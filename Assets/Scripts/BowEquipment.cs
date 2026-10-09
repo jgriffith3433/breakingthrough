@@ -5,7 +5,6 @@ public class BowEquipment : MonoBehaviour {
     [SerializeField] GameObject bowModel;
     [SerializeField] GameObject arrowModel;
 
-    const float BowLength = 1.35f;
     const float ArrowLength = 0.85f;
     const float ArrowSpeed = 34f;
 
@@ -33,7 +32,8 @@ public class BowEquipment : MonoBehaviour {
 
         int state = anim.GetInteger(CharacterMovement.PARAMETER_STATE);
         bool firstPerson = cam != null && cam.CamState == ZeldaStyleCamera.CamStates.FirstPerson;
-        bool show = !firstPerson && (state == 0 || state == 2 || state == 4);
+        //bool show = !firstPerson && (state == 0 || state == 2 || state == 4);
+        bool show = state == 0 || state == 2 || state == 4;
         bow.SetActive(show);
         nocked.SetActive(show && state != 2);
 
@@ -57,13 +57,14 @@ public class BowEquipment : MonoBehaviour {
 
         bow = Instantiate(bowModel, hand, false);
         bow.name = "EquippedBow";
-        DisableHelperBoxes(bow);
-        Orient(bow, BowLength, transform.up, transform.forward);
-        bow.transform.position += PalmOffset(hand);
+        //DisableHelperBoxes(bow);
+        bow.transform.localPosition = new Vector3(-0.009f, -0.066f, 0.035f);
+        bow.transform.localRotation = Quaternion.Euler(13f, 350f, 358f);
+        bow.transform.localScale = new Vector3(0.353789777f, 0.353789777f, 0.353789777f);
 
         nocked = Instantiate(arrowModel, bow.transform, false);
         nocked.name = "NockedArrow";
-        DisableHelperBoxes(nocked);
+        //DisableHelperBoxes(nocked);
         arrowLongLocal = Orient(nocked, ArrowLength, transform.forward, transform.up);
 
         equipped = true;
@@ -102,23 +103,6 @@ public class BowEquipment : MonoBehaviour {
             dir = transform.forward;
         }
         return dir.normalized;
-    }
-
-    static Vector3 PalmOffset(Transform hand) {
-        Vector3 sum = Vector3.zero;
-        int count = 0;
-        foreach (Transform child in hand) {
-            sum += child.position;
-            count++;
-        }
-        if (count == 0) {
-            return Vector3.zero;
-        }
-        Vector3 towardFingers = (sum / count) - hand.position;
-        if (towardFingers.sqrMagnitude < 0.0001f) {
-            return Vector3.zero;
-        }
-        return towardFingers.normalized * 0.08f;
     }
 
     static Vector3 Orient(GameObject go, float targetLength, Vector3 worldLong, Vector3 worldThin) {
