@@ -33,13 +33,9 @@ public class MovementMotor : MonoBehaviour {
 
     void Update() {
         IsGrounded = OnGround();
-        if (gamecam.CamState != ZeldaStyleCamera.CamStates.FirstPerson) {
-            MoveDirection = Vector3.Lerp(MoveDirection, TargetDirection, Time.deltaTime * LerpTime);
-            MoveDirection.y = FallVelocity;
-            charController.Move(MoveDirection * Time.deltaTime);
-        } else {
-            Anim.SetInteger("State", 0);
-        }
+        MoveDirection = Vector3.Lerp(MoveDirection, TargetDirection, Time.deltaTime * LerpTime);
+        MoveDirection.y = FallVelocity;
+        charController.Move(MoveDirection * Time.deltaTime);
         if (!IsGrounded) {
             FallVelocity -= 90f * GravityMultiplier * Time.deltaTime;
         }

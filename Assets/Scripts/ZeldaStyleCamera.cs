@@ -42,7 +42,14 @@ public class ZeldaStyleCamera : MonoBehaviour {
     [SerializeField]
     private float LockOnSnapSmoothDampTime = 20.0f;
     [SerializeField]
-    private float UnlockDistance = 5.0f;
+    private float UnlockDistance = 8.0f;
+
+    float orbitYaw;
+    float orbitPitch = 18f;
+    public float BodyScale = 1f;
+    float aimPitch = 8f;
+    bool resumeLock;
+    bool orbitReady;
 
     private bool HitWall;
     public CamStates CamState = CamStates.Behind;
@@ -74,73 +81,37 @@ public class ZeldaStyleCamera : MonoBehaviour {
         Animator = GameObject.FindWithTag("playerchild").GetComponent<Animator>();
         LockOn = GameObject.Find("LockOn").GetComponent<LockOn>();
         LookDir = FollowXForm.forward;
+        orbitYaw = FollowXForm.eulerAngles.y;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     void Update() {
         Vector3 characterOffset = FollowXForm.position + new Vector3(0f, DistanceUp, 0f);
-        if (Input.GetKey(KeyCode.E)) {
-            if (CamState == CamStates.Behind) {
-                CamState = CamStates.Target;
+        if (!orbitReady && FollowXForm != null) {
+            Vector3 fromPlayer = transform.position - FollowXForm.position;
+            fromPlayer.y = 0f;
+            if (fromPlayer.sqrMagnitude > 0.25f) {
+                orbitYaw = Mathf.Atan2(fromPlayer.x, fromPlayer.z) * Mathf.Rad2Deg;
+                CurrentCameraDistance = Mathf.Clamp(fromPlayer.magnitude, MinDistance, MaxDistance);
             }
-        } else if (Input.GetKeyUp(KeyCode.E)) {
-            CamState = CamStates.Behind;
-        } else if (Input.GetKeyUp(KeyCode.Q)) {
-            if (CamState == CamStates.FirstPerson) {
-                if (CamState == CamStates.LockOn) {
-                    LockedOnCrosshair.GetComponentInChildren<SpriteRenderer>().enabled = false;
-                    LockedOnGameObject = null;
-                    CamState = CamStates.Behind;
-                }
-                CamState = CamStates.Behind;
-            }
-            else if (CamState != CamStates.LockOn) { 
-                CamState = CamStates.FirstPerson;
-            }
-        } else if (Input.GetKeyUp(KeyCode.Space)) {
-            if (CamState == CamStates.LockOn) {
-                LockedOnCrosshair.GetComponentInChildren<SpriteRenderer>().enabled = false;
-                LockedOnGameObject = null;
-                CamState = CamStates.Behind;
-            } else {
-                if (LockOn.NearestObject != null) {
-                    LockOnSnap = false;
-                    LockedOnGameObject = LockOn.NearestObject;
-                    CamState = CamStates.LockOn;
-                }
-            }
-        } else if (CamState != CamStates.FirstPerson && CamState != CamStates.LockOn) {
-            CamState = CamStates.Behind;
+            orbitReady = true;
         }
-        if (CamState == CamStates.Behind) {
-            if ((LastChaaracterPos - Target.transform.position).magnitude <= .001f) {
-                if (!StoppedMoving) {
-                    TimeStoppedMoving = Time.time;
-                    StoppedMoving = true;
-                }
-            } else {
-                TimeStoppedMoving = Time.time;
-                StoppedMoving = false;
-            }
-            if (Time.time - TimeStoppedMoving > 2.0f) {
-                CamState = CamStates.Circling;
-            }
-        }
+
+        AcquireTarget();
+        CamState = CamStates.Behind;
 
         switch (CamState) {
             case CamStates.Behind:
-                LookDir = characterOffset - transform.position;
-                var distance = LookDir.magnitude;
-                LookDir.y = 0;
-                LookDir.Normalize();
-                if (distance >= MaxDistance) {
+                orbitYaw += Input.GetAxis("Mouse X") * 3.4f;
+                orbitPitch = Mathf.Clamp(orbitPitch - Input.GetAxis("Mouse Y") * 2.1f, 8f, 46f);
+                if (CurrentCameraDistance < MinDistance) {
                     CurrentCameraDistance = MaxDistance;
-                } else if (distance <= MinDistance) {
-                    CurrentCameraDistance = MinDistance;
-                } else {
-                    CurrentCameraDistance = distance;
                 }
-                TargetPosition = FollowXForm.position + FollowXForm.up * DistanceUp - LookDir * CurrentCameraDistance;
-
+                LookDir = Quaternion.Euler(0f, orbitYaw, 0f) * Vector3.forward;
+                float body = Mathf.Max(1f, BodyScale);
+                float camDist = CurrentCameraDistance * Mathf.Lerp(1f, body, 0.7f);
+                TargetPosition = FollowXForm.position + Vector3.up * (DistanceUp * body) + Quaternion.Euler(orbitPitch, orbitYaw, 0f) * new Vector3(0f, 0f, -camDist);
                 break;
             case CamStates.Target:
                 LookDir = FollowXForm.forward;
@@ -199,28 +170,17 @@ public class ZeldaStyleCamera : MonoBehaviour {
                 }
                 break;
             case CamStates.FirstPerson:
-                var vertInput = Input.GetAxis("Vertical");
-                var horiInput = Input.GetAxis("Horizontal");
-
-                FollowXForm.transform.Rotate(0, horiInput * FirstPersonTurnLeftAndRightSpeed, 0.0f);
-                transform.localEulerAngles = new Vector3(ClampAngle(transform.localEulerAngles.x + vertInput * FirstPersonLookUpAndDownSpeed, FirstPersonXAxisClamp.x, FirstPersonXAxisClamp.y), transform.localEulerAngles.y, transform.localEulerAngles.z);
-                transform.eulerAngles = new Vector3(transform.eulerAngles.x, FirstPersonCamPos.transform.eulerAngles.y, FirstPersonCamPos.transform.eulerAngles.z);
-
-                if (vertInput == 0) {
-                    if (transform.localEulerAngles.x > 5 && transform.localEulerAngles.x < 270) {
-                        transform.Rotate(-FirstPersonLookUpAndDownSpeed, 0, 0);
-                    } else if (transform.localEulerAngles.x < 0 || transform.localEulerAngles.x > 270) {
-                        transform.Rotate(FirstPersonLookUpAndDownSpeed, 0, 0);
-                    } else {
-                        transform.localEulerAngles = new Vector3(0, transform.localEulerAngles.y, transform.localEulerAngles.z);
-                    }
-                }
-                TargetPosition = FirstPersonCamPos.transform.position;
+                orbitYaw += Input.GetAxis("Mouse X") * 2.6f;
+                aimPitch = Mathf.Clamp(aimPitch - Input.GetAxis("Mouse Y") * 1.7f, -42f, 48f);
+                FollowXForm.rotation = Quaternion.Euler(0f, orbitYaw, 0f);
+                transform.position = FirstPersonCamPos.transform.position;
+                transform.rotation = Quaternion.Euler(aimPitch, orbitYaw, 0f);
+                TargetPosition = transform.position;
                 break;
         }
 
         LastChaaracterPos = Target.transform.position;
-        if (CamState != CamStates.Circling && CamState != CamStates.LockOn && CamState != CamStates.Target) {
+        if (CamState != CamStates.Circling && CamState != CamStates.LockOn && CamState != CamStates.Target && CamState != CamStates.FirstPerson) {
             transform.position = Vector3.SmoothDamp(transform.position, TargetPosition, ref VelocityCamSmooth, CamSmoothDampTime * Time.deltaTime);
         }
         if (CamState == CamStates.Target) {
@@ -228,9 +188,87 @@ public class ZeldaStyleCamera : MonoBehaviour {
         }
 
         CompensateForWalls(characterOffset, ref TargetPosition);
-        if (CamState != CamStates.FirstPerson && CamState != CamStates.LockOn) {
-            transform.LookAt(FollowXForm.position + FollowXForm.up);
+        transform.LookAt(FollowXForm.position + Vector3.up * Mathf.Max(1f, DistanceUp * Mathf.Max(1f, BodyScale)));
+        ShowLockMarker();
+    }
+
+    void AcquireTarget() {
+        GameObject best = null;
+        float bestDist = 12f;
+        Vector3 origin = FollowXForm.position;
+        Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
+        foreach (Enemy enemy in enemies) {
+            if (enemy == null || !enemy.Alive) {
+                continue;
+            }
+            float dist = Vector3.Distance(origin, enemy.transform.position);
+            if (dist < bestDist) {
+                bestDist = dist;
+                best = enemy.gameObject;
+            }
         }
+        LockedOnGameObject = best;
+    }
+
+    void ShowLockMarker() {
+        if (LockedOnCrosshair == null) {
+            return;
+        }
+        SpriteRenderer marker = LockedOnCrosshair.GetComponentInChildren<SpriteRenderer>();
+        if (marker == null) {
+            return;
+        }
+        marker.enabled = LockedOnGameObject != null;
+        if (LockedOnGameObject == null) {
+            return;
+        }
+        LockedOnCrosshair.transform.position = LockedOnGameObject.transform.position + Vector3.up * 0.95f;
+        LockedOnCrosshair.transform.LookAt(transform.position);
+    }
+
+    public Vector3 ViewAim() {
+        if (CamState == CamStates.FirstPerson) {
+            return transform.forward;
+        }
+
+        Vector3 flat = FollowXForm.position - transform.position;
+        flat.y = 0f;
+        if (flat.sqrMagnitude < 0.01f) {
+            flat = FollowXForm.forward;
+        }
+        return Quaternion.AngleAxis(-7f, Vector3.Cross(Vector3.up, flat.normalized)) * flat.normalized;
+    }
+
+    void ToggleLock() {
+        if (CamState == CamStates.LockOn) {
+            LockedOnCrosshair.GetComponentInChildren<SpriteRenderer>().enabled = false;
+            LockedOnGameObject = null;
+            resumeLock = false;
+            CamState = CamStates.Behind;
+            return;
+        }
+
+        if (LockOn.NearestObject == null) {
+            return;
+        }
+
+        LockOnSnap = false;
+        LockedOnGameObject = LockOn.NearestObject;
+        CamState = CamStates.LockOn;
+    }
+
+    void SwitchLock(int side) {
+        if (LockOn == null || LockedOnGameObject == null) {
+            return;
+        }
+
+        GameObject next = LockOn.Neighbor(LockedOnGameObject, side);
+        if (next == null) {
+            return;
+        }
+
+        LockOnSnap = false;
+        LockedOnGameObject = next;
     }
 
     private void CompensateForWalls(Vector3 fromObject, ref Vector3 toTarget) {

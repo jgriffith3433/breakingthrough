@@ -10,6 +10,7 @@ public class CharacterMovement : MonoBehaviour {
     public float SpeedAttack = 1.5f;
     public float TurnSpeed = 20f;
     public float SpeedJump = 20f;
+    float autoShot;
     private Vector3 Tar;
 
     [SerializeField]
@@ -54,15 +55,20 @@ public class CharacterMovement : MonoBehaviour {
     }
 
     bool Aiming() {
-        return ZeldaCam.CamState == ZeldaStyleCamera.CamStates.LockOn
-            || ZeldaCam.CamState == ZeldaStyleCamera.CamStates.Target;
+        return ZeldaCam.LockedOnGameObject != null;
     }
 
     void MovementAndJumping() {
         if (Anim) {
-            if (Input.GetMouseButtonDown(0) && ZeldaCam.CamState != ZeldaStyleCamera.CamStates.FirstPerson) {
+            autoShot -= Time.deltaTime;
+            bool auto = WaveDirector.Wave >= 5 && autoShot <= 0f && Anim.GetInteger(PARAMETER_STATE) != 2 && Anim.GetInteger(PARAMETER_STATE) != 3;
+            if (Input.GetMouseButtonDown(0) || auto) {
                 Anim.speed = 1f;
                 Anim.SetInteger(PARAMETER_STATE, 2);
+                if (auto) {
+                    float grown = PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f;
+                    autoShot = Mathf.Lerp(0.7f, 0.32f, Mathf.Clamp01((grown - 1f) / 4f));
+                }
             } else if (Anim.GetInteger(PARAMETER_STATE) == 2) {
                 AnimatorStateInfo info = Anim.GetCurrentAnimatorStateInfo(0);
                 if (info.IsName("Shoot") && info.normalizedTime >= 0.92f && !Anim.IsInTransition(0)) {
@@ -70,7 +76,7 @@ public class CharacterMovement : MonoBehaviour {
                 }
             }
 
-            if (ZeldaCam.CamState == ZeldaStyleCamera.CamStates.LockOn) {
+            if (ZeldaCam.LockedOnGameObject != null) {
                 var vert = Input.GetAxis("Vertical");
                 var hori = Input.GetAxis("Horizontal");
                 var directionTowardLockedOnObject = ZeldaCam.LockedOnGameObject.transform.position - transform.position;
@@ -87,13 +93,13 @@ public class CharacterMovement : MonoBehaviour {
                 directionToMove = directionToMove / 16 * Speed;
 
 
-                if (directionToMove.magnitude > 0) {
+                if (directionTowardLockedOnObject.sqrMagnitude > 0.01f) {
                     var newRotation = Quaternion.LookRotation(directionTowardLockedOnObject.normalized);
                     transform.rotation = Quaternion.Slerp(transform.rotation, newRotation, Time.deltaTime * TurnSpeed);
                 }
                 motor.Move(directionToMove);
                 AnimationMove(motor.charController.velocity.magnitude * 0.1f);
-            } else if (ZeldaCam.CamState != ZeldaStyleCamera.CamStates.FirstPerson) {
+            } else {
                 var vert = Input.GetAxis("Vertical");
                 var hori = Input.GetAxis("Horizontal");
                 var cameraForward = new Vector3(ZeldaCam.transform.forward.x * vert, 0, ZeldaCam.transform.forward.z * vert);
@@ -101,17 +107,17 @@ public class CharacterMovement : MonoBehaviour {
                 var directionToMove = cameraForward + cameraRight;
                 directionToMove *= Speed;
 
-                if (directionToMove.normalized.magnitude > 0) {
+                if (directionToMove.sqrMagnitude > 0.001f) {
                     var newRotation = Quaternion.LookRotation(directionToMove.normalized);
                     transform.rotation = Quaternion.Slerp(transform.rotation, newRotation, Time.deltaTime * TurnSpeed);
                 }
                 motor.Move(directionToMove);
                 AnimationMove(motor.charController.velocity.magnitude * 0.1f);
+            }
 
-                if (Input.GetKey(KeyCode.F)) {
-                    Anim.SetInteger(PARAMETER_STATE, 3);
-                    motor.Jump(SpeedJump);
-                }
+            if (Input.GetKey(KeyCode.Space)) {
+                Anim.SetInteger(PARAMETER_STATE, 3);
+                motor.Jump(SpeedJump);
             }
         }
     }

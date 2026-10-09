@@ -43,6 +43,22 @@ public class BowEquipment : MonoBehaviour {
         lastState = state;
     }
 
+    void OnGUI() {
+        if (cam == null || cam.LockedOnGameObject != null) {
+            return;
+        }
+
+        float cx = Screen.width * 0.5f;
+        float cy = Screen.height * 0.5f;
+        Color previous = GUI.color;
+        GUI.color = new Color(1f, 0.96f, 0.88f, 0.92f);
+        GUI.DrawTexture(new Rect(cx - 14f, cy - 1f, 8f, 2f), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(cx + 6f, cy - 1f, 8f, 2f), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(cx - 1f, cy - 14f, 2f, 8f), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(cx - 1f, cy + 6f, 2f, 8f), Texture2D.whiteTexture);
+        GUI.color = previous;
+    }
+
     void Equip() {
         if (bowModel == null || arrowModel == null || anim == null) {
             Debug.LogWarning("Bow and arrow models are not assigned.");
@@ -88,15 +104,16 @@ public class BowEquipment : MonoBehaviour {
         shot.transform.SetParent(null, true);
 
         ArrowFlight flight = shot.AddComponent<ArrowFlight>();
-        flight.Begin(dir * ArrowSpeed, transform, arrowLongLocal);
+        flight.Begin(dir * ArrowSpeed, transform, arrowLongLocal, PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f);
+        GameAudio.Play("shot", 0.8f);
     }
 
     Vector3 AimDirection() {
         Vector3 dir = transform.forward;
-        if (cam != null && cam.CamState == ZeldaStyleCamera.CamStates.LockOn && cam.LockedOnGameObject != null) {
-            dir = cam.LockedOnGameObject.transform.position + Vector3.up * 1.1f - nocked.transform.position;
-        } else if (cam != null && cam.CamState == ZeldaStyleCamera.CamStates.Target) {
-            dir = cam.transform.forward;
+        if (cam != null && cam.LockedOnGameObject != null) {
+            dir = cam.LockedOnGameObject.transform.position + Vector3.up * 0.45f - nocked.transform.position;
+        } else if (cam != null) {
+            dir = cam.ViewAim();
         }
 
         if (dir.sqrMagnitude < 0.0001f) {
@@ -214,11 +231,13 @@ public class ArrowFlight : MonoBehaviour {
     Vector3 longLocal;
     float life = 2.8f;
     float age;
+    float power = 1f;
 
-    public void Begin(Vector3 velocity, Transform owner, Vector3 longLocal) {
+    public void Begin(Vector3 velocity, Transform owner, Vector3 longLocal, float power) {
         this.velocity = velocity;
         this.owner = owner;
         this.longLocal = longLocal;
+        this.power = Mathf.Max(1f, power);
     }
 
     void Update() {
@@ -233,9 +252,22 @@ public class ArrowFlight : MonoBehaviour {
         Vector3 direction = velocity.sqrMagnitude > 0.0001f ? velocity.normalized : transform.forward;
         if (Physics.Raycast(transform.position, direction, out RaycastHit hit, distance + 0.08f, ~0, QueryTriggerInteraction.Ignore)) {
             if (owner == null || (!hit.transform.IsChildOf(owner) && hit.transform != owner)) {
+                Enemy foe = hit.collider.GetComponentInParent<Enemy>();
+                if (foe != null) {
+                    foe.Hit(power);
+                    if (power >= PlayerGrowth.BoomScale) {
+                        Collider[] caught = Physics.OverlapSphere(hit.point, 0.8f + power * 0.45f);
+                        foreach (Collider caughtCollider in caught) {
+                            Enemy other = caughtCollider.GetComponentInParent<Enemy>();
+                            if (other != null && other != foe && other.Alive) {
+                                other.Hit(power * 0.65f);
+                            }
+                        }
+                    }
+                }
                 transform.position = hit.point - direction * 0.05f;
                 velocity = Vector3.zero;
-                Destroy(gameObject, 6f);
+                Destroy(gameObject, foe != null ? 0.35f : 6f);
                 enabled = false;
                 return;
             }

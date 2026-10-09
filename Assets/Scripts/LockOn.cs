@@ -14,24 +14,11 @@ public class LockOn : MonoBehaviour {
     }
 
     void Update() {
-        if (NearObjects.Count == 0) {
-            NearestObject = null;
-        }
-        foreach(var nearObject in NearObjects) {
-            if (NearestObject == null) {
-                NearestObject = nearObject;
+        if (AbleToLockOnCrosshair != null) {
+            SpriteRenderer marker = AbleToLockOnCrosshair.GetComponent<SpriteRenderer>();
+            if (marker != null) {
+                marker.enabled = false;
             }
-            if ((transform.position - nearObject.transform.position).magnitude <
-                (transform.position - NearestObject.transform.position).magnitude) {
-                NearestObject = nearObject;
-            }
-        }
-        if (NearestObject != null && ZeldaCam.LockedOnGameObject == null) {
-            AbleToLockOnCrosshair.GetComponent<SpriteRenderer>().enabled = true;
-            AbleToLockOnCrosshair.transform.position = NearestObject.transform.position;
-            AbleToLockOnCrosshair.transform.LookAt(ZeldaCam.transform.position);
-        } else {
-            AbleToLockOnCrosshair.GetComponent<SpriteRenderer>().enabled = false;
         }
     }
 
@@ -45,6 +32,38 @@ public class LockOn : MonoBehaviour {
 
     void OnTriggerExit(Collider col) {
         NearObjects.Remove(col.gameObject);
+    }
+
+    public GameObject Neighbor(GameObject current, int side) {
+        if (ZeldaCam == null || current == null) {
+            return null;
+        }
+
+        Vector3 right = ZeldaCam.transform.right;
+        right.y = 0f;
+        if (right.sqrMagnitude < 0.001f) {
+            return null;
+        }
+        right.Normalize();
+
+        GameObject bestObject = null;
+        float bestScore = 0.15f;
+        foreach (GameObject candidate in NearObjects) {
+            if (candidate == null || candidate == current) {
+                continue;
+            }
+            Vector3 dir = candidate.transform.position - transform.position;
+            dir.y = 0f;
+            if (dir.sqrMagnitude < 0.01f) {
+                continue;
+            }
+            float score = Vector3.Dot(dir.normalized, right) * side;
+            if (score > bestScore) {
+                bestScore = score;
+                bestObject = candidate;
+            }
+        }
+        return bestObject;
     }
 }
 
