@@ -1,0 +1,244 @@
+fileFormatVersion: 2
+guid: 1725be73c6a528e4ab7f0431c0519724
+ModelImporter:
+  serializedVersion: 23
+  fileIDToRecycleName:
+    100000: Bip01_HeadS0
+    100002: Bip01_L_ClavicleS0
+    100004: Bip01_Neck1S0
+    100006: Bip01_R_ClavicleS0
+    100008: eyelid_L_down
+    100010: eyelid_L_up
+    100012: eyelid_R_down
+    100014: eyelid_R_up
+    100016: //RootNode
+    100018: jaw
+    100020: Lip_L
+    100022: Lip_L_down
+    100024: Lip_m_up
+    100026: Lip_R
+    100028: Lip_R_down
+    100030: nose
+    400000: Bip01_HeadS0
+    400002: Bip01_L_ClavicleS0
+    400004: Bip01_Neck1S0
+    400006: Bip01_R_ClavicleS0
+    400008: eyelid_L_down
+    400010: eyelid_L_up
+    400012: eyelid_R_down
+    400014: eyelid_R_up
+    400016: //RootNode
+    400018: jaw
+    400020: Lip_L
+    400022: Lip_L_down
+    400024: Lip_m_up
+    400026: Lip_R
+    400028: Lip_R_down
+    400030: nose
+    2300000: Bip01_HeadS0
+    2300002: Bip01_L_ClavicleS0
+    2300004: Bip01_Neck1S0
+    2300006: Bip01_R_ClavicleS0
+    2300008: eyelid_L_down
+    2300010: eyelid_L_up
+    2300012: eyelid_R_down
+    2300014: eyelid_R_up
+    2300016: jaw
+    2300018: Lip_L
+    2300020: Lip_L_down
+    2300022: Lip_m_up
+    2300024: Lip_R
+    2300026: Lip_R_down
+    2300028: nose
+    3300000: Bip01_HeadS0
+    3300002: Bip01_L_ClavicleS0
+    3300004: Bip01_Neck1S0
+    3300006: Bip01_R_ClavicleS0
+    3300008: eyelid_L_down
+    3300010: eyelid_L_up
+    3300012: eyelid_R_down
+    3300014: eyelid_R_up
+    3300016: jaw
+    3300018: Lip_L
+    3300020: Lip_L_down
+    3300022: Lip_m_up
+    3300024: Lip_R
+    3300026: Lip_R_down
+    3300028: nose
+    4300000: Bip01_HeadS0
+    4300002: Bip01_L_ClavicleS0
+    4300004: Bip01_Neck1S0
+    4300006: Bip01_R_ClavicleS0
+    4300008: eyelid_L_down
+    4300010: eyelid_L_up
+    4300012: eyelid_R_down
+    4300014: eyelid_R_up
+    4300016: jaw
+    4300018: Lip_L
+    4300020: Lip_L_down
+    4300022: Lip_m_up
+    4300024: Lip_R
+    4300026: Lip_R_down
+    4300028: nose
+    2186277476908879412: ImportLogs
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_HeadS0Mat
+    second: {fileID: 2100000, guid: ab6e11cd59c9c6c498eb5be2f2f0fee4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_ClavicleS0Mat
+    second: {fileID: 2100000, guid: 118ce61a177a5f144883543daa626264, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_Neck1S0Mat
+    second: {fileID: 2100000, guid: c48dbad5ac1320448963b70d197d844d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_ClavicleS0Mat
+    second: {fileID: 2100000, guid: 7b34433b0ffdf4c4a814ea8078c61626, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Lip_LMat
+    second: {fileID: 2100000, guid: 42d3993bdb5168e479962f4fff2ef474, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Lip_L_downMat
+    second: {fileID: 2100000, guid: 5fe3bcd3b54adcb489b651855050406e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Lip_RMat
+    second: {fileID: 2100000, guid: c7d31f085c7f5c54f9f6942d868729ea, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Lip_R_downMat
+    second: {fileID: 2100000, guid: 49380022376fab941af00d40d2dee33c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Lip_m_upMat
+    second: {fileID: 2100000, guid: 116f4b3b7c6280242889cacddd3cbee0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: eyelid_L_downMat
+    second: {fileID: 2100000, guid: 68c37d69475e7ae40a6e992b9aa6f85b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: eyelid_L_upMat
+    second: {fileID: 2100000, guid: 0221cf5e3b62d764a9ae10a4049b0efd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: eyelid_R_downMat
+    second: {fileID: 2100000, guid: e2b0eac46ab9f874aadf3948e81612e9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: eyelid_R_upMat
+    second: {fileID: 2100000, guid: cbd6bbb1e722a7344bcec8139d08787a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: jawMat
+    second: {fileID: 2100000, guid: 7d051856cc26596449dcde13b1dc8602, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: noseMat
+    second: {fileID: 2100000, guid: 2ac641b870addcc45a1eecdedaaeffba, type: 2}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    preserveHierarchy: 0
+    indexFormat: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    previousCalculatedGlobalScale: 1
+    hasPreviousCalculatedGlobalScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

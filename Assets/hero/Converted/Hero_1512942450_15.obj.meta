@@ -1,0 +1,454 @@
+fileFormatVersion: 2
+guid: 4cbbb9d4242b0684487cc8bbdf3e4444
+ModelImporter:
+  serializedVersion: 23
+  fileIDToRecycleName:
+    100000: Bip01_L_Finger01S0
+    100002: Bip01_L_Finger02S0
+    100004: Bip01_L_Finger0S0
+    100006: Bip01_L_Finger11S0
+    100008: Bip01_L_Finger12S0
+    100010: Bip01_L_Finger1S0
+    100012: Bip01_L_Finger21S0
+    100014: Bip01_L_Finger22S0
+    100016: Bip01_L_Finger2S0
+    100018: Bip01_L_Finger31S0
+    100020: Bip01_L_Finger32S0
+    100022: Bip01_L_Finger3S0
+    100024: Bip01_L_Finger41S0
+    100026: Bip01_L_Finger42S0
+    100028: Bip01_L_Finger4S0
+    100030: Bip01_L_ForeArmS0
+    100032: Bip01_L_HandS0
+    100034: Bip01_L_UpperArmS0
+    100036: Bip01_R_Finger01S0
+    100038: Bip01_R_Finger02S0
+    100040: Bip01_R_Finger0S0
+    100042: Bip01_R_Finger11S0
+    100044: Bip01_R_Finger12S0
+    100046: Bip01_R_Finger1S0
+    100048: Bip01_R_Finger21S0
+    100050: Bip01_R_Finger22S0
+    100052: Bip01_R_Finger2S0
+    100054: Bip01_R_Finger31S0
+    100056: Bip01_R_Finger32S0
+    100058: Bip01_R_Finger3S0
+    100060: Bip01_R_Finger41S0
+    100062: Bip01_R_Finger42S0
+    100064: Bip01_R_Finger4S0
+    100066: Bip01_R_ForeArmS0
+    100068: Bip01_R_HandS0
+    100070: Bip01_R_UpperArmS0
+    100072: //RootNode
+    400000: Bip01_L_Finger01S0
+    400002: Bip01_L_Finger02S0
+    400004: Bip01_L_Finger0S0
+    400006: Bip01_L_Finger11S0
+    400008: Bip01_L_Finger12S0
+    400010: Bip01_L_Finger1S0
+    400012: Bip01_L_Finger21S0
+    400014: Bip01_L_Finger22S0
+    400016: Bip01_L_Finger2S0
+    400018: Bip01_L_Finger31S0
+    400020: Bip01_L_Finger32S0
+    400022: Bip01_L_Finger3S0
+    400024: Bip01_L_Finger41S0
+    400026: Bip01_L_Finger42S0
+    400028: Bip01_L_Finger4S0
+    400030: Bip01_L_ForeArmS0
+    400032: Bip01_L_HandS0
+    400034: Bip01_L_UpperArmS0
+    400036: Bip01_R_Finger01S0
+    400038: Bip01_R_Finger02S0
+    400040: Bip01_R_Finger0S0
+    400042: Bip01_R_Finger11S0
+    400044: Bip01_R_Finger12S0
+    400046: Bip01_R_Finger1S0
+    400048: Bip01_R_Finger21S0
+    400050: Bip01_R_Finger22S0
+    400052: Bip01_R_Finger2S0
+    400054: Bip01_R_Finger31S0
+    400056: Bip01_R_Finger32S0
+    400058: Bip01_R_Finger3S0
+    400060: Bip01_R_Finger41S0
+    400062: Bip01_R_Finger42S0
+    400064: Bip01_R_Finger4S0
+    400066: Bip01_R_ForeArmS0
+    400068: Bip01_R_HandS0
+    400070: Bip01_R_UpperArmS0
+    400072: //RootNode
+    2300000: Bip01_L_Finger01S0
+    2300002: Bip01_L_Finger02S0
+    2300004: Bip01_L_Finger0S0
+    2300006: Bip01_L_Finger11S0
+    2300008: Bip01_L_Finger12S0
+    2300010: Bip01_L_Finger1S0
+    2300012: Bip01_L_Finger21S0
+    2300014: Bip01_L_Finger22S0
+    2300016: Bip01_L_Finger2S0
+    2300018: Bip01_L_Finger31S0
+    2300020: Bip01_L_Finger32S0
+    2300022: Bip01_L_Finger3S0
+    2300024: Bip01_L_Finger41S0
+    2300026: Bip01_L_Finger42S0
+    2300028: Bip01_L_Finger4S0
+    2300030: Bip01_L_ForeArmS0
+    2300032: Bip01_L_HandS0
+    2300034: Bip01_L_UpperArmS0
+    2300036: Bip01_R_Finger01S0
+    2300038: Bip01_R_Finger02S0
+    2300040: Bip01_R_Finger0S0
+    2300042: Bip01_R_Finger11S0
+    2300044: Bip01_R_Finger12S0
+    2300046: Bip01_R_Finger1S0
+    2300048: Bip01_R_Finger21S0
+    2300050: Bip01_R_Finger22S0
+    2300052: Bip01_R_Finger2S0
+    2300054: Bip01_R_Finger31S0
+    2300056: Bip01_R_Finger32S0
+    2300058: Bip01_R_Finger3S0
+    2300060: Bip01_R_Finger41S0
+    2300062: Bip01_R_Finger42S0
+    2300064: Bip01_R_Finger4S0
+    2300066: Bip01_R_ForeArmS0
+    2300068: Bip01_R_HandS0
+    2300070: Bip01_R_UpperArmS0
+    3300000: Bip01_L_Finger01S0
+    3300002: Bip01_L_Finger02S0
+    3300004: Bip01_L_Finger0S0
+    3300006: Bip01_L_Finger11S0
+    3300008: Bip01_L_Finger12S0
+    3300010: Bip01_L_Finger1S0
+    3300012: Bip01_L_Finger21S0
+    3300014: Bip01_L_Finger22S0
+    3300016: Bip01_L_Finger2S0
+    3300018: Bip01_L_Finger31S0
+    3300020: Bip01_L_Finger32S0
+    3300022: Bip01_L_Finger3S0
+    3300024: Bip01_L_Finger41S0
+    3300026: Bip01_L_Finger42S0
+    3300028: Bip01_L_Finger4S0
+    3300030: Bip01_L_ForeArmS0
+    3300032: Bip01_L_HandS0
+    3300034: Bip01_L_UpperArmS0
+    3300036: Bip01_R_Finger01S0
+    3300038: Bip01_R_Finger02S0
+    3300040: Bip01_R_Finger0S0
+    3300042: Bip01_R_Finger11S0
+    3300044: Bip01_R_Finger12S0
+    3300046: Bip01_R_Finger1S0
+    3300048: Bip01_R_Finger21S0
+    3300050: Bip01_R_Finger22S0
+    3300052: Bip01_R_Finger2S0
+    3300054: Bip01_R_Finger31S0
+    3300056: Bip01_R_Finger32S0
+    3300058: Bip01_R_Finger3S0
+    3300060: Bip01_R_Finger41S0
+    3300062: Bip01_R_Finger42S0
+    3300064: Bip01_R_Finger4S0
+    3300066: Bip01_R_ForeArmS0
+    3300068: Bip01_R_HandS0
+    3300070: Bip01_R_UpperArmS0
+    4300000: Bip01_L_Finger01S0
+    4300002: Bip01_L_Finger02S0
+    4300004: Bip01_L_Finger0S0
+    4300006: Bip01_L_Finger11S0
+    4300008: Bip01_L_Finger12S0
+    4300010: Bip01_L_Finger1S0
+    4300012: Bip01_L_Finger21S0
+    4300014: Bip01_L_Finger22S0
+    4300016: Bip01_L_Finger2S0
+    4300018: Bip01_L_Finger31S0
+    4300020: Bip01_L_Finger32S0
+    4300022: Bip01_L_Finger3S0
+    4300024: Bip01_L_Finger41S0
+    4300026: Bip01_L_Finger42S0
+    4300028: Bip01_L_Finger4S0
+    4300030: Bip01_L_ForeArmS0
+    4300032: Bip01_L_HandS0
+    4300034: Bip01_L_UpperArmS0
+    4300036: Bip01_R_Finger01S0
+    4300038: Bip01_R_Finger02S0
+    4300040: Bip01_R_Finger0S0
+    4300042: Bip01_R_Finger11S0
+    4300044: Bip01_R_Finger12S0
+    4300046: Bip01_R_Finger1S0
+    4300048: Bip01_R_Finger21S0
+    4300050: Bip01_R_Finger22S0
+    4300052: Bip01_R_Finger2S0
+    4300054: Bip01_R_Finger31S0
+    4300056: Bip01_R_Finger32S0
+    4300058: Bip01_R_Finger3S0
+    4300060: Bip01_R_Finger41S0
+    4300062: Bip01_R_Finger42S0
+    4300064: Bip01_R_Finger4S0
+    4300066: Bip01_R_ForeArmS0
+    4300068: Bip01_R_HandS0
+    4300070: Bip01_R_UpperArmS0
+    2186277476908879412: ImportLogs
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_Finger01S0Mat
+    second: {fileID: 2100000, guid: 28fb624ea94577c4dba8db2036bc7369, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_Finger02S0Mat
+    second: {fileID: 2100000, guid: f46b01fe85fd1664ea8cfa97e257745f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_Finger0S0Mat
+    second: {fileID: 2100000, guid: 1f05431aaa4591644ba6a3f3e8ebf8c1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_Finger11S0Mat
+    second: {fileID: 2100000, guid: a85c52bfc6a36f34791d071459269f40, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_Finger12S0Mat
+    second: {fileID: 2100000, guid: 84c162ea1fdb22e42bf9ea5624cce1c0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_Finger1S0Mat
+    second: {fileID: 2100000, guid: 742bafeb0420db34495ff6b781aeefe3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_Finger21S0Mat
+    second: {fileID: 2100000, guid: 30db1960052c26e41bc75ef945cc00b1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_Finger22S0Mat
+    second: {fileID: 2100000, guid: 0ce888d2170b75a48859aa66a405f78d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_Finger2S0Mat
+    second: {fileID: 2100000, guid: 6d542f9cd7836264b895a79e808396d7, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_Finger31S0Mat
+    second: {fileID: 2100000, guid: 493a1d2d8cc8a4243ab7f4e5292cc269, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_Finger32S0Mat
+    second: {fileID: 2100000, guid: 7b44d4ef81ba60d4c87b8919eac7502d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_Finger3S0Mat
+    second: {fileID: 2100000, guid: 4758b8db06a3f17428678f41ec0ee2e2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_Finger41S0Mat
+    second: {fileID: 2100000, guid: d7973272b199bc146a483d8170dad2d7, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_Finger42S0Mat
+    second: {fileID: 2100000, guid: b463c2633a7da0740a4dafb117eb7ba4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_Finger4S0Mat
+    second: {fileID: 2100000, guid: 0a85e6ce7e65af845a5ad90663ebb936, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_ForeArmS0Mat
+    second: {fileID: 2100000, guid: ced1667b11604fd4e9fd997119356751, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_HandS0Mat
+    second: {fileID: 2100000, guid: f8c55a1fb50db0949828e1ac4351ffc4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_UpperArmS0Mat
+    second: {fileID: 2100000, guid: 5af9f49abbcb63a4788cf0e71315f640, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_Finger01S0Mat
+    second: {fileID: 2100000, guid: 9dbd71ffd37966548a76aad745c0af09, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_Finger02S0Mat
+    second: {fileID: 2100000, guid: a39d2788a60615a4e8bc1299818283dc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_Finger0S0Mat
+    second: {fileID: 2100000, guid: e345ebcc70e64094f916a3fb2139f713, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_Finger11S0Mat
+    second: {fileID: 2100000, guid: ec5f3805012d3f1419eecd8b0fcd6587, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_Finger12S0Mat
+    second: {fileID: 2100000, guid: 59fb8ea7597591c49a858d1d75f3a5d8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_Finger1S0Mat
+    second: {fileID: 2100000, guid: 254aa9edd6b4d5048b6643174500b243, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_Finger21S0Mat
+    second: {fileID: 2100000, guid: 86411846914af2d46be01dcd4cbfb291, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_Finger22S0Mat
+    second: {fileID: 2100000, guid: 8a74795df03c3d8458c84b34785dba61, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_Finger2S0Mat
+    second: {fileID: 2100000, guid: cbbf124ecc6c72b4bb94fd1a7cfd76bd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_Finger31S0Mat
+    second: {fileID: 2100000, guid: 986c165e15c1ccb4787786f6ec418ccf, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_Finger32S0Mat
+    second: {fileID: 2100000, guid: 3474a4ba8560a4c4bb96e0bbb35933da, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_Finger3S0Mat
+    second: {fileID: 2100000, guid: ad1f00ca7e54e274f8948fe10192f9e6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_Finger41S0Mat
+    second: {fileID: 2100000, guid: 2ceb0c80dd9800840b2769ec886b759a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_Finger42S0Mat
+    second: {fileID: 2100000, guid: fdcaafa9574ce1f45bb32d8984e30cdc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_Finger4S0Mat
+    second: {fileID: 2100000, guid: 68ffef19915f58f4bad0c2fe0dbea6c2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_ForeArmS0Mat
+    second: {fileID: 2100000, guid: e753c8e9d0497b143afbdd0e2d392789, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_HandS0Mat
+    second: {fileID: 2100000, guid: 18416d02723232c41b48dbf4679e468b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_UpperArmS0Mat
+    second: {fileID: 2100000, guid: 62e70086f70998f4fa3ce5cfa3f6e89c, type: 2}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    preserveHierarchy: 0
+    indexFormat: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    previousCalculatedGlobalScale: 1
+    hasPreviousCalculatedGlobalScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

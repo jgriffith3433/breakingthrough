@@ -1,0 +1,194 @@
+fileFormatVersion: 2
+guid: 2c81466efa93ed14ba804d572a1b1aea
+ModelImporter:
+  serializedVersion: 23
+  fileIDToRecycleName:
+    100000: Bip01_L_CalfS0
+    100002: Bip01_L_FootS0
+    100004: Bip01_L_ThighS0
+    100006: Bip01_L_Toe0S0
+    100008: Bip01_PelvisS0
+    100010: Bip01_R_CalfS0
+    100012: Bip01_R_FootS0
+    100014: Bip01_R_ThighS0
+    100016: Bip01_R_Toe0S0
+    100018: Bip01_Spine1S0
+    100020: //RootNode
+    400000: Bip01_L_CalfS0
+    400002: Bip01_L_FootS0
+    400004: Bip01_L_ThighS0
+    400006: Bip01_L_Toe0S0
+    400008: Bip01_PelvisS0
+    400010: Bip01_R_CalfS0
+    400012: Bip01_R_FootS0
+    400014: Bip01_R_ThighS0
+    400016: Bip01_R_Toe0S0
+    400018: Bip01_Spine1S0
+    400020: //RootNode
+    2300000: Bip01_L_CalfS0
+    2300002: Bip01_L_FootS0
+    2300004: Bip01_L_ThighS0
+    2300006: Bip01_L_Toe0S0
+    2300008: Bip01_PelvisS0
+    2300010: Bip01_R_CalfS0
+    2300012: Bip01_R_FootS0
+    2300014: Bip01_R_ThighS0
+    2300016: Bip01_R_Toe0S0
+    2300018: Bip01_Spine1S0
+    3300000: Bip01_L_CalfS0
+    3300002: Bip01_L_FootS0
+    3300004: Bip01_L_ThighS0
+    3300006: Bip01_L_Toe0S0
+    3300008: Bip01_PelvisS0
+    3300010: Bip01_R_CalfS0
+    3300012: Bip01_R_FootS0
+    3300014: Bip01_R_ThighS0
+    3300016: Bip01_R_Toe0S0
+    3300018: Bip01_Spine1S0
+    4300000: Bip01_L_CalfS0
+    4300002: Bip01_L_FootS0
+    4300004: Bip01_L_ThighS0
+    4300006: Bip01_L_Toe0S0
+    4300008: Bip01_PelvisS0
+    4300010: Bip01_R_CalfS0
+    4300012: Bip01_R_FootS0
+    4300014: Bip01_R_ThighS0
+    4300016: Bip01_R_Toe0S0
+    4300018: Bip01_Spine1S0
+    2186277476908879412: ImportLogs
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_CalfS0Mat
+    second: {fileID: 2100000, guid: 61130a7c277c47843bba8a4dd9a037d2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_FootS0Mat
+    second: {fileID: 2100000, guid: bfcb7d2917fabc743a14114aa7060411, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_ThighS0Mat
+    second: {fileID: 2100000, guid: b98a708b147075446bd99580d958deaf, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_L_Toe0S0Mat
+    second: {fileID: 2100000, guid: 29014a07a98d25b4aa2770af8f0a6ab4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_PelvisS0Mat
+    second: {fileID: 2100000, guid: fd7edfc9a53976b4ea3ac3504562356c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_CalfS0Mat
+    second: {fileID: 2100000, guid: 2e4cee5641ea77749bcd902b9ffbe4b5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_FootS0Mat
+    second: {fileID: 2100000, guid: 79599a876ee68134dad1f8be4ad5126f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_ThighS0Mat
+    second: {fileID: 2100000, guid: 91c2a4e70d9fec84d848f4eb66c939fd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_R_Toe0S0Mat
+    second: {fileID: 2100000, guid: 0cbdb0700b6b716489c553c384dd630f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bip01_Spine1S0Mat
+    second: {fileID: 2100000, guid: ffe295919c2c5dd4dad11ac27823a51d, type: 2}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    preserveHierarchy: 0
+    indexFormat: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    previousCalculatedGlobalScale: 1
+    hasPreviousCalculatedGlobalScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

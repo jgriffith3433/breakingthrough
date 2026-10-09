@@ -1,0 +1,298 @@
+fileFormatVersion: 2
+guid: 7377c8f893839104babf2ef541e69a4e
+timeCreated: 1509396833
+licenseType: Free
+ModelImporter:
+  serializedVersion: 21
+  fileIDToRecycleName:
+    100000: //RootNode
+    100002: Bip01_HeadS0
+    100004: Bip01_L_CalfS0
+    100006: Bip01_L_ClavicleS0
+    100008: Bip01_L_Finger01S0
+    100010: Bip01_L_Finger02S0
+    100012: Bip01_L_Finger0S0
+    100014: Bip01_L_Finger11S0
+    100016: Bip01_L_Finger12S0
+    100018: Bip01_L_Finger1S0
+    100020: Bip01_L_Finger21S0
+    100022: Bip01_L_Finger22S0
+    100024: Bip01_L_Finger2S0
+    100026: Bip01_L_Finger31S0
+    100028: Bip01_L_Finger32S0
+    100030: Bip01_L_Finger3S0
+    100032: Bip01_L_Finger41S0
+    100034: Bip01_L_Finger42S0
+    100036: Bip01_L_Finger4S0
+    100038: Bip01_L_FootS0
+    100040: Bip01_L_ForeArmS0
+    100042: Bip01_L_HandS0
+    100044: Bip01_L_ThighS0
+    100046: Bip01_L_Toe0S0
+    100048: Bip01_L_UpperArmS0
+    100050: Bip01_Neck1S0
+    100052: Bip01_NeckS0
+    100054: Bip01_PelvisS0
+    100056: Bip01_R_CalfS0
+    100058: Bip01_R_ClavicleS0
+    100060: Bip01_R_Finger01S0
+    100062: Bip01_R_Finger02S0
+    100064: Bip01_R_Finger0S0
+    100066: Bip01_R_Finger11S0
+    100068: Bip01_R_Finger12S0
+    100070: Bip01_R_Finger1S0
+    100072: Bip01_R_Finger21S0
+    100074: Bip01_R_Finger22S0
+    100076: Bip01_R_Finger2S0
+    100078: Bip01_R_Finger31S0
+    100080: Bip01_R_Finger32S0
+    100082: Bip01_R_Finger3S0
+    100084: Bip01_R_Finger41S0
+    100086: Bip01_R_Finger42S0
+    100088: Bip01_R_Finger4S0
+    100090: Bip01_R_FootS0
+    100092: Bip01_R_ForeArmS0
+    100094: Bip01_R_HandS0
+    100096: Bip01_R_ThighS0
+    100098: Bip01_R_Toe0S0
+    100100: Bip01_R_UpperArmS0
+    100102: Bip01_Spine1S0
+    100104: Bip01_Spine2S0
+    100106: Bip01_Spine3S0
+    100108: Bip01_SpineS0
+    100110: Bip01S0
+    100112: CREATURE_HERO_HUMAN_BASE_A
+    100114: eye_L
+    100116: eye_R
+    100118: eyebrow_L01
+    100120: eyebrow_L02
+    100122: eyebrow_L03
+    100124: eyebrow_R01
+    100126: eyebrow_R02
+    100128: eyebrow_R03
+    100130: eyelid_L_down
+    100132: eyelid_L_up
+    100134: eyelid_R_down
+    100136: eyelid_R_up
+    100138: face_L_down
+    100140: face_L_up
+    100142: face_R_down
+    100144: face_R_up
+    100146: jaw
+    100148: Lip_L
+    100150: Lip_L_down
+    100152: Lip_L_up
+    100154: Lip_m_down
+    100156: Lip_m_up
+    100158: Lip_R
+    100160: Lip_R_down
+    100162: Lip_R_up
+    100164: Movement_dummyS0
+    100166: nose
+    100168: Scene_RootS0
+    100170: Sub_movement_dummyS0
+    100172: tongue_001
+    100174: tongue_002
+    100176: tongue_003
+    100178: WEAPON_FOCUS_01S0
+    100180: WEAPON_FOCUS_02S0
+    100182: WEAPON_SCABBARD_01S0
+    400000: //RootNode
+    400002: Bip01_HeadS0
+    400004: Bip01_L_CalfS0
+    400006: Bip01_L_ClavicleS0
+    400008: Bip01_L_Finger01S0
+    400010: Bip01_L_Finger02S0
+    400012: Bip01_L_Finger0S0
+    400014: Bip01_L_Finger11S0
+    400016: Bip01_L_Finger12S0
+    400018: Bip01_L_Finger1S0
+    400020: Bip01_L_Finger21S0
+    400022: Bip01_L_Finger22S0
+    400024: Bip01_L_Finger2S0
+    400026: Bip01_L_Finger31S0
+    400028: Bip01_L_Finger32S0
+    400030: Bip01_L_Finger3S0
+    400032: Bip01_L_Finger41S0
+    400034: Bip01_L_Finger42S0
+    400036: Bip01_L_Finger4S0
+    400038: Bip01_L_FootS0
+    400040: Bip01_L_ForeArmS0
+    400042: Bip01_L_HandS0
+    400044: Bip01_L_ThighS0
+    400046: Bip01_L_Toe0S0
+    400048: Bip01_L_UpperArmS0
+    400050: Bip01_Neck1S0
+    400052: Bip01_NeckS0
+    400054: Bip01_PelvisS0
+    400056: Bip01_R_CalfS0
+    400058: Bip01_R_ClavicleS0
+    400060: Bip01_R_Finger01S0
+    400062: Bip01_R_Finger02S0
+    400064: Bip01_R_Finger0S0
+    400066: Bip01_R_Finger11S0
+    400068: Bip01_R_Finger12S0
+    400070: Bip01_R_Finger1S0
+    400072: Bip01_R_Finger21S0
+    400074: Bip01_R_Finger22S0
+    400076: Bip01_R_Finger2S0
+    400078: Bip01_R_Finger31S0
+    400080: Bip01_R_Finger32S0
+    400082: Bip01_R_Finger3S0
+    400084: Bip01_R_Finger41S0
+    400086: Bip01_R_Finger42S0
+    400088: Bip01_R_Finger4S0
+    400090: Bip01_R_FootS0
+    400092: Bip01_R_ForeArmS0
+    400094: Bip01_R_HandS0
+    400096: Bip01_R_ThighS0
+    400098: Bip01_R_Toe0S0
+    400100: Bip01_R_UpperArmS0
+    400102: Bip01_Spine1S0
+    400104: Bip01_Spine2S0
+    400106: Bip01_Spine3S0
+    400108: Bip01_SpineS0
+    400110: Bip01S0
+    400112: CREATURE_HERO_HUMAN_BASE_A
+    400114: eye_L
+    400116: eye_R
+    400118: eyebrow_L01
+    400120: eyebrow_L02
+    400122: eyebrow_L03
+    400124: eyebrow_R01
+    400126: eyebrow_R02
+    400128: eyebrow_R03
+    400130: eyelid_L_down
+    400132: eyelid_L_up
+    400134: eyelid_R_down
+    400136: eyelid_R_up
+    400138: face_L_down
+    400140: face_L_up
+    400142: face_R_down
+    400144: face_R_up
+    400146: jaw
+    400148: Lip_L
+    400150: Lip_L_down
+    400152: Lip_L_up
+    400154: Lip_m_down
+    400156: Lip_m_up
+    400158: Lip_R
+    400160: Lip_R_down
+    400162: Lip_R_up
+    400164: Movement_dummyS0
+    400166: nose
+    400168: Scene_RootS0
+    400170: Sub_movement_dummyS0
+    400172: tongue_001
+    400174: tongue_002
+    400176: tongue_003
+    400178: WEAPON_FOCUS_01S0
+    400180: WEAPON_FOCUS_02S0
+    400182: WEAPON_SCABBARD_01S0
+    4300000: CREATURE_HERO_HUMAN_BASE_A
+    7400000: Unreal Matinee Take
+    9500000: //RootNode
+    13700000: CREATURE_HERO_HUMAN_BASE_A
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 3
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations:
+    - serializedVersion: 16
+      name: Unreal Matinee Take
+      takeName: Unreal Matinee Take
+      firstFrame: 0
+      lastFrame: 16
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    rootMotionBoneRotation: {x: 0, y: 0, z: 0, w: 1}
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
