@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "unityMCP": {
+      "command": "C:/Users/jgrif/AppData/Local/Microsoft/WinGet/Links/uvx.exe",
+      "args": [
+        "--from",
+        "mcpforunityserver",
+        "mcp-for-unity",
+        "--transport",
+        "stdio"
+      ]
+    },
+    "blender": {
+      "command": "C:/Users/jgrif/AppData/Local/Microsoft/WinGet/Links/uvx.exe",
+      "args": [
+        "mcp-for-blender"
+      ]
+    }
+  }
+}
