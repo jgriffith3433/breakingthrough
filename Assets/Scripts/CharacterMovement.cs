@@ -41,22 +41,35 @@ public class CharacterMovement : MonoBehaviour {
             }
 
             if (Anim.GetInteger(PARAMETER_STATE) != 2) {
-                Anim.SetInteger(PARAMETER_STATE, 1);
+                Anim.SetInteger(PARAMETER_STATE, Aiming() ? 4 : 1);
                 Anim.speed = speed_Animation;
-                if (ZeldaCam.CamState == ZeldaStyleCamera.CamStates.LockOn && Anim.GetInteger(PARAMETER_STATE) != 2) {
-                    Anim.SetInteger(PARAMETER_STATE, 4);
-                }
             }
 
         } else {
             if (Anim.GetInteger(PARAMETER_STATE) != 2) {
                 Anim.SetInteger(PARAMETER_STATE, 0);
+                Anim.speed = 1f;
             }
         }
     }
 
+    bool Aiming() {
+        return ZeldaCam.CamState == ZeldaStyleCamera.CamStates.LockOn
+            || ZeldaCam.CamState == ZeldaStyleCamera.CamStates.Target;
+    }
+
     void MovementAndJumping() {
         if (Anim) {
+            if (Input.GetMouseButtonDown(0) && ZeldaCam.CamState != ZeldaStyleCamera.CamStates.FirstPerson) {
+                Anim.speed = 1f;
+                Anim.SetInteger(PARAMETER_STATE, 2);
+            } else if (Anim.GetInteger(PARAMETER_STATE) == 2) {
+                AnimatorStateInfo info = Anim.GetCurrentAnimatorStateInfo(0);
+                if (info.IsName("Shoot") && info.normalizedTime >= 0.92f && !Anim.IsInTransition(0)) {
+                    Anim.SetInteger(PARAMETER_STATE, 0);
+                }
+            }
+
             if (ZeldaCam.CamState == ZeldaStyleCamera.CamStates.LockOn) {
                 var vert = Input.GetAxis("Vertical");
                 var hori = Input.GetAxis("Horizontal");
