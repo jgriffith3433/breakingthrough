@@ -18,7 +18,9 @@ static class SetupWarrok
         new ClipSetup("Assets/Art/Walking.fbx", true),
         new ClipSetup("Assets/Art/Standing Aim Walk Forward.fbx", true),
         new ClipSetup("Assets/Art/Mutant Jumping.fbx", false),
-        new ClipSetup("Assets/Art/Standing Aim Recoil.fbx", false)
+        new ClipSetup("Assets/Art/Standing Aim Recoil.fbx", false),
+        new ClipSetup("Assets/Art/Stomp.fbx", true),
+        new ClipSetup("Assets/Art/Shaking It Off.fbx", false)
     };
 
     static SetupWarrok()
@@ -57,8 +59,11 @@ static class SetupWarrok
         WireController(aimIdle, walk, aimWalk, jump, shoot);
         SwapModel();
         AssetDatabase.SaveAssets();
-        EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
-        EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene());
+        if (!Application.isPlaying)
+        {
+            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+            EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene());
+        }
         Debug.Log("Warrok is on the player. Walk, aim, shoot, and jump use the Mixamo clips.");
     }
 
@@ -184,7 +189,141 @@ static class SetupWarrok
             transition.canTransitionToSelf = false;
         }
 
+        foreach (AnimatorStateTransition transition in machine.anyStateTransitions)
+        {
+            if (transition.destinationState == jumpState)
+                transition.duration = 0.08f;
+        }
+
+        EnsureShootLayer(controller, shoot);
+        AnimationClip stomp = LoadClip("Assets/Art/Stomp.fbx");
+        AnimationClip shake = LoadClip("Assets/Art/Shaking It Off.fbx");
+        EnsureActionStates(controller, stomp, shake);
         EditorUtility.SetDirty(controller);
+    }
+
+    static void EnsureActionStates(AnimatorController controller, AnimationClip stomp, AnimationClip shake)
+    {
+        if (stomp == null)
+            Debug.LogWarning("Stomp.fbx has no clip yet.");
+        if (shake == null)
+            Debug.LogWarning("Shaking It Off.fbx has no clip yet.");
+
+        AnimatorStateMachine machine = controller.layers[0].stateMachine;
+        AddAction(machine, "Stomp", stomp, 5);
+        AddAction(machine, "Shake", shake, 7);
+    }
+
+    static void AddAction(AnimatorStateMachine machine, string name, AnimationClip clip, int stateValue)
+    {
+        if (clip == null) {
+            return;
+        }
+        AnimatorState state = FindState(machine, name);
+        if (state == null) {
+            state = machine.AddState(name);
+        }
+        state.motion = clip;
+        AnimatorStateTransition enter = null;
+        foreach (AnimatorStateTransition transition in machine.anyStateTransitions) {
+            if (transition.destinationState == state) {
+                enter = transition;
+            }
+        }
+        if (enter == null) {
+            enter = machine.AddAnyStateTransition(state);
+            enter.AddCondition(AnimatorConditionMode.Equals, stateValue, "State");
+            enter.hasExitTime = false;
+        }
+        enter.duration = 0.06f;
+        enter.canTransitionToSelf = false;
+    }
+
+    // Arms shoot on their own layer so a jump can keep playing underneath.
+    static void EnsureShootLayer(AnimatorController controller, AnimationClip shoot)
+    {
+        bool hasFire = false;
+        foreach (AnimatorControllerParameter parameter in controller.parameters)
+        {
+            if (parameter.name == "Fire")
+                hasFire = true;
+        }
+        if (!hasFire)
+            controller.AddParameter("Fire", AnimatorControllerParameterType.Trigger);
+
+        int upper = -1;
+        for (int i = 0; i < controller.layers.Length; i++)
+        {
+            if (controller.layers[i].name == "Upper Body")
+                upper = i;
+        }
+        if (upper < 0)
+        {
+            controller.AddLayer("Upper Body");
+            upper = controller.layers.Length - 1;
+        }
+
+        AvatarMask mask = AssetDatabase.LoadAssetAtPath<AvatarMask>("Assets/hero/UpperBody.mask");
+        AnimatorControllerLayer[] layers = controller.layers;
+        AnimatorControllerLayer layer = layers[upper];
+        layer.avatarMask = mask;
+        layer.defaultWeight = 1f;
+        layer.blendingMode = AnimatorLayerBlendingMode.Override;
+        layers[upper] = layer;
+        controller.layers = layers;
+
+        AnimatorStateMachine machine = controller.layers[upper].stateMachine;
+        AnimatorState empty = FindState(machine, "Empty");
+        if (empty == null)
+            empty = machine.AddState("Empty", new Vector3(300f, 0f, 0f));
+        empty.motion = null;
+        empty.writeDefaultValues = false;
+        machine.defaultState = empty;
+
+        AnimatorState shot = FindState(machine, "Shoot");
+        if (shot == null)
+            shot = machine.AddState("Shoot", new Vector3(300f, 120f, 0f));
+        shot.motion = shoot;
+        shot.writeDefaultValues = true;
+
+        bool hasExit = false;
+        foreach (AnimatorStateTransition transition in shot.transitions)
+        {
+            if (transition.destinationState != empty)
+                continue;
+            hasExit = true;
+            transition.hasExitTime = true;
+            transition.exitTime = 0.9f;
+            transition.duration = 0.05f;
+            transition.interruptionSource = TransitionInterruptionSource.Source;
+        }
+        if (!hasExit)
+        {
+            AnimatorStateTransition exit = shot.AddTransition(empty);
+            exit.hasExitTime = true;
+            exit.exitTime = 0.9f;
+            exit.duration = 0.05f;
+            exit.interruptionSource = TransitionInterruptionSource.Source;
+        }
+
+        bool hasEnter = false;
+        foreach (AnimatorStateTransition transition in machine.anyStateTransitions)
+        {
+            if (transition.destinationState != shot)
+                continue;
+            hasEnter = true;
+            transition.hasExitTime = false;
+            transition.duration = 0.05f;
+            transition.canTransitionToSelf = true;
+        }
+        if (!hasEnter)
+        {
+            AnimatorStateTransition enter = machine.AddAnyStateTransition(shot);
+            enter.AddCondition(AnimatorConditionMode.If, 0f, "Fire");
+            enter.hasExitTime = false;
+            enter.duration = 0.05f;
+            enter.canTransitionToSelf = true;
+        }
     }
 
     static AnimatorState FindState(AnimatorStateMachine machine, string name)

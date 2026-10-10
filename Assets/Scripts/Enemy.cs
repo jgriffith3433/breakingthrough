@@ -23,6 +23,7 @@ public class Enemy : MonoBehaviour
 {
     public int HitsToDrop = 1;
     public FowlKind Kind { get; private set; }
+    public int DebutWave { get; private set; }
     public bool IsGobbler { get; private set; }
 
     [Header("Movement")]
@@ -47,6 +48,7 @@ public class Enemy : MonoBehaviour
     public float groundRayStartHeight = 0.5f;
 
     public bool Alive { get { return !down; } }
+    public bool Climbing { get { return climbing; } }
     public static int Climbers { get; private set; }
 
     Transform wingL;
@@ -147,6 +149,7 @@ public class Enemy : MonoBehaviour
     public void ApplyFowl(FowlDef def)
     {
         Kind = def.Kind;
+        DebutWave = def.Kind == FowlKind.Turkey ? 0 : def.UnlockWave;
         HitsToDrop = Mathf.Max(1, def.Hits);
         walkSpeed = def.Walk * Random.Range(0.86f, 1.18f);
         chaseSpeed = def.Chase * Random.Range(0.9f, 1.16f);
@@ -320,8 +323,14 @@ public class Enemy : MonoBehaviour
             return;
         }
 
-        if (!down && (Musician.Instance == null || !Musician.Instance.Alive) && PlayerGrowth.Instance != null && PlayerGrowth.Instance.Scale >= PlayerGrowth.ClimbScale)
-            TryClimb();
+        bool dive = !down && Kind == FowlKind.Turkey && WaveDirector.Wave >= PlayerGrowth.ClimbWave && PlayerGrowth.Instance != null;
+        if (dive)
+        {
+            Vector3 flat = PlayerGrowth.Instance.transform.position - transform.position;
+            flat.y = 0f;
+            if (flat.magnitude <= PlayerGrowth.Instance.BodyRadius + 0.65f)
+                TryClimb();
+        }
 
         Musician musician = Musician.Instance;
         Vector3 toTarget = Vector3.zero;
@@ -329,8 +338,17 @@ public class Enemy : MonoBehaviour
         DefencePiece wall = null;
         bool sceneryBlock = false;
         float reach = 1.15f + bodyScale * 0.22f;
+        bool diving = false;
 
-        if (!down && musician != null && musician.Alive)
+        if (dive)
+        {
+            toTarget = PlayerGrowth.Instance.transform.position - transform.position;
+            toTarget.y = 0f;
+            distance = toTarget.magnitude;
+            diving = distance < 12f;
+        }
+
+        if (!diving && !down && musician != null && musician.Alive)
         {
             toTarget = musician.transform.position - transform.position;
             toTarget.y = 0f;
@@ -338,8 +356,8 @@ public class Enemy : MonoBehaviour
             ProbeAhead(toTarget, distance, out wall, out sceneryBlock);
         }
 
-        bool chasing = !down && musician != null && musician.Alive &&
-                       distance > reach && wall == null && !sceneryBlock;
+        bool chasing = !down && distance > reach && wall == null && !sceneryBlock &&
+                       (diving || (musician != null && musician.Alive));
 
         // Start a flight attempt only while chasing and standing on the ground.
         if (!down && chasing && grounded && !flying)
@@ -401,7 +419,7 @@ public class Enemy : MonoBehaviour
             {
                 peckIn = 1.05f;
                 if (wall != null && wall.Alive)
-                    wall.Hurt(1);
+                    wall.Stop(this);
                 else if (atMusician)
                     musician.Hurt(1);
                 verticalVelocity = Mathf.Max(verticalVelocity, 1.5f);

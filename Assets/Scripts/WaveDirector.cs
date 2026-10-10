@@ -66,6 +66,15 @@ public class WaveDirector : MonoBehaviour {
     }
 
     void Update() {
+        if (Input.GetKeyDown(KeyCode.KeypadPlus) || Input.GetKeyDown(KeyCode.Equals)) {
+            GoToWave(Wave + 1);
+            return;
+        }
+        if (Input.GetKeyDown(KeyCode.KeypadMinus) || Input.GetKeyDown(KeyCode.Minus)) {
+            GoToWave(Mathf.Max(1, Wave - 1));
+            return;
+        }
+
         if (phase == Phase.Lost) {
             if (Input.GetKeyDown(KeyCode.R)) {
                 Time.timeScale = 1f;
@@ -161,6 +170,32 @@ public class WaveDirector : MonoBehaviour {
         Lose();
     }
 
+    void GoToWave(int wave) {
+        Time.timeScale = 1f;
+        pausedGame = false;
+        if (lostPanel != null) {
+            lostPanel.SetActive(false);
+        }
+        Wave = Mathf.Max(1, wave);
+        Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
+        foreach (Enemy enemy in enemies) {
+            if (enemy != null) {
+                Destroy(enemy.gameObject);
+            }
+        }
+        if (IsFortWave(Wave)) {
+            phase = Phase.Build;
+            phaseLeft = 30f;
+            pending.Clear();
+            IsBuilding = true;
+            if (PlayerGrowth.Instance != null) {
+                PlayerGrowth.Instance.SyncToWave(Wave);
+            }
+            return;
+        }
+        BeginCombat();
+    }
+
     public static bool IsFortWave(int wave) {
         return wave >= 5 && (wave - 5) % 10 == 0;
     }
@@ -199,16 +234,26 @@ public class WaveDirector : MonoBehaviour {
         }
 
         Vector3 origin = player != null ? player.position : Vector3.zero;
-        float angle = (spawnAngle + spawnSerial * 137.5f) * Mathf.Deg2Rad;
         spawnSerial++;
         if (pending.Count == 0) {
             return;
         }
         FowlKind kind = pending[0];
         pending.RemoveAt(0);
-        FowlDef def = kind == FowlKind.Turkey ? FowlRoster.Turkey() : FowlRoster.ForTier(UnlockOf(kind));
-        float radius = Random.Range(9f, 13.5f) + def.Scale * 0.45f;
-        Vector3 spot = origin + new Vector3(Mathf.Sin(angle), 0f, Mathf.Cos(angle)) * radius;
+        FowlDef def = FowlRoster.ForSpawn(kind, Wave);
+        bool turkey = kind == FowlKind.Turkey;
+        float radiusMin = turkey ? 26f : DefencePiece.SpawnMin;
+        float radiusMax = turkey ? 36f : DefencePiece.SpawnMax;
+        float jitter = turkey ? 70f : 18f;
+        Vector3 spot = origin;
+        for (int attempt = 0; attempt < 8; attempt++) {
+            float spread = (spawnAngle + spawnSerial * 137.5f + Random.Range(-jitter, jitter)) * Mathf.Deg2Rad;
+            float radius = Random.Range(radiusMin, radiusMax) + Mathf.Max(0f, def.Scale - 1f) * 0.5f;
+            spot = origin + new Vector3(Mathf.Sin(spread), 0f, Mathf.Cos(spread)) * radius;
+            if (ClearOfFlock(spot, turkey ? 7f : 4f)) {
+                break;
+            }
+        }
         spot.y = GroundNear(spot, origin.y) + 0.55f + def.Scale * 0.08f;
 
         var go = new GameObject(def.Name);
@@ -222,6 +267,22 @@ public class WaveDirector : MonoBehaviour {
 
         Enemy enemy = go.AddComponent<Enemy>();
         enemy.ApplyFowl(def);
+    }
+
+    static bool ClearOfFlock(Vector3 spot, float gap) {
+        Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
+        float gapSqr = gap * gap;
+        foreach (Enemy enemy in enemies) {
+            if (enemy == null) {
+                continue;
+            }
+            Vector3 flat = enemy.transform.position - spot;
+            flat.y = 0f;
+            if (flat.sqrMagnitude < gapSqr) {
+                return false;
+            }
+        }
+        return true;
     }
 
     void FillPending(int wave) {
@@ -241,25 +302,9 @@ public class WaveDirector : MonoBehaviour {
         }
     }
 
-    static int UnlockOf(FowlKind kind) {
-        switch (kind) {
-            case FowlKind.Hen: return 10;
-            case FowlKind.Rooster: return 20;
-            case FowlKind.Goose: return 30;
-            case FowlKind.Swan: return 40;
-            case FowlKind.Emu: return 50;
-            case FowlKind.Ostrich: return 60;
-            case FowlKind.Cassowary: return 70;
-            case FowlKind.Terror: return 80;
-            case FowlKind.Roc: return 90;
-            case FowlKind.Thunderbird: return 100;
-            default: return 1;
-        }
-    }
-
     static string Flavor(int wave) {
         if (wave <= 1) {
-            return "Protect the musician. The turkeys want the piano. One arrow drops a turkey.";
+            return "";
         }
         string line = FowlRoster.Intro(wave);
         int auto = MetaProgress.AutoWave();
@@ -318,7 +363,9 @@ public class WaveDirector : MonoBehaviour {
             detailText.text = Flavor(Wave);
         } else if (phase == Phase.Build) {
             waveText.text = "Build  ·  " + Mathf.CeilToInt(Mathf.Max(phaseLeft, 0f)) + "s";
-            detailText.text = "1 wall, 2 spikes, 3 tower. Click inside the ring. Q and E turn it.";
+            detailText.text = Wave <= 5
+                ? "It's level 5, prepare."
+                : "It's level " + Wave + ", time to prepare.";
         } else if (phase == Phase.Break) {
             waveText.text = "Next wave in " + Mathf.CeilToInt(Mathf.Max(phaseLeft, 0f));
             detailText.text = Flavor(Wave);

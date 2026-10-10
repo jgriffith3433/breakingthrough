@@ -203,7 +203,9 @@ public class ZeldaStyleCamera : MonoBehaviour {
 
     void AcquireTarget() {
         GameObject best = null;
-        float bestDist = 12f;
+        float bestSize = 0f;
+        float bestDist = 0f;
+        const float reach = 36f;
         Vector3 origin = FollowXForm.position;
         Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
         foreach (Enemy enemy in enemies) {
@@ -211,10 +213,21 @@ public class ZeldaStyleCamera : MonoBehaviour {
                 continue;
             }
             float dist = Vector3.Distance(origin, enemy.transform.position);
-            if (dist < bestDist) {
-                bestDist = dist;
-                best = enemy.gameObject;
+            if (dist > reach) {
+                continue;
             }
+            float size = enemy.transform.lossyScale.y;
+            bool bigger = best != null && size > bestSize + 0.25f;
+            bool closeTie = best == null || Mathf.Abs(size - bestSize) <= 0.25f;
+            if (best != null && !bigger && !closeTie) {
+                continue;
+            }
+            if (best != null && !bigger && dist >= bestDist) {
+                continue;
+            }
+            best = enemy.gameObject;
+            bestSize = size;
+            bestDist = dist;
         }
         LockedOnGameObject = best;
     }

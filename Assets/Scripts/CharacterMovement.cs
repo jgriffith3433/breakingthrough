@@ -11,6 +11,8 @@ public class CharacterMovement : MonoBehaviour {
     public float TurnSpeed = 20f;
     public float SpeedJump = 20f;
     float autoShot;
+    bool shotLatch = true;
+    bool seenShot;
     private Vector3 Tar;
 
     [SerializeField]
@@ -33,25 +35,32 @@ public class CharacterMovement : MonoBehaviour {
     }
 
     void AnimationMove(float magnitude) {
+        if (Anim.layerCount < 2 && Anim.GetInteger(PARAMETER_STATE) == 2) {
+            return;
+        }
+        if (motor != null && motor.Airborne) {
+            if (Anim.GetInteger(PARAMETER_STATE) != 3) {
+                Anim.SetInteger(PARAMETER_STATE, 3);
+            }
+            Anim.speed = 1f;
+            return;
+        }
+
         if (magnitude > MoveMagnitude) {
-
             float speed_Animation = magnitude * 2f;
-
             if (speed_Animation < 1f) {
                 speed_Animation = 1f;
             }
-
-            if (Anim.GetInteger(PARAMETER_STATE) != 2) {
-                Anim.SetInteger(PARAMETER_STATE, Aiming() ? 4 : 1);
-                Anim.speed = speed_Animation;
-            }
-
+            Anim.SetInteger(PARAMETER_STATE, Aiming() ? 4 : 1);
+            Anim.speed = UpperShooting() ? 1f : speed_Animation;
         } else {
-            if (Anim.GetInteger(PARAMETER_STATE) != 2) {
-                Anim.SetInteger(PARAMETER_STATE, 0);
-                Anim.speed = 1f;
-            }
+            Anim.SetInteger(PARAMETER_STATE, 0);
+            Anim.speed = 1f;
         }
+    }
+
+    bool UpperShooting() {
+        return Anim != null && Anim.layerCount > 1 && Anim.GetCurrentAnimatorStateInfo(1).IsName("Shoot");
     }
 
     bool Aiming() {
@@ -62,22 +71,38 @@ public class CharacterMovement : MonoBehaviour {
         if (Anim) {
             autoShot -= Time.deltaTime;
             bool building = WaveDirector.IsBuilding;
-            bool auto = !building && WaveDirector.Wave >= MetaProgress.AutoWave() && autoShot <= 0f && Anim.GetInteger(PARAMETER_STATE) != 2 && Anim.GetInteger(PARAMETER_STATE) != 3;
-            if (!building && (Input.GetMouseButtonDown(0) || auto)) {
+            bool shooting = ShootingNow();
+            if (shooting) {
+                seenShot = true;
+            } else if (seenShot) {
+                shotLatch = true;
+                seenShot = false;
+            }
+            bool holdShot = !building && Input.GetMouseButton(0);
+            bool auto = !building && !holdShot && WaveDirector.Wave >= MetaProgress.AutoWave() && autoShot <= 0f;
+            if (!shooting && shotLatch && (holdShot || auto)) {
+                shotLatch = false;
                 Anim.speed = 1f;
-                Anim.SetInteger(PARAMETER_STATE, 2);
+                if (Anim.layerCount > 1) {
+                    Anim.SetTrigger("Fire");
+                } else {
+                    Anim.SetInteger(PARAMETER_STATE, 2);
+                }
                 if (auto) {
                     float grown = PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f;
                     autoShot = Mathf.Lerp(0.7f, 0.32f, Mathf.Clamp01((grown - 1f) / 4f)) * MetaProgress.DrawHaste();
                 }
-            } else if (Anim.GetInteger(PARAMETER_STATE) == 2) {
+            } else if (Anim.layerCount < 2 && Anim.GetInteger(PARAMETER_STATE) == 2) {
                 AnimatorStateInfo info = Anim.GetCurrentAnimatorStateInfo(0);
                 if (info.IsName("Shoot") && info.normalizedTime >= 0.92f && !Anim.IsInTransition(0)) {
                     Anim.SetInteger(PARAMETER_STATE, 0);
                 }
             }
 
-            if (ZeldaCam.LockedOnGameObject != null) {
+            bool rooted = PlayerGrowth.Instance != null && PlayerGrowth.Instance.Rooted;
+            if (rooted) {
+                motor.Move(Vector3.zero);
+            } else if (ZeldaCam.LockedOnGameObject != null) {
                 var vert = Input.GetAxis("Vertical");
                 var hori = Input.GetAxis("Horizontal");
                 var directionTowardLockedOnObject = ZeldaCam.LockedOnGameObject.transform.position - transform.position;
@@ -116,11 +141,26 @@ public class CharacterMovement : MonoBehaviour {
                 AnimationMove(motor.charController.velocity.magnitude * 0.1f);
             }
 
-            if (Input.GetKey(KeyCode.Space)) {
+            bool wantJump = WaveDirector.Wave >= 20
+                ? Input.GetKey(KeyCode.Space)
+                : Input.GetKeyDown(KeyCode.Space);
+            bool groundedAct = Enemy.Climbers == 0 && (PlayerGrowth.Instance == null || !PlayerGrowth.Instance.Rooted);
+            if (groundedAct && wantJump && motor.TryJump(SpeedJump)) {
+                Anim.speed = 1f;
                 Anim.SetInteger(PARAMETER_STATE, 3);
-                motor.Jump(SpeedJump);
+                Anim.CrossFade("Jump", 0.05f, 0, 0f);
             }
         }
+    }
+
+    bool ShootingNow() {
+        if (Anim.layerCount > 1) {
+            if (Anim.IsInTransition(1)) {
+                return true;
+            }
+            return Anim.GetCurrentAnimatorStateInfo(1).IsName("Shoot");
+        }
+        return Anim.GetInteger(PARAMETER_STATE) == 2;
     }
 }
 

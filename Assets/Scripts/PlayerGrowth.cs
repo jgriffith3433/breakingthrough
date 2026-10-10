@@ -7,7 +7,9 @@ public class PlayerGrowth : MonoBehaviour {
 
     public const float StompScale = 1.6f;
     public const float BoomScale = 2.2f;
-    public const float ClimbScale = 6.3f;
+    public const int ClimbWave = 50;
+
+    public bool Rooted { get; private set; }
 
     public float Scale { get; private set; } = 1f;
     public float BodyRadius { get; private set; } = 0.5f;
@@ -21,10 +23,13 @@ public class PlayerGrowth : MonoBehaviour {
     float baseRadius = 0.5f;
     float baseCenter = 1f;
     float baseSpeed = 4f;
+    float bannerLeft;
+    float stompIn;
+    float rootedLeft;
+    bool stomping;
     float airTime;
     bool leftGround;
-    float shake;
-    float bannerLeft;
+    bool toldJump;
     bool toldStomp;
     bool toldBoom;
     bool toldClimb;
@@ -132,17 +137,21 @@ public class PlayerGrowth : MonoBehaviour {
             cam.BodyScale = Scale;
         }
 
-        if (!toldStomp && Scale >= MetaProgress.StompScale()) {
+        if (!toldJump && wave >= 20) {
+            toldJump = true;
+            Show("Jump lands hurt birds from 20 levels back.", 5f);
+        }
+        if (!toldStomp && wave >= MetaProgress.StompWave()) {
             toldStomp = true;
-            Show("Stomp. Jump, then land on them.", 5f);
+            Show("Stomp. Nearby turkeys, one foot at a time.", 5f);
         }
-        if (!toldBoom && Scale >= MetaProgress.BoomScale()) {
+        if (!toldBoom && wave >= MetaProgress.BoomWave()) {
             toldBoom = true;
-            Show("Your arrows are big enough to blast them.", 5f);
+            Show("Arrows explode when they hit.", 5f);
         }
-        if (!toldClimb && Scale >= ClimbScale) {
+        if (!toldClimb && wave >= ClimbWave) {
             toldClimb = true;
-            Show("They're climbing you. Wiggle the mouse.", 6f);
+            Show("Small turkeys will climb you. Press F.", 6f);
         }
     }
 
@@ -168,37 +177,104 @@ public class PlayerGrowth : MonoBehaviour {
             return;
         }
 
-        bool grounded = controller.isGrounded;
-        if (!grounded) {
-            airTime += Time.deltaTime;
-            leftGround = true;
-        } else {
-            if (leftGround && airTime > 0.18f && Scale >= MetaProgress.StompScale()) {
-                Stomp();
+        if (rootedLeft > 0f) {
+            rootedLeft -= Time.deltaTime;
+            if (rootedLeft <= 0f) {
+                Rooted = false;
+                Animator anim = GetComponentInChildren<Animator>();
+                if (anim != null) {
+                    anim.SetInteger(CharacterMovement.PARAMETER_STATE, 0);
+                }
+            }
+        }
+
+        bool swarmed = Enemy.Climbers > 0;
+        if (swarmed) {
+            stomping = false;
+            airTime = 0f;
+            leftGround = false;
+            Banner = "They're climbing you. Press F.";
+            bannerLeft = 0.35f;
+            if (Input.GetKeyDown(KeyCode.F)) {
+                Shake();
+            }
+            return;
+        }
+
+        TrackLanding();
+
+        if (wave < MetaProgress.StompWave() || !controller.isGrounded || !TurkeyNear()) {
+            stomping = false;
+            return;
+        }
+
+        if (!stomping) {
+            stomping = true;
+            stompIn = 0f;
+            PlayBody("Stomp", 5);
+        }
+
+        Rooted = true;
+        rootedLeft = 0.3f;
+        stompIn -= Time.deltaTime;
+        if (stompIn > 0f) {
+            return;
+        }
+
+        stompIn = 0.45f;
+        StompFoot();
+    }
+
+    bool TurkeyNear() {
+        float radius = BodyRadius + 1.35f;
+        Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
+        foreach (Enemy enemy in enemies) {
+            if (enemy == null || !enemy.Alive || enemy.Kind != FowlKind.Turkey || enemy.Climbing) {
+                continue;
+            }
+            Vector3 flat = enemy.transform.position - transform.position;
+            flat.y = 0f;
+            if (flat.magnitude <= radius) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void TrackLanding() {
+        if (controller.isGrounded) {
+            if (leftGround && airTime > 0.18f && wave >= 20) {
+                LandStomp();
             }
             airTime = 0f;
             leftGround = false;
-        }
-
-        if (Enemy.Climbers > 0) {
-            Banner = "They're climbing you. Wiggle the mouse.";
-            bannerLeft = 0.4f;
-            shake += new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y")).magnitude;
-            if (shake >= 5.5f) {
-                shake = 0f;
-                Enemy.ShakeOffClimbers(Scale);
-                GameAudio.Play("launch", 1f);
-            }
+        } else {
+            airTime += Time.deltaTime;
+            leftGround = true;
         }
     }
 
-    void Stomp() {
+    void LandStomp() {
         GameAudio.Play("stomp", 1f);
+        Pound(BodyRadius + 1.15f * Scale, false, true);
+    }
+
+    void StompFoot() {
+        GameAudio.Play("stomp", 0.7f);
+        Pound(BodyRadius + 1.35f, true, false);
+    }
+
+    void Pound(float radius, bool turkeysOnly, bool onlyOlder) {
         Vector3 origin = transform.position;
-        float radius = BodyRadius + 1.15f * Scale;
         Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
         foreach (Enemy enemy in enemies) {
-            if (enemy == null || !enemy.Alive) {
+            if (enemy == null || !enemy.Alive || enemy.Climbing) {
+                continue;
+            }
+            if (turkeysOnly && enemy.Kind != FowlKind.Turkey) {
+                continue;
+            }
+            if (onlyOlder && WaveDirector.Wave - enemy.DebutWave < 20) {
                 continue;
             }
             Vector3 flat = enemy.transform.position - origin;
@@ -220,6 +296,26 @@ public class PlayerGrowth : MonoBehaviour {
             renderer.sharedMaterial.color = new Color(0.95f, 0.82f, 0.45f, 1f);
         }
         Destroy(ring, 0.28f);
+    }
+
+    void Shake() {
+        stomping = false;
+        Rooted = true;
+        rootedLeft = 2.1f;
+        PlayBody("Shake", 7);
+        Enemy.ShakeOffClimbers(Scale);
+        GameAudio.Play("launch", 1f);
+    }
+
+    void PlayBody(string stateName, int stateId) {
+        Animator anim = GetComponentInChildren<Animator>();
+        if (anim == null) {
+            return;
+        }
+        anim.SetInteger(CharacterMovement.PARAMETER_STATE, stateId);
+        if (anim.HasState(0, Animator.StringToHash(stateName))) {
+            anim.CrossFade(stateName, 0.05f, 0, 0f);
+        }
     }
 
     void Show(string text, float seconds) {

@@ -9,6 +9,7 @@ public class MovementMotor : MonoBehaviour {
     private Vector3 MoveDirection = Vector3.zero;
     private Vector3 TargetDirection = Vector3.zero;
     private float FallVelocity = 0f;
+    float jumpReadyAt;
     public float DistanceToGround = 0.1f;
     private bool IsGrounded;
     private Collider MyCollider;
@@ -33,25 +34,38 @@ public class MovementMotor : MonoBehaviour {
 
     void Update() {
         IsGrounded = OnGround();
+        // Rising always falls back down. A stuck ground check used to freeze the jump speed and carry you upward.
+        if (FallVelocity > 0.5f || !IsGrounded) {
+            FallVelocity -= 90f * GravityMultiplier * Time.deltaTime;
+        } else {
+            FallVelocity = -2f;
+        }
+        if (FallVelocity < -40f) {
+            FallVelocity = -40f;
+        }
+
         MoveDirection = Vector3.Lerp(MoveDirection, TargetDirection, Time.deltaTime * LerpTime);
         MoveDirection.y = FallVelocity;
         charController.Move(MoveDirection * Time.deltaTime);
-        if (!IsGrounded) {
-            FallVelocity -= 90f * GravityMultiplier * Time.deltaTime;
-        }
     }
 
     public bool OnGround() {
-        if (charController.isGrounded) {
+        if (charController == null) {
+            return false;
+        }
+
+        // Ignore the jump itself. isGrounded can stay true for the frame you leave the floor.
+        if (FallVelocity <= 0.5f && charController.isGrounded) {
             return true;
         }
 
-        RaycastHit hit;
-        if (Physics.Raycast(MyCollider.bounds.center, -Vector3.up, out hit, DistanceToGround + 0.1f)) {
-            return true;
+        float feet = charController.center.y - charController.height * 0.5f;
+        Vector3 origin = transform.position + Vector3.up * (feet + 0.25f);
+        int mask = LayerMask.GetMask("Ground");
+        if (mask == 0) {
+            mask = 1 << 3;
         }
-
-        return false;
+        return Physics.Raycast(origin, Vector3.down, 0.4f, mask, QueryTriggerInteraction.Ignore);
     }
 
     public void Move(Vector3 dir) {
@@ -63,9 +77,20 @@ public class MovementMotor : MonoBehaviour {
         TargetDirection = Vector3.zero;
     }
 
-    public void Jump(float jumpSpeed) {
-        if (IsGrounded) {
-            FallVelocity = jumpSpeed;
+    public bool Airborne {
+        get { return FallVelocity > 0.5f || !OnGround(); }
+    }
+
+    public bool TryJump(float jumpSpeed) {
+        if (Time.time < jumpReadyAt) {
+            return false;
         }
+        if (!(OnGround() && FallVelocity <= 0.5f)) {
+            return false;
+        }
+        FallVelocity = jumpSpeed;
+        IsGrounded = false;
+        jumpReadyAt = Time.time + 1f;
+        return true;
     }
 }

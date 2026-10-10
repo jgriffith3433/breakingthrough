@@ -15,6 +15,8 @@ public class BowEquipment : MonoBehaviour {
     Vector3 arrowLongLocal;
     int lastState = -1;
     bool equipped;
+    bool upperShot;
+    float upperTime = 1f;
 
     void Start() {
         anim = GetComponentInChildren<Animator>();
@@ -31,13 +33,21 @@ public class BowEquipment : MonoBehaviour {
         }
 
         int state = anim.GetInteger(CharacterMovement.PARAMETER_STATE);
-        bool firstPerson = cam != null && cam.CamState == ZeldaStyleCamera.CamStates.FirstPerson;
-        //bool show = !firstPerson && (state == 0 || state == 2 || state == 4);
-        bool show = state == 0 || state == 2 || state == 4;
+        bool firing = false;
+        if (anim.layerCount > 1) {
+            AnimatorStateInfo upper = anim.GetCurrentAnimatorStateInfo(1);
+            firing = upper.IsName("Shoot");
+            if (firing && (!upperShot || upper.normalizedTime + 0.2f < upperTime)) {
+                Launch();
+            }
+            upperShot = firing;
+            upperTime = firing ? upper.normalizedTime : 1f;
+        }
+        bool show = firing || state == 0 || state == 2 || state == 3 || state == 4;
         bow.SetActive(show);
-        nocked.SetActive(show && state != 2);
+        nocked.SetActive(show && state != 2 && !firing);
 
-        if (state == 2 && lastState != 2) {
+        if (anim.layerCount < 2 && state == 2 && lastState != 2) {
             Launch();
         }
         lastState = state;
@@ -268,7 +278,7 @@ public class ArrowFlight : MonoBehaviour {
                 Enemy foe = hit.collider.GetComponentInParent<Enemy>();
                 if (foe != null) {
                     foe.Hit(power);
-                    if (power >= MetaProgress.BoomScale()) {
+                    if (MetaProgress.ArrowsExplode() || power >= MetaProgress.BoomScale()) {
                         Collider[] caught = Physics.OverlapSphere(hit.point, MetaProgress.SplashRadius(power));
                         foreach (Collider caughtCollider in caught) {
                             Enemy other = caughtCollider.GetComponentInParent<Enemy>();

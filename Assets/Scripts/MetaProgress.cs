@@ -27,15 +27,15 @@ public static class MetaProgress {
 
     public static readonly UpgradeInfo[] Catalog = {
         new UpgradeInfo { Id = UpgradeId.Keen, Name = "Keen Arrows", About = "Arrows hit harder.", MaxRank = 6 },
-        new UpgradeInfo { Id = UpgradeId.Walls, Name = "Stone Pile", About = "Start each run with more walls.", MaxRank = 5 },
+        new UpgradeInfo { Id = UpgradeId.Walls, Name = "Stone Pile", About = "More walls to start, and each wall holds longer.", MaxRank = 5 },
         new UpgradeInfo { Id = UpgradeId.Draw, Name = "Quick Draw", About = "Auto-shoot starts earlier than wave 30, and fires faster.", MaxRank = 4 },
         new UpgradeInfo { Id = UpgradeId.Growth, Name = "Big Appetite", About = "You grow faster from wave to wave.", MaxRank = 5 },
-        new UpgradeInfo { Id = UpgradeId.Blast, Name = "Heavy Arrows", About = "Splashing shots start sooner and wider.", MaxRank = 4 },
+        new UpgradeInfo { Id = UpgradeId.Blast, Name = "Heavy Arrows", About = "Explosions start before wave 70, and splash wider.", MaxRank = 4 },
         new UpgradeInfo { Id = UpgradeId.Purse, Name = "Fat Purse", About = "Coins come from fewer hens.", MaxRank = 4 },
         new UpgradeInfo { Id = UpgradeId.Stride, Name = "Long Stride", About = "You cover the hill faster.", MaxRank = 5 },
-        new UpgradeInfo { Id = UpgradeId.Stomp, Name = "Iron Boots", About = "Stomps wake up sooner.", MaxRank = 3 },
-        new UpgradeInfo { Id = UpgradeId.Spikes, Name = "Spike Kit", About = "Start each run with more spike traps.", MaxRank = 5 },
-        new UpgradeInfo { Id = UpgradeId.Towers, Name = "Watch Kit", About = "Start each run with more towers.", MaxRank = 4 }
+        new UpgradeInfo { Id = UpgradeId.Stomp, Name = "Iron Boots", About = "Foot stomps start before wave 40.", MaxRank = 3 },
+        new UpgradeInfo { Id = UpgradeId.Spikes, Name = "Spike Kit", About = "More traps to start, and each trap kills more.", MaxRank = 5 },
+        new UpgradeInfo { Id = UpgradeId.Towers, Name = "Watch Kit", About = "More towers to start, and each tower lasts longer.", MaxRank = 4 }
     };
 
     public static int Coins { get; private set; }
@@ -167,6 +167,22 @@ public static class MetaProgress {
         return true;
     }
 
+    public static int WallStops() {
+        return DefencePiece.WallStops + Rank(UpgradeId.Walls) * 2;
+    }
+
+    public static int SpikeKills() {
+        return DefencePiece.SpikeKills + Rank(UpgradeId.Spikes);
+    }
+
+    public static int TowerKills() {
+        return DefencePiece.TowerKills + Rank(UpgradeId.Towers);
+    }
+
+    public static int TowerStops() {
+        return DefencePiece.TowerStops + Rank(UpgradeId.Towers) * 2;
+    }
+
     public static int BonusDamage() {
         return Rank(UpgradeId.Keen);
     }
@@ -181,6 +197,18 @@ public static class MetaProgress {
 
     public static float Stride() {
         return 1f + 0.08f * Rank(UpgradeId.Stride);
+    }
+
+    public static int StompWave() {
+        return Mathf.Max(28, 40 - Rank(UpgradeId.Stomp) * 4);
+    }
+
+    public static int BoomWave() {
+        return Mathf.Max(45, 70 - Rank(UpgradeId.Blast) * 6);
+    }
+
+    public static bool ArrowsExplode() {
+        return WaveDirector.Wave >= BoomWave();
     }
 
     public static float StompScale() {
@@ -206,23 +234,24 @@ public static class MetaProgress {
             case UpgradeId.Keen:
                 return "+" + rank + " arrow damage";
             case UpgradeId.Walls:
-                return "Start with " + (6 + rank * 2) + " walls";
+                return "Start with " + (6 + rank * 2) + " walls. Each stops " + WallStops() + ".";
             case UpgradeId.Spikes:
-                return "Start with " + (3 + rank) + " spikes";
+                return "Start with " + (3 + rank) + " spikes. Each kills " + SpikeKills() + ".";
             case UpgradeId.Towers:
-                return "Start with " + (1 + rank) + " towers";
+                int towers = 1 + rank;
+                return "Start with " + towers + (towers == 1 ? " tower" : " towers") + ". Each kills " + TowerKills() + " and holds " + TowerStops() + ".";
             case UpgradeId.Draw:
                 return "Auto-shoot from wave " + AutoWave();
             case UpgradeId.Growth:
                 return "Growth +" + Mathf.RoundToInt(rank * 0.02f / 0.11f * 100f) + "%";
             case UpgradeId.Blast:
-                return "Blasts at size " + BoomScale().ToString("0.0");
+                return "Explosions from wave " + BoomWave();
             case UpgradeId.Purse:
                 return (rank >= 3 ? "2 coins every " : "A coin every ") + RangeLabel();
             case UpgradeId.Stride:
                 return "+" + (rank * 8) + "% move speed";
             case UpgradeId.Stomp:
-                return "Stomp at size " + StompScale().ToString("0.0");
+                return "Stomp from wave " + StompWave();
             default:
                 return rank + " / " + info.MaxRank;
         }
