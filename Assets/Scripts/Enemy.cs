@@ -21,7 +21,8 @@ public enum TurkeyTrait
 // and drops after two hits.
 public class Enemy : MonoBehaviour
 {
-    public int HitsToDrop = 2;
+    public int HitsToDrop = 1;
+    public FowlKind Kind { get; private set; }
     public bool IsGobbler { get; private set; }
 
     [Header("Movement")]
@@ -79,6 +80,7 @@ public class Enemy : MonoBehaviour
     float chargeLeft;
     float chargeWait = 1.4f;
     float climbHeight;
+    float peckIn;
     Transform barRoot;
     Transform barFill;
 
@@ -140,6 +142,43 @@ public class Enemy : MonoBehaviour
             climbing = false;
             Climbers = Mathf.Max(0, Climbers - 1);
         }
+    }
+
+    public void ApplyFowl(FowlDef def)
+    {
+        Kind = def.Kind;
+        HitsToDrop = Mathf.Max(1, def.Hits);
+        walkSpeed = def.Walk * Random.Range(0.86f, 1.18f);
+        chaseSpeed = def.Chase * Random.Range(0.9f, 1.16f);
+        jumpVelocity = def.Jump * Random.Range(0.9f, 1.12f);
+        maxFlightHeight = def.FlightHeight;
+        minFlightInterval = Random.Range(0.9f, 2.2f);
+        maxFlightInterval = minFlightInterval + Random.Range(0.5f, 1.8f);
+        juker = def.Kind == FowlKind.Turkey ? Random.value < 0.55f : def.Weave && Random.value < 0.7f;
+        charger = def.Charge;
+        if (def.Kind == FowlKind.Turkey)
+            DyeTint(RandomTurkeyTint());
+        else
+            DyeTint(def.Tint);
+        bodyScale = def.Scale;
+        transform.localScale = new Vector3(def.Scale * def.Wide, def.Scale * def.Tall, def.Scale * def.Deep);
+        gameObject.name = def.Name;
+    }
+
+    static Color RandomTurkeyTint()
+    {
+        Color[] palette =
+        {
+            new Color(1.15f, 0.9f, 0.55f),
+            new Color(0.65f, 0.85f, 1.25f),
+            new Color(1.25f, 0.68f, 0.4f),
+            new Color(0.75f, 1.2f, 0.65f),
+            new Color(1.3f, 0.5f, 0.42f),
+            new Color(0.95f, 0.72f, 1.25f),
+            new Color(1.05f, 0.82f, 0.45f),
+            new Color(0.7f, 0.95f, 1.05f)
+        };
+        return palette[Random.Range(0, palette.Length)];
     }
 
     public void Apply(TurkeyTrait primary, TurkeyTrait secondary)
@@ -281,22 +320,26 @@ public class Enemy : MonoBehaviour
             return;
         }
 
-        if (!down && PlayerGrowth.Instance != null && PlayerGrowth.Instance.Scale >= PlayerGrowth.ClimbScale)
+        if (!down && (Musician.Instance == null || !Musician.Instance.Alive) && PlayerGrowth.Instance != null && PlayerGrowth.Instance.Scale >= PlayerGrowth.ClimbScale)
             TryClimb();
 
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        Vector3 toPlayer = Vector3.zero;
+        Musician musician = Musician.Instance;
+        Vector3 toTarget = Vector3.zero;
         float distance = float.MaxValue;
+        DefencePiece wall = null;
+        bool sceneryBlock = false;
+        float reach = 1.15f + bodyScale * 0.22f;
 
-        if (player != null)
+        if (!down && musician != null && musician.Alive)
         {
-            toPlayer = player.transform.position - transform.position;
-            toPlayer.y = 0f;
-            distance = toPlayer.magnitude;
+            toTarget = musician.transform.position - transform.position;
+            toTarget.y = 0f;
+            distance = toTarget.magnitude;
+            ProbeAhead(toTarget, distance, out wall, out sceneryBlock);
         }
 
-        bool chasing = !down && player != null &&
-                       distance > stopDistance && distance < chaseRange;
+        bool chasing = !down && musician != null && musician.Alive &&
+                       distance > reach && wall == null && !sceneryBlock;
 
         // Start a flight attempt only while chasing and standing on the ground.
         if (!down && chasing && grounded && !flying)
@@ -311,7 +354,7 @@ public class Enemy : MonoBehaviour
 
         if (chasing)
         {
-            Vector3 wish = toPlayer.normalized;
+            Vector3 wish = toTarget.normalized;
             float speed = flying ? chaseSpeed : walkSpeed;
             if (charger && !flying)
             {
@@ -339,6 +382,29 @@ public class Enemy : MonoBehaviour
                 Quaternion face = Quaternion.LookRotation(wish);
                 transform.rotation = Quaternion.Slerp(
                     transform.rotation, face, dt * 5f);
+            }
+        }
+        else if (wall != null && toTarget.sqrMagnitude > 0.01f)
+        {
+            Vector3 side = Vector3.Cross(Vector3.up, toTarget.normalized);
+            float sign = (GetInstanceID() & 1) == 0 ? 1f : -1f;
+            horizontal = side * sign * walkSpeed * 0.8f;
+            Quaternion face = Quaternion.LookRotation(toTarget.normalized);
+            transform.rotation = Quaternion.Slerp(transform.rotation, face, dt * 5f);
+        }
+
+        bool atMusician = distance <= Mathf.Max(reach, sceneryBlock ? 3.2f : reach);
+        if (!down && musician != null && musician.Alive && (wall != null || atMusician))
+        {
+            peckIn -= dt;
+            if (peckIn <= 0f)
+            {
+                peckIn = 1.05f;
+                if (wall != null && wall.Alive)
+                    wall.Hurt(1);
+                else if (atMusician)
+                    musician.Hurt(1);
+                verticalVelocity = Mathf.Max(verticalVelocity, 1.5f);
             }
         }
 
@@ -430,6 +496,43 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    void ProbeAhead(Vector3 toTarget, float distance, out DefencePiece wall, out bool sceneryBlock)
+    {
+        wall = null;
+        sceneryBlock = false;
+        if (toTarget.sqrMagnitude < 0.04f)
+            return;
+
+        Vector3 wish = toTarget.normalized;
+        float probe = 0.65f + bodyScale * 0.24f;
+        Vector3 origin = transform.position + Vector3.up * 0.42f;
+        RaycastHit[] ahead = Physics.RaycastAll(origin, wish, probe, ~0, QueryTriggerInteraction.Ignore);
+        float best = probe + 1f;
+        foreach (RaycastHit hit in ahead)
+        {
+            if (hit.collider == null || hit.distance > best)
+                continue;
+            if (hit.collider.transform == transform || hit.collider.transform.IsChildOf(transform))
+                continue;
+            if (hit.normal.y > 0.7f)
+                continue;
+            if (hit.collider.GetComponentInParent<Enemy>() != null)
+                continue;
+            if (hit.collider.GetComponentInParent<CharacterController>() != null)
+                continue;
+            if (hit.collider.GetComponentInParent<Musician>() != null)
+                continue;
+            DefencePiece piece = hit.collider.GetComponentInParent<DefencePiece>();
+            if (piece != null && (!piece.Alive || !piece.Blocks))
+                continue;
+            if (piece == null && distance > 3.4f)
+                continue;
+            best = hit.distance;
+            wall = piece != null && piece.Blocks ? piece : null;
+            sceneryBlock = wall == null;
+        }
+    }
+
     void StartFlightAttempt()
     {
         flying = true;
@@ -444,12 +547,8 @@ public class Enemy : MonoBehaviour
         if (down)
             return;
 
-        int damage = 1;
-        if (power >= 2.8f)
-            damage = 2;
-        if (power >= 4.2f)
-            damage = HitsToDrop;
-        hits += damage;
+        int damage = PlayerGrowth.Instance != null ? PlayerGrowth.Instance.ArrowDamage : 1;
+        hits += Mathf.Max(1, damage);
         RefreshBar();
         GameAudio.Play("hit", 0.7f);
         verticalVelocity = 2.2f;
@@ -468,6 +567,7 @@ public class Enemy : MonoBehaviour
         StopClimbing();
         ClearLock();
         PlayerGrowth.RegisterKill();
+        MetaProgress.NoteBird(Kind);
         BeginRagdoll(power, false);
     }
 
@@ -502,6 +602,7 @@ public class Enemy : MonoBehaviour
             flying = false;
             ClearLock();
             PlayerGrowth.RegisterKill();
+            MetaProgress.NoteBird(Kind);
             BeginRagdoll(scale, false);
             return;
         }
@@ -677,7 +778,7 @@ public class Enemy : MonoBehaviour
         if (!recover)
         {
             GameAudio.Play("death", 0.8f);
-            if (power >= PlayerGrowth.BoomScale)
+            if (power >= MetaProgress.BoomScale())
                 GameAudio.Play("launch", 0.7f);
         }
     }

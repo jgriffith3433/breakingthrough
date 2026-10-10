@@ -61,13 +61,14 @@ public class CharacterMovement : MonoBehaviour {
     void MovementAndJumping() {
         if (Anim) {
             autoShot -= Time.deltaTime;
-            bool auto = WaveDirector.Wave >= 5 && autoShot <= 0f && Anim.GetInteger(PARAMETER_STATE) != 2 && Anim.GetInteger(PARAMETER_STATE) != 3;
-            if (Input.GetMouseButtonDown(0) || auto) {
+            bool building = WaveDirector.IsBuilding;
+            bool auto = !building && WaveDirector.Wave >= MetaProgress.AutoWave() && autoShot <= 0f && Anim.GetInteger(PARAMETER_STATE) != 2 && Anim.GetInteger(PARAMETER_STATE) != 3;
+            if (!building && (Input.GetMouseButtonDown(0) || auto)) {
                 Anim.speed = 1f;
                 Anim.SetInteger(PARAMETER_STATE, 2);
                 if (auto) {
                     float grown = PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f;
-                    autoShot = Mathf.Lerp(0.7f, 0.32f, Mathf.Clamp01((grown - 1f) / 4f));
+                    autoShot = Mathf.Lerp(0.7f, 0.32f, Mathf.Clamp01((grown - 1f) / 4f)) * MetaProgress.DrawHaste();
                 }
             } else if (Anim.GetInteger(PARAMETER_STATE) == 2) {
                 AnimatorStateInfo info = Anim.GetCurrentAnimatorStateInfo(0);

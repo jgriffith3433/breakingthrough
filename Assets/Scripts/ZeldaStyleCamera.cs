@@ -100,17 +100,26 @@ public class ZeldaStyleCamera : MonoBehaviour {
 
         AcquireTarget();
         CamState = CamStates.Behind;
+        if (WaveDirector.IsBuilding) {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        } else {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
 
         switch (CamState) {
             case CamStates.Behind:
-                orbitYaw += Input.GetAxis("Mouse X") * 3.4f;
-                orbitPitch = Mathf.Clamp(orbitPitch - Input.GetAxis("Mouse Y") * 2.1f, 8f, 46f);
+                if (!WaveDirector.IsBuilding) {
+                    orbitYaw += Input.GetAxis("Mouse X") * 3.4f;
+                    orbitPitch = Mathf.Clamp(orbitPitch - Input.GetAxis("Mouse Y") * 2.1f, 5f, Mathf.Lerp(58f, 84f, Mathf.Clamp01((BodyScale - 1f) / 5f)));
+                }
                 if (CurrentCameraDistance < MinDistance) {
                     CurrentCameraDistance = MaxDistance;
                 }
                 LookDir = Quaternion.Euler(0f, orbitYaw, 0f) * Vector3.forward;
                 float body = Mathf.Max(1f, BodyScale);
-                float camDist = CurrentCameraDistance * Mathf.Lerp(1f, body, 0.7f);
+                float camDist = CurrentCameraDistance * Mathf.Lerp(1f, body, 0.18f);
                 TargetPosition = FollowXForm.position + Vector3.up * (DistanceUp * body) + Quaternion.Euler(orbitPitch, orbitYaw, 0f) * new Vector3(0f, 0f, -camDist);
                 break;
             case CamStates.Target:
@@ -222,7 +231,8 @@ public class ZeldaStyleCamera : MonoBehaviour {
         if (LockedOnGameObject == null) {
             return;
         }
-        LockedOnCrosshair.transform.position = LockedOnGameObject.transform.position + Vector3.up * 0.95f;
+        float mark = 0.32f * Mathf.Max(0.45f, LockedOnGameObject.transform.lossyScale.y);
+        LockedOnCrosshair.transform.position = LockedOnGameObject.transform.position + Vector3.up * mark;
         LockedOnCrosshair.transform.LookAt(transform.position);
     }
 
@@ -236,7 +246,9 @@ public class ZeldaStyleCamera : MonoBehaviour {
         if (flat.sqrMagnitude < 0.01f) {
             flat = FollowXForm.forward;
         }
-        return Quaternion.AngleAxis(-7f, Vector3.Cross(Vector3.up, flat.normalized)) * flat.normalized;
+        float drop = Mathf.Lerp(orbitPitch * 0.5f, orbitPitch * 0.95f, Mathf.Clamp01((BodyScale - 1f) / 5f));
+        drop = Mathf.Clamp(drop, 6f, 78f);
+        return Quaternion.AngleAxis(-drop, Vector3.Cross(Vector3.up, flat.normalized)) * flat.normalized;
     }
 
     void ToggleLock() {

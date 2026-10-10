@@ -93,12 +93,13 @@ public class BowEquipment : MonoBehaviour {
         }
 
         Vector3 dir = AimDirection();
+        float lead = Mathf.Lerp(0.05f, 0.35f, Mathf.Clamp01(dir.y + 0.85f));
         Vector3 visual = nocked.transform.TransformDirection(arrowLongLocal);
         if (visual.sqrMagnitude < 0.0001f) {
             visual = transform.forward;
         }
         Quaternion turn = Quaternion.FromToRotation(visual, dir);
-        GameObject shot = Instantiate(nocked, nocked.transform.position + dir * 0.4f, turn * nocked.transform.rotation);
+        GameObject shot = Instantiate(nocked, nocked.transform.position + dir * lead, turn * nocked.transform.rotation);
         shot.name = "Arrow";
         shot.SetActive(true);
         shot.transform.SetParent(null, true);
@@ -110,8 +111,8 @@ public class BowEquipment : MonoBehaviour {
 
     Vector3 AimDirection() {
         Vector3 dir = transform.forward;
-        if (cam != null && cam.LockedOnGameObject != null) {
-            dir = cam.LockedOnGameObject.transform.position + Vector3.up * 0.45f - nocked.transform.position;
+        if (cam != null && cam.LockedOnGameObject != null && nocked != null) {
+            dir = ChestPoint(cam.LockedOnGameObject, nocked.transform.position) - nocked.transform.position;
         } else if (cam != null) {
             dir = cam.ViewAim();
         }
@@ -120,6 +121,18 @@ public class BowEquipment : MonoBehaviour {
             dir = transform.forward;
         }
         return dir.normalized;
+    }
+
+    // Body center when the shot is level. Lower when the bow is close or high, so the arrow meets the bird instead of passing over it.
+    public static Vector3 ChestPoint(GameObject target, Vector3 from) {
+        float scale = Mathf.Max(0.45f, target.transform.lossyScale.y);
+        float body = 0.68f * scale;
+        Vector3 feet = target.transform.position;
+        float flat = Vector3.Distance(new Vector3(from.x, 0f, from.z), new Vector3(feet.x, 0f, feet.z));
+        float above = Mathf.Clamp01((from.y - feet.y - 0.6f) / 3.5f);
+        float near = 1f - Mathf.Clamp01(flat / 4.2f);
+        float portion = Mathf.Lerp(0.4f, 0.2f, Mathf.Clamp01(near + above * 0.85f));
+        return feet + Vector3.up * (body * portion);
     }
 
     static Vector3 Orient(GameObject go, float targetLength, Vector3 worldLong, Vector3 worldThin) {
@@ -255,8 +268,8 @@ public class ArrowFlight : MonoBehaviour {
                 Enemy foe = hit.collider.GetComponentInParent<Enemy>();
                 if (foe != null) {
                     foe.Hit(power);
-                    if (power >= PlayerGrowth.BoomScale) {
-                        Collider[] caught = Physics.OverlapSphere(hit.point, 0.8f + power * 0.45f);
+                    if (power >= MetaProgress.BoomScale()) {
+                        Collider[] caught = Physics.OverlapSphere(hit.point, MetaProgress.SplashRadius(power));
                         foreach (Collider caughtCollider in caught) {
                             Enemy other = caughtCollider.GetComponentInParent<Enemy>();
                             if (other != null && other != foe && other.Alive) {

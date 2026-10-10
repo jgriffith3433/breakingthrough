@@ -7,7 +7,7 @@ public class PlayerGrowth : MonoBehaviour {
 
     public const float StompScale = 1.6f;
     public const float BoomScale = 2.2f;
-    public const float ClimbScale = 4.2f;
+    public const float ClimbScale = 6.3f;
 
     public float Scale { get; private set; } = 1f;
     public float BodyRadius { get; private set; } = 0.5f;
@@ -29,6 +29,9 @@ public class PlayerGrowth : MonoBehaviour {
     bool toldBoom;
     bool toldClimb;
     int kills;
+    int wave = 1;
+    int killsThisWave;
+    float punch = 1f;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap() {
@@ -46,11 +49,6 @@ public class PlayerGrowth : MonoBehaviour {
     void Start() {
         controller = GetComponent<CharacterController>();
         movement = GetComponent<CharacterMovement>();
-        Animator animator = GetComponentInChildren<Animator>();
-        if (animator != null) {
-            visual = animator.transform;
-            baseVisual = visual.localScale;
-        }
         if (controller != null) {
             baseHeight = controller.height;
             baseRadius = controller.radius;
@@ -61,6 +59,30 @@ public class PlayerGrowth : MonoBehaviour {
         if (movement != null) {
             baseSpeed = movement.Speed;
         }
+        EnsureVisual();
+        ApplyScale();
+    }
+
+    public static int DamageAtWave(int waveNumber) {
+        float raw = 1f + (Mathf.Max(1, waveNumber) - 1) * 0.5f;
+        return Mathf.Max(1, Mathf.FloorToInt(raw + 0.001f) + MetaProgress.BonusDamage());
+    }
+
+    public int ArrowDamage {
+        get {
+            float raw = 1f + (Mathf.Max(1, wave) - 1) * 0.5f + killsThisWave * 0.01f;
+            return Mathf.Max(1, Mathf.FloorToInt(raw + 0.001f) + MetaProgress.BonusDamage());
+        }
+    }
+
+    public void SyncToWave(int waveNumber) {
+        int next = Mathf.Max(1, waveNumber);
+        if (next > wave) {
+            punch = 1.18f;
+        }
+        wave = next;
+        killsThisWave = 0;
+        ApplyScale();
     }
 
     public static void RegisterKill() {
@@ -68,14 +90,33 @@ public class PlayerGrowth : MonoBehaviour {
             return;
         }
         Instance.kills++;
+        Instance.killsThisWave++;
+        Instance.punch = 1.22f;
         Instance.ApplyScale();
     }
 
-    void ApplyScale() {
-        Scale = 1f + kills * 0.008f;
+    void EnsureVisual() {
         if (visual != null) {
-            visual.localScale = baseVisual * Scale;
+            return;
         }
+        GameObject marked = GameObject.FindGameObjectWithTag("playerchild");
+        if (marked != null) {
+            visual = marked.transform;
+        } else {
+            Animator animator = GetComponentInChildren<Animator>();
+            if (animator != null) {
+                visual = animator.transform;
+            }
+        }
+        if (visual != null) {
+            baseVisual = visual.localScale;
+        }
+    }
+
+    void ApplyScale() {
+        EnsureVisual();
+        float progress = (Mathf.Max(1, wave) - 1) + killsThisWave * 0.035f;
+        Scale = 1f + progress * MetaProgress.GrowthPerWave();
         if (controller != null) {
             controller.height = baseHeight * Scale;
             controller.radius = baseRadius * Scale;
@@ -84,18 +125,18 @@ public class PlayerGrowth : MonoBehaviour {
             BodyHeight = controller.height;
         }
         if (movement != null) {
-            movement.Speed = baseSpeed * Mathf.Lerp(1f, 1.7f, Mathf.Clamp01((Scale - 1f) / 4f));
+            movement.Speed = baseSpeed * Mathf.Lerp(1f, 1.7f, Mathf.Clamp01((Scale - 1f) / 4f)) * MetaProgress.Stride();
         }
         ZeldaStyleCamera cam = FindAnyObjectByType<ZeldaStyleCamera>();
         if (cam != null) {
             cam.BodyScale = Scale;
         }
 
-        if (!toldStomp && Scale >= StompScale) {
+        if (!toldStomp && Scale >= MetaProgress.StompScale()) {
             toldStomp = true;
             Show("Stomp. Jump, then land on them.", 5f);
         }
-        if (!toldBoom && Scale >= BoomScale) {
+        if (!toldBoom && Scale >= MetaProgress.BoomScale()) {
             toldBoom = true;
             Show("Your arrows are big enough to blast them.", 5f);
         }
@@ -105,7 +146,17 @@ public class PlayerGrowth : MonoBehaviour {
         }
     }
 
+    void LateUpdate() {
+        if (visual != null) {
+            visual.localScale = baseVisual * Scale * punch;
+        }
+    }
+
     void Update() {
+        if (punch > 1.001f) {
+            punch = Mathf.MoveTowards(punch, 1f, Time.deltaTime * 1.4f);
+        }
+
         if (bannerLeft > 0f) {
             bannerLeft -= Time.deltaTime;
             if (bannerLeft <= 0f) {
@@ -122,7 +173,7 @@ public class PlayerGrowth : MonoBehaviour {
             airTime += Time.deltaTime;
             leftGround = true;
         } else {
-            if (leftGround && airTime > 0.18f && Scale >= StompScale) {
+            if (leftGround && airTime > 0.18f && Scale >= MetaProgress.StompScale()) {
                 Stomp();
             }
             airTime = 0f;

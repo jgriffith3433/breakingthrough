@@ -6,37 +6,38 @@ using UnityEngine.UI;
 // Infinite turkey waves. The clock is the only way to lose.
 public class WaveDirector : MonoBehaviour {
     public static int Wave { get; private set; } = 1;
+    public static bool IsBuilding { get; private set; }
 
     enum Phase {
         Intro,
         Combat,
-        Clear,
+        Break,
+        Build,
         Lost
     }
 
-    static int bestCleared;
-
     Phase phase = Phase.Intro;
     float phaseLeft = 1.6f;
-    float timeLeft = 22f;
-    float spare;
     float spawnIn;
     float spawnAngle;
-    int toSpawn;
+    readonly List<FowlKind> pending = new List<FowlKind>();
     int cleared;
     int spawnSerial;
-    bool bossSpawned;
     bool pausedGame;
     bool record;
 
     Text timerText;
     Text waveText;
     Text detailText;
+    Text coinText;
     GameObject lostPanel;
     Text lostBody;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap() {
+        if (SceneManager.GetActiveScene().name != MetaProgress.GameScene) {
+            return;
+        }
         if (FindAnyObjectByType<WaveDirector>() != null) {
             return;
         }
@@ -52,6 +53,8 @@ public class WaveDirector : MonoBehaviour {
         }
 
         BuildHud();
+        MetaProgress.BeginRun();
+        FortStock.BeginRun();
         Wave = 1;
         BeginIntro();
     }
@@ -67,7 +70,11 @@ public class WaveDirector : MonoBehaviour {
             if (Input.GetKeyDown(KeyCode.R)) {
                 Time.timeScale = 1f;
                 pausedGame = false;
-                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+                SceneManager.LoadScene(MetaProgress.GameScene);
+            } else if (Input.GetKeyDown(KeyCode.M) && Application.CanStreamedLevelBeLoaded(MetaProgress.MenuScene)) {
+                Time.timeScale = 1f;
+                pausedGame = false;
+                SceneManager.LoadScene(MetaProgress.MenuScene);
             }
             return;
         }
@@ -77,102 +84,134 @@ public class WaveDirector : MonoBehaviour {
             if (phaseLeft <= 0f) {
                 BeginCombat();
             }
-        } else if (phase == Phase.Clear) {
+        } else if (phase == Phase.Break || phase == Phase.Build) {
             phaseLeft -= Time.deltaTime;
+            IsBuilding = phase == Phase.Build;
             if (phaseLeft <= 0f) {
-                BeginIntro();
+                IsBuilding = false;
+                BeginCombat();
             }
         } else {
             TickCombat();
         }
 
+        MetaProgress.TickToast();
         RefreshHud();
     }
 
     void BeginIntro() {
         phase = Phase.Intro;
         phaseLeft = Wave == 1 ? 1.8f : 1.35f;
-        bossSpawned = false;
-        toSpawn = 0;
-        timeLeft = TimeFor(Wave, CountFor(Wave));
+        pending.Clear();
+        IsBuilding = false;
         spawnAngle = Random.Range(0f, 360f);
+        if (PlayerGrowth.Instance != null) {
+            PlayerGrowth.Instance.SyncToWave(Wave);
+        }
     }
 
     void BeginCombat() {
         phase = Phase.Combat;
-        toSpawn = CountFor(Wave);
+        FillPending(Wave);
         spawnIn = 0f;
         spawnSerial = 0;
-        bossSpawned = false;
-        timeLeft = TimeFor(Wave, toSpawn);
+        IsBuilding = false;
+        if (PlayerGrowth.Instance != null) {
+            PlayerGrowth.Instance.SyncToWave(Wave);
+        }
     }
 
     void TickCombat() {
-        if (toSpawn > 0) {
+        int cap = Mathf.Clamp(8 + Wave / 2, 8, 32);
+        if (pending.Count > 0 && AliveCount() < cap) {
             spawnIn -= Time.deltaTime;
             if (spawnIn <= 0f) {
                 SpawnOne();
-                toSpawn--;
-                spawnIn = 0.42f;
+                spawnIn = pending.Count > 20 ? 0.08f : 0.22f;
             }
         }
 
-        if (toSpawn == 0 && !AnyAlive()) {
-            spare = timeLeft;
+        if (pending.Count == 0 && !AnyAlive()) {
             cleared = Wave;
-            record = Wave > bestCleared;
+            record = Wave > MetaProgress.BestWave;
             if (record) {
-                bestCleared = Wave;
+                MetaProgress.SetBest(Wave);
             }
             Wave++;
-            phase = Phase.Clear;
-            phaseLeft = 1.7f;
+            if (IsFortWave(Wave)) {
+                phase = Phase.Build;
+                phaseLeft = 30f;
+                IsBuilding = true;
+            } else {
+                phase = Phase.Break;
+                phaseLeft = 5f;
+                IsBuilding = false;
+            }
+            if (PlayerGrowth.Instance != null) {
+                PlayerGrowth.Instance.SyncToWave(Wave);
+            }
             return;
         }
+    }
 
-        float drain = GobblerAlive() ? 1.65f : 1f;
-        timeLeft -= Time.deltaTime * drain;
-        if (timeLeft <= 0f) {
-            timeLeft = 0f;
-            Lose();
+    public void MusicianDown() {
+        if (phase == Phase.Lost) {
+            return;
         }
+        Lose();
+    }
+
+    public static bool IsFortWave(int wave) {
+        return wave >= 5 && (wave - 5) % 10 == 0;
     }
 
     void Lose() {
         phase = Phase.Lost;
+        IsBuilding = false;
         pausedGame = true;
         Time.timeScale = 0f;
         lostPanel.SetActive(true);
+        string coins = MetaProgress.CoinsThisRun == 0
+            ? "No new coins."
+            : "+" + MetaProgress.CoinsThisRun + (MetaProgress.CoinsThisRun == 1 ? " coin." : " coins.");
+        string shop = Application.CanStreamedLevelBeLoaded(MetaProgress.MenuScene)
+            ? "\n\nPress R to try again\nPress M for the shop"
+            : "\n\nPress R to try again";
         if (cleared <= 0) {
-            lostBody.text = bestCleared > 0
-                ? "The first turkey won.\n\nBest cleared: " + bestCleared + "\n\nPress R to try again"
-                : "The first turkey won.\n\nPress R to try again";
+            string best = MetaProgress.BestWave > 0 ? "\n\nBest cleared: " + MetaProgress.BestWave : "";
+            lostBody.text = "The musician fell." + best + "\n\n" + coins + shop;
         } else {
             string waves = cleared == 1 ? "1 wave" : cleared + " waves";
-            string bestLine = record ? "New best." : "Best cleared: " + bestCleared;
-            lostBody.text = "You cleared " + waves + ".\n\n" + bestLine + "\n\nPress R to try again";
+            string bestLine = record ? "New best." : "Best cleared: " + MetaProgress.BestWave;
+            lostBody.text = "You cleared " + waves + ".\n\n" + bestLine + "\n\n" + coins + shop;
         }
     }
 
     void SpawnOne() {
         Transform player = null;
-        GameObject playerGo = GameObject.FindGameObjectWithTag("Player");
-        if (playerGo != null) {
-            player = playerGo.transform;
+        if (Musician.Instance != null) {
+            player = Musician.Instance.transform;
+        } else {
+            GameObject playerGo = GameObject.FindGameObjectWithTag("Player");
+            if (playerGo != null) {
+                player = playerGo.transform;
+            }
         }
 
         Vector3 origin = player != null ? player.position : Vector3.zero;
         float angle = (spawnAngle + spawnSerial * 137.5f) * Mathf.Deg2Rad;
         spawnSerial++;
-        float radius = Random.Range(8.2f, 12f);
+        if (pending.Count == 0) {
+            return;
+        }
+        FowlKind kind = pending[0];
+        pending.RemoveAt(0);
+        FowlDef def = kind == FowlKind.Turkey ? FowlRoster.Turkey() : FowlRoster.ForTier(UnlockOf(kind));
+        float radius = Random.Range(9f, 13.5f) + def.Scale * 0.45f;
         Vector3 spot = origin + new Vector3(Mathf.Sin(angle), 0f, Mathf.Cos(angle)) * radius;
-        spot.y = GroundNear(spot, origin.y) + 0.55f;
+        spot.y = GroundNear(spot, origin.y) + 0.55f + def.Scale * 0.08f;
 
-        TurkeyTrait primary;
-        TurkeyTrait secondary;
-        Roll(Wave, out primary, out secondary);
-
-        var go = new GameObject("Turkey");
+        var go = new GameObject(def.Name);
         go.tag = "enemy";
         go.transform.position = spot;
         Vector3 look = origin - spot;
@@ -182,157 +221,54 @@ public class WaveDirector : MonoBehaviour {
         }
 
         Enemy enemy = go.AddComponent<Enemy>();
-        enemy.Apply(primary, secondary);
+        enemy.ApplyFowl(def);
     }
 
-    void Roll(int wave, out TurkeyTrait primary, out TurkeyTrait secondary) {
-        primary = TurkeyTrait.None;
-        secondary = TurkeyTrait.None;
-        if (wave % 5 == 0 && !bossSpawned) {
-            primary = TurkeyTrait.Gobbler;
-            bossSpawned = true;
-            return;
-        }
-
-        TurkeyTrait newest = Newest(wave);
-        if (newest == TurkeyTrait.None) {
-            return;
-        }
-
-        primary = Random.value < 0.7f ? newest : RandomFrom(wave);
-        if (wave >= 8 && Random.value < 0.42f) {
-            secondary = RandomFrom(wave);
-            if (secondary == primary) {
-                secondary = TurkeyTrait.None;
+    void FillPending(int wave) {
+        pending.Clear();
+        for (int tier = 100; tier >= 10; tier -= 10) {
+            int count = wave - (tier - 1);
+            if (count <= 0) {
+                continue;
+            }
+            FowlKind kind = FowlRoster.ForTier(tier).Kind;
+            for (int i = 0; i < count; i++) {
+                pending.Add(kind);
             }
         }
+        for (int i = 0; i < wave; i++) {
+            pending.Add(FowlKind.Turkey);
+        }
     }
 
-    static TurkeyTrait Newest(int wave) {
-        if (wave >= 36) {
-            return TurkeyTrait.Titan;
+    static int UnlockOf(FowlKind kind) {
+        switch (kind) {
+            case FowlKind.Hen: return 10;
+            case FowlKind.Rooster: return 20;
+            case FowlKind.Goose: return 30;
+            case FowlKind.Swan: return 40;
+            case FowlKind.Emu: return 50;
+            case FowlKind.Ostrich: return 60;
+            case FowlKind.Cassowary: return 70;
+            case FowlKind.Terror: return 80;
+            case FowlKind.Roc: return 90;
+            case FowlKind.Thunderbird: return 100;
+            default: return 1;
         }
-        if (wave >= 26) {
-            return TurkeyTrait.Swarmer;
-        }
-        if (wave >= 18) {
-            return TurkeyTrait.Charger;
-        }
-        if (wave >= 14) {
-            return TurkeyTrait.Blinker;
-        }
-        if (wave >= 11) {
-            return TurkeyTrait.Splitter;
-        }
-        if (wave >= 9) {
-            return TurkeyTrait.Glider;
-        }
-        if (wave >= 7) {
-            return TurkeyTrait.Juker;
-        }
-        if (wave >= 5) {
-            return TurkeyTrait.Bruiser;
-        }
-        if (wave >= 3) {
-            return TurkeyTrait.Hopper;
-        }
-        if (wave >= 2) {
-            return TurkeyTrait.Sprinter;
-        }
-        return TurkeyTrait.None;
-    }
-
-    static TurkeyTrait RandomFrom(int wave) {
-        var pool = new List<TurkeyTrait> { TurkeyTrait.None };
-        if (wave >= 2) {
-            pool.Add(TurkeyTrait.Sprinter);
-        }
-        if (wave >= 3) {
-            pool.Add(TurkeyTrait.Hopper);
-        }
-        if (wave >= 5) {
-            pool.Add(TurkeyTrait.Bruiser);
-        }
-        if (wave >= 7) {
-            pool.Add(TurkeyTrait.Juker);
-        }
-        if (wave >= 9) {
-            pool.Add(TurkeyTrait.Glider);
-        }
-        if (wave >= 11) {
-            pool.Add(TurkeyTrait.Splitter);
-        }
-        if (wave >= 14) {
-            pool.Add(TurkeyTrait.Blinker);
-        }
-        if (wave >= 18) {
-            pool.Add(TurkeyTrait.Charger);
-        }
-        if (wave >= 26) {
-            pool.Add(TurkeyTrait.Swarmer);
-        }
-        if (wave >= 36) {
-            pool.Add(TurkeyTrait.Titan);
-        }
-        return pool[Random.Range(0, pool.Count)];
-    }
-
-    static int CountFor(int wave) {
-        if (wave <= 8) {
-            return wave;
-        }
-        return Mathf.Min(10, 8 + (wave - 8) / 4);
-    }
-
-    static float TimeFor(int wave, int count) {
-        if (wave <= 1) {
-            return 22f;
-        }
-
-        float seconds = 12f + count * 6f;
-        float heat = Mathf.Clamp01((wave - 1) / 16f);
-        seconds *= Mathf.Lerp(1.05f, 0.75f, heat);
-        if (wave % 5 == 0) {
-            seconds += 10f;
-        }
-        return Mathf.Max(14f, seconds);
     }
 
     static string Flavor(int wave) {
         if (wave <= 1) {
-            return "One turkey. The clock is the only way to lose. Each one you drop makes you bigger.";
+            return "Protect the musician. The turkeys want the piano. One arrow drops a turkey.";
         }
-        if (wave == 5) {
-            return "Your bow fires on its own now. Click still shoots.";
+        string line = FowlRoster.Intro(wave);
+        int auto = MetaProgress.AutoWave();
+        if (wave == auto) {
+            line += " Your bow fires on its own now.";
+        } else if (wave > auto) {
+            line += "  Auto-shoot is on.";
         }
-        if (wave % 5 == 0) {
-            return "A Gobbler. Huge, and it eats the clock.";
-        }
-
-        switch (Newest(wave)) {
-            case TurkeyTrait.Sprinter:
-                return "Sprinters. They close the gap.";
-            case TurkeyTrait.Hopper:
-                return "Hoppers. They fling themselves, then fall.";
-            case TurkeyTrait.Bruiser:
-                return "Bruisers. They take more arrows.";
-            case TurkeyTrait.Juker:
-                return "Jukers. They zig-zag.";
-            case TurkeyTrait.Glider:
-                return "Gliders. They stay up longer, then drop.";
-            case TurkeyTrait.Splitter:
-                return "Splitters. Drop one, and two pop out.";
-            case TurkeyTrait.Blinker:
-                return "Blinkers. They vanish sideways.";
-            case TurkeyTrait.Charger:
-                return "Chargers. They rush you.";
-            case TurkeyTrait.Swarmer:
-                return "Swarmers. Small, fast, one arrow.";
-            case TurkeyTrait.Titan:
-                return "Titans. Slow, and they take a beating.";
-            default:
-                return "Clear them before the clock runs out.";
-        }
+        return line;
     }
 
     bool AnyAlive() {
@@ -375,42 +311,47 @@ public class WaveDirector : MonoBehaviour {
     }
 
     void RefreshHud() {
-        int shown = Mathf.CeilToInt(Mathf.Max(timeLeft, 0f));
-        timerText.text = shown.ToString();
-        if (phase == Phase.Lost || timeLeft <= 5f) {
-            timerText.color = new Color(1f, 0.35f, 0.28f);
-        } else if (timeLeft <= 10f) {
-            timerText.color = new Color(1f, 0.82f, 0.35f);
-        } else if (phase == Phase.Clear) {
-            timerText.color = new Color(0.55f, 0.95f, 0.55f);
-        } else {
-            timerText.color = new Color(1f, 0.97f, 0.9f);
-        }
+        timerText.text = "";
 
         if (phase == Phase.Intro) {
-            waveText.text = "Wave " + Wave;
+            waveText.text = WaveLine();
             detailText.text = Flavor(Wave);
-        } else if (phase == Phase.Clear) {
-            timerText.text = Mathf.CeilToInt(spare).ToString();
-            waveText.text = "Wave clear";
-            detailText.text = Mathf.CeilToInt(spare) + "s to spare";
+        } else if (phase == Phase.Build) {
+            waveText.text = "Build  ·  " + Mathf.CeilToInt(Mathf.Max(phaseLeft, 0f)) + "s";
+            detailText.text = "1 wall, 2 spikes, 3 tower. Click inside the ring. Q and E turn it.";
+        } else if (phase == Phase.Break) {
+            waveText.text = "Next wave in " + Mathf.CeilToInt(Mathf.Max(phaseLeft, 0f));
+            detailText.text = Flavor(Wave);
         } else if (phase == Phase.Lost) {
-            waveText.text = "Time's up";
+            waveText.text = "The musician fell";
             detailText.text = "";
         } else if (!string.IsNullOrEmpty(PlayerGrowth.Banner)) {
-            waveText.text = "Wave " + Wave + "   ·   " + (AliveCount() + toSpawn) + " left";
+            waveText.text = WaveLine();
             detailText.text = PlayerGrowth.Banner;
-        } else if (GobblerAlive()) {
-            waveText.text = "Wave " + Wave + "   ·   " + (AliveCount() + toSpawn) + " left";
-            detailText.text = "The Gobbler is eating the clock.";
-            detailText.color = new Color(1f, 0.45f, 0.32f);
-            return;
         } else {
-            waveText.text = "Wave " + Wave + "   ·   " + (AliveCount() + toSpawn) + " left";
-            detailText.text = Wave >= 5 ? Flavor(Wave) + "  Auto-shoot is on." : Flavor(Wave);
+            waveText.text = WaveLine();
+            detailText.text = Flavor(Wave);
         }
 
         detailText.color = new Color(1f, 0.96f, 0.88f, 0.92f);
+        if (coinText != null) {
+            coinText.text = MetaProgress.StatusLine();
+            coinText.color = string.IsNullOrEmpty(MetaProgress.Toast)
+                ? new Color(1f, 0.86f, 0.4f, 0.95f)
+                : new Color(1f, 0.95f, 0.55f, 1f);
+        }
+    }
+
+    string WaveLine() {
+        string size = "";
+        if (PlayerGrowth.Instance != null) {
+            size = "   ·   Size " + PlayerGrowth.Instance.Scale.ToString("0.00") + "   ·   Arrow " + PlayerGrowth.Instance.ArrowDamage;
+        }
+        if (phase == Phase.Intro) {
+            return "Wave " + Wave + size;
+        }
+        int left = AliveCount() + pending.Count;
+        return "Wave " + Wave + "   ·   " + left + " left" + size;
     }
 
     int AliveCount() {
@@ -437,8 +378,10 @@ public class WaveDirector : MonoBehaviour {
 
         Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         timerText = MakeText(canvasGo.transform, font, "22", 84, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(420f, 100f));
-        waveText = MakeText(canvasGo.transform, font, "Wave 1", 32, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -108f), new Vector2(900f, 46f));
-        detailText = MakeText(canvasGo.transform, font, "", 24, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -154f), new Vector2(1100f, 40f));
+        waveText = MakeText(canvasGo.transform, font, "Wave 1", 32, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -108f), new Vector2(1500f, 46f));
+        detailText = MakeText(canvasGo.transform, font, "", 24, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -154f), new Vector2(1400f, 72f));
+        coinText = MakeText(canvasGo.transform, font, "", 26, TextAnchor.UpperLeft, new Vector2(0f, 1f), new Vector2(36f, -24f), new Vector2(860f, 40f));
+        coinText.rectTransform.pivot = new Vector2(0f, 1f);
 
         lostPanel = new GameObject("Lost");
         lostPanel.transform.SetParent(canvasGo.transform, false);
@@ -449,11 +392,11 @@ public class WaveDirector : MonoBehaviour {
         panelRect.anchorMin = new Vector2(0.5f, 0.5f);
         panelRect.anchorMax = new Vector2(0.5f, 0.5f);
         panelRect.pivot = new Vector2(0.5f, 0.5f);
-        panelRect.sizeDelta = new Vector2(720f, 420f);
+        panelRect.sizeDelta = new Vector2(760f, 520f);
 
-        var title = MakeText(lostPanel.transform, font, "Time's up", 68, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -36f), new Vector2(640f, 90f));
+        var title = MakeText(lostPanel.transform, font, "The music stopped", 58, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -36f), new Vector2(680f, 90f));
         title.color = new Color(1f, 0.45f, 0.35f);
-        lostBody = MakeText(lostPanel.transform, font, "", 32, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -150f), new Vector2(620f, 220f));
+        lostBody = MakeText(lostPanel.transform, font, "", 30, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -140f), new Vector2(660f, 320f));
         lostPanel.SetActive(false);
     }
 

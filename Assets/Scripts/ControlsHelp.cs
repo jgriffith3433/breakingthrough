@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class ControlsHelp : MonoBehaviour {
@@ -8,10 +9,16 @@ public class ControlsHelp : MonoBehaviour {
         "Space jumps\n" +
         "Click shoots\n\n" +
         "A nearby turkey takes your aim.\n" +
-        "Clear the wave before the clock runs out.";
+        "Keep the musician alive. Turkeys want the piano.\n" +
+        "Before waves 5, 15, 25... you get 30 seconds to build.\n" +
+        "1 wall, 2 spikes, 3 tower. Q and E turn. Click places.\n" +
+        "Hens drop a coin every 10 to 20.";
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap() {
+        if (SceneManager.GetActiveScene().name != MetaProgress.GameScene) {
+            return;
+        }
         var existing = FindAnyObjectByType<ControlsHelp>();
         if (existing != null) {
             return;
@@ -44,7 +51,7 @@ public class ControlsHelp : MonoBehaviour {
         panelRect.anchorMax = new Vector2(0f, 0f);
         panelRect.pivot = new Vector2(0f, 0f);
         panelRect.anchoredPosition = new Vector2(24f, 24f);
-        panelRect.sizeDelta = new Vector2(520f, 250f);
+        panelRect.sizeDelta = new Vector2(640f, 360f);
 
         var body = new GameObject("Text");
         body.transform.SetParent(panel.transform, false);

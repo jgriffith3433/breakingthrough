@@ -3,11 +3,13 @@ Shader "Knoll/VertexColorLit"
     Properties
     {
         _AmbientBoost ("Ambient Boost", Range(0, 1)) = 0.18
+        [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 2
     }
     SubShader
     {
         Tags { "RenderType" = "Opaque" }
         LOD 200
+        Cull [_Cull]
 
         CGPROGRAM
         #pragma surface surf Lambert vertex:vert
