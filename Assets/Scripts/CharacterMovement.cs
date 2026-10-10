@@ -141,6 +141,10 @@ public class CharacterMovement : MonoBehaviour {
                 AnimationMove(motor.charController.velocity.magnitude * 0.1f);
             }
 
+            if (motor.charController.velocity.sqrMagnitude > 1.2f) {
+                UpgradeLook.Stride(transform.position);
+            }
+
             bool wantJump = WaveDirector.Wave >= 20
                 ? Input.GetKey(KeyCode.Space)
                 : Input.GetKeyDown(KeyCode.Space);

@@ -94,7 +94,10 @@ static class FixMixamoImport
 
         FinishPirate();
         AssetDatabase.SaveAssets();
-        EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene());
+        if (!Application.isPlaying)
+        {
+            EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene());
+        }
         Debug.Log(Report());
     }
 

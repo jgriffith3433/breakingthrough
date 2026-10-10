@@ -14,11 +14,24 @@ public class Musician : MonoBehaviour {
     Light flare;
     Image fill;
     Image back;
+    Image veil;
     Text number;
     Text title;
+    Vector3 basePos;
+    float flinch;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap() {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        Ensure();
+    }
+
+    static void OnSceneLoaded(Scene scene, LoadSceneMode mode) {
+        Ensure();
+    }
+
+    static void Ensure() {
         if (SceneManager.GetActiveScene().name != MetaProgress.GameScene) {
             return;
         }
@@ -62,6 +75,10 @@ public class Musician : MonoBehaviour {
         }
         Health = Mathf.Max(0, Health - amount);
         HitFlash = 1f;
+        if (flinch <= 0f) {
+            basePos = transform.localPosition;
+        }
+        flinch = 1f;
         GameAudio.Play("hit", 0.45f);
         RefreshBar();
         if (!Alive) {
@@ -75,10 +92,26 @@ public class Musician : MonoBehaviour {
     void Update() {
         if (HitFlash > 0f) {
             HitFlash = Mathf.MoveTowards(HitFlash, 0f, Time.deltaTime * 3.2f);
+        }
+        bool low = Alive && Health <= 30;
+        if (HitFlash > 0f || low) {
             RefreshBar();
         }
+        if (flinch > 0f) {
+            flinch = Mathf.MoveTowards(flinch, 0f, Time.deltaTime * 3.5f);
+            transform.localPosition = basePos + new Vector3(Mathf.Sin(flinch * 28f) * 0.05f, 0f, 0f);
+            if (flinch <= 0f) {
+                transform.localPosition = basePos;
+            }
+        }
         if (flare != null) {
-            flare.intensity = HitFlash * 7f;
+            float hurt = HitFlash * 7f;
+            float warn = low ? 1.2f + Mathf.Sin(Time.time * 5f) * 0.8f : 0f;
+            flare.intensity = Mathf.Max(hurt, warn);
+        }
+        if (veil != null) {
+            float pulse = low ? 0.12f + 0.14f * (0.5f + 0.5f * Mathf.Sin(Time.time * 5f)) : 0f;
+            veil.color = new Color(0.65f, 0.04f, 0.03f, pulse);
         }
     }
 
@@ -90,6 +123,17 @@ public class Musician : MonoBehaviour {
         var scaler = canvasGo.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
+
+        var veilGo = new GameObject("Veil");
+        veilGo.transform.SetParent(canvasGo.transform, false);
+        veil = veilGo.AddComponent<Image>();
+        veil.color = new Color(0.65f, 0.04f, 0.03f, 0f);
+        veil.raycastTarget = false;
+        var veilRect = veil.rectTransform;
+        veilRect.anchorMin = Vector2.zero;
+        veilRect.anchorMax = Vector2.one;
+        veilRect.offsetMin = Vector2.zero;
+        veilRect.offsetMax = Vector2.zero;
 
         Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         title = MakeText(canvasGo.transform, font, "Musician's Health", 26, new Vector2(0f, -8f), new Vector2(640f, 32f));
@@ -138,6 +182,11 @@ public class Musician : MonoBehaviour {
             healthy = Color.Lerp(new Color(0.85f, 0.16f, 0.12f), new Color(0.92f, 0.72f, 0.22f), ratio / 0.45f);
         }
         bool flash = HitFlash > 0.35f;
+        bool low = Alive && Health <= 30;
+        if (!flash && low) {
+            float throb = 0.5f + 0.5f * Mathf.Sin(Time.time * 5f);
+            healthy = Color.Lerp(new Color(0.45f, 0.05f, 0.04f), new Color(1f, 0.28f, 0.18f), throb);
+        }
         fill.color = flash ? Color.white : healthy;
         if (back != null) {
             back.color = flash ? new Color(1f, 0.92f, 0.85f, 0.95f) : new Color(0.12f, 0.08f, 0.08f, 0.92f);

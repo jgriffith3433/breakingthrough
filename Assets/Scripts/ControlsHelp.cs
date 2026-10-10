@@ -9,6 +9,16 @@ public class ControlsHelp : MonoBehaviour {
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap() {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        Ensure();
+    }
+
+    static void OnSceneLoaded(Scene scene, LoadSceneMode mode) {
+        Ensure();
+    }
+
+    static void Ensure() {
         if (SceneManager.GetActiveScene().name != MetaProgress.GameScene) {
             return;
         }

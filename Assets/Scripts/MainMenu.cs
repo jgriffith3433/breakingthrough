@@ -14,6 +14,10 @@ public class MainMenu : MonoBehaviour {
     readonly Text[] ranks = new Text[MetaProgress.Catalog.Length];
     readonly Text[] costs = new Text[MetaProgress.Catalog.Length];
     readonly Button[] buttons = new Button[MetaProgress.Catalog.Length];
+    readonly Image[] rows = new Image[MetaProgress.Catalog.Length];
+    Text celebrate;
+    int flashRow = -1;
+    float flash;
 
     void Awake() {
         Time.timeScale = 1f;
@@ -34,6 +38,10 @@ public class MainMenu : MonoBehaviour {
     }
 
     void Update() {
+        if (flash > 0f && flashRow >= 0 && flashRow < rows.Length && rows[flashRow] != null) {
+            flash -= Time.deltaTime;
+            rows[flashRow].color = Color.Lerp(new Color(0.12f, 0.1f, 0.08f, 1f), new Color(0.55f, 0.4f, 0.12f, 1f), Mathf.Clamp01(flash));
+        }
         if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space)) {
             Play();
         }
@@ -62,7 +70,8 @@ public class MainMenu : MonoBehaviour {
 
         coinText = Label(left, "", 36, FontStyle.Bold, new Color(1f, 0.84f, 0.35f), new Vector2(36f, -220f), new Vector2(540f, 48f), TextAnchor.UpperLeft);
         bestText = Label(left, "", 28, FontStyle.Normal, new Color(0.85f, 0.95f, 0.8f), new Vector2(36f, -274f), new Vector2(540f, 40f), TextAnchor.UpperLeft);
-        purseText = Label(left, "", 24, FontStyle.Normal, new Color(1f, 0.96f, 0.88f, 0.88f), new Vector2(36f, -330f), new Vector2(540f, 120f), TextAnchor.UpperLeft);
+        purseText = Label(left, "", 24, FontStyle.Normal, new Color(1f, 0.96f, 0.88f, 0.88f), new Vector2(36f, -330f), new Vector2(540f, 90f), TextAnchor.UpperLeft);
+        celebrate = Label(left, "", 28, FontStyle.Bold, new Color(1f, 0.84f, 0.35f), new Vector2(36f, -430f), new Vector2(540f, 64f), TextAnchor.UpperLeft);
 
         var play = Button(left, "Play", new Vector2(36f, -500f), new Vector2(280f, 72f), 32, Play);
         var playImage = play.GetComponent<Image>();
@@ -76,6 +85,7 @@ public class MainMenu : MonoBehaviour {
         for (int i = 0; i < MetaProgress.Catalog.Length; i++) {
             float y = -90f - i * 76f;
             var row = Panel(right, new Color(0.12f, 0.1f, 0.08f, 1f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(-48f, 72f));
+            rows[i] = row.GetComponent<Image>();
             UpgradeInfo info = MetaProgress.Catalog[i];
             titles[i] = Label(row, info.Name, 26, FontStyle.Bold, new Color(1f, 0.95f, 0.84f), new Vector2(18f, -8f), new Vector2(520f, 32f), TextAnchor.UpperLeft);
             abouts[i] = Label(row, info.About, 20, FontStyle.Normal, new Color(1f, 0.92f, 0.8f, 0.8f), new Vector2(18f, -42f), new Vector2(560f, 36f), TextAnchor.UpperLeft);
@@ -92,8 +102,12 @@ public class MainMenu : MonoBehaviour {
     }
 
     void Buy(int index) {
-        if (MetaProgress.TryBuy(MetaProgress.Catalog[index].Id)) {
-            GameAudio.Play("shot", 0.35f);
+        UpgradeInfo info = MetaProgress.Catalog[index];
+        if (MetaProgress.TryBuy(info.Id)) {
+            GameAudio.Play("launch", 0.8f);
+            flashRow = index;
+            flash = 1f;
+            celebrate.text = info.Name + "\n" + MetaProgress.RankLine(info.Id);
         }
         Refresh();
     }

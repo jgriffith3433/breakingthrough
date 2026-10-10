@@ -101,24 +101,41 @@ public class DefencePiece : MonoBehaviour {
         if (Kind == FortKind.Wall) {
             stopsLeft = stopMax = MetaProgress.WallStops();
             Blocks = true;
-            baseColor = new Color(0.45f, 0.32f, 0.2f);
-            AddBox(new Vector3(1.7f, 1.15f, 0.4f), new Vector3(0f, 0.58f, 0f), baseColor, false);
+            int stone = MetaProgress.Rank(UpgradeId.Walls);
+            baseColor = Color.Lerp(new Color(0.45f, 0.32f, 0.2f), new Color(0.55f, 0.56f, 0.58f), stone / 5f);
+            float height = 1.15f + stone * 0.16f;
+            AddBox(new Vector3(1.7f + stone * 0.08f, height, 0.4f + stone * 0.04f), new Vector3(0f, height * 0.5f, 0f), baseColor, false);
+            if (stone > 0) {
+                AddBox(new Vector3(1.9f, 0.16f, 0.55f), new Vector3(0f, height + 0.08f, 0f), new Color(0.72f, 0.73f, 0.75f), false);
+            }
         } else if (Kind == FortKind.Spike) {
             killsLeft = killMax = MetaProgress.SpikeKills();
             Blocks = false;
-            baseColor = new Color(0.35f, 0.36f, 0.4f);
+            int kit = MetaProgress.Rank(UpgradeId.Spikes);
+            baseColor = Color.Lerp(new Color(0.35f, 0.36f, 0.4f), new Color(0.45f, 0.28f, 0.22f), kit / 5f);
             AddBox(new Vector3(1.35f, 0.12f, 1.35f), new Vector3(0f, 0.06f, 0f), baseColor, true);
-            AddBox(new Vector3(0.12f, 0.45f, 0.12f), new Vector3(0.35f, 0.28f, 0.35f), new Color(0.75f, 0.76f, 0.8f), true);
-            AddBox(new Vector3(0.12f, 0.45f, 0.12f), new Vector3(-0.35f, 0.28f, 0.35f), new Color(0.75f, 0.76f, 0.8f), true);
-            AddBox(new Vector3(0.12f, 0.45f, 0.12f), new Vector3(0.35f, 0.28f, -0.35f), new Color(0.75f, 0.76f, 0.8f), true);
-            AddBox(new Vector3(0.12f, 0.45f, 0.12f), new Vector3(-0.35f, 0.28f, -0.35f), new Color(0.75f, 0.76f, 0.8f), true);
+            Color metal = Color.Lerp(new Color(0.75f, 0.76f, 0.8f), new Color(0.95f, 0.55f, 0.28f), kit / 5f);
+            float spike = 0.45f + kit * 0.08f;
+            AddBox(new Vector3(0.12f, spike, 0.12f), new Vector3(0.35f, spike * 0.55f, 0.35f), metal, true);
+            AddBox(new Vector3(0.12f, spike, 0.12f), new Vector3(-0.35f, spike * 0.55f, 0.35f), metal, true);
+            AddBox(new Vector3(0.12f, spike, 0.12f), new Vector3(0.35f, spike * 0.55f, -0.35f), metal, true);
+            AddBox(new Vector3(0.12f, spike, 0.12f), new Vector3(-0.35f, spike * 0.55f, -0.35f), metal, true);
+            for (int i = 0; i < kit; i++) {
+                float ang = i / (float)kit * Mathf.PI * 2f;
+                AddBox(new Vector3(0.1f, spike * 0.8f, 0.1f), new Vector3(Mathf.Sin(ang) * 0.15f, spike * 0.4f, Mathf.Cos(ang) * 0.15f), metal, true);
+            }
         } else {
             stopsLeft = stopMax = MetaProgress.TowerStops();
             killsLeft = killMax = MetaProgress.TowerKills();
             Blocks = true;
+            int watch = MetaProgress.Rank(UpgradeId.Towers);
             baseColor = new Color(0.32f, 0.34f, 0.38f);
-            AddBox(new Vector3(0.55f, 1.5f, 0.55f), new Vector3(0f, 0.75f, 0f), baseColor, false);
-            AddBox(new Vector3(0.85f, 0.28f, 0.85f), new Vector3(0f, 1.55f, 0f), new Color(0.55f, 0.42f, 0.22f), false);
+            float shaft = 1.5f + watch * 0.28f;
+            AddBox(new Vector3(0.55f, shaft, 0.55f), new Vector3(0f, shaft * 0.5f, 0f), baseColor, false);
+            AddBox(new Vector3(0.85f, 0.28f, 0.85f), new Vector3(0f, shaft + 0.14f, 0f), new Color(0.55f, 0.42f, 0.22f), false);
+            if (watch > 0) {
+                AddBox(new Vector3(0.18f, 0.18f, 0.18f), new Vector3(0f, shaft + 0.42f, 0f), new Color(1f, 0.78f, 0.28f), false);
+            }
         }
         skins = GetComponentsInChildren<Renderer>();
     }
@@ -169,6 +186,8 @@ public class DefencePiece : MonoBehaviour {
             PaintWear();
             if (stopsLeft <= 0) {
                 Break();
+            } else {
+                UpgradeLook.Crack(transform.position);
             }
         }
     }
@@ -203,6 +222,7 @@ public class DefencePiece : MonoBehaviour {
             return;
         }
         spent = true;
+        UpgradeLook.BreakBurst(transform.position);
         foreach (Collider collider in GetComponentsInChildren<Collider>()) {
             collider.enabled = false;
         }
@@ -264,6 +284,7 @@ public class DefencePiece : MonoBehaviour {
             return;
         }
         shotTick = 0.8f;
+        UpgradeLook.Bolt(transform.position + Vector3.up * (1.7f + MetaProgress.Rank(UpgradeId.Towers) * 0.28f), best.transform.position + Vector3.up * 0.7f);
         best.Hit(1f);
         if (!best.Alive) {
             NoteKill();
@@ -291,6 +312,16 @@ public class BuildMode : MonoBehaviour {
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap() {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        Ensure();
+    }
+
+    static void OnSceneLoaded(Scene scene, LoadSceneMode mode) {
+        Ensure();
+    }
+
+    static void Ensure() {
         if (SceneManager.GetActiveScene().name != MetaProgress.GameScene) {
             return;
         }
@@ -352,6 +383,7 @@ public class BuildMode : MonoBehaviour {
             Vector3 grounded = spot;
             grounded.y = Ground(spot);
             DefencePiece.Place(selected, grounded, rotation);
+            UpgradeLook.PlaceDust(grounded);
             GameAudio.Play("stomp", 0.35f);
             RefreshLabels();
         }

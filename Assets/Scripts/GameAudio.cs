@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 // Plays the short ElevenLabs effects in Resources/Sfx.
 public class GameAudio : MonoBehaviour {
@@ -7,6 +8,16 @@ public class GameAudio : MonoBehaviour {
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap() {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        Ensure();
+    }
+
+    static void OnSceneLoaded(Scene scene, LoadSceneMode mode) {
+        Ensure();
+    }
+
+    static void Ensure() {
         if (FindAnyObjectByType<GameAudio>() != null) {
             return;
         }

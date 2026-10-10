@@ -43,6 +43,7 @@ public static class MetaProgress {
     public static int NextCoinAt { get; private set; }
     public static int CoinsThisRun { get; private set; }
     public static string Toast { get; private set; }
+    public static float PurseFlash { get; private set; }
 
     static int[] ranks = new int[10];
     static bool loaded;
@@ -108,15 +109,16 @@ public static class MetaProgress {
         }
     }
 
-    public static void NoteBird(FowlKind kind) {
+    public static int NoteBird(FowlKind kind) {
         if (kind != FowlKind.Hen) {
-            return;
+            return 0;
         }
         Ensure();
         HensToward++;
+        PurseFlash = 1f;
         if (HensToward < NextCoinAt) {
             Save();
-            return;
+            return 0;
         }
 
         int pay = Payout();
@@ -128,11 +130,15 @@ public static class MetaProgress {
         toastUntil = Time.unscaledTime + 2.4f;
         Save();
         GameAudio.Play("launch", 0.55f);
+        return pay;
     }
 
     public static void TickToast() {
         if (Toast != null && Time.unscaledTime >= toastUntil) {
             Toast = null;
+        }
+        if (PurseFlash > 0f) {
+            PurseFlash = Mathf.MoveTowards(PurseFlash, 0f, Time.unscaledDeltaTime * 2.5f);
         }
     }
 

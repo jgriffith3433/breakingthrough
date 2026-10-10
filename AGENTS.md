@@ -14,7 +14,7 @@ Runtime gameplay is `Assets/Scripts/`. Editor wiring is `Assets/Editor/`. Do not
 | Wave rules, pauses, skip keys | `WaveDirector.cs` |
 | Damage, size, jump-land, foot stomp, shake | `PlayerGrowth.cs` |
 | Climbing or getting hit | `Enemy.cs` |
-| A shop upgrade | `UpgradeId` in `MetaProgress.cs` with a **new number at the end**, a `Catalog` row, and a real caller. Slot 7 is retired Iron Boots. Do not renumber |
+| A shop upgrade | `UpgradeId` in `MetaProgress.cs` with a **new number at the end**, a `Catalog` row, a real caller, and a visible mark in `UpgradeLook.cs`. Slot 7 is retired Iron Boots. Do not renumber |
 | A fort piece | `FortKind`, `FortStock`, `DefencePiece`, and `BuildMode` in `Fort.cs` |
 | A combat or build tip | `ControlsHelp.cs`. Later waves are supposed to replace earlier tips |
 | A body animation | A Mixamo humanoid FBX under `Assets/Art/`, listed in `SetupWarrok.Clips`, then a State id and `AddAction` |

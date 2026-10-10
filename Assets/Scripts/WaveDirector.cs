@@ -23,6 +23,7 @@ public class WaveDirector : MonoBehaviour {
     readonly List<FowlKind> pending = new List<FowlKind>();
     int cleared;
     int spawnSerial;
+    bool debutAnnounced;
     bool pausedGame;
     bool record;
 
@@ -30,21 +31,9 @@ public class WaveDirector : MonoBehaviour {
     Text waveText;
     Text detailText;
     Text coinText;
+    Image purseFill;
     GameObject lostPanel;
     Text lostBody;
-
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    static void Bootstrap() {
-        if (SceneManager.GetActiveScene().name != MetaProgress.GameScene) {
-            return;
-        }
-        if (FindAnyObjectByType<WaveDirector>() != null) {
-            return;
-        }
-
-        var go = new GameObject("Wave Director");
-        go.AddComponent<WaveDirector>();
-    }
 
     void Start() {
         Enemy[] already = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
@@ -124,9 +113,13 @@ public class WaveDirector : MonoBehaviour {
         FillPending(Wave);
         spawnIn = 0f;
         spawnSerial = 0;
+        debutAnnounced = false;
         IsBuilding = false;
         if (PlayerGrowth.Instance != null) {
             PlayerGrowth.Instance.SyncToWave(Wave);
+        }
+        if (Wave == 1) {
+            UpgradeLook.AnnounceLoadout();
         }
     }
 
@@ -142,6 +135,8 @@ public class WaveDirector : MonoBehaviour {
 
         if (pending.Count == 0 && !AnyAlive()) {
             cleared = Wave;
+            Vector3 celebration = PlayerGrowth.Instance != null ? PlayerGrowth.Instance.transform.position : Vector3.zero;
+            UpgradeLook.WaveCleared(cleared, celebration);
             record = Wave > MetaProgress.BestWave;
             if (record) {
                 MetaProgress.SetBest(Wave);
@@ -267,6 +262,10 @@ public class WaveDirector : MonoBehaviour {
 
         Enemy enemy = go.AddComponent<Enemy>();
         enemy.ApplyFowl(def);
+        if (!debutAnnounced && def.UnlockWave == Wave && Wave % 10 == 0) {
+            debutAnnounced = true;
+            UpgradeLook.Arrive(def.Name);
+        }
     }
 
     static bool ClearOfFlock(Vector3 spot, float gap) {
@@ -383,9 +382,17 @@ public class WaveDirector : MonoBehaviour {
         detailText.color = new Color(1f, 0.96f, 0.88f, 0.92f);
         if (coinText != null) {
             coinText.text = MetaProgress.StatusLine();
-            coinText.color = string.IsNullOrEmpty(MetaProgress.Toast)
-                ? new Color(1f, 0.86f, 0.4f, 0.95f)
-                : new Color(1f, 0.95f, 0.55f, 1f);
+            float pulse = MetaProgress.PurseFlash;
+            coinText.color = pulse > 0.05f
+                ? Color.Lerp(new Color(1f, 0.86f, 0.4f, 0.95f), Color.white, pulse)
+                : new Color(1f, 0.86f, 0.4f, 0.95f);
+        }
+        if (purseFill != null && MetaProgress.NextCoinAt > 0) {
+            float ratio = Mathf.Clamp01(MetaProgress.HensToward / (float)MetaProgress.NextCoinAt);
+            purseFill.rectTransform.sizeDelta = new Vector2(220f * ratio, 8f);
+            purseFill.color = MetaProgress.PurseFlash > 0.05f
+                ? new Color(1f, 0.95f, 0.6f, 1f)
+                : new Color(1f, 0.78f, 0.22f, 0.95f);
         }
     }
 
@@ -429,6 +436,29 @@ public class WaveDirector : MonoBehaviour {
         detailText = MakeText(canvasGo.transform, font, "", 24, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -154f), new Vector2(1400f, 72f));
         coinText = MakeText(canvasGo.transform, font, "", 26, TextAnchor.UpperLeft, new Vector2(0f, 1f), new Vector2(36f, -24f), new Vector2(860f, 40f));
         coinText.rectTransform.pivot = new Vector2(0f, 1f);
+
+        var purseBackGo = new GameObject("Purse");
+        purseBackGo.transform.SetParent(canvasGo.transform, false);
+        var purseBack = purseBackGo.AddComponent<Image>();
+        purseBack.color = new Color(0.12f, 0.08f, 0.04f, 0.85f);
+        purseBack.raycastTarget = false;
+        var purseRect = purseBack.rectTransform;
+        purseRect.anchorMin = new Vector2(0f, 1f);
+        purseRect.anchorMax = new Vector2(0f, 1f);
+        purseRect.pivot = new Vector2(0f, 1f);
+        purseRect.anchoredPosition = new Vector2(36f, -68f);
+        purseRect.sizeDelta = new Vector2(220f, 10f);
+        var purseFillGo = new GameObject("Fill");
+        purseFillGo.transform.SetParent(purseBackGo.transform, false);
+        purseFill = purseFillGo.AddComponent<Image>();
+        purseFill.color = new Color(1f, 0.78f, 0.22f, 0.95f);
+        purseFill.raycastTarget = false;
+        var fillRect = purseFill.rectTransform;
+        fillRect.anchorMin = new Vector2(0f, 0.5f);
+        fillRect.anchorMax = new Vector2(0f, 0.5f);
+        fillRect.pivot = new Vector2(0f, 0.5f);
+        fillRect.anchoredPosition = new Vector2(0f, 0f);
+        fillRect.sizeDelta = new Vector2(0f, 8f);
 
         lostPanel = new GameObject("Lost");
         lostPanel.transform.SetParent(canvasGo.transform, false);

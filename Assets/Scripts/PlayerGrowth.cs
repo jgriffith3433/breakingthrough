@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 // Every turkey you drop makes you a little bigger. Size unlocks the later powers.
 public class PlayerGrowth : MonoBehaviour {
@@ -38,6 +39,16 @@ public class PlayerGrowth : MonoBehaviour {
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap() {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        Ensure();
+    }
+
+    static void OnSceneLoaded(Scene scene, LoadSceneMode mode) {
+        Ensure();
+    }
+
+    static void Ensure() {
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player == null || player.GetComponent<PlayerGrowth>() != null) {
             return;
@@ -133,6 +144,9 @@ public class PlayerGrowth : MonoBehaviour {
         ZeldaStyleCamera cam = FindAnyObjectByType<ZeldaStyleCamera>();
         if (cam != null) {
             cam.BodyScale = Scale;
+        }
+        if (punch > 1.05f) {
+            UpgradeLook.Grow(transform.position, BodyRadius * 2f);
         }
 
         if (!toldJump && wave >= 20) {

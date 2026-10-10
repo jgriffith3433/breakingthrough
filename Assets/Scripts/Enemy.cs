@@ -570,9 +570,15 @@ public class Enemy : MonoBehaviour
         RefreshBar();
         GameAudio.Play("hit", 0.7f);
         verticalVelocity = 2.2f;
+        Vector3 mark = transform.position + Vector3.up * (0.7f * Mathf.Max(1f, bodyScale));
+        UpgradeLook.Spark(mark);
+        UpgradeLook.Number(mark, damage);
+        UpgradeLook.MarkHit();
 
-        if (hits < HitsToDrop)
+        if (hits < HitsToDrop) {
+            Nudge();
             return;
+        }
 
         if (splitter && !hatchling)
         {
@@ -584,8 +590,12 @@ public class Enemy : MonoBehaviour
         flying = false;
         StopClimbing();
         ClearLock();
+        CelebrateDeath();
         PlayerGrowth.RegisterKill();
-        MetaProgress.NoteBird(Kind);
+        int coins = MetaProgress.NoteBird(Kind);
+        if (coins > 0) {
+            UpgradeLook.Coins(transform.position, coins);
+        }
         BeginRagdoll(power, false);
     }
 
@@ -619,12 +629,37 @@ public class Enemy : MonoBehaviour
             down = true;
             flying = false;
             ClearLock();
+            CelebrateDeath();
             PlayerGrowth.RegisterKill();
-            MetaProgress.NoteBird(Kind);
+            int coins = MetaProgress.NoteBird(Kind);
+            if (coins > 0) {
+                UpgradeLook.Coins(transform.position, coins);
+            }
             BeginRagdoll(scale, false);
             return;
         }
         BeginRagdoll(scale, true);
+    }
+
+    void Nudge() {
+        Vector3 away = transform.position;
+        if (PlayerGrowth.Instance != null) {
+            away -= PlayerGrowth.Instance.transform.position;
+        }
+        away.y = 0f;
+        if (away.sqrMagnitude < 0.01f) {
+            away = transform.forward;
+        }
+        transform.position += away.normalized * 0.2f;
+    }
+
+    void CelebrateDeath() {
+        bool boss = DebutWave >= 10;
+        int feathers = Kind == FowlKind.Thunderbird ? 20 : boss ? 12 : 5;
+        UpgradeLook.Feathers(transform.position, feathers, boss);
+        if (Kind == FowlKind.Thunderbird) {
+            UpgradeLook.Say("The Thunderbird falls", 2.8f);
+        }
     }
 
     void SpawnHatchling(Vector3 offset)

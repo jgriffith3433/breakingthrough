@@ -54,14 +54,18 @@ public class BowEquipment : MonoBehaviour {
     }
 
     void OnGUI() {
-        if (cam == null || cam.LockedOnGameObject != null) {
+        bool confirm = UpgradeLook.HitConfirm;
+        if (cam == null || (cam.LockedOnGameObject != null && !confirm)) {
             return;
         }
 
         float cx = Screen.width * 0.5f;
         float cy = Screen.height * 0.5f;
         Color previous = GUI.color;
-        GUI.color = new Color(1f, 0.96f, 0.88f, 0.92f);
+        bool quick = MetaProgress.Rank(UpgradeId.Draw) > 0 && WaveDirector.Wave >= MetaProgress.AutoWave();
+        GUI.color = confirm
+            ? new Color(1f, 0.9f, 0.35f, 1f)
+            : quick ? new Color(1f, 0.82f, 0.28f, 0.95f) : new Color(1f, 0.96f, 0.88f, 0.92f);
         GUI.DrawTexture(new Rect(cx - 14f, cy - 1f, 8f, 2f), Texture2D.whiteTexture);
         GUI.DrawTexture(new Rect(cx + 6f, cy - 1f, 8f, 2f), Texture2D.whiteTexture);
         GUI.DrawTexture(new Rect(cx - 1f, cy - 14f, 2f, 8f), Texture2D.whiteTexture);
@@ -87,6 +91,7 @@ public class BowEquipment : MonoBehaviour {
         bow.transform.localPosition = new Vector3(-0.009f, -0.066f, 0.035f);
         bow.transform.localRotation = Quaternion.Euler(13f, 350f, 358f);
         bow.transform.localScale = new Vector3(0.353789777f, 0.353789777f, 0.353789777f);
+        UpgradeLook.BowMark(bow.transform);
 
         nocked = Instantiate(arrowModel, bow.transform, false);
         nocked.name = "NockedArrow";
@@ -116,6 +121,7 @@ public class BowEquipment : MonoBehaviour {
 
         ArrowFlight flight = shot.AddComponent<ArrowFlight>();
         flight.Begin(dir * ArrowSpeed, transform, arrowLongLocal, PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f);
+        UpgradeLook.KeenArrow(shot);
         GameAudio.Play("shot", 0.8f);
     }
 
@@ -279,13 +285,15 @@ public class ArrowFlight : MonoBehaviour {
                 if (foe != null) {
                     foe.Hit(power);
                     if (MetaProgress.ArrowsExplode()) {
-                        Collider[] caught = Physics.OverlapSphere(hit.point, MetaProgress.SplashRadius(power));
+                        float splash = MetaProgress.SplashRadius(power);
+                        Collider[] caught = Physics.OverlapSphere(hit.point, splash);
                         foreach (Collider caughtCollider in caught) {
                             Enemy other = caughtCollider.GetComponentInParent<Enemy>();
                             if (other != null && other != foe && other.Alive) {
                                 other.Hit(power * 0.65f);
                             }
                         }
+                        UpgradeLook.Blast(hit.point, splash);
                     }
                 }
                 transform.position = hit.point - direction * 0.05f;

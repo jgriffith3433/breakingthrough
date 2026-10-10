@@ -105,7 +105,7 @@ Stone Pile, Spike Kit, and Watch Kit raise the starting counts and how long each
 
 Coins and upgrades are stored in PlayerPrefs (`bt_coins`, `bt_best`, `bt_hens`, `bt_next`, `bt_ranks`) and survive death and restart. Only hen kills pay. The next coin is a random count between 10 and 20 hens. Fat Purse tightens that range and, from rank 3, pays 2 coins.
 
-Cost of the next rank is the current rank plus 1.
+Cost of the next rank is the current rank plus 1. Buying one flashes the row, names what you gained, and the hill shows it on the next run. Wave 1 lists everything you brought.
 
 | Upgrade | Effect |
 |---|---|
