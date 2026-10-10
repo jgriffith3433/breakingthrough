@@ -5,8 +5,6 @@ public class PlayerGrowth : MonoBehaviour {
     public static PlayerGrowth Instance { get; private set; }
     public static string Banner { get; private set; }
 
-    public const float StompScale = 1.6f;
-    public const float BoomScale = 2.2f;
     public const int ClimbWave = 50;
 
     public bool Rooted { get; private set; }

@@ -278,7 +278,7 @@ public class ArrowFlight : MonoBehaviour {
                 Enemy foe = hit.collider.GetComponentInParent<Enemy>();
                 if (foe != null) {
                     foe.Hit(power);
-                    if (MetaProgress.ArrowsExplode() || power >= MetaProgress.BoomScale()) {
+                    if (MetaProgress.ArrowsExplode()) {
                         Collider[] caught = Physics.OverlapSphere(hit.point, MetaProgress.SplashRadius(power));
                         foreach (Collider caughtCollider in caught) {
                             Enemy other = caughtCollider.GetComponentInParent<Enemy>();

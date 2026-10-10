@@ -8,7 +8,7 @@ public enum UpgradeId {
     Blast = 4,
     Purse = 5,
     Stride = 6,
-    Stomp = 7,
+    Stomp = 7, // retired; this slot stays so saved ranks do not shift
     Spikes = 8,
     Towers = 9
 }
@@ -33,7 +33,6 @@ public static class MetaProgress {
         new UpgradeInfo { Id = UpgradeId.Blast, Name = "Heavy Arrows", About = "Explosions start before wave 70, and splash wider.", MaxRank = 4 },
         new UpgradeInfo { Id = UpgradeId.Purse, Name = "Fat Purse", About = "Coins come from fewer hens.", MaxRank = 4 },
         new UpgradeInfo { Id = UpgradeId.Stride, Name = "Long Stride", About = "You cover the hill faster.", MaxRank = 5 },
-        new UpgradeInfo { Id = UpgradeId.Stomp, Name = "Iron Boots", About = "Foot stomps start before wave 40.", MaxRank = 3 },
         new UpgradeInfo { Id = UpgradeId.Spikes, Name = "Spike Kit", About = "More traps to start, and each trap kills more.", MaxRank = 5 },
         new UpgradeInfo { Id = UpgradeId.Towers, Name = "Watch Kit", About = "More towers to start, and each tower lasts longer.", MaxRank = 4 }
     };
@@ -200,7 +199,7 @@ public static class MetaProgress {
     }
 
     public static int StompWave() {
-        return Mathf.Max(28, 40 - Rank(UpgradeId.Stomp) * 4);
+        return 40;
     }
 
     public static int BoomWave() {
@@ -209,14 +208,6 @@ public static class MetaProgress {
 
     public static bool ArrowsExplode() {
         return WaveDirector.Wave >= BoomWave();
-    }
-
-    public static float StompScale() {
-        return Mathf.Max(1.15f, PlayerGrowth.StompScale - 0.15f * Rank(UpgradeId.Stomp));
-    }
-
-    public static float BoomScale() {
-        return Mathf.Max(1.2f, PlayerGrowth.BoomScale - 0.25f * Rank(UpgradeId.Blast));
     }
 
     public static float SplashRadius(float power) {
@@ -250,8 +241,6 @@ public static class MetaProgress {
                 return (rank >= 3 ? "2 coins every " : "A coin every ") + RangeLabel();
             case UpgradeId.Stride:
                 return "+" + (rank * 8) + "% move speed";
-            case UpgradeId.Stomp:
-                return "Stomp from wave " + StompWave();
             default:
                 return rank + " / " + info.MaxRank;
         }

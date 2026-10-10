@@ -796,7 +796,7 @@ public class Enemy : MonoBehaviour
         if (!recover)
         {
             GameAudio.Play("death", 0.8f);
-            if (power >= MetaProgress.BoomScale())
+            if (MetaProgress.ArrowsExplode())
                 GameAudio.Play("launch", 0.7f);
         }
     }
