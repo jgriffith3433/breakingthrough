@@ -51,12 +51,72 @@ public class UpgradeLook : MonoBehaviour {
         go.AddComponent<LoadoutBanner>();
     }
 
+    public static GameObject BuildRocket() {
+        var root = new GameObject("Rocket");
+        Quaternion along = Quaternion.Euler(-90f, 0f, 0f);
+        Color body = new Color(0.72f, 0.16f, 0.12f);
+        Color metal = new Color(0.92f, 0.86f, 0.74f);
+        Part(root.transform, PrimitiveType.Cylinder, Vector3.zero, along, new Vector3(0.16f, 0.36f, 0.16f), body);
+        Part(root.transform, PrimitiveType.Sphere, new Vector3(0f, 0f, 0.46f), Quaternion.identity, Vector3.one * 0.2f, metal);
+        Part(root.transform, PrimitiveType.Cylinder, new Vector3(0f, 0f, 0.08f), along, new Vector3(0.2f, 0.045f, 0.2f), new Color(0.95f, 0.78f, 0.28f));
+        Part(root.transform, PrimitiveType.Cube, new Vector3(0.14f, 0f, -0.28f), Quaternion.identity, new Vector3(0.16f, 0.03f, 0.14f), body);
+        Part(root.transform, PrimitiveType.Cube, new Vector3(-0.14f, 0f, -0.28f), Quaternion.identity, new Vector3(0.16f, 0.03f, 0.14f), body);
+        Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 0.14f, -0.28f), Quaternion.identity, new Vector3(0.03f, 0.16f, 0.14f), body);
+        Part(root.transform, PrimitiveType.Cube, new Vector3(0f, -0.14f, -0.28f), Quaternion.identity, new Vector3(0.03f, 0.16f, 0.14f), body);
+        Part(root.transform, PrimitiveType.Sphere, new Vector3(0f, 0f, -0.46f), Quaternion.identity, Vector3.one * 0.1f, new Color(1f, 0.62f, 0.16f));
+        return root;
+    }
+
+    public static void LightRocket(GameObject shot, Vector3 longLocal) {
+        if (shot == null) {
+            return;
+        }
+        int rank = Mathf.Max(1, MetaProgress.Rank(UpgradeId.Blast));
+        var flame = new GameObject("Flame");
+        flame.transform.SetParent(shot.transform, false);
+        Vector3 tail = longLocal.sqrMagnitude > 0.0001f ? -longLocal.normalized : Vector3.back;
+        flame.transform.localPosition = tail * 0.36f;
+        TrailRenderer trail = flame.AddComponent<TrailRenderer>();
+        trail.time = 0.2f + 0.05f * rank;
+        trail.startWidth = 0.07f + 0.03f * rank;
+        trail.endWidth = 0f;
+        trail.minVertexDistance = 0.05f;
+        trail.numCapVertices = 4;
+        trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        trail.receiveShadows = false;
+        Shader shader = Shader.Find("Sprites/Default");
+        if (shader != null) {
+            trail.material = new Material(shader);
+        }
+        trail.startColor = new Color(1f, 0.55f, 0.12f, 1f);
+        trail.endColor = new Color(1f, 0.28f, 0.05f, 0f);
+    }
+
+    static GameObject Part(Transform parent, PrimitiveType type, Vector3 localPos, Quaternion localRot, Vector3 localScale, Color color) {
+        GameObject go = GameObject.CreatePrimitive(type);
+        Collider collider = go.GetComponent<Collider>();
+        if (collider != null) {
+            Object.Destroy(collider);
+        }
+        go.transform.SetParent(parent, false);
+        go.transform.localPosition = localPos;
+        go.transform.localRotation = localRot;
+        go.transform.localScale = localScale;
+        Paint(go, color);
+        Renderer renderer = go.GetComponent<Renderer>();
+        if (renderer != null) {
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+        }
+        return go;
+    }
+
     public static void KeenArrow(GameObject shot) {
         int rank = MetaProgress.Rank(UpgradeId.Keen);
         if (rank <= 0 || shot == null) {
             return;
         }
-        shot.transform.localScale *= 1f + 0.08f * rank;
+        shot.transform.localScale *= 1f + 0.22f * rank;
         TrailRenderer trail = shot.AddComponent<TrailRenderer>();
         trail.time = 0.16f + 0.03f * rank;
         trail.startWidth = 0.05f + 0.018f * rank;
@@ -73,23 +133,9 @@ public class UpgradeLook : MonoBehaviour {
         trail.endColor = new Color(gold.r, gold.g, gold.b, 0f);
     }
 
-    public static void BowMark(Transform bow) {
-        int rank = MetaProgress.Rank(UpgradeId.Draw);
-        if (rank <= 0 || bow == null) {
-            return;
-        }
-        var band = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        Destroy(band.GetComponent<Collider>());
-        band.name = "QuickDraw";
-        band.transform.SetParent(bow, false);
-        band.transform.localPosition = new Vector3(0f, 0.12f, 0.05f);
-        band.transform.localScale = new Vector3(0.9f, 0.12f, 0.28f);
-        Paint(band, Color.Lerp(new Color(0.85f, 0.55f, 0.2f), new Color(1f, 0.9f, 0.35f), rank / 4f));
-    }
-
     public static void Blast(Vector3 point, float radius) {
         int rank = MetaProgress.Rank(UpgradeId.Blast);
-        float size = Mathf.Max(1.2f, radius) * (0.55f + 0.12f * rank);
+        float size = Mathf.Max(2.4f, radius);
         Spawn(point, Vector3.one * 0.35f, new Color(1f, 0.55f, 0.18f), 0.28f, Vector3.up * 0.2f, size);
         if (rank > 0) {
             Spawn(point, Vector3.one * 0.2f, new Color(1f, 0.9f, 0.4f), 0.34f, Vector3.up * 1.2f, size * 0.45f);
@@ -105,28 +151,12 @@ public class UpgradeLook : MonoBehaviour {
         }
     }
 
-    public static void Grow(Vector3 point, float body) {
-        int rank = MetaProgress.Rank(UpgradeId.Growth);
-        if (rank <= 0) {
-            return;
-        }
-        float radius = body * (0.8f + 0.15f * rank);
-        var ring = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        Destroy(ring.GetComponent<Collider>());
-        ring.name = "Growth";
-        ring.transform.position = point + Vector3.up * 0.08f;
-        ring.transform.localScale = new Vector3(radius, 0.04f, radius);
-        Paint(ring, new Color(0.55f, 0.95f, 0.45f));
-        Flourish flourish = ring.AddComponent<Flourish>();
-        flourish.Begin(Vector3.zero, 0.45f, ring.transform.localScale * (1.3f + 0.1f * rank));
-    }
-
     public static void Stride(Vector3 feet) {
         int rank = MetaProgress.Rank(UpgradeId.Stride);
         if (rank <= 0 || Time.time < nextStride) {
             return;
         }
-        nextStride = Time.time + Mathf.Lerp(0.22f, 0.1f, rank / 5f);
+        nextStride = Time.time + Mathf.Lerp(0.22f, 0.08f, rank / 3f);
         Spawn(feet + Vector3.up * 0.05f, new Vector3(0.35f, 0.06f, 0.35f), new Color(0.75f, 0.68f, 0.48f), 0.28f, Vector3.up * 0.4f, 0.7f + 0.08f * rank);
     }
 
@@ -148,7 +178,7 @@ public class UpgradeLook : MonoBehaviour {
         if (shader != null) {
             line.material = new Material(shader);
         }
-        Color gold = Color.Lerp(new Color(1f, 0.75f, 0.3f), new Color(1f, 0.95f, 0.6f), rank / 4f);
+        Color gold = Color.Lerp(new Color(1f, 0.75f, 0.3f), new Color(1f, 0.95f, 0.6f), rank / 3f);
         line.startColor = gold;
         line.endColor = gold;
         Flourish flourish = go.AddComponent<Flourish>();
@@ -205,19 +235,8 @@ public class UpgradeLook : MonoBehaviour {
         }
     }
 
-    public static void WaveCleared(int wave, Vector3 point) {
+    public static void WaveCleared(int wave) {
         Say("Wave " + wave + " cleared", 2.2f, 150f);
-        var ring = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        Collider solid = ring.GetComponent<Collider>();
-        if (solid != null) {
-            Object.DestroyImmediate(solid);
-        }
-        ring.name = "WaveClear";
-        ring.transform.position = point + Vector3.up * 0.08f;
-        ring.transform.localScale = new Vector3(2.2f, 0.04f, 2.2f);
-        Paint(ring, new Color(1f, 0.84f, 0.35f));
-        Flourish flourish = ring.AddComponent<Flourish>();
-        flourish.Begin(Vector3.zero, 0.7f, new Vector3(8f, 0.04f, 8f));
     }
 
     public static void Arrive(string bird) {

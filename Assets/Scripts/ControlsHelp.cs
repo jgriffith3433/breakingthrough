@@ -6,6 +6,9 @@ using UnityEngine.UI;
 public class ControlsHelp : MonoBehaviour {
     Text line;
     RectTransform lineRect;
+    string shown = "";
+    float flash;
+    readonly Color resting = new Color(1f, 0.97f, 0.9f, 0.96f);
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap() {
@@ -45,88 +48,64 @@ public class ControlsHelp : MonoBehaviour {
         go.transform.SetParent(canvasGo.transform, false);
         line = go.AddComponent<Text>();
         line.font = font;
-        line.fontSize = 26;
+        line.fontSize = 42;
         line.alignment = TextAnchor.MiddleCenter;
-        line.color = new Color(1f, 0.97f, 0.9f, 0.96f);
+        line.color = resting;
         line.raycastTarget = false;
         line.horizontalOverflow = HorizontalWrapMode.Wrap;
         var outline = go.AddComponent<Outline>();
-        outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
-        outline.effectDistance = new Vector2(1.4f, -1.4f);
+        outline.effectColor = new Color(0f, 0f, 0f, 0.92f);
+        outline.effectDistance = new Vector2(2f, -2f);
         lineRect = line.rectTransform;
         lineRect.anchorMin = new Vector2(0.5f, 0f);
         lineRect.anchorMax = new Vector2(0.5f, 0f);
         lineRect.pivot = new Vector2(0.5f, 0f);
-        lineRect.sizeDelta = new Vector2(1100f, 88f);
+        lineRect.sizeDelta = new Vector2(1400f, 72f);
     }
 
     void Update() {
         bool building = WaveDirector.IsBuilding;
-        line.text = building ? BuildLesson() : CombatLesson(Mathf.Max(1, WaveDirector.Wave));
-        lineRect.anchoredPosition = new Vector2(0f, building ? 176f : 28f);
+        string next = building ? BuildLesson() : CombatLesson(Mathf.Max(1, WaveDirector.Wave));
+        if (next != shown) {
+            shown = next;
+            line.text = next;
+            flash = 1f;
+        }
+        lineRect.anchoredPosition = new Vector2(0f, building ? 176f : 36f);
+        if (flash > 0f) {
+            flash -= Time.deltaTime;
+            float pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 22f);
+            line.color = Color.Lerp(resting, new Color(1f, 0.82f, 0.28f, 1f), pulse);
+            if (flash <= 0f) {
+                line.color = resting;
+            }
+        }
     }
 
     static string BuildLesson() {
-        string turn = "Q and E turn the piece. Tab switches.";
         BuildMode build = BuildMode.Instance;
         if (build != null && build.IsPlacing) {
-            return turn + "\n" + DefencePiece.PlaceLesson(build.Selected);
+            return "Click between the rings.";
         }
-        return turn + "\nClick between the rings, away from the piano.";
+        return "Q and E turn. Tab switches.";
     }
 
     static string CombatLesson(int wave) {
-        int auto = MetaProgress.AutoWave();
-        bool chain = wave >= 20;
-        string jump = chain
-            ? "Hold Space to keep jumping."
-            : "Release Space to jump again. One second between jumps.";
-        if (wave == 100) {
-            return "The Thunderbird is bigger than you.\nIt takes a lot of arrows.";
+        if (wave >= 50) {
+            return "Press F to shake them off.";
         }
-        if (wave > 100 && wave % 10 == 0) {
-            return "Same birds, all of them larger.\n" + jump;
+        if (wave >= 40) {
+            return "Stomp turkeys at your feet.";
         }
-        if (wave == 70) {
-            return "Arrows explode when they hit.\nBoss wave. About your height, and it takes a lot of arrows.";
+        if (wave >= MetaProgress.AutoWave()) {
+            return "The bow fires on its own.";
         }
-        if (wave == 50) {
-            return "Small turkeys fly at you and climb. Press F.\nJump and stomp stop until you shake them off.";
+        if (wave >= 20) {
+            return "Hold Space to jump.";
         }
-        if (wave == 40) {
-            return "Stomp nearby turkeys, one foot at a time.\nYou stay put. Jump still works. Boss wave.";
+        if (wave >= 10) {
+            return "Shift locks the biggest bird.";
         }
-        if (wave == 10) {
-            return "Boss wave. The Hen is about your height.\nIt takes a lot of arrows. Aim locks the biggest bird.";
-        }
-        if (wave % 10 == 0 && wave <= 90) {
-            return "Boss wave. The new bird is about your height.\nIt takes a lot of arrows. " + jump;
-        }
-        if (wave > 70) {
-            return "Arrows explode when they hit.\n" + jump;
-        }
-        if (wave > 50) {
-            return "Press F if turkeys climb you.\n" + jump;
-        }
-        if (wave > 40) {
-            return "Stomp nearby turkeys. You stay in place.\n" + jump;
-        }
-        if (wave == auto) {
-            return "The bow fires on its own.\n" + jump;
-        }
-        if (wave == 20) {
-            return "Hold Space to keep jumping.\nOne second between jumps. Hold click to shoot.";
-        }
-        if (wave == 1) {
-            return "Hold click to shoot.\n" + jump;
-        }
-        if (!chain) {
-            string aim = wave > 10 ? "Aim stays on the biggest bird. " : "";
-            return jump + "\n" + aim + "Hold click to shoot.";
-        }
-        if (wave < auto) {
-            return jump + "\nHold click to shoot.";
-        }
-        return jump;
+        return "Click to shoot. Shift locks on.";
     }
 }

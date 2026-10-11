@@ -3,13 +3,13 @@ using UnityEngine;
 public enum UpgradeId {
     Keen = 0,
     Walls = 1,
-    Draw = 2,
-    Growth = 3,
+    Draw = 2, // retired; slot stays so saved ranks do not shift
+    Growth = 3, // retired
     Blast = 4,
-    Purse = 5,
+    Purse = 5, // retired
     Stride = 6,
-    Stomp = 7, // retired; this slot stays so saved ranks do not shift
-    Spikes = 8,
+    Stomp = 7, // retired
+    Spikes = 8, // retired
     Towers = 9
 }
 
@@ -26,19 +26,16 @@ public static class MetaProgress {
     public const string GameScene = "scene2";
 
     public static readonly UpgradeInfo[] Catalog = {
-        new UpgradeInfo { Id = UpgradeId.Keen, Name = "Keen Arrows", About = "Arrows hit harder.", MaxRank = 6 },
-        new UpgradeInfo { Id = UpgradeId.Walls, Name = "Stone Pile", About = "More walls to start, and each wall holds longer.", MaxRank = 5 },
-        new UpgradeInfo { Id = UpgradeId.Draw, Name = "Quick Draw", About = "Auto-shoot starts earlier than wave 30, and fires faster.", MaxRank = 4 },
-        new UpgradeInfo { Id = UpgradeId.Growth, Name = "Big Appetite", About = "You grow faster from wave to wave.", MaxRank = 5 },
-        new UpgradeInfo { Id = UpgradeId.Blast, Name = "Heavy Arrows", About = "Explosions start before wave 70, and splash wider.", MaxRank = 4 },
-        new UpgradeInfo { Id = UpgradeId.Purse, Name = "Fat Purse", About = "Coins come from fewer hens.", MaxRank = 4 },
-        new UpgradeInfo { Id = UpgradeId.Stride, Name = "Long Stride", About = "You cover the hill faster.", MaxRank = 5 },
-        new UpgradeInfo { Id = UpgradeId.Spikes, Name = "Spike Kit", About = "More traps to start, and each trap kills more.", MaxRank = 5 },
-        new UpgradeInfo { Id = UpgradeId.Towers, Name = "Watch Kit", About = "More towers to start, and each tower lasts longer.", MaxRank = 4 }
+        new UpgradeInfo { Id = UpgradeId.Keen, Name = "Keen Arrows", About = "Each rank adds 6 arrow damage.", MaxRank = 3 },
+        new UpgradeInfo { Id = UpgradeId.Blast, Name = "Rockets! Not arrows!", About = "The bow shoots rockets. Each rank blasts wider.", MaxRank = 3 },
+        new UpgradeInfo { Id = UpgradeId.Stride, Name = "Long Stride", About = "Each rank is 25% more speed.", MaxRank = 3 },
+        new UpgradeInfo { Id = UpgradeId.Walls, Name = "Stone Pile", About = "A much thicker wall line.", MaxRank = 3 },
+        new UpgradeInfo { Id = UpgradeId.Towers, Name = "Watch Kit", About = "More towers. They shoot farther and faster.", MaxRank = 3 }
     };
 
     public static int Coins { get; private set; }
     public static int BestWave { get; private set; }
+    public static int ReachedWave { get; private set; }
     public static int HensToward { get; private set; }
     public static int NextCoinAt { get; private set; }
     public static int CoinsThisRun { get; private set; }
@@ -48,6 +45,7 @@ public static class MetaProgress {
     static int[] ranks = new int[10];
     static bool loaded;
     static float toastUntil;
+    static int armedStart = 1;
 
     public static void BeginRun() {
         Ensure();
@@ -109,6 +107,40 @@ public static class MetaProgress {
         }
     }
 
+    public static void NoteReached(int wave) {
+        Ensure();
+        if (wave > ReachedWave) {
+            ReachedWave = wave;
+            Save();
+        }
+    }
+
+    public static int MaxStartWave() {
+        Ensure();
+        return (ReachedWave / 10) * 10;
+    }
+
+    public static bool TryArmStart(int wave) {
+        Ensure();
+        if (wave <= 1) {
+            armedStart = 1;
+            return true;
+        }
+        if (wave % 10 != 0 || wave > MaxStartWave() || Coins < wave) {
+            return false;
+        }
+        Coins -= wave;
+        armedStart = wave;
+        Save();
+        return true;
+    }
+
+    public static int TakeStartWave() {
+        int wave = Mathf.Max(1, armedStart);
+        armedStart = 1;
+        return wave;
+    }
+
     public static int NoteBird(FowlKind kind) {
         if (kind != FowlKind.Hen) {
             return 0;
@@ -129,7 +161,7 @@ public static class MetaProgress {
         Toast = pay == 1 ? "+1 coin" : "+" + pay + " coins";
         toastUntil = Time.unscaledTime + 2.4f;
         Save();
-        GameAudio.Play("launch", 0.55f);
+        GameAudio.Play("coin", 0.55f);
         return pay;
     }
 
@@ -159,7 +191,7 @@ public static class MetaProgress {
     }
 
     public static int AutoWave() {
-        return Mathf.Max(1, 30 - Rank(UpgradeId.Draw) * 3);
+        return 30;
     }
 
     public static bool TrySpend(int cost) {
@@ -172,53 +204,69 @@ public static class MetaProgress {
         return true;
     }
 
+    public static int StartWalls() {
+        return 6 + Rank(UpgradeId.Walls) * 5;
+    }
+
+    public static int StartSpikes() {
+        return 3;
+    }
+
+    public static int StartTowers() {
+        return 1 + Rank(UpgradeId.Towers) * 2;
+    }
+
     public static int WallStops() {
-        return DefencePiece.WallStops + Rank(UpgradeId.Walls) * 2;
+        return DefencePiece.WallStops + Rank(UpgradeId.Walls) * 8;
     }
 
     public static int SpikeKills() {
-        return DefencePiece.SpikeKills + Rank(UpgradeId.Spikes);
+        return DefencePiece.SpikeKills;
     }
 
     public static int TowerKills() {
-        return DefencePiece.TowerKills + Rank(UpgradeId.Towers);
+        return DefencePiece.TowerKills + Rank(UpgradeId.Towers) * 3;
     }
 
     public static int TowerStops() {
-        return DefencePiece.TowerStops + Rank(UpgradeId.Towers) * 2;
+        return DefencePiece.TowerStops + Rank(UpgradeId.Towers) * 4;
+    }
+
+    public static float TowerRange() {
+        return 9.5f + Rank(UpgradeId.Towers) * 4f;
+    }
+
+    public static float TowerInterval() {
+        return Mathf.Max(0.38f, 0.8f - Rank(UpgradeId.Towers) * 0.14f);
     }
 
     public static int BonusDamage() {
-        return Rank(UpgradeId.Keen);
+        return Rank(UpgradeId.Keen) * 6;
     }
 
     public static float GrowthPerWave() {
-        return 0.11f + 0.02f * Rank(UpgradeId.Growth);
+        return 0.11f;
     }
 
     public static float DrawHaste() {
-        return Mathf.Max(0.45f, 1f - 0.12f * Rank(UpgradeId.Draw));
+        return 1f;
     }
 
     public static float Stride() {
-        return 1f + 0.08f * Rank(UpgradeId.Stride);
+        return 1f + 0.25f * Rank(UpgradeId.Stride);
     }
 
     public static int StompWave() {
         return 40;
     }
 
-    public static int BoomWave() {
-        return Mathf.Max(45, 70 - Rank(UpgradeId.Blast) * 6);
-    }
-
-    public static bool ArrowsExplode() {
-        return WaveDirector.Wave >= BoomWave();
+    public static bool ShootsRockets() {
+        return Rank(UpgradeId.Blast) > 0;
     }
 
     public static float SplashRadius(float power) {
-        float bonus = 1f + 0.22f * Rank(UpgradeId.Blast);
-        return (0.8f + Mathf.Max(1f, power) * 0.45f) * bonus;
+        int rank = Mathf.Max(1, Rank(UpgradeId.Blast));
+        return 4.2f + (rank - 1) * 3.2f + Mathf.Max(0f, power - 1f) * 0.5f;
     }
 
     public static string RankLine(UpgradeId id) {
@@ -229,39 +277,31 @@ public static class MetaProgress {
         }
         switch (id) {
             case UpgradeId.Keen:
-                return "+" + rank + " arrow damage";
+                return "+" + (rank * 6) + " arrow damage";
             case UpgradeId.Walls:
-                return "Start with " + (6 + rank * 2) + " walls. Each stops " + WallStops() + ".";
-            case UpgradeId.Spikes:
-                return "Start with " + (3 + rank) + " spikes. Each kills " + SpikeKills() + ".";
+                return "Start with " + StartWalls() + " walls. Each stops " + WallStops() + ".";
             case UpgradeId.Towers:
-                int towers = 1 + rank;
-                return "Start with " + towers + (towers == 1 ? " tower" : " towers") + ". Each kills " + TowerKills() + " and holds " + TowerStops() + ".";
-            case UpgradeId.Draw:
-                return "Auto-shoot from wave " + AutoWave();
-            case UpgradeId.Growth:
-                return "Growth +" + Mathf.RoundToInt(rank * 0.02f / 0.11f * 100f) + "%";
+                int towers = StartTowers();
+                return "Start with " + towers + (towers == 1 ? " tower" : " towers") + ". Range " + TowerRange().ToString("0") + "m.";
             case UpgradeId.Blast:
-                return "Explosions from wave " + BoomWave();
-            case UpgradeId.Purse:
-                return (rank >= 3 ? "2 coins every " : "A coin every ") + RangeLabel();
+                return "Rockets from the bow. Blast " + SplashRadius(1f).ToString("0.#") + "m.";
             case UpgradeId.Stride:
-                return "+" + (rank * 8) + "% move speed";
+                return "+" + (rank * 25) + "% move speed";
             default:
                 return rank + " / " + info.MaxRank;
         }
     }
 
     static int Payout() {
-        return Rank(UpgradeId.Purse) >= 3 ? 2 : 1;
+        return 1;
     }
 
     static int ThresholdMin() {
-        return Mathf.Max(4, 10 - Rank(UpgradeId.Purse) * 2);
+        return 10;
     }
 
     static int ThresholdMax() {
-        return Mathf.Max(ThresholdMin(), 20 - Rank(UpgradeId.Purse) * 3);
+        return 20;
     }
 
     static int RollThreshold() {
@@ -283,6 +323,7 @@ public static class MetaProgress {
         loaded = true;
         Coins = PlayerPrefs.GetInt("bt_coins", 0);
         BestWave = PlayerPrefs.GetInt("bt_best", 0);
+        ReachedWave = PlayerPrefs.HasKey("bt_reached") ? PlayerPrefs.GetInt("bt_reached", 0) : BestWave;
         HensToward = PlayerPrefs.GetInt("bt_hens", 0);
         NextCoinAt = PlayerPrefs.GetInt("bt_next", 0);
         string packed = PlayerPrefs.GetString("bt_ranks", "");
@@ -311,6 +352,7 @@ public static class MetaProgress {
     static void Save() {
         PlayerPrefs.SetInt("bt_coins", Coins);
         PlayerPrefs.SetInt("bt_best", BestWave);
+        PlayerPrefs.SetInt("bt_reached", ReachedWave);
         PlayerPrefs.SetInt("bt_hens", HensToward);
         PlayerPrefs.SetInt("bt_next", NextCoinAt);
         var packed = new string[ranks.Length];

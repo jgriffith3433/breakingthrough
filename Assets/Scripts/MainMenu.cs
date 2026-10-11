@@ -16,13 +16,19 @@ public class MainMenu : MonoBehaviour {
     readonly Button[] buttons = new Button[MetaProgress.Catalog.Length];
     readonly Image[] rows = new Image[MetaProgress.Catalog.Length];
     Text celebrate;
+    Text startText;
+    Button lowerStart;
+    Button raiseStart;
+    int startWave = 1;
     int flashRow = -1;
     float flash;
+    float playReadyAt;
 
     void Awake() {
         Time.timeScale = 1f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+        playReadyAt = Time.unscaledTime + 0.35f;
         MetaProgress.BeginRun();
     }
 
@@ -42,13 +48,33 @@ public class MainMenu : MonoBehaviour {
             flash -= Time.deltaTime;
             rows[flashRow].color = Color.Lerp(new Color(0.12f, 0.1f, 0.08f, 1f), new Color(0.55f, 0.4f, 0.12f, 1f), Mathf.Clamp01(flash));
         }
-        if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space)) {
+        if (Time.unscaledTime >= playReadyAt && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space))) {
             Play();
         }
     }
 
     void Play() {
+        if (!MetaProgress.TryArmStart(startWave)) {
+            Refresh();
+            return;
+        }
+        if (startWave > 1) {
+            GameAudio.Play("coin", 0.55f);
+        }
         SceneManager.LoadScene(MetaProgress.GameScene);
+    }
+
+    void LowerStart() {
+        startWave = Mathf.Max(1, startWave - 10);
+        Refresh();
+    }
+
+    void RaiseStart() {
+        int next = startWave + 10;
+        if (next <= MetaProgress.MaxStartWave() && MetaProgress.Coins >= next) {
+            startWave = next;
+        }
+        Refresh();
     }
 
     void Build() {
@@ -73,11 +99,16 @@ public class MainMenu : MonoBehaviour {
         purseText = Label(left, "", 24, FontStyle.Normal, new Color(1f, 0.96f, 0.88f, 0.88f), new Vector2(36f, -330f), new Vector2(540f, 90f), TextAnchor.UpperLeft);
         celebrate = Label(left, "", 28, FontStyle.Bold, new Color(1f, 0.84f, 0.35f), new Vector2(36f, -430f), new Vector2(540f, 64f), TextAnchor.UpperLeft);
 
-        var play = Button(left, "Play", new Vector2(36f, -500f), new Vector2(280f, 72f), 32, Play);
+        Label(left, "Start later", 22, FontStyle.Bold, new Color(1f, 0.94f, 0.8f), new Vector2(36f, -500f), new Vector2(540f, 28f), TextAnchor.UpperLeft);
+        startText = Label(left, "", 22, FontStyle.Normal, new Color(1f, 0.96f, 0.88f, 0.9f), new Vector2(36f, -530f), new Vector2(540f, 52f), TextAnchor.UpperLeft);
+        lowerStart = Button(left, "-10", new Vector2(36f, -588f), new Vector2(110f, 46f), 22, LowerStart);
+        raiseStart = Button(left, "+10", new Vector2(158f, -588f), new Vector2(110f, 46f), 22, RaiseStart);
+
+        var play = Button(left, "Play", new Vector2(36f, -656f), new Vector2(280f, 72f), 32, Play);
         var playImage = play.GetComponent<Image>();
         playImage.color = new Color(0.22f, 0.38f, 0.22f, 1f);
 
-        Label(left, "Enter or click Play. After a run, M brings you back here.", 22, FontStyle.Italic, new Color(1f, 0.96f, 0.88f, 0.7f), new Vector2(36f, -590f), new Vector2(540f, 70f), TextAnchor.UpperLeft);
+        Label(left, "Enter or click Play. After a run, M brings you back here.", 22, FontStyle.Italic, new Color(1f, 0.96f, 0.88f, 0.7f), new Vector2(36f, -742f), new Vector2(540f, 70f), TextAnchor.UpperLeft);
 
         var right = Panel(canvasGo.transform, new Color(0.08f, 0.07f, 0.06f, 0.94f), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(-72f, 0f), new Vector2(980f, -120f));
         Label(right, "Upgrades", 42, FontStyle.Bold, new Color(1f, 0.94f, 0.8f), new Vector2(32f, -24f), new Vector2(900f, 56f), TextAnchor.UpperLeft);
@@ -104,7 +135,7 @@ public class MainMenu : MonoBehaviour {
     void Buy(int index) {
         UpgradeInfo info = MetaProgress.Catalog[index];
         if (MetaProgress.TryBuy(info.Id)) {
-            GameAudio.Play("launch", 0.8f);
+            GameAudio.Play("coin", 0.55f);
             flashRow = index;
             flash = 1f;
             celebrate.text = info.Name + "\n" + MetaProgress.RankLine(info.Id);
@@ -113,6 +144,20 @@ public class MainMenu : MonoBehaviour {
     }
 
     void Refresh() {
+        int maxStart = MetaProgress.MaxStartWave();
+        while (startWave > 1 && (startWave > maxStart || MetaProgress.Coins < startWave)) {
+            startWave -= 10;
+        }
+        if (maxStart < 10) {
+            startText.text = "Reach wave 10 to buy a later start.";
+        } else if (startWave <= 1) {
+            startText.text = "This run starts at wave 1. Later starts cost 10 coins per 10 waves.";
+        } else {
+            startText.text = "This run starts at wave " + startWave + ". Play spends " + startWave + " coins.";
+        }
+        lowerStart.interactable = startWave > 1;
+        raiseStart.interactable = startWave + 10 <= maxStart && MetaProgress.Coins >= startWave + 10;
+
         coinText.text = MetaProgress.Coins + (MetaProgress.Coins == 1 ? " coin" : " coins");
         bestText.text = MetaProgress.BestWave > 0 ? "Best wave cleared: " + MetaProgress.BestWave : "No wave cleared yet.";
         purseText.text = "Kill hens. Every " + MetaProgress.RangeLabel() + " drops a coin. Coins stay when you fall. Progress toward the next coin is " + MetaProgress.HensToward + " / " + MetaProgress.NextCoinAt + ".";

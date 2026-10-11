@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Plays the short ElevenLabs effects in Resources/Sfx.
+// Plays the short effects in Resources/Sfx.
 public class GameAudio : MonoBehaviour {
     static GameAudio instance;
     AudioSource source;

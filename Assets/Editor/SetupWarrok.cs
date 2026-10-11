@@ -166,6 +166,7 @@ static class SetupWarrok
         aimMove.motion = aimWalk;
         jumpState.name = "Jump";
         jumpState.motion = jump;
+        jumpState.speed = 2f;
 
         AnimatorState shootState = FindState(machine, "Shoot");
         if (shootState == null)

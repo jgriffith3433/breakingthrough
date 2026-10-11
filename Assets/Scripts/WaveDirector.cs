@@ -24,8 +24,10 @@ public class WaveDirector : MonoBehaviour {
     int cleared;
     int spawnSerial;
     bool debutAnnounced;
+    bool toldLoadout;
     bool pausedGame;
     bool record;
+    float returnReadyAt;
 
     Text timerText;
     Text waveText;
@@ -36,44 +38,51 @@ public class WaveDirector : MonoBehaviour {
     Text lostBody;
 
     void Start() {
+        Instance = this;
         Enemy[] already = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
         foreach (Enemy enemy in already) {
             Destroy(enemy.gameObject);
         }
 
+        WidenHill();
         BuildHud();
         MetaProgress.BeginRun();
         FortStock.BeginRun();
-        Wave = 1;
+        Wave = MetaProgress.TakeStartWave();
+        MetaProgress.NoteReached(Wave);
         BeginIntro();
     }
 
     void OnDestroy() {
+        if (Instance == this) {
+            Instance = null;
+        }
         if (pausedGame) {
             Time.timeScale = 1f;
         }
     }
 
     void Update() {
+        if (phase == Phase.Lost) {
+            if (Time.unscaledTime >= returnReadyAt && Input.anyKeyDown) {
+                Time.timeScale = 1f;
+                pausedGame = false;
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+                string scene = Application.CanStreamedLevelBeLoaded(MetaProgress.MenuScene)
+                    ? MetaProgress.MenuScene
+                    : MetaProgress.GameScene;
+                SceneManager.LoadScene(scene);
+            }
+            return;
+        }
+
         if (Input.GetKeyDown(KeyCode.KeypadPlus) || Input.GetKeyDown(KeyCode.Equals)) {
             GoToWave(Wave + 1);
             return;
         }
         if (Input.GetKeyDown(KeyCode.KeypadMinus) || Input.GetKeyDown(KeyCode.Minus)) {
             GoToWave(Mathf.Max(1, Wave - 1));
-            return;
-        }
-
-        if (phase == Phase.Lost) {
-            if (Input.GetKeyDown(KeyCode.R)) {
-                Time.timeScale = 1f;
-                pausedGame = false;
-                SceneManager.LoadScene(MetaProgress.GameScene);
-            } else if (Input.GetKeyDown(KeyCode.M) && Application.CanStreamedLevelBeLoaded(MetaProgress.MenuScene)) {
-                Time.timeScale = 1f;
-                pausedGame = false;
-                SceneManager.LoadScene(MetaProgress.MenuScene);
-            }
             return;
         }
 
@@ -97,6 +106,14 @@ public class WaveDirector : MonoBehaviour {
         RefreshHud();
     }
 
+    static void WidenHill() {
+        GameObject knoll = GameObject.Find("Knoll");
+        if (knoll == null) {
+            return;
+        }
+        knoll.transform.localScale = new Vector3(4.5f, 3f, 4.5f);
+    }
+
     void BeginIntro() {
         phase = Phase.Intro;
         phaseLeft = Wave == 1 ? 1.8f : 1.35f;
@@ -111,37 +128,43 @@ public class WaveDirector : MonoBehaviour {
     void BeginCombat() {
         phase = Phase.Combat;
         FillPending(Wave);
-        spawnIn = 0f;
+        spawnIn = 0.2f;
         spawnSerial = 0;
         debutAnnounced = false;
         IsBuilding = false;
         if (PlayerGrowth.Instance != null) {
             PlayerGrowth.Instance.SyncToWave(Wave);
         }
-        if (Wave == 1) {
+        if (!toldLoadout) {
+            toldLoadout = true;
             UpgradeLook.AnnounceLoadout();
         }
     }
 
     void TickCombat() {
-        int cap = Mathf.Clamp(8 + Wave / 2, 8, 32);
-        if (pending.Count > 0 && AliveCount() < cap) {
-            spawnIn -= Time.deltaTime;
-            if (spawnIn <= 0f) {
-                SpawnOne();
-                spawnIn = pending.Count > 20 ? 0.08f : 0.22f;
+        if (pending.Count > 0) {
+            int[] alive = new int[KindCount];
+            int[] caps = new int[KindCount];
+            CountAlive(alive);
+            ScreenCaps(Wave, caps);
+            int pick = PickSpawn(alive, caps);
+            if (pick >= 0) {
+                spawnIn -= Time.deltaTime;
+                if (spawnIn <= 0f) {
+                    spawnIn = SpawnOne(pick);
+                }
             }
         }
 
         if (pending.Count == 0 && !AnyAlive()) {
             cleared = Wave;
-            Vector3 celebration = PlayerGrowth.Instance != null ? PlayerGrowth.Instance.transform.position : Vector3.zero;
-            UpgradeLook.WaveCleared(cleared, celebration);
+            UpgradeLook.WaveCleared(cleared);
             record = Wave > MetaProgress.BestWave;
             if (record) {
                 MetaProgress.SetBest(Wave);
             }
             Wave++;
+            MetaProgress.NoteReached(Wave);
             if (IsFortWave(Wave)) {
                 phase = Phase.Build;
                 phaseLeft = 30f;
@@ -172,6 +195,7 @@ public class WaveDirector : MonoBehaviour {
             lostPanel.SetActive(false);
         }
         Wave = Mathf.Max(1, wave);
+        MetaProgress.NoteReached(Wave);
         Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
         foreach (Enemy enemy in enemies) {
             if (enemy != null) {
@@ -201,23 +225,21 @@ public class WaveDirector : MonoBehaviour {
         pausedGame = true;
         Time.timeScale = 0f;
         lostPanel.SetActive(true);
-        string coins = MetaProgress.CoinsThisRun == 0
+        returnReadyAt = Time.unscaledTime + 0.4f;
+        string waves = cleared <= 0
+            ? "No waves cleared."
+            : cleared == 1 ? "Cleared 1 wave." : "Cleared " + cleared + " waves.";
+        string bestLine = record
+            ? "New best: " + MetaProgress.BestWave + "."
+            : MetaProgress.BestWave > 0 ? "Best cleared: " + MetaProgress.BestWave + "." : "No best yet.";
+        string earned = MetaProgress.CoinsThisRun == 0
             ? "No new coins."
-            : "+" + MetaProgress.CoinsThisRun + (MetaProgress.CoinsThisRun == 1 ? " coin." : " coins.");
-        string shop = Application.CanStreamedLevelBeLoaded(MetaProgress.MenuScene)
-            ? "\n\nPress R to try again\nPress M for the shop"
-            : "\n\nPress R to try again";
-        if (cleared <= 0) {
-            string best = MetaProgress.BestWave > 0 ? "\n\nBest cleared: " + MetaProgress.BestWave : "";
-            lostBody.text = "The musician fell." + best + "\n\n" + coins + shop;
-        } else {
-            string waves = cleared == 1 ? "1 wave" : cleared + " waves";
-            string bestLine = record ? "New best." : "Best cleared: " + MetaProgress.BestWave;
-            lostBody.text = "You cleared " + waves + ".\n\n" + bestLine + "\n\n" + coins + shop;
-        }
+            : "+" + MetaProgress.CoinsThisRun + (MetaProgress.CoinsThisRun == 1 ? " coin this run." : " coins this run.");
+        string purse = MetaProgress.Coins == 1 ? "1 coin to spend." : MetaProgress.Coins + " coins to spend.";
+        lostBody.text = waves + "\n" + bestLine + "\n\n" + earned + "\n" + purse + "\n\nPress any key";
     }
 
-    void SpawnOne() {
+    float SpawnOne(int index) {
         Transform player = null;
         if (Musician.Instance != null) {
             player = Musician.Instance.transform;
@@ -230,22 +252,33 @@ public class WaveDirector : MonoBehaviour {
 
         Vector3 origin = player != null ? player.position : Vector3.zero;
         spawnSerial++;
-        if (pending.Count == 0) {
-            return;
+        if (index < 0 || index >= pending.Count) {
+            return 1.8f;
         }
-        FowlKind kind = pending[0];
-        pending.RemoveAt(0);
+        FowlKind kind = pending[index];
+        pending.RemoveAt(index);
         FowlDef def = FowlRoster.ForSpawn(kind, Wave);
         bool turkey = kind == FowlKind.Turkey;
-        float radiusMin = turkey ? 26f : DefencePiece.SpawnMin;
-        float radiusMax = turkey ? 36f : DefencePiece.SpawnMax;
-        float jitter = turkey ? 70f : 18f;
+        float waveT = Mathf.Max(0, Wave - 1);
+        float reach = waveT * 0.48f;
+        float band = (turkey ? 18f : 16f) + waveT * 0.22f;
+        float inner = (turkey ? 30f : 24f) + reach + Mathf.Max(0f, def.Scale - 1f) * 0.35f;
+        float outer = Mathf.Min(inner + band, 150f);
+        inner = Mathf.Min(inner, outer - 10f);
+        float jitter = turkey ? 110f : 80f;
+        float gap = turkey ? 8f + waveT * 0.08f : Mathf.Max(7f, def.Scale * 0.85f);
         Vector3 spot = origin;
-        for (int attempt = 0; attempt < 8; attempt++) {
+        float bestClear = -1f;
+        for (int attempt = 0; attempt < 18; attempt++) {
             float spread = (spawnAngle + spawnSerial * 137.5f + Random.Range(-jitter, jitter)) * Mathf.Deg2Rad;
-            float radius = Random.Range(radiusMin, radiusMax) + Mathf.Max(0f, def.Scale - 1f) * 0.5f;
-            spot = origin + new Vector3(Mathf.Sin(spread), 0f, Mathf.Cos(spread)) * radius;
-            if (ClearOfFlock(spot, turkey ? 7f : 4f)) {
+            float radius = Random.Range(inner, outer);
+            Vector3 trySpot = origin + new Vector3(Mathf.Sin(spread), 0f, Mathf.Cos(spread)) * radius;
+            float clear = FlockClearance(trySpot);
+            if (clear > bestClear) {
+                bestClear = clear;
+                spot = trySpot;
+            }
+            if (clear >= gap) {
                 break;
             }
         }
@@ -266,39 +299,207 @@ public class WaveDirector : MonoBehaviour {
             debutAnnounced = true;
             UpgradeLook.Arrive(def.Name);
         }
+        return PaceAfter(kind);
     }
 
-    static bool ClearOfFlock(Vector3 spot, float gap) {
+    static float PaceAfter(FowlKind kind) {
+        int heft = kind == FowlKind.Turkey ? 0 : (int)kind;
+        return 0.32f + heft * 0.04f + Random.Range(-0.04f, 0.06f);
+    }
+
+    static float FlockClearance(Vector3 spot) {
         Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
-        float gapSqr = gap * gap;
+        float best = 999f;
         foreach (Enemy enemy in enemies) {
             if (enemy == null) {
                 continue;
             }
             Vector3 flat = enemy.transform.position - spot;
             flat.y = 0f;
-            if (flat.sqrMagnitude < gapSqr) {
-                return false;
+            if (flat.magnitude < best) {
+                best = flat.magnitude;
             }
         }
-        return true;
+        return best;
+    }
+
+    public void CopyRoster(int[] total, int[] left) {
+        for (int i = 0; i < total.Length; i++) {
+            total[i] = 0;
+            left[i] = 0;
+        }
+        if (phase == Phase.Lost) {
+            return;
+        }
+        WaveQuota(Wave, total);
+        if (phase != Phase.Combat) {
+            for (int i = 0; i < total.Length; i++) {
+                left[i] = total[i];
+            }
+            return;
+        }
+        for (int i = 0; i < pending.Count; i++) {
+            int index = (int)pending[i];
+            if (index >= 0 && index < left.Length) {
+                left[index]++;
+            }
+        }
+        Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
+        foreach (Enemy enemy in enemies) {
+            if (enemy == null || !enemy.Alive) {
+                continue;
+            }
+            int index = (int)enemy.Kind;
+            if (index >= 0 && index < left.Length) {
+                left[index]++;
+            }
+        }
+    }
+
+    static void WaveQuota(int wave, int[] counts) {
+        for (int i = 0; i < counts.Length; i++) {
+            counts[i] = 0;
+        }
+        int[] caps = new int[KindCount];
+        ScreenCaps(wave, caps);
+        for (int tier = 10; tier <= 100; tier += 10) {
+            if (tier > wave) {
+                break;
+            }
+            FowlKind kind = FowlRoster.ForTier(tier).Kind;
+            int slots = caps[(int)kind];
+            if (slots <= 0) {
+                continue;
+            }
+            counts[(int)kind] = Mathf.Max(2, slots * 2);
+        }
+        if (counts.Length > (int)FowlKind.Turkey) {
+            counts[(int)FowlKind.Turkey] = TurkeyCount(wave);
+        }
     }
 
     void FillPending(int wave) {
         pending.Clear();
-        for (int tier = 100; tier >= 10; tier -= 10) {
-            int count = wave - (tier - 1);
-            if (count <= 0) {
-                continue;
+        int[] quota = new int[KindCount];
+        WaveQuota(wave, quota);
+        for (int tier = 10; tier <= 100; tier += 10) {
+            if (tier > wave) {
+                break;
             }
             FowlKind kind = FowlRoster.ForTier(tier).Kind;
+            int count = quota[(int)kind];
             for (int i = 0; i < count; i++) {
                 pending.Add(kind);
             }
         }
-        for (int i = 0; i < wave; i++) {
+        int turkeys = quota[(int)FowlKind.Turkey];
+        for (int i = 0; i < turkeys; i++) {
             pending.Add(FowlKind.Turkey);
         }
+        for (int i = pending.Count - 1; i > 0; i--) {
+            int j = Random.Range(0, i + 1);
+            FowlKind swap = pending[i];
+            pending[i] = pending[j];
+            pending[j] = swap;
+        }
+    }
+
+    public const int KindCount = 11;
+    public static WaveDirector Instance { get; private set; }
+
+    static int AliveCap(int wave) {
+        int cap = Mathf.Clamp(16 + wave, 16, 56);
+        if (wave >= 50) {
+            cap = Mathf.Clamp(72 + (wave - 50), 72, 120);
+        }
+        return cap;
+    }
+
+    // Every unlocked size gets at least one spot. Extra spots pile onto the smaller birds.
+    static void ScreenCaps(int wave, int[] maxAlive) {
+        for (int i = 0; i < maxAlive.Length; i++) {
+            maxAlive[i] = 0;
+        }
+        int cap = AliveCap(wave);
+        var kinds = new List<FowlKind>();
+        kinds.Add(FowlKind.Turkey);
+        for (int tier = 10; tier <= 100; tier += 10) {
+            if (tier > wave) {
+                break;
+            }
+            kinds.Add(FowlRoster.ForTier(tier).Kind);
+        }
+
+        int count = kinds.Count;
+        for (int i = 0; i < count; i++) {
+            maxAlive[(int)kinds[i]] = 1;
+        }
+        int left = Mathf.Max(0, cap - count);
+        int[] weights = new int[count];
+        int weightSum = 0;
+        for (int i = 0; i < count; i++) {
+            int weight = 1;
+            for (int step = 0; step < count - 1 - i; step++) {
+                weight *= 3;
+            }
+            weights[i] = weight;
+            weightSum += weight;
+        }
+        int given = 0;
+        for (int i = count - 1; i >= 1; i--) {
+            int share = left * weights[i] / Mathf.Max(1, weightSum);
+            maxAlive[(int)kinds[i]] += share;
+            given += share;
+        }
+        maxAlive[(int)FowlKind.Turkey] += Mathf.Max(0, left - given);
+    }
+
+    static void CountAlive(int[] alive) {
+        for (int i = 0; i < alive.Length; i++) {
+            alive[i] = 0;
+        }
+        Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
+        foreach (Enemy enemy in enemies) {
+            if (enemy == null || !enemy.Alive) {
+                continue;
+            }
+            int index = (int)enemy.Kind;
+            if (index >= 0 && index < alive.Length) {
+                alive[index]++;
+            }
+        }
+    }
+
+    int PickSpawn(int[] alive, int[] caps) {
+        int best = -1;
+        int bestScore = -1;
+        for (int i = 0; i < pending.Count; i++) {
+            FowlKind kind = pending[i];
+            int index = (int)kind;
+            if (index < 0 || index >= caps.Length || caps[index] <= 0 || alive[index] >= caps[index]) {
+                continue;
+            }
+            int gap = Wave - FowlRoster.DebutOf(kind);
+            int score = alive[index] == 0
+                ? 100000 - gap
+                : (caps[index] - alive[index]) * 1000 / caps[index];
+            if (score > bestScore) {
+                bestScore = score;
+                best = i;
+            }
+        }
+        return best;
+    }
+
+    static int TurkeyCount(int wave) {
+        if (wave < 20) {
+            return Mathf.Max(0, wave);
+        }
+        int count = wave + (wave - 20) * 2;
+        if (wave >= 50) {
+            count += (wave - 50) * 6;
+        }
+        return count;
     }
 
     static string Flavor(int wave) {
@@ -399,7 +600,8 @@ public class WaveDirector : MonoBehaviour {
     string WaveLine() {
         string size = "";
         if (PlayerGrowth.Instance != null) {
-            size = "   ·   Size " + PlayerGrowth.Instance.Scale.ToString("0.00") + "   ·   Arrow " + PlayerGrowth.Instance.ArrowDamage;
+            string shot = MetaProgress.ShootsRockets() ? "Rocket" : "Arrow";
+            size = "   ·   Size " + PlayerGrowth.Instance.Scale.ToString("0.00") + "   ·   " + shot + " " + PlayerGrowth.Instance.ArrowDamage;
         }
         if (phase == Phase.Intro) {
             return "Wave " + Wave + size;
@@ -473,7 +675,7 @@ public class WaveDirector : MonoBehaviour {
 
         var title = MakeText(lostPanel.transform, font, "The music stopped", 58, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -36f), new Vector2(680f, 90f));
         title.color = new Color(1f, 0.45f, 0.35f);
-        lostBody = MakeText(lostPanel.transform, font, "", 30, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -140f), new Vector2(660f, 320f));
+        lostBody = MakeText(lostPanel.transform, font, "", 30, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -140f), new Vector2(660f, 340f));
         lostPanel.SetActive(false);
     }
 

@@ -151,8 +151,8 @@ public class Enemy : MonoBehaviour
         Kind = def.Kind;
         DebutWave = def.Kind == FowlKind.Turkey ? 0 : def.UnlockWave;
         HitsToDrop = Mathf.Max(1, def.Hits);
-        walkSpeed = def.Walk * Random.Range(0.86f, 1.18f);
-        chaseSpeed = def.Chase * Random.Range(0.9f, 1.16f);
+        walkSpeed = def.Walk * Random.Range(0.86f, 1.18f) * 1.5f;
+        chaseSpeed = def.Chase * Random.Range(0.9f, 1.16f) * 1.5f;
         jumpVelocity = def.Jump * Random.Range(0.9f, 1.12f);
         maxFlightHeight = def.FlightHeight;
         minFlightInterval = Random.Range(0.9f, 2.2f);
@@ -323,12 +323,12 @@ public class Enemy : MonoBehaviour
             return;
         }
 
-        bool dive = !down && Kind == FowlKind.Turkey && WaveDirector.Wave >= PlayerGrowth.ClimbWave && PlayerGrowth.Instance != null;
-        if (dive)
+        bool swarm = GoesForPlayer();
+        if (swarm)
         {
             Vector3 flat = PlayerGrowth.Instance.transform.position - transform.position;
             flat.y = 0f;
-            if (flat.magnitude <= PlayerGrowth.Instance.BodyRadius + 0.65f)
+            if (flat.magnitude <= ClimbReach())
                 TryClimb();
         }
 
@@ -340,12 +340,13 @@ public class Enemy : MonoBehaviour
         float reach = 1.15f + bodyScale * 0.22f;
         bool diving = false;
 
-        if (dive)
+        if (swarm)
         {
             toTarget = PlayerGrowth.Instance.transform.position - transform.position;
             toTarget.y = 0f;
             distance = toTarget.magnitude;
-            diving = distance < 12f;
+            diving = true;
+            ProbeAhead(toTarget, distance, out wall, out sceneryBlock);
         }
 
         if (!diving && !down && musician != null && musician.Alive)
@@ -411,7 +412,7 @@ public class Enemy : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, face, dt * 5f);
         }
 
-        bool atMusician = distance <= Mathf.Max(reach, sceneryBlock ? 3.2f : reach);
+        bool atMusician = !diving && distance <= Mathf.Max(reach, sceneryBlock ? 3.2f : reach);
         if (!down && musician != null && musician.Alive && (wall != null || atMusician))
         {
             peckIn -= dt;
@@ -760,6 +761,21 @@ public class Enemy : MonoBehaviour
         return true;
     }
 
+    bool GoesForPlayer()
+    {
+        if (down || PlayerGrowth.Instance == null || WaveDirector.Wave < PlayerGrowth.ClimbWave)
+            return false;
+        return WaveDirector.Wave - DebutWave >= 5;
+    }
+
+    float ClimbReach()
+    {
+        PlayerGrowth growth = PlayerGrowth.Instance;
+        if (growth == null)
+            return 1.2f;
+        return growth.BodyRadius + 0.55f + Mathf.Min(1.6f, bodyScale * 0.14f);
+    }
+
     void TryClimb()
     {
         PlayerGrowth growth = PlayerGrowth.Instance;
@@ -768,10 +784,11 @@ public class Enemy : MonoBehaviour
 
         Vector3 flat = growth.transform.position - transform.position;
         flat.y = 0f;
-        if (flat.magnitude > growth.BodyRadius + 0.45f)
+        if (flat.magnitude > ClimbReach())
             return;
 
         climbing = true;
+        SetSolid(false);
         Climbers++;
         climbHeight = Random.Range(0.35f, Mathf.Max(0.8f, growth.BodyHeight * 0.35f));
         flying = false;
@@ -793,7 +810,8 @@ public class Enemy : MonoBehaviour
         if (outDir.sqrMagnitude < 0.01f)
             outDir = growth.transform.forward;
         outDir.Normalize();
-        transform.position = growth.transform.position + outDir * (growth.BodyRadius * 0.92f) + Vector3.up * climbHeight;
+        float grip = growth.BodyRadius * 0.92f + Mathf.Min(1.1f, bodyScale * 0.06f);
+        transform.position = growth.transform.position + outDir * grip + Vector3.up * climbHeight;
         transform.rotation = Quaternion.LookRotation(-outDir);
     }
 
@@ -803,6 +821,14 @@ public class Enemy : MonoBehaviour
             return;
         climbing = false;
         Climbers = Mathf.Max(0, Climbers - 1);
+        SetSolid(true);
+    }
+
+    void SetSolid(bool solid) {
+        Collider body = GetComponent<Collider>();
+        if (body != null) {
+            body.enabled = solid;
+        }
     }
 
     void BeginRagdoll(float power, bool recover)
@@ -830,9 +856,7 @@ public class Enemy : MonoBehaviour
         body.angularVelocity = Random.insideUnitSphere * (2.5f + power);
         if (!recover)
         {
-            GameAudio.Play("death", 0.8f);
-            if (MetaProgress.ArrowsExplode())
-                GameAudio.Play("launch", 0.7f);
+            GameAudio.Play("death", 0.55f);
         }
     }
 
@@ -889,11 +913,11 @@ public class Enemy : MonoBehaviour
         if (shader == null)
             shader = Shader.Find("Sprites/Default");
 
-        Transform back = MakeBarQuad("Back", shader, new Color(0.12f, 0.08f, 0.08f));
+        Transform back = MakeBarQuad("Back", shader, new Color(0.1f, 0.07f, 0.06f, 0.94f));
         back.SetParent(barRoot, false);
-        back.localScale = new Vector3(0.72f, 0.09f, 1f);
+        back.localScale = new Vector3(1f, 0.18f, 1f);
 
-        barFill = MakeBarQuad("Fill", shader, new Color(0.35f, 0.85f, 0.32f));
+        barFill = MakeBarQuad("Fill", shader, new Color(0.45f, 0.82f, 0.38f));
         barFill.SetParent(barRoot, false);
         RefreshBar();
     }
@@ -908,6 +932,8 @@ public class Enemy : MonoBehaviour
         Renderer renderer = quad.GetComponent<Renderer>();
         if (shader != null && renderer != null)
         {
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
             renderer.sharedMaterial = new Material(shader);
             renderer.sharedMaterial.color = color;
         }
@@ -919,22 +945,39 @@ public class Enemy : MonoBehaviour
         if (barFill == null)
             return;
         float remaining = Mathf.Clamp01(1f - hits / Mathf.Max(1f, HitsToDrop));
-        barFill.localScale = new Vector3(0.68f * remaining, 0.06f, 1f);
-        barFill.localPosition = new Vector3(-0.34f + barFill.localScale.x * 0.5f, 0f, -0.01f);
+        barFill.localScale = new Vector3(0.92f * remaining, 0.12f, 1f);
+        barFill.localPosition = new Vector3(-0.46f + barFill.localScale.x * 0.5f, 0f, -0.02f);
         Renderer renderer = barFill.GetComponent<Renderer>();
         if (renderer != null && renderer.sharedMaterial != null)
-            renderer.sharedMaterial.color = remaining > 0.5f
-                ? new Color(0.35f, 0.85f, 0.32f)
-                : new Color(0.9f, 0.28f, 0.2f);
+            renderer.sharedMaterial.color = remaining > 0.45f
+                ? Color.Lerp(new Color(0.92f, 0.72f, 0.22f), new Color(0.45f, 0.82f, 0.38f), (remaining - 0.45f) / 0.55f)
+                : Color.Lerp(new Color(0.85f, 0.16f, 0.12f), new Color(0.92f, 0.72f, 0.22f), remaining / 0.45f);
     }
 
     void FaceBar()
     {
-        if (barRoot == null || Camera.main == null)
+        if (barRoot == null)
             return;
-        float size = Mathf.Max(0.01f, transform.localScale.x);
-        barRoot.localScale = Vector3.one * (1.15f / size);
-        barRoot.rotation = Quaternion.LookRotation(Camera.main.transform.position - barRoot.position);
+        if (down)
+        {
+            if (barRoot.gameObject.activeSelf)
+                barRoot.gameObject.SetActive(false);
+            return;
+        }
+        Camera cam = Camera.main;
+        if (cam == null)
+            return;
+        Vector3 bird = transform.lossyScale;
+        float wide = Mathf.Max(0.01f, bird.x);
+        float tall = Mathf.Max(0.01f, bird.y);
+        float deep = Mathf.Max(0.01f, bird.z);
+        float barWorld = Mathf.Clamp(Mathf.Max(wide, tall) * 0.55f, 1.6f, 8f);
+        barRoot.localScale = new Vector3(barWorld / wide, barWorld / tall, barWorld / deep);
+        barRoot.localPosition = new Vector3(0f, 0.9f, 0f);
+        Vector3 away = barRoot.position - cam.transform.position;
+        if (away.sqrMagnitude < 0.0001f)
+            return;
+        barRoot.rotation = Quaternion.LookRotation(away, cam.transform.up);
     }
 
     void BuildTurkey()

@@ -16,9 +16,9 @@ public static class FortStock {
     public static int Towers;
 
     public static void BeginRun() {
-        Walls = 6 + MetaProgress.Rank(UpgradeId.Walls) * 2;
-        Spikes = 3 + MetaProgress.Rank(UpgradeId.Spikes);
-        Towers = 1 + MetaProgress.Rank(UpgradeId.Towers);
+        Walls = MetaProgress.StartWalls();
+        Spikes = MetaProgress.StartSpikes();
+        Towers = MetaProgress.StartTowers();
     }
 
     public static int Count(FortKind kind) {
@@ -268,7 +268,7 @@ public class DefencePiece : MonoBehaviour {
             return;
         }
         Enemy best = null;
-        float bestDist = 9.5f;
+        float bestDist = MetaProgress.TowerRange();
         Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
         foreach (Enemy enemy in enemies) {
             if (enemy == null || !enemy.Alive) {
@@ -283,7 +283,7 @@ public class DefencePiece : MonoBehaviour {
         if (best == null) {
             return;
         }
-        shotTick = 0.8f;
+        shotTick = MetaProgress.TowerInterval();
         UpgradeLook.Bolt(transform.position + Vector3.up * (1.7f + MetaProgress.Rank(UpgradeId.Towers) * 0.28f), best.transform.position + Vector3.up * 0.7f);
         best.Hit(1f);
         if (!best.Alive) {
@@ -401,7 +401,7 @@ public class BuildMode : MonoBehaviour {
             return;
         }
         FortStock.Add(kind);
-        GameAudio.Play("launch", 0.35f);
+        GameAudio.Play("coin", 0.35f);
         RefreshLabels();
     }
 

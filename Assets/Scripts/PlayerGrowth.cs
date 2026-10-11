@@ -145,10 +145,6 @@ public class PlayerGrowth : MonoBehaviour {
         if (cam != null) {
             cam.BodyScale = Scale;
         }
-        if (punch > 1.05f) {
-            UpgradeLook.Grow(transform.position, BodyRadius * 2f);
-        }
-
         if (!toldJump && wave >= 20) {
             toldJump = true;
             Show("Jump lands hurt birds from 20 levels back.", 5f);
@@ -157,13 +153,13 @@ public class PlayerGrowth : MonoBehaviour {
             toldStomp = true;
             Show("Stomp. Nearby turkeys, one foot at a time.", 5f);
         }
-        if (!toldBoom && wave >= MetaProgress.BoomWave()) {
+        if (!toldBoom && MetaProgress.ShootsRockets()) {
             toldBoom = true;
-            Show("Arrows explode when they hit.", 5f);
+            Show("Rockets, not arrows. They explode.", 5f);
         }
         if (!toldClimb && wave >= ClimbWave) {
             toldClimb = true;
-            Show("Small turkeys will climb you. Press F.", 6f);
+            Show("Birds from 5 waves back climb you. Press F.", 6f);
         }
     }
 
@@ -316,7 +312,7 @@ public class PlayerGrowth : MonoBehaviour {
         rootedLeft = 2.1f;
         PlayBody("Shake", 7);
         Enemy.ShakeOffClimbers(Scale);
-        GameAudio.Play("launch", 1f);
+        GameAudio.Play("shake", 0.7f);
     }
 
     void PlayBody(string stateName, int stateId) {

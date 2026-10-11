@@ -202,10 +202,16 @@ public class ZeldaStyleCamera : MonoBehaviour {
     }
 
     void AcquireTarget() {
+        bool holding = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        if (!holding || WaveDirector.IsBuilding) {
+            LockedOnGameObject = null;
+            return;
+        }
         GameObject best = null;
         float bestSize = 0f;
         float bestDist = 0f;
-        const float reach = 36f;
+        int wave = Mathf.Max(1, WaveDirector.Wave);
+        float reach = Mathf.Min(170f, 36f + (wave - 1) * 1.25f);
         Vector3 origin = FollowXForm.position;
         Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
         foreach (Enemy enemy in enemies) {
@@ -247,6 +253,59 @@ public class ZeldaStyleCamera : MonoBehaviour {
         float mark = 0.32f * Mathf.Max(0.45f, LockedOnGameObject.transform.lossyScale.y);
         LockedOnCrosshair.transform.position = LockedOnGameObject.transform.position + Vector3.up * mark;
         LockedOnCrosshair.transform.LookAt(transform.position);
+    }
+
+    public Vector3 AimRay() {
+        Camera view = GetComponent<Camera>();
+        if (view == null) {
+            view = Camera.main;
+        }
+        if (view == null) {
+            return ViewAim();
+        }
+        Ray ray = view.ScreenPointToRay(new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f));
+        if (ray.direction.sqrMagnitude < 0.0001f) {
+            return ViewAim();
+        }
+        return ray.direction.normalized;
+    }
+
+    public Vector3 ManualAim(Vector3 from) {
+        Camera view = GetComponent<Camera>();
+        if (view == null) {
+            view = Camera.main;
+        }
+        if (view == null) {
+            return ViewAim();
+        }
+
+        Ray ray = view.ScreenPointToRay(new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f));
+        RaycastHit[] hits = Physics.RaycastAll(ray, 220f, ~0, QueryTriggerInteraction.Ignore);
+        float nearest = float.MaxValue;
+        Vector3 point = ray.GetPoint(80f);
+        for (int i = 0; i < hits.Length; i++) {
+            Transform hit = hits[i].collider != null ? hits[i].collider.transform : null;
+            if (hit == null || IsShooter(hit)) {
+                continue;
+            }
+            if (hits[i].distance < nearest) {
+                nearest = hits[i].distance;
+                point = hits[i].point;
+            }
+        }
+
+        Vector3 dir = point - from;
+        if (dir.sqrMagnitude < 0.04f) {
+            dir = ray.direction;
+        }
+        return dir.normalized;
+    }
+
+    bool IsShooter(Transform hit) {
+        if (FollowXForm == null) {
+            return false;
+        }
+        return hit == FollowXForm || hit.IsChildOf(FollowXForm);
     }
 
     public Vector3 ViewAim() {

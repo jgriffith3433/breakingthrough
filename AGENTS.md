@@ -14,13 +14,15 @@ Runtime gameplay is `Assets/Scripts/`. Editor wiring is `Assets/Editor/`. Do not
 | Wave rules, pauses, skip keys | `WaveDirector.cs` |
 | Damage, size, jump-land, foot stomp, shake | `PlayerGrowth.cs` |
 | Climbing or getting hit | `Enemy.cs` |
-| A shop upgrade | `UpgradeId` in `MetaProgress.cs` with a **new number at the end**, a `Catalog` row, a real caller, and a visible mark in `UpgradeLook.cs`. Slot 7 is retired Iron Boots. Do not renumber |
+| A shop upgrade | `UpgradeId` in `MetaProgress.cs` with a **new number at the end**, a `Catalog` row, a real caller, and a visible mark in `UpgradeLook.cs`. The shop is five upgrades, three ranks each. Slots 2, 3, 5, 7, and 8 are retired. Do not renumber or reuse them. `Blast` is rockets from the bow: the bow pose stays, and the nocked shot becomes a rocket |
 | A fort piece | `FortKind`, `FortStock`, `DefencePiece`, and `BuildMode` in `Fort.cs` |
-| A combat or build tip | `ControlsHelp.cs`. Later waves are supposed to replace earlier tips |
+| A combat or build tip | `ControlsHelp.cs`. A tip holds for a band of waves, then the next one replaces it and flashes |
+| A wave-unlocked ability on the left | `AbilityList.cs`. Jump land is wave 20, auto shoot is `AutoWave`, stomp is `StompWave`, shake off is `ClimbWave` |
+| The flock list on the right | `WaveRoster.cs`. It reads `WaveDirector.CopyRoster`. Each row is one bird in the wave, the number still to fall, and a bar that fills as that type dies |
 | A body animation | A Mixamo humanoid FBX under `Assets/Art/`, listed in `SetupWarrok.Clips`, then a State id and `AddAction` |
-| A sound | `Assets/Resources/Sfx/Name.mp3`, played with `GameAudio.Play("Name")` |
+| A sound | `Assets/Resources/Sfx/Name.mp3`, played with `GameAudio.Play("Name")`. Current names: `shot`, `hit`, `death`, `stomp`, `launch`, `coin`, `shake` |
 
-Bird counts are `max(0, wave - (unlock - 1))` plus `wave` turkeys. Health is authored on the `FowlDef`. Spawn size is applied only in `ForSpawn`. Jump-landing uses `DebutWave`: turkeys are 0, everyone else is their unlock wave, and they can be landed on when `wave - DebutWave >= 20`.
+Bird counts and the on-screen mix are `TurkeyCount` and `ScreenCaps` in `WaveDirector`. Turkeys match the wave number until wave 20, then pull ahead, and from wave 50 they swarm. Every unlocked size gets at least one on-screen slot. Extra slots favor the smaller birds, and turkeys fill what is left. Health is authored on the `FowlDef`. Spawn size is applied only in `ForSpawn`. Jump-landing uses `DebutWave`: turkeys are 0, everyone else is their unlock wave, and they can be landed on when `wave - DebutWave >= 20`. From `ClimbWave`, a bird climbs the player instead of the musician when `wave - DebutWave >= 5`.
 
 ## Editor scripts
 

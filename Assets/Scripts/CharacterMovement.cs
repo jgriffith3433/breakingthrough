@@ -11,6 +11,8 @@ public class CharacterMovement : MonoBehaviour {
     public float TurnSpeed = 20f;
     public float SpeedJump = 20f;
     float autoShot;
+    float jumpAnimLeft;
+    bool jumpLengthPending;
     bool shotLatch = true;
     bool seenShot;
     private Vector3 Tar;
@@ -38,10 +40,27 @@ public class CharacterMovement : MonoBehaviour {
         if (Anim.layerCount < 2 && Anim.GetInteger(PARAMETER_STATE) == 2) {
             return;
         }
-        if (motor != null && motor.Airborne) {
-            if (Anim.GetInteger(PARAMETER_STATE) != 3) {
-                Anim.SetInteger(PARAMETER_STATE, 3);
+        int bodyState = Anim.GetInteger(PARAMETER_STATE);
+        if (bodyState == 5 || bodyState == 7) {
+            jumpAnimLeft = 0f;
+        } else if (jumpAnimLeft > 0f) {
+            if (jumpLengthPending) {
+                jumpLengthPending = false;
+                AnimatorStateInfo clip = Anim.GetCurrentAnimatorStateInfo(0);
+                if (!clip.IsName("Jump") && Anim.IsInTransition(0)) {
+                    clip = Anim.GetNextAnimatorStateInfo(0);
+                }
+                if (clip.IsName("Jump") && clip.length > 0.2f) {
+                    jumpAnimLeft = clip.length * Mathf.Max(0.05f, 1f - clip.normalizedTime);
+                } else {
+                    Anim.Play("Jump", 0, 0f);
+                }
             }
+            jumpAnimLeft -= Time.deltaTime;
+            Anim.speed = 1f;
+            return;
+        }
+        if (motor != null && motor.Airborne) {
             Anim.speed = 1f;
             return;
         }
@@ -151,8 +170,12 @@ public class CharacterMovement : MonoBehaviour {
             bool groundedAct = Enemy.Climbers == 0 && (PlayerGrowth.Instance == null || !PlayerGrowth.Instance.Rooted);
             if (groundedAct && wantJump && motor.TryJump(SpeedJump)) {
                 Anim.speed = 1f;
-                Anim.SetInteger(PARAMETER_STATE, 3);
-                Anim.CrossFade("Jump", 0.05f, 0, 0f);
+                // State 3's Any State transition will not restart Jump. Play the clip
+                // directly and keep locomotion from stealing the body until it finishes.
+                Anim.SetInteger(PARAMETER_STATE, -1);
+                Anim.Play("Jump", 0, 0f);
+                jumpAnimLeft = 1.2f;
+                jumpLengthPending = true;
             }
         }
     }

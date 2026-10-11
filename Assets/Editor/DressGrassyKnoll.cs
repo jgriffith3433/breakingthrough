@@ -207,13 +207,13 @@ static class DressGrassyKnoll
     {
         RenderSettings.skybox = sky;
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
-        RenderSettings.ambientSkyColor = new Color(0.05f, 0.07f, 0.13f);
-        RenderSettings.ambientEquatorColor = new Color(0.04f, 0.045f, 0.06f);
-        RenderSettings.ambientGroundColor = new Color(0.02f, 0.025f, 0.02f);
+        RenderSettings.ambientSkyColor = new Color(0.32f, 0.36f, 0.48f);
+        RenderSettings.ambientEquatorColor = new Color(0.28f, 0.3f, 0.34f);
+        RenderSettings.ambientGroundColor = new Color(0.16f, 0.16f, 0.14f);
         RenderSettings.fog = true;
         RenderSettings.fogMode = FogMode.ExponentialSquared;
-        RenderSettings.fogColor = new Color(0.04f, 0.05f, 0.08f);
-        RenderSettings.fogDensity = 0.008f;
+        RenderSettings.fogColor = new Color(0.22f, 0.26f, 0.34f);
+        RenderSettings.fogDensity = 0.0035f;
         DynamicGI.UpdateEnvironment();
 
         Light moon = Object.FindFirstObjectByType<Light>();
@@ -221,8 +221,8 @@ static class DressGrassyKnoll
         {
             Vector3 moonDirection = new Vector3(0.45f, 0.62f, 0.55f).normalized;
             moon.transform.rotation = Quaternion.LookRotation(-moonDirection, Vector3.up);
-            moon.color = new Color(0.68f, 0.78f, 1f);
-            moon.intensity = 0.72f;
+            moon.color = new Color(0.82f, 0.88f, 1f);
+            moon.intensity = 1.55f;
             moon.shadows = LightShadows.Soft;
         }
 

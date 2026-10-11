@@ -91,11 +91,16 @@ public class BowEquipment : MonoBehaviour {
         bow.transform.localPosition = new Vector3(-0.009f, -0.066f, 0.035f);
         bow.transform.localRotation = Quaternion.Euler(13f, 350f, 358f);
         bow.transform.localScale = new Vector3(0.353789777f, 0.353789777f, 0.353789777f);
-        UpgradeLook.BowMark(bow.transform);
 
         nocked = Instantiate(arrowModel, bow.transform, false);
         nocked.name = "NockedArrow";
         //DisableHelperBoxes(nocked);
+        if (MetaProgress.ShootsRockets()) {
+            Destroy(nocked);
+            nocked = UpgradeLook.BuildRocket();
+            nocked.transform.SetParent(bow.transform, false);
+            nocked.name = "NockedRocket";
+        }
         arrowLongLocal = Orient(nocked, ArrowLength, transform.forward, transform.up);
 
         equipped = true;
@@ -114,27 +119,48 @@ public class BowEquipment : MonoBehaviour {
             visual = transform.forward;
         }
         Quaternion turn = Quaternion.FromToRotation(visual, dir);
+        bool rocket = MetaProgress.ShootsRockets();
         GameObject shot = Instantiate(nocked, nocked.transform.position + dir * lead, turn * nocked.transform.rotation);
-        shot.name = "Arrow";
+        shot.name = rocket ? "Rocket" : "Arrow";
         shot.SetActive(true);
         shot.transform.SetParent(null, true);
 
         ArrowFlight flight = shot.AddComponent<ArrowFlight>();
-        flight.Begin(dir * ArrowSpeed, transform, arrowLongLocal, PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f);
+        float speed = rocket ? 44f : ArrowSpeed;
+        flight.Begin(dir * speed, transform, arrowLongLocal, PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f);
+        if (rocket) {
+            UpgradeLook.LightRocket(shot, arrowLongLocal);
+        }
         UpgradeLook.KeenArrow(shot);
-        GameAudio.Play("shot", 0.8f);
+        GameAudio.Play("shot", rocket ? 0.45f : 0.8f);
     }
 
     Vector3 AimDirection() {
-        Vector3 dir = transform.forward;
         if (cam != null && cam.LockedOnGameObject != null && nocked != null) {
-            dir = ChestPoint(cam.LockedOnGameObject, nocked.transform.position) - nocked.transform.position;
-        } else if (cam != null) {
-            dir = cam.ViewAim();
+            return LockedAim(cam.LockedOnGameObject, nocked.transform.position);
         }
+        Vector3 forward = cam != null ? cam.AimRay() : transform.forward;
+        if (forward.sqrMagnitude < 0.0001f) {
+            forward = transform.forward;
+        }
+        return forward.normalized;
+    }
 
+    Vector3 LockedAim(GameObject target, Vector3 from) {
+        Vector3 aim = ChestPoint(target, from);
+        Vector3 dir = aim - from;
+        Vector3 toTarget = target.transform.position - from;
+        toTarget.y = 0f;
+        Vector3 flatDir = dir;
+        flatDir.y = 0f;
+        bool away = toTarget.sqrMagnitude > 0.04f && Vector3.Dot(flatDir, toTarget) <= 0f;
+        if (dir.sqrMagnitude < 0.25f || away) {
+            Vector3 through = toTarget.sqrMagnitude > 0.04f ? toTarget.normalized : transform.forward;
+            float scale = Mathf.Max(1f, target.transform.lossyScale.y);
+            dir = through * Mathf.Max(8f, scale * 0.5f) + Vector3.up * (aim.y - from.y);
+        }
         if (dir.sqrMagnitude < 0.0001f) {
-            dir = transform.forward;
+            dir = toTarget.sqrMagnitude > 0.04f ? toTarget : transform.forward;
         }
         return dir.normalized;
     }
@@ -282,19 +308,14 @@ public class ArrowFlight : MonoBehaviour {
         if (Physics.Raycast(transform.position, direction, out RaycastHit hit, distance + 0.08f, ~0, QueryTriggerInteraction.Ignore)) {
             if (owner == null || (!hit.transform.IsChildOf(owner) && hit.transform != owner)) {
                 Enemy foe = hit.collider.GetComponentInParent<Enemy>();
+                bool rocket = MetaProgress.ShootsRockets();
+                if (rocket) {
+                    Blast(hit.point, foe);
+                    Vanish();
+                    return;
+                }
                 if (foe != null) {
                     foe.Hit(power);
-                    if (MetaProgress.ArrowsExplode()) {
-                        float splash = MetaProgress.SplashRadius(power);
-                        Collider[] caught = Physics.OverlapSphere(hit.point, splash);
-                        foreach (Collider caughtCollider in caught) {
-                            Enemy other = caughtCollider.GetComponentInParent<Enemy>();
-                            if (other != null && other != foe && other.Alive) {
-                                other.Hit(power * 0.65f);
-                            }
-                        }
-                        UpgradeLook.Blast(hit.point, splash);
-                    }
                 }
                 transform.position = hit.point - direction * 0.05f;
                 velocity = Vector3.zero;
@@ -309,5 +330,28 @@ public class ArrowFlight : MonoBehaviour {
             Vector3 visual = transform.TransformDirection(longLocal);
             transform.rotation = Quaternion.FromToRotation(visual, velocity.normalized) * transform.rotation;
         }
+    }
+
+    void Blast(Vector3 point, Enemy direct) {
+        if (direct != null) {
+            direct.Hit(power);
+        }
+        float splash = MetaProgress.SplashRadius(power);
+        Collider[] caught = Physics.OverlapSphere(point, splash);
+        foreach (Collider caughtCollider in caught) {
+            Enemy other = caughtCollider.GetComponentInParent<Enemy>();
+            if (other != null && other != direct && other.Alive) {
+                other.Hit(power * 0.65f);
+            }
+        }
+        UpgradeLook.Blast(point, splash);
+    }
+
+    void Vanish() {
+        Renderer[] shown = GetComponentsInChildren<Renderer>();
+        for (int i = 0; i < shown.Length; i++) {
+            shown[i].enabled = false;
+        }
+        Destroy(gameObject);
     }
 }
