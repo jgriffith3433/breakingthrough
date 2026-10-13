@@ -79,6 +79,10 @@ Blender MCP is a socket in a Blender GUI session, port **9876**, not a Unity pac
 
 Cursor's own MCP namespaces (browser, Origin, and so on) are separate from `.cursor/mcp.json`.
 
+## WebGL
+
+`Tools → Build → WebGL`, or batchmode: `Unity.exe -batchmode -nographics -quit -projectPath C:\Projects\breakingthrough -buildTarget WebGL -executeMethod WebGlBuild.Build`. Output is `Builds/WebGL` (gitignored). The player starts with 256 MB and gzip, with decompression fallback so a static host can serve it.
+
 ## This machine
 
 Shell commands need to run outside the sandbox (`required_permissions: ["all"]`). The workspace sandbox cannot isolate the filesystem here.
