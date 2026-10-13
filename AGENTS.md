@@ -81,7 +81,7 @@ Cursor's own MCP namespaces (browser, Origin, and so on) are separate from `.cur
 
 ## WebGL
 
-`Tools → Build → WebGL`, or batchmode: `Unity.exe -batchmode -nographics -quit -projectPath C:\Projects\breakingthrough -buildTarget WebGL -executeMethod WebGlBuild.Build`. Output is `Builds/WebGL` (gitignored). The player starts with 256 MB and gzip, with decompression fallback so a static host can serve it.
+`Tools → Build → WebGL` opens the deploy window. **Run Full Deploy** writes `Game/vN/BreakingThrough`, points `Game/index.html` at that version, deletes the previous version folder, and starts the local site at `http://localhost:8089/Game/`. Batchmode: `Unity.exe -batchmode -nographics -quit -projectPath C:\Projects\breakingthrough -buildTarget WebGL -executeMethod WebGlBuild.Build`. The page is the Yooba Land loader (`window.GAME_BUILD`). Version folders are gitignored. The player starts with 256 MB and gzip, with decompression fallback so a static host can serve the `.unityweb` files without a `Content-Encoding` header. `auto-start.bat` serves them through Vite.
 
 ## This machine
 
