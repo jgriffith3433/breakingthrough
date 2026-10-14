@@ -27,6 +27,11 @@ Material:
     m_Floats:
     - _AmbientBoost: 0.18
     - _Cull: 0
-    m_Colors: []
+    - _GlowBand: 1
+    - _Meadow: 0.8
+    - _RimStrength: 0.06
+    m_Colors:
+    - _Flash: {r: 0, g: 0, b: 0, a: 0}
+    - _RimColor: {r: 0.42, g: 0.55, b: 0.95, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

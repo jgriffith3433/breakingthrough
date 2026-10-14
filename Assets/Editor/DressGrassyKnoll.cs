@@ -46,7 +46,8 @@ static class DressGrassyKnoll
             return;
         }
 
-        if (GameObject.Find(MarkerName) != null)
+        // The arena replaced the knoll. Never dress over it.
+        if (GameObject.Find(MarkerName) != null || GameObject.Find(BuildArena.RootName) != null)
             return;
 
         Dress();

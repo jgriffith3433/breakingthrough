@@ -6,7 +6,7 @@ public class PlayerGrowth : MonoBehaviour {
     public static PlayerGrowth Instance { get; private set; }
     public static string Banner { get; private set; }
 
-    public const int ClimbWave = 50;
+    public const int ClimbWave = Tuning.ClimbWave;
 
     public bool Rooted { get; private set; }
 
@@ -99,6 +99,10 @@ public class PlayerGrowth : MonoBehaviour {
         ApplyScale();
     }
 
+    public void RefreshStats() {
+        ApplyScale();
+    }
+
     public static void RegisterKill() {
         if (Instance == null) {
             return;
@@ -139,15 +143,15 @@ public class PlayerGrowth : MonoBehaviour {
             BodyHeight = controller.height;
         }
         if (movement != null) {
-            movement.Speed = baseSpeed * Mathf.Lerp(1f, 1.7f, Mathf.Clamp01((Scale - 1f) / 4f)) * MetaProgress.Stride();
+            movement.Speed = baseSpeed * Mathf.Lerp(1f, 1.7f, Mathf.Clamp01((Scale - 1f) / 4f)) * MetaProgress.Stride() * RunBoons.MoveMult;
         }
         ZeldaStyleCamera cam = FindAnyObjectByType<ZeldaStyleCamera>();
         if (cam != null) {
             cam.BodyScale = Scale;
         }
-        if (!toldJump && wave >= 20) {
+        if (!toldJump && wave >= Tuning.JumpWave) {
             toldJump = true;
-            Show("Jump lands hurt birds from 20 levels back.", 5f);
+            Show("Land a jump on turkeys to crush them. Hold Space to keep hopping.", 5f);
         }
         if (!toldStomp && wave >= MetaProgress.StompWave()) {
             toldStomp = true;
@@ -159,7 +163,7 @@ public class PlayerGrowth : MonoBehaviour {
         }
         if (!toldClimb && wave >= ClimbWave) {
             toldClimb = true;
-            Show("Birds from 5 waves back climb you. Press F.", 6f);
+            Show("Older birds climb you now instead of the piano. Press F.", 6f);
         }
     }
 
@@ -251,7 +255,7 @@ public class PlayerGrowth : MonoBehaviour {
 
     void TrackLanding() {
         if (controller.isGrounded) {
-            if (leftGround && airTime > 0.18f && wave >= 20) {
+            if (leftGround && airTime > 0.18f && wave >= Tuning.JumpWave) {
                 LandStomp();
             }
             airTime = 0f;
@@ -282,7 +286,7 @@ public class PlayerGrowth : MonoBehaviour {
             if (turkeysOnly && enemy.Kind != FowlKind.Turkey) {
                 continue;
             }
-            if (onlyOlder && WaveDirector.Wave - enemy.DebutWave < 20) {
+            if (onlyOlder && WaveDirector.Wave - enemy.DebutWave < Tuning.JumpLandGap) {
                 continue;
             }
             Vector3 flat = enemy.transform.position - origin;
@@ -292,18 +296,8 @@ public class PlayerGrowth : MonoBehaviour {
             }
         }
 
-        var ring = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        Destroy(ring.GetComponent<Collider>());
-        ring.name = "Stomp";
-        ring.transform.position = origin + Vector3.up * 0.08f;
-        ring.transform.localScale = new Vector3(radius * 2f, 0.04f, radius * 2f);
-        Renderer renderer = ring.GetComponent<Renderer>();
-        Shader shader = Shader.Find("Unlit/Color");
-        if (shader != null && renderer != null) {
-            renderer.sharedMaterial = new Material(shader);
-            renderer.sharedMaterial.color = new Color(0.95f, 0.82f, 0.45f, 1f);
-        }
-        Destroy(ring, 0.28f);
+        Fx.Ring(origin, radius * 2f, new Color(0.95f, 0.82f, 0.45f, 0.9f), 0.35f);
+        Fx.Emit(FxKind.Dust, origin, 10, new Color(0.62f, 0.58f, 0.5f, 0.55f), 0.6f * Scale, 2.2f * Scale, radius * 0.6f);
     }
 
     void Shake() {

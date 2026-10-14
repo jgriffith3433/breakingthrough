@@ -4,10 +4,12 @@ using UnityEngine.UI;
 
 // The pirate at the piano. Turkeys are here for him. The run ends when he does.
 public class Musician : MonoBehaviour {
-    public const int MaxHealth = 100;
+    public const int BaseHealth = 100;
 
     public static Musician Instance { get; private set; }
-    public int Health { get; private set; } = MaxHealth;
+    public int MaxHealth { get; private set; } = BaseHealth;
+    public int Health { get; private set; } = BaseHealth;
+    public int DamageTaken { get; private set; }
     public float HitFlash { get; private set; }
     public bool Alive { get { return Health > 0; } }
 
@@ -50,6 +52,7 @@ public class Musician : MonoBehaviour {
 
     void Awake() {
         Instance = this;
+        MaxHealth = BaseHealth + MetaProgress.StageHealth();
         Health = MaxHealth;
         flare = gameObject.AddComponent<Light>();
         flare.type = LightType.Point;
@@ -74,6 +77,7 @@ public class Musician : MonoBehaviour {
             return;
         }
         Health = Mathf.Max(0, Health - amount);
+        DamageTaken += amount;
         HitFlash = 1f;
         if (flinch <= 0f) {
             basePos = transform.localPosition;
@@ -87,6 +91,22 @@ public class Musician : MonoBehaviour {
                 director.MusicianDown();
             }
         }
+    }
+
+    public void Heal(int amount) {
+        if (!Alive || amount <= 0 || Health >= MaxHealth) {
+            return;
+        }
+        int before = Health;
+        Health = Mathf.Min(MaxHealth, Health + amount);
+        UpgradeLook.Number(transform.position + Vector3.up * 2.4f, Health - before, false, DamageKind.Blade);
+        RefreshBar();
+    }
+
+    public void RaiseMax(int amount) {
+        MaxHealth += amount;
+        Health += amount;
+        RefreshBar();
     }
 
     void Update() {
@@ -142,6 +162,7 @@ public class Musician : MonoBehaviour {
         var backGo = new GameObject("Back");
         backGo.transform.SetParent(canvasGo.transform, false);
         back = backGo.AddComponent<Image>();
+        UiSkin.Bar(back);
         back.color = new Color(0.12f, 0.08f, 0.08f, 0.92f);
         back.raycastTarget = false;
         var backRect = back.rectTransform;
@@ -154,6 +175,7 @@ public class Musician : MonoBehaviour {
         var fillGo = new GameObject("Fill");
         fillGo.transform.SetParent(backGo.transform, false);
         fill = fillGo.AddComponent<Image>();
+        UiSkin.Bar(fill);
         fill.raycastTarget = false;
         var fillRect = fill.rectTransform;
         fillRect.anchorMin = new Vector2(0f, 0f);

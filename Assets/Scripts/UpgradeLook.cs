@@ -135,20 +135,12 @@ public class UpgradeLook : MonoBehaviour {
 
     public static void Blast(Vector3 point, float radius) {
         int rank = MetaProgress.Rank(UpgradeId.Blast);
-        float size = Mathf.Max(2.4f, radius);
-        Spawn(point, Vector3.one * 0.35f, new Color(1f, 0.55f, 0.18f), 0.28f, Vector3.up * 0.2f, size);
-        if (rank > 0) {
-            Spawn(point, Vector3.one * 0.2f, new Color(1f, 0.9f, 0.4f), 0.34f, Vector3.up * 1.2f, size * 0.45f);
-        }
-        GameAudio.Play("launch", 0.45f + 0.08f * rank);
+        Fx.Explosion(point, Mathf.Max(2.4f, radius), new Color(1f, 0.55f, 0.18f));
+        GameAudio.Play("launch", 0.45f + 0.08f * rank, Random.Range(0.9f, 1.1f));
     }
 
     public static void Coins(Vector3 point, int count) {
-        int n = Mathf.Max(1, count);
-        for (int i = 0; i < n; i++) {
-            Vector3 toss = new Vector3((i - (n - 1) * 0.5f) * 1.4f, 4.5f, 0.2f);
-            Spawn(point + Vector3.up * 0.8f, Vector3.one * 0.34f, new Color(1f, 0.82f, 0.22f), 0.9f, toss, 0.08f);
-        }
+        Fx.Ring(point + Vector3.up * 0.1f, 1.8f, new Color(1f, 0.82f, 0.3f, 0.8f), 0.4f);
     }
 
     public static void Stride(Vector3 feet) {
@@ -157,7 +149,7 @@ public class UpgradeLook : MonoBehaviour {
             return;
         }
         nextStride = Time.time + Mathf.Lerp(0.22f, 0.08f, rank / 3f);
-        Spawn(feet + Vector3.up * 0.05f, new Vector3(0.35f, 0.06f, 0.35f), new Color(0.75f, 0.68f, 0.48f), 0.28f, Vector3.up * 0.4f, 0.7f + 0.08f * rank);
+        Fx.Footstep(feet, 1f + 0.3f * rank);
     }
 
     public static void Bolt(Vector3 from, Vector3 to) {
@@ -196,6 +188,31 @@ public class UpgradeLook : MonoBehaviour {
         flourish.Begin(velocity, life, Vector3.one * endScale);
     }
 
+    // Like Spawn, but see-through and fading, so big blasts never hide the fight.
+    public static void Glow(Vector3 point, Vector3 scale, Color color, float life, Vector3 velocity, float endScale) {
+        var body = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        Destroy(body.GetComponent<Collider>());
+        body.transform.position = point;
+        body.transform.localScale = scale;
+        Tint(body, color);
+        Flourish flourish = body.AddComponent<Flourish>();
+        flourish.Begin(velocity, life, Vector3.one * endScale);
+        flourish.Fade();
+    }
+
+    static void Tint(GameObject go, Color color) {
+        Renderer renderer = go.GetComponent<Renderer>();
+        Shader shader = Shader.Find("Sprites/Default");
+        if (renderer == null || shader == null) {
+            Paint(go, color);
+            return;
+        }
+        renderer.sharedMaterial = new Material(shader);
+        renderer.sharedMaterial.color = color;
+        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
+    }
+
     public static bool HitConfirm { get { return Time.time < hitUntil; } }
     static float hitUntil;
 
@@ -204,20 +221,38 @@ public class UpgradeLook : MonoBehaviour {
     }
 
     public static void Spark(Vector3 point) {
-        Spawn(point, Vector3.one * 0.12f, new Color(1f, 0.92f, 0.55f), 0.18f, Vector3.up * 1.5f, 0.35f);
-        Spawn(point, Vector3.one * 0.08f, new Color(1f, 0.55f, 0.2f), 0.22f, new Vector3(0.8f, 1.2f, 0f), 0.2f);
+        Fx.Hit(point, 1f, false);
     }
 
     public static void Number(Vector3 point, int amount) {
+        Number(point, amount, false, DamageKind.Plain);
+    }
+
+    static int numbersThisFrame;
+    static int numberFrame;
+
+    // Damage numbers. Crits are big and gold, fire is orange, lightning is blue.
+    public static void Number(Vector3 point, float amount, bool crit, DamageKind kind) {
+        if (numberFrame != Time.frameCount) {
+            numberFrame = Time.frameCount;
+            numbersThisFrame = 0;
+        }
+        if (++numbersThisFrame > 14 && !crit) {
+            return;
+        }
         var go = new GameObject("Damage");
-        go.transform.position = point + Vector3.up * 0.4f;
+        Vector3 jitter = new Vector3(Random.Range(-0.35f, 0.35f), Random.Range(0f, 0.3f), Random.Range(-0.35f, 0.35f));
+        go.transform.position = point + Vector3.up * 0.4f + jitter;
         TextMesh mesh = go.AddComponent<TextMesh>();
-        mesh.text = amount.ToString();
+        int shown = Mathf.Max(1, Mathf.RoundToInt(amount));
+        mesh.text = crit ? shown + "!" : shown.ToString();
         mesh.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         mesh.fontSize = 64;
-        mesh.characterSize = 0.045f;
+        mesh.fontStyle = crit ? FontStyle.Bold : FontStyle.Normal;
+        float far = Camera.main != null ? Mathf.Clamp(Vector3.Distance(Camera.main.transform.position, point) / 14f, 1f, 4f) : 1f;
+        mesh.characterSize = (crit ? 0.075f : kind == DamageKind.Burn ? 0.035f : 0.045f) * far;
         mesh.anchor = TextAnchor.MiddleCenter;
-        mesh.color = new Color(1f, 0.96f, 0.82f);
+        mesh.color = NumberColor(crit, kind);
         Renderer meshRenderer = mesh.GetComponent<Renderer>();
         if (meshRenderer != null && mesh.font != null && mesh.font.material != null) {
             meshRenderer.material = mesh.font.material;
@@ -225,14 +260,97 @@ public class UpgradeLook : MonoBehaviour {
         go.AddComponent<FloatUp>();
     }
 
+    static Color NumberColor(bool crit, DamageKind kind) {
+        if (crit) {
+            return new Color(1f, 0.82f, 0.2f);
+        }
+        switch (kind) {
+            case DamageKind.Burn: return new Color(1f, 0.55f, 0.2f);
+            case DamageKind.Lightning: return new Color(0.55f, 0.85f, 1f);
+            case DamageKind.Blast: return new Color(1f, 0.7f, 0.45f);
+            case DamageKind.Blade: return new Color(0.75f, 0.95f, 1f);
+            case DamageKind.Pulse: return new Color(1f, 0.9f, 0.6f);
+            default: return new Color(1f, 0.96f, 0.82f);
+        }
+    }
+
+    public static void Blast(Vector3 point, float radius, Color color) {
+        Fx.Explosion(point, Mathf.Max(2f, radius), color);
+        GameAudio.Play("launch", 0.35f, Random.Range(0.9f, 1.15f));
+    }
+
+    // A jagged bolt between two points.
+    public static void Zap(Vector3 from, Vector3 to) {
+        var go = new GameObject("Zap");
+        var line = go.AddComponent<LineRenderer>();
+        int points = 7;
+        line.positionCount = points;
+        Vector3 side = Vector3.Cross((to - from).normalized, Vector3.up);
+        for (int i = 0; i < points; i++) {
+            float t = i / (float)(points - 1);
+            Vector3 p = Vector3.Lerp(from, to, t);
+            if (i > 0 && i < points - 1) {
+                p += side * Random.Range(-0.5f, 0.5f) + Vector3.up * Random.Range(-0.4f, 0.4f);
+            }
+            line.SetPosition(i, p);
+        }
+        line.startWidth = 0.14f;
+        line.endWidth = 0.06f;
+        Fx.Emit(FxKind.Flash, to, 1, new Color(0.55f, 0.8f, 1f, 0.9f), 1.1f, 0f);
+        line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        line.receiveShadows = false;
+        Shader shader = Shader.Find("Sprites/Default");
+        if (shader != null) {
+            line.material = new Material(shader);
+        }
+        line.startColor = new Color(0.8f, 0.95f, 1f);
+        line.endColor = new Color(0.4f, 0.7f, 1f);
+        Flourish flourish = go.AddComponent<Flourish>();
+        flourish.Begin(Vector3.zero, 0.14f, Vector3.one);
+        flourish.hideLine = true;
+    }
+
+    // A flat ring that expands from a point: encore, second wind.
+    public static void Ring(Vector3 point, float radius, Color color, float life) {
+        Fx.Ring(point, radius * 2f, new Color(color.r, color.g, color.b, 0.8f), life);
+        Fx.Ring(point, radius * 1.6f, new Color(color.r, color.g, color.b, 0.4f), life * 0.8f);
+    }
+
+    // Arrows show what they carry: fire, frost, lightning.
+    public static void BoonTrail(GameObject shot, bool volley) {
+        if (shot == null || MetaProgress.Rank(UpgradeId.Keen) > 0) {
+            return;
+        }
+        Color tint;
+        if (RunBoons.Has(BoonId.Phoenix) || RunBoons.Has(BoonId.Firebrand)) {
+            tint = new Color(1f, 0.5f, 0.15f);
+        } else if (RunBoons.Has(BoonId.Frost) || (volley && RunBoons.Has(BoonId.Hailstorm))) {
+            tint = new Color(0.6f, 0.9f, 1f);
+        } else if (RunBoons.Has(BoonId.Chain) || RunBoons.Has(BoonId.StormQuiver)) {
+            tint = new Color(0.55f, 0.75f, 1f);
+        } else if (volley) {
+            tint = new Color(1f, 1f, 1f);
+        } else {
+            return;
+        }
+        TrailRenderer trail = shot.AddComponent<TrailRenderer>();
+        trail.time = 0.14f;
+        trail.startWidth = 0.08f;
+        trail.endWidth = 0f;
+        trail.numCapVertices = 2;
+        trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        trail.receiveShadows = false;
+        Shader shader = Shader.Find("Sprites/Default");
+        if (shader != null) {
+            trail.material = new Material(shader);
+        }
+        trail.startColor = tint;
+        trail.endColor = new Color(tint.r, tint.g, tint.b, 0f);
+    }
+
     public static void Feathers(Vector3 point, int count, bool boss) {
         Color feather = boss ? new Color(1f, 0.9f, 0.55f) : new Color(0.9f, 0.7f, 0.4f);
-        for (int i = 0; i < count; i++) {
-            Vector3 toss = Random.insideUnitSphere;
-            toss.y = Mathf.Abs(toss.y) + 0.6f;
-            toss *= boss ? 4.5f : 2.4f;
-            Spawn(point + Vector3.up * 0.6f, new Vector3(0.16f, 0.05f, 0.08f), feather, boss ? 0.7f : 0.45f, toss, 0.04f);
-        }
+        Fx.Emit(FxKind.Feather, point + Vector3.up * 0.6f, count, feather, boss ? 0.5f : 0.3f, boss ? 4.5f : 2.6f, 1.5f);
     }
 
     public static void WaveCleared(int wave) {
@@ -244,19 +362,15 @@ public class UpgradeLook : MonoBehaviour {
     }
 
     public static void PlaceDust(Vector3 point) {
-        Spawn(point + Vector3.up * 0.15f, new Vector3(0.5f, 0.08f, 0.5f), new Color(0.8f, 0.72f, 0.5f), 0.28f, Vector3.up * 0.6f, 1.4f);
+        Fx.Emit(FxKind.Dust, point + Vector3.up * 0.15f, 8, new Color(0.7f, 0.64f, 0.52f, 0.6f), 0.9f, 1.6f, 2f);
     }
 
     public static void Crack(Vector3 point) {
-        Spawn(point + Vector3.up * 0.4f, Vector3.one * 0.1f, new Color(0.85f, 0.55f, 0.3f), 0.2f, Vector3.up * 1.4f, 0.28f);
+        Fx.Emit(FxKind.Dust, point + Vector3.up * 0.3f, 2, new Color(0.6f, 0.52f, 0.42f, 0.5f), 0.5f, 1f);
     }
 
     public static void BreakBurst(Vector3 point) {
-        for (int i = 0; i < 6; i++) {
-            Vector3 toss = Random.insideUnitSphere;
-            toss.y = Mathf.Abs(toss.y) + 0.4f;
-            Spawn(point + Vector3.up * 0.4f, Vector3.one * 0.16f, new Color(0.55f, 0.4f, 0.28f), 0.45f, toss * 3f, 0.05f);
-        }
+        Fx.Emit(FxKind.Dust, point + Vector3.up * 0.4f, 10, new Color(0.5f, 0.42f, 0.34f, 0.7f), 1.2f, 2.5f, 2f);
     }
 
     public static void Say(string line, float seconds, float y = 80f) {
@@ -304,6 +418,25 @@ public class Flourish : MonoBehaviour {
     float age;
     Vector3 endScale;
     bool armed;
+    bool fade;
+    Material faded;
+    float startAlpha;
+
+    public void Fade() {
+        Renderer renderer = GetComponent<Renderer>();
+        if (renderer == null || renderer.sharedMaterial == null) {
+            return;
+        }
+        fade = true;
+        faded = renderer.sharedMaterial;
+        startAlpha = faded.color.a;
+    }
+
+    void OnDestroy() {
+        if (faded != null) {
+            Destroy(faded);
+        }
+    }
 
     public void Begin(Vector3 velocity, float life, Vector3 endScale) {
         this.velocity = velocity;
@@ -321,6 +454,11 @@ public class Flourish : MonoBehaviour {
         float u = Mathf.Clamp01(age / life);
         if (!hideLine && endScale.sqrMagnitude > 0.0001f) {
             transform.localScale = Vector3.Lerp(transform.localScale, endScale, Time.deltaTime * 8f);
+        }
+        if (fade && faded != null) {
+            Color c = faded.color;
+            c.a = startAlpha * (1f - u * u);
+            faded.color = c;
         }
         if (u >= 1f) {
             Destroy(gameObject);

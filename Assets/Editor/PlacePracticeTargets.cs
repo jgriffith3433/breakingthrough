@@ -22,7 +22,7 @@ static class PlacePracticeTargets
             return;
 
         EditorApplication.update -= Tick;
-        if (GameObject.Find(RootName) != null)
+        if (GameObject.Find(RootName) != null || GameObject.Find(BuildArena.RootName) != null)
             return;
 
         Mesh oak = AssetDatabase.LoadAssetAtPath<Mesh>("Assets/Art/Knoll/Oak.asset");

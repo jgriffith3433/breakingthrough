@@ -1,10 +1,13 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Plays the short effects in Resources/Sfx.
+// Plays the short effects in Resources/Sfx. A few voices so pitch can vary per sound.
 public class GameAudio : MonoBehaviour {
     static GameAudio instance;
-    AudioSource source;
+    static readonly Dictionary<string, AudioClip> clips = new Dictionary<string, AudioClip>();
+    readonly AudioSource[] voices = new AudioSource[8];
+    int next;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap() {
@@ -27,19 +30,33 @@ public class GameAudio : MonoBehaviour {
 
     void Awake() {
         instance = this;
-        source = gameObject.AddComponent<AudioSource>();
-        source.playOnAwake = false;
-        source.spatialBlend = 0f;
+        for (int i = 0; i < voices.Length; i++) {
+            AudioSource source = gameObject.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.spatialBlend = 0f;
+            voices[i] = source;
+        }
     }
 
     public static void Play(string name, float volume = 1f) {
-        if (instance == null || instance.source == null || string.IsNullOrEmpty(name)) {
+        Play(name, volume, 1f);
+    }
+
+    public static void Play(string name, float volume, float pitch) {
+        if (instance == null || string.IsNullOrEmpty(name)) {
             return;
         }
-        AudioClip clip = Resources.Load<AudioClip>("Sfx/" + name);
+        AudioClip clip;
+        if (!clips.TryGetValue(name, out clip)) {
+            clip = Resources.Load<AudioClip>("Sfx/" + name);
+            clips[name] = clip;
+        }
         if (clip == null) {
             return;
         }
-        instance.source.PlayOneShot(clip, volume);
+        AudioSource source = instance.voices[instance.next];
+        instance.next = (instance.next + 1) % instance.voices.Length;
+        source.pitch = Mathf.Clamp(pitch, 0.3f, 3f);
+        source.PlayOneShot(clip, volume);
     }
 }

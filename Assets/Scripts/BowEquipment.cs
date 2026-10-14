@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // Shows the bow during the aim poses and fires the arrow on the existing shoot state.
@@ -17,6 +18,7 @@ public class BowEquipment : MonoBehaviour {
     bool equipped;
     bool upperShot;
     float upperTime = 1f;
+    int shotCount;
 
     void Start() {
         anim = GetComponentInChildren<Animator>();
@@ -55,7 +57,7 @@ public class BowEquipment : MonoBehaviour {
 
     void OnGUI() {
         bool confirm = UpgradeLook.HitConfirm;
-        if (cam == null || (cam.LockedOnGameObject != null && !confirm)) {
+        if (cam == null || LevelUpScreen.IsOpen || WaveDirector.IsLost || (cam.LockedOnGameObject != null && !confirm)) {
             return;
         }
 
@@ -107,12 +109,42 @@ public class BowEquipment : MonoBehaviour {
         Debug.Log("Bow and arrow equipped on " + hand.name + ".");
     }
 
+    // One draw. Split Shot fans extra arrows, Volley adds a ring now and then.
     void Launch() {
         if (nocked == null) {
             return;
         }
 
         Vector3 dir = AimDirection();
+        int count = 1 + RunBoons.ExtraArrows;
+        float fan = count > 3 ? 5.5f : 7f;
+        for (int i = 0; i < count; i++) {
+            float yaw = (i - (count - 1) * 0.5f) * fan;
+            Fire(Quaternion.AngleAxis(yaw, Vector3.up) * dir, false);
+        }
+        shotCount++;
+        int every = RunBoons.VolleyEvery;
+        if (every > 0 && shotCount % every == 0) {
+            Volley();
+        }
+        RunLog.NoteShot();
+        bool rocket = MetaProgress.ShootsRockets();
+        GameAudio.Play("shot", rocket ? 0.45f : 0.8f, Random.Range(0.94f, 1.06f));
+    }
+
+    void Volley() {
+        int ring = 10 + 4 * RunBoons.Rank(BoonId.Volley) + (RunBoons.Has(BoonId.Hailstorm) ? 4 : 0);
+        float tilt = -0.06f;
+        float start = Random.Range(0f, 360f);
+        for (int i = 0; i < ring; i++) {
+            float angle = (start + i * 360f / ring) * Mathf.Deg2Rad;
+            Vector3 dir = new Vector3(Mathf.Sin(angle), tilt, Mathf.Cos(angle)).normalized;
+            Fire(dir, true);
+        }
+        GameAudio.Play("shot", 0.5f, 0.75f);
+    }
+
+    void Fire(Vector3 dir, bool volley) {
         float lead = Mathf.Lerp(0.05f, 0.35f, Mathf.Clamp01(dir.y + 0.85f));
         Vector3 visual = nocked.transform.TransformDirection(arrowLongLocal);
         if (visual.sqrMagnitude < 0.0001f) {
@@ -128,11 +160,14 @@ public class BowEquipment : MonoBehaviour {
         ArrowFlight flight = shot.AddComponent<ArrowFlight>();
         float speed = rocket ? 44f : ArrowSpeed;
         flight.Begin(dir * speed, transform, arrowLongLocal, PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f);
+        if (volley) {
+            flight.MakeVolley(RunBoons.Has(BoonId.Hailstorm));
+        }
         if (rocket) {
             UpgradeLook.LightRocket(shot, arrowLongLocal);
         }
         UpgradeLook.KeenArrow(shot);
-        GameAudio.Play("shot", rocket ? 0.45f : 0.8f);
+        UpgradeLook.BoonTrail(shot, volley);
     }
 
     Vector3 AimDirection() {
@@ -287,12 +322,30 @@ public class ArrowFlight : MonoBehaviour {
     float life = 2.8f;
     float age;
     float power = 1f;
+    float scale = 1f;
+    int pierceLeft;
+    int bouncesLeft;
+    float homing;
+    float seekIn;
+    bool chill;
+    Enemy seek;
+    readonly List<Enemy> struck = new List<Enemy>();
+    static readonly RaycastHit[] hitBuffer = new RaycastHit[16];
 
     public void Begin(Vector3 velocity, Transform owner, Vector3 longLocal, float power) {
         this.velocity = velocity;
         this.owner = owner;
         this.longLocal = longLocal;
         this.power = Mathf.Max(1f, power);
+        pierceLeft = RunBoons.PierceCount;
+        bouncesLeft = RunBoons.Bounces;
+        homing = RunBoons.Rank(BoonId.Homing);
+    }
+
+    public void MakeVolley(bool frost) {
+        chill = frost;
+        scale = 0.6f;
+        life = 1.6f;
     }
 
     void Update() {
@@ -303,46 +356,112 @@ public class ArrowFlight : MonoBehaviour {
             return;
         }
 
+        if (homing > 0f && age > 0.05f) {
+            Steer();
+        }
+
         float distance = velocity.magnitude * Time.deltaTime;
         Vector3 direction = velocity.sqrMagnitude > 0.0001f ? velocity.normalized : transform.forward;
-        if (Physics.Raycast(transform.position, direction, out RaycastHit hit, distance + 0.08f, ~0, QueryTriggerInteraction.Ignore)) {
-            if (owner == null || (!hit.transform.IsChildOf(owner) && hit.transform != owner)) {
-                Enemy foe = hit.collider.GetComponentInParent<Enemy>();
-                bool rocket = MetaProgress.ShootsRockets();
-                if (rocket) {
-                    Blast(hit.point, foe);
-                    Vanish();
-                    return;
-                }
-                if (foe != null) {
-                    foe.Hit(power);
-                }
-                transform.position = hit.point - direction * 0.05f;
-                velocity = Vector3.zero;
-                Destroy(gameObject, foe != null ? 0.35f : 6f);
-                enabled = false;
+        int count = Physics.RaycastNonAlloc(transform.position, direction, hitBuffer, distance + 0.08f, ~0, QueryTriggerInteraction.Ignore);
+        System.Array.Sort(hitBuffer, 0, count, HitOrder.Instance);
+        for (int i = 0; i < count; i++) {
+            RaycastHit hit = hitBuffer[i];
+            if (hit.collider == null) {
+                continue;
+            }
+            if (owner != null && (hit.transform.IsChildOf(owner) || hit.transform == owner)) {
+                continue;
+            }
+            Enemy foe = hit.collider.GetComponentInParent<Enemy>();
+            if (foe != null && (struck.Contains(foe) || !foe.Alive)) {
+                continue;
+            }
+            if (MetaProgress.ShootsRockets()) {
+                Blast(hit.point, foe);
+                Vanish();
                 return;
             }
+            if (foe != null) {
+                struck.Add(foe);
+                Combat.ArrowHit(foe, power, scale, true);
+                if (chill) {
+                    foe.Chill(0.6f, 2f, 1f);
+                }
+                if (pierceLeft > 0) {
+                    pierceLeft--;
+                    scale *= 0.85f;
+                    continue;
+                }
+                if (bouncesLeft > 0 && Bounce(hit.point)) {
+                    return;
+                }
+            }
+            transform.position = hit.point - direction * 0.05f;
+            velocity = Vector3.zero;
+            Destroy(gameObject, foe != null ? 0.35f : 4f);
+            enabled = false;
+            return;
         }
 
         transform.position += direction * distance;
+        Face();
+    }
+
+    void Face() {
         if (velocity.sqrMagnitude > 0.0001f && longLocal.sqrMagnitude > 0.0001f) {
             Vector3 visual = transform.TransformDirection(longLocal);
             transform.rotation = Quaternion.FromToRotation(visual, velocity.normalized) * transform.rotation;
         }
     }
 
+    void Steer() {
+        seekIn -= Time.deltaTime;
+        if (seekIn <= 0f || seek == null || !seek.Alive) {
+            seekIn = 0.12f;
+            seek = Combat.Nearest(transform.position + velocity.normalized * 7f, 9f + 4f * homing, struck);
+        }
+        if (seek == null) {
+            return;
+        }
+        Vector3 aim = seek.transform.position + Vector3.up * 0.5f * Mathf.Max(1f, seek.BodyScale) - transform.position;
+        float turn = (2.2f + 2.2f * homing) * Time.deltaTime;
+        velocity = Vector3.RotateTowards(velocity, aim.normalized * velocity.magnitude, turn, 0f);
+    }
+
+    bool Bounce(Vector3 from) {
+        Enemy next = Combat.Nearest(from, 16f, struck);
+        if (next == null) {
+            return false;
+        }
+        bouncesLeft--;
+        scale *= 0.8f;
+        Vector3 to = next.transform.position + Vector3.up * 0.5f * Mathf.Max(1f, next.BodyScale) - from;
+        velocity = to.normalized * Mathf.Max(30f, velocity.magnitude);
+        transform.position = from + to.normalized * 0.25f;
+        life = Mathf.Max(life, 1.2f);
+        Face();
+        return true;
+    }
+
     void Blast(Vector3 point, Enemy direct) {
         if (direct != null) {
-            direct.Hit(power);
+            Combat.ArrowHit(direct, power, scale, true);
         }
         float splash = MetaProgress.SplashRadius(power);
-        Collider[] caught = Physics.OverlapSphere(point, splash);
-        foreach (Collider caughtCollider in caught) {
-            Enemy other = caughtCollider.GetComponentInParent<Enemy>();
-            if (other != null && other != direct && other.Alive) {
-                other.Hit(power * 0.65f);
+        List<Enemy> roster = Enemy.Roster;
+        var caught = new List<Enemy>();
+        for (int i = 0; i < roster.Count; i++) {
+            Enemy other = roster[i];
+            if (other == null || other == direct || !other.Alive) {
+                continue;
             }
+            float reach = splash + other.BodyScale * 0.3f;
+            if ((other.transform.position - point).sqrMagnitude <= reach * reach) {
+                caught.Add(other);
+            }
+        }
+        for (int i = 0; i < caught.Count; i++) {
+            Combat.ArrowHit(caught[i], power, scale * 0.65f, false);
         }
         UpgradeLook.Blast(point, splash);
     }
@@ -353,5 +472,13 @@ public class ArrowFlight : MonoBehaviour {
             shown[i].enabled = false;
         }
         Destroy(gameObject);
+    }
+}
+
+sealed class HitOrder : IComparer<RaycastHit> {
+    public static readonly HitOrder Instance = new HitOrder();
+
+    public int Compare(RaycastHit a, RaycastHit b) {
+        return a.distance.CompareTo(b.distance);
     }
 }

@@ -251,6 +251,7 @@ static class SetupWarrok
         }
         if (!hasFire)
             controller.AddParameter("Fire", AnimatorControllerParameterType.Trigger);
+        EnsureFireSpeed(controller);
 
         int upper = -1;
         for (int i = 0; i < controller.layers.Length; i++)
@@ -286,6 +287,9 @@ static class SetupWarrok
             shot = machine.AddState("Shoot", new Vector3(300f, 120f, 0f));
         shot.motion = shoot;
         shot.writeDefaultValues = true;
+        // Quick Draw and streaks speed the draw through this parameter.
+        shot.speedParameter = "FireSpeed";
+        shot.speedParameterActive = true;
 
         bool hasExit = false;
         foreach (AnimatorStateTransition transition in shot.transitions)
@@ -325,6 +329,27 @@ static class SetupWarrok
             enter.duration = 0.05f;
             enter.canTransitionToSelf = true;
         }
+    }
+
+    static void EnsureFireSpeed(AnimatorController controller)
+    {
+        AnimatorControllerParameter[] parameters = controller.parameters;
+        for (int i = 0; i < parameters.Length; i++)
+        {
+            if (parameters[i].name != "FireSpeed")
+                continue;
+            if (Mathf.Approximately(parameters[i].defaultFloat, 1f))
+                return;
+            parameters[i].defaultFloat = 1f;
+            controller.parameters = parameters;
+            return;
+        }
+        controller.AddParameter(new AnimatorControllerParameter
+        {
+            name = "FireSpeed",
+            type = AnimatorControllerParameterType.Float,
+            defaultFloat = 1f
+        });
     }
 
     static AnimatorState FindState(AnimatorStateMachine machine, string name)

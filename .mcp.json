@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "unityMCP": {
+      "type": "http",
+      "url": "http://127.0.0.1:9090/mcp"
+    },
+    "blender": {
+      "command": "C:/Users/jgrif/AppData/Local/Microsoft/WinGet/Links/uvx.exe",
+      "args": [
+        "mcp-for-blender"
+      ]
+    }
+  }
+}

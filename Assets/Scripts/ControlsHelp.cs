@@ -91,20 +91,23 @@ public class ControlsHelp : MonoBehaviour {
     }
 
     static string CombatLesson(int wave) {
-        if (wave >= 50) {
+        if (wave >= Tuning.ClimbWave) {
             return "Press F to shake them off.";
         }
-        if (wave >= 40) {
+        if (wave >= Tuning.StompWave) {
             return "Stomp turkeys at your feet.";
         }
-        if (wave >= MetaProgress.AutoWave()) {
+        if (wave >= Tuning.AutoWave) {
             return "The bow fires on its own.";
         }
-        if (wave >= 20) {
-            return "Hold Space to jump.";
+        if (wave >= Tuning.JumpWave) {
+            return "Hold Space to hop. Landings crush turkeys.";
         }
-        if (wave >= 10) {
-            return "Shift locks the biggest bird.";
+        if (wave >= Tuning.GoldenFirstWave) {
+            return "Shift locks on. Chase gold turkeys for treasure.";
+        }
+        if (wave >= 2) {
+            return "Walk over feathers to level up.";
         }
         return "Click to shoot. Shift locks on.";
     }

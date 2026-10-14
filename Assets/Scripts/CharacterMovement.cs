@@ -22,6 +22,8 @@ public class CharacterMovement : MonoBehaviour {
     private Animator Anim;
 
     public const string PARAMETER_STATE = "State";
+    static readonly int FireSpeedHash = Animator.StringToHash("FireSpeed");
+    bool hasFireSpeed;
 
     void Awake() {
         motor = GetComponent<MovementMotor>();
@@ -30,6 +32,11 @@ public class CharacterMovement : MonoBehaviour {
 
     void Start() {
         Anim.applyRootMotion = false;
+        foreach (AnimatorControllerParameter parameter in Anim.parameters) {
+            if (parameter.nameHash == FireSpeedHash) {
+                hasFireSpeed = true;
+            }
+        }
     }
 
     void Update() {
@@ -97,8 +104,12 @@ public class CharacterMovement : MonoBehaviour {
                 shotLatch = true;
                 seenShot = false;
             }
-            bool holdShot = !building && Input.GetMouseButton(0);
-            bool auto = !building && !holdShot && WaveDirector.Wave >= MetaProgress.AutoWave() && autoShot <= 0f;
+            if (hasFireSpeed) {
+                Anim.SetFloat(FireSpeedHash, RunBoons.DrawSpeed);
+            }
+            bool menu = LevelUpScreen.IsOpen || LevelUpScreen.HoldFire;
+            bool holdShot = !building && !menu && Input.GetMouseButton(0);
+            bool auto = !building && !menu && !holdShot && WaveDirector.Wave >= MetaProgress.AutoWave() && autoShot <= 0f;
             if (!shooting && shotLatch && (holdShot || auto)) {
                 shotLatch = false;
                 Anim.speed = 1f;
@@ -109,7 +120,7 @@ public class CharacterMovement : MonoBehaviour {
                 }
                 if (auto) {
                     float grown = PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f;
-                    autoShot = Mathf.Lerp(0.7f, 0.32f, Mathf.Clamp01((grown - 1f) / 4f)) * MetaProgress.DrawHaste();
+                    autoShot = Mathf.Lerp(0.7f, 0.32f, Mathf.Clamp01((grown - 1f) / 4f)) * MetaProgress.DrawHaste() / RunBoons.DrawSpeed;
                 }
             } else if (Anim.layerCount < 2 && Anim.GetInteger(PARAMETER_STATE) == 2) {
                 AnimatorStateInfo info = Anim.GetCurrentAnimatorStateInfo(0);
@@ -164,7 +175,7 @@ public class CharacterMovement : MonoBehaviour {
                 UpgradeLook.Stride(transform.position);
             }
 
-            bool wantJump = WaveDirector.Wave >= 20
+            bool wantJump = WaveDirector.Wave >= Tuning.JumpWave
                 ? Input.GetKey(KeyCode.Space)
                 : Input.GetKeyDown(KeyCode.Space);
             bool groundedAct = Enemy.Climbers == 0 && (PlayerGrowth.Instance == null || !PlayerGrowth.Instance.Rooted);

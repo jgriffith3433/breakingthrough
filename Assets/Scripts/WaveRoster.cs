@@ -111,6 +111,7 @@ public class WaveRoster : MonoBehaviour {
         var trackGo = new GameObject("Track");
         trackGo.transform.SetParent(rowGo.transform, false);
         var track = trackGo.AddComponent<Image>();
+        UiSkin.Bar(track);
         track.color = new Color(0.08f, 0.07f, 0.06f, 0.88f);
         track.raycastTarget = false;
         var trackRect = track.rectTransform;
@@ -123,6 +124,7 @@ public class WaveRoster : MonoBehaviour {
         var fillGo = new GameObject("Fill");
         fillGo.transform.SetParent(trackGo.transform, false);
         row.FillImage = fillGo.AddComponent<Image>();
+        UiSkin.Bar(row.FillImage);
         row.FillImage.raycastTarget = false;
         row.Fill = row.FillImage.rectTransform;
         row.Fill.anchorMin = new Vector2(0f, 0.5f);

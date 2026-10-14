@@ -100,7 +100,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
 
         AcquireTarget();
         CamState = CamStates.Behind;
-        if (WaveDirector.IsBuilding) {
+        if (WaveDirector.IsBuilding || LevelUpScreen.IsOpen) {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         } else {
@@ -110,7 +110,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
 
         switch (CamState) {
             case CamStates.Behind:
-                if (!WaveDirector.IsBuilding) {
+                if (!WaveDirector.IsBuilding && !LevelUpScreen.IsOpen) {
                     orbitYaw += Input.GetAxis("Mouse X") * 3.4f;
                     orbitPitch = Mathf.Clamp(orbitPitch - Input.GetAxis("Mouse Y") * 2.1f, 5f, Mathf.Lerp(58f, 84f, Mathf.Clamp01((BodyScale - 1f) / 5f)));
                 }

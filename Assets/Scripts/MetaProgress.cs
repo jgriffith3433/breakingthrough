@@ -10,7 +10,10 @@ public enum UpgradeId {
     Stride = 6,
     Stomp = 7, // retired
     Spikes = 8, // retired
-    Towers = 9
+    Towers = 9,
+    Clover = 10,
+    OpeningAct = 11,
+    StageHands = 12
 }
 
 public struct UpgradeInfo {
@@ -30,7 +33,10 @@ public static class MetaProgress {
         new UpgradeInfo { Id = UpgradeId.Blast, Name = "Rockets! Not arrows!", About = "The bow shoots rockets. Each rank blasts wider.", MaxRank = 3 },
         new UpgradeInfo { Id = UpgradeId.Stride, Name = "Long Stride", About = "Each rank is 25% more speed.", MaxRank = 3 },
         new UpgradeInfo { Id = UpgradeId.Walls, Name = "Stone Pile", About = "A much thicker wall line.", MaxRank = 3 },
-        new UpgradeInfo { Id = UpgradeId.Towers, Name = "Watch Kit", About = "More towers. They shoot farther and faster.", MaxRank = 3 }
+        new UpgradeInfo { Id = UpgradeId.Towers, Name = "Watch Kit", About = "More towers. They shoot farther and faster.", MaxRank = 3 },
+        new UpgradeInfo { Id = UpgradeId.Clover, Name = "Four-Leaf Clover", About = "+1 reroll each run. Rare and epic boons show up more.", MaxRank = 3 },
+        new UpgradeInfo { Id = UpgradeId.OpeningAct, Name = "Opening Act", About = "Start each run holding a random boon per rank.", MaxRank = 3 },
+        new UpgradeInfo { Id = UpgradeId.StageHands, Name = "Stage Hands", About = "The musician starts with +25 health per rank.", MaxRank = 3 }
     };
 
     public static int Coins { get; private set; }
@@ -42,7 +48,7 @@ public static class MetaProgress {
     public static string Toast { get; private set; }
     public static float PurseFlash { get; private set; }
 
-    static int[] ranks = new int[10];
+    static int[] ranks = new int[13];
     static bool loaded;
     static float toastUntil;
     static int armedStart = 1;
@@ -72,7 +78,7 @@ public static class MetaProgress {
     }
 
     public static int Cost(UpgradeId id) {
-        return Rank(id) + 1;
+        return 2 + Rank(id) * 3;
     }
 
     public static bool CanBuy(UpgradeId id) {
@@ -88,7 +94,7 @@ public static class MetaProgress {
         if (rank >= info.MaxRank) {
             return false;
         }
-        int cost = rank + 1;
+        int cost = Cost(id);
         if (Coins < cost) {
             return false;
         }
@@ -191,7 +197,29 @@ public static class MetaProgress {
     }
 
     public static int AutoWave() {
-        return 30;
+        return Tuning.AutoWave;
+    }
+
+    public static int StageHealth() {
+        return Rank(UpgradeId.StageHands) * 25;
+    }
+
+    // Coins from anything other than hens: cleared waves, bosses, chests, Bounty Hunter.
+    public static void AddCoins(int amount, Vector3 at) {
+        if (amount <= 0) {
+            return;
+        }
+        Ensure();
+        Coins += amount;
+        CoinsThisRun += amount;
+        PurseFlash = 1f;
+        Toast = amount == 1 ? "+1 coin" : "+" + amount + " coins";
+        toastUntil = Time.unscaledTime + 2.4f;
+        Save();
+        if (at != Vector3.zero) {
+            UpgradeLook.Coins(at, Mathf.Min(amount, 6));
+        }
+        GameAudio.Play("coin", 0.55f);
     }
 
     public static bool TrySpend(int cost) {
@@ -257,7 +285,7 @@ public static class MetaProgress {
     }
 
     public static int StompWave() {
-        return 40;
+        return Tuning.StompWave;
     }
 
     public static bool ShootsRockets() {
@@ -287,6 +315,12 @@ public static class MetaProgress {
                 return "Rockets from the bow. Blast " + SplashRadius(1f).ToString("0.#") + "m.";
             case UpgradeId.Stride:
                 return "+" + (rank * 25) + "% move speed";
+            case UpgradeId.Clover:
+                return (Tuning.StartRerolls + rank) + " rerolls a run";
+            case UpgradeId.OpeningAct:
+                return rank == 1 ? "Start with 1 boon" : "Start with " + rank + " boons";
+            case UpgradeId.StageHands:
+                return "Musician starts at " + (Musician.BaseHealth + StageHealth());
             default:
                 return rank + " / " + info.MaxRank;
         }
@@ -349,7 +383,23 @@ public static class MetaProgress {
         }
     }
 
+    // The autopilot plays without touching the real save.
+    public static bool Sandbox { get; private set; }
+
+    public static void EnterSandbox(bool freshRanks) {
+        Ensure();
+        Sandbox = true;
+        if (freshRanks) {
+            for (int i = 0; i < ranks.Length; i++) {
+                ranks[i] = 0;
+            }
+        }
+    }
+
     static void Save() {
+        if (Sandbox) {
+            return;
+        }
         PlayerPrefs.SetInt("bt_coins", Coins);
         PlayerPrefs.SetInt("bt_best", BestWave);
         PlayerPrefs.SetInt("bt_reached", ReachedWave);

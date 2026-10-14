@@ -283,7 +283,7 @@ public class DefencePiece : MonoBehaviour {
         if (best == null) {
             return;
         }
-        shotTick = MetaProgress.TowerInterval();
+        shotTick = MetaProgress.TowerInterval() / RunBoons.TowerHaste;
         UpgradeLook.Bolt(transform.position + Vector3.up * (1.7f + MetaProgress.Rank(UpgradeId.Towers) * 0.28f), best.transform.position + Vector3.up * 0.7f);
         best.Hit(1f);
         if (!best.Alive) {
@@ -379,7 +379,7 @@ public class BuildMode : MonoBehaviour {
         }
 
         bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
-        if (aimed && ghostOk && !overUi && Input.GetMouseButtonDown(0) && FortStock.Take(selected)) {
+        if (aimed && ghostOk && !overUi && !LevelUpScreen.IsOpen && Input.GetMouseButtonDown(0) && FortStock.Take(selected)) {
             Vector3 grounded = spot;
             grounded.y = Ground(spot);
             DefencePiece.Place(selected, grounded, rotation);
@@ -567,6 +567,7 @@ public class BuildMode : MonoBehaviour {
             var card = new GameObject(kinds[i].ToString());
             card.transform.SetParent(canvasGo.transform, false);
             var image = card.AddComponent<Image>();
+            UiSkin.Round(image, 0.6f);
             image.color = new Color(0.1f, 0.09f, 0.08f, 0.92f);
             var rect = image.rectTransform;
             rect.anchorMin = new Vector2(0.5f, 0f);
@@ -585,6 +586,7 @@ public class BuildMode : MonoBehaviour {
             var buttonGo = new GameObject("Buy");
             buttonGo.transform.SetParent(card.transform, false);
             var buttonImage = buttonGo.AddComponent<Image>();
+            UiSkin.Round(buttonImage, 0.5f);
             buttonImage.color = new Color(0.28f, 0.22f, 0.12f, 1f);
             var button = buttonGo.AddComponent<Button>();
             button.targetGraphic = buttonImage;

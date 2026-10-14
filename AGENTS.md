@@ -14,15 +14,33 @@ Runtime gameplay is `Assets/Scripts/`. Editor wiring is `Assets/Editor/`. Do not
 | Wave rules, pauses, skip keys | `WaveDirector.cs` |
 | Damage, size, jump-land, foot stomp, shake | `PlayerGrowth.cs` |
 | Climbing or getting hit | `Enemy.cs` |
-| A shop upgrade | `UpgradeId` in `MetaProgress.cs` with a **new number at the end**, a `Catalog` row, a real caller, and a visible mark in `UpgradeLook.cs`. The shop is five upgrades, three ranks each. Slots 2, 3, 5, 7, and 8 are retired. Do not renumber or reuse them. `Blast` is rockets from the bow: the bow pose stays, and the nocked shot becomes a rocket |
+| A balance number | `Tuning.cs` first. Wave power waves, level curve, feather values, elite odds, golden gobbler, boss health, events, combo, coins, bird health growth |
+| An in-run boon | `BoonId` and a row in `RunBoons.All`, **in enum order** (the array is indexed by the enum). Read its rank where it acts: `Combat.ArrowHit` / `Combat.OnKill` for hits and kills, `ArrowFlight` for arrow behavior, `BoonEffects` for things that tick on their own. An evolution uses `E(...)` with two parents that have max ranks |
+| Anything that damages a bird | `Enemy.Damage(amount, DamageKind, crit)`. Arrows go through `Combat.ArrowHit` so crits, marks, fire, frost and lightning apply. `Enemy.Hit` is one plain blow at arrow strength (spikes, towers, stomps). Deaths go through `Enemy.Die` → `Combat.OnKill` (feathers, chests, bombs, combo, run log) |
+| Elites, golden gobbler, boss | `Enemy.MakeElite` / `MakeGolden` / `MakeBoss`, spawned from `WaveDirector.Spawn`, `SpawnGolden`, and the `bossPending` path in `SpawnOne` |
+| A wave event | `WaveEvent` and its getters at the top of `WaveDirector.cs`, plus `RollEvent` |
+| Level-up cards, boss bar, XP bar, streak | `LevelUpScreen.cs`, `RunHud.cs`, `Juice.cs` (`Combo`, shake, hit-stop) |
+| Feathers and chests | `Pickups.cs`. Models come from `Resources/Models` through `ArtLibrary.Make` |
+| A shop upgrade | `UpgradeId` in `MetaProgress.cs` with a **new number at the end**, a `Catalog` row, a real caller, and a visible mark in `UpgradeLook.cs`. The shop is eight upgrades, three ranks each, costing 2, 5, and 8. Slots 2, 3, 5, 7, and 8 are retired. Do not renumber or reuse them. 10 is Four-Leaf Clover, 11 Opening Act, 12 Stage Hands. `Blast` is rockets from the bow: the bow pose stays, and the nocked shot becomes a rocket |
 | A fort piece | `FortKind`, `FortStock`, `DefencePiece`, and `BuildMode` in `Fort.cs` |
 | A combat or build tip | `ControlsHelp.cs`. A tip holds for a band of waves, then the next one replaces it and flashes |
-| A wave-unlocked ability on the left | `AbilityList.cs`. Jump land is wave 20, auto shoot is `AutoWave`, stomp is `StompWave`, shake off is `ClimbWave` |
+| A wave-unlocked ability on the left | `AbilityList.cs`. The waves are `Tuning.JumpWave` (8), `AutoWave` (12), `StompWave` (16), and `ClimbWave` (25) |
 | The flock list on the right | `WaveRoster.cs`. It reads `WaveDirector.CopyRoster`. Each row is one bird in the wave, the number still to fall, and a bar that fills as that type dies |
 | A body animation | A Mixamo humanoid FBX under `Assets/Art/`, listed in `SetupWarrok.Clips`, then a State id and `AddAction` |
+| Bird art | `Tools/Blender/bt_birds.py` (rerun `export("<Kind>")` in Blender), output `Assets/Resources/Models/Birds/`. Parts must stay named `Body`, `Head`, `WingL`, `WingR`, `LegL`, `LegR`. FBX import mirrors X, so code reads each wing's side from its local position. Animation is in `Enemy.AnimateModel` |
+| Look of the night, lanterns, fireflies, mist, notes | `NightAtmosphere.cs`. Bloom and grade: `NightGrade.cs` + `Resources/Shaders/BTPost.shader` |
+| A particle effect | `Fx.cs`: add an `FxKind` and a `Make(...)` line, or reuse a recipe. Do not spawn primitive spheres for effects. Burning, frozen and golden birds show as a tint on the bird (`Enemy.TickFlash`), not as particles |
+| The map | `Assets/Editor/BuildArena.cs`, then **Tools → Arena → Rebuild Arena**. Props: `Tools/Blender/bt_arena.py` → `Assets/Art/Arena/` |
+| UI panels and bars | `UiSkin.Round` / `UiSkin.Bar` |
 | A sound | `Assets/Resources/Sfx/Name.mp3`, played with `GameAudio.Play("Name")`. Current names: `shot`, `hit`, `death`, `stomp`, `launch`, `coin`, `shake` |
 
-Bird counts and the on-screen mix are `TurkeyCount` and `ScreenCaps` in `WaveDirector`. Turkeys match the wave number until wave 20, then pull ahead, and from wave 50 they swarm. Every unlocked size gets at least one on-screen slot. Extra slots favor the smaller birds, and turkeys fill what is left. Health is authored on the `FowlDef`. Spawn size is applied only in `ForSpawn`. Jump-landing uses `DebutWave`: turkeys are 0, everyone else is their unlock wave, and they can be landed on when `wave - DebutWave >= 20`. From `ClimbWave`, a bird climbs the player instead of the musician when `wave - DebutWave >= 5`.
+Bird counts and the on-screen mix are `TurkeyCount`, `WaveQuota` and `ScreenCaps` in `WaveDirector`. Turkeys are `2 + 1.5 × wave` until wave 20, then pull ahead, and from wave 50 they swarm. A new bird debuts as a pair (one is the Alpha) and ramps by 2 a wave. Every unlocked size gets at least one on-screen slot. Extra slots favor the smaller birds, and turkeys fill what is left. Health is authored on the `FowlDef` and multiplied by `Tuning.HealthScale(wave)` in `ApplyFowl`. Spawn size is applied only in `ForSpawn`. Jump-landing uses `DebutWave`: turkeys are 0, everyone else is their unlock wave, and they can be landed on when `wave - DebutWave >= Tuning.JumpLandGap`. From `ClimbWave`, a bird climbs the player instead of the musician when `wave - DebutWave >= 5`.
+
+`Enemy.Roster` lists every live bird. Use it instead of `FindObjectsByType<Enemy>` in anything that runs every frame. Copy it before you damage birds in a loop, because a Splitter death adds hatchlings to it.
+
+`LevelUpScreen` pauses with `Time.timeScale = 0`. `Juice.HitStop` uses 0.05 briefly and never overrides a real pause. The camera, fire input, and build clicks all check `LevelUpScreen.IsOpen`.
+
+Balance testing: in play mode, **F9** toggles `DevAutopilot` (editor only). It sandboxes `MetaProgress` so the real save is never written. Read the `[RunLog]` console lines or `runlog.csv` in `Application.persistentDataPath`.
 
 ## Editor scripts
 
@@ -44,7 +62,8 @@ Prefer an editor script over hand-editing `scene2.unity` while the editor is ope
 - `.meta` files, except by letting Unity create them. Never delete a `.meta` without the asset.
 - `Library/`, `Temp/`, `obj/`.
 - `Packages/manifest.json` must not gain `com.unity.purchasing`.
-- The night knoll, cottages, piano pirate, and bow textures, unless the task is specifically about them.
+- The piano pirate and bow textures, unless the task is specifically about them. The old knoll and cottages are gone. The map is `BuildArena.cs`. Keep the playfield (inside 150 m of the piano) free of anything solid, because birds walk straight lines and do not pathfind.
+- No camera shake, and no tiny spark or glitter particles. J removed both on purpose. Effects stay soft: flashes, smoke, a few feathers, rings.
 - Existing files in `Assets/Resources/Sfx/`. Do not regenerate them.
 - `KeyCode.Plus` does not exist. Wave skip uses `Equals`, `KeypadPlus`, `Minus`, and `KeypadMinus`.
 
