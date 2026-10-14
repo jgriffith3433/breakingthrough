@@ -31,7 +31,7 @@ The project folder is `breakingthrough`. The Unity product name is still `Contro
 
 A build starts at the menu. Pressing Play with `scene2` open skips the menu and starts a run. After a loss, any key returns to the shop.
 
-To build for the web, use **Tools → Build → WebGL**. AGENTS.md has the details.
+To build for the web, use **Tools → Build → WebGL**. **Run Full Deploy** publishes into the website repo at `C:\Projects\theplacedepartmentwebsite` (`Game/vN/PlaceDepartment`), points the site's game page at the new version, and opens it locally. AGENTS.md has the details.
 
 ## How a run works
 

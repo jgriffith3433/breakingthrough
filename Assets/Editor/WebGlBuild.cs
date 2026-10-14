@@ -8,11 +8,10 @@ using UnityEditor.Build.Reporting;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-// Tools → Build → WebGL. Each publish lands in Game/vN/BreakingThrough and the game page is pointed at it.
+// Tools → Build → WebGL. Each publish lands in <site>/Game/vN/<gameName> and the site's game page is pointed at it.
+// The site defaults to C:\Projects\theplacedepartmentwebsite (the folder next to this project).
 public class WebGlDeployWindow : EditorWindow
 {
-    private const int Port = 8089;
-
     private int detectedVersion = -1;
     private int newVersion = 1;
     private Vector2 scroll;
@@ -53,9 +52,29 @@ public class WebGlDeployWindow : EditorWindow
         }
 
         EditorGUILayout.Space();
+        EditorGUILayout.BeginHorizontal();
+        string site = EditorGUILayout.TextField("Website folder", WebGlBuild.SiteRoot);
+        if (GUILayout.Button("Browse", GUILayout.Width(70)))
+        {
+            string picked = EditorUtility.OpenFolderPanel("Website folder", WebGlBuild.SiteRoot, "");
+            if (!string.IsNullOrEmpty(picked))
+            {
+                site = picked;
+            }
+        }
+        EditorGUILayout.EndHorizontal();
+        if (site != WebGlBuild.SiteRoot)
+        {
+            WebGlBuild.SiteRoot = site;
+            RefreshVersionInfo();
+        }
         DrawReadOnly("Game page", WebGlBuild.GamePage);
         DrawReadOnly("Build output", Path.Combine(WebGlBuild.GameFolder, "v" + newVersion, WebGlBuild.ProductFolder));
-        DrawReadOnly("Local game", "http://localhost:" + Port + "/Game/");
+        DrawReadOnly("Local game", WebGlBuild.LocalUrl);
+        if (!File.Exists(WebGlBuild.GamePage))
+        {
+            EditorGUILayout.HelpBox("No Game/index.html in that folder. Pick the website folder.", MessageType.Warning);
+        }
 
         EditorGUILayout.Space(8);
         EditorGUILayout.LabelField("Steps", EditorStyles.boldLabel);
@@ -117,8 +136,8 @@ public class WebGlDeployWindow : EditorWindow
         if (!EditorUtility.DisplayDialog(
                 "Full Deploy",
                 "This will:\n" +
-                "1. Create Game/v" + newVersion + "\n" +
-                "2. Build WebGL into that folder\n" +
+                "1. Create " + Path.Combine(WebGlBuild.GameFolder, "v" + newVersion) + "\n" +
+                "2. Build WebGL into that folder as " + WebGlBuild.ProductFolder + "\n" +
                 "3. Point the game page at v" + newVersion + "\n" +
                 "4. Delete the previous build folder\n" +
                 "5. Start the local site and open the game\n\n" +
@@ -230,7 +249,7 @@ public class WebGlDeployWindow : EditorWindow
 
     private void StartSite()
     {
-        string bat = Path.Combine(WebGlBuild.ProjectRoot, "auto-start.bat");
+        string bat = Path.Combine(WebGlBuild.SiteRoot, "auto-start.bat");
         Log("Starting " + bat);
         if (!File.Exists(bat))
         {
@@ -241,12 +260,13 @@ public class WebGlDeployWindow : EditorWindow
         {
             FileName = "cmd.exe",
             Arguments = "/c \"" + bat + "\"",
-            WorkingDirectory = WebGlBuild.ProjectRoot,
+            WorkingDirectory = WebGlBuild.SiteRoot,
             UseShellExecute = true
         });
 
-        EditorApplication.delayCall += () => Application.OpenURL("http://localhost:" + Port + "/Game/");
-        Log("Opened http://localhost:" + Port + "/Game/");
+        string url = WebGlBuild.LocalUrl;
+        EditorApplication.delayCall += () => Application.OpenURL(url);
+        Log("Opened " + url);
     }
 
     private void RunStep(Action action)
@@ -285,16 +305,69 @@ public class WebGlDeployWindow : EditorWindow
 
 public static class WebGlBuild
 {
-    public const string ProductFolder = "BreakingThrough";
+    const string SiteKey = "bt_webgl_site_root";
+    const string DefaultSiteName = "theplacedepartmentwebsite";
+    const string DefaultGameName = "PlaceDepartment";
 
     public static string ProjectRoot
     {
         get { return Directory.GetParent(Application.dataPath).FullName; }
     }
 
+    // The website the game is published into. Remembered per machine; defaults to the sibling folder.
+    public static string SiteRoot
+    {
+        get
+        {
+            string saved = EditorPrefs.GetString(SiteKey, "");
+            if (!string.IsNullOrEmpty(saved))
+            {
+                return saved;
+            }
+            return Path.Combine(Directory.GetParent(ProjectRoot).FullName, DefaultSiteName);
+        }
+        set { EditorPrefs.SetString(SiteKey, value); }
+    }
+
     public static string GameFolder
     {
-        get { return Path.Combine(ProjectRoot, "Game"); }
+        get { return Path.Combine(SiteRoot, "Game"); }
+    }
+
+    // Unity names the build files after the output folder, so this must match the page's gameName.
+    public static string ProductFolder
+    {
+        get
+        {
+            if (File.Exists(GamePage))
+            {
+                Match match = Regex.Match(File.ReadAllText(GamePage), @"var\s+gameName\s*=\s*""([^""]+)""");
+                if (match.Success)
+                {
+                    return match.Groups[1].Value;
+                }
+            }
+            return DefaultGameName;
+        }
+    }
+
+    // The site's own server port, read from its auto-start.bat.
+    public static string LocalUrl
+    {
+        get
+        {
+            int port = 4173;
+            string bat = Path.Combine(SiteRoot, "auto-start.bat");
+            if (File.Exists(bat))
+            {
+                Match match = Regex.Match(File.ReadAllText(bat), @"localhost:(\d+)");
+                if (match.Success)
+                {
+                    port = int.Parse(match.Groups[1].Value);
+                }
+            }
+            return "http://localhost:" + port + "/Game/";
+        }
     }
 
     public static string GamePage
@@ -441,11 +514,11 @@ public static class WebGlBuild
         string html = File.ReadAllText(gamePage);
         string updated = Regex.Replace(
             html,
-            @"window\.GAME_BUILD\s*=\s*""v\d+""",
-            "window.GAME_BUILD = \"v" + version + "\"");
-        if (updated == html)
+            @"window\.(PLACE_BUILD|GAME_BUILD)\s*=\s*""v\d+""",
+            match => "window." + match.Groups[1].Value + " = \"v" + version + "\"");
+        if (updated == html && !Regex.IsMatch(html, @"window\.(PLACE_BUILD|GAME_BUILD)\s*=\s*""v" + version + @""""))
         {
-            throw new Exception("Could not find window.GAME_BUILD in " + gamePage);
+            throw new Exception("Could not find window.PLACE_BUILD or window.GAME_BUILD in " + gamePage);
         }
 
         File.WriteAllText(gamePage, updated);

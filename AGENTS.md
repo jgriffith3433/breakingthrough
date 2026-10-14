@@ -130,12 +130,16 @@ If a Unity MCP call fails to connect, say so and edit the scripts instead. Do no
 
 ## WebGL
 
+The game is published into the website repo at `C:\Projects\theplacedepartmentwebsite` (theplacedepartment.com). The deploy window defaults to the folder next to this project. Change it in the window's **Website folder** field, which is saved in EditorPrefs (`bt_webgl_site_root`).
+
 **Tools → Build → WebGL** opens the deploy window. **Run Full Deploy** does four things:
 
-- writes `Game/vN/BreakingThrough`
-- points `Game/index.html` at that version
+- writes `<site>/Game/vN/<gameName>`, where `<gameName>` is read from the page's `var gameName = "…"` (currently `PlaceDepartment`). Unity names the build files after that folder, so they match what the page loads
+- points `<site>/Game/index.html` at the new version through `window.PLACE_BUILD`. `window.GAME_BUILD` also works
 - deletes the previous version folder
-- serves the build at `http://localhost:8089/Game/`
+- runs the site's own `auto-start.bat` and opens the port it names (`http://localhost:4173/Game/`)
+
+It does not commit or push the website. Do that in the website repo.
 
 To build from the command line:
 
@@ -143,8 +147,8 @@ To build from the command line:
 
 Notes:
 
-- The page is the Yooba Land loader (`window.GAME_BUILD`). Version folders are gitignored.
-- The player starts with 256 MB of memory and gzip compression, with a decompression fallback so a static host can serve the `.unityweb` files without a `Content-Encoding` header. `auto-start.bat` serves them through Vite.
+- The player starts with 256 MB of memory and gzip compression, with a decompression fallback so a static host (the site's `python -m http.server`, or GitHub Pages) can serve the `.unityweb` files without a `Content-Encoding` header.
+- This project's own `Game/` folder and `auto-start.bat` (Vite on port 8089) are the old local target. The deploy no longer uses them.
 - Runtime shaders that no scene references live in `Assets/Resources/Shaders/`, so builds include them.
 
 ## This machine
