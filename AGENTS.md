@@ -1,111 +1,154 @@
 # Agent guide
 
-Unity 6.3 LTS (`6000.3.7f1`), built-in pipeline, old Input Manager (`activeInputHandler` 0). Design detail is in `README.md`. This file is how to change the project without breaking it.
+Unity 6.3 LTS (`6000.3.7f1`), built-in render pipeline, old Input Manager (`activeInputHandler` 0). `README.md` explains how the game plays. This file explains how to change it without breaking it.
 
 The player is J. Prefer editing the scripts directly. Do not commit unless asked.
 
-## Where code lives
-
-Runtime gameplay is `Assets/Scripts/`. Editor wiring is `Assets/Editor/`. Do not put gameplay in editor scripts.
-
-| If you are adding… | Touch |
-|---|---|
-| A bird | `FowlRoster.cs` (`ForTier`, `UnlockOf`), then spawn already picks it up through `ForSpawn` |
-| Wave rules, pauses, skip keys | `WaveDirector.cs` |
-| Damage, size, jump-land, foot stomp, shake | `PlayerGrowth.cs` |
-| Climbing or getting hit | `Enemy.cs` |
-| A balance number | `Tuning.cs` first. Wave power waves, level curve, feather values, elite odds, golden gobbler, boss health, events, combo, coins, bird health growth |
-| An in-run boon | `BoonId` and a row in `RunBoons.All`, **in enum order** (the array is indexed by the enum). Read its rank where it acts: `Combat.ArrowHit` / `Combat.OnKill` for hits and kills, `ArrowFlight` for arrow behavior, `BoonEffects` for things that tick on their own. An evolution uses `E(...)` with two parents that have max ranks |
-| Anything that damages a bird | `Enemy.Damage(amount, DamageKind, crit)`. Arrows go through `Combat.ArrowHit` so crits, marks, fire, frost and lightning apply. `Enemy.Hit` is one plain blow at arrow strength (spikes, towers, stomps). Deaths go through `Enemy.Die` → `Combat.OnKill` (feathers, chests, bombs, combo, run log) |
-| Elites, golden gobbler, boss | `Enemy.MakeElite` / `MakeGolden` / `MakeBoss`, spawned from `WaveDirector.Spawn`, `SpawnGolden`, and the `bossPending` path in `SpawnOne` |
-| A wave event | `WaveEvent` and its getters at the top of `WaveDirector.cs`, plus `RollEvent` |
-| Level-up cards, boss bar, XP bar, streak | `LevelUpScreen.cs`, `RunHud.cs`, `Juice.cs` (`Combo`, shake, hit-stop) |
-| Feathers and chests | `Pickups.cs`. Models come from `Resources/Models` through `ArtLibrary.Make` |
-| A shop upgrade | `UpgradeId` in `MetaProgress.cs` with a **new number at the end**, a `Catalog` row, a real caller, and a visible mark in `UpgradeLook.cs`. The shop is eight upgrades, three ranks each, costing 2, 5, and 8. Slots 2, 3, 5, 7, and 8 are retired. Do not renumber or reuse them. 10 is Four-Leaf Clover, 11 Opening Act, 12 Stage Hands. `Blast` is rockets from the bow: the bow pose stays, and the nocked shot becomes a rocket |
-| A fort piece | `FortKind`, `FortStock`, `DefencePiece`, and `BuildMode` in `Fort.cs` |
-| A combat or build tip | `ControlsHelp.cs`. A tip holds for a band of waves, then the next one replaces it and flashes |
-| A wave-unlocked ability on the left | `AbilityList.cs`. The waves are `Tuning.JumpWave` (8), `AutoWave` (12), `StompWave` (16), and `ClimbWave` (25) |
-| The flock list on the right | `WaveRoster.cs`. It reads `WaveDirector.CopyRoster`. Each row is one bird in the wave, the number still to fall, and a bar that fills as that type dies |
-| A body animation | A Mixamo humanoid FBX under `Assets/Art/`, listed in `SetupWarrok.Clips`, then a State id and `AddAction` |
-| Bird art | `Tools/Blender/bt_birds.py` (rerun `export("<Kind>")` in Blender), output `Assets/Resources/Models/Birds/`. Parts must stay named `Body`, `Head`, `WingL`, `WingR`, `LegL`, `LegR`. FBX import mirrors X, so code reads each wing's side from its local position. Animation is in `Enemy.AnimateModel` |
-| Look of the night, lanterns, fireflies, mist, notes | `NightAtmosphere.cs`. Bloom and grade: `NightGrade.cs` + `Resources/Shaders/BTPost.shader` |
-| A particle effect | `Fx.cs`: add an `FxKind` and a `Make(...)` line, or reuse a recipe. Do not spawn primitive spheres for effects. Burning, frozen and golden birds show as a tint on the bird (`Enemy.TickFlash`), not as particles |
-| The map | `Assets/Editor/BuildArena.cs`, then **Tools → Arena → Rebuild Arena**. Props: `Tools/Blender/bt_arena.py` → `Assets/Art/Arena/` |
-| UI panels and bars | `UiSkin.Round` / `UiSkin.Bar` |
-| A sound | `Assets/Resources/Sfx/Name.mp3`, played with `GameAudio.Play("Name")`. Current names: `shot`, `hit`, `death`, `stomp`, `launch`, `coin`, `shake` |
-
-Bird counts and the on-screen mix are `TurkeyCount`, `WaveQuota` and `ScreenCaps` in `WaveDirector`. Turkeys are `2 + 1.5 × wave` until wave 20, then pull ahead, and from wave 50 they swarm. A new bird debuts as a pair (one is the Alpha) and ramps by 2 a wave. Every unlocked size gets at least one on-screen slot. Extra slots favor the smaller birds, and turkeys fill what is left. Health is authored on the `FowlDef` and multiplied by `Tuning.HealthScale(wave)` in `ApplyFowl`. Spawn size is applied only in `ForSpawn`. Jump-landing uses `DebutWave`: turkeys are 0, everyone else is their unlock wave, and they can be landed on when `wave - DebutWave >= Tuning.JumpLandGap`. From `ClimbWave`, a bird climbs the player instead of the musician when `wave - DebutWave >= 5`.
-
-`Enemy.Roster` lists every live bird. Use it instead of `FindObjectsByType<Enemy>` in anything that runs every frame. Copy it before you damage birds in a loop, because a Splitter death adds hatchlings to it.
-
-`LevelUpScreen` pauses with `Time.timeScale = 0`. `Juice.HitStop` uses 0.05 briefly and never overrides a real pause. The camera, fire input, and build clicks all check `LevelUpScreen.IsOpen`.
-
-Balance testing: in play mode, **F9** toggles `DevAutopilot` (editor only). It sandboxes `MetaProgress` so the real save is never written. Read the `[RunLog]` console lines or `runlog.csv` in `Application.persistentDataPath`.
-
-## Editor scripts
-
-`SetupWarrok`, `SetupMainMenu`, `FixMixamoImport`, and `BlenderMcpSetup` use `[InitializeOnLoad]`.
-
-- Reschedule on `EditorApplication.delayCall` while compiling, updating, or playing.
-- Return immediately unless the open scene is `scene2` when the script mutates that scene.
-- Cap retries. `FixMixamoImport` stops after 8 passes.
-- `SetupWarrok` reimports clips, rewrites `Hero.controller`, and saves the scene. New states must be applied **after** the loop that sets `canTransitionToSelf` false, or the next editor load clears them.
-- Do not retarget `Assets/hero/ANIM_HERO_*` kick clips onto Warrok. They are generic Bip01.
-
-While Unity is playing, script and controller edits are not live. Leave play mode before expecting a compile. `SetupWarrok` logging `InvalidOperationException` on `MarkSceneDirty` during play is expected.
-
-Prefer an editor script over hand-editing `scene2.unity` while the editor is open. Unity will overwrite the YAML.
-
 ## Do not change
 
-- The equipped bow local pose in `BowEquipment.cs`: position `(-0.009, -0.066, 0.035)`, Euler `(13, 350, 358)`, scale `0.353789777`.
-- `.meta` files, except by letting Unity create them. Never delete a `.meta` without the asset.
+- The equipped bow's local pose in `BowEquipment.cs`: position `(-0.009, -0.066, 0.035)`, Euler `(13, 350, 358)`, scale `0.353789777`.
+- `.meta` files, except by letting Unity create them. Never delete a `.meta` without its asset.
 - `Library/`, `Temp/`, `obj/`.
 - `Packages/manifest.json` must not gain `com.unity.purchasing`.
-- The piano pirate and bow textures, unless the task is specifically about them. The old knoll and cottages are gone. The map is `BuildArena.cs`. Keep the playfield (inside 150 m of the piano) free of anything solid, because birds walk straight lines and do not pathfind.
-- No camera shake, and no tiny spark or glitter particles. J removed both on purpose. Effects stay soft: flashes, smoke, a few feathers, rings.
 - Existing files in `Assets/Resources/Sfx/`. Do not regenerate them.
-- `KeyCode.Plus` does not exist. Wave skip uses `Equals`, `KeypadPlus`, `Minus`, and `KeypadMinus`.
+- The piano pirate and the bow textures, unless the task is about them.
+- Retired `UpgradeId` slots 2, 3, 5, 7 and 8. Never renumber or reuse them, because saved ranks are packed by index.
+- J's standing art rules:
+  - No camera shake.
+  - No tiny spark, glitter, ember or firefly particles. Effects stay soft: flashes, smoke, a few feathers, rings.
+  - Keep the playfield (within 150 m of the piano) free of anything solid. Birds walk straight lines and do not pathfind.
+- `KeyCode.Plus` does not exist. Wave skip uses `Equals`, `KeypadPlus`, `Minus` and `KeypadMinus`.
 
-## Scripts and encoding
+## Where code lives
 
-Match the surrounding C# style. No new namespaces.
+Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. Do not put gameplay in editor scripts.
 
-Write `.cs` files as UTF-8. A BOM is accepted (`CharacterMovement.cs` has one). UTF-16 LE breaks the compiler (`CS1056`). `ZeldaStyleCamera.cs` is UTF-8, but some readers show it as one garbled line. If a search-and-replace fails, edit it with Python and keep LF.
+| To change… | Touch |
+|---|---|
+| A balance number | `Tuning.cs` first: wave-power waves, level curve, feather values, elite odds, golden gobbler, boss health, events, streaks, coins, bird health growth |
+| Wave flow, spawning, events, bosses, coins per wave | `WaveDirector.cs`. Bird counts are `TurkeyCount`, `WaveQuota` and `ScreenCaps`. Events are `WaveEvent` plus `RollEvent` |
+| A bird species | `FowlRoster.cs` (`ForTier`, `UnlockOf`). Spawning picks it up through `ForSpawn`, which is the only place spawn size is applied |
+| Bird behavior, health, status, elites, golden gobbler, bosses | `Enemy.cs` (`ApplyFowl`, `MakeElite`, `MakeGolden`, `MakeBoss`, `TickStatus`) |
+| Anything that damages a bird | `Enemy.Damage(amount, DamageKind, crit)`. Arrows go through `Combat.ArrowHit`, so crits, marks, fire, frost and lightning apply. `Enemy.Hit` is one plain blow at arrow strength, used by spikes, towers and stomps. Deaths go through `Enemy.Die` → `Combat.OnKill` (feathers, chests, bombs, streak, run log) |
+| An in-run boon | `BoonId` and a row in `RunBoons.All`, **in enum order**, because the array is indexed by the enum. Read the boon's rank where it acts: `Combat` for hits and kills, `ArrowFlight` (in `BowEquipment.cs`) for arrow behavior, `BoonEffects` for things that tick on their own. An evolution uses `E(...)` and names two parents that have max ranks |
+| Level-up cards | `LevelUpScreen.cs` |
+| XP bar, streak counter, boss bar, boon list | `RunHud.cs` |
+| Streak and hit-stop | `Juice.cs` (`Combo`, `HitStop`) |
+| Feathers and chests | `Pickups.cs` |
+| Size, jump-landing, foot stomp, shake-off | `PlayerGrowth.cs` |
+| A shop upgrade | `UpgradeId` in `MetaProgress.cs` with a **new number at the end**, a `Catalog` row, a real caller, and a visible mark in `UpgradeLook.cs`. 10 is Four-Leaf Clover, 11 Opening Act, 12 Stage Hands. Rank costs come from `Cost` |
+| A fort piece | `FortKind`, `FortStock`, `DefencePiece` and `BuildMode` in `Fort.cs` |
+| A combat or build tip | `ControlsHelp.cs` |
+| The wave-power list on the left | `AbilityList.cs` |
+| The bird list on the right | `WaveRoster.cs`, which reads `WaveDirector.CopyRoster` |
+| A sound | `Assets/Resources/Sfx/Name.mp3`, played with `GameAudio.Play("Name", volume, pitch)` |
+| A body animation | A Mixamo humanoid FBX under `Assets/Art/`, listed in `SetupWarrok.Clips`, then a State id and `AddAction` |
+| Bird models | `Tools/Blender/bt_birds.py`, then `export("<Kind>")` in Blender. Output goes to `Assets/Resources/Models/Birds/` |
+| Map scenery models | `Tools/Blender/bt_arena.py`, then `export_arena()`. Output goes to `Assets/Art/Arena/` |
+| The map | `Assets/Editor/BuildArena.cs`, then **Tools → Arena → Rebuild Arena** |
+| Night lighting, lanterns, mist, notes | `NightAtmosphere.cs` |
+| Bloom and color grade | `NightGrade.cs` with `Resources/Shaders/BTPost.shader` |
+| A particle effect | `Fx.cs`: add an `FxKind` and a `Make(...)` line, or reuse a recipe. Never spawn primitive spheres for effects. Status (burning, frozen, golden) is a tint on the bird in `Enemy.TickFlash`, not particles |
+| UI panels and bars | `UiSkin.Round` and `UiSkin.Bar` |
 
-The ground ray is Ground only (`1 << 3`) and ignores triggers. `MovementMotor` must keep applying gravity while `FallVelocity > 0.5`, or the player rockets upward. Jump only when grounded, cooled down, and not rising.
+## Rules the code depends on
 
-`CharacterController` is not scaled by transform. `PlayerGrowth` scales height, radius, and center from the scene baseline (height 2, radius 0.5). Do not save a grown capsule back into the scene.
+- **`Enemy.Roster`** lists every live bird. Use it instead of `FindObjectsByType<Enemy>` in anything that runs every frame. Copy it before you damage birds in a loop, because a Splitter death adds hatchlings mid-loop.
+- **Bird models:**
+  - Parts must stay named `Body`, `Head`, `WingL`, `WingR`, `LegL` and `LegR`.
+  - The FBX import mirrors X, so the code reads each wing's side from its local position.
+  - Blender's −Y is the bird's front. `BuildModel` turns the model around if the head ends up behind.
+  - `BirdArt` tints by copying meshes, so the meshes must stay readable. `ModelImportRules.cs` enforces that, together with smooth normals at a 60° crease angle.
+- **Shader:** birds use `BirdArt.Shared`, which is `Knoll/VertexColorLit` with `_GlowBand` 0 and a strong `_RimStrength`. Use `BirdArt.Glowing` only where warm vertex colors should emit (Thunderbird, lantern glass). `KnollLit.mat` keeps `_RimStrength` near 0 so scenery does not glow.
+- **Hit flash:** it sets a `MaterialPropertyBlock` and clears it when the flash ends, so the bird batches with the flock again. Keep that cleanup.
+- **Pausing:** `LevelUpScreen` pauses with `Time.timeScale = 0`. `Juice.HitStop` uses 0.05 briefly and never overrides a real pause. The camera, firing and build clicks all check `LevelUpScreen.IsOpen`.
+- **Jump-landing and climbing:** these use `DebutWave`. Turkeys count as 0, and every other species counts as its unlock wave.
+- **Map:** the arena is centered on `PianoRecital`. The ground is on the Ground layer (`1 << 3`) with a mesh collider. Scenery has no colliders. The `Boundary` wall is on Ignore Raycast at 205 m. `DressGrassyKnoll` and `PlacePracticeTargets` skip when `Arena` exists, so the old knoll never comes back.
+- **Movement:**
+  - The ground ray is Ground only and ignores triggers.
+  - `MovementMotor` must keep applying gravity while `FallVelocity > 0.5`, or the player rockets upward.
+  - Jump only when grounded, cooled down and not rising.
+- **Player size:** `CharacterController` is not scaled by its transform. `PlayerGrowth` scales height, radius and center from the scene baseline (height 2, radius 0.5). Never save a grown capsule back into the scene.
 
 ## Animator
 
-`applyRootMotion` is false. Gameplay calls `SetInteger("State", n)` and `CrossFade`. Upper-body shots call `SetTrigger("Fire")` and must not set base State to 2.
+- `applyRootMotion` is false. Gameplay calls `SetInteger("State", n)` and `CrossFade`.
+- Shots on the upper layer call `SetTrigger("Fire")` and must not set the base State to 2, or the jump is cancelled.
+- The upper-layer Shoot state's speed follows the `FireSpeed` float (default 1), which `CharacterMovement` sets every frame.
+- While `PlayerGrowth.Rooted` is set or `Enemy.Climbers > 0`, there is no jump, and `AnimationMove` must not overwrite State 5 or 7. Shooting can continue.
 
-While `PlayerGrowth.Rooted` is set, or `Enemy.Climbers > 0`, `CharacterMovement` moves nowhere useful for actions: no jump, and `AnimationMove` must not overwrite State 5 or 7. Shooting on the upper layer can continue.
+## Editor scripts
+
+Many editor scripts run on load through `[InitializeOnLoad]`: `SetupWarrok`, `BuildArena`, `DressGrassyKnoll`, `PlacePianoPlayer`, `PlaceWaveDirector`, `PlaceEnemies`, `PlacePracticeTargets`, `RestoreOldPlayer`, `EquipBow`, `FixMixamoImport`, `SetupMainMenu`, `BlenderMcpSetup`, `ResetTimeScale` and `DisableXboxGdkPrompt`. When writing one:
+
+- Reschedule on `EditorApplication.delayCall` while compiling, updating or playing.
+- Return immediately unless the open scene is `scene2`, if the script changes that scene.
+- Cap retries. For example, `FixMixamoImport` stops after 8 passes.
+
+Specific scripts:
+
+- **`SetupWarrok`** reimports clips, rewrites `Hero.controller` and saves the scene. Apply new states **after** the loop that sets `canTransitionToSelf` false, or the next editor load clears them. Its `InvalidOperationException` on `MarkSceneDirty` during play is expected.
+- **Kick clips:** do not retarget `Assets/hero/ANIM_HERO_*` onto Warrok. They are generic Bip01 clips.
+- **`ResetTimeScale`** puts `Time.timeScale` back to 1 when play mode ends. Without it, stopping play while a level-up card is open can save 0 into `TimeManager.asset`, and the next Play starts frozen.
+
+While Unity is playing, script edits do not compile. Leave play mode first. Prefer an editor script over hand-editing `scene2.unity`, because Unity overwrites the YAML while the editor is open.
+
+## Scripts and encoding
+
+- Match the surrounding C# style. No new namespaces.
+- Write `.cs` files as UTF-8. A BOM is fine (`CharacterMovement.cs` has one). UTF-16 LE breaks the compiler (`CS1056`).
+- `CharacterMovementController.cs` is already UTF-16. It compiles, so leave it alone, and skip it in bulk text edits.
+- `ZeldaStyleCamera.cs` is UTF-8, but some readers show it as one garbled line. If a search-and-replace fails, edit it with Python and keep LF.
+
+## Testing and balance
+
+- **Never write to J's save from a test.** Call `MetaProgress.EnterSandbox(freshRanks)` first. `DevAutopilot` (F9) does this itself. `PlayerPrefs` writes from tooling are also blocked by the session's safety rules.
+- **Autopilot:** `DevAutopilot` is a perfect archer by the piano. Read its `[RunLog]` lines in the console or `runlog.csv`. It is easier than real play, so treat its results as an upper bound.
+- **Restore project settings after tests.** Setting `Application.runInBackground` during play writes `runInBackground: 1` into `ProjectSettings.asset`, and quality changes can stick too. Before handing back, check `git diff ProjectSettings/` and restore anything a test changed.
+- **The game view only updates while Unity is focused or set to run in the background.** If `Time.time` stops advancing during an MCP session, that is why.
 
 ## MCP servers
 
-Project config is `.cursor/mcp.json`. Both servers are started with `uvx` from WinGet (`C:/Users/jgrif/AppData/Local/Microsoft/WinGet/Links/uvx.exe`).
+`.mcp.json` at the project root configures both servers for Claude Code. `.cursor/mcp.json` is the older Cursor config.
 
-| Server | What it is | How it starts |
+| Server | What it is | How it connects |
 |---|---|---|
-| `unityMCP` | [CoplayDev/unity-mcp](https://github.com/CoplayDev/unity-mcp) | `uvx --from mcpforunityserver mcp-for-unity --transport stdio` |
-| `blender` | MCP for Blender | `uvx mcp-for-blender` |
+| `unityMCP` | [CoplayDev/unity-mcp](https://github.com/CoplayDev/unity-mcp), Unity package `com.coplaydev.unity-mcp` | HTTP at `http://127.0.0.1:9090/mcp`. J runs that server alongside the editor |
+| `blender` | MCP for Blender | `uvx mcp-for-blender` (WinGet `uvx`). It talks to a Blender GUI session on port **9876** |
 
-Unity also has the package `com.coplaydev.unity-mcp` (`MCPForUnity` on `main`). The editor and the MCP process have to be running together. This session's `user-unityMCP` bridge has been in an error state. If a Unity MCP call fails auth or connection, say so and edit the scripts. Do not keep retrying a dead bridge, and do not drive the editor by focusing its window.
+Unity MCP tools that have worked well:
 
-Blender MCP is a socket in a Blender GUI session, port **9876**, not a Unity package. `Assets/Editor/BlenderMcpSetup.cs` probes that port when the editor loads and from **Tools → Blender MCP → Ensure Server**. It enables the `blender_mcp` add-on and starts the server. Blender has to be a GUI session. Background mode cannot host it.
+- `refresh_unity` with `compile: request` to compile
+- `read_console` for errors and `[RunLog]` lines
+- `manage_editor` play and stop
+- `execute_code` to inspect state or drive a test in play mode
+- `manage_camera` screenshots. A positioned view (`view_position` / `view_target`) uses a temporary camera without the post-process grade
 
-Cursor's own MCP namespaces (browser, Origin, and so on) are separate from `.cursor/mcp.json`.
+Check `Editor.log` for `error CS` too, but only trust lines from after your edit.
+
+If a Unity MCP call fails to connect, say so and edit the scripts instead. Do not keep retrying a dead bridge, and do not drive the editor by focusing its window. `Assets/Editor/BlenderMcpSetup.cs` probes the Blender port on load and from **Tools → Blender MCP → Ensure Server**. Blender must be a GUI session, because background mode cannot host the server.
 
 ## WebGL
 
-`Tools → Build → WebGL` opens the deploy window. **Run Full Deploy** writes `Game/vN/BreakingThrough`, points `Game/index.html` at that version, deletes the previous version folder, and starts the local site at `http://localhost:8089/Game/`. Batchmode: `Unity.exe -batchmode -nographics -quit -projectPath C:\Projects\breakingthrough -buildTarget WebGL -executeMethod WebGlBuild.Build`. The page is the Yooba Land loader (`window.GAME_BUILD`). Version folders are gitignored. The player starts with 256 MB and gzip, with decompression fallback so a static host can serve the `.unityweb` files without a `Content-Encoding` header. `auto-start.bat` serves them through Vite.
+**Tools → Build → WebGL** opens the deploy window. **Run Full Deploy** does four things:
+
+- writes `Game/vN/BreakingThrough`
+- points `Game/index.html` at that version
+- deletes the previous version folder
+- serves the build at `http://localhost:8089/Game/`
+
+To build from the command line:
+
+`Unity.exe -batchmode -nographics -quit -projectPath C:\Projects\breakingthrough -buildTarget WebGL -executeMethod WebGlBuild.Build`
+
+Notes:
+
+- The page is the Yooba Land loader (`window.GAME_BUILD`). Version folders are gitignored.
+- The player starts with 256 MB of memory and gzip compression, with a decompression fallback so a static host can serve the `.unityweb` files without a `Content-Encoding` header. `auto-start.bat` serves them through Vite.
+- Runtime shaders that no scene references live in `Assets/Resources/Shaders/`, so builds include them.
 
 ## This machine
 
-Shell commands need to run outside the sandbox (`required_permissions: ["all"]`). The workspace sandbox cannot isolate the filesystem here.
-
-`Editor.log` is `C:\Users\jgrif\AppData\Local\Unity\Editor\Editor.log`. Trust only lines from after your edit. Older `error CS` lines stay in that file.
-
-There is a parent `C:\Projects\AGENTS.md` about a Docker mount at `/home/node/workspace/`. This game is edited on Windows at `C:\Projects\breakingthrough`. Follow this file when the two disagree.
+- Windows, project at `C:\Projects\breakingthrough`. The parent `C:\Projects\AGENTS.md` describes a Docker mount. Follow this file when the two disagree.
+- `Editor.log` is at `C:\Users\jgrif\AppData\Local\Unity\Editor\Editor.log`. Older `error CS` lines stay in that file.
+- Under Cursor, shell commands need to run outside the sandbox (`required_permissions: ["all"]`).
