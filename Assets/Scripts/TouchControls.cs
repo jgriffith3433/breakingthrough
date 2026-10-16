@@ -84,12 +84,13 @@ public class TouchControls : MonoBehaviour {
         stickKnob.anchoredPosition = Vector2.zero;
         RestStick();
 
-        float margin = 28f;
+        float margin = 72f;
+        float bottom = 84f;
         float fire = 104f;
         float small = 72f;
-        Add(rt, Role.Fire, "Fire", new Vector2(1f, 0f), new Vector2(-margin - fire * 0.5f, 60f + fire * 0.5f), fire, 24);
-        Add(rt, Role.Lock, "Lock", new Vector2(1f, 0f), new Vector2(-margin - fire - 16f - small * 0.5f, 60f + small * 0.5f), small, 18);
-        Add(rt, Role.Jump, "Jump", new Vector2(1f, 0f), new Vector2(-margin - small * 0.5f - 16f, 60f + fire + 16f + small * 0.5f), small, 18);
+        Add(rt, Role.Fire, "Fire", new Vector2(1f, 0f), new Vector2(-margin - fire * 0.5f, bottom + fire * 0.5f), fire, 24);
+        Add(rt, Role.Lock, "Lock", new Vector2(1f, 0f), new Vector2(-margin - fire - 16f - small * 0.5f, bottom + small * 0.5f), small, 18);
+        Add(rt, Role.Jump, "Jump", new Vector2(1f, 0f), new Vector2(-margin - small * 0.5f - 16f, bottom + fire + 16f + small * 0.5f), small, 18);
         next = Add(rt, Role.Next, "Next wave", new Vector2(0.5f, 0f), new Vector2(0f, 110f + 28f), 0f, 20);
         next.Rect.sizeDelta = new Vector2(U(190f), U(60f));
         next.Rect.pivot = new Vector2(0.5f, 0.5f);

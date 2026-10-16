@@ -39,6 +39,8 @@ public class RunHud : MonoBehaviour {
         new GameObject("Run Hud").AddComponent<RunHud>();
     }
 
+    // Keeps the level label and XP bar clear of the screen edge (and phone notches and rounded corners).
+    const float Inset = 40f;
     float barWidth = 1240f;
     float bossWidth = 820f;
 
@@ -53,14 +55,14 @@ public class RunHud : MonoBehaviour {
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         UiSkin.Reference(scaler);
         Transform top = canvasGo.transform;
-        barWidth = Mathf.Min(1240f, UiSkin.CanvasWidth - 80f);
+        barWidth = Mathf.Min(1240f, UiSkin.CanvasWidth - 2f * Inset);
         bossWidth = Mathf.Min(820f, UiSkin.CanvasWidth - 60f);
 
-        Image xpBack = Bar(top, new Vector2(0.5f, 0f), new Vector2(0f, 10f), new Vector2(barWidth, 14f), new Color(0.05f, 0.08f, 0.12f, 0.85f));
-        xpFill = Bar(xpBack.transform, new Vector2(0f, 0.5f), new Vector2(2f, 0f), new Vector2(0f, 10f), new Color(0.45f, 0.92f, 1f, 1f));
+        Image xpBack = Bar(top, new Vector2(0.5f, 0f), new Vector2(0f, Inset), new Vector2(barWidth, 22f), new Color(0.05f, 0.08f, 0.12f, 0.92f));
+        xpFill = Bar(xpBack.transform, new Vector2(0f, 0.5f), new Vector2(3f, 0f), new Vector2(0f, 16f), new Color(0.45f, 0.92f, 1f, 1f));
         xpFill.rectTransform.pivot = new Vector2(0f, 0.5f);
-        levelText = Label(top, "", 26, FontStyle.Bold, TextAnchor.LowerRight, new Vector2(0.5f, 0f), new Vector2(-barWidth * 0.5f, 4f), new Vector2(240f, 34f));
-        levelText.rectTransform.pivot = new Vector2(1f, 0f);
+        levelText = Label(top, "", 28, FontStyle.Bold, TextAnchor.LowerLeft, new Vector2(0.5f, 0f), new Vector2(-barWidth * 0.5f, Inset + 26f), new Vector2(240f, 38f));
+        levelText.rectTransform.pivot = new Vector2(0f, 0f);
         levelText.color = new Color(0.6f, 0.95f, 1f);
 
         comboText = Label(top, "", 40, FontStyle.Bold, TextAnchor.MiddleLeft, new Vector2(0.5f, 0.5f), new Vector2(150f, 40f), new Vector2(400f, 60f));
@@ -101,7 +103,7 @@ public class RunHud : MonoBehaviour {
         if (target < shownXp - 0.3f) {
             shownXp = target;
         }
-        xpFill.rectTransform.sizeDelta = new Vector2((barWidth - 4f) * shownXp, 10f);
+        xpFill.rectTransform.sizeDelta = new Vector2((barWidth - 6f) * shownXp, 16f);
         levelText.text = hidden ? "" : "Lv " + RunBoons.Level;
 
         int combo = Combo.Count;

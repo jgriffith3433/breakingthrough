@@ -61,6 +61,9 @@ public static class Playtest {
             if (id == "menus") {
                 yield return ShopMenu();
             }
+            if (id == "smoke") {
+                yield return HoldMenu();
+            }
             yield return StartRun();
             if (run.Done) {
                 yield break;
@@ -94,6 +97,12 @@ public static class Playtest {
             run.Problem(PlaytestSeverity.Polish, "menu key art Resources/UI/MenuArt is missing");
         }
         yield return new WaitForSecondsRealtime(1f);
+    }
+
+    // Hold on the menu so the review frame shows both panels and Play.
+    static IEnumerator HoldMenu() {
+        run.Event("menu shown", "holding the main menu for 2 s");
+        yield return new WaitForSecondsRealtime(2f);
     }
 
     static IEnumerator ShopMenu() {
