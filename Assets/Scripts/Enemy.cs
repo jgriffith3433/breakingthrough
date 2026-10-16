@@ -1242,7 +1242,7 @@ public class Enemy : MonoBehaviour
         barRoot.SetParent(transform, false);
         barRoot.localPosition = new Vector3(0f, 1.15f, 0f);
 
-        Shader shader = Shader.Find("Unlit/Color");
+        Shader shader = FlatShader.Get();
         if (shader == null)
             shader = Shader.Find("Sprites/Default");
 

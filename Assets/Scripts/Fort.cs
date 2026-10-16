@@ -162,7 +162,7 @@ public class DefencePiece : MonoBehaviour {
             collider.isTrigger = trigger;
         }
         Renderer renderer = box.GetComponent<Renderer>();
-        Shader shader = Shader.Find("Unlit/Color");
+        Shader shader = FlatShader.Get();
         if (shader != null && renderer != null) {
             renderer.sharedMaterial = new Material(shader);
             renderer.sharedMaterial.color = color;
@@ -478,7 +478,7 @@ public class BuildMode : MonoBehaviour {
                 Destroy(collider);
             }
             Renderer renderer = ghost.GetComponent<Renderer>();
-            Shader shader = Shader.Find("Unlit/Color");
+            Shader shader = FlatShader.Get();
             if (shader != null && renderer != null) {
                 renderer.sharedMaterial = new Material(shader);
             }
@@ -508,7 +508,7 @@ public class BuildMode : MonoBehaviour {
         }
         if (ring == null) {
             ring = new GameObject("Build Ring");
-            Shader shader = Shader.Find("Unlit/Color");
+            Shader shader = FlatShader.Get();
             Material material = shader != null ? new Material(shader) : null;
             if (material != null) {
                 material.color = new Color(0.95f, 0.82f, 0.4f);

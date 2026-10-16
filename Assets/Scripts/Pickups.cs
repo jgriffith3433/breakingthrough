@@ -110,7 +110,7 @@ public class Pickups : MonoBehaviour {
 
     static Material FeatherMat() {
         if (featherMat == null) {
-            featherMat = new Material(Shader.Find("Unlit/Color"));
+            featherMat = new Material(FlatShader.Get());
             featherMat.color = new Color(0.45f, 0.95f, 1f);
         }
         return featherMat;
@@ -118,7 +118,7 @@ public class Pickups : MonoBehaviour {
 
     static Material RareMat() {
         if (rareMat == null) {
-            rareMat = new Material(Shader.Find("Unlit/Color"));
+            rareMat = new Material(FlatShader.Get());
             rareMat.color = new Color(1f, 0.45f, 0.95f);
         }
         return rareMat;
@@ -252,7 +252,7 @@ public static class ArtLibrary {
                 }
                 Material bright;
                 if (!glow.TryGetValue(mats[i].name, out bright)) {
-                    bright = new Material(Shader.Find("Unlit/Color"));
+                    bright = new Material(FlatShader.Get());
                     bright.color = mats[i].HasProperty("_Color") ? mats[i].color : Color.white;
                     glow[mats[i].name] = bright;
                 }

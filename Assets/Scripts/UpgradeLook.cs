@@ -402,7 +402,7 @@ public class UpgradeLook : MonoBehaviour {
 
     public static void Paint(GameObject go, Color color) {
         Renderer renderer = go.GetComponent<Renderer>();
-        Shader shader = Shader.Find("Unlit/Color");
+        Shader shader = FlatShader.Get();
         if (shader == null || renderer == null) {
             return;
         }

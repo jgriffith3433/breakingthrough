@@ -123,7 +123,7 @@ public class NightAtmosphere : MonoBehaviour {
         wire.positionCount = points;
         wire.startWidth = 0.025f;
         wire.endWidth = 0.025f;
-        wire.material = new Material(Shader.Find("Unlit/Color"));
+        wire.material = new Material(FlatShader.Get());
         wire.material.color = new Color(0.05f, 0.04f, 0.04f);
         wire.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         Color[] bulbs = { new Color(1f, 0.78f, 0.4f), new Color(1f, 0.5f, 0.35f), new Color(0.6f, 0.85f, 1f), new Color(0.75f, 1f, 0.55f) };

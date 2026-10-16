@@ -94,7 +94,7 @@ public class BoonEffects : MonoBehaviour {
 
     Transform MakeBlade() {
         if (bladeMat == null) {
-            bladeMat = new Material(Shader.Find("Unlit/Color"));
+            bladeMat = new Material(FlatShader.Get());
             bladeMat.color = new Color(0.75f, 0.95f, 1f);
         }
         GameObject model = ArtLibrary.Make("Quill", true);
