@@ -212,14 +212,14 @@ public static class Playtest {
                         int picksBefore = RunBoons.Picks;
                         yield return null;
                         yield return null;
-                        if (LevelUpScreen.IsOpen && pick > 0) {
+                        if (LevelUpScreen.IsOpen && RunBoons.Picks == picksBefore && pick > 0) {
                             PlayInput.Tap(KeyCode.Alpha1);
                             yield return null;
                             yield return null;
                         }
-                        if (LevelUpScreen.IsOpen) {
+                        if (LevelUpScreen.IsOpen && RunBoons.Picks == picksBefore) {
                             yield return new WaitForSecondsRealtime(1f);
-                            if (LevelUpScreen.IsOpen) {
+                            if (LevelUpScreen.IsOpen && RunBoons.Picks == picksBefore) {
                                 run.Problem(PlaytestSeverity.Bug, "the level-up card did not close after pressing a number key");
                                 run.Finish(PlaytestOutcome.Stuck);
                                 yield break;

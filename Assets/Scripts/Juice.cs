@@ -52,7 +52,7 @@ public class Juice : MonoBehaviour {
     void Update() {
         if (stopping && Time.unscaledTime >= stopUntil) {
             stopping = false;
-            if (Time.timeScale > 0.01f) {
+            if (Time.timeScale > 0.01f && !LevelUpScreen.IsOpen) {
                 Time.timeScale = 1f;
             }
         }

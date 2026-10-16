@@ -18,6 +18,8 @@ public class LevelUpScreen : MonoBehaviour {
     List<BoonId> offer = new List<BoonId>();
     bool fromChest;
     float openedAt;
+    // Chained level-ups wait a beat after a pick so each screen opens cleanly on its own.
+    float nextOpenAt;
 
     class Card {
         public GameObject Go;
@@ -91,7 +93,7 @@ public class LevelUpScreen : MonoBehaviour {
             HoldFire = false;
         }
         if (!IsOpen) {
-            if (WaveDirector.IsLost || root == null) {
+            if (WaveDirector.IsLost || root == null || Time.unscaledTime < nextOpenAt) {
                 return;
             }
             if (RunBoons.TakePendingChest()) {
@@ -200,6 +202,7 @@ public class LevelUpScreen : MonoBehaviour {
         RunBoons.Take(offer[index]);
         IsOpen = false;
         HoldFire = true;
+        nextOpenAt = Time.unscaledTime + 0.5f;
         root.SetActive(false);
         Time.timeScale = WaveDirector.IsLost ? 0f : 1f;
         UpgradeLook.Say(info.Name + (info.Evolution ? "  ★" : ""), 1.6f, 200f);
