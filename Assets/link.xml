@@ -1,0 +1,5 @@
+<linker>
+  <!-- Colliders and rigidbodies are added at runtime (CreatePrimitive, AddComponent) and no scene serializes
+       them, so WebGL engine stripping removes the classes. Keep the whole physics module. -->
+  <assembly fullname="UnityEngine.PhysicsModule" preserve="all"/>
+</linker>

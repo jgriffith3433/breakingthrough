@@ -1,4 +1,5 @@
-// Flat unlit color for Breaking Through (_Color, alpha blended when the color has alpha).
+// Flat unlit opaque color for Breaking Through (_Color). Opaque with depth write, like Unlit/Color,
+// so fort pieces, feathers and health bars sort correctly.
 // Lives in Resources so it ships in WebGL builds; Shader.Find("Unlit/Color") is stripped there.
 Shader "BT/Flat"
 {
@@ -8,9 +9,8 @@ Shader "BT/Flat"
     }
     SubShader
     {
-        Tags { "Queue" = "Transparent" "RenderType" = "Transparent" "IgnoreProjector" = "True" }
-        Blend SrcAlpha OneMinusSrcAlpha
-        ZWrite Off
+        Tags { "Queue" = "Geometry" "RenderType" = "Opaque" }
+        ZWrite On
 
         Pass
         {
