@@ -21,6 +21,9 @@ public class Musician : MonoBehaviour {
     Text title;
     Vector3 basePos;
     float flinch;
+    CanvasScaler barScaler;
+    float barFill = 554f;
+    int barStamp = -1;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap() {
@@ -110,6 +113,9 @@ public class Musician : MonoBehaviour {
     }
 
     void Update() {
+        if (barScaler != null && barStamp != UiFit.Stamp) {
+            LayoutBar();
+        }
         if (HitFlash > 0f) {
             HitFlash = Mathf.MoveTowards(HitFlash, 0f, Time.deltaTime * 3.2f);
         }
@@ -140,9 +146,9 @@ public class Musician : MonoBehaviour {
         var canvas = canvasGo.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 140;
-        var scaler = canvasGo.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
+        barScaler = canvasGo.AddComponent<CanvasScaler>();
+        barScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        barScaler.referenceResolution = new Vector2(1920, 1080);
 
         var veilGo = new GameObject("Veil");
         veilGo.transform.SetParent(canvasGo.transform, false);
@@ -190,6 +196,25 @@ public class Musician : MonoBehaviour {
         number.rectTransform.anchorMax = Vector2.one;
         number.rectTransform.offsetMin = Vector2.zero;
         number.rectTransform.offsetMax = Vector2.zero;
+        LayoutBar();
+    }
+
+    // Top middle everywhere. Held sideways, a phone narrows it to fit between the coin line and the bird list.
+    void LayoutBar() {
+        barStamp = UiFit.Stamp;
+        UiFit.Apply(barScaler);
+        float width = 560f;
+        float titleWidth = 640f;
+        int titleSize = 26;
+        if (UiFit.Mode == UiMode.Wide) {
+            width = Mathf.Clamp(UiFit.Size.x - 880f, 280f, 560f);
+            titleWidth = width;
+            titleSize = 22;
+        }
+        title.fontSize = titleSize;
+        title.rectTransform.sizeDelta = new Vector2(titleWidth, 32f);
+        back.rectTransform.sizeDelta = new Vector2(width, 26f);
+        barFill = width - 6f;
         RefreshBar();
     }
 
@@ -198,7 +223,7 @@ public class Musician : MonoBehaviour {
             return;
         }
         float ratio = MaxHealth <= 0 ? 0f : Health / (float)MaxHealth;
-        fill.rectTransform.sizeDelta = new Vector2(Mathf.Max(0f, 554f * ratio), -6f);
+        fill.rectTransform.sizeDelta = new Vector2(Mathf.Max(0f, barFill * ratio), -6f);
         Color healthy = Color.Lerp(new Color(0.75f, 0.18f, 0.14f), new Color(0.45f, 0.82f, 0.38f), ratio);
         if (ratio < 0.45f) {
             healthy = Color.Lerp(new Color(0.85f, 0.16f, 0.12f), new Color(0.92f, 0.72f, 0.22f), ratio / 0.45f);

@@ -48,6 +48,12 @@ public class UpgradeLook : MonoBehaviour {
         rect.pivot = new Vector2(0.5f, 1f);
         rect.anchoredPosition = new Vector2(0f, -150f);
         rect.sizeDelta = new Vector2(1400f, 90f);
+        if (UiFit.Compact) {
+            UiFit.Apply(scaler);
+            text.fontSize = 26;
+            rect.anchoredPosition = new Vector2(0f, UiFit.Mode == UiMode.Tall ? -260f : -200f);
+            rect.sizeDelta = new Vector2(UiFit.Size.x - 48f, 90f);
+        }
         go.AddComponent<LoadoutBanner>();
     }
 
@@ -396,6 +402,11 @@ public class UpgradeLook : MonoBehaviour {
         rect.pivot = new Vector2(0.5f, 0.5f);
         rect.anchoredPosition = new Vector2(0f, y);
         rect.sizeDelta = new Vector2(1200f, 80f);
+        if (UiFit.Compact) {
+            UiFit.Apply(scaler);
+            text.fontSize = 32;
+            rect.sizeDelta = new Vector2(UiFit.Size.x - 48f, 80f);
+        }
         LoadoutBanner banner = go.AddComponent<LoadoutBanner>();
         banner.SetLife(seconds);
     }

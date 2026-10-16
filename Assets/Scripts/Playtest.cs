@@ -18,6 +18,7 @@ public static class Playtest {
         new PlaytestScenario("smoke", "Boot, menu, start a run, survive about 30 s", 45, "smoke"),
         new PlaytestScenario("run", "A full run until the musician falls, picking level-ups", 600, "full"),
         new PlaytestScenario("menus", "Shop menu, start a run, a level-up card, reroll and pick", 120, "menus"),
+        new PlaytestScenario("touch", "Touch only, for a phone-sized screen (mobile, or 844x390): the menu fits, tap Play, move and fire with the on-screen stick and buttons, tap a level-up card, play to wave 2", 330, "menus"),
     };
 
     static PlaytestRun run;
@@ -40,6 +41,8 @@ public static class Playtest {
 
     static void Stop() {
         PlayInput.Release();
+        TouchControls.LiftBotFingers();
+        UiFit.ForceTouch(false);
         if (Time.timeScale > 1f) {
             Time.timeScale = 1f;
         }
@@ -57,6 +60,13 @@ public static class Playtest {
         Random.InitState(options.seed);
         Application.logMessageReceived += OnLog;
         try {
+            if (id == "touch") {
+                yield return TouchRun();
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
             yield return ToMenu();
             if (id == "menus") {
                 yield return ShopMenu();
@@ -311,6 +321,422 @@ public static class Playtest {
         }
         PlayInput.Axis("Horizontal", h);
         PlayInput.Axis("Vertical", v);
+    }
+
+    // Touch only, as on a phone: no keys at all. Taps on the menu and the cards go through the UI event system
+    // like a finger's; the stick, Fire, Lock and Next wave get the bot's fingers through TouchControls, the same
+    // path real touches take. Setup: touch controls are switched on (a phone has them on by itself) and the menu
+    // is loaded fresh so it is built for touch.
+    static IEnumerator TouchRun() {
+        UiFit.ForceTouch(true);
+        run.Log("layout " + UiFit.Mode + " at " + Screen.width + "x" + Screen.height + ", pixel ratio " + UiFit.PixelRatio);
+        run.Metric("viewportWidth", Mathf.Round(Screen.width / UiFit.PixelRatio));
+        run.Metric("viewportHeight", Mathf.Round(Screen.height / UiFit.PixelRatio));
+        run.Scene("Main Menu");
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(MetaProgress.MenuScene);
+        yield return null;
+        yield return run.Until(() => Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the main menu");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1.5f);
+        CheckScreen("menu");
+        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+        Button play = menu != null ? menu.PlayButton : null;
+        if (play == null || !play.isActiveAndEnabled) {
+            run.Problem(PlaytestSeverity.Bug, "no Play button on the menu");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        Rect playRect = ScreenRect((RectTransform)play.transform);
+        run.Metric("playButtonPx", Mathf.Round(playRect.height / UiFit.PixelRatio));
+        if (!Inside(playRect)) {
+            run.Problem(PlaytestSeverity.Bug, "the Play button is not fully on screen");
+        }
+
+        run.Note("tapping Play");
+        Tap(play.gameObject);
+        run.Event("tap", "Play");
+        yield return run.Until(() => WaveDirector.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the game scene after tapping Play");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Wave 1");
+        run.Event("run-start");
+        Random.InitState(run.Options.seed);
+        yield return TouchPlay(300f);
+    }
+
+    static IEnumerator TouchPlay(float seconds) {
+        float start = Time.realtimeSinceStartup;
+        float nextMetrics = 0f;
+        float nextTap = 0f;
+        float cardSeenAt = -1f;
+        float waveTwoAt = -1f;
+        bool stickDown = false;
+        bool fireDown = false;
+        bool tapping = false;
+        int tapFinger = -1;
+        bool checkedHud = false;
+        bool checkedCards = false;
+        Vector2 stickAt = Vector2.zero;
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+
+        while (!run.Done) {
+            float now = Time.realtimeSinceStartup;
+            float elapsed = now - start;
+            SampleFps();
+
+            if (WaveDirector.IsLost) {
+                TouchControls.LiftBotFingers();
+                Metrics(elapsed);
+                run.Event("lost", "wave " + WaveDirector.Wave);
+                run.Scene("Game Over");
+                if (WaveDirector.Wave < 2) {
+                    run.Problem(PlaytestSeverity.Warning, "the musician fell before wave 2 with touch controls");
+                }
+                yield return new WaitForSecondsRealtime(2.5f);
+                TouchControls.BotFinger(9, new Vector2(Screen.width * 0.5f, Screen.height * 0.5f), true);
+                yield return null;
+                yield return null;
+                TouchControls.BotFinger(9, Vector2.zero, false);
+                yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene, 20f, "the menu after tapping the game-over screen");
+                if (!run.Done) {
+                    run.Scene("Main Menu");
+                    run.Finish(PlaytestOutcome.Lost);
+                }
+                yield break;
+            }
+            if (elapsed >= seconds) {
+                run.Problem(PlaytestSeverity.Warning, "touch play did not reach wave 2 and a level-up in " + seconds.ToString("0") + " s (wave " + WaveDirector.Wave + ", " + levelUps + " level-ups)");
+                yield break;
+            }
+
+            // A one-frame tap from last frame lifts now.
+            if (tapping) {
+                TouchControls.BotFinger(tapFinger, Vector2.zero, false);
+                tapping = false;
+            }
+
+            if (LevelUpScreen.IsOpen) {
+                if (stickDown || fireDown) {
+                    TouchControls.LiftBotFingers();
+                    stickDown = false;
+                    fireDown = false;
+                }
+                if (cardSeenAt < 0f) {
+                    cardSeenAt = now;
+                    run.Event("level-up", "level " + RunBoons.Level);
+                    run.Scene("Level Up");
+                }
+                if (now - cardSeenAt > 0.8f) {
+                    if (!checkedCards) {
+                        checkedCards = true;
+                        CheckScreen("cards", 400);
+                    }
+                    Button card = Card(Random.Range(0, 3));
+                    if (card == null) {
+                        run.Problem(PlaytestSeverity.Bug, "no level-up card to tap");
+                        run.Finish(PlaytestOutcome.Stuck);
+                        yield break;
+                    }
+                    Tap(card.gameObject);
+                    yield return null;
+                    yield return null;
+                    if (LevelUpScreen.IsOpen) {
+                        yield return new WaitForSecondsRealtime(1f);
+                        if (LevelUpScreen.IsOpen) {
+                            run.Problem(PlaytestSeverity.Bug, "the level-up card did not close after a tap");
+                            run.Finish(PlaytestOutcome.Stuck);
+                            yield break;
+                        }
+                    }
+                    levelUps++;
+                    run.Add("levelUps");
+                    run.Log("tapped " + card.name);
+                    cardSeenAt = -1f;
+                    run.Scene("Wave " + WaveDirector.Wave);
+                }
+                yield return null;
+                continue;
+            }
+
+            bool building = WaveDirector.IsBuilding;
+            bool birds = Enemy.Roster.Count > 0;
+
+            // The stick: a lap around the start so the stick is seen working, then back to the piano when drifted.
+            Vector2 dir = elapsed < 5f ? new Vector2(Mathf.Sin(elapsed * 1.3f), Mathf.Cos(elapsed * 1.3f)) * 0.8f : SteerDir(player);
+            if (building) {
+                dir = Vector2.zero;
+            }
+            if (dir.magnitude > 0.05f) {
+                if (!stickDown) {
+                    if (TouchControls.Spot("Stick", out stickAt)) {
+                        TouchControls.BotFinger(0, stickAt, true);
+                        stickDown = true;
+                    }
+                } else {
+                    TouchControls.BotFinger(0, stickAt + Vector2.ClampMagnitude(dir, 1f) * TouchControls.StickReach * 0.9f, true);
+                }
+            } else if (stickDown) {
+                TouchControls.BotFinger(0, stickAt, false);
+                stickDown = false;
+            }
+
+            // Fire held while there are birds; Lock toggled on with them, off without.
+            bool shoot = !building && birds && !LevelUpScreen.HoldFire;
+            if (shoot && !fireDown && TouchControls.Spot("Fire", out Vector2 fireAt)) {
+                TouchControls.BotFinger(1, fireAt, true);
+                fireDown = true;
+            } else if (!shoot && fireDown) {
+                TouchControls.BotFinger(1, Vector2.zero, false);
+                fireDown = false;
+            }
+            if (!tapping && now >= nextTap) {
+                Vector2 at;
+                if (WaveDirector.Waiting && TouchControls.Spot("Next", out at)) {
+                    TouchControls.BotFinger(3, at, true);
+                    tapping = true;
+                    tapFinger = 3;
+                    nextTap = now + 1.5f;
+                    run.Event("tap", "Next wave");
+                } else if (!building && birds != TouchControls.Locked && TouchControls.Spot("Lock", out at)) {
+                    TouchControls.BotFinger(2, at, true);
+                    tapping = true;
+                    tapFinger = 2;
+                    nextTap = now + 0.6f;
+                }
+            }
+
+            int wave = WaveDirector.Wave;
+            if (wave != lastWave) {
+                if (lastWave != 0) {
+                    run.Event("wave", wave.ToString());
+                }
+                lastWave = wave;
+                run.Scene("Wave " + wave);
+                if (wave >= 2 && waveTwoAt < 0f) {
+                    waveTwoAt = now;
+                }
+            }
+            if (!checkedHud && elapsed > 8f && birds) {
+                checkedHud = true;
+                CheckScreen("hud");
+            }
+            // Done: wave 2 under way and at least one card picked by touch.
+            if (waveTwoAt > 0f && now - waveTwoAt > 10f && levelUps > 0) {
+                Metrics(elapsed);
+                run.Event("done", "wave " + wave + " by touch");
+                yield break;
+            }
+
+            if (now >= nextMetrics) {
+                nextMetrics = now + 0.5f;
+                Metrics(elapsed);
+                run.Metric("touchLocked", TouchControls.Locked ? 1 : 0);
+                run.Progress(Mathf.Clamp01((wave - 1 + (levelUps > 0 ? 0.5f : 0f)) / 2f));
+                run.Note(building ? "build phase" : Enemy.Roster.Count + " birds, musician " + (Musician.Instance != null ? Musician.Instance.Health : 0));
+            }
+            yield return null;
+        }
+    }
+
+    static Vector2 SteerDir(CharacterMovement player) {
+        Camera cam = Camera.main;
+        if (player == null || Musician.Instance == null || cam == null) {
+            return Vector2.zero;
+        }
+        Vector3 to = Musician.Instance.transform.position - player.transform.position;
+        to.y = 0f;
+        if (to.magnitude <= 9f) {
+            return Vector2.zero;
+        }
+        Vector3 fwd = cam.transform.forward;
+        fwd.y = 0f;
+        Vector3 right = cam.transform.right;
+        right.y = 0f;
+        to.Normalize();
+        return new Vector2(Vector3.Dot(right.normalized, to), Vector3.Dot(fwd.normalized, to));
+    }
+
+    static Button Card(int index) {
+        LevelUpScreen screen = Object.FindAnyObjectByType<LevelUpScreen>();
+        if (screen == null) {
+            return null;
+        }
+        var cards = new List<Button>();
+        foreach (Button button in screen.GetComponentsInChildren<Button>()) {
+            if (button.name.StartsWith("Card") && button.isActiveAndEnabled) {
+                cards.Add(button);
+            }
+        }
+        return cards.Count == 0 ? null : cards[Mathf.Min(index, cards.Count - 1)];
+    }
+
+    // A finger's tap on a UI button: down, up, click.
+    static void Tap(GameObject target) {
+        var data = new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left };
+        ExecuteEvents.Execute(target, data, ExecuteEvents.pointerDownHandler);
+        ExecuteEvents.Execute(target, data, ExecuteEvents.pointerUpHandler);
+        ExecuteEvents.Execute(target, data, ExecuteEvents.pointerClickHandler);
+    }
+
+    // What a player would call broken at this screen size: text or a button off the screen, text over text or
+    // over a button or touch control, text under 11 px, a button under 44 px. Sizes are CSS pixels. Text
+    // scrolled out of its list doesn't count.
+    // minOrder skips canvases drawn under a full-screen one (the HUD under the level-up cards).
+    static void CheckScreen(string where, int minOrder = 0) {
+        float ratio = UiFit.PixelRatio;
+        var texts = new List<(Rect rect, string what, Transform owner)>();
+        var taps = new List<(Rect rect, string what, Transform owner)>();
+        float minText = 999f;
+        float minTap = 999f;
+        int found = 0;
+
+        foreach (Text text in Object.FindObjectsByType<Text>(FindObjectsSortMode.None)) {
+            if (!text.isActiveAndEnabled || string.IsNullOrEmpty(text.text) || text.color.a < 0.05f) {
+                continue;
+            }
+            Canvas canvas = text.canvas;
+            if (canvas == null || canvas.renderMode != RenderMode.ScreenSpaceOverlay || canvas.rootCanvas.sortingOrder < minOrder) {
+                continue;
+            }
+            if (!Glyphs(text, out Rect rect) || !Unclipped(text.transform, rect)) {
+                continue;
+            }
+            string what = "\"" + Clip(text.text) + "\"";
+            float px = text.fontSize * text.transform.lossyScale.y / ratio;
+            minText = Mathf.Min(minText, px);
+            if (px < 11f) {
+                found++;
+                run.Problem(PlaytestSeverity.Polish, where + ": text is " + px.ToString("0") + " px: " + what);
+            }
+            if (!Inside(rect)) {
+                found++;
+                run.Problem(PlaytestSeverity.Warning, where + ": text runs off the screen: " + what);
+            }
+            texts.Add((rect, what, text.transform));
+        }
+
+        foreach (Button button in Object.FindObjectsByType<Button>(FindObjectsSortMode.None)) {
+            Canvas holder = button.GetComponentInParent<Canvas>();
+            if (!button.isActiveAndEnabled || holder == null || holder.rootCanvas.sortingOrder < minOrder) {
+                continue;
+            }
+            var rt = (RectTransform)button.transform;
+            Rect rect = ScreenRect(rt);
+            if (!Unclipped(rt, rect)) {
+                continue;
+            }
+            Text label = button.GetComponentInChildren<Text>();
+            string what = "button " + (label != null ? "\"" + Clip(label.text) + "\"" : button.name);
+            float px = Mathf.Min(rect.width, rect.height) / ratio;
+            minTap = Mathf.Min(minTap, px);
+            if (px < 44f) {
+                found++;
+                run.Problem(PlaytestSeverity.Polish, where + ": " + what + " is " + px.ToString("0") + " px, under 44");
+            }
+            if (!Inside(rect)) {
+                found++;
+                run.Problem(PlaytestSeverity.Warning, where + ": " + what + " is not fully on screen");
+            }
+            taps.Add((rect, what, rt));
+        }
+        var controls = new List<RectTransform>();
+        TouchControls.Shown(controls);
+        foreach (RectTransform control in controls) {
+            Rect rect = ScreenRect(control);
+            minTap = Mathf.Min(minTap, Mathf.Min(rect.width, rect.height) / ratio);
+            taps.Add((rect, "touch " + control.name, control));
+        }
+
+        int overlaps = 0;
+        for (int i = 0; i < texts.Count; i++) {
+            for (int j = i + 1; j < texts.Count; j++) {
+                if (Overlap(texts[i].rect, texts[j].rect) > 0.2f && !Related(texts[i].owner, texts[j].owner)) {
+                    overlaps++;
+                    run.Problem(PlaytestSeverity.Warning, where + ": " + texts[i].what + " overlaps " + texts[j].what);
+                }
+            }
+            foreach (var tap in taps) {
+                if (Overlap(texts[i].rect, tap.rect) > 0.2f && !texts[i].owner.IsChildOf(tap.owner)) {
+                    overlaps++;
+                    run.Problem(PlaytestSeverity.Warning, where + ": " + texts[i].what + " is under " + tap.what);
+                }
+            }
+        }
+        for (int i = 0; i < taps.Count; i++) {
+            for (int j = i + 1; j < taps.Count; j++) {
+                if (Overlap(taps[i].rect, taps[j].rect) > 0.05f && !Related(taps[i].owner, taps[j].owner)) {
+                    overlaps++;
+                    run.Problem(PlaytestSeverity.Warning, where + ": " + taps[i].what + " overlaps " + taps[j].what);
+                }
+            }
+        }
+        run.Metric(where + "MinTextPx", Mathf.Round(minText));
+        run.Metric(where + "MinTapPx", Mathf.Round(minTap));
+        run.Metric(where + "Overlaps", overlaps);
+        run.Event("layout", where + ": " + texts.Count + " texts, " + taps.Count + " buttons, " + overlaps + " overlaps, " + found + " other problems");
+    }
+
+    // Where a text's letters are on screen (not its box, which is often bigger).
+    static bool Glyphs(Text text, out Rect rect) {
+        rect = default;
+        IList<UIVertex> verts = text.cachedTextGenerator.verts;
+        if (verts == null || verts.Count == 0) {
+            return false;
+        }
+        float unit = 1f / Mathf.Max(0.0001f, text.pixelsPerUnit);
+        Vector2 min = new Vector2(float.MaxValue, float.MaxValue);
+        Vector2 max = new Vector2(float.MinValue, float.MinValue);
+        for (int i = 0; i < verts.Count; i++) {
+            Vector3 world = text.rectTransform.TransformPoint(verts[i].position * unit);
+            min = Vector2.Min(min, world);
+            max = Vector2.Max(max, world);
+        }
+        rect = Rect.MinMaxRect(min.x, min.y, max.x, max.y);
+        return rect.width > 0.5f && rect.height > 0.5f;
+    }
+
+    static Rect ScreenRect(RectTransform rect) {
+        var corners = new Vector3[4];
+        rect.GetWorldCorners(corners);
+        return Rect.MinMaxRect(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
+    }
+
+    static bool Inside(Rect rect) {
+        return rect.xMin >= -2f && rect.yMin >= -2f && rect.xMax <= Screen.width + 2f && rect.yMax <= Screen.height + 2f;
+    }
+
+    // False for something in a scrolling list that is scrolled (even partly) out of view.
+    static bool Unclipped(Transform item, Rect rect) {
+        RectMask2D mask = item.GetComponentInParent<RectMask2D>();
+        if (mask == null) {
+            return true;
+        }
+        Rect view = ScreenRect(mask.rectTransform);
+        return rect.xMin >= view.xMin - 1f && rect.yMin >= view.yMin - 1f && rect.xMax <= view.xMax + 1f && rect.yMax <= view.yMax + 1f;
+    }
+
+    // How much of the smaller rect the two share.
+    static float Overlap(Rect a, Rect b) {
+        float w = Mathf.Min(a.xMax, b.xMax) - Mathf.Max(a.xMin, b.xMin);
+        float h = Mathf.Min(a.yMax, b.yMax) - Mathf.Max(a.yMin, b.yMin);
+        if (w <= 0f || h <= 0f) {
+            return 0f;
+        }
+        float smaller = Mathf.Min(a.width * a.height, b.width * b.height);
+        return smaller <= 0f ? 0f : w * h / smaller;
+    }
+
+    static bool Related(Transform a, Transform b) {
+        return a.IsChildOf(b) || b.IsChildOf(a);
+    }
+
+    static string Clip(string text) {
+        string line = text.Replace("\n", " ");
+        return line.Length > 40 ? line.Substring(0, 40) + "…" : line;
     }
 
     static IEnumerator GameOver() {

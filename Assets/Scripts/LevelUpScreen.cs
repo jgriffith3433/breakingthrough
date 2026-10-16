@@ -18,6 +18,13 @@ public class LevelUpScreen : MonoBehaviour {
     List<BoonId> offer = new List<BoonId>();
     bool fromChest;
     float openedAt;
+    CanvasScaler scaler;
+    RectTransform deck;
+    readonly Vector2[] homes = new Vector2[3];
+    GameObject reroll;
+    Text rerollLabel;
+    UiMode laidOut;
+    int laidStamp = -1;
 
     class Card {
         public GameObject Go;
@@ -105,6 +112,10 @@ public class LevelUpScreen : MonoBehaviour {
         Time.timeScale = 0f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+        if (laidStamp != UiFit.Stamp) {
+            Layout();
+            Fill();
+        }
         // Cards rise in, and rare halos breathe.
         float rise = Mathf.Clamp01((Time.unscaledTime - openedAt) / 0.3f);
         for (int i = 0; i < cards.Length; i++) {
@@ -113,7 +124,7 @@ public class LevelUpScreen : MonoBehaviour {
             }
             float stagger = Mathf.Clamp01(rise * 1.4f - i * 0.15f);
             float ease = 1f - (1f - stagger) * (1f - stagger);
-            Vector2 home = new Vector2((i - 1) * 470f, 0f);
+            Vector2 home = homes[i];
             cards[i].Frame.rectTransform.anchoredPosition = home + Vector2.down * (1f - ease) * 120f;
             cards[i].Halo.rectTransform.anchoredPosition = cards[i].Frame.rectTransform.anchoredPosition;
             Color halo = cards[i].Halo.color;
@@ -148,11 +159,15 @@ public class LevelUpScreen : MonoBehaviour {
         root.SetActive(true);
         heading.text = chest ? "Treasure!  Pick one" : "Level " + RunBoons.Level + "!  Pick one";
         heading.color = chest ? new Color(1f, 0.82f, 0.3f) : new Color(0.55f, 0.95f, 1f);
+        if (laidStamp != UiFit.Stamp) {
+            Layout();
+        }
         Fill();
         GameAudio.Play("coin", 0.7f, chest ? 0.9f : 1.15f);
     }
 
     void Fill() {
+        bool touch = UiFit.Touch;
         for (int i = 0; i < cards.Length; i++) {
             Card card = cards[i];
             if (i >= offer.Count) {
@@ -173,8 +188,15 @@ public class LevelUpScreen : MonoBehaviour {
             card.About.text = info.About;
             card.Tag.text = info.Rarity.ToString().ToUpper();
             card.Tag.color = tint;
-            card.Key.text = "[" + (i + 1) + "]";
+            card.Key.text = touch ? "Tap to pick" : "[" + (i + 1) + "]";
         }
+        if (touch) {
+            footer.text = "Tap a card to choose.";
+            reroll.SetActive(RunBoons.Rerolls > 0);
+            rerollLabel.text = "Reroll (" + RunBoons.Rerolls + " left)";
+            return;
+        }
+        reroll.SetActive(false);
         footer.text = RunBoons.Rerolls > 0
             ? "1 2 3 or click to choose.   R rerolls (" + RunBoons.Rerolls + " left)"
             : "1 2 3 or click to choose.";
@@ -217,7 +239,7 @@ public class LevelUpScreen : MonoBehaviour {
         var canvas = canvasGo.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 400;
-        var scaler = canvasGo.AddComponent<CanvasScaler>();
+        scaler = canvasGo.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
         scaler.matchWidthOrHeight = 0.5f;
@@ -229,16 +251,90 @@ public class LevelUpScreen : MonoBehaviour {
         dim.color = new Color(0.02f, 0.02f, 0.04f, 0.72f);
         Stretch(dim.rectTransform);
 
-        heading = MakeText(root.transform, "Level up", 64, FontStyle.Bold, TextAnchor.MiddleCenter);
+        // Everything but the dimmer, so phones can scale or restack it as one.
+        var deckGo = new GameObject("Deck", typeof(RectTransform));
+        deckGo.transform.SetParent(root.transform, false);
+        deck = (RectTransform)deckGo.transform;
+        deck.anchorMin = new Vector2(0.5f, 0.5f);
+        deck.anchorMax = new Vector2(0.5f, 0.5f);
+        deck.pivot = new Vector2(0.5f, 0.5f);
+        deck.sizeDelta = new Vector2(1400f, 760f);
+
+        heading = MakeText(deck, "Level up", 64, FontStyle.Bold, TextAnchor.MiddleCenter);
         Place(heading.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 330f), new Vector2(1400f, 90f));
 
-        footer = MakeText(root.transform, "", 26, FontStyle.Normal, TextAnchor.MiddleCenter);
+        footer = MakeText(deck, "", 26, FontStyle.Normal, TextAnchor.MiddleCenter);
         footer.color = new Color(1f, 0.95f, 0.85f, 0.85f);
         Place(footer.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -330f), new Vector2(1400f, 40f));
 
         for (int i = 0; i < cards.Length; i++) {
-            cards[i] = MakeCard(root.transform, i);
+            cards[i] = MakeCard(deck, i);
         }
+
+        // Touch has no R key: a button rerolls.
+        reroll = new GameObject("Reroll");
+        reroll.transform.SetParent(deck, false);
+        var rerollImage = reroll.AddComponent<Image>();
+        UiSkin.Round(rerollImage, 0.6f);
+        rerollImage.color = new Color(0.28f, 0.22f, 0.12f, 1f);
+        var rerollButton = reroll.AddComponent<Button>();
+        rerollButton.targetGraphic = rerollImage;
+        rerollButton.onClick.AddListener(Reroll);
+        rerollLabel = MakeText(reroll.transform, "Reroll", 28, FontStyle.Bold, TextAnchor.MiddleCenter);
+        Stretch(rerollLabel.rectTransform);
+        reroll.SetActive(false);
+        Layout();
+    }
+
+    // Desktop: the row of three as drawn. Wide: the same row, scaled to fit a phone held sideways. Tall: the
+    // cards stack, each laid out across instead of down.
+    void Layout() {
+        laidOut = UiFit.Mode;
+        laidStamp = UiFit.Stamp;
+        UiFit.Apply(scaler, 0.5f);
+        Vector2 size = UiFit.Size;
+        bool tall = laidOut == UiMode.Tall;
+        float scale = 1f;
+        if (laidOut == UiMode.Wide) {
+            scale = Mathf.Min(1f, (size.x - 40f) / 1400f, (size.y - 20f) / 780f);
+        } else if (tall) {
+            scale = Mathf.Min(1f, (size.y - 40f) / 1290f);
+        }
+        deck.localScale = new Vector3(scale, scale, 1f);
+        deck.sizeDelta = tall ? new Vector2(size.x, 1290f) : new Vector2(1400f, 760f);
+
+        Place(heading.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, tall ? 545f : 330f), new Vector2(tall ? size.x - 40f : 1400f, 90f));
+        heading.fontSize = tall ? 52 : 64;
+        Place(footer.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, tall ? -510f : -330f), new Vector2(tall ? size.x - 40f : 1400f, 40f));
+        Place((RectTransform)reroll.transform, new Vector2(0.5f, 0.5f), tall ? new Vector2(0f, -600f) : new Vector2(540f, -340f), new Vector2(300f, 96f));
+
+        for (int i = 0; i < cards.Length; i++) {
+            Card card = cards[i];
+            Vector2 frame = tall ? new Vector2(size.x - 40f, 300f) : new Vector2(430f, 500f);
+            homes[i] = tall ? new Vector2(0f, (1 - i) * 330f) : new Vector2((i - 1) * 470f, 0f);
+            Place(card.Frame.rectTransform, new Vector2(0.5f, 0.5f), homes[i], frame);
+            Place(card.Halo.rectTransform, new Vector2(0.5f, 0.5f), homes[i], frame + new Vector2(90f, 90f));
+            float inner = frame.x - 40f;
+            if (tall) {
+                Lay(card.Tag, 20, new Vector2(0f, -14f), new Vector2(inner, 28f));
+                Lay(card.Name, 36, new Vector2(0f, -40f), new Vector2(inner, 50f));
+                Lay(card.Rank, 22, new Vector2(0f, -92f), new Vector2(inner, 30f));
+                Lay(card.About, 26, new Vector2(0f, -128f), new Vector2(inner, 120f));
+                Lay(card.Key, 24, new Vector2(0f, 12f), new Vector2(inner, 32f));
+            } else {
+                Lay(card.Tag, 20, new Vector2(0f, -22f), new Vector2(380f, 30f));
+                Lay(card.Name, 40, new Vector2(0f, -60f), new Vector2(390f, 110f));
+                Lay(card.Rank, 24, new Vector2(0f, -170f), new Vector2(380f, 34f));
+                Lay(card.About, 27, new Vector2(0f, -220f), new Vector2(370f, 200f));
+                Lay(card.Key, 30, new Vector2(0f, 60f), new Vector2(380f, 40f));
+            }
+        }
+    }
+
+    static void Lay(Text text, int fontSize, Vector2 position, Vector2 size) {
+        text.fontSize = fontSize;
+        text.rectTransform.anchoredPosition = position;
+        text.rectTransform.sizeDelta = size;
     }
 
     Card MakeCard(Transform parent, int index) {
