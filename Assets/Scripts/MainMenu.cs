@@ -55,7 +55,7 @@ public class MainMenu : MonoBehaviour {
             flash -= Time.deltaTime;
             rows[flashRow].color = Color.Lerp(new Color(0.1f, 0.09f, 0.13f, 0.78f), new Color(0.55f, 0.4f, 0.12f, 0.9f), Mathf.Clamp01(flash));
         }
-        if (Time.unscaledTime >= playReadyAt && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space))) {
+        if (Time.unscaledTime >= playReadyAt && (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.Space))) {
             Play();
         }
     }

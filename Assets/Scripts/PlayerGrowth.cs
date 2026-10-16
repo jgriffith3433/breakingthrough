@@ -207,7 +207,7 @@ public class PlayerGrowth : MonoBehaviour {
             leftGround = false;
             Banner = "They're climbing you. Press F.";
             bannerLeft = 0.35f;
-            if (Input.GetKeyDown(KeyCode.F)) {
+            if (PlayInput.GetKeyDown(KeyCode.F)) {
                 Shake();
             }
             return;

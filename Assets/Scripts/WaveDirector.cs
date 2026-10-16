@@ -115,7 +115,7 @@ public class WaveDirector : MonoBehaviour {
 
     void Update() {
         if (phase == Phase.Lost) {
-            if (Time.unscaledTime >= returnReadyAt && Input.anyKeyDown) {
+            if (Time.unscaledTime >= returnReadyAt && PlayInput.AnyKeyDown) {
                 Time.timeScale = 1f;
                 pausedGame = false;
                 Cursor.lockState = CursorLockMode.None;
@@ -128,11 +128,11 @@ public class WaveDirector : MonoBehaviour {
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.KeypadPlus) || Input.GetKeyDown(KeyCode.Equals)) {
+        if (PlayInput.GetKeyDown(KeyCode.KeypadPlus) || PlayInput.GetKeyDown(KeyCode.Equals)) {
             GoToWave(Wave + 1);
             return;
         }
-        if (Input.GetKeyDown(KeyCode.KeypadMinus) || Input.GetKeyDown(KeyCode.Minus)) {
+        if (PlayInput.GetKeyDown(KeyCode.KeypadMinus) || PlayInput.GetKeyDown(KeyCode.Minus)) {
             GoToWave(Mathf.Max(1, Wave - 1));
             return;
         }
@@ -145,7 +145,7 @@ public class WaveDirector : MonoBehaviour {
         } else if (phase == Phase.Break || phase == Phase.Build) {
             phaseLeft -= Time.deltaTime;
             IsBuilding = phase == Phase.Build;
-            if (!LevelUpScreen.IsOpen && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))) {
+            if (!LevelUpScreen.IsOpen && (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter))) {
                 phaseLeft = 0f;
             }
             if (phaseLeft <= 0f) {

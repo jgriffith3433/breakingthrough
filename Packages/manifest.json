@@ -1,6 +1,8 @@
 {
   "dependencies": {
     "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#main",
+    "com.hawkes.gen": "file:C:/Projects/hawkesgen/clients/unity/com.hawkes.gen",
+    "com.hawkes.playtest": "file:C:/Projects/hawkesstudio/clients/unity/com.hawkes.playtest",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
     "com.unity.ads": "4.16.4",

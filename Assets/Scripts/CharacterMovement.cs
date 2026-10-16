@@ -108,7 +108,7 @@ public class CharacterMovement : MonoBehaviour {
                 Anim.SetFloat(FireSpeedHash, RunBoons.DrawSpeed);
             }
             bool menu = LevelUpScreen.IsOpen || LevelUpScreen.HoldFire;
-            bool holdShot = !building && !menu && Input.GetMouseButton(0);
+            bool holdShot = !building && !menu && PlayInput.GetMouseButton(0);
             bool auto = !building && !menu && !holdShot && WaveDirector.Wave >= MetaProgress.AutoWave() && autoShot <= 0f;
             if (!shooting && shotLatch && (holdShot || auto)) {
                 shotLatch = false;
@@ -133,8 +133,8 @@ public class CharacterMovement : MonoBehaviour {
             if (rooted) {
                 motor.Move(Vector3.zero);
             } else if (ZeldaCam.LockedOnGameObject != null) {
-                var vert = Input.GetAxis("Vertical");
-                var hori = Input.GetAxis("Horizontal");
+                var vert = PlayInput.GetAxis("Vertical");
+                var hori = PlayInput.GetAxis("Horizontal");
                 var directionTowardLockedOnObject = ZeldaCam.LockedOnGameObject.transform.position - transform.position;
                 directionTowardLockedOnObject.y = 0;
 
@@ -156,8 +156,8 @@ public class CharacterMovement : MonoBehaviour {
                 motor.Move(directionToMove);
                 AnimationMove(motor.charController.velocity.magnitude * 0.1f);
             } else {
-                var vert = Input.GetAxis("Vertical");
-                var hori = Input.GetAxis("Horizontal");
+                var vert = PlayInput.GetAxis("Vertical");
+                var hori = PlayInput.GetAxis("Horizontal");
                 var cameraForward = new Vector3(ZeldaCam.transform.forward.x * vert, 0, ZeldaCam.transform.forward.z * vert);
                 var cameraRight = new Vector3(ZeldaCam.transform.right.x * hori, 0, ZeldaCam.transform.right.z * hori);
                 var directionToMove = cameraForward + cameraRight;
@@ -176,8 +176,8 @@ public class CharacterMovement : MonoBehaviour {
             }
 
             bool wantJump = WaveDirector.Wave >= Tuning.JumpWave
-                ? Input.GetKey(KeyCode.Space)
-                : Input.GetKeyDown(KeyCode.Space);
+                ? PlayInput.GetKey(KeyCode.Space)
+                : PlayInput.GetKeyDown(KeyCode.Space);
             bool groundedAct = Enemy.Climbers == 0 && (PlayerGrowth.Instance == null || !PlayerGrowth.Instance.Rooted);
             if (groundedAct && wantJump && motor.TryJump(SpeedJump)) {
                 Anim.speed = 1f;

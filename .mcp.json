@@ -9,6 +9,18 @@
       "args": [
         "mcp-for-blender"
       ]
+    },
+    "hawkesgen": {
+      "command": "node",
+      "args": [
+        "C:/Projects/hawkesgen/bin/hawkesgen-mcp.mjs"
+      ]
+    },
+    "hawkesstudio": {
+      "command": "node",
+      "args": [
+        "C:/Projects/hawkesstudio/bin/studio-mcp.mjs"
+      ]
     }
   }
 }

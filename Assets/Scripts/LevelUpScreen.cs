@@ -87,7 +87,7 @@ public class LevelUpScreen : MonoBehaviour {
     }
 
     void Update() {
-        if (HoldFire && !Input.GetMouseButton(0)) {
+        if (HoldFire && !PlayInput.GetMouseButton(0)) {
             HoldFire = false;
         }
         if (!IsOpen) {
@@ -124,12 +124,12 @@ public class LevelUpScreen : MonoBehaviour {
             return;
         }
         for (int i = 0; i < offer.Count; i++) {
-            if (Input.GetKeyDown(KeyCode.Alpha1 + i) || Input.GetKeyDown(KeyCode.Keypad1 + i)) {
+            if (PlayInput.GetKeyDown(KeyCode.Alpha1 + i) || PlayInput.GetKeyDown(KeyCode.Keypad1 + i)) {
                 Choose(i);
                 return;
             }
         }
-        if (Input.GetKeyDown(KeyCode.R)) {
+        if (PlayInput.GetKeyDown(KeyCode.R)) {
             Reroll();
         }
     }

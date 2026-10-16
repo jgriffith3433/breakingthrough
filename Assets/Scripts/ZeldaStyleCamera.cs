@@ -111,8 +111,8 @@ public class ZeldaStyleCamera : MonoBehaviour {
         switch (CamState) {
             case CamStates.Behind:
                 if (!WaveDirector.IsBuilding && !LevelUpScreen.IsOpen) {
-                    orbitYaw += Input.GetAxis("Mouse X") * 3.4f;
-                    orbitPitch = Mathf.Clamp(orbitPitch - Input.GetAxis("Mouse Y") * 2.1f, 5f, Mathf.Lerp(58f, 84f, Mathf.Clamp01((BodyScale - 1f) / 5f)));
+                    orbitYaw += PlayInput.GetAxis("Mouse X") * 3.4f;
+                    orbitPitch = Mathf.Clamp(orbitPitch - PlayInput.GetAxis("Mouse Y") * 2.1f, 5f, Mathf.Lerp(58f, 84f, Mathf.Clamp01((BodyScale - 1f) / 5f)));
                 }
                 if (CurrentCameraDistance < MinDistance) {
                     CurrentCameraDistance = MaxDistance;
@@ -179,8 +179,8 @@ public class ZeldaStyleCamera : MonoBehaviour {
                 }
                 break;
             case CamStates.FirstPerson:
-                orbitYaw += Input.GetAxis("Mouse X") * 2.6f;
-                aimPitch = Mathf.Clamp(aimPitch - Input.GetAxis("Mouse Y") * 1.7f, -42f, 48f);
+                orbitYaw += PlayInput.GetAxis("Mouse X") * 2.6f;
+                aimPitch = Mathf.Clamp(aimPitch - PlayInput.GetAxis("Mouse Y") * 1.7f, -42f, 48f);
                 FollowXForm.rotation = Quaternion.Euler(0f, orbitYaw, 0f);
                 transform.position = FirstPersonCamPos.transform.position;
                 transform.rotation = Quaternion.Euler(aimPitch, orbitYaw, 0f);
@@ -202,7 +202,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
     }
 
     void AcquireTarget() {
-        bool holding = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        bool holding = PlayInput.GetKey(KeyCode.LeftShift) || PlayInput.GetKey(KeyCode.RightShift);
         if (!holding || WaveDirector.IsBuilding) {
             LockedOnGameObject = null;
             return;

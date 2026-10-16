@@ -16,12 +16,22 @@ public static class RunLog {
     static readonly StringBuilder picks = new StringBuilder();
     static bool headerChecked;
 
+    // Whole-run totals, for the playtest report.
+    public static int RunShots { get; private set; }
+    public static int RunHits { get; private set; }
+    public static int RunKills { get; private set; }
+    public static float RunDamage { get; private set; }
+
     public static string FilePath {
         get { return Path.Combine(Application.persistentDataPath, "runlog.csv"); }
     }
 
     public static void BeginRun() {
         runId = System.DateTime.Now.ToString("yyyyMMdd-HHmmss");
+        RunShots = 0;
+        RunHits = 0;
+        RunKills = 0;
+        RunDamage = 0f;
         Reset();
     }
 
@@ -47,15 +57,19 @@ public static class RunLog {
 
     public static void NoteShot() {
         shots++;
+        RunShots++;
     }
 
     public static void NoteHit(float amount) {
         hits++;
         dealt += amount;
+        RunHits++;
+        RunDamage += amount;
     }
 
     public static void NoteKill(FowlKind kind) {
         kills++;
+        RunKills++;
         int index = (int)kind;
         if (index >= 0 && index < killsByKind.Length) {
             killsByKind[index]++;

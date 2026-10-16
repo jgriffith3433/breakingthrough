@@ -107,6 +107,28 @@ While Unity is playing, script edits do not compile. Leave play mode first. Pref
 - **Restore project settings after tests.** Setting `Application.runInBackground` during play writes `runInBackground: 1` into `ProjectSettings.asset`, and quality changes can stick too. Before handing back, check `git diff ProjectSettings/` and restore anything a test changed.
 - **The game view only updates while Unity is focused or set to run in the background.** If `Time.time` stops advancing during an MCP session, that is why.
 
+## Playtests
+
+The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\docs\playtest.md`) through the
+`com.hawkes.playtest` package. Hawkes Studio runs it daily against the WebGL build (`?playtest=<id>` in the URL, or
+`window.hawkesPlaytest.start(id)`), records it and has Claude review it.
+
+- **Bot:** `Assets/Scripts/Playtest.cs` registers product `theplacedepartment` at startup. Scenarios: `smoke` (menu,
+  Enter, about 30 s of play), `run` (until the musician falls, picking cards; capped at 15 min), `menus` (shop
+  clicks, start, one level-up card with a reroll).
+- **Real input:** gameplay reads keys and the mouse through `PlayInput` (`Assets/Scripts/PlayInput.cs`), which is
+  `UnityEngine.Input` plus whatever the bot holds. Use `PlayInput.GetKey...` in new gameplay input code, or the bot
+  can't press it. The bot holds Shift (lock-on) and the left button (shoot), walks back to the piano with WASD,
+  presses Enter to skip breaks and 1-3 for cards. It plays in `MetaProgress.EnterSandbox(true)`, so it never
+  touches the save.
+- **Report:** wave, kills, damage, shots, hits, level, levelUps, musician HP, coins, run seconds and fps. Problems:
+  errors and exceptions (from the package), missing-asset warnings, menu art missing, "no kills for 45 s", a wave
+  that doesn't end in 240 s, a level-up card that won't close, a game-over screen that doesn't return to the menu.
+- **Test:** `Assets/Tests/PlayMode/PlaytestSmokeTest.cs` runs `smoke` through `HawkesPlaytest.StartScenario`.
+  With the editor closed:
+  `Unity.exe -batchmode -projectPath C:/Projects/breakingthrough -runTests -testPlatform PlayMode -testResults <xml> -logFile <log>`
+  (about 1.5 min). The report is the `[Playtest] smoke report:` line in the log.
+
 ## MCP servers
 
 `.mcp.json` at the project root configures both servers for Claude Code. `.cursor/mcp.json` is the older Cursor config.
@@ -156,3 +178,17 @@ Notes:
 - Windows, project at `C:\Projects\breakingthrough`. The parent `C:\Projects\AGENTS.md` describes a Docker mount. Follow this file when the two disagree.
 - `Editor.log` is at `C:\Users\jgrif\AppData\Local\Unity\Editor\Editor.log`. Older `error CS` lines stay in that file.
 - Under Cursor, shell commands need to run outside the sandbox (`required_permissions: ["all"]`).
+
+## Generative AI: Hawkes Gen
+
+Images, textures, video, 3D, music, voice, sound and Claude all go through **Hawkes Gen**
+(`C:\Projects\hawkesgen`, dashboard http://127.0.0.1:8790; start it with `hawkesgen\auto-start.bat`). It holds
+the API and AWS keys and runs the shared GPU fleet. This project never holds those keys.
+
+- **Agents:** the `hawkesgen` MCP server is in this folder's `.mcp.json`. Use `hawkesgen_presets` (project
+  `theplacedepartment`) for the art direction, then `hawkesgen_run`.
+- **Command line:** `C:\Projects\hawkesgen\hawkesgen.cmd run - --project theplacedepartment --preset <name> --param prompt="..." --out <folder>`
+- **Art direction:** `hawkesgen/presets/theplacedepartment.json` (style line and named presets). Edit it there.
+- **Unity:** Window > Hawkes Gen (package `com.hawkes.gen` in `Packages/manifest.json`) runs any tool or preset and imports the results into `Assets/HawkesGen/`.
+- J's art rules above still apply to anything generated (soft effects, no sparks or fireflies).
+- GPU tools cost money while a server runs. Ask J before starting servers or running big batches.

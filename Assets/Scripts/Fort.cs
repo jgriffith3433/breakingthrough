@@ -359,13 +359,13 @@ public class BuildMode : MonoBehaviour {
         }
 
         ShowRing();
-        if (Input.GetKeyDown(KeyCode.Tab)) {
+        if (PlayInput.GetKeyDown(KeyCode.Tab)) {
             selected = selected == FortKind.Wall ? FortKind.Spike
                 : selected == FortKind.Spike ? FortKind.Tower
                 : FortKind.Wall;
         }
-        if (Input.GetKeyDown(KeyCode.Q)) yawExtra -= 45f;
-        if (Input.GetKeyDown(KeyCode.E)) yawExtra += 45f;
+        if (PlayInput.GetKeyDown(KeyCode.Q)) yawExtra -= 45f;
+        if (PlayInput.GetKeyDown(KeyCode.E)) yawExtra += 45f;
 
         RefreshLabels();
         Vector3 spot;
@@ -379,7 +379,7 @@ public class BuildMode : MonoBehaviour {
         }
 
         bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
-        if (aimed && ghostOk && !overUi && !LevelUpScreen.IsOpen && Input.GetMouseButtonDown(0) && FortStock.Take(selected)) {
+        if (aimed && ghostOk && !overUi && !LevelUpScreen.IsOpen && PlayInput.GetMouseButtonDown(0) && FortStock.Take(selected)) {
             Vector3 grounded = spot;
             grounded.y = Ground(spot);
             DefencePiece.Place(selected, grounded, rotation);
