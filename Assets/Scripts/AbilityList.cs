@@ -11,6 +11,9 @@ public class AbilityList : MonoBehaviour {
     int freshFrom = int.MaxValue;
     float freshUntil;
     bool cachedFresh;
+    CanvasScaler scaler;
+    UiMode laidOut;
+    int laidStamp = -1;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap() {
@@ -40,7 +43,7 @@ public class AbilityList : MonoBehaviour {
         var canvas = canvasGo.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 130;
-        var scaler = canvasGo.AddComponent<CanvasScaler>();
+        scaler = canvasGo.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
         canvasGo.AddComponent<GraphicRaycaster>();
@@ -66,9 +69,33 @@ public class AbilityList : MonoBehaviour {
         rect.pivot = new Vector2(0f, 1f);
         rect.anchoredPosition = new Vector2(36f, -108f);
         rect.sizeDelta = new Vector2(360f, 280f);
+        Layout();
+    }
+
+    // Phones list the abilities on one wrapped line under the coin line, to leave room for the boons.
+    void Layout() {
+        laidOut = UiFit.Mode;
+        laidStamp = UiFit.Stamp;
+        UiFit.Apply(scaler);
+        cachedWave = -2;
+        RectTransform rect = body.rectTransform;
+        if (laidOut == UiMode.Desktop) {
+            body.fontSize = 24;
+            body.horizontalOverflow = HorizontalWrapMode.Overflow;
+            rect.anchoredPosition = new Vector2(36f, -108f);
+            rect.sizeDelta = new Vector2(360f, 280f);
+        } else {
+            body.fontSize = 22;
+            body.horizontalOverflow = HorizontalWrapMode.Wrap;
+            rect.anchoredPosition = laidOut == UiMode.Tall ? new Vector2(24f, -398f) : new Vector2(24f, -152f);
+            rect.sizeDelta = laidOut == UiMode.Tall ? new Vector2(300f, 80f) : new Vector2(360f, 56f);
+        }
     }
 
     void Update() {
+        if (laidStamp != UiFit.Stamp) {
+            Layout();
+        }
         if (Time.timeScale == 0f) {
             if (body.text.Length > 0) {
                 body.text = "";
@@ -110,11 +137,18 @@ public class AbilityList : MonoBehaviour {
         if (!unlocked) {
             return;
         }
+        bool inline = laidOut != UiMode.Desktop;
         if (lines.Length == 0) {
-            lines.Append("<color=#C9B48A>Abilities</color>");
+            lines.Append(inline ? "<color=#C9B48A>Abilities:</color> " : "<color=#C9B48A>Abilities</color>");
+        } else if (inline) {
+            lines.Append("<color=#C9B48A>  ·  </color>");
         }
         bool justOn = highlight && atWave >= freshFrom;
         string color = justOn ? "FFE08A" : "FFF8E6";
+        if (inline) {
+            lines.Append("<color=#").Append(color).Append(">").Append(name).Append("</color>");
+            return;
+        }
         lines.Append("\n<color=#").Append(color).Append(">·  ").Append(name).Append("</color>");
     }
 }

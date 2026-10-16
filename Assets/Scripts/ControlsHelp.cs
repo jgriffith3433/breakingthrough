@@ -8,6 +8,9 @@ public class ControlsHelp : MonoBehaviour {
     RectTransform lineRect;
     string shown = "";
     float flash;
+    CanvasScaler scaler;
+    UiMode laidOut;
+    int laidStamp = -1;
     readonly Color resting = new Color(1f, 0.97f, 0.9f, 0.96f);
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -38,7 +41,7 @@ public class ControlsHelp : MonoBehaviour {
         var canvas = canvasGo.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 180;
-        var scaler = canvasGo.AddComponent<CanvasScaler>();
+        scaler = canvasGo.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
         canvasGo.AddComponent<GraphicRaycaster>();
@@ -61,17 +64,43 @@ public class ControlsHelp : MonoBehaviour {
         lineRect.anchorMax = new Vector2(0.5f, 0f);
         lineRect.pivot = new Vector2(0.5f, 0f);
         lineRect.sizeDelta = new Vector2(1400f, 72f);
+        Layout();
+    }
+
+    // Phones: between the touch stick and buttons in landscape, above them in portrait.
+    void Layout() {
+        laidOut = UiFit.Mode;
+        laidStamp = UiFit.Stamp;
+        UiFit.Apply(scaler);
+        Vector2 size = UiFit.Size;
+        if (laidOut == UiMode.Desktop) {
+            line.fontSize = 42;
+            lineRect.sizeDelta = new Vector2(1400f, 72f);
+        } else {
+            line.fontSize = 28;
+            lineRect.sizeDelta = new Vector2(laidOut == UiMode.Tall ? size.x - 48f : Mathf.Max(300f, size.x - 660f), 72f);
+        }
     }
 
     void Update() {
+        if (laidStamp != UiFit.Stamp) {
+            Layout();
+        }
         bool building = WaveDirector.IsBuilding;
-        string next = building ? BuildLesson() : CombatLesson(Mathf.Max(1, WaveDirector.Wave));
+        bool touch = UiFit.Touch;
+        string next = building ? BuildLesson(touch) : CombatLesson(Mathf.Max(1, WaveDirector.Wave), touch);
         if (next != shown) {
             shown = next;
             line.text = next;
             flash = 1f;
         }
-        lineRect.anchoredPosition = new Vector2(0f, building ? 176f : 36f);
+        float y = building ? 176f : 36f;
+        if (laidOut == UiMode.Wide) {
+            y = building ? 150f : 34f;
+        } else if (laidOut == UiMode.Tall) {
+            y = building ? 330f : 620f;
+        }
+        lineRect.anchoredPosition = new Vector2(0f, y);
         if (flash > 0f) {
             flash -= Time.deltaTime;
             float pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 22f);
@@ -82,17 +111,17 @@ public class ControlsHelp : MonoBehaviour {
         }
     }
 
-    static string BuildLesson() {
+    static string BuildLesson(bool touch) {
         BuildMode build = BuildMode.Instance;
         if (build != null && build.IsPlacing) {
-            return "Click between the rings.";
+            return touch ? "Tap between the rings." : "Click between the rings.";
         }
-        return "Q and E turn. Tab switches.";
+        return touch ? "Turn rotates. Tap a card to switch." : "Q and E turn. Tab switches.";
     }
 
-    static string CombatLesson(int wave) {
+    static string CombatLesson(int wave, bool touch) {
         if (wave >= Tuning.ClimbWave) {
-            return "Press F to shake them off.";
+            return touch ? "Tap Shake to shake them off." : "Press F to shake them off.";
         }
         if (wave >= Tuning.StompWave) {
             return "Stomp turkeys at your feet.";
@@ -101,14 +130,14 @@ public class ControlsHelp : MonoBehaviour {
             return "The bow fires on its own.";
         }
         if (wave >= Tuning.JumpWave) {
-            return "Hold Space to hop. Landings crush turkeys.";
+            return touch ? "Hold Jump to hop. Landings crush turkeys." : "Hold Space to hop. Landings crush turkeys.";
         }
         if (wave >= Tuning.GoldenFirstWave) {
-            return "Shift locks on. Chase gold turkeys for treasure.";
+            return touch ? "Lock locks on. Chase gold turkeys for treasure." : "Shift locks on. Chase gold turkeys for treasure.";
         }
         if (wave >= 2) {
             return "Walk over feathers to level up.";
         }
-        return "Click to shoot. Shift locks on.";
+        return touch ? "Hold Fire to shoot. Lock locks on." : "Click to shoot. Shift locks on.";
     }
 }

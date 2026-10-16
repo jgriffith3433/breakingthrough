@@ -309,6 +309,10 @@ public class BuildMode : MonoBehaviour {
     Text[] labels = new Text[3];
     Text[] prices = new Text[3];
     bool ghostOk;
+    CanvasScaler barScaler;
+    RectTransform cardRow;
+    UiMode barMode;
+    int barStamp = -1;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap() {
@@ -413,7 +417,7 @@ public class BuildMode : MonoBehaviour {
         if (camera == null || musician == null) {
             return false;
         }
-        Ray ray = camera.ScreenPointToRay(Input.mousePosition);
+        Ray ray = camera.ScreenPointToRay(PlayInput.MousePosition);
         if (!Physics.Raycast(ray, out RaycastHit hit, 80f, ~0, QueryTriggerInteraction.Ignore)) {
             return false;
         }
@@ -550,9 +554,9 @@ public class BuildMode : MonoBehaviour {
         var canvas = canvasGo.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 160;
-        var scaler = canvasGo.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
+        barScaler = canvasGo.AddComponent<CanvasScaler>();
+        barScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        barScaler.referenceResolution = new Vector2(1920, 1080);
         canvasGo.AddComponent<GraphicRaycaster>();
         if (FindAnyObjectByType<EventSystem>() == null) {
             var events = new GameObject("Event System");
@@ -560,12 +564,21 @@ public class BuildMode : MonoBehaviour {
             events.AddComponent<StandaloneInputModule>();
         }
 
+        // The three cards sit in one row that phones shrink and move clear of the touch buttons.
+        var rowGo = new GameObject("Cards", typeof(RectTransform));
+        rowGo.transform.SetParent(canvasGo.transform, false);
+        cardRow = (RectTransform)rowGo.transform;
+        cardRow.anchorMin = new Vector2(0.5f, 0f);
+        cardRow.anchorMax = new Vector2(0.5f, 0f);
+        cardRow.pivot = new Vector2(0.5f, 0f);
+        cardRow.sizeDelta = new Vector2(760f, 146f);
+
         Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         FortKind[] kinds = { FortKind.Wall, FortKind.Spike, FortKind.Tower };
         for (int i = 0; i < kinds.Length; i++) {
             float x = -340f + i * 250f;
             var card = new GameObject(kinds[i].ToString());
-            card.transform.SetParent(canvasGo.transform, false);
+            card.transform.SetParent(cardRow, false);
             var image = card.AddComponent<Image>();
             UiSkin.Round(image, 0.6f);
             image.color = new Color(0.1f, 0.09f, 0.08f, 0.92f);
@@ -605,9 +618,40 @@ public class BuildMode : MonoBehaviour {
             prices[i].rectTransform.offsetMax = Vector2.zero;
             prices[i].alignment = TextAnchor.MiddleCenter;
         }
+        LayoutBar();
+    }
+
+    void LayoutBar() {
+        barMode = UiFit.Mode;
+        barStamp = UiFit.Stamp;
+        UiFit.Apply(barScaler);
+        Vector2 size = UiFit.Size;
+        float scale = 1f;
+        Vector2 at = Vector2.zero;
+        if (barMode == UiMode.Wide) {
+            scale = Mathf.Min(1f, (size.x - 404f) / 760f);
+            at = new Vector2(-size.x * 0.5f + 24f + 380f * scale, 0f);
+        } else if (barMode == UiMode.Tall) {
+            scale = Mathf.Min(1f, (size.x - 24f) / 760f);
+            at = new Vector2(0f, 190f);
+        }
+        cardRow.localScale = new Vector3(scale, scale, 1f);
+        cardRow.anchoredPosition = at;
+        bool compact = barMode != UiMode.Desktop;
+        for (int i = 0; i < labels.Length; i++) {
+            if (labels[i] != null) {
+                labels[i].fontSize = compact ? 26 : 22;
+            }
+            if (prices[i] != null) {
+                prices[i].fontSize = compact ? 22 : 18;
+            }
+        }
     }
 
     void SetBar(bool open) {
+        if (open && barStamp != UiFit.Stamp && cardRow != null) {
+            LayoutBar();
+        }
         if (bar != null && bar.activeSelf != open) {
             bar.SetActive(open);
         }

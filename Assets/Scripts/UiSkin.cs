@@ -55,6 +55,16 @@ public static class UiSkin {
         image.pixelsPerUnitMultiplier = 2f;
     }
 
+    // A circle as wide as the image, for the touch stick and buttons.
+    public static void Disc(Image image, float diameter) {
+        if (image == null) {
+            return;
+        }
+        image.sprite = Pill;
+        image.type = Image.Type.Sliced;
+        image.pixelsPerUnitMultiplier = 16f / Mathf.Max(1f, diameter * 0.5f);
+    }
+
     static Sprite Make(int size, int radius, float rim, bool soft) {
         var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
         tex.wrapMode = TextureWrapMode.Clamp;

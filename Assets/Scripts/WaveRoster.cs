@@ -9,6 +9,11 @@ public class WaveRoster : MonoBehaviour {
 
     GameObject panel;
     RectTransform list;
+    RectTransform headerRect;
+    CanvasScaler scaler;
+    UiMode laidOut;
+    int laidStamp = -1;
+    float rowHeight = RowHeight;
     Row[] rows;
     int[] total;
     int[] left;
@@ -55,7 +60,7 @@ public class WaveRoster : MonoBehaviour {
         var canvas = canvasGo.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 130;
-        var scaler = canvasGo.AddComponent<CanvasScaler>();
+        scaler = canvasGo.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
         canvasGo.AddComponent<GraphicRaycaster>();
@@ -73,7 +78,7 @@ public class WaveRoster : MonoBehaviour {
         var outline = headerGo.AddComponent<Outline>();
         outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
         outline.effectDistance = new Vector2(1.4f, -1.4f);
-        RectTransform headerRect = header.rectTransform;
+        headerRect = header.rectTransform;
         headerRect.anchorMin = new Vector2(1f, 1f);
         headerRect.anchorMax = new Vector2(1f, 1f);
         headerRect.pivot = new Vector2(1f, 1f);
@@ -91,6 +96,25 @@ public class WaveRoster : MonoBehaviour {
 
         for (int i = 0; i < kinds; i++) {
             rows[i] = BuildRow(list, font, i);
+        }
+        Layout();
+    }
+
+    // Phones: top right in landscape, under the wave line on the right in portrait, with tighter rows.
+    void Layout() {
+        laidOut = UiFit.Mode;
+        laidStamp = UiFit.Stamp;
+        UiFit.Apply(scaler);
+        float top = laidOut == UiMode.Desktop ? -24f : laidOut == UiMode.Wide ? -16f : -340f;
+        float side = laidOut == UiMode.Desktop ? -36f : -24f;
+        rowHeight = laidOut == UiMode.Desktop ? RowHeight : 52f;
+        headerRect.anchoredPosition = new Vector2(side, top);
+        list.anchoredPosition = new Vector2(side, top - 34f);
+        list.sizeDelta = new Vector2(BarWidth, rows.Length * rowHeight);
+        int fontSize = laidOut == UiMode.Desktop ? 24 : 22;
+        foreach (Row row in rows) {
+            row.Name.fontSize = fontSize;
+            row.Count.fontSize = fontSize;
         }
     }
 
@@ -158,6 +182,9 @@ public class WaveRoster : MonoBehaviour {
     }
 
     void Update() {
+        if (laidStamp != UiFit.Stamp) {
+            Layout();
+        }
         bool show = Time.timeScale > 0f && WaveDirector.Instance != null;
         if (panel != null && panel.activeSelf != show) {
             panel.SetActive(show);
@@ -176,7 +203,7 @@ public class WaveRoster : MonoBehaviour {
             }
             row.Root.SetActive(true);
             var rect = (RectTransform)row.Root.transform;
-            rect.anchoredPosition = new Vector2(0f, -shown * RowHeight);
+            rect.anchoredPosition = new Vector2(0f, -shown * rowHeight);
             shown++;
 
             FowlKind fowl = (FowlKind)kind;

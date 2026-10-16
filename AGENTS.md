@@ -50,6 +50,8 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 | Bloom and color grade | `NightGrade.cs` with `Resources/Shaders/BTPost.shader` |
 | A particle effect | `Fx.cs`: add an `FxKind` and a `Make(...)` line, or reuse a recipe. Never spawn primitive spheres for effects. Status (burning, frozen, golden) is a tint on the bird in `Enemy.TickFlash`, not particles |
 | UI panels and bars | `UiSkin.Round` and `UiSkin.Bar` |
+| Touch controls (stick, Fire, Lock, Jump, Shake, Next wave, Turn) | `TouchControls.cs`. They press keys through `PlayInput.Pad...`, so gameplay needs no touch code |
+| Phone and tablet layouts | `UiFit.cs` picks the layout (`Mode`: Desktop, Wide, Tall) and the canvas scale (`Apply`). Each screen has a `Layout()` that redoes positions when `UiFit.Stamp` changes |
 
 ## Rules the code depends on
 
@@ -68,6 +70,16 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
   - The ground ray is Ground only and ignores triggers.
   - `MovementMotor` must keep applying gravity while `FallVelocity > 0.5`, or the player rockets upward.
   - Jump only when grounded, cooled down and not rising.
+- **Phones and tablets:** every overlay canvas calls `UiFit.Apply(scaler)`. Desktop (`UiMode.Desktop`) is the
+  1920x1080 layout exactly as drawn: never change its numbers for phones. Wide (landscape under 500 CSS px tall, or
+  a touch tablet) and Tall (portrait) use a canvas at least 660 units across its short side, so 22-unit text is
+  about 13 px on a phone and an 88-unit button about 52 px. Keep compact text at 20 units or more and buttons at 88.
+  Compact screens keep the bottom corners for the touch stick (left) and buttons (right). The musician's bar keeps
+  the top middle. `Screen.width` is in device pixels in the browser: `UiFit.PixelRatio` (from
+  `Plugins/WebGL/HawkesScreen.jslib`) converts to CSS pixels.
+- **Touch:** `UiFit.Touch` is true on phones and tablets, after the first touch, or when a playtest forces it.
+  `TouchControls` then turns off `Input.simulateMouseWithTouches`, so a finger on the stick never counts as a click.
+  New gameplay input must go through `PlayInput`, or touch can't press it either.
 - **Player size:** `CharacterController` is not scaled by its transform. `PlayerGrowth` scales height, radius and center from the scene baseline (height 2, radius 0.5). Never save a grown capsule back into the scene.
 
 ## Animator
@@ -115,7 +127,11 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
 
 - **Bot:** `Assets/Scripts/Playtest.cs` registers product `theplacedepartment` at startup. Scenarios: `smoke` (menu,
   Enter, about 30 s of play), `run` (until the musician falls, picking cards; capped at 15 min), `menus` (shop
-  clicks, start, one level-up card with a reroll).
+  clicks, start, one level-up card with a reroll), `touch` (touch only: menu layout check, tap Play, the stick,
+  Fire, Lock and Next wave pressed by the bot's fingers through `TouchControls.BotFinger`, a level-up card tapped,
+  until wave 2 is under way; run it with `mobile` for portrait or at 844x390 for landscape). Every touch run reports
+  a layout check per screen (`menu`, `hud`, `cards`): text or buttons off screen, text over text or over a button,
+  text under 11 px, buttons under 44 px, with `<screen>MinTextPx`, `<screen>MinTapPx` and `<screen>Overlaps`.
 - **Real input:** gameplay reads keys and the mouse through `PlayInput` (`Assets/Scripts/PlayInput.cs`), which is
   `UnityEngine.Input` plus whatever the bot holds. Use `PlayInput.GetKey...` in new gameplay input code, or the bot
   can't press it. The bot holds Shift (lock-on) and the left button (shoot), walks back to the piano with WASD,

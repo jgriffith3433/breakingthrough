@@ -18,6 +18,8 @@ public class WaveDirector : MonoBehaviour {
     public static int Wave { get; private set; } = 1;
     public static bool IsBuilding { get; private set; }
     public static bool IsLost { get; private set; }
+    // A break or the build window, which Enter (or Next wave) ends early.
+    public static bool Waiting { get; private set; }
     public static WaveEvent Event { get; private set; }
     // Shown on the menu after a run ends. Lives only until the game closes.
     public static string LastRun { get; private set; }
@@ -82,6 +84,10 @@ public class WaveDirector : MonoBehaviour {
     Image purseFill;
     GameObject lostPanel;
     Text lostBody;
+    CanvasScaler hudScaler;
+    RectTransform hudPurse;
+    UiMode hudMode;
+    int hudStamp = -1;
 
     void Start() {
         Instance = this;
@@ -92,6 +98,7 @@ public class WaveDirector : MonoBehaviour {
 
         BuildHud();
         IsLost = false;
+        Waiting = false;
         Event = WaveEvent.None;
         MetaProgress.BeginRun();
         FortStock.BeginRun();
@@ -114,6 +121,10 @@ public class WaveDirector : MonoBehaviour {
     }
 
     void Update() {
+        Waiting = phase == Phase.Break || phase == Phase.Build;
+        if (hudStamp != UiFit.Stamp) {
+            LayoutHud();
+        }
         if (phase == Phase.Lost) {
             if (Time.unscaledTime >= returnReadyAt && PlayInput.AnyKeyDown) {
                 Time.timeScale = 1f;
@@ -394,7 +405,7 @@ public class WaveDirector : MonoBehaviour {
         string boons = RunBoons.Summary();
         LastRun = "Fell on wave " + Wave + ", level " + RunBoons.Level + ", streak " + Combo.Best + ", +" + MetaProgress.CoinsThisRun + " coins.\n" + boons;
         lostBody.text = waves + "\n" + bestLine + "\n" + run + "\n\n" + earned + "\n" + purse
-            + (string.IsNullOrEmpty(boons) ? "" : "\n\n<size=22>" + boons + "</size>") + "\n\nPress any key";
+            + (string.IsNullOrEmpty(boons) ? "" : "\n\n<size=22>" + boons + "</size>") + (UiFit.Touch ? "\n\nTap to go on" : "\n\nPress any key");
     }
 
     float SpawnOne(int index) {
@@ -723,12 +734,12 @@ public class WaveDirector : MonoBehaviour {
             waveText.text = WaveLine();
             detailText.text = Flavor(Wave);
         } else if (phase == Phase.Build) {
-            waveText.text = "Build  ·  " + Mathf.CeilToInt(Mathf.Max(phaseLeft, 0f)) + "s   ·   Enter to start";
+            waveText.text = "Build  ·  " + Mathf.CeilToInt(Mathf.Max(phaseLeft, 0f)) + "s   ·   " + StartHint();
             detailText.text = Wave <= 5
                 ? "It's level 5, prepare."
                 : "It's level " + Wave + ", time to prepare.";
         } else if (phase == Phase.Break) {
-            waveText.text = "Next wave in " + Mathf.CeilToInt(Mathf.Max(phaseLeft, 0f)) + "   ·   Enter to start";
+            waveText.text = "Next wave in " + Mathf.CeilToInt(Mathf.Max(phaseLeft, 0f)) + "   ·   " + StartHint();
             detailText.text = Flavor(Wave);
         } else if (phase == Phase.Lost) {
             waveText.text = "The musician fell";
@@ -756,6 +767,10 @@ public class WaveDirector : MonoBehaviour {
                 ? new Color(1f, 0.95f, 0.6f, 1f)
                 : new Color(1f, 0.78f, 0.22f, 0.95f);
         }
+    }
+
+    static string StartHint() {
+        return UiFit.Touch ? "tap Next wave" : "Enter to start";
     }
 
     string WaveLine() {
@@ -841,6 +856,44 @@ public class WaveDirector : MonoBehaviour {
         title.color = new Color(1f, 0.45f, 0.35f);
         lostBody = MakeText(lostPanel.transform, font, "", 30, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -140f), new Vector2(820f, 520f));
         lostPanel.SetActive(false);
+        hudScaler = scaler;
+        hudPurse = purseRect;
+        LayoutHud();
+    }
+
+    // Desktop is the layout above. Phones: the coin line top left, the wave line in the middle column between
+    // the side lists (Wide), or across the top (Tall), and the game-over panel shrunk to fit.
+    void LayoutHud() {
+        hudMode = UiFit.Mode;
+        hudStamp = UiFit.Stamp;
+        if (hudScaler == null) {
+            return;
+        }
+        UiFit.Apply(hudScaler);
+        Vector2 size = UiFit.Size;
+        if (hudMode == UiMode.Desktop) {
+            Fit(waveText, 32, new Vector2(0f, -108f), new Vector2(1500f, 46f));
+            Fit(detailText, 24, new Vector2(0f, -154f), new Vector2(1400f, 72f));
+            Fit(coinText, 26, new Vector2(36f, -24f), new Vector2(860f, 40f));
+            hudPurse.anchoredPosition = new Vector2(36f, -68f);
+            lostPanel.transform.localScale = Vector3.one;
+            return;
+        }
+        // Under the musician's bar, which keeps the top middle.
+        bool tall = hudMode == UiMode.Tall;
+        float middle = tall ? size.x - 48f : Mathf.Max(360f, size.x - 800f);
+        hudPurse.anchoredPosition = new Vector2(24f, tall ? -80f : -18f);
+        Fit(coinText, 22, new Vector2(24f, tall ? -92f : -34f), new Vector2(tall ? size.x - 48f : 360f, 56f));
+        Fit(waveText, 28, new Vector2(0f, tall ? -126f : -66f), new Vector2(middle, 70f));
+        Fit(detailText, 22, new Vector2(0f, tall ? -196f : -136f), new Vector2(middle, 56f));
+        float fit = Mathf.Min(1f, (size.x - 40f) / 900f, (size.y - 40f) / 700f);
+        lostPanel.transform.localScale = new Vector3(fit, fit, 1f);
+    }
+
+    static void Fit(Text text, int fontSize, Vector2 position, Vector2 box) {
+        text.fontSize = fontSize;
+        text.rectTransform.anchoredPosition = position;
+        text.rectTransform.sizeDelta = box;
     }
 
     static Text MakeText(Transform parent, Font font, string value, int size, TextAnchor anchor, Vector2 anchorPoint, Vector2 position, Vector2 sizeDelta) {
