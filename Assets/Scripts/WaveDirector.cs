@@ -61,6 +61,11 @@ public class WaveDirector : MonoBehaviour {
     }
 
     Phase phase = Phase.Intro;
+
+    // True while Enter would skip the wait (the on-screen Next button follows this).
+    public static bool CanSkipBreak {
+        get { return Instance != null && (Instance.phase == Phase.Break || Instance.phase == Phase.Build); }
+    }
     float phaseLeft = 1.6f;
     float spawnIn;
     float spawnAngle;
@@ -723,12 +728,12 @@ public class WaveDirector : MonoBehaviour {
             waveText.text = WaveLine();
             detailText.text = Flavor(Wave);
         } else if (phase == Phase.Build) {
-            waveText.text = "Build  ·  " + Mathf.CeilToInt(Mathf.Max(phaseLeft, 0f)) + "s   ·   Enter to start";
+            waveText.text = "Build  ·  " + Mathf.CeilToInt(Mathf.Max(phaseLeft, 0f)) + "s   ·   " + (UiSkin.Touch ? "Tap to start" : "Enter to start");
             detailText.text = Wave <= 5
                 ? "It's level 5, prepare."
                 : "It's level " + Wave + ", time to prepare.";
         } else if (phase == Phase.Break) {
-            waveText.text = "Next wave in " + Mathf.CeilToInt(Mathf.Max(phaseLeft, 0f)) + "   ·   Enter to start";
+            waveText.text = "Next wave in " + Mathf.CeilToInt(Mathf.Max(phaseLeft, 0f)) + "   ·   " + (UiSkin.Touch ? "Tap to start" : "Enter to start");
             detailText.text = Flavor(Wave);
         } else if (phase == Phase.Lost) {
             waveText.text = "The musician fell";
@@ -790,7 +795,7 @@ public class WaveDirector : MonoBehaviour {
         canvas.sortingOrder = 120;
         var scaler = canvasGo.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
+        UiSkin.Reference(scaler);
         canvasGo.AddComponent<GraphicRaycaster>();
 
         Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");

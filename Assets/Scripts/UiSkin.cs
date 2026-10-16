@@ -37,6 +37,38 @@ public static class UiSkin {
         }
     }
 
+    // Phones and tablets: a 1920x1080 reference makes every label a fifth of its size on a 390 px wide
+    // screen, so touch devices get a much smaller reference canvas.
+    public static bool Touch {
+        get { return TouchControls.Wanted; }
+    }
+
+    public static bool Portrait {
+        get { return Screen.height > Screen.width; }
+    }
+
+    // Width in canvas units of a canvas set up with Reference.
+    public static float CanvasWidth {
+        get {
+            if (!Touch) {
+                return 1920f;
+            }
+            return Portrait ? 800f : 720f * Screen.width / Mathf.Max(1f, Screen.height);
+        }
+    }
+
+    public static void Reference(CanvasScaler scaler) {
+        if (!Touch) {
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+        } else if (Portrait) {
+            scaler.referenceResolution = new Vector2(800f, 1732f);
+            scaler.matchWidthOrHeight = 0f;
+        } else {
+            scaler.referenceResolution = new Vector2(1280f, 720f);
+            scaler.matchWidthOrHeight = 1f;
+        }
+    }
+
     public static void Round(Image image, float scale = 1f) {
         if (image == null) {
             return;

@@ -42,7 +42,7 @@ public class AbilityList : MonoBehaviour {
         canvas.sortingOrder = 130;
         var scaler = canvasGo.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
+        UiSkin.Reference(scaler);
         canvasGo.AddComponent<GraphicRaycaster>();
 
         Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");

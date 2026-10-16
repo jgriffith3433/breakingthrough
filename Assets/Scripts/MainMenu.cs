@@ -91,8 +91,19 @@ public class MainMenu : MonoBehaviour {
         canvas.sortingOrder = 50;
         var scaler = canvasGo.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
+        UiSkin.Reference(scaler);
         canvasGo.AddComponent<GraphicRaycaster>();
+
+        // A phone held upright has no room for two side-by-side panels: stack them in a scrolling column.
+        bool stacked = UiSkin.Touch && UiSkin.Portrait;
+        float rowPitch = stacked ? 116f : 76f;
+        float rightHeight = 110f + MetaProgress.Catalog.Length * rowPitch;
+        Transform host = canvasGo.transform;
+        if (stacked) {
+            scaler.referenceResolution = new Vector2(640f, 1386f);
+            scaler.matchWidthOrHeight = 0f;
+            host = ScrollColumn(canvasGo.transform, 10f + 1000f + 10f + rightHeight + 20f);
+        }
 
         var backdrop = Image(canvasGo.transform, new Color(0.04f, 0.05f, 0.08f, 1f));
         Stretch(backdrop.rectTransform);
@@ -108,7 +119,9 @@ public class MainMenu : MonoBehaviour {
             Stretch(shade.rectTransform);
         }
 
-        var left = Panel(canvasGo.transform, new Color(0.03f, 0.04f, 0.08f, 0.66f), new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(60f, 0f), new Vector2(620f, -120f));
+        var left = stacked
+            ? Panel(host, new Color(0.03f, 0.04f, 0.08f, 0.66f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(10f, -10f), new Vector2(620f, 1000f))
+            : Panel(canvasGo.transform, new Color(0.03f, 0.04f, 0.08f, 0.66f), new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(60f, 0f), new Vector2(620f, -120f));
         Label(left, "Breaking Through", 64, FontStyle.Bold, new Color(1f, 0.96f, 0.86f), new Vector2(36f, -36f), new Vector2(540f, 80f), TextAnchor.UpperLeft);
         Label(left, "Protect the musician. Level up on feathers, pick boons, build a run. Coins buy a stronger start.", 24, FontStyle.Normal, new Color(1f, 0.9f, 0.72f, 0.9f), new Vector2(36f, -124f), new Vector2(540f, 80f), TextAnchor.UpperLeft);
 
@@ -126,23 +139,24 @@ public class MainMenu : MonoBehaviour {
         var playImage = play.GetComponent<Image>();
         playImage.color = new Color(0.22f, 0.38f, 0.22f, 1f);
 
-        Label(left, "Enter or click Play. After a run, M brings you back here.", 22, FontStyle.Italic, new Color(1f, 0.96f, 0.88f, 0.7f), new Vector2(36f, -742f), new Vector2(540f, 70f), TextAnchor.UpperLeft);
+        Label(left, UiSkin.Touch ? "Tap Play. After a run, tap anywhere to come back here." : "Enter or click Play. After a run, M brings you back here.", 22, FontStyle.Italic, new Color(1f, 0.96f, 0.88f, 0.7f), new Vector2(36f, -742f), new Vector2(540f, 70f), TextAnchor.UpperLeft);
         if (!string.IsNullOrEmpty(WaveDirector.LastRun)) {
             Label(left, "Last run\n" + WaveDirector.LastRun, 20, FontStyle.Normal, new Color(0.7f, 0.9f, 1f, 0.9f), new Vector2(36f, -800f), new Vector2(540f, 140f), TextAnchor.UpperLeft);
         }
 
-        float rightHeight = 110f + MetaProgress.Catalog.Length * 76f;
-        var right = Panel(canvasGo.transform, new Color(0.04f, 0.04f, 0.07f, 0.72f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-60f, -60f), new Vector2(900f, rightHeight));
+        var right = stacked
+            ? Panel(host, new Color(0.04f, 0.04f, 0.07f, 0.72f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(10f, -1020f), new Vector2(620f, rightHeight))
+            : Panel(canvasGo.transform, new Color(0.04f, 0.04f, 0.07f, 0.72f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-60f, -60f), new Vector2(900f, rightHeight));
         Label(right, "Upgrades", 42, FontStyle.Bold, new Color(1f, 0.94f, 0.8f), new Vector2(32f, -24f), new Vector2(900f, 56f), TextAnchor.UpperLeft);
 
         for (int i = 0; i < MetaProgress.Catalog.Length; i++) {
-            float y = -90f - i * 76f;
-            var row = Panel(right, new Color(0.1f, 0.09f, 0.13f, 0.78f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(-48f, 72f));
+            float y = -90f - i * rowPitch;
+            var row = Panel(right, new Color(0.1f, 0.09f, 0.13f, 0.78f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(-48f, stacked ? 112f : 72f));
             rows[i] = row.GetComponent<Image>();
             UpgradeInfo info = MetaProgress.Catalog[i];
-            titles[i] = Label(row, info.Name, 26, FontStyle.Bold, new Color(1f, 0.95f, 0.84f), new Vector2(18f, -8f), new Vector2(520f, 32f), TextAnchor.UpperLeft);
-            abouts[i] = Label(row, info.About, 20, FontStyle.Normal, new Color(1f, 0.92f, 0.8f, 0.8f), new Vector2(18f, -42f), new Vector2(560f, 36f), TextAnchor.UpperLeft);
-            ranks[i] = Label(row, "", 20, FontStyle.Normal, new Color(0.8f, 0.92f, 0.7f), new Vector2(410f, -8f), new Vector2(250f, 32f), TextAnchor.UpperRight);
+            titles[i] = Label(row, info.Name, 26, FontStyle.Bold, new Color(1f, 0.95f, 0.84f), new Vector2(18f, -8f), new Vector2(stacked ? 380f : 520f, 32f), TextAnchor.UpperLeft);
+            abouts[i] = Label(row, info.About, 20, FontStyle.Normal, new Color(1f, 0.92f, 0.8f, 0.8f), new Vector2(18f, -42f), new Vector2(stacked ? 380f : 560f, stacked ? 66f : 36f), TextAnchor.UpperLeft);
+            ranks[i] = Label(row, "", 20, FontStyle.Normal, new Color(0.8f, 0.92f, 0.7f), stacked ? new Vector2(406f, -8f) : new Vector2(410f, -8f), stacked ? new Vector2(150f, 28f) : new Vector2(250f, 32f), TextAnchor.UpperRight);
             int captured = i;
             buttons[i] = Button(row, "Buy", new Vector2(-168f, -18f), new Vector2(150f, 52f), 22, () => Buy(captured));
             var buttonRect = buttons[i].GetComponent<RectTransform>();
@@ -215,6 +229,34 @@ public class MainMenu : MonoBehaviour {
         rect.anchoredPosition = position;
         rect.sizeDelta = sizeDelta;
         return text;
+    }
+
+    // A vertical drag-to-scroll column filling the canvas. Returns the content transform.
+    Transform ScrollColumn(Transform parent, float height) {
+        var viewGo = new GameObject("Scroll View", typeof(RectTransform));
+        viewGo.transform.SetParent(parent, false);
+        var viewImage = viewGo.AddComponent<Image>();
+        viewImage.color = new Color(0f, 0f, 0f, 0.004f);
+        viewGo.AddComponent<RectMask2D>();
+        Stretch(viewImage.rectTransform);
+
+        var contentGo = new GameObject("Content", typeof(RectTransform));
+        contentGo.transform.SetParent(viewGo.transform, false);
+        var content = (RectTransform)contentGo.transform;
+        content.anchorMin = new Vector2(0f, 1f);
+        content.anchorMax = new Vector2(1f, 1f);
+        content.pivot = new Vector2(0.5f, 1f);
+        content.anchoredPosition = Vector2.zero;
+        content.sizeDelta = new Vector2(0f, height);
+
+        var scroll = viewGo.AddComponent<ScrollRect>();
+        scroll.viewport = viewImage.rectTransform;
+        scroll.content = content;
+        scroll.horizontal = false;
+        scroll.vertical = true;
+        scroll.movementType = ScrollRect.MovementType.Elastic;
+        scroll.scrollSensitivity = 40f;
+        return content;
     }
 
     Image Image(Transform parent, Color color) {

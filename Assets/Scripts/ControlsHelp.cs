@@ -40,7 +40,7 @@ public class ControlsHelp : MonoBehaviour {
         canvas.sortingOrder = 180;
         var scaler = canvasGo.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
+        UiSkin.Reference(scaler);
         canvasGo.AddComponent<GraphicRaycaster>();
 
         Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -109,6 +109,6 @@ public class ControlsHelp : MonoBehaviour {
         if (wave >= 2) {
             return "Walk over feathers to level up.";
         }
-        return "Click to shoot. Shift locks on.";
+        return UiSkin.Touch ? "Tap Fire to shoot. Lock holds a target." : "Click to shoot. Shift locks on.";
     }
 }

@@ -39,6 +39,9 @@ public class RunHud : MonoBehaviour {
         new GameObject("Run Hud").AddComponent<RunHud>();
     }
 
+    float barWidth = 1240f;
+    float bossWidth = 820f;
+
     void Start() {
         font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         var canvasGo = new GameObject("Run Canvas");
@@ -48,13 +51,15 @@ public class RunHud : MonoBehaviour {
         canvas.sortingOrder = 125;
         var scaler = canvasGo.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
+        UiSkin.Reference(scaler);
         Transform top = canvasGo.transform;
+        barWidth = Mathf.Min(1240f, UiSkin.CanvasWidth - 80f);
+        bossWidth = Mathf.Min(820f, UiSkin.CanvasWidth - 60f);
 
-        Image xpBack = Bar(top, new Vector2(0.5f, 0f), new Vector2(0f, 10f), new Vector2(1240f, 14f), new Color(0.05f, 0.08f, 0.12f, 0.85f));
+        Image xpBack = Bar(top, new Vector2(0.5f, 0f), new Vector2(0f, 10f), new Vector2(barWidth, 14f), new Color(0.05f, 0.08f, 0.12f, 0.85f));
         xpFill = Bar(xpBack.transform, new Vector2(0f, 0.5f), new Vector2(2f, 0f), new Vector2(0f, 10f), new Color(0.45f, 0.92f, 1f, 1f));
         xpFill.rectTransform.pivot = new Vector2(0f, 0.5f);
-        levelText = Label(top, "", 26, FontStyle.Bold, TextAnchor.LowerRight, new Vector2(0.5f, 0f), new Vector2(-640f, 4f), new Vector2(240f, 34f));
+        levelText = Label(top, "", 26, FontStyle.Bold, TextAnchor.LowerRight, new Vector2(0.5f, 0f), new Vector2(-barWidth * 0.5f, 4f), new Vector2(240f, 34f));
         levelText.rectTransform.pivot = new Vector2(1f, 0f);
         levelText.color = new Color(0.6f, 0.95f, 1f);
 
@@ -70,8 +75,8 @@ public class RunHud : MonoBehaviour {
         bossRect.offsetMax = Vector2.zero;
         bossName = Label(bossRoot.transform, "", 28, FontStyle.Bold, TextAnchor.LowerCenter, new Vector2(0.5f, 1f), new Vector2(0f, -196f), new Vector2(900f, 36f));
         bossName.color = new Color(1f, 0.55f, 0.45f);
-        Image bossBack = Bar(bossRoot.transform, new Vector2(0.5f, 1f), new Vector2(0f, -236f), new Vector2(820f, 22f), new Color(0.12f, 0.04f, 0.04f, 0.92f));
-        bossFill = Bar(bossBack.transform, new Vector2(0f, 0.5f), new Vector2(3f, 0f), new Vector2(814f, 16f), new Color(0.9f, 0.18f, 0.12f));
+        Image bossBack = Bar(bossRoot.transform, new Vector2(0.5f, 1f), new Vector2(0f, -236f), new Vector2(bossWidth, 22f), new Color(0.12f, 0.04f, 0.04f, 0.92f));
+        bossFill = Bar(bossBack.transform, new Vector2(0f, 0.5f), new Vector2(3f, 0f), new Vector2(bossWidth - 6f, 16f), new Color(0.9f, 0.18f, 0.12f));
         bossFill.rectTransform.pivot = new Vector2(0f, 0.5f);
         bossRoot.SetActive(false);
 
@@ -96,7 +101,7 @@ public class RunHud : MonoBehaviour {
         if (target < shownXp - 0.3f) {
             shownXp = target;
         }
-        xpFill.rectTransform.sizeDelta = new Vector2(1236f * shownXp, 10f);
+        xpFill.rectTransform.sizeDelta = new Vector2((barWidth - 4f) * shownXp, 10f);
         levelText.text = hidden ? "" : "Lv " + RunBoons.Level;
 
         int combo = Combo.Count;
@@ -134,7 +139,7 @@ public class RunHud : MonoBehaviour {
         }
         if (showBoss) {
             bossName.text = boss.Title;
-            bossFill.rectTransform.sizeDelta = new Vector2(814f * boss.Health01, 16f);
+            bossFill.rectTransform.sizeDelta = new Vector2((bossWidth - 6f) * boss.Health01, 16f);
         }
         goldenText.text = golden != null && !hidden
             ? "Golden Gobbler!  Catch it:  " + Mathf.CeilToInt(golden.GoldenLeft) + "s"

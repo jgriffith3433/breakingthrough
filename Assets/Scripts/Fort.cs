@@ -552,7 +552,7 @@ public class BuildMode : MonoBehaviour {
         canvas.sortingOrder = 160;
         var scaler = canvasGo.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
+        UiSkin.Reference(scaler);
         canvasGo.AddComponent<GraphicRaycaster>();
         if (FindAnyObjectByType<EventSystem>() == null) {
             var events = new GameObject("Event System");

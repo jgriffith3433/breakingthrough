@@ -142,7 +142,7 @@ public class Musician : MonoBehaviour {
         canvas.sortingOrder = 140;
         var scaler = canvasGo.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
+        UiSkin.Reference(scaler);
 
         var veilGo = new GameObject("Veil");
         veilGo.transform.SetParent(canvasGo.transform, false);

@@ -219,8 +219,10 @@ public class LevelUpScreen : MonoBehaviour {
         canvas.sortingOrder = 400;
         var scaler = canvasGo.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
-        scaler.matchWidthOrHeight = 0.5f;
+        UiSkin.Reference(scaler);
+        if (!UiSkin.Touch) {
+            scaler.matchWidthOrHeight = 0.5f;
+        }
         canvasGo.AddComponent<GraphicRaycaster>();
 
         root = new GameObject("Root");
