@@ -1,6 +1,7 @@
-// The website around the game, for the `site` playtest (Playtest.cs). Reads the site's pages (the landing page and
-// every page linked from it, outside Game/) and reports their footer links, and can show one page over the game for
-// a few seconds so the recording shows its footer. Nothing here runs unless that scenario calls it.
+// The website around the game, for the `site` playtest (Playtest.cs). Reads the site's pages (the landing page, every
+// page the deploy listed in site/pages.json and every page linked from those, outside Game/), looks for a blog at
+// the usual addresses, and reports their footer links. It can show one page over the game for a few seconds so the
+// recording shows its footer. Nothing here runs unless that scenario calls it.
 mergeInto(LibraryManager.library, {
   HawkesSiteCheckStart: function () {
     var path = location.pathname;
@@ -22,21 +23,78 @@ mergeInto(LibraryManager.library, {
     }
 
     var seen = {};
-    var queue = [root + "index.html"];
+    var queue = [];
     var pages = [];
+    var listed = 0;
+    var blog = "";
+
+    function add(s) {
+      if (/\/$/.test(s)) s += "index.html";
+      if (s.indexOf(root) !== 0 || s.indexOf(game) === 0) return;
+      if (!/\.html$/.test(s) || seen[s]) return;
+      seen[s] = true;
+      queue.push(s);
+    }
+
+    function get(url) {
+      return fetch(url, { cache: "no-store" }).then(function (r) {
+        return r.text().then(function (body) {
+          return { status: r.status, body: body };
+        });
+      });
+    }
+
+    // site/pages.json is written by the deploy (WebGlBuild.InstallSiteFooter): every page it stamped, linked or not.
+    function readList() {
+      return get(root + "site/pages.json")
+        .then(function (res) {
+          if (res.status !== 200) return;
+          var list = JSON.parse(res.body);
+          (list.pages || []).forEach(function (p) {
+            listed++;
+            add(root + String(p).replace(/^\/+/, ""));
+          });
+        })
+        .catch(function () {});
+    }
+
+    // A blog at any of the usual addresses gets checked like the other pages (it may not be linked yet). A host that
+    // answers every address with the landing page (a dev server's fallback) doesn't count as having one.
+    function findBlog() {
+      var tries = ["blog/index.html", "blog.html", "news/index.html", "posts/index.html"];
+      var landing = "";
+      function step(i) {
+        if (i >= tries.length) return Promise.resolve();
+        return get(root + tries[i])
+          .then(function (res) {
+            if (res.status === 200 && res.body !== landing && /<html/i.test(res.body)) {
+              blog = "/" + tries[i];
+              add(root + tries[i]);
+              return;
+            }
+            return step(i + 1);
+          })
+          .catch(function () {
+            return step(i + 1);
+          });
+      }
+      return get(root + "index.html")
+        .then(function (res) {
+          landing = res.body;
+        })
+        .catch(function () {})
+        .then(function () {
+          return step(0);
+        });
+    }
 
     function next() {
       if (!queue.length || pages.length >= 25) {
-        window.__hawkesSiteCheck = JSON.stringify({ root: root, pages: pages });
+        window.__hawkesSiteCheck = JSON.stringify({ root: root, listed: listed, blog: blog, pages: pages });
         return;
       }
       var url = queue.shift();
-      fetch(url, { cache: "no-store" })
-        .then(function (r) {
-          return r.text().then(function (body) {
-            return { status: r.status, body: body };
-          });
-        })
+      get(url)
         .then(function (res) {
           var doc = new DOMParser().parseFromString(res.body, "text/html");
           var links = Array.prototype.slice.call(doc.querySelectorAll("a[href]"));
@@ -63,12 +121,7 @@ mergeInto(LibraryManager.library, {
             }
             u.hash = "";
             u.search = "";
-            var s = u.href;
-            if (/\/$/.test(s)) s += "index.html";
-            if (u.origin !== location.origin || s.indexOf(root) !== 0 || s.indexOf(game) === 0) return;
-            if (!/\.html$/.test(s) || seen[s]) return;
-            seen[s] = true;
-            queue.push(s);
+            if (u.origin === location.origin) add(u.href);
           });
         })
         .catch(function (e) {
@@ -77,8 +130,10 @@ mergeInto(LibraryManager.library, {
         .then(next);
     }
 
-    seen[queue[0]] = true;
-    next();
+    add(root + "index.html");
+    readList()
+      .then(findBlog)
+      .then(next);
   },
 
   // "" while the check runs, then its JSON.
