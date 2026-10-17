@@ -52,6 +52,10 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 | UI panels and bars | `UiSkin.Round` and `UiSkin.Bar` |
 | Touch controls (stick, Fire, Lock, Jump, Shake, Next wave, Turn) | `TouchControls.cs`. They press keys through `PlayInput.Pad...`, so gameplay needs no touch code |
 | Phone and tablet layouts | `UiFit.cs` picks the layout (`Mode`: Desktop, Wide, Tall) and the canvas scale (`Apply`). Each screen has a `Layout()` that redoes positions when `UiFit.Stamp` changes |
+| Sound on/off, music and effects volume | `SoundSettings.cs` (saved as JSON `{ on, music, sfx }` under `hawkes.sound`: localStorage on the web, PlayerPrefs too). Music is every looping `AudioSource` (the piano); effects are `GameAudio`, which multiplies by `SoundSettings.EffectsLevel` |
+| The Settings screen | `SettingsPanel.cs`, opened from the main menu's Settings button and the pause menu |
+| Pausing a run | `PauseMenu.cs`: P or Escape, the pause button right of the musician's bar, or the browser freeing a locked mouse. Gameplay that must stop checks `PauseMenu.IsOpen` next to `LevelUpScreen.IsOpen` |
+| The website's "Tap to play" prompt | `Tools/Web/hawkes-sound.js`. `WebGlBuild.InstallSoundPrompt` copies it to `<site>/Game/` and adds its `<script data-hawkes-sound>` to `Game/index.html` on every deploy, so edit it here, never in the website |
 
 ## Rules the code depends on
 
@@ -137,6 +141,9 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
   `Plugins/WebGL/HawkesSite.jslib` and plays 20 s). Every touch run reports
   a layout check per screen (`menu`, `hud`, `cards`): text or buttons off screen, text over text or over a button,
   text under 11 px, buttons under 44 px, with `<screen>MinTextPx`, `<screen>MinTapPx` and `<screen>Overlaps`.
+  `settings` (Settings from the menu: sound off and on, both sliders, Done; then a run, the pause button, Settings
+  from pause, Resume, P twice; layout checks `settings` and `pause`). Every scenario first presses the page's "Tap
+  to play" prompt (event `tap-prompt` with the audio state, metric `audioRunning`); in the editor there is none.
 - **Real input:** gameplay reads keys and the mouse through `PlayInput` (`Assets/Scripts/PlayInput.cs`), which is
   `UnityEngine.Input` plus whatever the bot holds. Use `PlayInput.GetKey...` in new gameplay input code, or the bot
   can't press it. The bot holds Shift (lock-on) and the left button (shoot), walks back to the piano with WASD,

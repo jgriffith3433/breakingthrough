@@ -107,7 +107,7 @@ public class CharacterMovement : MonoBehaviour {
             if (hasFireSpeed) {
                 Anim.SetFloat(FireSpeedHash, RunBoons.DrawSpeed);
             }
-            bool menu = LevelUpScreen.IsOpen || LevelUpScreen.HoldFire;
+            bool menu = LevelUpScreen.IsOpen || LevelUpScreen.HoldFire || PauseMenu.IsOpen || PauseMenu.HoldFire;
             bool holdShot = !building && !menu && PlayInput.GetMouseButton(0);
             bool auto = !building && !menu && !holdShot && WaveDirector.Wave >= MetaProgress.AutoWave() && autoShot <= 0f;
             if (!shooting && shotLatch && (holdShot || auto)) {

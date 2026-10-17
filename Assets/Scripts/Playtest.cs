@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Hawkes.Playtest;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -8,7 +9,7 @@ using UnityEngine.UI;
 
 // The Hawkes playtest bot (contract v1, C:/Projects/hawkesstudio/docs/playtest.md). It plays through PlayInput,
 // the same keys and mouse a player uses: Enter on the menu, Shift to lock on, the left button to shoot, 1-3 for
-// cards, Enter to skip a break. Setup only: it plays in MetaProgress's sandbox with fresh ranks, so it never
+// cards, Enter to skip a break. Every scenario first presses the web page's "Tap to play" prompt. Setup only: it plays in MetaProgress's sandbox with fresh ranks, so it never
 // touches the player's save, and it loads the menu scene if the game isn't on it. Nothing runs until a scenario starts.
 public static class Playtest {
     const string Product = "theplacedepartment";
@@ -19,8 +20,25 @@ public static class Playtest {
         new PlaytestScenario("run", "A full run until the musician falls, picking level-ups", 600, "full"),
         new PlaytestScenario("menus", "Shop menu, start a run, a level-up card, reroll and pick", 120, "menus"),
         new PlaytestScenario("touch", "Touch only, for a phone-sized screen (mobile, or 844x390): the menu fits, tap Play, move and fire with the on-screen stick and buttons, tap a level-up card, play to wave 2", 330, "menus"),
+        new PlaytestScenario("settings", "Press Tap to play, open Settings from the menu: sound off and on, music and effects sliders, Done; start a run, pause (button, then P), Settings from the pause menu, resume, play a little. Any screen size", 100, "menus"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.com and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
     };
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+    [DllImport("__Internal")]
+    static extern int HawkesSoundPressPrompt();
+
+    [DllImport("__Internal")]
+    static extern string HawkesSoundState();
+#else
+    static int HawkesSoundPressPrompt() {
+        return 0;
+    }
+
+    static string HawkesSoundState() {
+        return "";
+    }
+#endif
 
     static PlaytestRun run;
     static int levelUps;
@@ -41,6 +59,8 @@ public static class Playtest {
     }
 
     static void Stop() {
+        SettingsPanel.Close();
+        PauseMenu.Resume();
         PlayInput.Release();
         TouchControls.LiftBotFingers();
         UiFit.ForceTouch(false);
@@ -62,6 +82,14 @@ public static class Playtest {
         Random.InitState(options.seed);
         Application.logMessageReceived += OnLog;
         try {
+            yield return TapToPlay();
+            if (id == "settings") {
+                yield return SettingsRun(options);
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
             if (id == "touch") {
                 yield return TouchRun();
                 if (!run.Done) {
@@ -98,6 +126,204 @@ public static class Playtest {
             Application.logMessageReceived -= OnLog;
             Stop();
         }
+    }
+
+    // The page's "Tap to play" prompt covers the game until it is pressed, as a player would: a pointer press on the
+    // prompt, through its own handler (HawkesSound.jslib). It reports whether the browser's audio is running after it.
+    // In the editor, or on a page without the prompt, there is nothing to press.
+    static IEnumerator TapToPlay() {
+        string before = HawkesSoundState();
+        if (before != "prompt") {
+            run.Log(string.IsNullOrEmpty(before) ? "no Tap to play prompt on this page" : "Tap to play was already pressed (audio " + before + ")");
+            yield break;
+        }
+        run.Scene("Tap to play");
+        yield return new WaitForSecondsRealtime(1.5f);
+        HawkesSoundPressPrompt();
+        yield return new WaitForSecondsRealtime(0.6f);
+        string after = HawkesSoundState();
+        run.Event("tap-prompt", "audio " + after);
+        run.Metric("audioRunning", after == "running" ? 1 : 0);
+        if (after == "prompt") {
+            run.Problem(PlaytestSeverity.Bug, "the Tap to play prompt did not close when pressed");
+        }
+    }
+
+    // Settings from the main menu and from the pause menu, through the same taps and drags a player makes.
+    static IEnumerator SettingsRun(PlaytestOptions options) {
+        yield return ToMenu();
+        if (run.Done) {
+            yield break;
+        }
+        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+        Button open = menu != null ? menu.SettingsButton : null;
+        if (open == null || !open.isActiveAndEnabled) {
+            run.Problem(PlaytestSeverity.Bug, "no Settings button on the main menu");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        if (!Inside(ScreenRect((RectTransform)open.transform))) {
+            run.Problem(PlaytestSeverity.Bug, "the menu's Settings button is not fully on screen");
+        }
+        Tap(open.gameObject);
+        run.Event("tap", "Settings (menu)");
+        yield return run.Until(() => SettingsPanel.IsOpen, 5f, "Settings to open from the menu");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Settings");
+        run.Event("settings-opened", "menu");
+        run.Progress(0.15f);
+        yield return new WaitForSecondsRealtime(1f);
+        CheckScreen("settings", 600);
+        yield return PlayWithSettings("menu");
+        if (run.Done) {
+            yield break;
+        }
+
+        menu = Object.FindAnyObjectByType<MainMenu>();
+        if (menu == null || menu.PlayButton == null) {
+            run.Problem(PlaytestSeverity.Bug, "no Play button on the menu after Settings closed");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        Tap(menu.PlayButton.gameObject);
+        run.Event("tap", "Play");
+        yield return run.Until(() => WaveDirector.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the game scene after tapping Play");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Wave 1");
+        run.Event("run-start");
+        run.Progress(0.45f);
+        yield return new WaitForSecondsRealtime(4f);
+        yield return run.Until(() => PauseMenu.Instance != null && PauseMenu.Instance.PauseButton != null && PauseMenu.Instance.PauseButton.isActiveAndEnabled, 20f, "the pause button");
+        if (run.Done) {
+            yield break;
+        }
+        if (!Inside(ScreenRect((RectTransform)PauseMenu.Instance.PauseButton.transform))) {
+            run.Problem(PlaytestSeverity.Bug, "the pause button is not fully on screen");
+        }
+        if (UiFit.Touch) {
+            CheckScreen("hud");
+        }
+
+        Tap(PauseMenu.Instance.PauseButton.gameObject);
+        run.Event("tap", "Pause");
+        yield return run.Until(() => PauseMenu.IsOpen, 5f, "the pause menu after tapping the pause button");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Paused");
+        run.Event("paused", "button");
+        yield return new WaitForSecondsRealtime(1f);
+        if (Time.timeScale > 0.01f) {
+            run.Problem(PlaytestSeverity.Bug, "the game kept running behind the pause menu (time scale " + Time.timeScale.ToString("0.00") + ")");
+        }
+        CheckScreen("pause", 450);
+        Tap(PauseMenu.Instance.SettingsButton.gameObject);
+        run.Event("tap", "Settings (pause)");
+        yield return run.Until(() => SettingsPanel.IsOpen, 5f, "Settings to open from the pause menu");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Settings (paused)");
+        run.Event("settings-opened", "pause");
+        run.Progress(0.65f);
+        yield return new WaitForSecondsRealtime(1f);
+        yield return PlayWithSettings("pause");
+        if (run.Done) {
+            yield break;
+        }
+        if (!PauseMenu.IsOpen) {
+            run.Problem(PlaytestSeverity.Bug, "closing Settings also closed the pause menu");
+        } else {
+            Tap(PauseMenu.Instance.ResumeButton.gameObject);
+            run.Event("tap", "Resume");
+        }
+        yield return new WaitForSecondsRealtime(0.5f);
+        if (PauseMenu.IsOpen || Time.timeScale <= 0.01f) {
+            run.Problem(PlaytestSeverity.Bug, "the game stayed paused after Resume");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        run.Scene("Wave " + WaveDirector.Wave);
+        run.Event("resumed", "button");
+
+        // The keyboard way: P pauses and P resumes.
+        if (!UiFit.Touch) {
+            yield return new WaitForSecondsRealtime(2f);
+            PlayInput.Tap(KeyCode.P);
+            yield return run.Until(() => PauseMenu.IsOpen, 3f, "the pause menu after pressing P");
+            if (run.Done) {
+                yield break;
+            }
+            run.Event("paused", "P");
+            yield return new WaitForSecondsRealtime(1f);
+            PlayInput.Tap(KeyCode.P);
+            yield return run.Until(() => !PauseMenu.IsOpen, 3f, "the pause menu to close after pressing P again");
+            if (run.Done) {
+                yield break;
+            }
+            run.Event("resumed", "P");
+        }
+        run.Progress(0.85f);
+        yield return Play(options, 15f, false);
+    }
+
+    // On the open Settings: sound off and back on, music to 30%, effects to 70%, each by a tap or a press on the
+    // slider where a finger would land, then Done.
+    static IEnumerator PlayWithSettings(string from) {
+        SettingsPanel panel = SettingsPanel.Instance;
+        if (panel == null) {
+            run.Problem(PlaytestSeverity.Bug, "Settings has no panel");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        bool was = SoundSettings.On;
+        Tap(panel.SoundButton.gameObject);
+        yield return new WaitForSecondsRealtime(0.8f);
+        if (SoundSettings.On == was) {
+            run.Problem(PlaytestSeverity.Bug, "the Sound button did not switch sound (" + from + ")");
+        }
+        run.Event(SoundSettings.On ? "sound-on" : "sound-off", from);
+        Tap(panel.SoundButton.gameObject);
+        yield return new WaitForSecondsRealtime(0.8f);
+        run.Event(SoundSettings.On ? "sound-on" : "sound-off", from);
+
+        Slide(panel.MusicSlider, 0.3f);
+        yield return new WaitForSecondsRealtime(0.8f);
+        run.Event("music-volume", Mathf.RoundToInt(SoundSettings.Music * 100f) + "% (" + from + ")");
+        if (Mathf.Abs(SoundSettings.Music - 0.3f) > 0.08f) {
+            run.Problem(PlaytestSeverity.Bug, "the music slider set " + SoundSettings.Music.ToString("0.00") + " for a press at 30% (" + from + ")");
+        }
+        Slide(panel.EffectsSlider, 0.7f);
+        yield return new WaitForSecondsRealtime(0.8f);
+        run.Event("effects-volume", Mathf.RoundToInt(SoundSettings.Sfx * 100f) + "% (" + from + ")");
+        if (Mathf.Abs(SoundSettings.Sfx - 0.7f) > 0.08f) {
+            run.Problem(PlaytestSeverity.Bug, "the effects slider set " + SoundSettings.Sfx.ToString("0.00") + " for a press at 70% (" + from + ")");
+        }
+        run.Metric("soundOn", SoundSettings.On ? 1 : 0);
+        run.Metric("musicVolume", Mathf.Round(SoundSettings.Music * 100f));
+        run.Metric("effectsVolume", Mathf.Round(SoundSettings.Sfx * 100f));
+
+        Tap(panel.DoneButton.gameObject);
+        run.Event("tap", "Done");
+        yield return run.Until(() => !SettingsPanel.IsOpen, 5f, "Settings to close after Done");
+        if (!run.Done) {
+            run.Event("settings-closed", from);
+        }
+    }
+
+    // A press and release on a slider at a fraction of its track, like a finger landing there.
+    static void Slide(Slider slider, float at) {
+        Rect track = ScreenRect(slider.handleRect != null ? (RectTransform)slider.handleRect.parent : (RectTransform)slider.transform);
+        var data = new PointerEventData(EventSystem.current) {
+            button = PointerEventData.InputButton.Left,
+            position = new Vector2(Mathf.Lerp(track.xMin, track.xMax, at), track.center.y),
+        };
+        ExecuteEvents.Execute(slider.gameObject, data, ExecuteEvents.pointerDownHandler);
+        ExecuteEvents.Execute(slider.gameObject, data, ExecuteEvents.pointerUpHandler);
     }
 
     // Setup: the run always starts from the menu, as a player's does.

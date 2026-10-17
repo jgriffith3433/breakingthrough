@@ -57,7 +57,7 @@ public class BowEquipment : MonoBehaviour {
 
     void OnGUI() {
         bool confirm = UpgradeLook.HitConfirm;
-        if (cam == null || LevelUpScreen.IsOpen || WaveDirector.IsLost || (cam.LockedOnGameObject != null && !confirm)) {
+        if (cam == null || LevelUpScreen.IsOpen || PauseMenu.IsOpen || WaveDirector.IsLost || (cam.LockedOnGameObject != null && !confirm)) {
             return;
         }
 

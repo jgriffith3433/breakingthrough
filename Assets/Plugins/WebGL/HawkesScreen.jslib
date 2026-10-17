@@ -5,6 +5,11 @@ mergeInto(LibraryManager.library, {
     return window.devicePixelRatio || 1;
   },
 
+  // 1 while the game holds the mouse (pointer lock), 0 when it doesn't. Read by PauseMenu.
+  HawkesPointerLocked: function () {
+    return document.pointerLockElement ? 1 : 0;
+  },
+
   HawkesCoarsePointer: function () {
     try {
       return window.matchMedia && window.matchMedia("(pointer: coarse)").matches ? 1 : 0;

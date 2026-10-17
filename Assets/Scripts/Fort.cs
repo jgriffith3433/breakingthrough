@@ -383,7 +383,7 @@ public class BuildMode : MonoBehaviour {
         }
 
         bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
-        if (aimed && ghostOk && !overUi && !LevelUpScreen.IsOpen && PlayInput.GetMouseButtonDown(0) && FortStock.Take(selected)) {
+        if (aimed && ghostOk && !overUi && !LevelUpScreen.IsOpen && !PauseMenu.IsOpen && PlayInput.GetMouseButtonDown(0) && FortStock.Take(selected)) {
             Vector3 grounded = spot;
             grounded.y = Ground(spot);
             DefencePiece.Place(selected, grounded, rotation);
