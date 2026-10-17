@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -210,6 +211,8 @@ public class WebGlDeployWindow : EditorWindow
     {
         Log("Pointing " + WebGlBuild.GamePage + " at v" + newVersion);
         WebGlBuild.UpdateGamePageVersion(WebGlBuild.GamePage, newVersion);
+        Log("Stamping the site footer onto the pages outside Game/");
+        WebGlBuild.InstallSiteFooter();
     }
 
     private void RemoveIncompleteVersion()
@@ -407,6 +410,7 @@ public static class WebGlBuild
             Directory.CreateDirectory(versionFolder);
             BuildWebGLTo(Path.Combine(versionFolder, ProductFolder));
             UpdateGamePageVersion(GamePage, next);
+            InstallSiteFooter();
 
             if (current >= 1 && current != next)
             {
@@ -522,6 +526,110 @@ public static class WebGlBuild
         }
 
         File.WriteAllText(gamePage, updated);
+    }
+
+    // The "Powered by HAWKES GEN" footer (Tools/Web/site-footer.html) goes on every page of the site except the game:
+    // each .html outside Game/. The landing page (the root index.html) also keeps the Hawkes Biomedical line between
+    // the template's landing markers; other pages drop it. A page that has the footer gets it replaced, so editing the
+    // template and deploying again updates every page. Pages that didn't change aren't rewritten.
+    const string FooterStart = "<!-- hawkes-footer";
+    const string FooterEnd = "<!-- /hawkes-footer -->";
+
+    public static string FooterTemplate
+    {
+        get { return Path.Combine(ProjectRoot, "Tools", "Web", "site-footer.html"); }
+    }
+
+    public static void InstallSiteFooter()
+    {
+        if (!File.Exists(FooterTemplate))
+        {
+            Debug.LogWarning("[WebGlBuild] No footer template at " + FooterTemplate + "; the site pages keep their old footer");
+            return;
+        }
+
+        string template = File.ReadAllText(FooterTemplate).Replace("\r\n", "\n").Trim();
+        string landing = Path.GetFullPath(Path.Combine(SiteRoot, "index.html"));
+        int changed = 0;
+        foreach (string page in SitePages(SiteRoot))
+        {
+            string html = File.ReadAllText(page);
+            string updated = WithFooter(html, template, Path.GetFullPath(page) == landing);
+            if (updated != html)
+            {
+                File.WriteAllText(page, updated);
+                changed++;
+            }
+        }
+        Debug.Log("[WebGlBuild] Site footer: " + changed + " page(s) updated");
+    }
+
+    // Every .html in the site, skipping the game (Game/), dot folders (.git) and node_modules.
+    static IEnumerable<string> SitePages(string root)
+    {
+        foreach (string file in Directory.GetFiles(root, "*.html"))
+        {
+            yield return file;
+        }
+        foreach (string dir in Directory.GetDirectories(root))
+        {
+            string name = Path.GetFileName(dir);
+            if (name.StartsWith(".") || name == "node_modules" || (Path.GetFullPath(dir) == Path.GetFullPath(GameFolder)))
+            {
+                continue;
+            }
+            foreach (string file in SitePages(dir))
+            {
+                yield return file;
+            }
+        }
+    }
+
+    public static string WithFooter(string html, string template, bool landing)
+    {
+        string block = landing
+            ? Regex.Replace(template, @"[ \t]*<!-- /?landing -->\n", "")
+            : Regex.Replace(template, @"[ \t]*<!-- landing -->[\s\S]*?<!-- /landing -->\n", "");
+        string nl = html.Contains("\r\n") ? "\r\n" : "\n";
+        block = block.Replace("\n", nl);
+
+        int start = html.IndexOf(FooterStart, StringComparison.Ordinal);
+        if (start >= 0)
+        {
+            int end = html.IndexOf(FooterEnd, start, StringComparison.Ordinal);
+            if (end >= 0)
+            {
+                int from = html.LastIndexOf('\n', Math.Max(0, start - 1)) + 1;
+                string pad = html.Substring(from, start - from);
+                if (!Regex.IsMatch(pad, @"^[ \t]*$"))
+                {
+                    pad = "";
+                }
+                return html.Substring(0, start) + block.Replace(nl, nl + pad) + html.Substring(end + FooterEnd.Length);
+            }
+        }
+
+        // New: after the page's last </main>, or else just before </body>, indented like the line it follows.
+        int at = html.LastIndexOf("</main>", StringComparison.OrdinalIgnoreCase);
+        if (at >= 0)
+        {
+            at += "</main>".Length;
+        }
+        else
+        {
+            at = html.LastIndexOf("</body>", StringComparison.OrdinalIgnoreCase);
+            if (at < 0)
+            {
+                return html;
+            }
+            at = html.LastIndexOf('\n', at) + 1;
+        }
+        int lineStart = html.LastIndexOf('\n', Math.Max(0, at - 1)) + 1;
+        string indent = Regex.Match(html.Substring(lineStart), @"^[ \t]*").Value;
+        string indented = indent + block.Replace(nl, nl + indent);
+        return at == lineStart
+            ? html.Substring(0, at) + indented + nl + html.Substring(at)
+            : html.Substring(0, at) + nl + nl + indented + html.Substring(at);
     }
 
     private static void RemoveIncomplete(int version)
