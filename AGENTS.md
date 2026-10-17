@@ -135,8 +135,10 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
   Fire, Lock and Next wave pressed by the bot's fingers through `TouchControls.BotFinger`, a level-up card tapped,
   until wave 2 is under way; run it with `mobile` for portrait or at 844x390 for landscape), `site` (the website
   around the game: every page outside `Game/` has "Powered by HAWKES GEN" linking to hawkesgen.com, the landing page
-  links to hawkesbiomedical.com; it lays each page over the game for 4 s via `Plugins/WebGL/HawkesSite.jslib`, then
-  plays 20 s). Every touch run reports
+  links to hawkesbiomedical.com. It checks the landing page, every page in the deploy's `site/pages.json` and every
+  page they link to, looks for a blog at `/blog/`, `/blog.html`, `/news/` and `/posts/`, and logs `site-pages`,
+  `sub-pages` and `blog` events saying what exists. Then it lays each page over the game for 4 s via
+  `Plugins/WebGL/HawkesSite.jslib` and plays 20 s). Every touch run reports
   a layout check per screen (`menu`, `hud`, `cards`): text or buttons off screen, text over text or over a button,
   text under 11 px, buttons under 44 px, with `<screen>MinTextPx`, `<screen>MinTapPx` and `<screen>Overlaps`.
   `settings` (Settings from the menu: sound off and on, both sliders, Done; then a run, the pause button, Settings
@@ -187,7 +189,8 @@ The game is published into the website repo at `C:\Projects\theplacedepartmentwe
 - deletes the previous version folder
 - stamps the site footer from `Tools/Web/site-footer.html` ("Powered by HAWKES GEN"; on the landing page also
   "A Hawkes Biomedical company") onto every `.html` outside `Game/`, replacing the block between its
-  `<!-- hawkes-footer -->` markers. Change the footer there, never in the website repo
+  `<!-- hawkes-footer -->` markers, and lists those pages in `<site>/site/pages.json` for the `site` playtest. Change
+  the footer there, never in the website repo
 - runs the site's own `auto-start.bat` and opens the port it names (`http://localhost:4173/Game/`)
 
 It does not commit or push the website. Do that in the website repo.

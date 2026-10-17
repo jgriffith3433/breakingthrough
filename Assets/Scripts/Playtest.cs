@@ -21,7 +21,7 @@ public static class Playtest {
         new PlaytestScenario("menus", "Shop menu, start a run, a level-up card, reroll and pick", 120, "menus"),
         new PlaytestScenario("touch", "Touch only, for a phone-sized screen (mobile, or 844x390): the menu fits, tap Play, move and fire with the on-screen stick and buttons, tap a level-up card, play to wave 2", 330, "menus"),
         new PlaytestScenario("settings", "Press Tap to play, open Settings from the menu: sound off and on, music and effects sliders, Done; start a run, pause (button, then P), Settings from the pause menu, resume, play a little. Any screen size", 100, "menus"),
-        new PlaytestScenario("site", "The website around the game: reads the landing page and every page linked from it (outside Game/), checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.com and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 90, "menus"),
+        new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.com and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
     };
 
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -576,6 +576,8 @@ public static class Playtest {
     [System.Serializable]
     class SiteCheck {
         public string root;
+        public int listed;
+        public string blog;
         public SitePage[] pages;
     }
 
@@ -653,14 +655,41 @@ public static class Playtest {
             if (pages.Length == 0) {
                 run.Problem(PlaytestSeverity.Bug, "no website pages found around the game");
             }
+
+            // Which pages the site has: the landing page, its sub pages and its blog, if it has one.
+            List<string> paths = new List<string>();
+            List<string> subPages = new List<string>();
+            foreach (SitePage page in pages) {
+                paths.Add(page.path);
+                if (page.path != "/index.html") {
+                    subPages.Add(page.path);
+                }
+            }
+            run.Event("site-pages", pages.Length + " page(s) outside the game: " + string.Join(", ", paths)
+                + (check != null && check.listed > 0 ? " (" + check.listed + " listed by the deploy in site/pages.json)" : " (no site/pages.json from the deploy; found by links only)"));
+            if (check == null || check.listed == 0) {
+                run.Problem(PlaytestSeverity.Warning, "the site has no site/pages.json (written by the WebGL deploy), so only linked pages were checked");
+            }
+            run.Event("sub-pages", subPages.Count > 0
+                ? subPages.Count + " sub page(s): " + string.Join(", ", subPages)
+                : "the site has no sub pages besides the landing page");
+            string blog = check != null ? check.blog : "";
+            if (!string.IsNullOrEmpty(blog)) {
+                SitePage blogPage = System.Array.Find(pages, p => p.path == blog);
+                run.Event("blog", blog + (blogPage != null && blogPage.powered ? ": has \"Powered by HAWKES GEN\"" : ": no Powered by mark"));
+            } else {
+                run.Event("blog", "the site has no blog (none at /blog/, /blog.html, /news/ or /posts/)");
+            }
             run.Metric("sitePages", pages.Length);
+            run.Metric("siteSubPages", subPages.Count);
+            run.Metric("siteBlog", string.IsNullOrEmpty(blog) ? 0 : 1);
             run.Metric("sitePagesPowered", powered);
             run.Progress(0.3f);
 
             // Show each page's footer (the landing page first), a few seconds each, then back to the game.
             int shown = 0;
             foreach (SitePage page in pages) {
-                if (page.status != 200 || shown >= 6) {
+                if (page.status != 200 || shown >= 8) {
                     continue;
                 }
                 run.Scene("Site " + page.path);
@@ -669,7 +698,7 @@ public static class Playtest {
                 yield return new WaitForSecondsRealtime(4f);
                 HawkesSiteHide();
                 shown++;
-                run.Progress(0.3f + 0.4f * shown / Mathf.Max(1, Mathf.Min(6, pages.Length)));
+                run.Progress(0.3f + 0.4f * shown / Mathf.Max(1, Mathf.Min(8, pages.Length)));
             }
         }
 
