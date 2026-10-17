@@ -551,6 +551,7 @@ public static class WebGlBuild
         string template = File.ReadAllText(FooterTemplate).Replace("\r\n", "\n").Trim();
         string landing = Path.GetFullPath(Path.Combine(SiteRoot, "index.html"));
         int changed = 0;
+        List<string> listed = new List<string>();
         foreach (string page in SitePages(SiteRoot))
         {
             string html = File.ReadAllText(page);
@@ -560,8 +561,29 @@ public static class WebGlBuild
                 File.WriteAllText(page, updated);
                 changed++;
             }
+            if (updated.Contains(FooterStart))
+            {
+                listed.Add("/" + Path.GetRelativePath(SiteRoot, page).Replace('\\', '/'));
+            }
         }
         Debug.Log("[WebGlBuild] Site footer: " + changed + " page(s) updated");
+        WritePageList(listed);
+    }
+
+    // site/pages.json: every page that carries the footer, so the `site` playtest checks them all, linked or not.
+    static void WritePageList(List<string> pages)
+    {
+        pages.Sort(StringComparer.Ordinal);
+        string json = "{\n  \"note\": \"Written by breakingthrough's WebGL deploy: the pages with the Hawkes footer\",\n  \"pages\": [\n"
+            + string.Join(",\n", pages.ConvertAll(p => "    \"" + p.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\""))
+            + "\n  ]\n}\n";
+        string file = Path.Combine(SiteRoot, "site", "pages.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(file));
+        if (!File.Exists(file) || File.ReadAllText(file) != json)
+        {
+            File.WriteAllText(file, json);
+        }
+        Debug.Log("[WebGlBuild] Site page list: " + pages.Count + " page(s) in site/pages.json");
     }
 
     // Every .html in the site, skipping the game (Game/), dot folders (.git) and node_modules.
