@@ -3,9 +3,9 @@
 //
 // Browsers (iOS above all) keep Web Audio silent until the player touches the page. The prompt covers the page while
 // Unity loads underneath; the tap that closes it resumes Unity's AudioContext and primes an audio element, inside the
-// gesture, as iOS requires. If Unity hasn't made its AudioContext yet, the tap makes one and hands it to Unity when it
-// asks. Audio resumes again when the tab comes back, after an iOS interruption (a call, the lock screen) and on any
-// later touch, click or key.
+// gesture, as iOS requires. If Unity hasn't made its AudioContext yet, it is resumed as soon as it exists.
+// Audio resumes again when the tab comes back, after an iOS interruption (a call, the lock screen) and on any later
+// touch, click or key.
 //
 // window.hawkesSound: tap() closes the prompt (the playtest bot presses it through the same handler), state() says
 // "prompt", "suspended", "running" or "none" (no Web Audio yet), attach(ctx) is called from Unity with WEBAudio's
@@ -20,7 +20,6 @@
   var SILENCE_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
   var Native = w.AudioContext || w.webkitAudioContext;
   var contexts = [];
-  var primed = null;
   var tapped = false;
   var silent = null;
   var prompt = null;
@@ -41,15 +40,16 @@
     return ctx;
   }
 
-  // Every AudioContext the page makes is tracked. The first one Unity asks for after the tap is the one the tap
-  // already unlocked.
+  // Every AudioContext the page makes is tracked, so the tap can resume it. Unity always gets a context of its own,
+  // never one already running: it only marks its audio as running from the context's statechange event, so a context
+  // that was resumed before Unity took it would leave every sound queued for good.
   if (Native) {
     var Wrapped = function (options) {
-      if (primed && !primed.__hawkesHanded) {
-        primed.__hawkesHanded = true;
-        return primed;
+      var ctx = track(options === undefined ? new Native() : new Native(options));
+      if (tapped) {
+        resume();
       }
-      return track(options === undefined ? new Native() : new Native(options));
+      return ctx;
     };
     Wrapped.prototype = Native.prototype;
     try {
@@ -109,11 +109,6 @@
   }
 
   function unlock() {
-    if (Native && contexts.length === 0 && !primed) {
-      try {
-        primed = track(new Native());
-      } catch (e) {}
-    }
     resume();
     kick();
     primeElement();
