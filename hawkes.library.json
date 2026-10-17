@@ -1,0 +1,8 @@
+{
+  "_about": "The Place Department's birds in the Hawkes Gen library (hawkesgen/clients/js/hawkesgen-folders.mjs): one entity per bird model, its model slot the FBX. Picks write back to the same file.",
+  "project": "theplacedepartment",
+  "kind": "bird",
+  "layout": "files",
+  "root": "Assets/Resources/Models/Birds",
+  "slots": [{ "slot": "model", "current": "{entity}.fbx" }]
+}
