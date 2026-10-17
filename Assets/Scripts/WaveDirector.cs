@@ -138,6 +138,10 @@ public class WaveDirector : MonoBehaviour {
             }
             return;
         }
+        // Paused: the world, the clock and the wave keys wait.
+        if (PauseMenu.IsOpen) {
+            return;
+        }
 
         if (PlayInput.GetKeyDown(KeyCode.KeypadPlus) || PlayInput.GetKeyDown(KeyCode.Equals)) {
             GoToWave(Wave + 1);

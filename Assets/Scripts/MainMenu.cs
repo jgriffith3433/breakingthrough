@@ -28,8 +28,9 @@ public class MainMenu : MonoBehaviour {
     UiMode builtMode;
     int builtStamp = -1;
 
-    // The Play button, for the playtest's touch scenario.
+    // The Play and Settings buttons, for the playtest's touch and settings scenarios.
     public Button PlayButton { get; private set; }
+    public Button SettingsButton { get; private set; }
 
     void Awake() {
         Time.timeScale = 1f;
@@ -69,6 +70,9 @@ public class MainMenu : MonoBehaviour {
             flash -= Time.deltaTime;
             rows[flashRow].color = Color.Lerp(new Color(0.1f, 0.09f, 0.13f, 0.78f), new Color(0.55f, 0.4f, 0.12f, 0.9f), Mathf.Clamp01(flash));
         }
+        if (SettingsPanel.IsOpen || SettingsPanel.ClosedFrame == Time.frameCount) {
+            return;
+        }
         if (Time.unscaledTime >= playReadyAt && (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.Space))) {
             Play();
         }
@@ -83,6 +87,10 @@ public class MainMenu : MonoBehaviour {
             GameAudio.Play("coin", 0.55f);
         }
         SceneManager.LoadScene(MetaProgress.GameScene);
+    }
+
+    void OpenSettings() {
+        SettingsPanel.Open(null);
     }
 
     void LowerStart() {
@@ -149,6 +157,7 @@ public class MainMenu : MonoBehaviour {
         var playImage = play.GetComponent<Image>();
         playImage.color = new Color(0.22f, 0.38f, 0.22f, 1f);
         PlayButton = play;
+        SettingsButton = Button(left, "Settings", new Vector2(332f, -656f), new Vector2(220f, 72f), 28, OpenSettings);
 
         Label(left, UiFit.Touch ? "Tap Play to start. After a run, you come back here." : "Enter or click Play. After a run, M brings you back here.", 22, FontStyle.Italic, new Color(1f, 0.96f, 0.88f, 0.7f), new Vector2(36f, -742f), new Vector2(540f, 70f), TextAnchor.UpperLeft);
         if (!string.IsNullOrEmpty(WaveDirector.LastRun)) {
@@ -206,6 +215,8 @@ public class MainMenu : MonoBehaviour {
         play.GetComponent<Image>().color = new Color(0.22f, 0.38f, 0.22f, 1f);
         PinBottom(play, new Vector2(24f, 20f));
         PlayButton = play;
+        SettingsButton = Button(info, "Settings", Vector2.zero, new Vector2(Mathf.Min(200f, infoWidth - 340f), 96f), 28, OpenSettings);
+        PinBottom(SettingsButton, new Vector2(316f, 20f));
         lowerStart = Button(info, "-10", Vector2.zero, new Vector2(120f, 88f), 26, LowerStart);
         PinBottom(lowerStart, new Vector2(24f, 128f));
         raiseStart = Button(info, "+10", Vector2.zero, new Vector2(120f, 88f), 26, RaiseStart);

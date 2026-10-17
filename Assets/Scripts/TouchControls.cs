@@ -177,7 +177,7 @@ public class TouchControls : MonoBehaviour {
         Gather();
 
         bool lost = WaveDirector.IsLost;
-        bool show = touch && WaveDirector.Instance != null && !lost && !LevelUpScreen.IsOpen;
+        bool show = touch && WaveDirector.Instance != null && !lost && !LevelUpScreen.IsOpen && !PauseMenu.IsOpen;
         if (show != shown) {
             shown = show;
             root.SetActive(show);

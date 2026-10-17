@@ -210,6 +210,7 @@ public class WebGlDeployWindow : EditorWindow
     {
         Log("Pointing " + WebGlBuild.GamePage + " at v" + newVersion);
         WebGlBuild.UpdateGamePageVersion(WebGlBuild.GamePage, newVersion);
+        WebGlBuild.InstallSoundPrompt(WebGlBuild.GamePage, newVersion);
     }
 
     private void RemoveIncompleteVersion()
@@ -308,6 +309,7 @@ public static class WebGlBuild
     const string SiteKey = "bt_webgl_site_root";
     const string DefaultSiteName = "theplacedepartmentwebsite";
     const string DefaultGameName = "PlaceDepartment";
+    const string SoundScript = "hawkes-sound.js";
 
     public static string ProjectRoot
     {
@@ -407,6 +409,7 @@ public static class WebGlBuild
             Directory.CreateDirectory(versionFolder);
             BuildWebGLTo(Path.Combine(versionFolder, ProductFolder));
             UpdateGamePageVersion(GamePage, next);
+            InstallSoundPrompt(GamePage, next);
 
             if (current >= 1 && current != next)
             {
@@ -522,6 +525,39 @@ public static class WebGlBuild
         }
 
         File.WriteAllText(gamePage, updated);
+    }
+
+    // The studio's "Tap to play" prompt (Tools/Web/hawkes-sound.js): copied next to the game page, with a <script> for
+    // it at the end of the page's <head>, so it is there before Unity's loader makes an AudioContext. Run on every
+    // deploy, so the page always has this project's copy; the ?v= makes browsers fetch a new one.
+    public static void InstallSoundPrompt(string gamePage, int version)
+    {
+        string source = Path.Combine(ProjectRoot, "Tools", "Web", SoundScript);
+        if (!File.Exists(source))
+        {
+            throw new Exception("The Tap to play prompt is missing: " + source);
+        }
+
+        // LF, as the website repo keeps its files (this project's checkout can be CRLF on Windows).
+        File.WriteAllText(Path.Combine(Path.GetDirectoryName(gamePage), SoundScript), File.ReadAllText(source).Replace("\r\n", "\n"));
+        string html = File.ReadAllText(gamePage);
+        string tag = "<script src=\"" + SoundScript + "?v=v" + version + "\" data-hawkes-sound></script>";
+        string updated = Regex.Replace(html, @"<script[^>]*data-hawkes-sound[^>]*></script>", tag);
+        if (updated == html && !html.Contains(tag))
+        {
+            int head = html.IndexOf("</head>", StringComparison.OrdinalIgnoreCase);
+            if (head < 0)
+            {
+                throw new Exception("No </head> in " + gamePage + " for the Tap to play prompt");
+            }
+            string newline = html.Contains("\r\n") ? "\r\n" : "\n";
+            updated = html.Insert(head, "  " + tag + newline);
+        }
+
+        if (updated != html)
+        {
+            File.WriteAllText(gamePage, updated);
+        }
     }
 
     private static void RemoveIncomplete(int version)

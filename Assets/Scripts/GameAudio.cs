@@ -43,7 +43,8 @@ public class GameAudio : MonoBehaviour {
     }
 
     public static void Play(string name, float volume, float pitch) {
-        if (instance == null || string.IsNullOrEmpty(name)) {
+        float level = SoundSettings.EffectsLevel;
+        if (instance == null || string.IsNullOrEmpty(name) || level <= 0f) {
             return;
         }
         AudioClip clip;
@@ -57,6 +58,6 @@ public class GameAudio : MonoBehaviour {
         AudioSource source = instance.voices[instance.next];
         instance.next = (instance.next + 1) % instance.voices.Length;
         source.pitch = Mathf.Clamp(pitch, 0.3f, 3f);
-        source.PlayOneShot(clip, volume);
+        source.PlayOneShot(clip, volume * level);
     }
 }
