@@ -21,6 +21,7 @@ public static class Playtest {
         new PlaytestScenario("menus", "Shop menu, start a run, a level-up card, reroll and pick", 120, "menus"),
         new PlaytestScenario("touch", "Touch only, for a phone-sized screen (mobile, or 844x390): the menu fits, tap Play, move and fire with the on-screen stick and buttons, tap a level-up card, play to wave 2", 330, "menus"),
         new PlaytestScenario("settings", "Press Tap to play, open Settings from the menu: sound off and on, music and effects sliders, Done; start a run, pause (button, then P), Settings from the pause menu, resume, play a little. Any screen size", 100, "menus"),
+        new PlaytestScenario("site", "The website around the game: reads the landing page and every page linked from it (outside Game/), checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.com and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 90, "menus"),
     };
 
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -63,6 +64,7 @@ public static class Playtest {
         PlayInput.Release();
         TouchControls.LiftBotFingers();
         UiFit.ForceTouch(false);
+        HawkesSiteHide();
         if (Time.timeScale > 1f) {
             Time.timeScale = 1f;
         }
@@ -90,6 +92,13 @@ public static class Playtest {
             }
             if (id == "touch") {
                 yield return TouchRun();
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "site") {
+                yield return SiteRun(options);
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
                 }
@@ -547,6 +556,131 @@ public static class Playtest {
         }
         PlayInput.Axis("Horizontal", h);
         PlayInput.Axis("Vertical", v);
+    }
+
+    // ---------------------------------------------------------------- site
+
+    // The website's footer marks (written by WebGlBuild.InstallSiteFooter on every deploy). Read-only: it fetches the
+    // pages and, so the recording shows them, lays each one over the game for a few seconds (HawkesSite.jslib).
+    [System.Serializable]
+    class SitePage {
+        public string path;
+        public int status;
+        public bool powered;
+        public string poweredText;
+        public bool parent;
+        public string parentText;
+        public string error;
+    }
+
+    [System.Serializable]
+    class SiteCheck {
+        public string root;
+        public SitePage[] pages;
+    }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+    [System.Runtime.InteropServices.DllImport("__Internal")]
+    static extern void HawkesSiteCheckStart();
+
+    [System.Runtime.InteropServices.DllImport("__Internal")]
+    static extern string HawkesSiteCheckResult();
+
+    [System.Runtime.InteropServices.DllImport("__Internal")]
+    static extern int HawkesGamePageHasFooter();
+
+    [System.Runtime.InteropServices.DllImport("__Internal")]
+    static extern void HawkesSiteShow(string path);
+
+    [System.Runtime.InteropServices.DllImport("__Internal")]
+    static extern void HawkesSiteHide();
+
+    const bool InBrowser = true;
+#else
+    static void HawkesSiteCheckStart() { }
+    static string HawkesSiteCheckResult() { return ""; }
+    static int HawkesGamePageHasFooter() { return 0; }
+    static void HawkesSiteShow(string path) { }
+    static void HawkesSiteHide() { }
+
+    const bool InBrowser = false;
+#endif
+
+    static IEnumerator SiteRun(PlaytestOptions options) {
+        yield return ToMenu();
+        if (run.Done) {
+            yield break;
+        }
+        if (HawkesGamePageHasFooter() != 0) {
+            run.Problem(PlaytestSeverity.Bug, "the game page carries the website footer; the game screen must stay as it was");
+        } else {
+            run.Event("game-page", "no site footer on the game page");
+        }
+        run.Progress(0.1f);
+
+        if (!InBrowser) {
+            run.Problem(PlaytestSeverity.Warning, "the site check needs the WebGL build in a browser; skipped");
+        } else {
+            run.Note("reading the website's pages");
+            HawkesSiteCheckStart();
+            yield return run.Until(() => HawkesSiteCheckResult() != "", 45f, "the website's pages to load");
+            if (run.Done) {
+                yield break;
+            }
+            SiteCheck check = JsonUtility.FromJson<SiteCheck>(HawkesSiteCheckResult());
+            SitePage[] pages = check != null && check.pages != null ? check.pages : new SitePage[0];
+            int powered = 0;
+            foreach (SitePage page in pages) {
+                if (page.status != 200) {
+                    run.Problem(PlaytestSeverity.Bug, page.path + " didn't load (" + (string.IsNullOrEmpty(page.error) ? "HTTP " + page.status : page.error) + ")");
+                    continue;
+                }
+                if (page.powered) {
+                    powered++;
+                    run.Event("powered-by", page.path + ": \"" + page.poweredText + "\" links to https://hawkesgen.com");
+                } else {
+                    run.Problem(PlaytestSeverity.Bug, page.path + " has no \"Powered by HAWKES GEN\" link to https://hawkesgen.com");
+                }
+                if (page.path == "/index.html") {
+                    if (page.parent) {
+                        run.Event("parent-link", page.path + ": \"" + page.parentText + "\" links to https://hawkesbiomedical.com");
+                    } else {
+                        run.Problem(PlaytestSeverity.Bug, "the landing page has no link to https://hawkesbiomedical.com");
+                    }
+                    run.Metric("landingParentLink", page.parent ? 1 : 0);
+                }
+            }
+            if (pages.Length == 0) {
+                run.Problem(PlaytestSeverity.Bug, "no website pages found around the game");
+            }
+            run.Metric("sitePages", pages.Length);
+            run.Metric("sitePagesPowered", powered);
+            run.Progress(0.3f);
+
+            // Show each page's footer (the landing page first), a few seconds each, then back to the game.
+            int shown = 0;
+            foreach (SitePage page in pages) {
+                if (page.status != 200 || shown >= 6) {
+                    continue;
+                }
+                run.Scene("Site " + page.path);
+                HawkesSiteShow(page.path);
+                run.Event("site-shown", page.path + " footer" + (page.powered ? ": Powered by HAWKES GEN" : ": no Powered by mark") + (page.parent ? ", A Hawkes Biomedical company" : ""));
+                yield return new WaitForSecondsRealtime(4f);
+                HawkesSiteHide();
+                shown++;
+                run.Progress(0.3f + 0.4f * shown / Mathf.Max(1, Mathf.Min(6, pages.Length)));
+            }
+        }
+
+        run.Scene("Main Menu");
+        run.Event("game-screen", "back on the game: the menu and a short run, unchanged");
+        yield return new WaitForSecondsRealtime(2f);
+        yield return StartRun();
+        if (run.Done) {
+            yield break;
+        }
+        yield return Play(options, 20f, false);
     }
 
     // Touch only, as on a phone: no keys at all. Taps on the menu and the cards go through the UI event system
