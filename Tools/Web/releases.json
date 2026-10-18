@@ -1,0 +1,20 @@
+{
+  "product": "theplacedepartment",
+  "name": "The Place Department",
+  "current": "1.0.0",
+  "releases": [
+    {
+      "version": "1.0.0",
+      "date": "2026-10-18",
+      "build": "",
+      "title": "The Place has an address",
+      "notes": [
+        "A pirate plays the piano in the Moonlit Hollow. Birds have been told about it.",
+        "Warrok has a bow and one job: keep the music going while the birds come in waves.",
+        "He grows every wave. Feathers level him up, and every level is a choice of boons.",
+        "When the pianist falls, the run is over. Coins from it buy upgrades for the next one.",
+        "Tap to play turns the sound on. Settings keep it where you put it."
+      ]
+    }
+  ]
+}

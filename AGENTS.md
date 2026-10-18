@@ -56,6 +56,7 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 | The Settings screen | `SettingsPanel.cs`, opened from the main menu's Settings button and the pause menu |
 | Pausing a run | `PauseMenu.cs`: P or Escape, the pause button right of the musician's bar, or the browser freeing a locked mouse. Gameplay that must stop checks `PauseMenu.IsOpen` next to `LevelUpScreen.IsOpen` |
 | The website's "Tap to play" prompt | `Tools/Web/hawkes-sound.js`. `WebGlBuild.InstallSoundPrompt` copies it to `<site>/Game/` and adds its `<script data-hawkes-sound>` to `Game/index.html` on every deploy, so edit it here, never in the website |
+| The website's What's new page and release notes | `Tools/Web/`: `whatsnew.html`, `releases.json` (the first release), `hawkes-release.js`, and the link blocks `whatsnew-landing.html` (nav, before Play) and `whatsnew-game.html` (the version in the game's corner). `WebGlBuild.InstallWhatsNew` installs them on every deploy. The site's `releases.json` is written only when it has none: after that Hawkes Studio adds a release at each go live, so later notes go there, not here |
 
 ## Rules the code depends on
 
@@ -182,7 +183,7 @@ If a Unity MCP call fails to connect, say so and edit the scripts instead. Do no
 
 The game is published into the website repo at `C:\Projects\theplacedepartmentwebsite` (theplacedepartment.com). The deploy window defaults to the folder next to this project. Change it in the window's **Website folder** field, which is saved in EditorPrefs (`bt_webgl_site_root`).
 
-**Tools → Build → WebGL** opens the deploy window. **Run Full Deploy** does five things:
+**Tools → Build → WebGL** opens the deploy window. **Run Full Deploy** does six things:
 
 - writes `<site>/Game/vN/<gameName>`, where `<gameName>` is read from the page's `var gameName = "…"` (currently `PlaceDepartment`). Unity names the build files after that folder, so they match what the page loads
 - points `<site>/Game/index.html` at the new version through `window.PLACE_BUILD`. `window.GAME_BUILD` also works
@@ -191,6 +192,10 @@ The game is published into the website repo at `C:\Projects\theplacedepartmentwe
   "A Hawkes Biomedical company") onto every `.html` outside `Game/`, replacing the block between its
   `<!-- hawkes-footer -->` markers, and lists those pages in `<site>/site/pages.json` for the `site` playtest. Change
   the footer there, never in the website repo
+- installs What's new from `Tools/Web/` (before the footer, so `whatsnew.html` gets it too): `whatsnew.html`,
+  `js/hawkes-release.js`, `releases.json` if the site has none (its first release gets this deploy's build number),
+  and a block between `<!-- hawkes-whatsnew -->` markers on the landing page and on `Game/index.html`. Each deploy
+  replaces those blocks instead of adding them again
 - runs the site's own `auto-start.bat` and opens the port it names (`http://localhost:4173/Game/`)
 
 It does not commit or push the website. Do that in the website repo.

@@ -1,0 +1,39 @@
+<!-- hawkes-whatsnew: written by breakingthrough's WebGL deploy (Tools/Web/whatsnew-game.html); edit it there, not here -->
+<style>
+  #version-display a {
+    color: inherit;
+    text-decoration: none;
+  }
+  #version-display a:hover,
+  #version-display a:focus-visible {
+    color: #e7d3b0;
+  }
+</style>
+<script src="../js/hawkes-release.js" data-releases="../releases.json"></script>
+<script>
+  // The release (releases.json) and the build running, as a link to What's new: "v1.0.0 · build 8 · What's new".
+  // It opens in a new tab, so a tap in the corner never ends a run.
+  (function () {
+    var box = document.getElementById("version-display");
+    if (!box) return;
+    var build = String(window.PLACE_BUILD || window.GAME_BUILD || "");
+    function show(label) {
+      var link = document.createElement("a");
+      link.href = "../whatsnew.html";
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.setAttribute("data-hawkes-whatsnew", "");
+      link.textContent = label;
+      box.textContent = "";
+      box.appendChild(link);
+    }
+    show(build + " · What's new");
+    if (window.hawkesRelease) window.hawkesRelease.then(function (r) {
+      var top = r && r.releases && r.releases[0];
+      if (!top) return;
+      var beta = /\.hawkesgen\.com$/.test(location.hostname) || location.hostname === "localhost" || location.hostname === "127.0.0.1";
+      show("v" + top.version + (beta ? " beta" : "") + " · build " + build.replace(/^v/, "") + " · What's new");
+    });
+  })();
+</script>
+<!-- /hawkes-whatsnew -->

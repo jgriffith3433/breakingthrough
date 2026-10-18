@@ -1,0 +1,44 @@
+<!-- hawkes-whatsnew: written by breakingthrough's WebGL deploy (Tools/Web/whatsnew-landing.html); edit it there, not here -->
+<a class="nav-whatsnew" href="./whatsnew.html" data-hawkes-whatsnew>What's new <span data-hawkes-version hidden></span></a>
+<style>
+  .nav-whatsnew {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 0 10px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-decoration: none;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .nav-whatsnew:hover,
+  .nav-whatsnew:focus-visible {
+    color: var(--gold);
+  }
+  .nav-whatsnew [data-hawkes-version] {
+    color: var(--gold);
+    letter-spacing: 0.12em;
+    text-transform: none;
+  }
+  @media (max-width: 560px) {
+    .nav-whatsnew {
+      letter-spacing: 0.12em;
+    }
+    .nav-whatsnew [data-hawkes-version] {
+      display: none;
+    }
+  }
+  @media (max-width: 420px) {
+    .nav-whatsnew {
+      padding: 0 4px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+    }
+  }
+</style>
+<script src="./js/hawkes-release.js" data-releases="./releases.json" defer></script>
+<!-- /hawkes-whatsnew -->

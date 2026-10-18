@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<!-- What's new: installed by breakingthrough's WebGL deploy (Tools/Web/whatsnew.html); edit it there, not here -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#12100e" />
+    <meta name="description" content="What's new at The Place Department, newest first." />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>What's new - The Place Department</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,520;0,9..144,560;1,9..144,520&family=Outfit:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./site/marketing.css" />
+    <style>
+      .whatsnew {
+        padding: calc(var(--nav-h) + 56px) 0 72px;
+      }
+      .whatsnew .page-title {
+        margin-bottom: 22px;
+      }
+      .whatsnew .lede {
+        margin-bottom: 48px;
+      }
+      .whatsnew [data-hawkes-version] {
+        color: var(--gold);
+        white-space: nowrap;
+      }
+      .hawkes-release {
+        max-width: 68ch;
+        padding: 28px 0;
+        border-top: 1px solid var(--line);
+      }
+      .hawkes-release h3 {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 6px 16px;
+        margin: 0 0 16px;
+        font-family: Fraunces, Georgia, serif;
+        font-weight: 560;
+        font-size: 30px;
+        letter-spacing: -0.01em;
+        line-height: 1.1;
+      }
+      .hawkes-release-version {
+        color: var(--accent);
+        font-family: Outfit, Arial, Helvetica, sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+      }
+      .hawkes-release-date {
+        margin-left: auto;
+        color: var(--muted);
+        font-family: Outfit, Arial, Helvetica, sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+      .hawkes-release ul {
+        display: grid;
+        gap: 10px;
+        margin: 0;
+        padding-left: 20px;
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1.5;
+      }
+      .hawkes-release li::marker {
+        color: var(--stamp);
+      }
+      .whatsnew .hawkes-release-empty,
+      .whatsnew .filing {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body data-page="whatsnew">
+    <a class="skip" href="#content">Skip to content</a>
+
+    <header class="nav is-solid">
+      <div class="nav-inner">
+        <a class="brand" href="./index.html">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="5" y="3" width="14" height="18" rx="1" fill="none" stroke="#e7d3b0" stroke-width="1.6" />
+            <circle cx="15.2" cy="12" r="1.1" fill="#f0b36a" />
+          </svg>
+          The Place Department
+        </a>
+        <div class="nav-tools">
+          <a class="nav-play" href="/Game/index.html">Play</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="content" class="whatsnew">
+      <div class="wrap">
+        <p class="eyebrow">Notices of change</p>
+        <h1 class="page-title">What's new</h1>
+        <p class="lede">
+          Where things that should not exist are given an address. Everything that has moved in, newest first.
+          <span data-hawkes-version hidden></span>
+        </p>
+        <div data-hawkes-releases><p class="filing">Filing&hellip;</p></div>
+      </div>
+    </main>
+
+    <script src="./js/hawkes-release.js" data-releases="./releases.json" defer></script>
+  </body>
+</html>

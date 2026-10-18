@@ -212,6 +212,8 @@ public class WebGlDeployWindow : EditorWindow
         Log("Pointing " + WebGlBuild.GamePage + " at v" + newVersion);
         WebGlBuild.UpdateGamePageVersion(WebGlBuild.GamePage, newVersion);
         WebGlBuild.InstallSoundPrompt(WebGlBuild.GamePage, newVersion);
+        Log("Installing What's new (whatsnew.html, releases.json, js/hawkes-release.js and its links)");
+        WebGlBuild.InstallWhatsNew(WebGlBuild.GamePage, newVersion);
         Log("Stamping the site footer onto the pages outside Game/");
         WebGlBuild.InstallSiteFooter();
     }
@@ -413,6 +415,7 @@ public static class WebGlBuild
             BuildWebGLTo(Path.Combine(versionFolder, ProductFolder));
             UpdateGamePageVersion(GamePage, next);
             InstallSoundPrompt(GamePage, next);
+            InstallWhatsNew(GamePage, next);
             InstallSiteFooter();
 
             if (current >= 1 && current != next)
@@ -562,6 +565,118 @@ public static class WebGlBuild
         {
             File.WriteAllText(gamePage, updated);
         }
+    }
+
+    // The site's "What's new", the way the other Hawkes sites have it, from Tools/Web on every deploy:
+    // - js/hawkes-release.js (the studio's release script) and whatsnew.html (with the site footer already on it, so
+    //   InstallSiteFooter leaves it alone) are this project's: the site gets this copy each time.
+    // - releases.json only when the site has none. After that the site's copy is the record: Hawkes Studio adds a
+    //   release at every go live, and a deploy must not take it back. The first release gets this deploy's build.
+    // - a "What's new" link with the version on the landing page (in the nav, before Play) and on the game page (the
+    //   version in the corner), each a block between <!-- hawkes-whatsnew --> markers that is replaced, not added again.
+    // Files that didn't change aren't rewritten.
+    const string WhatsNewStart = "<!-- hawkes-whatsnew";
+    const string WhatsNewEnd = "<!-- /hawkes-whatsnew -->";
+
+    static string WebTemplate(string name)
+    {
+        string path = Path.Combine(ProjectRoot, "Tools", "Web", name);
+        if (!File.Exists(path))
+        {
+            throw new Exception("What's new is missing a file: " + path);
+        }
+        // LF, as the website repo keeps its files (this project's checkout can be CRLF on Windows).
+        return File.ReadAllText(path).Replace("\r\n", "\n");
+    }
+
+    static void WriteIfChanged(string file, string text)
+    {
+        if (File.Exists(file) && File.ReadAllText(file) == text)
+        {
+            return;
+        }
+        Directory.CreateDirectory(Path.GetDirectoryName(file));
+        File.WriteAllText(file, text);
+    }
+
+    public static void InstallWhatsNew(string gamePage, int version)
+    {
+        WriteIfChanged(Path.Combine(SiteRoot, "js", "hawkes-release.js"), WebTemplate("hawkes-release.js"));
+
+        string page = WebTemplate("whatsnew.html");
+        if (File.Exists(FooterTemplate))
+        {
+            page = WithFooter(page, File.ReadAllText(FooterTemplate).Replace("\r\n", "\n").Trim(), false);
+        }
+        WriteIfChanged(Path.Combine(SiteRoot, "whatsnew.html"), page);
+
+        string releases = Path.Combine(SiteRoot, "releases.json");
+        if (!File.Exists(releases))
+        {
+            var empty = new Regex(@"""build""\s*:\s*""""");
+            File.WriteAllText(releases, empty.Replace(WebTemplate("releases.json"), "\"build\": \"" + version + "\"", 1));
+            Debug.Log("[WebGlBuild] What's new: wrote the first releases.json (build " + version + ")");
+        }
+
+        string landing = Path.Combine(SiteRoot, "index.html");
+        if (File.Exists(landing))
+        {
+            string html = File.ReadAllText(landing);
+            string updated = WithBlock(html, WebTemplate("whatsnew-landing.html"), "<a class=\"nav-play\"", false);
+            if (updated == html && !html.Contains(WhatsNewStart))
+            {
+                Debug.LogWarning("[WebGlBuild] What's new: no <a class=\"nav-play\"> on " + landing + " to put the link before");
+            }
+            WriteIfChanged(landing, updated);
+        }
+
+        string game = File.ReadAllText(gamePage);
+        string block = WebTemplate("whatsnew-game.html").Replace("hawkes-release.js\"", "hawkes-release.js?v=v" + version + "\"");
+        string withLink = WithBlock(game, block, "</body>", true);
+        if (withLink == game && !game.Contains(WhatsNewStart))
+        {
+            throw new Exception("No </body> in " + gamePage + " for the What's new link");
+        }
+        WriteIfChanged(gamePage, withLink);
+    }
+
+    // Replaces the block between the What's new markers, or puts it on its own line before the anchor (the first one,
+    // or the last with last), indented like the anchor's line.
+    public static string WithBlock(string html, string block, string anchor, bool last)
+    {
+        string nl = html.Contains("\r\n") ? "\r\n" : "\n";
+        block = block.Replace("\r\n", "\n").Trim().Replace("\n", nl);
+
+        int start = html.IndexOf(WhatsNewStart, StringComparison.Ordinal);
+        if (start >= 0)
+        {
+            int end = html.IndexOf(WhatsNewEnd, start, StringComparison.Ordinal);
+            if (end >= 0)
+            {
+                int from = html.LastIndexOf('\n', Math.Max(0, start - 1)) + 1;
+                string pad = html.Substring(from, start - from);
+                if (!Regex.IsMatch(pad, @"^[ \t]*$"))
+                {
+                    pad = "";
+                }
+                return html.Substring(0, start) + block.Replace(nl, nl + pad) + html.Substring(end + WhatsNewEnd.Length);
+            }
+        }
+
+        int at = last
+            ? html.LastIndexOf(anchor, StringComparison.OrdinalIgnoreCase)
+            : html.IndexOf(anchor, StringComparison.OrdinalIgnoreCase);
+        if (at < 0)
+        {
+            return html;
+        }
+        int lineStart = html.LastIndexOf('\n', Math.Max(0, at - 1)) + 1;
+        string indent = html.Substring(lineStart, at - lineStart);
+        if (!Regex.IsMatch(indent, @"^[ \t]*$"))
+        {
+            return html.Substring(0, at) + block + nl + html.Substring(at);
+        }
+        return html.Substring(0, lineStart) + indent + block.Replace(nl, nl + indent) + nl + html.Substring(lineStart);
     }
 
     // The "Powered by HAWKES GEN" footer (Tools/Web/site-footer.html) goes on every page of the site except the game:
