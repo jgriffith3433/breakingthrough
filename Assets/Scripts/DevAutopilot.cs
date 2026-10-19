@@ -2,8 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Editor-only balance probe. F9 toggles it: it plays like a perfect archer standing by the piano,
-// picks the first card, skips breaks, and runs the clock faster. Read the [RunLog] lines it leaves.
+// Editor-only balance probe. F9 toggles it: it plays like a perfect batter who is always at the bird nearest the
+// piano (it swings at that bird and whatever is in reach of it, without walking there), picks the first card,
+// skips breaks, and runs the clock faster. Read the [RunLog] lines it leaves.
 public class DevAutopilot : MonoBehaviour {
     public static DevAutopilot Instance { get; private set; }
     public static bool On { get; private set; }
@@ -12,9 +13,9 @@ public class DevAutopilot : MonoBehaviour {
     public float Accuracy = 0.8f;
     public int PickIndex = -1;
 
-    float shotIn;
+    float swingIn;
     float sweepIn;
-    int shots;
+    int swings;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap() {
@@ -76,47 +77,43 @@ public class DevAutopilot : MonoBehaviour {
             Pickups.Vacuum();
         }
 
-        shotIn -= Time.deltaTime;
-        if (shotIn > 0f) {
+        swingIn -= Time.deltaTime;
+        if (swingIn > 0f) {
             return;
         }
-        shotIn = 0.7f / Mathf.Max(0.2f, RunBoons.DrawSpeed);
-        shots++;
-        RunLog.NoteShot();
-        int arrows = 1 + RunBoons.ExtraArrows;
-        var taken = new List<Enemy>();
-        for (int i = 0; i < arrows; i++) {
-            Enemy target = Threat(taken);
-            if (target == null) {
-                break;
-            }
-            taken.Add(target);
-            if (Random.value > Accuracy) {
-                continue;
-            }
-            Combat.ArrowHit(target, 2f, 1f, true);
-            Vector3 at = target.transform.position;
-            for (int p = 0; p < RunBoons.PierceCount + RunBoons.Bounces; p++) {
-                Enemy next = Combat.Nearest(at, 4f, taken);
-                if (next == null) {
-                    break;
-                }
-                taken.Add(next);
-                Combat.ArrowHit(next, 2f, 0.8f, true);
-            }
-            if (MetaProgress.ShootsRockets()) {
-                Combat.Burst(at, MetaProgress.SplashRadius(2f), Combat.ArrowBase() * 0.65f, DamageKind.Blast, target);
+        swingIn = 0.4f / Mathf.Max(0.2f, RunBoons.DrawSpeed);
+        Enemy target = Threat(null);
+        if (target == null) {
+            return;
+        }
+        swings++;
+        RunLog.NoteSwing();
+        if (Random.value > Accuracy) {
+            return;
+        }
+        RunLog.NoteConnect();
+        // The combo: two plain swings, then the finisher. Everything within the bat's reach of the target is hit.
+        bool finisher = swings % 3 == 0;
+        float scale = finisher ? Tuning.BatDamageFinisher : Tuning.BatDamage;
+        Vector3 at = target.transform.position;
+        float reach = BatEquipment.Reach;
+        var struck = new List<Enemy>();
+        for (int i = 0; i < Enemy.Roster.Count; i++) {
+            Enemy enemy = Enemy.Roster[i];
+            if (enemy != null && enemy.Alive && !enemy.Climbing && (enemy.transform.position - at).sqrMagnitude <= reach * reach) {
+                struck.Add(enemy);
             }
         }
-        int every = RunBoons.VolleyEvery;
-        if (every > 0 && shots % every == 0) {
-            int hits = 3 + RunBoons.Rank(BoonId.Volley) * 2;
-            for (int i = 0; i < hits; i++) {
-                Enemy target = Threat(null);
-                if (target != null) {
-                    Combat.ArrowHit(target, 2f, 0.6f, false);
-                }
+        for (int i = 0; i < struck.Count; i++) {
+            Enemy enemy = struck[i];
+            if (!Combat.BatHit(enemy, scale, finisher ? 4f : 2f, true) && enemy != null) {
+                Vector3 away = enemy.transform.position - at;
+                away.y = 0f;
+                enemy.Knock(away.normalized * (finisher ? Tuning.BatKnockFinisher : Tuning.BatKnock) + Vector3.up * 3f);
             }
+        }
+        if (finisher && MetaProgress.ShootsRockets()) {
+            Combat.Burst(at, MetaProgress.SplashRadius(2f), Combat.BatBase() * 0.65f, DamageKind.Blast, target);
         }
     }
 

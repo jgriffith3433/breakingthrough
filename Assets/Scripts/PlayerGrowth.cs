@@ -159,7 +159,7 @@ public class PlayerGrowth : MonoBehaviour {
         }
         if (!toldBoom && MetaProgress.ShootsRockets()) {
             toldBoom = true;
-            Show("Rockets, not arrows. They explode.", 5f);
+            Show("Rockets in the bat. Heavy swings explode.", 5f);
         }
         if (!toldClimb && wave >= ClimbWave) {
             toldClimb = true;

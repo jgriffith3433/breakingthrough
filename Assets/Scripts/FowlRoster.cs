@@ -50,20 +50,20 @@ public static class FowlRoster {
             Weave = true,
             Tint = Color.white,
             UnlockWave = 1,
-            Blurb = "Turkeys. Three arrows on the first wave. They wander differently, and you grow when they drop."
+            Blurb = "Turkeys. Three hits on the first wave. They wander differently, and you grow when they drop."
         };
     }
 
     public static FowlDef ForTier(int unlockWave) {
         switch (unlockWave) {
-            case 10: return Make(FowlKind.Hen, "Hen", 60, 4.6f, 1.18f, 0.92f, 1.12f, 0.72f, 1.15f, 3.2f, 1.3f, false, false, new Color(1.55f, 1.22f, 0.82f), 10, "A Hen. About your height, and she takes a lot of arrows.");
-            case 20: return Make(FowlKind.Rooster, "Rooster", 270, 5.4f, 1f, 1.15f, 1f, 1.35f, 2.4f, 4.2f, 1.5f, true, true, new Color(1.65f, 0.32f, 0.22f), 20, "A Rooster. As tall as you, and it takes a lot of arrows.");
+            case 10: return Make(FowlKind.Hen, "Hen", 60, 4.6f, 1.18f, 0.92f, 1.12f, 0.72f, 1.15f, 3.2f, 1.3f, false, false, new Color(1.55f, 1.22f, 0.82f), 10, "A Hen. About your height, and she takes a lot of hits.");
+            case 20: return Make(FowlKind.Rooster, "Rooster", 270, 5.4f, 1f, 1.15f, 1f, 1.35f, 2.4f, 4.2f, 1.5f, true, true, new Color(1.65f, 0.32f, 0.22f), 20, "A Rooster. As tall as you, and it takes a lot of hits.");
             case 30: return Make(FowlKind.Goose, "Goose", 480, 8.2f, 1.05f, 1f, 1.25f, 1.05f, 1.8f, 3.6f, 1.8f, true, false, new Color(0.82f, 0.9f, 0.98f), 30, "A Goose. Twice the old size, and much harder to drop.");
             case 40: return Make(FowlKind.Swan, "Swan", 660, 9.4f, 1f, 1.05f, 1.2f, 0.95f, 1.7f, 3.4f, 2.2f, false, false, new Color(1.65f, 1.65f, 1.75f), 40, "A Swan. About your height, with a long health bar.");
             case 50: return Make(FowlKind.Emu, "Emu", 840, 10.8f, 0.85f, 1.4f, 0.9f, 1.55f, 2.5f, 3.8f, 1.4f, true, true, new Color(1.15f, 0.72f, 0.42f), 50, "An Emu. Tall as you, and it closes the gap.");
             case 60: return Make(FowlKind.Ostrich, "Ostrich", 990, 12.4f, 0.9f, 1.45f, 0.95f, 1.7f, 2.8f, 3.5f, 1.3f, false, true, new Color(1.15f, 1.02f, 0.88f), 60, "An Ostrich. A running wall about your size.");
             case 70: return Make(FowlKind.Cassowary, "Cassowary", 1260, 14f, 1f, 1.2f, 1f, 1.45f, 2.6f, 3.6f, 1.2f, true, true, new Color(0.32f, 0.26f, 0.42f), 70, "A Cassowary. Dark, your height, and stubborn.");
-            case 80: return Make(FowlKind.Terror, "Terror", 1500, 16.2f, 1.1f, 1.25f, 1.15f, 1.1f, 2f, 3.8f, 1.5f, false, true, new Color(0.55f, 0.3f, 0.26f), 80, "A Terror. Huge, and it takes a lot of arrows.");
+            case 80: return Make(FowlKind.Terror, "Terror", 1500, 16.2f, 1.1f, 1.25f, 1.15f, 1.1f, 2f, 3.8f, 1.5f, false, true, new Color(0.55f, 0.3f, 0.26f), 80, "A Terror. Huge, and it takes a lot of hits.");
             case 90: return Make(FowlKind.Roc, "Roc", 1800, 18.6f, 1.35f, 0.85f, 1.4f, 0.9f, 1.6f, 3f, 2.4f, false, false, new Color(0.42f, 0.55f, 0.9f), 90, "A Roc. It covers you, and the health bar is long.");
             case 100: return Make(FowlKind.Thunderbird, "Thunderbird", 2700, 28f, 1.4f, 1.1f, 1.45f, 0.85f, 1.5f, 3.2f, 2.6f, false, false, new Color(1.45f, 1.12f, 0.32f), 100, "The Thunderbird. Bigger than you. The last boss.");
             default: return Turkey();
@@ -83,26 +83,26 @@ public static class FowlRoster {
 
     public static string Intro(int wave) {
         if (wave <= 1) {
-            return "Turkeys take three arrows. You grow as they fall.";
+            return "Turkeys take three hits. You grow as they fall.";
         }
         if (wave % 10 == 0 && wave <= 100) {
             FowlDef debut = ForTier(wave);
             int arrows = ArrowsFor(debut.Hits, wave);
-            string shot = arrows <= 1 ? "One arrow drops it." : "It takes " + arrows + " arrows right now.";
+            string shot = arrows <= 1 ? "One hit drops it." : "It takes " + arrows + " hits right now.";
             return debut.Blurb + " " + shot;
         }
         if (wave == 5) {
-            return "Turkeys drop in one arrow.";
+            return "Turkeys drop in one hit.";
         }
         int decade = (wave / 10) * 10;
         if (decade >= 10) {
             FowlDef current = ForTier(decade);
             int arrows = ArrowsFor(current.Hits, wave);
-            string shot = arrows <= 1 ? "One arrow drops a " + current.Name + "." : "A " + current.Name + " takes " + arrows + " arrows.";
+            string shot = arrows <= 1 ? "One hit drops a " + current.Name + "." : "A " + current.Name + " takes " + arrows + " hits.";
             return "Turkeys, and everything you have met. " + shot;
         }
         int turkeyArrows = ArrowsFor(Turkey().Hits, wave);
-        string each = turkeyArrows <= 1 ? "One arrow each." : turkeyArrows + " arrows each.";
+        string each = turkeyArrows <= 1 ? "One hit each." : turkeyArrows + " hits each.";
         return "More turkeys. " + each + " You are getting bigger.";
     }
 

@@ -127,7 +127,7 @@ public class AbilityList : MonoBehaviour {
     string Build(int wave, bool highlight) {
         var lines = new StringBuilder();
         Add(lines, wave >= Tuning.JumpWave, Tuning.JumpWave, "Jump land", highlight);
-        Add(lines, wave >= MetaProgress.AutoWave(), MetaProgress.AutoWave(), "Auto shoot", highlight);
+        Add(lines, wave >= MetaProgress.AutoWave(), MetaProgress.AutoWave(), "Auto swing", highlight);
         Add(lines, wave >= MetaProgress.StompWave(), MetaProgress.StompWave(), "Stomp", highlight);
         Add(lines, wave >= PlayerGrowth.ClimbWave, PlayerGrowth.ClimbWave, "Shake off", highlight);
         return lines.ToString();

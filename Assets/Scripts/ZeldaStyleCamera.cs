@@ -61,6 +61,14 @@ public class ZeldaStyleCamera : MonoBehaviour {
     private LockOn LockOn;
     public GameObject LockedOnGameObject;
     private bool LockOnSnap;
+    readonly List<Enemy> lockList = new List<Enemy>();
+    System.Comparison<Enemy> byDistance;
+    Vector3 lockOrigin;
+    public static int LockSwitches;
+    static float shakeAmount;
+    static float shakeUntil;
+    static float shakeLength = 0.2f;
+    Vector3 shakeOffset;
     [SerializeField]
     private GameObject LockedOnCrosshair;
     [SerializeField]
@@ -87,6 +95,8 @@ public class ZeldaStyleCamera : MonoBehaviour {
     }
 
     void Update() {
+        transform.position -= shakeOffset;
+        shakeOffset = Vector3.zero;
         Vector3 characterOffset = FollowXForm.position + new Vector3(0f, DistanceUp, 0f);
         if (!orbitReady && FollowXForm != null) {
             Vector3 fromPlayer = transform.position - FollowXForm.position;
@@ -199,43 +209,80 @@ public class ZeldaStyleCamera : MonoBehaviour {
         CompensateForWalls(characterOffset, ref TargetPosition);
         transform.LookAt(FollowXForm.position + Vector3.up * Mathf.Max(1f, DistanceUp * Mathf.Max(1f, BodyScale)));
         ShowLockMarker();
+        ApplyShake();
     }
 
+    // Hold Shift to lock on to the nearest bird in reach. The lock stays on that bird while it lives and stays
+    // close; right click (or Tab) moves it to the next nearest, round the list.
     void AcquireTarget() {
         bool holding = PlayInput.GetKey(KeyCode.LeftShift) || PlayInput.GetKey(KeyCode.RightShift);
         if (!holding || WaveDirector.IsBuilding) {
             LockedOnGameObject = null;
             return;
         }
-        GameObject best = null;
-        float bestSize = 0f;
-        float bestDist = 0f;
-        int wave = Mathf.Max(1, WaveDirector.Wave);
-        float reach = Mathf.Min(170f, 36f + (wave - 1) * 1.25f);
+        float reach = LockReach();
         Vector3 origin = FollowXForm.position;
-        Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
-        foreach (Enemy enemy in enemies) {
-            if (enemy == null || !enemy.Alive) {
+        lockList.Clear();
+        List<Enemy> roster = Enemy.Roster;
+        for (int i = 0; i < roster.Count; i++) {
+            Enemy enemy = roster[i];
+            if (enemy == null || !enemy.Alive || enemy.Climbing) {
                 continue;
             }
-            float dist = Vector3.Distance(origin, enemy.transform.position);
-            if (dist > reach) {
-                continue;
+            if ((enemy.transform.position - origin).sqrMagnitude <= reach * reach) {
+                lockList.Add(enemy);
             }
-            float size = enemy.transform.lossyScale.y;
-            bool bigger = best != null && size > bestSize + 0.25f;
-            bool closeTie = best == null || Mathf.Abs(size - bestSize) <= 0.25f;
-            if (best != null && !bigger && !closeTie) {
-                continue;
-            }
-            if (best != null && !bigger && dist >= bestDist) {
-                continue;
-            }
-            best = enemy.gameObject;
-            bestSize = size;
-            bestDist = dist;
         }
-        LockedOnGameObject = best;
+        if (lockList.Count == 0) {
+            LockedOnGameObject = null;
+            return;
+        }
+        lockOrigin = origin;
+        if (byDistance == null) {
+            byDistance = (a, b) => (a.transform.position - lockOrigin).sqrMagnitude.CompareTo((b.transform.position - lockOrigin).sqrMagnitude);
+        }
+        lockList.Sort(byDistance);
+
+        int current = -1;
+        if (LockedOnGameObject != null) {
+            for (int i = 0; i < lockList.Count; i++) {
+                if (lockList[i].gameObject == LockedOnGameObject) {
+                    current = i;
+                    break;
+                }
+            }
+        }
+        bool cycle = !LevelUpScreen.IsOpen && !PauseMenu.IsOpen && (PlayInput.GetMouseButtonDown(1) || PlayInput.GetKeyDown(KeyCode.Tab));
+        if (cycle && current >= 0) {
+            LockedOnGameObject = lockList[(current + 1) % lockList.Count].gameObject;
+            LockSwitches++;
+        } else if (current < 0) {
+            LockedOnGameObject = lockList[0].gameObject;
+        }
+    }
+
+    // How far the lock reaches: a walk, not a bowshot. Grows with you.
+    public float LockReach() {
+        float grown = PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f;
+        return Mathf.Min(90f, 26f + Mathf.Max(0, WaveDirector.Wave - 1) * 0.6f) * Mathf.Lerp(1f, grown, 0.5f);
+    }
+
+    // A small jolt when the bat connects. Unscaled, so it still plays through hit-stop.
+    public static void Shake(float amount, float seconds) {
+        shakeAmount = Mathf.Max(shakeAmount * Mathf.Clamp01((shakeUntil - Time.unscaledTime) / Mathf.Max(0.01f, shakeLength)), amount);
+        shakeLength = Mathf.Max(0.02f, seconds);
+        shakeUntil = Time.unscaledTime + shakeLength;
+    }
+
+    void ApplyShake() {
+        float left = shakeUntil - Time.unscaledTime;
+        if (left <= 0f || shakeAmount <= 0f || LevelUpScreen.IsOpen || PauseMenu.IsOpen) {
+            return;
+        }
+        float fade = left / shakeLength;
+        float body = Mathf.Max(1f, BodyScale);
+        shakeOffset = (transform.right * Random.Range(-1f, 1f) + transform.up * Random.Range(-1f, 1f)) * shakeAmount * fade * Mathf.Sqrt(body);
+        transform.position += shakeOffset;
     }
 
     void ShowLockMarker() {

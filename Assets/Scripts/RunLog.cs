@@ -8,7 +8,8 @@ public static class RunLog {
     static string runId;
     static float waveStart;
     static int musicianStart;
-    static int shots;
+    static int swings;
+    static int connects;
     static int hits;
     static float dealt;
     static int kills;
@@ -17,7 +18,9 @@ public static class RunLog {
     static bool headerChecked;
 
     // Whole-run totals, for the playtest report.
-    public static int RunShots { get; private set; }
+    // Swings taken, swings that struck at least one bird, and birds struck (one swing can hit several).
+    public static int RunSwings { get; private set; }
+    public static int RunConnects { get; private set; }
     public static int RunHits { get; private set; }
     public static int RunKills { get; private set; }
     public static float RunDamage { get; private set; }
@@ -28,7 +31,8 @@ public static class RunLog {
 
     public static void BeginRun() {
         runId = System.DateTime.Now.ToString("yyyyMMdd-HHmmss");
-        RunShots = 0;
+        RunSwings = 0;
+        RunConnects = 0;
         RunHits = 0;
         RunKills = 0;
         RunDamage = 0f;
@@ -45,7 +49,8 @@ public static class RunLog {
     static void Reset() {
         waveStart = Time.time;
         musicianStart = Musician.Instance != null ? Musician.Instance.Health : 0;
-        shots = 0;
+        swings = 0;
+        connects = 0;
         hits = 0;
         dealt = 0f;
         kills = 0;
@@ -55,9 +60,15 @@ public static class RunLog {
         picks.Length = 0;
     }
 
-    public static void NoteShot() {
-        shots++;
-        RunShots++;
+    public static void NoteSwing() {
+        swings++;
+        RunSwings++;
+    }
+
+    // A swing struck something. Once per swing.
+    public static void NoteConnect() {
+        connects++;
+        RunConnects++;
     }
 
     public static void NoteHit(float amount) {
@@ -108,7 +119,7 @@ public static class RunLog {
             hp.ToString(),
             kills.ToString(),
             byKind.ToString(),
-            shots.ToString(),
+            swings.ToString(),
             hits.ToString(),
             Mathf.RoundToInt(dealt).ToString(),
             RunBoons.Level.ToString(),
@@ -119,12 +130,12 @@ public static class RunLog {
             Quote(RunBoons.Summary())
         });
         Debug.Log("[RunLog] wave " + wave + " " + outcome + " in " + seconds.ToString("0.0") + "s, musician " + musicianStart + "→" + hp
-            + ", kills " + kills + ", shots " + shots + "/" + hits + " hit, level " + RunBoons.Level + (picks.Length > 0 ? ", picked " + picks : ""));
+            + ", kills " + kills + ", swings " + swings + " (" + connects + " connected, " + hits + " birds hit), level " + RunBoons.Level + (picks.Length > 0 ? ", picked " + picks : ""));
         try {
             if (!headerChecked) {
                 headerChecked = true;
                 if (!File.Exists(FilePath)) {
-                    File.AppendAllText(FilePath, "run,wave,outcome,seconds,musician_start,musician_end,kills,kills_by_kind,shots,hits,damage,level,best_streak,coins_run,event,picked,boons\n");
+                    File.AppendAllText(FilePath, "run,wave,outcome,seconds,musician_start,musician_end,kills,kills_by_kind,swings,hits,damage,level,best_streak,coins_run,event,picked,boons\n");
                 }
             }
             File.AppendAllText(FilePath, line + "\n");
