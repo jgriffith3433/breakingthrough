@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-// Right-side list of every bird in this wave, how many are left, and a bar that fills as they fall.
+// Right-side list of every bot in this wave, how many are left, and a bar that fills as they fall.
 public class WaveRoster : MonoBehaviour {
     const float BarWidth = 300f;
     const float RowHeight = 62f;
@@ -206,8 +206,7 @@ public class WaveRoster : MonoBehaviour {
             rect.anchoredPosition = new Vector2(0f, -shown * rowHeight);
             shown++;
 
-            FowlKind fowl = (FowlKind)kind;
-            FowlDef def = fowl == FowlKind.Turkey ? FowlRoster.Turkey() : FowlRoster.ForTier(FowlRoster.DebutOf(fowl));
+            BotDef def = BotRoster.ForKind((BotKind)kind);
             int remain = Mathf.Max(0, left[kind]);
             bool done = remain == 0;
             row.Name.text = def.Name;

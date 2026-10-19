@@ -6,14 +6,14 @@ using UnityEngine.UI;
 public enum WaveEvent {
     None,
     Stampede,
-    AirRaid,
+    JumpJetWave,
     Feast,
     GoldenHour,
     EliteSurge,
     BloodMoon
 }
 
-// Infinite turkey waves. You lose when the musician falls.
+// Infinite waves of bots. You lose when the musician falls.
 public class WaveDirector : MonoBehaviour {
     public static int Wave { get; private set; } = 1;
     public static bool IsBuilding { get; private set; }
@@ -28,8 +28,8 @@ public class WaveDirector : MonoBehaviour {
         get {
             switch (Event) {
                 case WaveEvent.Stampede: return "Stampede: everything runs faster";
-                case WaveEvent.AirRaid: return "Air Raid: they fly more";
-                case WaveEvent.Feast: return "Feast: twice the turkeys, half the health";
+                case WaveEvent.JumpJetWave: return "Jump-Jet Wave: they hop higher, and more often";
+                case WaveEvent.Feast: return "Feast: twice the Yo Bots, half the health";
                 case WaveEvent.GoldenHour: return "Golden Hour: double feathers";
                 case WaveEvent.EliteSurge: return "Elite Surge: crested birds everywhere";
                 case WaveEvent.BloodMoon: return "Blood Moon: tougher birds, more feathers";
@@ -43,7 +43,7 @@ public class WaveDirector : MonoBehaviour {
     }
 
     public static float FlightScale {
-        get { return Event == WaveEvent.AirRaid ? 2f : 1f; }
+        get { return Event == WaveEvent.JumpJetWave ? 2f : 1f; }
     }
 
     public static float FeatherScale {
@@ -66,7 +66,7 @@ public class WaveDirector : MonoBehaviour {
     float phaseLeft = 1.6f;
     float spawnIn;
     float spawnAngle;
-    readonly List<FowlKind> pending = new List<FowlKind>();
+    readonly List<BotKind> pending = new List<BotKind>();
     int cleared;
     int spawnSerial;
     bool debutAnnounced;
@@ -106,6 +106,7 @@ public class WaveDirector : MonoBehaviour {
         Combat.BeginRun();
         RunLog.BeginRun();
         RunBoons.BeginRun();
+        Pickups.BeginRun();
         Wave = MetaProgress.TakeStartWave();
         MetaProgress.NoteReached(Wave);
         RunAnalytics.RunStart(Wave);
@@ -223,7 +224,7 @@ public class WaveDirector : MonoBehaviour {
         }
         var options = new List<WaveEvent> { WaveEvent.Stampede, WaveEvent.Feast, WaveEvent.GoldenHour, WaveEvent.EliteSurge };
         if (Wave >= 8) {
-            options.Add(WaveEvent.AirRaid);
+            options.Add(WaveEvent.JumpJetWave);
         }
         if (Wave >= 15) {
             options.Add(WaveEvent.BloodMoon);
@@ -231,7 +232,7 @@ public class WaveDirector : MonoBehaviour {
         Event = options[Random.Range(0, options.Count)];
     }
 
-    // A boss calls for help: a few turkeys burst out around it.
+    // A boss calls for help: a few Yo Bots burst out around it.
     public void BossCall(Vector3 at, int count) {
         if (phase != Phase.Combat) {
             return;
@@ -240,7 +241,7 @@ public class WaveDirector : MonoBehaviour {
             float angle = Random.Range(0f, Mathf.PI * 2f);
             Vector3 spot = at + new Vector3(Mathf.Sin(angle), 0f, Mathf.Cos(angle)) * Random.Range(3f, 6f);
             spot.y = GroundNear(spot, at.y) + 0.5f;
-            Spawn(FowlRoster.ForSpawn(FowlKind.Turkey, Wave), spot, false);
+            Spawn(BotRoster.ForSpawn(BotKind.YoBot, Wave), spot, false);
         }
     }
 
@@ -249,14 +250,14 @@ public class WaveDirector : MonoBehaviour {
         float angle = Random.Range(0f, Mathf.PI * 2f);
         Vector3 spot = origin + new Vector3(Mathf.Sin(angle), 0f, Mathf.Cos(angle)) * Random.Range(22f, 32f);
         spot.y = GroundNear(spot, origin.y) + 0.5f;
-        Enemy golden = Spawn(FowlRoster.ForSpawn(FowlKind.Turkey, Wave), spot, false);
+        Enemy golden = Spawn(BotRoster.ForSpawn(BotKind.YoBot, Wave), spot, false);
         golden.MakeGolden();
         golden.transform.localScale *= 1.25f;
-        UpgradeLook.Say("A Golden Gobbler! Catch it for treasure", 2.6f, 120f);
+        UpgradeLook.Say("A Golden Yo Bot! Catch it for treasure", 2.6f, 120f);
         GameAudio.Play("coin", 0.8f, 1.5f);
     }
 
-    Enemy Spawn(FowlDef def, Vector3 spot, bool rollElite) {
+    Enemy Spawn(BotDef def, Vector3 spot, bool rollElite) {
         var go = new GameObject(def.Name);
         go.tag = "enemy";
         go.transform.position = spot;
@@ -267,9 +268,9 @@ public class WaveDirector : MonoBehaviour {
             go.transform.rotation = Quaternion.LookRotation(look);
         }
         Enemy enemy = go.AddComponent<Enemy>();
-        enemy.ApplyFowl(def);
+        enemy.ApplyBot(def);
         enemy.HitsToDrop = Mathf.Max(1, Mathf.RoundToInt(enemy.HitsToDrop * HealthMult));
-        if (rollElite && def.Kind == FowlKind.Turkey) {
+        if (rollElite && def.Kind == BotKind.YoBot) {
             float chance = Tuning.EliteChance(Wave) * (Event == WaveEvent.EliteSurge ? 3f : 1f);
             if (Random.value < chance) {
                 enemy.MakeElite(PickTrait());
@@ -278,14 +279,14 @@ public class WaveDirector : MonoBehaviour {
         return enemy;
     }
 
-    TurkeyTrait PickTrait() {
-        var traits = new List<TurkeyTrait> { TurkeyTrait.Sprinter, TurkeyTrait.Bruiser };
-        if (Wave >= 4) traits.Add(TurkeyTrait.Glider);
-        if (Wave >= 6) traits.Add(TurkeyTrait.Splitter);
-        if (Wave >= 8) traits.Add(TurkeyTrait.Charger);
-        if (Wave >= 10) traits.Add(TurkeyTrait.Blinker);
-        if (Wave >= 12) traits.Add(TurkeyTrait.Swarmer);
-        if (Wave >= 15) traits.Add(TurkeyTrait.Titan);
+    BotTrait PickTrait() {
+        var traits = new List<BotTrait> { BotTrait.Sprinter, BotTrait.Bruiser };
+        if (Wave >= 4) traits.Add(BotTrait.JumpJets);
+        if (Wave >= 6) traits.Add(BotTrait.Splitter);
+        if (Wave >= 8) traits.Add(BotTrait.Charger);
+        if (Wave >= 10) traits.Add(BotTrait.Blinker);
+        if (Wave >= 12) traits.Add(BotTrait.Swarmer);
+        if (Wave >= 15) traits.Add(BotTrait.Juggernaut);
         return traits[Random.Range(0, traits.Count)];
     }
 
@@ -434,19 +435,19 @@ public class WaveDirector : MonoBehaviour {
         if (index < 0 || index >= pending.Count) {
             return 1.8f;
         }
-        FowlKind kind = pending[index];
+        BotKind kind = pending[index];
         pending.RemoveAt(index);
-        FowlDef def = FowlRoster.ForSpawn(kind, Wave);
+        BotDef def = BotRoster.ForSpawn(kind, Wave);
         bool makeBoss = bossPending && kind == BossKind(Wave);
-        bool turkey = kind == FowlKind.Turkey;
+        bool small = kind == BotKind.YoBot;
         float waveT = Mathf.Max(0, Wave - 1);
         float reach = waveT * 0.48f;
-        float band = (turkey ? 18f : 16f) + waveT * 0.22f;
-        float inner = (turkey ? 30f : 24f) + reach + Mathf.Max(0f, def.Scale - 1f) * 0.35f;
+        float band = (small ? 18f : 16f) + waveT * 0.22f;
+        float inner = (small ? 30f : 24f) + reach + Mathf.Max(0f, def.Scale - 1f) * 0.35f;
         float outer = Mathf.Min(inner + band, 150f);
         inner = Mathf.Min(inner, outer - 10f);
-        float jitter = turkey ? 110f : 80f;
-        float gap = turkey ? 8f + waveT * 0.08f : Mathf.Max(7f, def.Scale * 0.85f);
+        float jitter = small ? 110f : 80f;
+        float gap = small ? 8f + waveT * 0.08f : Mathf.Max(7f, def.Scale * 0.85f);
         Vector3 spot = origin;
         float bestClear = -1f;
         for (int attempt = 0; attempt < 18; attempt++) {
@@ -477,13 +478,15 @@ public class WaveDirector : MonoBehaviour {
         return PaceAfter(kind);
     }
 
-    static FowlKind BossKind(int wave) {
+    // The boss is the kind that debuts on the wave: a Plated Yo Bot on 10, the first Spider Bot on 30,
+    // the Titan on 100. After 100 the bosses go round again.
+    static BotKind BossKind(int wave) {
         int tier = wave <= 100 ? wave : ((wave / 10 - 1) % 10 + 1) * 10;
-        return FowlRoster.ForTier(tier).Kind;
+        return BotRoster.ForTier(tier).Kind;
     }
 
-    static float PaceAfter(FowlKind kind) {
-        int heft = kind == FowlKind.Turkey ? 0 : (int)kind;
+    static float PaceAfter(BotKind kind) {
+        int heft = (int)kind;
         return 0.32f + heft * 0.04f + Random.Range(-0.04f, 0.06f);
     }
 
@@ -546,17 +549,17 @@ public class WaveDirector : MonoBehaviour {
             if (tier > wave) {
                 break;
             }
-            FowlKind kind = FowlRoster.ForTier(tier).Kind;
+            BotKind kind = BotRoster.ForTier(tier).Kind;
             int slots = caps[(int)kind];
             if (slots <= 0) {
                 continue;
             }
-            // A new bird debuts as a pair (one is the Alpha), then ramps up over its decade.
+            // A new kind debuts as a pair (one is the Alpha), then ramps up over its decade.
             int ramp = 2 + (wave - tier) * 2;
             counts[(int)kind] = Mathf.Min(Mathf.Max(2, slots * 2), Mathf.Max(2, ramp));
         }
-        if (counts.Length > (int)FowlKind.Turkey) {
-            counts[(int)FowlKind.Turkey] = TurkeyCount(wave) * (Event == WaveEvent.Feast ? 2 : 1);
+        if (counts.Length > (int)BotKind.YoBot) {
+            counts[(int)BotKind.YoBot] = YoBotCount(wave) * (Event == WaveEvent.Feast ? 2 : 1);
         }
     }
 
@@ -568,24 +571,25 @@ public class WaveDirector : MonoBehaviour {
             if (tier > wave) {
                 break;
             }
-            FowlKind kind = FowlRoster.ForTier(tier).Kind;
+            BotKind kind = BotRoster.ForTier(tier).Kind;
             int count = quota[(int)kind];
             for (int i = 0; i < count; i++) {
                 pending.Add(kind);
             }
         }
-        int turkeys = quota[(int)FowlKind.Turkey];
-        for (int i = 0; i < turkeys; i++) {
-            pending.Add(FowlKind.Turkey);
+        int yoBots = quota[(int)BotKind.YoBot];
+        for (int i = 0; i < yoBots; i++) {
+            pending.Add(BotKind.YoBot);
         }
         for (int i = pending.Count - 1; i > 0; i--) {
             int j = Random.Range(0, i + 1);
-            FowlKind swap = pending[i];
+            BotKind swap = pending[i];
             pending[i] = pending[j];
             pending[j] = swap;
         }
     }
 
+    // One per BotKind.
     public const int KindCount = 11;
     public static WaveDirector Instance { get; private set; }
 
@@ -597,19 +601,19 @@ public class WaveDirector : MonoBehaviour {
         return cap;
     }
 
-    // Every unlocked size gets at least one spot. Extra spots pile onto the smaller birds.
+    // Every unlocked size gets at least one spot. Extra spots pile onto the smaller bots.
     static void ScreenCaps(int wave, int[] maxAlive) {
         for (int i = 0; i < maxAlive.Length; i++) {
             maxAlive[i] = 0;
         }
         int cap = AliveCap(wave);
-        var kinds = new List<FowlKind>();
-        kinds.Add(FowlKind.Turkey);
+        var kinds = new List<BotKind>();
+        kinds.Add(BotKind.YoBot);
         for (int tier = 10; tier <= 100; tier += 10) {
             if (tier > wave) {
                 break;
             }
-            kinds.Add(FowlRoster.ForTier(tier).Kind);
+            kinds.Add(BotRoster.ForTier(tier).Kind);
         }
 
         int count = kinds.Count;
@@ -633,7 +637,7 @@ public class WaveDirector : MonoBehaviour {
             maxAlive[(int)kinds[i]] += share;
             given += share;
         }
-        maxAlive[(int)FowlKind.Turkey] += Mathf.Max(0, left - given);
+        maxAlive[(int)BotKind.YoBot] += Mathf.Max(0, left - given);
     }
 
     static void CountAlive(int[] alive) {
@@ -656,12 +660,12 @@ public class WaveDirector : MonoBehaviour {
         int best = -1;
         int bestScore = -1;
         for (int i = 0; i < pending.Count; i++) {
-            FowlKind kind = pending[i];
+            BotKind kind = pending[i];
             int index = (int)kind;
             if (index < 0 || index >= caps.Length || caps[index] <= 0 || alive[index] >= caps[index]) {
                 continue;
             }
-            int gap = Wave - FowlRoster.DebutOf(kind);
+            int gap = Wave - BotRoster.DebutOf(kind);
             int score = alive[index] == 0
                 ? 100000 - gap
                 : (caps[index] - alive[index]) * 1000 / caps[index];
@@ -673,7 +677,7 @@ public class WaveDirector : MonoBehaviour {
         return best;
     }
 
-    static int TurkeyCount(int wave) {
+    static int YoBotCount(int wave) {
         if (wave < 20) {
             return Mathf.RoundToInt(2f + wave * 1.5f);
         }
@@ -688,7 +692,7 @@ public class WaveDirector : MonoBehaviour {
         if (wave <= 1) {
             return "";
         }
-        string line = FowlRoster.Intro(wave);
+        string line = BotRoster.Intro(wave);
         int auto = MetaProgress.AutoWave();
         if (wave == auto) {
             line += " Your bow fires on its own now.";
@@ -708,10 +712,10 @@ public class WaveDirector : MonoBehaviour {
         return false;
     }
 
-    bool GobblerAlive() {
+    bool HeavyAlive() {
         Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
         foreach (Enemy enemy in enemies) {
-            if (enemy != null && enemy.Alive && enemy.IsGobbler) {
+            if (enemy != null && enemy.Alive && enemy.IsHeavy) {
                 return true;
             }
         }

@@ -241,7 +241,7 @@ public class PlayerGrowth : MonoBehaviour {
         float radius = BodyRadius + 1.35f;
         Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
         foreach (Enemy enemy in enemies) {
-            if (enemy == null || !enemy.Alive || enemy.Kind != FowlKind.Turkey || enemy.Climbing) {
+            if (enemy == null || !enemy.Alive || enemy.Kind != BotKind.YoBot || enemy.Climbing) {
                 continue;
             }
             Vector3 flat = enemy.transform.position - transform.position;
@@ -283,7 +283,7 @@ public class PlayerGrowth : MonoBehaviour {
             if (enemy == null || !enemy.Alive || enemy.Climbing) {
                 continue;
             }
-            if (turkeysOnly && enemy.Kind != FowlKind.Turkey) {
+            if (turkeysOnly && enemy.Kind != BotKind.YoBot) {
                 continue;
             }
             if (onlyOlder && WaveDirector.Wave - enemy.DebutWave < Tuning.JumpLandGap) {

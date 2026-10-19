@@ -1,30 +1,31 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum TurkeyTrait
+// Elite traits for Yo Bots. Keep the order.
+public enum BotTrait
 {
     None,
     Sprinter,
     Hopper,
     Bruiser,
     Juker,
-    Glider,
+    JumpJets,
     Splitter,
     Blinker,
-    Gobbler,
+    Heavy,
     Charger,
     Swarmer,
-    Titan
+    Juggernaut
 }
 
-// A turkey that waddles, chases the player, attempts short flapping flights,
-// and drops after two hits.
+// A bot that walks at the musician, hops on its jump jets, and swipes (Yo Bots) or stabs (Spider Bots)
+// when it gets there. From the climb wave, old kinds go for the player instead.
 public class Enemy : MonoBehaviour
 {
     public int HitsToDrop = 1;
-    public FowlKind Kind { get; private set; }
+    public BotKind Kind { get; private set; }
     public int DebutWave { get; private set; }
-    public bool IsGobbler { get; private set; }
+    public bool IsHeavy { get; private set; }
     public bool Elite { get; private set; }
     public bool Golden { get; private set; }
     public bool Boss { get; private set; }
@@ -33,7 +34,7 @@ public class Enemy : MonoBehaviour
     public float BodyScale { get { return bodyScale; } }
     public bool Burning { get { return burnLeft > 0f; } }
 
-    // Every bird on the hill, so effects do not have to search the scene.
+    // Every bot on the hill, so effects do not have to search the scene.
     public static readonly List<Enemy> Roster = new List<Enemy>();
 
     [Header("Movement")]
@@ -42,7 +43,7 @@ public class Enemy : MonoBehaviour
     public float chaseRange = 22f;
     public float stopDistance = 1.15f;
 
-    [Header("Flight")]
+    [Header("Jump jets")]
     public float jumpVelocity = 4.2f;
     public float flightGravity = 7f;
     public float normalGravity = 26f;
@@ -52,7 +53,7 @@ public class Enemy : MonoBehaviour
     public float maxFlightInterval = 3.5f;
 
     [Header("Grounding")]
-    [Tooltip("Layers the ground raycast can hit. Turkeys stand on Ground.")]
+    [Tooltip("Layers the ground raycast can hit. Bots stand on Ground.")]
     public LayerMask groundLayers = 1 << 3;
     public float groundRayDistance = 10f;
     public float groundRayStartHeight = 0.5f;
@@ -61,15 +62,21 @@ public class Enemy : MonoBehaviour
     public bool Climbing { get { return climbing; } }
     public static int Climbers { get; private set; }
 
-    Transform wingL;
-    Transform wingR;
+    Transform clawL;
+    Transform clawR;
     Transform head;
     Transform legL;
     Transform legR;
     Transform model;
-    Vector3 headRest;
-    Quaternion wingLRest = Quaternion.identity;
-    Quaternion wingRRest = Quaternion.identity;
+    // Spider Bots: LegL1..LegL4 then LegR1..LegR4, front pair first.
+    readonly Transform[] spiderLegs = new Transform[8];
+    readonly Quaternion[] spiderLegRest = new Quaternion[8];
+    bool spider;
+    bool swipeLeft;
+    Quaternion clawLRest = Quaternion.identity;
+    Quaternion clawRRest = Quaternion.identity;
+    Quaternion legLRest = Quaternion.identity;
+    Quaternion legRRest = Quaternion.identity;
     Quaternion headRestRot = Quaternion.identity;
     Quaternion modelRest = Quaternion.identity;
     bool modelled;
@@ -98,13 +105,10 @@ public class Enemy : MonoBehaviour
     bool splitter;
     bool juker;
     bool blinker;
-    bool hatchling;
+    bool drone;
     float bodyScale = 1f;
     float jukePhase;
     float blinkIn = 2.5f;
-    Color bodyTint = Color.white;
-    Color wingTint = Color.white;
-    Color headTint = Color.white;
     bool ragdoll;
     bool climbing;
     bool tumbleRecover;
@@ -174,8 +178,8 @@ public class Enemy : MonoBehaviour
 
     void Start()
     {
-        if (transform.Find("Turkey") == null)
-            BuildTurkey();
+        if (transform.Find("Bot") == null)
+            BuildModel();
         BuildHealthBar();
         BuildCrest();
     }
@@ -190,7 +194,7 @@ public class Enemy : MonoBehaviour
         gem.transform.SetParent(transform, false);
         gem.transform.localPosition = new Vector3(0f, topY + 0.35f, 0f);
         gem.transform.localRotation = Quaternion.Euler(45f, 0f, 45f);
-        // Keep the gem a readable size in the world no matter how big the bird is.
+        // Keep the gem a readable size in the world no matter how big the bot is.
         float world = (Boss ? 0.55f : Golden ? 0.4f : 0.3f) + bodyScale * 0.04f;
         float size = world / Mathf.Max(0.2f, bodyScale);
         gem.transform.localScale = new Vector3(size / shape.x, size / shape.y, size / shape.z);
@@ -251,8 +255,8 @@ public class Enemy : MonoBehaviour
             goldenLeft -= dt;
             if (goldenLeft <= 0f)
             {
-                UpgradeLook.Say("The Golden Gobbler got away", 2f, 120f);
-                UpgradeLook.Feathers(transform.position, 10, true);
+                UpgradeLook.Say("The Golden Yo Bot got away", 2f, 120f);
+                UpgradeLook.Scrap(transform.position, 10, true);
                 Destroy(gameObject);
                 return false;
             }
@@ -309,32 +313,30 @@ public class Enemy : MonoBehaviour
         }
     }
 
-    public void ApplyFowl(FowlDef def)
+    public void ApplyBot(BotDef def)
     {
         Kind = def.Kind;
-        DebutWave = def.Kind == FowlKind.Turkey ? 0 : def.UnlockWave;
+        spider = BotRoster.IsSpider(def.Kind);
+        DebutWave = def.Kind == BotKind.YoBot ? 0 : def.UnlockWave;
         HitsToDrop = Mathf.Max(1, Mathf.RoundToInt(def.Hits * Tuning.HealthScale(WaveDirector.Wave)));
         Title = def.Name;
         walkSpeed = def.Walk * Random.Range(0.86f, 1.18f) * 1.5f;
         chaseSpeed = def.Chase * Random.Range(0.9f, 1.16f) * 1.5f;
         jumpVelocity = def.Jump * Random.Range(0.9f, 1.12f);
-        maxFlightHeight = def.FlightHeight;
+        maxFlightHeight = def.HopHeight;
         minFlightInterval = Random.Range(0.9f, 2.2f);
         maxFlightInterval = minFlightInterval + Random.Range(0.5f, 1.8f);
-        juker = def.Kind == FowlKind.Turkey ? Random.value < 0.55f : def.Weave && Random.value < 0.7f;
+        juker = def.Kind == BotKind.YoBot ? Random.value < 0.55f : def.Weave && Random.value < 0.7f;
         charger = def.Charge;
-        if (def.Kind == FowlKind.Turkey)
-            DyeTint(RandomTurkeyTint());
-        else
-            DyeTint(def.Tint);
-        if (def.Kind == FowlKind.Turkey)
+        // Every Yo Bot gets its own paint job; the bigger kinds keep their authored colors.
+        if (def.Kind == BotKind.YoBot)
         {
-            modelTint = bodyTint;
+            modelTint = RandomPaint();
             modelTintAmount = 0.28f;
         }
         bodyScale = def.Scale;
-        // Blender birds carry their own proportions, so they scale evenly.
-        shape = BirdArt.Has(def.Kind) ? Vector3.one : new Vector3(def.Wide, def.Tall, def.Deep);
+        // The models carry their own proportions, so they scale evenly.
+        shape = Vector3.one;
         transform.localScale = shape * def.Scale;
         gameObject.name = def.Name;
         float pace = WaveDirector.SpeedScale;
@@ -348,8 +350,8 @@ public class Enemy : MonoBehaviour
         }
     }
 
-    // A turkey with a trait. Tougher, worth more feathers, and marked with a gem over its head.
-    public void MakeElite(TurkeyTrait trait)
+    // A Yo Bot with a trait. Tougher, worth more bolts, and marked with a gem over its head.
+    public void MakeElite(BotTrait trait)
     {
         int baseHealth = HitsToDrop;
         float before = bodyScale;
@@ -357,11 +359,11 @@ public class Enemy : MonoBehaviour
         ApplyTrait(trait);
         bodyScale = before * bodyScale;
         transform.localScale = shape * bodyScale;
-        float toughness = trait == TurkeyTrait.Titan ? 6f : trait == TurkeyTrait.Bruiser ? 4f : trait == TurkeyTrait.Swarmer ? 0.6f : 2.5f;
+        float toughness = trait == BotTrait.Juggernaut ? 6f : trait == BotTrait.Bruiser ? 4f : trait == BotTrait.Swarmer ? 0.6f : 2.5f;
         HitsToDrop = Mathf.Max(1, Mathf.RoundToInt(baseHealth * toughness));
-        IsGobbler = false;
+        IsHeavy = false;
         Elite = true;
-        Title = trait.ToString();
+        Title = TraitTitle(trait);
         gameObject.name = Title;
         crestColor = EliteColor(trait);
         modelTint = crestColor;
@@ -371,12 +373,9 @@ public class Enemy : MonoBehaviour
     public void MakeGolden()
     {
         Golden = true;
-        Title = "Golden Gobbler";
+        Title = "Golden Yo Bot";
         gameObject.name = Title;
         HitsToDrop = Mathf.RoundToInt((10f + WaveDirector.Wave * 3f) * Tuning.HealthScale(WaveDirector.Wave));
-        bodyTint = new Color(1.9f, 1.5f, 0.35f);
-        wingTint = new Color(1.8f, 1.35f, 0.3f);
-        headTint = new Color(1.9f, 1.6f, 0.5f);
         walkSpeed *= 1.6f;
         chaseSpeed *= 1.4f;
         juker = true;
@@ -399,23 +398,34 @@ public class Enemy : MonoBehaviour
         crestColor = new Color(1f, 0.3f, 0.22f);
     }
 
-    static Color EliteColor(TurkeyTrait trait)
+    static Color EliteColor(BotTrait trait)
     {
         switch (trait)
         {
-            case TurkeyTrait.Sprinter: return new Color(1f, 0.95f, 0.3f);
-            case TurkeyTrait.Bruiser: return new Color(1f, 0.35f, 0.25f);
-            case TurkeyTrait.Splitter: return new Color(1f, 0.6f, 0.2f);
-            case TurkeyTrait.Blinker: return new Color(0.85f, 0.4f, 1f);
-            case TurkeyTrait.Charger: return new Color(1f, 0.25f, 0.15f);
-            case TurkeyTrait.Glider: return new Color(0.4f, 0.75f, 1f);
-            case TurkeyTrait.Titan: return new Color(0.55f, 0.3f, 0.75f);
-            case TurkeyTrait.Swarmer: return new Color(1f, 0.85f, 0.4f);
+            case BotTrait.Sprinter: return new Color(1f, 0.95f, 0.3f);
+            case BotTrait.Bruiser: return new Color(1f, 0.35f, 0.25f);
+            case BotTrait.Splitter: return new Color(1f, 0.6f, 0.2f);
+            case BotTrait.Blinker: return new Color(0.85f, 0.4f, 1f);
+            case BotTrait.Charger: return new Color(1f, 0.25f, 0.15f);
+            case BotTrait.JumpJets: return new Color(0.4f, 0.75f, 1f);
+            case BotTrait.Juggernaut: return new Color(0.55f, 0.3f, 0.75f);
+            case BotTrait.Swarmer: return new Color(1f, 0.85f, 0.4f);
             default: return new Color(0.5f, 1f, 0.5f);
         }
     }
 
-    static Color RandomTurkeyTint()
+    // What an elite is called on the hill.
+    public static string TraitTitle(BotTrait trait)
+    {
+        switch (trait)
+        {
+            case BotTrait.None: return "Yo Bot";
+            case BotTrait.JumpJets: return "Jump-Jet Yo Bot";
+            default: return trait + " Yo Bot";
+        }
+    }
+
+    static Color RandomPaint()
     {
         Color[] palette =
         {
@@ -431,128 +441,111 @@ public class Enemy : MonoBehaviour
         return palette[Random.Range(0, palette.Length)];
     }
 
-    public void Apply(TurkeyTrait primary, TurkeyTrait secondary)
+    public void Apply(BotTrait primary, BotTrait secondary)
     {
         bodyScale = 1f;
         ApplyTrait(primary);
-        if (secondary != TurkeyTrait.None && secondary != primary)
+        if (secondary != BotTrait.None && secondary != primary)
             ApplyTrait(secondary);
         transform.localScale = Vector3.one * bodyScale;
         gameObject.name = TraitName(primary, secondary);
     }
 
-    public void ApplyHatchling()
+    // A Splitter comes apart into two small drones.
+    public void ApplyDrone()
     {
-        hatchling = true;
+        drone = true;
         splitter = false;
         HitsToDrop = 1;
         walkSpeed = 1.9f;
         chaseSpeed = 2.8f;
         jumpVelocity = 3.2f;
         maxFlightHeight = 1.15f;
+        minFlightInterval = 0.6f;
+        maxFlightInterval = 1.4f;
         bodyScale = 0.58f;
-        DyeTint(new Color(1.45f, 0.9f, 0.4f));
         modelTint = new Color(1f, 0.85f, 0.45f);
         modelTintAmount = 0.6f;
         transform.localScale = Vector3.one * bodyScale;
-        gameObject.name = "Hatchling";
+        Title = "Drone";
+        gameObject.name = Title;
     }
 
-    void ApplyTrait(TurkeyTrait trait)
+    void ApplyTrait(BotTrait trait)
     {
         switch (trait)
         {
-            case TurkeyTrait.Sprinter:
+            case BotTrait.Sprinter:
                 walkSpeed *= 1.8f;
                 chaseSpeed *= 1.45f;
                 bodyScale *= 0.92f;
-                DyeTint(new Color(1.4f, 1.15f, 0.5f));
                 break;
-            case TurkeyTrait.Hopper:
+            case BotTrait.Hopper:
                 jumpVelocity *= 1.2f;
                 maxFlightHeight += 0.35f;
                 minFlightInterval = 0.7f;
                 maxFlightInterval = 1.5f;
                 flightDuration *= 0.85f;
-                DyeTint(new Color(1.25f, 0.85f, 0.45f));
                 break;
-            case TurkeyTrait.Bruiser:
+            case BotTrait.Bruiser:
                 HitsToDrop += 2;
                 walkSpeed *= 0.72f;
                 chaseSpeed *= 0.72f;
                 bodyScale *= 1.42f;
-                DyeTint(new Color(1.35f, 0.4f, 0.32f));
                 break;
-            case TurkeyTrait.Juker:
+            case BotTrait.Juker:
                 juker = true;
                 walkSpeed *= 1.15f;
-                DyeTint(new Color(0.55f, 1.25f, 0.55f));
                 break;
-            case TurkeyTrait.Glider:
+            case BotTrait.JumpJets:
                 flightGravity = 4.2f;
                 flightDuration = 2.5f;
                 chaseSpeed *= 1.35f;
                 maxFlightHeight += 0.55f;
                 jumpVelocity *= 0.85f;
-                DyeTint(new Color(0.55f, 0.8f, 1.45f));
                 break;
-            case TurkeyTrait.Splitter:
+            case BotTrait.Splitter:
                 splitter = true;
-                DyeTint(new Color(1.55f, 0.65f, 0.25f));
                 break;
-            case TurkeyTrait.Blinker:
+            case BotTrait.Blinker:
                 blinker = true;
-                DyeTint(new Color(1.15f, 0.45f, 1.45f));
                 break;
-            case TurkeyTrait.Charger:
+            case BotTrait.Charger:
                 charger = true;
                 walkSpeed *= 1.15f;
-                DyeTint(new Color(1.2f, 0.35f, 0.25f));
                 break;
-            case TurkeyTrait.Swarmer:
+            case BotTrait.Swarmer:
                 HitsToDrop = 1;
                 walkSpeed *= 1.7f;
                 chaseSpeed *= 1.45f;
                 bodyScale *= 0.62f;
                 jumpVelocity *= 0.8f;
-                DyeTint(new Color(1.5f, 1.15f, 0.4f));
                 break;
-            case TurkeyTrait.Titan:
+            case BotTrait.Juggernaut:
                 HitsToDrop += 4;
                 walkSpeed *= 0.55f;
                 chaseSpeed *= 0.6f;
                 bodyScale *= 1.75f;
-                DyeTint(new Color(0.45f, 0.28f, 0.55f));
                 break;
-            case TurkeyTrait.Gobbler:
-                IsGobbler = true;
+            case BotTrait.Heavy:
+                IsHeavy = true;
                 HitsToDrop = 5 + WaveDirector.Wave / 5;
                 walkSpeed *= 0.62f;
                 chaseSpeed *= 0.75f;
                 jumpVelocity *= 0.75f;
                 maxFlightHeight = 1.25f;
                 bodyScale *= 1.85f;
-                bodyTint = new Color(1.7f, 0.28f, 0.22f);
-                wingTint = new Color(1.4f, 0.3f, 0.22f);
-                headTint = new Color(1.7f, 1.25f, 0.35f);
+                modelTint = new Color(1.7f, 0.28f, 0.22f);
+                modelTintAmount = 0.5f;
                 break;
         }
     }
 
-    static string TraitName(TurkeyTrait primary, TurkeyTrait secondary)
+    static string TraitName(BotTrait primary, BotTrait secondary)
     {
-        if (primary == TurkeyTrait.None && secondary == TurkeyTrait.None)
-            return "Turkey";
-        if (secondary == TurkeyTrait.None || secondary == primary)
-            return primary.ToString();
-        return primary + " " + secondary;
-    }
-
-    void DyeTint(Color tint)
-    {
-        bodyTint = bodyTint == Color.white ? tint : Color.Lerp(bodyTint, tint, 0.5f);
-        wingTint = wingTint == Color.white ? tint : Color.Lerp(wingTint, tint, 0.5f);
-        headTint = headTint == Color.white ? tint : Color.Lerp(headTint, tint, 0.5f);
+        if (secondary == BotTrait.None || secondary == primary)
+            return TraitTitle(primary);
+        return primary + " " + TraitTitle(secondary);
     }
 
     void Update()
@@ -630,7 +623,7 @@ public class Enemy : MonoBehaviour
         bool chasing = !down && distance > reach && wall == null && !sceneryBlock &&
                        (diving || (musician != null && musician.Alive));
 
-        // Start a flight attempt only while chasing and standing on the ground.
+        // Fire the jump jets only while chasing and standing on the ground.
         if (!down && chasing && grounded && !flying)
         {
             nextFlightTimer -= dt;
@@ -688,8 +681,10 @@ public class Enemy : MonoBehaviour
             peckIn -= dt;
             if (peckIn <= 0f)
             {
+                // A claw swipe from a Yo Bot, a stab of a front leg from a Spider Bot.
                 peckIn = 1.05f;
                 peckAnim = 1f;
+                swipeLeft = !swipeLeft;
                 if (wall != null && wall.Alive)
                     wall.Stop(this);
                 else if (atMusician)
@@ -702,7 +697,7 @@ public class Enemy : MonoBehaviour
         {
             flightTimer -= dt;
 
-            // Reduced gravity gives the turkey a short, visibly gliding descent.
+            // The jets hold it up: reduced gravity gives a short, floating descent.
             verticalVelocity -= flightGravity * dt;
 
             // Do not let a flight climb indefinitely.
@@ -762,24 +757,6 @@ public class Enemy : MonoBehaviour
             AnimateModel(dt);
             TickFlash(dt);
         }
-        else
-        {
-            float flap = flying
-                ? Mathf.Sin(Time.time * 32f)
-                : Mathf.Sin(Time.time * 3f) * 0.2f;
-
-            if (wingL != null)
-                wingL.localRotation = Quaternion.Euler(0f, 0f, 18f + flap * 62f);
-
-            if (wingR != null)
-                wingR.localRotation = Quaternion.Euler(0f, 0f, -18f - flap * 62f);
-
-            if (head != null)
-            {
-                head.localPosition = new Vector3(0f, 0.42f, 0.34f) +
-                                     Vector3.up * Mathf.Sin(Time.time * 6f) * 0.02f;
-            }
-        }
 
         if (down)
         {
@@ -831,6 +808,7 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    // A jump-jet hop: a soft puff under the feet, then up.
     void StartFlightAttempt()
     {
         flying = true;
@@ -838,6 +816,7 @@ public class Enemy : MonoBehaviour
         flightTimer = flightDuration;
         flightStartY = transform.position.y;
         verticalVelocity = jumpVelocity;
+        Fx.JetPuff(transform.position, transform.lossyScale.y);
     }
 
     // One plain blow at the player's arrow strength: spikes, towers, stomps.
@@ -850,7 +829,7 @@ public class Enemy : MonoBehaviour
         Damage(damage, DamageKind.Plain, false, damage, power);
     }
 
-    // Every source of harm comes through here. True when this blow dropped the bird.
+    // Every source of harm comes through here. True when this blow dropped the bot.
     public bool Damage(float amount, DamageKind kind, bool crit, float shown = -1f, float power = 1f)
     {
         if (down || amount <= 0f)
@@ -891,10 +870,10 @@ public class Enemy : MonoBehaviour
     {
         if (down)
             return;
-        if (splitter && !hatchling)
+        if (splitter && !drone)
         {
-            SpawnHatchling(new Vector3(0.75f, 0f, 0.35f));
-            SpawnHatchling(new Vector3(-0.75f, 0f, -0.35f));
+            SpawnDrone(new Vector3(0.75f, 0f, 0.35f));
+            SpawnDrone(new Vector3(-0.75f, 0f, -0.35f));
         }
 
         down = true;
@@ -903,7 +882,7 @@ public class Enemy : MonoBehaviour
         ClearLock();
         CelebrateDeath();
         PlayerGrowth.RegisterKill();
-        int coins = MetaProgress.NoteBird(Kind);
+        int coins = MetaProgress.NoteBot(Kind);
         if (coins > 0) {
             UpgradeLook.Coins(transform.position, coins);
         }
@@ -960,52 +939,39 @@ public class Enemy : MonoBehaviour
 
     void CelebrateDeath() {
         bool boss = DebutWave >= 10 || Boss || Golden;
-        Fx.Death(transform.position, transform.lossyScale.y, Plumage, boss || Elite);
+        Fx.Death(transform.position, transform.lossyScale.y, Paint, boss || Elite);
         if (Golden)
             Fx.Ring(transform.position, 5f, new Color(1f, 0.82f, 0.35f, 0.9f), 0.6f);
         if (Boss)
             Fx.Explosion(transform.position + Vector3.up * topY * 0.5f * transform.lossyScale.y, transform.lossyScale.y, new Color(1f, 0.6f, 0.3f));
-        if (Kind == FowlKind.Thunderbird) {
-            UpgradeLook.Say("The Thunderbird falls", 2.8f);
+        if (Kind == BotKind.TitanSpiderBot) {
+            UpgradeLook.Say("The Titan falls", 2.8f);
         }
     }
 
-    // The feather color that flies off this bird when it is hit or falls.
-    Color Plumage
+    // The color of the plates that fly off this bot when it falls.
+    Color Paint
     {
         get
         {
             if (Golden)
                 return new Color(1f, 0.82f, 0.3f);
-            if (Elite || hatchling)
-                return Color.Lerp(new Color(0.6f, 0.45f, 0.3f), modelTint, 0.6f);
-            switch (Kind)
-            {
-                case FowlKind.Hen: return new Color(0.8f, 0.5f, 0.25f);
-                case FowlKind.Rooster: return new Color(0.85f, 0.35f, 0.15f);
-                case FowlKind.Goose: return new Color(0.6f, 0.55f, 0.5f);
-                case FowlKind.Swan: return new Color(0.95f, 0.95f, 0.92f);
-                case FowlKind.Emu: return new Color(0.45f, 0.38f, 0.3f);
-                case FowlKind.Ostrich: return new Color(0.92f, 0.9f, 0.85f);
-                case FowlKind.Cassowary: return new Color(0.15f, 0.15f, 0.18f);
-                case FowlKind.Terror: return new Color(0.45f, 0.36f, 0.27f);
-                case FowlKind.Roc: return new Color(0.45f, 0.3f, 0.18f);
-                case FowlKind.Thunderbird: return new Color(0.3f, 0.45f, 0.9f);
-                default: return Color.Lerp(new Color(0.48f, 0.32f, 0.2f), modelTint, 0.25f);
-            }
+            if (Elite || drone || Kind == BotKind.YoBot)
+                return Color.Lerp(BotArt.PaintOf(Kind), modelTint, Mathf.Max(0.25f, modelTintAmount));
+            return BotArt.PaintOf(Kind);
         }
     }
 
-    void SpawnHatchling(Vector3 offset)
+    void SpawnDrone(Vector3 offset)
     {
         Vector3 spot = transform.position + offset;
         spot.y = GroundAt(spot + Vector3.up * 6f, spot.y) + 0.45f;
-        var go = new GameObject("Hatchling");
+        var go = new GameObject("Drone");
         go.tag = "enemy";
         go.transform.position = spot;
         go.transform.rotation = transform.rotation;
-        Enemy chick = go.AddComponent<Enemy>();
-        chick.ApplyHatchling();
+        Enemy part = go.AddComponent<Enemy>();
+        part.ApplyDrone();
     }
 
     bool TryBlink()
@@ -1046,14 +1012,6 @@ public class Enemy : MonoBehaviour
             }
         }
         return y;
-    }
-
-    static Color Dye(Color color, Color tint)
-    {
-        return new Color(
-            Mathf.Clamp01(color.r * tint.r),
-            Mathf.Clamp01(color.g * tint.g),
-            Mathf.Clamp01(color.b * tint.b));
     }
 
     bool StickToGround(ref Vector3 next)
@@ -1300,10 +1258,10 @@ public class Enemy : MonoBehaviour
         Camera cam = Camera.main;
         if (cam == null)
             return;
-        Vector3 bird = transform.lossyScale;
-        float wide = Mathf.Max(0.01f, bird.x);
-        float tall = Mathf.Max(0.01f, bird.y);
-        float deep = Mathf.Max(0.01f, bird.z);
+        Vector3 size = transform.lossyScale;
+        float wide = Mathf.Max(0.01f, size.x);
+        float tall = Mathf.Max(0.01f, size.y);
+        float deep = Mathf.Max(0.01f, size.z);
         float barWorld = Mathf.Clamp(Mathf.Max(wide, tall) * 0.55f, 1.6f, 8f);
         barRoot.localScale = new Vector3(barWorld / wide, barWorld / tall, barWorld / deep);
         barRoot.localPosition = new Vector3(0f, topY + 0.12f, 0f);
@@ -1313,7 +1271,8 @@ public class Enemy : MonoBehaviour
         barRoot.rotation = Quaternion.LookRotation(away, cam.transform.up);
     }
 
-    // Walk cycle, waddle, wing flaps, head bob and the peck, all from code on the Blender parts.
+    // Walk cycle, jump jets, head turn and the attack, all from code on the model's parts:
+    // Yo Bots stomp on two legs and swipe a claw, Spider Bots walk on eight and stab with a front leg.
     void AnimateModel(float dt)
     {
         Vector3 moved = transform.position - lastPos;
@@ -1324,44 +1283,99 @@ public class Enemy : MonoBehaviour
         float walk = Mathf.Clamp01(speed / 2.5f);
         if (down || frozenLeft > 0f)
             walk = 0f;
-        stridePhase += dt * (5f + speed * 3.2f);
+        stridePhase += dt * (spider ? 6f + speed * 4f : 5f + speed * 3.2f);
         float step = Mathf.Sin(stridePhase);
         bool stepSign = step > 0f;
         if (stepSign != lastStepSign && walk > 0.3f && bodyScale > 2.5f && grounded)
             Fx.Footstep(transform.position, bodyScale * 0.6f);
         lastStepSign = stepSign;
 
-        if (legL != null)
-            legL.localRotation = Quaternion.Euler(step * 34f * walk, 0f, 0f);
-        if (legR != null)
-            legR.localRotation = Quaternion.Euler(-step * 34f * walk, 0f, 0f);
+        peckAnim = Mathf.MoveTowards(peckAnim, 0f, dt * 4f);
+        // Wind up slowly, then strike fast.
+        float strike = peckAnim > 0.35f ? (1f - peckAnim) / 0.65f : peckAnim / 0.35f;
+
         if (model != null)
         {
-            float waddle = Mathf.Sin(stridePhase) * 7f * walk;
-            float bounce = Mathf.Abs(Mathf.Cos(stridePhase)) * 0.03f * walk;
-            model.localRotation = modelRest * Quaternion.Euler(walk * 6f, 0f, waddle);
+            float sway = Mathf.Sin(stridePhase) * (spider ? 1.5f : 3f) * walk;
+            float bounce = Mathf.Abs(Mathf.Cos(stridePhase)) * (spider ? 0.015f : 0.025f) * walk;
+            model.localRotation = modelRest * Quaternion.Euler(walk * 4f + (spider ? 0f : strike * 8f), 0f, sway);
             model.localPosition = new Vector3(0f, bounce, 0f);
         }
 
-        float flapAngle;
-        if (flying)
-            flapAngle = 25f + Mathf.Sin(Time.time * 26f) * 55f;
-        else if (climbing)
-            flapAngle = 20f + Mathf.Sin(Time.time * 14f) * 25f;
+        if (spider)
+            AnimateSpiderLegs(walk, strike);
         else
-            flapAngle = 4f + Mathf.Sin(Time.time * 2.4f + jukePhase) * 3f + walk * Mathf.Abs(step) * 6f;
-        // Positive flap lifts a wing on +X; the other side mirrors it.
-        if (wingL != null)
-            wingL.localRotation = wingLRest * Quaternion.Euler(0f, 0f, flapAngle * Mathf.Sign(wingL.localPosition.x + 0.0001f));
-        if (wingR != null)
-            wingR.localRotation = wingRRest * Quaternion.Euler(0f, 0f, flapAngle * Mathf.Sign(wingR.localPosition.x + 0.0001f));
+            AnimateYoBotLimbs(walk, step, strike);
 
         if (head != null)
         {
-            peckAnim = Mathf.MoveTowards(peckAnim, 0f, dt * 4f);
-            float peck = Mathf.Sin(peckAnim * Mathf.PI) * 45f;
-            float bob = Mathf.Sin(stridePhase * 2f) * 6f * walk + Mathf.Sin(Time.time * 1.7f + jukePhase) * 3f;
-            head.localRotation = headRestRot * Quaternion.Euler(bob + peck, Mathf.Sin(Time.time * 0.9f + jukePhase * 2f) * 10f * (1f - walk), 0f);
+            float bob = Mathf.Sin(stridePhase * 2f) * 3f * walk + strike * (spider ? -12f : 10f);
+            float look = Mathf.Sin(Time.time * 0.9f + jukePhase * 2f) * (spider ? 14f : 20f) * (1f - walk);
+            head.localRotation = headRestRot * Quaternion.Euler(bob, look, 0f);
+        }
+    }
+
+    void AnimateYoBotLimbs(float walk, float step, float strike)
+    {
+        // Legs tuck under the jets in a hop.
+        float tuck = flying ? -28f : 0f;
+        if (legL != null)
+            legL.localRotation = legLRest * Quaternion.Euler(tuck + step * 30f * walk, 0f, 0f);
+        if (legR != null)
+            legR.localRotation = legRRest * Quaternion.Euler(tuck - step * 30f * walk, 0f, 0f);
+
+        AnimateClaw(clawL, clawLRest, -step, walk, swipeLeft ? strike : 0f);
+        AnimateClaw(clawR, clawRRest, step, walk, swipeLeft ? 0f : strike);
+    }
+
+    void AnimateClaw(Transform claw, Quaternion rest, float step, float walk, float swipe)
+    {
+        if (claw == null)
+            return;
+        float side = Mathf.Sign(claw.localPosition.x + 0.0001f);
+        // Arms swing against the legs, spread for balance in a hop and grab while climbing.
+        float swing = step * 22f * walk;
+        float spread = flying ? 38f : climbing ? 25f + Mathf.Sin(Time.time * 14f) * 15f : 6f;
+        // The swipe raises the claw forward and sweeps it across the body.
+        float raise = -95f * swipe;
+        float sweep = -side * 55f * swipe;
+        claw.localRotation = rest * Quaternion.Euler(swing + raise, sweep, side * spread);
+    }
+
+    void AnimateSpiderLegs(float walk, float strike)
+    {
+        for (int i = 0; i < spiderLegs.Length; i++)
+        {
+            Transform leg = spiderLegs[i];
+            if (leg == null)
+                continue;
+            int pair = i % 4;
+            float side = i < 4 ? -1f : 1f;
+            // Alternating fours: L1 R2 L3 R4 step together, then the other four.
+            int group = (pair + (side > 0f ? 1 : 0)) % 2;
+            float phase = stridePhase + group * Mathf.PI;
+            float swing = Mathf.Sin(phase) * 16f * walk;
+            float lift = Mathf.Max(0f, Mathf.Cos(phase)) * 16f * walk;
+            if (flying)
+            {
+                swing = 0f;
+                lift = -18f;
+            }
+            else if (climbing)
+            {
+                lift = 10f + Mathf.Sin(Time.time * 12f + i) * 10f;
+            }
+            if (pair == 0)
+            {
+                bool stabbing = side < 0f ? swipeLeft : !swipeLeft;
+                if (stabbing)
+                {
+                    lift += 55f * strike;
+                    swing += 30f * strike;
+                }
+            }
+            // Positive lift raises the foot on either side; positive swing brings it forward.
+            leg.localRotation = spiderLegRest[i] * Quaternion.Euler(0f, -side * swing, side * lift);
         }
     }
 
@@ -1427,37 +1441,43 @@ public class Enemy : MonoBehaviour
 
     bool BuildModel()
     {
-        FowlKind look = hatchling ? FowlKind.Turkey : Kind;
-        GameObject made = BirdArt.Make(look, modelTint, modelTintAmount);
+        BotKind look = drone ? BotKind.YoBot : Kind;
+        GameObject made = BotArt.Make(look, modelTint, modelTintAmount);
         if (made == null)
             return false;
         made.transform.SetParent(transform, false);
         made.transform.localPosition = Vector3.zero;
         model = made.transform;
-        wingL = FindPart(model, "WingL");
-        wingR = FindPart(model, "WingR");
+        spider = BotRoster.IsSpider(look);
         head = FindPart(model, "Head");
+        clawL = FindPart(model, "ClawL");
+        clawR = FindPart(model, "ClawR");
         legL = FindPart(model, "LegL");
         legR = FindPart(model, "LegR");
+        for (int i = 0; i < spiderLegs.Length; i++)
+        {
+            spiderLegs[i] = FindPart(model, (i < 4 ? "LegL" : "LegR") + (i % 4 + 1));
+            if (spiderLegs[i] != null)
+                spiderLegRest[i] = spiderLegs[i].localRotation;
+        }
         // The head must lead. If the export axes ever flip, turn the model around.
         if (head != null && Vector3.Dot(head.position - transform.position, transform.forward) < 0f)
             model.localRotation = Quaternion.Euler(0f, 180f, 0f);
         modelRest = model.localRotation;
-        if (wingL != null) wingLRest = wingL.localRotation;
-        if (wingR != null) wingRRest = wingR.localRotation;
+        if (clawL != null) clawLRest = clawL.localRotation;
+        if (clawR != null) clawRRest = clawR.localRotation;
+        if (legL != null) legLRest = legL.localRotation;
+        if (legR != null) legRRest = legR.localRotation;
         if (head != null)
-        {
-            headRest = head.localPosition;
             headRestRot = head.localRotation;
-        }
 
-        // Fit the hit capsule to the body and head, ignoring spread wings.
+        // Fit the hit capsule to the body, head and legs, ignoring the swinging claws.
         Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
         bool any = false;
         foreach (MeshRenderer renderer in made.GetComponentsInChildren<MeshRenderer>())
         {
             string part = renderer.transform.name;
-            if (part.StartsWith("Wing"))
+            if (part.StartsWith("Claw"))
                 continue;
             Bounds world = renderer.bounds;
             Vector3 min = transform.InverseTransformPoint(world.min);
@@ -1496,140 +1516,5 @@ public class Enemy : MonoBehaviour
                 return t;
         }
         return null;
-    }
-
-    void BuildTurkey()
-    {
-        if (BuildModel())
-            return;
-
-        Shader shader = Shader.Find("Knoll/VertexColorLit");
-        if (shader == null)
-            shader = Shader.Find("Standard");
-
-        Material mat = new Material(shader);
-
-        var root = new GameObject("Turkey");
-        root.transform.SetParent(transform, false);
-
-        AddMesh(root.transform, "Body", mat, BodyMesh());
-
-        wingL = new GameObject("WingL").transform;
-        wingL.SetParent(root.transform, false);
-        wingL.localPosition = new Vector3(-0.16f, 0.22f, 0.02f);
-        AddMesh(wingL, "Wing", mat, WingMesh());
-
-        wingR = new GameObject("WingR").transform;
-        wingR.SetParent(root.transform, false);
-        wingR.localPosition = new Vector3(0.16f, 0.22f, 0.02f);
-        wingR.localScale = new Vector3(-1f, 1f, 1f);
-        AddMesh(wingR, "Wing", mat, WingMesh());
-
-        head = new GameObject("Head").transform;
-        head.SetParent(root.transform, false);
-        head.localPosition = new Vector3(0f, 0.42f, 0.34f);
-        AddMesh(head, "Head", mat, HeadMesh());
-    }
-
-    static void AddMesh(Transform parent, string name, Material material, Mesh mesh)
-    {
-        var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
-        go.AddComponent<MeshFilter>().sharedMesh = mesh;
-        go.AddComponent<MeshRenderer>().sharedMaterial = material;
-    }
-
-    Mesh BodyMesh()
-    {
-        var builder = new TurkeyMesh();
-        builder.AddSphere(new Vector3(0f, 0.28f, 0f), new Vector3(0.34f, 0.24f, 0.42f), Dye(new Color(0.42f, 0.24f, 0.12f), bodyTint));
-        builder.AddSphere(new Vector3(0f, 0.34f, -0.28f), new Vector3(0.16f, 0.2f, 0.08f), Dye(new Color(0.55f, 0.16f, 0.1f), bodyTint));
-        builder.AddSphere(new Vector3(0.1f, 0.38f, -0.36f), new Vector3(0.05f, 0.16f, 0.1f), Dye(new Color(0.62f, 0.2f, 0.12f), bodyTint));
-        builder.AddSphere(new Vector3(-0.1f, 0.38f, -0.36f), new Vector3(0.05f, 0.16f, 0.1f), Dye(new Color(0.5f, 0.14f, 0.1f), bodyTint));
-        builder.AddSphere(new Vector3(0f, 0.12f, 0.08f), new Vector3(0.04f, 0.14f, 0.04f), Dye(new Color(0.72f, 0.5f, 0.28f), bodyTint));
-        builder.AddSphere(new Vector3(0.1f, 0.12f, 0.02f), new Vector3(0.04f, 0.14f, 0.04f), Dye(new Color(0.72f, 0.5f, 0.28f), bodyTint));
-        return builder.ToMesh("TurkeyBody");
-    }
-
-    Mesh WingMesh()
-    {
-        var builder = new TurkeyMesh();
-        builder.AddSphere(new Vector3(-0.16f, 0f, 0f), new Vector3(0.22f, 0.05f, 0.16f), Dye(new Color(0.5f, 0.28f, 0.14f), wingTint));
-        return builder.ToMesh("TurkeyWing");
-    }
-
-    Mesh HeadMesh()
-    {
-        var builder = new TurkeyMesh();
-        builder.AddSphere(new Vector3(0f, 0.08f, 0.02f), new Vector3(0.05f, 0.16f, 0.05f), Dye(new Color(0.36f, 0.5f, 0.62f), headTint));
-        builder.AddSphere(Vector3.zero, new Vector3(0.1f, 0.09f, 0.11f), Dye(new Color(0.32f, 0.48f, 0.66f), headTint));
-        builder.AddSphere(new Vector3(0f, -0.02f, 0.1f), new Vector3(0.04f, 0.03f, 0.08f), Dye(new Color(0.9f, 0.62f, 0.18f), headTint));
-        builder.AddSphere(new Vector3(0f, -0.06f, 0.04f), new Vector3(0.035f, 0.06f, 0.03f), Dye(new Color(0.72f, 0.1f, 0.08f), headTint));
-        builder.AddSphere(new Vector3(0.04f, 0.03f, 0.06f), new Vector3(0.02f, 0.02f, 0.02f), new Color(0.05f, 0.05f, 0.05f));
-        builder.AddSphere(new Vector3(-0.04f, 0.03f, 0.06f), new Vector3(0.02f, 0.02f, 0.02f), new Color(0.05f, 0.05f, 0.05f));
-        return builder.ToMesh("TurkeyHead");
-    }
-}
-
-sealed class TurkeyMesh
-{
-    readonly List<Vector3> vertices = new List<Vector3>();
-    readonly List<Color> colors = new List<Color>();
-    readonly List<int> triangles = new List<int>();
-
-    public void AddSphere(Vector3 center, Vector3 radius, Color color)
-    {
-        const int lat = 6;
-        const int lon = 8;
-
-        for (int y = 0; y < lat; y++)
-        {
-            float v0 = y / (float)lat;
-            float v1 = (y + 1) / (float)lat;
-            float y0 = Mathf.Cos(v0 * Mathf.PI);
-            float y1 = Mathf.Cos(v1 * Mathf.PI);
-            float r0 = Mathf.Sin(v0 * Mathf.PI);
-            float r1 = Mathf.Sin(v1 * Mathf.PI);
-
-            for (int x = 0; x < lon; x++)
-            {
-                float u0 = x / (float)lon * Mathf.PI * 2f;
-                float u1 = (x + 1) / (float)lon * Mathf.PI * 2f;
-
-                Vector3 p00 = center + Vector3.Scale(new Vector3(Mathf.Cos(u0) * r0, y0, Mathf.Sin(u0) * r0), radius);
-                Vector3 p10 = center + Vector3.Scale(new Vector3(Mathf.Cos(u1) * r0, y0, Mathf.Sin(u1) * r0), radius);
-                Vector3 p01 = center + Vector3.Scale(new Vector3(Mathf.Cos(u0) * r1, y1, Mathf.Sin(u0) * r1), radius);
-                Vector3 p11 = center + Vector3.Scale(new Vector3(Mathf.Cos(u1) * r1, y1, Mathf.Sin(u1) * r1), radius);
-
-                AddTriangle(p00, p01, p11, color);
-                AddTriangle(p00, p11, p10, color);
-            }
-        }
-    }
-
-    void AddTriangle(Vector3 a, Vector3 b, Vector3 c, Color color)
-    {
-        int index = vertices.Count;
-        vertices.Add(a);
-        vertices.Add(b);
-        vertices.Add(c);
-        colors.Add(color);
-        colors.Add(color);
-        colors.Add(color);
-        triangles.Add(index);
-        triangles.Add(index + 1);
-        triangles.Add(index + 2);
-    }
-
-    public Mesh ToMesh(string name)
-    {
-        var mesh = new Mesh();
-        mesh.name = name;
-        mesh.SetVertices(vertices);
-        mesh.SetColors(colors);
-        mesh.SetTriangles(triangles, 0);
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
-        return mesh;
     }
 }

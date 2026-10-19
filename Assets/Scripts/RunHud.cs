@@ -216,7 +216,7 @@ public class RunHud : MonoBehaviour {
             bossFill.rectTransform.sizeDelta = new Vector2(bossWidth * boss.Health01, 16f);
         }
         goldenText.text = golden != null && !hidden
-            ? "Golden Gobbler!  Catch it:  " + Mathf.CeilToInt(golden.GoldenLeft) + "s"
+            ? "Golden Yo Bot!  Catch it:  " + Mathf.CeilToInt(golden.GoldenLeft) + "s"
             : "";
 
         string ev = WaveDirector.EventName;

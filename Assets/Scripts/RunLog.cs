@@ -67,7 +67,7 @@ public static class RunLog {
         RunDamage += amount;
     }
 
-    public static void NoteKill(FowlKind kind) {
+    public static void NoteKill(BotKind kind) {
         kills++;
         RunKills++;
         int index = (int)kind;
@@ -97,7 +97,7 @@ public static class RunLog {
             if (byKind.Length > 0) {
                 byKind.Append('|');
             }
-            byKind.Append((FowlKind)i).Append(':').Append(killsByKind[i]);
+            byKind.Append((BotKind)i).Append(':').Append(killsByKind[i]);
         }
         string line = string.Join(",", new[] {
             runId,
