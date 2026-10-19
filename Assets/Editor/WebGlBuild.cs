@@ -412,7 +412,15 @@ public static class WebGlBuild
             }
 
             Directory.CreateDirectory(versionFolder);
-            BuildWebGLTo(Path.Combine(versionFolder, ProductFolder));
+            WriteBuildStamp(next);
+            try
+            {
+                BuildWebGLTo(Path.Combine(versionFolder, ProductFolder));
+            }
+            finally
+            {
+                RemoveBuildStamp();
+            }
             UpdateGamePageVersion(GamePage, next);
             InstallSoundPrompt(GamePage, next);
             InstallWhatsNew(GamePage, next);
@@ -472,6 +480,70 @@ public static class WebGlBuild
         }
 
         return max;
+    }
+
+    // Hawkes Analytics: every event says which build the player is on. The build carries
+    // Resources/HawkesBuild.json ({ version, commit, date }) only while it is being made; RunAnalytics hands it to the
+    // page as window.HAWKES_BUILD. The version is the player version plus the Game/v<n> folder ("1.0+v12"). The commit
+    // is HAWKES_COMMIT when the build sets it, else this checkout's HEAD when nothing tracked differs from it (the
+    // build server's copy is the merge base plus uploaded edits, so its HEAD is not the commit being built).
+    const string BuildStampAsset = "Assets/Resources/HawkesBuild.json";
+
+    public static void WriteBuildStamp(int version)
+    {
+        string commit = Environment.GetEnvironmentVariable("HAWKES_COMMIT") ?? "";
+        if (!Regex.IsMatch(commit, "^[0-9a-fA-F]{4,40}$"))
+        {
+            commit = "";
+            string head = Git("rev-parse HEAD");
+            if (Regex.IsMatch(head, "^[0-9a-f]{40}$") && Git("status --porcelain --untracked-files=no") == "")
+            {
+                commit = head;
+            }
+        }
+        string json = "{\"version\":\"" + Application.version + "+v" + version + "\""
+            + (commit != "" ? ",\"commit\":\"" + commit.ToLowerInvariant() + "\"" : "")
+            + ",\"date\":\"" + DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ") + "\"}";
+        File.WriteAllText(Path.Combine(ProjectRoot, BuildStampAsset), json);
+        AssetDatabase.ImportAsset(BuildStampAsset, ImportAssetOptions.ForceSynchronousImport);
+        Debug.Log("[WebGlBuild] Build stamp: " + json);
+    }
+
+    public static void RemoveBuildStamp()
+    {
+        if (File.Exists(Path.Combine(ProjectRoot, BuildStampAsset)))
+        {
+            AssetDatabase.DeleteAsset(BuildStampAsset);
+        }
+    }
+
+    // One git command in this project, or "" when git isn't there or fails.
+    static string Git(string args)
+    {
+        try
+        {
+            var info = new ProcessStartInfo("git", "-C \"" + ProjectRoot + "\" " + args)
+            {
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+            using (Process git = Process.Start(info))
+            {
+                string output = git.StandardOutput.ReadToEnd();
+                git.StandardError.ReadToEnd();
+                if (!git.WaitForExit(15000) || git.ExitCode != 0)
+                {
+                    return "";
+                }
+                return output.Trim();
+            }
+        }
+        catch (Exception)
+        {
+            return "";
+        }
     }
 
     public static void BuildWebGLTo(string buildPath)

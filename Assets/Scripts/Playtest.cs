@@ -21,6 +21,7 @@ public static class Playtest {
         new PlaytestScenario("menus", "Shop menu, start a run, a level-up card, reroll and pick", 120, "menus"),
         new PlaytestScenario("touch", "Touch only, for a phone-sized screen (mobile, or 844x390): the menu fits, tap Play, move and fire with the on-screen stick and buttons, tap a level-up card, play to wave 2", 330, "menus"),
         new PlaytestScenario("settings", "Press Tap to play, open Settings from the menu: sound off and on, music and effects sliders, Done; start a run, pause (button, then P), Settings from the pause menu, resume, play a little. Any screen size", 100, "menus"),
+        new PlaytestScenario("analytics", "Hawkes Analytics: start a run, clear wave 1, then hold fire on wave 2 so the birds take the musician. Every analytics event is logged as it goes out (run_start, level_start and level_end per wave, card picks, the death and its bird, run_end) with the build version and env; on the game-over screen the \"How was that run?\" card must show, and the bot rates it 4 stars", 240, "full"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.com and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
     };
 
@@ -30,6 +31,15 @@ public static class Playtest {
 
     [DllImport("__Internal")]
     static extern string HawkesSoundState();
+
+    [DllImport("__Internal")]
+    static extern string HawkesAnalyticsPageLog(int afterSeq);
+
+    [DllImport("__Internal")]
+    static extern int HawkesAnalyticsPageAskShown(string id);
+
+    [DllImport("__Internal")]
+    static extern int HawkesAnalyticsPageRate(string id, int stars);
 #else
     static int HawkesSoundPressPrompt() {
         return 0;
@@ -37,6 +47,18 @@ public static class Playtest {
 
     static string HawkesSoundState() {
         return "";
+    }
+
+    static string HawkesAnalyticsPageLog(int afterSeq) {
+        return "";
+    }
+
+    static int HawkesAnalyticsPageAskShown(string id) {
+        return 0;
+    }
+
+    static int HawkesAnalyticsPageRate(string id, int stars) {
+        return 0;
     }
 #endif
 
@@ -47,6 +69,13 @@ public static class Playtest {
     static int fpsFrames;
     static float worstFps = 999f;
     static float fpsNow;
+    // The analytics scenario: from this wave on the bot holds fire, so the birds end the run.
+    static int holdFireFrom;
+    static bool analyticsRun;
+    static int analyticsSeq;
+    static int analyticsEvents;
+    static int analyticsSent;
+    static bool analyticsConfig;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Install() {
@@ -77,6 +106,13 @@ public static class Playtest {
         fpsSum = 0f;
         fpsFrames = 0;
         worstFps = 999f;
+        holdFireFrom = 0;
+        analyticsRun = id == "analytics";
+        analyticsSeq = -1;
+        analyticsEvents = 0;
+        analyticsSent = 0;
+        analyticsConfig = false;
+        RunAnalytics.EnableDebug();
         PlayInput.Release();
         MetaProgress.EnterSandbox(true);
         Random.InitState(options.seed);
@@ -112,7 +148,13 @@ public static class Playtest {
             if (run.Done) {
                 yield break;
             }
-            if (id == "smoke") {
+            if (id == "analytics") {
+                holdFireFrom = 2;
+                yield return Play(options, 220f, false);
+                if (!run.Done) {
+                    AnalyticsReport();
+                }
+            } else if (id == "smoke") {
                 yield return Play(options, 30f, false);
             } else if (id == "run") {
                 yield return Play(options, RunCap, false);
@@ -491,8 +533,9 @@ public static class Playtest {
 
             // Shoot: Shift locks on to the biggest bird in reach, the left button draws and looses.
             bool building = WaveDirector.IsBuilding;
-            PlayInput.Hold(KeyCode.LeftShift, !building && Enemy.Roster.Count > 0);
-            PlayInput.Hold(KeyCode.Mouse0, !building && !LevelUpScreen.HoldFire && Enemy.Roster.Count > 0);
+            bool holding = holdFireFrom > 0 && WaveDirector.Wave >= holdFireFrom;
+            PlayInput.Hold(KeyCode.LeftShift, !building && !holding && Enemy.Roster.Count > 0);
+            PlayInput.Hold(KeyCode.Mouse0, !building && !holding && !LevelUpScreen.HoldFire && Enemy.Roster.Count > 0);
 
             // Stay by the piano: walk back with WASD (camera-relative) when drifted away.
             Steer(player);
@@ -510,6 +553,9 @@ public static class Playtest {
                 }
                 lastWave = wave;
                 waveSince = now;
+                if (holdFireFrom > 0 && wave >= holdFireFrom) {
+                    run.Event("hold-fire", "wave " + wave + ": the bot stops shooting so the birds reach the musician");
+                }
                 warnedKills = false;
                 run.Scene("Wave " + wave);
             }
@@ -517,7 +563,7 @@ public static class Playtest {
                 lastKills = RunLog.RunKills;
                 lastKillAt = now;
             }
-            if (!warnedKills && Enemy.Roster.Count > 0 && now - lastKillAt > 45f) {
+            if (!warnedKills && holdFireFrom == 0 && Enemy.Roster.Count > 0 && now - lastKillAt > 45f) {
                 warnedKills = true;
                 run.Problem(PlaytestSeverity.Warning, "no kills for 45 s at wave " + wave + " with " + Enemy.Roster.Count + " birds alive");
             }
@@ -530,6 +576,7 @@ public static class Playtest {
             if (now >= nextMetrics) {
                 nextMetrics = now + 0.5f;
                 Metrics(elapsed);
+                AnalyticsTimeline();
                 run.Progress(seconds > 0f ? elapsed / seconds : 0f);
                 run.Note(building ? "build phase" : Enemy.Roster.Count + " birds, musician " + (Musician.Instance != null ? Musician.Instance.Health : 0));
             }
@@ -1133,12 +1180,93 @@ public static class Playtest {
         Metrics(Time.realtimeSinceStartup - run.StartTime);
         run.Event("lost", "wave " + WaveDirector.Wave);
         run.Scene("Game Over");
-        yield return new WaitForSecondsRealtime(2.5f);
+        yield return new WaitForSecondsRealtime(1f);
+        AnalyticsTimeline();
+        // The feedback card ("How was that run?") is the page's, over the game-over screen.
+        bool asked = HawkesAnalyticsPageAskShown(RunAnalytics.AskId) == 1;
+        if (asked) {
+            run.Event("feedback-prompt", "\"How was that run?\" stars and a comment, on the game-over screen");
+        } else if (InBrowser && analyticsRun) {
+            run.Problem(PlaytestSeverity.Bug, "no \"How was that run?\" feedback card on the game-over screen");
+        } else {
+            run.Log(InBrowser ? "no feedback card on the game-over screen (shown once a session, then not for 7 days after a close)" : "no feedback card in the editor");
+        }
+        if (analyticsRun && asked) {
+            yield return new WaitForSecondsRealtime(2.5f);
+            if (HawkesAnalyticsPageRate(RunAnalytics.AskId, 4) == 1) {
+                run.Event("feedback-rated", "4 stars, Skip");
+            } else {
+                run.Problem(PlaytestSeverity.Bug, "the feedback card's stars could not be pressed");
+            }
+            yield return new WaitForSecondsRealtime(1.5f);
+            AnalyticsTimeline();
+        } else {
+            yield return new WaitForSecondsRealtime(1.5f);
+        }
         PlayInput.Tap(KeyCode.Space);
         yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene, 20f, "the menu after the game-over screen");
         if (!run.Done) {
             run.Scene("Main Menu");
+            if (analyticsRun) {
+                // The SDK sends a batch every 5 s: wait for the last one so the report can say it went out.
+                yield return new WaitForSecondsRealtime(6f);
+                AnalyticsReport();
+            }
             run.Finish(PlaytestOutcome.Lost);
+        }
+    }
+
+    // ---------------------------------------------------------------- analytics
+
+    // Every Hawkes Analytics event since the last look, from the SDK's debug log (RunAnalytics turns debug mode on
+    // in a bot's browser), as timeline events: "run_start run=1 start_wave=1", "level_end level=1 result=complete…".
+    // The first time, it says which product, build and env every batch carries.
+    static void AnalyticsTimeline() {
+        string text = HawkesAnalyticsPageLog(analyticsSeq);
+        if (string.IsNullOrEmpty(text)) {
+            return;
+        }
+        string[] lines = text.Split('\n');
+        string[] config = lines[0].Split('\t');
+        if (config.Length >= 7) {
+            int.TryParse(config[6], out analyticsSent);
+            if (!analyticsConfig) {
+                analyticsConfig = true;
+                run.Event("analytics-config", "product " + config[1] + ", build " + (config[2] == "" ? "(none)" : config[2])
+                    + (config[3] == "" ? "" : " (" + config[3].Substring(0, Mathf.Min(7, config[3].Length)) + ")")
+                    + ", env " + config[4] + ", debug " + (config[5] == "1" ? "on" : "off"));
+            }
+        }
+        for (int i = 1; i < lines.Length; i++) {
+            string[] parts = lines[i].Split('\t');
+            if (parts.Length < 4 || !int.TryParse(parts[0], out int seq)) {
+                continue;
+            }
+            analyticsSeq = Mathf.Max(analyticsSeq, seq);
+            analyticsEvents++;
+            if (parts[1] == "perf") {
+                continue;
+            }
+            run.Event("analytics", parts[1] + (parts[3] == "" ? "" : " " + parts[3]));
+        }
+    }
+
+    // How many of the events went out, and the build and env they carried (said again at the end).
+    static void AnalyticsReport() {
+        AnalyticsTimeline();
+        run.Metric("analyticsEvents", analyticsEvents);
+        run.Metric("analyticsSent", analyticsSent);
+        if (!InBrowser) {
+            run.Log("analytics: nothing is sent in the editor");
+            return;
+        }
+        if (!analyticsConfig) {
+            run.Problem(PlaytestSeverity.Bug, "the Hawkes Analytics SDK is not on the page (window.hawkesAnalytics), so no events went out");
+            return;
+        }
+        run.Event("analytics-sent", analyticsSent + " of " + analyticsEvents + " events sent");
+        if (analyticsSent == 0) {
+            run.Problem(PlaytestSeverity.Bug, "no analytics batch went out (the collect endpoint was not reached)");
         }
     }
 

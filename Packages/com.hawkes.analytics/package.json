@@ -1,0 +1,8 @@
+{
+  "name": "com.hawkes.analytics",
+  "version": "0.1.0",
+  "displayName": "Hawkes Analytics",
+  "description": "Hawkes Analytics for Unity WebGL games (Hawkes Gen's player analytics, docs/analytics.md): HawkesAnalytics.Track/Screen/SetContext/LevelStart/LevelEnd/Death/Feedback/Ask… call window.hawkesAnalytics in the page, and load the SDK there when the page hasn't (product id from Resources/HawkesAnalyticsSettings). In the Editor and outside WebGL it only logs. Runtime package; nothing else is needed in the game's website.",
+  "unity": "2021.3",
+  "author": { "name": "Hawkes Gen" }
+}

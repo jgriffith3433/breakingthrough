@@ -693,7 +693,7 @@ public class Enemy : MonoBehaviour
                 if (wall != null && wall.Alive)
                     wall.Stop(this);
                 else if (atMusician)
-                    musician.Hurt(Boss ? 3 : Elite ? 2 : 1);
+                    musician.Hurt(Boss ? 3 : Elite ? 2 : 1, this);
                 verticalVelocity = Mathf.Max(verticalVelocity, 1.5f);
             }
         }

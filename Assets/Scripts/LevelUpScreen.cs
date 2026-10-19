@@ -154,6 +154,7 @@ public class LevelUpScreen : MonoBehaviour {
             return;
         }
         IsOpen = true;
+        RunAnalytics.CardsOpen(chest);
         openedAt = Time.unscaledTime;
         Time.timeScale = 0f;
         root.SetActive(true);
@@ -206,6 +207,7 @@ public class LevelUpScreen : MonoBehaviour {
         if (!RunBoons.SpendReroll()) {
             return;
         }
+        RunAnalytics.Reroll();
         offer = RunBoons.Roll(3, fromChest);
         Fill();
         GameAudio.Play("shot", 0.4f, 1.4f);
@@ -220,6 +222,7 @@ public class LevelUpScreen : MonoBehaviour {
         }
         BoonInfo info = RunBoons.Info(offer[index]);
         RunBoons.Take(offer[index]);
+        RunAnalytics.CardTaken(fromChest, offer, index);
         IsOpen = false;
         HoldFire = true;
         root.SetActive(false);

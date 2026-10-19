@@ -7,7 +7,7 @@ using UnityEngine.UI;
 // layout, scaled down to fit a phone, with 88-unit buttons and a slider knob as big.
 public class SettingsPanel : MonoBehaviour {
     const float PanelWidth = 680f;
-    const float PanelHeight = 620f;
+    const float PanelHeight = 680f;
 
     static SettingsPanel instance;
 
@@ -48,6 +48,7 @@ public class SettingsPanel : MonoBehaviour {
         instance.root.SetActive(true);
         instance.Fill();
         instance.Layout();
+        RunAnalytics.Screen("settings");
     }
 
     public static void Close() {
@@ -57,6 +58,8 @@ public class SettingsPanel : MonoBehaviour {
         instance.root.SetActive(false);
         ClosedFrame = Time.frameCount;
         SoundSettings.Flush();
+        RunAnalytics.SettingsClosed(PauseMenu.IsOpen ? "pause" : "menu");
+        RunAnalytics.Screen(PauseMenu.IsOpen ? "pause" : WaveDirector.Instance != null ? "wave" : "menu");
         System.Action closed = instance.whenClosed;
         instance.whenClosed = null;
         closed?.Invoke();
@@ -190,6 +193,11 @@ public class SettingsPanel : MonoBehaviour {
         RowLabel("Effects", -430f);
         EffectsSlider = MakeSlider("Effects", -430f, EffectsChanged);
         effectsValue = ValueLabel(-430f);
+
+        // What Hawkes Analytics (RunAnalytics) collects, said where a player of the game page can read it.
+        Text privacy = MakeText(panel, "Anonymous gameplay statistics help improve the game.\nNo cookies, no personal data, no IP stored.", 22, FontStyle.Normal, TextAnchor.MiddleCenter);
+        privacy.color = new Color(1f, 0.97f, 0.9f, 0.62f);
+        Place(privacy.rectTransform, new Vector2(0f, -492f), new Vector2(PanelWidth - 60f, 60f), new Vector2(0.5f, 1f));
 
         DoneButton = MakeButton(panel, "Done", "Done", new Vector2(260f, 88f), Close);
         DoneButton.GetComponent<Image>().color = new Color(0.22f, 0.38f, 0.22f, 1f);
