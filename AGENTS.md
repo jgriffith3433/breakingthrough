@@ -56,6 +56,7 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 | Sound on/off, music and effects volume | `SoundSettings.cs` (saved as JSON `{ on, music, sfx }` under `hawkes.sound`: localStorage on the web, PlayerPrefs too). Music is every looping `AudioSource` (the piano); effects are `GameAudio`, which multiplies by `SoundSettings.EffectsLevel` |
 | The Settings screen | `SettingsPanel.cs`, opened from the main menu's Settings button and the pause menu |
 | Pausing a run | `PauseMenu.cs`: P or Escape, the pause button right of the musician's bar, or the browser freeing a locked mouse. Gameplay that must stop checks `PauseMenu.IsOpen` next to `LevelUpScreen.IsOpen` |
+| Slice's knife (stand, stab, slash, sit back down) and her health bar | `Musician.cs` (`TickKnife`, `Stab`, `LateUpdate` straightens the seated pianist's legs as a stand-in until Slice's model lands). Reach, cooldown and the bar's title are its `StabReach`, `StabCooldown` and `Name` |
 | The website's "Tap to play" prompt | `Tools/Web/hawkes-sound.js`. `WebGlBuild.InstallSoundPrompt` copies it to `<site>/Game/` and adds its `<script data-hawkes-sound>` to `Game/index.html` on every deploy, so edit it here, never in the website |
 | Analytics events, the feedback card, the build stamp | `RunAnalytics.cs`, `Plugins/WebGL/HawkesAnalyticsPage.jslib`, `WebGlBuild.WriteBuildStamp`. See Analytics below |
 | The website's What's new page and release notes | `Tools/Web/`: `whatsnew.html`, `releases.json` (the first release), `hawkes-release.js`, and the link blocks `whatsnew-landing.html` (nav, before Play) and `whatsnew-game.html` (the version in the game's corner). `WebGlBuild.InstallWhatsNew` installs them on every deploy. The site's `releases.json` is written only when it has none: after that Hawkes Studio adds a release at each go live, so later notes go there, not here |
@@ -137,7 +138,7 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
   three moves, each until it is seen: the 3-hit combo on wave 1's turkeys with one right-click lock switch, then a
   ground smash on three hatchlings dropped in front of the player, then a home run into a line of four turkeys
   dropped in front of the player (both drops are named `setup` events); then a minute of play. `bat` timeline
-  lines say what each swing did, and the report fails any move it didn't see), `menus` (shop
+  lines say what each swing did, and the report fails any move it didn't see), `musician` (the bar says Slice; the bot holds fire by the piano until wave 1's Yo Bots reach her and she has stabbed three times, one `stab` event each with damage and the gap since the last; then it clears the wave and waits for `slice-sits`; then it holds fire from wave 2, pressing `=` if she outlasts it, until the run ends), `menus` (shop
   clicks, start, one level-up card with a reroll), `touch` (touch only: menu layout check, tap Play, the stick,
   Swing, Lock and Next wave pressed by the bot's fingers through `TouchControls.BotFinger`, a level-up card tapped,
   until wave 2 is under way; run it with `mobile` for portrait or at 844x390 for landscape), `site` (the website

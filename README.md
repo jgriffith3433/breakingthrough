@@ -1,6 +1,6 @@
 # Breaking Through
 
-A roguelike wave-defense game in Unity 6.3 LTS (`6000.3.7f1`) on the built-in render pipeline. You play a brute with a baseball bat in a moonlit hollow (Warrok's model for now; Wallit's model replaces it next), and you protect a pirate playing the piano from endless waves of birds. You grow every wave, level up on feathers, and pick boons that build into a different run each time. Between runs, coins buy permanent upgrades.
+A roguelike wave-defense game in Unity 6.3 LTS (`6000.3.7f1`) on the built-in render pipeline. You play a brute with a baseball bat in a moonlit hollow (Warrok's model for now; Wallit's model replaces it next), and you protect Slice, who plays the piano (the pirate pianist's model stands in until hers lands), from endless waves of birds. You grow every wave, level up on feathers, and pick boons that build into a different run each time. Between runs, coins buy permanent upgrades.
 
 The project folder is `breakingthrough`. The Unity product name is still `Controller`.
 
@@ -38,6 +38,7 @@ To build for the web, use **Tools → Build → WebGL**. **Run Full Deploy** pub
 
 Waves count up from 1 and never stop. You lose when the musician's health reaches 0. There is no timer.
 
+- **Slice:** the musician. Her bar at the top is titled Slice. She keeps a small knife (her scalpel): when a bot comes within 1.8 m she gets up from the bench, turns to it and stabs it, at most once every 2.5 s, with a quick pale slash. A stab is blade damage worth 0.6 of the player's hit (at least 1), 15% more per Stage Hands rank, enough to finish a small Yo Bot over a few stabs. Large bots (Spider Bots, heavies, the Alpha) only get a flinch-cut, a quarter of that, and a shove back. After 1.2 s with nothing in reach she sits back down and plays. The music keeps playing throughout; the knife is a last line, the bat is the defence.
 - **Musician health:** starts at 100, plus 25 per Stage Hands rank. A turkey's peck takes 1, an elite's takes 2, and a boss's takes 3. The bar flashes on each hit and throbs when health is low.
 - **Bird counts:** turkeys arrive at `2 + 1.5 × wave` until wave 20. After that it's 3 more per wave, and from wave 50 they swarm. For example, wave 1 has 4 turkeys, wave 10 has 17 turkeys and 2 hens, wave 30 has 62, wave 50 has 122, and wave 100 has 572.
 - **New species:** every 10th wave adds a new bird. It debuts as a pair, one of which is that wave's Alpha boss, then 2 more join each wave until its on-screen share is full. After wave 100 the same birds repeat, only larger.
