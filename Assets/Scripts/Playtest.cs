@@ -17,16 +17,17 @@ public static class Playtest {
     const float RunCap = 900f;
 
     static readonly PlaytestScenario[] Scenarios = {
-        new PlaytestScenario("smoke", "Boot, menu, start a run, about 30 s of play: the bot walks to birds near the musician and swings the bat (lock-on nearest, combo swings)", 45, "smoke"),
-        new PlaytestScenario("run", "A full run until the musician falls, picking level-ups: the bot guards the musician with the bat (walks to the nearest bird near the piano, locks on, swings, walks back). Should pass wave 5 without 'no kills for 45 s'", 600, "full"),
-        new PlaytestScenario("bat", "The bat: a 3-hit combo on wave 1's turkeys (hits and knockback, the third further), a ground smash on small hatchlings dropped in front of the player (setup), then a charged home run into a line of turkeys (setup) that bowls them over; lock-on picks the nearest bird throughout. Then a minute of play", 200, "full"),
+        new PlaytestScenario("smoke", "Boot, menu, start a run, about 30 s of play: the bot walks to bots near the musician and swings the bat (lock-on nearest, combo swings)", 45, "smoke"),
+        new PlaytestScenario("run", "A full run until the musician falls, picking level-ups: the bot guards the musician with the bat (walks to the nearest bot near the piano, locks on, swings, walks back). Should pass wave 5 without 'no kills for 45 s'", 600, "full"),
+        new PlaytestScenario("bat", "The bat: a 3-hit combo on wave 1's Yo Bots (hits and knockback, the third further), a ground smash on small Yo Bots dropped in front of the player (setup), then a charged home run into a line of Yo Bots (setup) that bowls them over; lock-on picks the nearest bot throughout. Then a minute of play", 200, "full"),
         new PlaytestScenario("menus", "Shop menu, start a run, a level-up card, reroll and pick", 120, "menus"),
-        new PlaytestScenario("touch", "Touch only, for a phone-sized screen (mobile, or 844x390): the menu fits, tap Play, walk to the birds with the on-screen stick and tap Swing, tap a level-up card, play to wave 2", 330, "menus"),
+        new PlaytestScenario("words", "Reads the menu, the shop, the help line, build tips, pause, level-up cards and the game-over screen for retired cast words. Setup: the testing wave key visits the tip waves, then wave 2 is held until Slice falls", 300, "menus"),
+        new PlaytestScenario("touch", "Touch only, for a phone-sized screen (mobile, or 844x390): the menu fits, tap Play, walk to the bots with the on-screen stick and tap Swing, tap a level-up card, play to wave 2", 330, "menus"),
         new PlaytestScenario("settings", "Press Tap to play, open Settings from the menu: sound off and on, music and effects sliders, Done; start a run, pause (button, then P), Settings from the pause menu, resume, play a little. Any screen size", 100, "menus"),
         new PlaytestScenario("bots", "The bots: wave 1's small Yo Bots walk at the musician (their distance to him is logged as they come), destroyed bots drop bolts the bot picks up as XP, and the enemy list on the right names them. Setup shortcut: the testing wave key (=) jumps to wave 30, where the first Spider Bot arrives as the Alpha, a large enemy with the boss bar, then the bot fights it for 30 s", 300, "content"),
         new PlaytestScenario("analytics", "Hawkes Analytics: start a run, clear wave 1, then hold fire on wave 2 so the bots take the musician. Every analytics event is logged as it goes out (run_start, level_start and level_end per wave, card picks, the death and the bot kind that landed it, run_end) with the build version and env; on the game-over screen the \"How was that run?\" card must show, and the bot rates it 4 stars", 240, "full"),
         new PlaytestScenario("musician", "Slice, the musician (the pirate pianist's model stands in): her health bar is titled Slice. The bot holds fire by the piano so wave 1's Yo Bots reach her: she stands, stabs the one in reach with her knife (a pale slash; it takes damage) at most once every 2.5 s, logged per stab; then the bot clears the wave and she sits back down to play. Then it holds fire from wave 2 (setup: the testing wave key (=) if she outlasts it) until the bots empty her bar and the run ends", 330, "content"),
-        new PlaytestScenario("upgrades", "The bat upgrades: the shop lists Corked Core and Aluminum! Not wood! (setup: both owned in the sandbox) and the metal bat is in the player's hands; wave 1's first level-up cards are read off the screen (bat upgrades, no arrows or bow); setup: the testing wave key (=) to wave 14 for tougher Plated Yo Bots and a handful of bat boons granted (Wide Arc, Pine Tar, Ice Bat, Live Wire, Grand Slam, Long Ball and more), each one's mark on the bat logged; then the bot plays until each effect is seen: a wider swing, bots burning, bots slowed, chain sparks shorting bots out, a 360 spin swing, batted bolts landing. Then Thunder Bat is granted for a lightning spin, and 30 s of play", 330, "content"),
+        new PlaytestScenario("upgrades", "The bat upgrades: the shop lists Corked Core and Aluminum! Not wood! (setup: both owned in the sandbox) and the metal bat is in the player's hands; wave 1's first level-up cards are read off the screen (bat upgrades, no retired cast words); setup: the testing wave key (=) to wave 14 for tougher Plated Yo Bots and a handful of bat boons granted (Wide Arc, Pine Tar, Ice Bat, Live Wire, Grand Slam, Long Ball and more), each one's mark on the bat logged; then the bot plays until each effect is seen: a wider swing, bots burning, bots slowed, chain sparks shorting bots out, a 360 spin swing, batted bolts landing. Then Thunder Bat is granted for a lightning spin, and 30 s of play", 330, "content"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.com and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
     };
 
@@ -179,6 +180,9 @@ public static class Playtest {
             if (id == "menus") {
                 yield return ShopMenu();
             }
+            if (id == "words") {
+                yield return WordsMenu();
+            }
             if (id == "upgrades") {
                 UpgradesShop();
             }
@@ -212,6 +216,8 @@ public static class Playtest {
                 if (!run.Done) {
                     BatReport();
                 }
+            } else if (id == "words") {
+                yield return WordsRun();
             } else if (id == "run") {
                 yield return Play(options, RunCap, false);
             } else {
@@ -776,13 +782,13 @@ public static class Playtest {
         lockChecks++;
         if (ZeldaStyleCamera.LockSwitches > lockSwitchesSeen) {
             lockSwitchesSeen = ZeldaStyleCamera.LockSwitches;
-            run.Event("lock-switch", "right click: the lock moved to the next nearest bird, " + locked.name + " at " + dist.ToString("0.0") + " m (" + inReach + " in reach)");
+            run.Event("lock-switch", "right click: the lock moved to the next nearest bot, " + locked.name + " at " + dist.ToString("0.0") + " m (" + inReach + " in reach)");
             return;
         }
         if (nearest == null || nearest.gameObject == locked || dist <= best + 0.75f) {
             lockNearest++;
             if (batRun || lockNearest <= 6) {
-                run.Event("lock-on", "the nearest bird: " + locked.name + " at " + dist.ToString("0.0") + " m of " + inReach + " in reach" + (hadOne ? " (the last one fell)" : ""));
+                run.Event("lock-on", "the nearest bot: " + locked.name + " at " + dist.ToString("0.0") + " m of " + inReach + " in reach" + (hadOne ? " (the last one fell)" : ""));
             }
         } else {
             lockWrong++;
@@ -816,7 +822,7 @@ public static class Playtest {
 
         // 1. The combo on wave 1's turkeys, and one lock switch along the way.
         run.Scene("Bat: the combo");
-        run.Note("swinging the 3-hit combo at wave 1's turkeys");
+        run.Note("swinging the 3-hit combo at wave 1's Yo Bots");
         bool switched = false;
         yield return Fight(player, () => {
             if (!switched && BatEquipment.Finishers >= 1 && Juice.Cam != null && Juice.Cam.LockedOnGameObject != null && BirdsInLockReach(player) >= 2) {
@@ -828,7 +834,7 @@ public static class Playtest {
         if (run.Done) {
             yield break;
         }
-        run.Event("combo", BatEquipment.Swings + " swings, " + BatEquipment.Finishers + " finishers (swing 3), " + BatEquipment.KnockedBack + " birds knocked back");
+        run.Event("combo", BatEquipment.Swings + " swings, " + BatEquipment.Finishers + " finishers (swing 3), " + BatEquipment.KnockedBack + " bots knocked back");
         run.Progress(0.3f);
 
         // 2. A ground smash: small birds get the bat swung down at the ground.
@@ -908,7 +914,7 @@ public static class Playtest {
         for (int i = 0; i < at.Length; i++) {
             line.Add(SpawnBird(player.transform.position + front * at[i] + Vector3.Cross(Vector3.up, front) * Random.Range(-0.3f, 0.3f), false));
         }
-        run.Event("setup", "a line of 4 turkeys dropped 6.5 to 12 m in front of the player, walking in toward the piano");
+        run.Event("setup", "a line of 4 Yo Bots dropped 6.5 to 12 m in front of the player, walking in toward the piano");
 
         // Hold to wind up, step toward the front turkey, let go once it is in reach and the charge is full.
         int knocksBefore = BatEquipment.HomeRunKnocks;
@@ -951,7 +957,7 @@ public static class Playtest {
         if (BatEquipment.HomeRuns == homeRunsBefore) {
             run.Log("the home run swing did not go off; trying again");
         } else if (BatEquipment.HomeRunKnocks == knocksBefore) {
-            run.Log("the home run flew without hitting another bird; trying again");
+            run.Log("the home run flew without hitting another bot; trying again");
         }
     }
 
@@ -1031,21 +1037,21 @@ public static class Playtest {
         TellBat();
         Metrics(Time.realtimeSinceStartup - run.StartTime);
         if (BatEquipment.Finishers == 0) {
-            run.Problem(PlaytestSeverity.Bug, "no 3-hit combo landed (no swing 3 hit a bird)");
+            run.Problem(PlaytestSeverity.Bug, "no 3-hit combo landed (no swing 3 hit a bot)");
         }
         if (BatEquipment.KnockedBack == 0) {
-            run.Problem(PlaytestSeverity.Bug, "the bat hit no bird hard enough to knock it back");
+            run.Problem(PlaytestSeverity.Bug, "the bat hit no bot hard enough to knock it back");
         }
         if (BatEquipment.SmashHits == 0) {
-            run.Problem(PlaytestSeverity.Bug, "no ground smash hit a small bird");
+            run.Problem(PlaytestSeverity.Bug, "no ground smash hit a small bot");
         }
         if (BatEquipment.HomeRuns == 0) {
             run.Problem(PlaytestSeverity.Bug, "no home run swing went off after holding the button");
         } else if (BatEquipment.HomeRunKnocks == 0) {
-            run.Problem(PlaytestSeverity.Bug, "the home run launched a bird that knocked into no other bird");
+            run.Problem(PlaytestSeverity.Bug, "the home run launched a bot that knocked into no other bot");
         }
         run.Event("bat-report", BatEquipment.Swings + " swings, " + BatEquipment.Finishers + " finishers, " + BatEquipment.SmashHits + " smash hits, "
-            + BatEquipment.HomeRuns + " home runs knocking into " + BatEquipment.HomeRunKnocks + " birds, lock nearest " + lockNearest + " of " + lockChecks);
+            + BatEquipment.HomeRuns + " home runs knocking into " + BatEquipment.HomeRunKnocks + " bots, lock nearest " + lockNearest + " of " + lockChecks);
     }
 
     static int BirdsInLockReach(CharacterMovement player) {
@@ -1314,9 +1320,220 @@ public static class Playtest {
             + (sliceGapMin < 900f ? sliceGapMin.ToString("0.00") + " s" : "n/a") + ", " + sliceShortGaps + " under the cooldown, sat back down " + sliceSits + " times");
     }
 
+    // ---------------------------------------------------------------- words
+
+    // Menu, shop, help, build tips, pause, cards and game over, read off the screen. The testing wave key is the
+    // setup shortcut that lands on each tip. Success is an old-words event of 0 for every screen.
+    static IEnumerator WordsMenu() {
+        oldHits = 0;
+        run.Scene("Words: menu");
+        yield return new WaitForSecondsRealtime(0.6f);
+        ScanUi("menu");
+        int copy = 0;
+        foreach (WaveEvent ev in System.Enum.GetValues(typeof(WaveEvent))) {
+            copy += ScanLine("event", WaveDirector.EventLine(ev));
+        }
+        for (int i = 0; i < RunBoons.All.Length; i++) {
+            copy += ScanLine("card", RunBoons.All[i].Name);
+            copy += ScanLine("card", RunBoons.All[i].About);
+        }
+        for (int i = 0; i < MetaProgress.Catalog.Length; i++) {
+            copy += ScanLine("shop", MetaProgress.Catalog[i].Name);
+            copy += ScanLine("shop", MetaProgress.Catalog[i].About);
+        }
+        copy += ScanLine("fort", DefencePiece.PlaceLesson(FortKind.Wall));
+        copy += ScanLine("fort", DefencePiece.PlaceLesson(FortKind.Spike));
+        copy += ScanLine("fort", DefencePiece.PlaceLesson(FortKind.Tower));
+        copy += ScanLine("thanks", RunAnalytics.Thanks);
+        copy += ScanLine("purse", "Waves pay coins. Bosses and the Golden Yo Bot pay more. Every " + MetaProgress.RangeLabel() + " drops one. Pay up.");
+        run.Metric("copyHits", copy);
+        run.Event("copy-scan", copy + " retired-cast hits in event, card, shop, fort and thanks lines");
+        run.Progress(0.05f);
+    }
+
+    static IEnumerator WordsRun() {
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+        run.Scene("Words: wave 1");
+        yield return run.Until(() => !string.IsNullOrEmpty(HelpLine()), 20f, "the wave 1 tip");
+        yield return new WaitForSecondsRealtime(0.4f);
+        NoteHelp("wave-1");
+        ScanUi("help");
+
+        run.Scene("Words: pause");
+        PlayInput.Tap(KeyCode.P);
+        yield return run.Until(() => PauseMenu.IsOpen, 5f, "the pause menu");
+        yield return new WaitForSecondsRealtime(0.4f);
+        ScanUi("pause");
+        PlayInput.Tap(KeyCode.P);
+        yield return run.Until(() => !PauseMenu.IsOpen, 5f, "play to resume");
+
+        int[] stops = { 2, 4, 5, 8, 12, 16, 25 };
+        foreach (int wave in stops) {
+            run.Event("setup", "testing wave key to wave " + wave);
+            yield return GoWave(wave);
+            if (run.Done || WaveDirector.IsLost) {
+                break;
+            }
+            if (wave == 5) {
+                yield return FortTips();
+            } else {
+                float waited = Time.realtimeSinceStartup;
+                while (string.IsNullOrEmpty(PlayerGrowth.Banner) && Time.realtimeSinceStartup - waited < 1.2f) {
+                    yield return null;
+                }
+                if (!string.IsNullOrEmpty(PlayerGrowth.Banner)) {
+                    run.Event("banner", PlayerGrowth.Banner);
+                } else if (wave == 8 || wave == 16 || wave == 25) {
+                    run.Problem(PlaytestSeverity.Bug, "the wave " + wave + " tip did not show");
+                }
+                NoteHelp("wave-" + wave);
+                ScanUi("help");
+            }
+            run.Progress(0.35f);
+        }
+
+        if (!run.Done && !WaveDirector.IsLost) {
+            run.Event("setup", "testing wave key back to wave 1 for a level-up card");
+            yield return GoWave(1);
+            run.Scene("Words: cards");
+            float start = Time.realtimeSinceStartup;
+            float nextSkip = 0f;
+            while (!run.Done && !LevelUpScreen.IsOpen && !WaveDirector.IsLost && Time.realtimeSinceStartup - start < 110f) {
+                bool building = WaveDirector.IsBuilding;
+                Batter(player, building, null, true);
+                float now = Time.realtimeSinceStartup;
+                if ((building || Enemy.Roster.Count == 0) && now >= nextSkip) {
+                    nextSkip = now + 1.5f;
+                    PlayInput.Tap(KeyCode.Return);
+                }
+                run.Progress(0.55f);
+                run.Note(Enemy.Roster.Count + " bots, level " + RunBoons.Level);
+                yield return null;
+            }
+            if (LevelUpScreen.IsOpen) {
+                yield return new WaitForSecondsRealtime(0.5f);
+                ScanUi("cards");
+                CheckBoonTexts();
+                yield return PickCard();
+            } else if (!WaveDirector.IsLost) {
+                run.Problem(PlaytestSeverity.Bug, "no level-up card opened");
+            }
+        }
+
+        if (!run.Done && !WaveDirector.IsLost) {
+            run.Event("setup", "testing wave key to wave 2, then hold fire so Slice falls");
+            yield return GoWave(2);
+            run.Scene("Words: game over");
+            PlayInput.Release();
+            float die = Time.realtimeSinceStartup;
+            while (!run.Done && !WaveDirector.IsLost && Time.realtimeSinceStartup - die < 140f) {
+                Batter(player, true, null, false);
+                run.Progress(0.8f);
+                run.Note("holding fire, Slice " + (Musician.Instance != null ? Musician.Instance.Health : 0));
+                yield return null;
+            }
+        }
+        if (WaveDirector.IsLost) {
+            yield return new WaitForSecondsRealtime(0.6f);
+            ScanUi("gameover");
+            ScanLine("thanks", RunAnalytics.Thanks);
+            run.Event("feedback-thanks", RunAnalytics.Thanks);
+            if (HawkesAnalyticsPageAskShown(RunAnalytics.AskId) == 1) {
+                yield return new WaitForSecondsRealtime(1.2f);
+                if (HawkesAnalyticsPageRate(RunAnalytics.AskId, 4) == 1) {
+                    run.Event("feedback-card", "4 stars, then: " + RunAnalytics.Thanks);
+                }
+                yield return new WaitForSecondsRealtime(1.5f);
+            }
+            run.Metric("oldWords", oldHits);
+            run.Event("old-words-total", oldHits.ToString());
+            yield return GameOver();
+        } else if (!run.Done) {
+            run.Problem(PlaytestSeverity.Bug, "Slice did not fall, so the game-over screen was not read");
+            run.Metric("oldWords", oldHits);
+        }
+    }
+
+    static IEnumerator GoWave(int target) {
+        PlayInput.Hold(KeyCode.Mouse0, false);
+        PlayInput.Hold(KeyCode.LeftShift, false);
+        for (int guard = 0; guard < 50 && WaveDirector.Wave != target && !run.Done && !WaveDirector.IsLost; guard++) {
+            if (LevelUpScreen.IsOpen) {
+                PlayInput.Tap(KeyCode.Alpha1);
+            } else if (PauseMenu.IsOpen) {
+                PlayInput.Tap(KeyCode.P);
+            } else {
+                PlayInput.Tap(WaveDirector.Wave < target ? KeyCode.Equals : KeyCode.Minus);
+            }
+            yield return new WaitForSecondsRealtime(0.2f);
+        }
+        if (WaveDirector.Wave != target && !run.Done && !WaveDirector.IsLost) {
+            run.Problem(PlaytestSeverity.Bug, "the testing wave key did not reach wave " + target + " (at " + WaveDirector.Wave + ")");
+        }
+        yield return new WaitForSecondsRealtime(0.45f);
+    }
+
+    static IEnumerator FortTips() {
+        for (int i = 0; i < 3; i++) {
+            yield return new WaitForSecondsRealtime(0.35f);
+            run.Event("fort-tip", HelpLine());
+            ScanUi("tips");
+            if (i < 2) {
+                PlayInput.Tap(KeyCode.Tab);
+            }
+        }
+    }
+
+    static void NoteHelp(string where) {
+        run.Event("help", where + ": " + HelpLine());
+    }
+
+    static string HelpLine() {
+        ControlsHelp help = Object.FindAnyObjectByType<ControlsHelp>();
+        if (help == null) {
+            return "";
+        }
+        Text line = help.GetComponentInChildren<Text>();
+        return line != null ? line.text : "";
+    }
+
+    static int ScanUi(string screen) {
+        int hits = 0;
+        var seen = new HashSet<string>();
+        Text[] labels = Object.FindObjectsByType<Text>(FindObjectsSortMode.None);
+        foreach (Text label in labels) {
+            if (label == null || !label.isActiveAndEnabled || string.IsNullOrEmpty(label.text)) {
+                continue;
+            }
+            if (!OldWords.IsMatch(label.text) || !seen.Add(label.text)) {
+                continue;
+            }
+            hits++;
+            oldHits++;
+            string quote = label.text.Replace("\n", " ");
+            if (quote.Length > 140) {
+                quote = quote.Substring(0, 140);
+            }
+            run.Problem(PlaytestSeverity.Bug, screen + " shows retired cast words: \"" + quote + "\"");
+        }
+        run.Event("old-words", screen + ": " + hits);
+        return hits;
+    }
+
+    static int ScanLine(string screen, string text) {
+        if (string.IsNullOrEmpty(text) || !OldWords.IsMatch(text)) {
+            return 0;
+        }
+        oldHits++;
+        run.Problem(PlaytestSeverity.Bug, screen + " copy has retired cast words: \"" + text + "\"");
+        return 1;
+    }
+
     // ---------------------------------------------------------------- upgrades
 
-    static readonly System.Text.RegularExpressions.Regex BowWords = new System.Text.RegularExpressions.Regex(@"\b(arrows?|bows?|quivers?|fletching|archer)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    // Retired cast: the bow, the birds, and the words that went with them. Word boundaries, so "elbow" and "bowled" stay.
+    static readonly System.Text.RegularExpressions.Regex OldWords = new System.Text.RegularExpressions.Regex(@"\b(arrows?|bows?|quivers?|fletchings?|archers?|birds?|feathers?|turkeys?|gobblers?|pecks?|flocks?|hens?)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    static int oldHits;
     static readonly string[] Effects = { "wide-swing", "burning", "slowing", "chain-sparks", "spin-swing", "batted-bolt" };
     static readonly HashSet<string> effectsSeen = new HashSet<string>();
 
@@ -1333,9 +1550,9 @@ public static class Playtest {
                         shown.Add(label.text);
                     }
                 }
-                if (BowWords.IsMatch(label.text)) {
+                if (OldWords.IsMatch(label.text)) {
                     bowWords = true;
-                    run.Problem(PlaytestSeverity.Bug, "the shop still mentions arrows or the bow: \"" + label.text + "\"");
+                    run.Problem(PlaytestSeverity.Bug, "shop text has retired cast words: \"" + label.text + "\"");
                 }
             }
         }
@@ -1443,8 +1660,8 @@ public static class Playtest {
                         titles.Add(label.text);
                     }
                 }
-                if (BowWords.IsMatch(label.text)) {
-                    run.Problem(PlaytestSeverity.Bug, "a level-up card mentions arrows or the bow: \"" + label.text + "\"");
+                if (OldWords.IsMatch(label.text)) {
+                    run.Problem(PlaytestSeverity.Bug, "a level-up card has retired cast words: \"" + label.text + "\"");
                 }
             }
         }
@@ -1460,13 +1677,13 @@ public static class Playtest {
         int bad = 0;
         for (int i = 0; i < RunBoons.All.Length; i++) {
             BoonInfo info = RunBoons.All[i];
-            if (BowWords.IsMatch(info.Name) || BowWords.IsMatch(info.About)) {
+            if (OldWords.IsMatch(info.Name) || OldWords.IsMatch(info.About)) {
                 bad++;
-                run.Problem(PlaytestSeverity.Bug, "boon " + info.Name + " still mentions arrows or the bow: " + info.About);
+                run.Problem(PlaytestSeverity.Bug, "boon " + info.Name + " has retired cast words: " + info.About);
             }
         }
         run.Metric("boonBowWords", bad);
-        run.Event("boon-texts", RunBoons.All.Length + " boons checked, " + bad + " mention arrows or the bow");
+        run.Event("boon-texts", RunBoons.All.Length + " boons checked, " + bad + " with retired cast words");
     }
 
     // Logs each effect the first time it shows; true once all have.

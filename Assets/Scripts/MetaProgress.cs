@@ -37,7 +37,7 @@ public static class MetaProgress {
         new UpgradeInfo { Id = UpgradeId.Towers, Name = "Watch Kit", About = "More towers. They shoot farther and faster.", MaxRank = 3 },
         new UpgradeInfo { Id = UpgradeId.Clover, Name = "Four-Leaf Clover", About = "+1 reroll each run. Rare and epic boons show up more.", MaxRank = 3 },
         new UpgradeInfo { Id = UpgradeId.OpeningAct, Name = "Opening Act", About = "Start each run holding a random boon per rank.", MaxRank = 3 },
-        new UpgradeInfo { Id = UpgradeId.StageHands, Name = "Stage Hands", About = "The musician starts with +25 health per rank.", MaxRank = 3 }
+        new UpgradeInfo { Id = UpgradeId.StageHands, Name = "Stage Hands", About = "Slice starts with +25 health per rank.", MaxRank = 3 }
     };
 
     public static int Coins { get; private set; }
@@ -204,7 +204,7 @@ public static class MetaProgress {
 
     public static string StatusLine() {
         Ensure();
-        string line = "Coins " + Coins + "    ·    " + HensToward + " / " + NextCoinAt + " hens";
+        string line = "Coins " + Coins + "    ·    " + HensToward + " / " + NextCoinAt + " plated";
         if (!string.IsNullOrEmpty(Toast)) {
             line += "    ·    " + Toast;
         }
@@ -215,7 +215,7 @@ public static class MetaProgress {
         Ensure();
         int min = ThresholdMin();
         int max = ThresholdMax();
-        return min + " to " + max + " hens";
+        return min + " to " + max + " Plated Yo Bots";
     }
 
     public static int AutoWave() {
@@ -344,7 +344,7 @@ public static class MetaProgress {
             case UpgradeId.OpeningAct:
                 return rank == 1 ? "Start with 1 boon" : "Start with " + rank + " boons";
             case UpgradeId.StageHands:
-                return "Musician starts at " + (Musician.BaseHealth + StageHealth());
+                return "Slice starts at " + (Musician.BaseHealth + StageHealth());
             default:
                 return rank + " / " + info.MaxRank;
         }

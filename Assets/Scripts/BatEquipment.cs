@@ -420,7 +420,7 @@ public class BatEquipment : MonoBehaviour {
             Smashes++;
             int struck = Strike(hits, Tuning.SmashDamage, 1.5f, 3f, 5.5f);
             SmashHits += struck;
-            Say("ground smash (target " + Size(faceTarget) + " under " + Tuning.SmashBelow.ToString("0.00") + " of yours): " + struck + " bird" + (struck == 1 ? "" : "s") + " hit");
+            Say("ground smash (target " + Size(faceTarget) + " under " + Tuning.SmashBelow.ToString("0.00") + " of yours): " + struck + " bot" + (struck == 1 ? "" : "s") + " hit");
             if (struck > 0) {
                 Juice.HitStop(0.05f);
                 ZeldaStyleCamera.Shake(0.08f, 0.16f);
@@ -573,7 +573,7 @@ public class BatEquipment : MonoBehaviour {
             flight.Left -= dt;
             if (flight.Bird == null || flight.Left <= 0f || flight.HitsLeft <= 0 || (!flight.HomeRun && !flight.Bird.Knocked)) {
                 if (flight.HomeRun && flight.Bowled > 0) {
-                    Say("home run knock: the launched bird bowled over " + flight.Bowled + " bird" + (flight.Bowled == 1 ? "" : "s"));
+                    Say("home run knock: the launched bot bowled over " + flight.Bowled + " bot" + (flight.Bowled == 1 ? "" : "s"));
                 }
                 flights.RemoveAt(f);
                 continue;

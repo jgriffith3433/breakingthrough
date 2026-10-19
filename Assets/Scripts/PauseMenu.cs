@@ -206,7 +206,7 @@ public class PauseMenu : MonoBehaviour {
 
         Text title = MakeText(deck, "Paused", 52, FontStyle.Bold);
         Place(title.rectTransform, new Vector2(0f, -30f), new Vector2(460f, 70f));
-        Text line = MakeText(deck, "The birds will wait.", 24, FontStyle.Italic);
+        Text line = MakeText(deck, "Clean. The bots will wait.", 24, FontStyle.Italic);
         line.color = new Color(1f, 0.9f, 0.72f, 0.85f);
         Place(line.rectTransform, new Vector2(0f, -100f), new Vector2(460f, 34f));
 

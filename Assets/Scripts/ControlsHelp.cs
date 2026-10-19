@@ -113,10 +113,13 @@ public class ControlsHelp : MonoBehaviour {
 
     static string BuildLesson(bool touch) {
         BuildMode build = BuildMode.Instance;
-        if (build != null && build.IsPlacing) {
-            return touch ? "Tap between the rings." : "Click between the rings.";
+        string how = build != null && build.IsPlacing
+            ? (touch ? "Tap between the rings." : "Click between the rings.")
+            : (touch ? "Turn rotates. Tap a card to switch." : "Q and E turn. Tab switches.");
+        if (build == null) {
+            return how;
         }
-        return touch ? "Turn rotates. Tap a card to switch." : "Q and E turn. Tab switches.";
+        return how + "  " + DefencePiece.PlaceLesson(build.Selected);
     }
 
     static string CombatLesson(int wave, bool touch) {
@@ -124,19 +127,19 @@ public class ControlsHelp : MonoBehaviour {
             return touch ? "Tap Shake to shake them off." : "Press F to shake them off.";
         }
         if (wave >= Tuning.StompWave) {
-            return "Stomp turkeys at your feet.";
+            return "Stomp Yo Bots at your feet.";
         }
         if (wave >= Tuning.AutoWave) {
-            return "The bat swings on its own at birds in reach.";
+            return "The bat swings on its own at bots in reach.";
         }
         if (wave >= Tuning.JumpWave) {
-            return touch ? "Hold Jump to hop. Landings crush turkeys." : "Hold Space to hop. Landings crush turkeys.";
+            return touch ? "Hold Jump to hop. Landings crush Yo Bots." : "Hold Space to hop. Landings crush Yo Bots.";
         }
         if (wave >= Tuning.GoldenFirstWave) {
-            return touch ? "Lock locks on. Chase gold turkeys for treasure." : "Shift locks on, right click switches. Chase gold turkeys for treasure.";
+            return touch ? "Lock locks on. Chase the Golden Yo Bot." : "Shift locks on, right click switches. Chase the Golden Yo Bot.";
         }
         if (wave >= 2) {
-            return "Walk over feathers to level up.";
+            return "Walk over bolts to level up.";
         }
         return touch ? "Tap Swing to swing. Hold it for a home run." : "Click to swing. Hold for a home run. Shift locks on.";
     }

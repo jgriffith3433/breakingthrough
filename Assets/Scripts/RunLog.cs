@@ -130,7 +130,7 @@ public static class RunLog {
             Quote(RunBoons.Summary())
         });
         Debug.Log("[RunLog] wave " + wave + " " + outcome + " in " + seconds.ToString("0.0") + "s, musician " + musicianStart + "→" + hp
-            + ", kills " + kills + ", swings " + swings + " (" + connects + " connected, " + hits + " birds hit), level " + RunBoons.Level + (picks.Length > 0 ? ", picked " + picks : ""));
+            + ", kills " + kills + ", swings " + swings + " (" + connects + " connected, " + hits + " bots hit), level " + RunBoons.Level + (picks.Length > 0 ? ", picked " + picks : ""));
         try {
             if (!headerChecked) {
                 headerChecked = true;

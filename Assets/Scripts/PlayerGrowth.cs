@@ -151,11 +151,11 @@ public class PlayerGrowth : MonoBehaviour {
         }
         if (!toldJump && wave >= Tuning.JumpWave) {
             toldJump = true;
-            Show("Land a jump on turkeys to crush them. Hold Space to keep hopping.", 5f);
+            Show("Land a jump on Yo Bots to crush them. Hold Space to keep hopping.", 5f);
         }
         if (!toldStomp && wave >= MetaProgress.StompWave()) {
             toldStomp = true;
-            Show("Stomp. Nearby turkeys, one foot at a time.", 5f);
+            Show("Stomp. Nearby Yo Bots, one foot at a time.", 5f);
         }
         if (!toldBoom && MetaProgress.MetalBat()) {
             toldBoom = true;
@@ -163,7 +163,7 @@ public class PlayerGrowth : MonoBehaviour {
         }
         if (!toldClimb && wave >= ClimbWave) {
             toldClimb = true;
-            Show("Older birds climb you now instead of the piano. Press F.", 6f);
+            Show("Older bots climb you now instead of the piano. Press F.", 6f);
         }
     }
 

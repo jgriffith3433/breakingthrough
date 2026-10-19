@@ -142,7 +142,7 @@ public class MainMenu : MonoBehaviour {
 
         var left = Panel(canvasGo.transform, new Color(0.03f, 0.04f, 0.08f, 0.66f), new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(60f, 0f), new Vector2(620f, -120f));
         Label(left, "Breaking Through", 64, FontStyle.Bold, new Color(1f, 0.96f, 0.86f), new Vector2(36f, -36f), new Vector2(540f, 80f), TextAnchor.UpperLeft);
-        Label(left, "Protect the musician. Level up on feathers, pick boons, build a run. Coins buy a stronger start.", 24, FontStyle.Normal, new Color(1f, 0.9f, 0.72f, 0.9f), new Vector2(36f, -124f), new Vector2(540f, 80f), TextAnchor.UpperLeft);
+        Label(left, "Protect Slice. Level up on bolts, pick boons, build a run. Coins buy a stronger start.", 24, FontStyle.Normal, new Color(1f, 0.9f, 0.72f, 0.9f), new Vector2(36f, -124f), new Vector2(540f, 80f), TextAnchor.UpperLeft);
 
         coinText = Label(left, "", 36, FontStyle.Bold, new Color(1f, 0.84f, 0.35f), new Vector2(36f, -220f), new Vector2(540f, 48f), TextAnchor.UpperLeft);
         bestText = Label(left, "", 28, FontStyle.Normal, new Color(0.85f, 0.95f, 0.8f), new Vector2(36f, -274f), new Vector2(540f, 40f), TextAnchor.UpperLeft);
@@ -229,7 +229,7 @@ public class MainMenu : MonoBehaviour {
         later.rectTransform.anchoredPosition = new Vector2(292f, 128f);
 
         RectTransform about = Scroller(info, new Vector2(12f, 228f), new Vector2(-12f, -84f), 10f);
-        Flow(about, "Protect the musician. Level up on feathers, pick boons, build a run. Coins buy a stronger start.", 22, FontStyle.Normal, new Color(1f, 0.9f, 0.72f, 0.9f));
+        Flow(about, "Protect Slice. Level up on bolts, pick boons, build a run. Coins buy a stronger start.", 22, FontStyle.Normal, new Color(1f, 0.9f, 0.72f, 0.9f));
         coinText = Flow(about, "", 32, FontStyle.Bold, new Color(1f, 0.84f, 0.35f));
         bestText = Flow(about, "", 24, FontStyle.Normal, new Color(0.85f, 0.95f, 0.8f));
         celebrate = Flow(about, "", 26, FontStyle.Bold, new Color(1f, 0.84f, 0.35f));
@@ -397,7 +397,7 @@ public class MainMenu : MonoBehaviour {
 
         coinText.text = MetaProgress.Coins + (MetaProgress.Coins == 1 ? " coin" : " coins");
         bestText.text = MetaProgress.BestWave > 0 ? "Best wave cleared: " + MetaProgress.BestWave : "No wave cleared yet.";
-        purseText.text = "Every cleared wave pays coins. Bosses and golden gobblers pay more, and every " + MetaProgress.RangeLabel() + " drops one too. Coins stay when you fall.";
+        purseText.text = "Waves pay coins. Bosses and the Golden Yo Bot pay more. Every " + MetaProgress.RangeLabel() + " drops one. Pay up.";
 
         for (int i = 0; i < MetaProgress.Catalog.Length; i++) {
             UpgradeInfo info = MetaProgress.Catalog[i];

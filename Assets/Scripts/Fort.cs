@@ -143,11 +143,11 @@ public class DefencePiece : MonoBehaviour {
     public static string PlaceLesson(FortKind kind) {
         switch (kind) {
             case FortKind.Spike:
-                return "Kills " + MetaProgress.SpikeKills() + " turkeys, then breaks.";
+                return "Kills " + MetaProgress.SpikeKills() + " bots, then breaks.";
             case FortKind.Tower:
-                return "Kills " + MetaProgress.TowerKills() + " turkeys. Falls after " + MetaProgress.TowerStops() + " reach it.";
+                return "Kills " + MetaProgress.TowerKills() + " bots. Falls after " + MetaProgress.TowerStops() + " reach it.";
             default:
-                return "Stops " + MetaProgress.WallStops() + " turkeys, then breaks.";
+                return "Stops " + MetaProgress.WallStops() + " bots, then breaks.";
         }
     }
 
