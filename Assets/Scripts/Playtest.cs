@@ -25,6 +25,7 @@ public static class Playtest {
         new PlaytestScenario("settings", "Press Tap to play, open Settings from the menu: sound off and on, music and effects sliders, Done; start a run, pause (button, then P), Settings from the pause menu, resume, play a little. Any screen size", 100, "menus"),
         new PlaytestScenario("bots", "The bots: wave 1's small Yo Bots walk at the musician (their distance to him is logged as they come), destroyed bots drop bolts the bot picks up as XP, and the enemy list on the right names them. Setup shortcut: the testing wave key (=) jumps to wave 30, where the first Spider Bot arrives as the Alpha, a large enemy with the boss bar, then the bot fights it for 30 s", 300, "content"),
         new PlaytestScenario("analytics", "Hawkes Analytics: start a run, clear wave 1, then hold fire on wave 2 so the bots take the musician. Every analytics event is logged as it goes out (run_start, level_start and level_end per wave, card picks, the death and the bot kind that landed it, run_end) with the build version and env; on the game-over screen the \"How was that run?\" card must show, and the bot rates it 4 stars", 240, "full"),
+        new PlaytestScenario("musician", "Slice, the musician (the pirate pianist's model stands in): her health bar is titled Slice. The bot holds fire by the piano so wave 1's Yo Bots reach her: she stands, stabs the one in reach with her knife (a pale slash; it takes damage) at most once every 2.5 s, logged per stab; then the bot clears the wave and she sits back down to play. Then it holds fire from wave 2 (setup: the testing wave key (=) if she outlasts it) until the bots empty her bar and the run ends", 330, "content"),
         new PlaytestScenario("upgrades", "The bat upgrades: the shop lists Corked Core and Aluminum! Not wood! (setup: both owned in the sandbox) and the metal bat is in the player's hands; wave 1's first level-up cards are read off the screen (bat upgrades, no arrows or bow); setup: the testing wave key (=) to wave 14 for tougher Plated Yo Bots and a handful of bat boons granted (Wide Arc, Pine Tar, Ice Bat, Live Wire, Grand Slam, Long Ball and more), each one's mark on the bat logged; then the bot plays until each effect is seen: a wider swing, bots burning, bots slowed, chain sparks shorting bots out, a 360 spin swing, batted bolts landing. Then Thunder Bat is granted for a lightning spin, and 30 s of play", 330, "content"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.com and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
     };
@@ -91,6 +92,15 @@ public static class Playtest {
     static int batTold;
     static bool batRun;
     static int lockSwitchesSeen;
+    // The musician scenario: Slice's stabs and stands told so far.
+    static int sliceStabsTold;
+    static float sliceLastStab;
+    static float sliceGapMin;
+    static bool sliceWasUp;
+    static float sliceClearAt;
+    static int sliceSits;
+    static int sliceShortGaps;
+    static int sliceNoDamage;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Install() {
@@ -186,6 +196,8 @@ public static class Playtest {
                 yield return Play(options, 30f, false);
             } else if (id == "bots") {
                 yield return BotsRun(options);
+            } else if (id == "musician") {
+                yield return MusicianRun(options);
             } else if (id == "upgrades") {
                 yield return UpgradesRun(options);
                 if (!run.Done) {
@@ -1080,6 +1092,226 @@ public static class Playtest {
             enemy.ApplyBot(BotRoster.ForSpawn(BotKind.YoBot, WaveDirector.Wave));
         }
         return enemy;
+    }
+
+    // ---------------------------------------------------------------- musician
+
+    // Slice's knife. 1: the bar says Slice. 2: the bot waits by the piano (no swings) until wave 1's Yo Bots reach her
+    // and she has stabbed three times, each logged with its damage and the gap since the last. 3: the bot clears the
+    // wave and she must sit back down to play. 4: it holds fire from wave 2 until the bots empty her bar.
+    static IEnumerator MusicianRun(PlaytestOptions options) {
+        Musician slice = Musician.Instance;
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+        if (slice == null) {
+            yield break;
+        }
+        sliceStabsTold = 0;
+        sliceLastStab = -99f;
+        sliceGapMin = 999f;
+        sliceWasUp = false;
+        sliceClearAt = -1f;
+        sliceSits = 0;
+        sliceShortGaps = 0;
+        sliceNoDamage = 0;
+
+        run.Scene("Slice: the health bar");
+        string title = slice.Title;
+        run.Event("health-bar", "titled \"" + title + "\", " + slice.Health + " / " + slice.MaxHealth);
+        if (title != Musician.Name) {
+            run.Problem(PlaytestSeverity.Bug, "the musician's health bar says \"" + title + "\", not \"" + Musician.Name + "\"");
+        }
+
+        yield return run.Until(() => YoBotsAlive() > 0, 25f, "wave 1's Yo Bots");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Slice: the knife");
+        run.Event("hold-fire", "the bot waits by the piano without swinging, so wave 1's Yo Bots reach Slice");
+        yield return GuardSlice(player, () => slice.Stabs >= 3 || slice.Health < slice.MaxHealth * 0.5f, 90f, false, "three stabs");
+        if (run.Done) {
+            yield break;
+        }
+        if (slice.Stabs == 0) {
+            run.Problem(PlaytestSeverity.Bug, "Slice never stabbed: Yo Bots reached her but the knife did nothing");
+        }
+
+        run.Scene("Slice: back to the keys");
+        run.Event("fight", "the bot clears the wave; Slice should sit back down and play");
+        yield return GuardSlice(player, () => sliceSits > 0 && slice.Seated && sliceClearAt > 0f && Time.time - sliceClearAt > 2f, 90f, true, "Slice sitting back down at the piano");
+        if (!run.Done && slice.Seated) {
+            run.Event("slice-playing", "nothing in reach for " + (Time.time - sliceClearAt).ToString("0.0") + " s: she is on the bench, the piano clip playing");
+        }
+        if (run.Done) {
+            yield break;
+        }
+
+        run.Scene("Slice: the run ends");
+        run.Event("hold-fire", "from here the bot holds fire, so the bots empty Slice's bar");
+        float holdStart = Time.realtimeSinceStartup;
+        float nextSkip = 0f;
+        int skips = 0;
+        while (!run.Done) {
+            float now = Time.realtimeSinceStartup;
+            SampleFps();
+            WatchSlice(slice);
+            if (WaveDirector.IsLost) {
+                if (slice.Health > 0) {
+                    run.Problem(PlaytestSeverity.Bug, "the run ended with Slice at " + slice.Health + " health");
+                }
+                SliceReport(slice);
+                yield return GameOver();
+                yield break;
+            }
+            if (now - holdStart > 200f) {
+                run.Problem(PlaytestSeverity.Bug, "the run did not end in 200 s of holding fire (Slice at " + slice.Health + ")");
+                SliceReport(slice);
+                yield break;
+            }
+            if (LevelUpScreen.IsOpen) {
+                yield return PickCard();
+                continue;
+            }
+            Batter(player, true, null, false);
+            bool clear = WaveDirector.IsBuilding || Enemy.Roster.Count == 0;
+            if (clear && now >= nextSkip) {
+                nextSkip = now + 1.5f;
+                PlayInput.Tap(KeyCode.Return);
+            }
+            // Setup: if she outlasts the early waves, the testing wave key brings bigger ones.
+            if (now - holdStart > 60f + skips * 30f && skips < 4) {
+                skips++;
+                for (int i = 0; i < 3; i++) {
+                    PlayInput.Tap(KeyCode.Equals);
+                    yield return null;
+                    yield return null;
+                }
+                run.Event("setup", "testing wave key (=) three times: wave " + WaveDirector.Wave);
+            }
+            int wave = WaveDirector.Wave;
+            if (wave != lastWave) {
+                lastWave = wave;
+                run.Event("wave", wave.ToString());
+                run.Scene("Wave " + wave);
+            }
+            yield return null;
+        }
+    }
+
+    // The batter (or not, when idle), cards and breaks, watching Slice, until goal. Not seeing it in time is a bug.
+    static IEnumerator GuardSlice(CharacterMovement player, System.Func<bool> goal, float seconds, bool fight, string what) {
+        Musician slice = Musician.Instance;
+        float start = Time.realtimeSinceStartup;
+        float nextSkip = 0f;
+        float nextMetrics = 0f;
+        while (!run.Done && slice != null && !goal()) {
+            float now = Time.realtimeSinceStartup;
+            SampleFps();
+            WatchSlice(slice);
+            if (WaveDirector.IsLost) {
+                SliceReport(slice);
+                yield return GameOver();
+                yield break;
+            }
+            if (now - start > seconds) {
+                run.Problem(PlaytestSeverity.Bug, "the musician scenario did not see " + what + " in " + seconds.ToString("0") + " s");
+                yield break;
+            }
+            if (LevelUpScreen.IsOpen) {
+                yield return PickCard();
+                continue;
+            }
+            bool building = WaveDirector.IsBuilding;
+            Batter(player, !fight || building, null, fight);
+            if (fight && (building || Enemy.Roster.Count == 0) && now >= nextSkip && sliceSits > 0) {
+                nextSkip = now + 1.5f;
+                PlayInput.Tap(KeyCode.Return);
+            }
+            if (now >= nextMetrics) {
+                nextMetrics = now + 0.5f;
+                Metrics(now - run.StartTime);
+                run.Note(Enemy.Roster.Count + " bots, Slice " + slice.Health + (slice.Standing ? ", standing" : slice.Seated ? ", at the keys" : ""));
+            }
+            yield return null;
+        }
+        WatchSlice(slice);
+    }
+
+    // One timeline line per stab (who, how much, the health it took, the gap since the last) and per stand and sit.
+    static void WatchSlice(Musician slice) {
+        if (slice == null) {
+            return;
+        }
+        bool up = !slice.Seated;
+        if (up && !sliceWasUp) {
+            run.Event("slice-stands", "a bot came within " + Musician.StabReach.ToString("0.0") + " m: she gets up from the bench");
+        }
+        if (!up && sliceWasUp) {
+            sliceSits++;
+            string after = sliceClearAt > 0f ? ", " + (Time.time - sliceClearAt).ToString("0.0") + " s after the last bot left her reach" : "";
+            run.Event("slice-sits", "back on the bench playing" + after);
+        }
+        sliceWasUp = up;
+        bool near = false;
+        Vector3 at = slice.transform.position;
+        for (int i = 0; i < Enemy.Roster.Count; i++) {
+            Enemy enemy = Enemy.Roster[i];
+            if (enemy == null || !enemy.Alive) {
+                continue;
+            }
+            Vector3 to = enemy.transform.position - at;
+            to.y = 0f;
+            if (to.magnitude - enemy.BodyScale * 0.22f <= Musician.StabReach) {
+                near = true;
+                break;
+            }
+        }
+        if (near) {
+            sliceClearAt = -1f;
+        } else if (sliceClearAt < 0f) {
+            sliceClearAt = Time.time;
+        }
+
+        while (sliceStabsTold < slice.Stabs) {
+            sliceStabsTold++;
+            float when = slice.LastStabAt;
+            string gap = "first stab";
+            if (sliceLastStab > -50f) {
+                float g = when - sliceLastStab;
+                sliceGapMin = Mathf.Min(sliceGapMin, g);
+                gap = g.ToString("0.00") + " s after the last";
+                if (g < Musician.StabCooldown - 0.05f) {
+                    sliceShortGaps++;
+                    run.Problem(PlaytestSeverity.Bug, "Slice stabbed again after " + g.ToString("0.00") + " s, under her " + Musician.StabCooldown.ToString("0.0") + " s cooldown");
+                }
+            }
+            sliceLastStab = when;
+            Enemy foe = slice.LastStabbed;
+            string who = foe != null ? foe.Title ?? foe.name : "a bot";
+            bool hurt = slice.LastStabHealthAfter < slice.LastStabHealthBefore;
+            if (!hurt) {
+                sliceNoDamage++;
+            }
+            run.Event("stab", "#" + slice.Stabs + " " + who + (slice.LastStabBig ? " (large: flinch-cut)" : "") + ": " + slice.LastStabDamage.ToString("0.0") + " blade damage, its health "
+                + Mathf.RoundToInt(slice.LastStabHealthBefore * 100f) + "% -> " + Mathf.RoundToInt(slice.LastStabHealthAfter * 100f) + "%" + (slice.LastStabHealthAfter <= 0f ? " (destroyed)" : "") + ", " + gap);
+            run.Add("stabs");
+        }
+    }
+
+    static void SliceReport(Musician slice) {
+        if (slice == null) {
+            return;
+        }
+        run.Metric("stabs", slice.Stabs);
+        run.Metric("flinchCuts", slice.FlinchCuts);
+        run.Metric("sits", sliceSits);
+        if (sliceGapMin < 900f) {
+            run.Metric("stabGapMin", Mathf.Round(sliceGapMin * 100f) / 100f);
+        }
+        if (sliceNoDamage > 0) {
+            run.Problem(PlaytestSeverity.Bug, sliceNoDamage + " of Slice's stabs did no damage");
+        }
+        run.Event("slice-report", slice.Stabs + " stabs (" + slice.FlinchCuts + " flinch-cuts on large bots), shortest gap "
+            + (sliceGapMin < 900f ? sliceGapMin.ToString("0.00") + " s" : "n/a") + ", " + sliceShortGaps + " under the cooldown, sat back down " + sliceSits + " times");
     }
 
     // ---------------------------------------------------------------- upgrades
