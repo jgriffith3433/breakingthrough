@@ -6,7 +6,6 @@ The player is J. Prefer editing the scripts directly. Do not commit unless asked
 
 ## Do not change
 
-- The equipped bow's local pose in `BowEquipment.cs`: position `(-0.009, -0.066, 0.035)`, Euler `(13, 350, 358)`, scale `0.353789777`.
 - `.meta` files, except by letting Unity create them. Never delete a `.meta` without its asset.
 - `Library/`, `Temp/`, `obj/`.
 - `Packages/manifest.json` must not gain `com.unity.purchasing`.
@@ -14,7 +13,7 @@ The player is J. Prefer editing the scripts directly. Do not commit unless asked
 - The piano pirate and the bow textures, unless the task is about them.
 - Retired `UpgradeId` slots 2, 3, 5, 7 and 8. Never renumber or reuse them, because saved ranks are packed by index.
 - J's standing art rules:
-  - No camera shake.
+  - No camera shake, except the bat's small contact jolt (`ZeldaStyleCamera.Shake`, called only from `BatEquipment`), which J asked for with the bat on 2026-10-19. Keep it that small and don't add others.
   - No tiny spark, glitter, ember or firefly particles. Effects stay soft: flashes, smoke, a few feathers or chunky bot plates, rings.
   - Keep the playfield (within 150 m of the piano) free of anything solid. Bots walk straight lines and do not pathfind.
 - `KeyCode.Plus` does not exist. Wave skip uses `Equals`, `KeypadPlus`, `Minus` and `KeypadMinus`.
@@ -29,8 +28,10 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 | Wave flow, spawning, events, bosses, coins per wave | `WaveDirector.cs`. Bot counts are `YoBotCount`, `WaveQuota` and `ScreenCaps` (one slot per `BotKind`, `KindCount` 11); the Alpha is `BossKind`. Events are `WaveEvent` plus `RollEvent` |
 | A bot kind (name, stats, tint, blurb) | `BotRoster.cs` (`BotKind`, `ForTier`, `ForKind`, `UnlockOf`). Keep `BotKind`'s order: kill counts, the wave list, pacing and the coin tally (index 1, saved as `HensToward`) are packed by it. Yo Bots are the kinds before `SpiderBot` (`IsSpider`). Spawning picks it up through `ForSpawn`, which is the only place spawn size is applied |
 | Bot behavior, health, status, elites (`BotTrait`), drones, golden Yo Bot, bosses, the claw swipe and leg stab | `Enemy.cs` (`ApplyBot`, `MakeElite`, `MakeGolden`, `MakeBoss`, `TickStatus`, `AnimateModel`) |
-| Anything that damages a bot | `Enemy.Damage(amount, DamageKind, crit)`. Arrows go through `Combat.ArrowHit`, so crits, marks, fire, frost and lightning apply. `Enemy.Hit` is one plain blow at arrow strength, used by spikes, towers and stomps. Deaths go through `Enemy.Die` → `Combat.OnKill` (bolts, chests, bombs, streak, run log) |
-| An in-run boon | `BoonId` and a row in `RunBoons.All`, **in enum order**, because the array is indexed by the enum. Read the boon's rank where it acts: `Combat` for hits and kills, `ArrowFlight` (in `BowEquipment.cs`) for arrow behavior, `BoonEffects` for things that tick on their own. An evolution uses `E(...)` and names two parents that have max ranks |
+| Anything that damages a bot | `Enemy.Damage(amount, DamageKind, crit)`. The bat goes through `Combat.BatHit` (`DamageKind.Bat`), so crits, marks, executes, fire, frost and lightning apply. `Enemy.Hit` is one plain blow at base strength, used by spikes, towers and stomps. Deaths go through `Enemy.Die` → `Combat.OnKill` (bolts, chests, bombs, streak, run log). Shoving a bot is `Enemy.Knock(velocity, airSeconds)` |
+| The bat: combo, ground smash, home run, auto swing, facing, the stand-in bat | `BatEquipment.cs` (on the player; the scene's old `BowEquipment` slot adds it and switches off). Its numbers are the `Bat...`, `Smash...`, `Charge...` and `HomeRun...` values in `Tuning.cs` |
+| Lock-on | `ZeldaStyleCamera.AcquireTarget`: hold Shift for the nearest bird in `LockReach()` from `Enemy.Roster`; it sticks to that bird; right click or Tab moves it to the next nearest |
+| An in-run boon | `BoonId` and a row in `RunBoons.All`, **in enum order**, because the array is indexed by the enum. Read the boon's rank where it acts: `Combat` for hits and kills, `BatEquipment` for swing behavior, `BoonEffects` for things that tick on their own. An evolution uses `E(...)` and names two parents that have max ranks. The arrow boons keep their names and `BoonId`s; until the upgrades task they act as bat stand-ins (Split Shot: wider arc, Bodkin: reach, Ricochet: knocked birds bowl others over, Seeker: facing range, Volley/Hailstorm: a shockwave every Nth swing) |
 | Level-up cards | `LevelUpScreen.cs` |
 | XP bar, streak counter, boss bar, boon list | `RunHud.cs` |
 | Streak and hit-stop | `Juice.cs` (`Combo`, `HitStop`) |
@@ -41,7 +42,7 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 | A combat or build tip | `ControlsHelp.cs` |
 | The wave-power list on the left | `AbilityList.cs` |
 | The enemy list on the right | `WaveRoster.cs`, which reads `WaveDirector.CopyRoster` and names rows from `BotRoster.ForKind` |
-| A sound | `Assets/Resources/Sfx/Name.mp3`, played with `GameAudio.Play("Name", volume, pitch)` |
+| A sound | `Assets/Resources/Sfx/Name.mp3`, played with `GameAudio.Play("Name", volume, pitch)`. The bat's are `batswing`, `batcrack`, `batsmash` and `homerun` (Hawkes Gen `audio.sfx`) |
 | A body animation | A Mixamo humanoid FBX under `Assets/Art/`, listed in `SetupWarrok.Clips`, then a State id and `AddAction` |
 | Bot models | Stand-ins: `BotArt.cs` builds them in code. `Tools/Blender/bt_bots.py` makes the same in Blender (`export("<Kind>")`, `export_all()`) into `Assets/Resources/Models/Bots/`, which `BotArt` loads instead when present |
 | Map scenery models | `Tools/Blender/bt_arena.py`, then `export_arena()`. Output goes to `Assets/Art/Arena/` |
@@ -50,7 +51,7 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 | Bloom and color grade | `NightGrade.cs` with `Resources/Shaders/BTPost.shader` |
 | A particle effect | `Fx.cs`: add an `FxKind` and a `Make(...)` line, or reuse a recipe. Never spawn primitive spheres for effects. Status (burning, frozen, golden) is a tint on the bot in `Enemy.TickFlash`, not particles. Bot deaths are `Fx.Death` (flash, smoke, `Debris` plates); jump-jet hops are `Fx.JetPuff` |
 | UI panels and bars | `UiSkin.Round` and `UiSkin.Bar` |
-| Touch controls (stick, Fire, Lock, Jump, Shake, Next wave, Turn) | `TouchControls.cs`. They press keys through `PlayInput.Pad...`, so gameplay needs no touch code |
+| Touch controls (stick, Swing, Lock, Jump, Shake, Next wave, Turn) | `TouchControls.cs`. They press keys through `PlayInput.Pad...`, so gameplay needs no touch code |
 | Phone and tablet layouts | `UiFit.cs` picks the layout (`Mode`: Desktop, Wide, Tall) and the canvas scale (`Apply`). Each screen has a `Layout()` that redoes positions when `UiFit.Stamp` changes |
 | Sound on/off, music and effects volume | `SoundSettings.cs` (saved as JSON `{ on, music, sfx }` under `hawkes.sound`: localStorage on the web, PlayerPrefs too). Music is every looping `AudioSource` (the piano); effects are `GameAudio`, which multiplies by `SoundSettings.EffectsLevel` |
 | The Settings screen | `SettingsPanel.cs`, opened from the main menu's Settings button and the pause menu |
@@ -69,7 +70,7 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
   - `BirdArt.Tinted` tints by copying meshes, so the meshes must stay readable. `ModelImportRules.cs` enforces that, together with smooth normals at a 60° crease angle.
 - **Shader:** bots use `BirdArt.Shared`, which is `Knoll/VertexColorLit` with `_GlowBand` 0 and a strong `_RimStrength`. Use `BirdArt.Glowing` only where warm vertex colors should emit (the Titan Spider Bot's gold trim, lantern glass). `KnollLit.mat` keeps `_RimStrength` near 0 so scenery does not glow.
 - **Hit flash:** it sets a `MaterialPropertyBlock` and clears it when the flash ends, so the bot batches with the rest again. Keep that cleanup.
-- **Pausing:** `LevelUpScreen` pauses with `Time.timeScale = 0`. `Juice.HitStop` uses 0.05 briefly and never overrides a real pause. The camera, firing and build clicks all check `LevelUpScreen.IsOpen`.
+- **Pausing:** `LevelUpScreen` pauses with `Time.timeScale = 0`. `Juice.HitStop` uses 0.05 briefly and never overrides a real pause. The camera, swinging and build clicks all check `LevelUpScreen.IsOpen`.
 - **Jump-landing and climbing:** these use `DebutWave`. Yo Bots count as 0, and every other kind counts as its unlock wave.
 - **Map:** the arena is centered on `PianoRecital`. The ground is on the Ground layer (`1 << 3`) with a mesh collider. Scenery has no colliders. The `Boundary` wall is on Ignore Raycast at 205 m. `DressGrassyKnoll` and `PlacePracticeTargets` skip when `Arena` exists, so the old knoll never comes back.
 - **Movement:**
@@ -91,9 +92,9 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 ## Animator
 
 - `applyRootMotion` is false. Gameplay calls `SetInteger("State", n)` and `CrossFade`.
-- Shots on the upper layer call `SetTrigger("Fire")` and must not set the base State to 2, or the jump is cancelled.
+- Each bat swing calls `SetTrigger("Fire")` on the upper layer (the old shoot recoil, a stand-in until the new model) and must not set the base State to 2, or the jump is cancelled.
 - The upper-layer Shoot state's speed follows the `FireSpeed` float (default 1), which `CharacterMovement` sets every frame.
-- While `PlayerGrowth.Rooted` is set or `Enemy.Climbers > 0`, there is no jump, and `AnimationMove` must not overwrite State 5 or 7. Shooting can continue.
+- While `PlayerGrowth.Rooted` is set or `Enemy.Climbers > 0`, there is no jump, and `AnimationMove` must not overwrite State 5 or 7. Swinging can continue.
 
 ## Editor scripts
 
@@ -121,7 +122,7 @@ While Unity is playing, script edits do not compile. Leave play mode first. Pref
 ## Testing and balance
 
 - **Never write to J's save from a test.** Call `MetaProgress.EnterSandbox(freshRanks)` first. `DevAutopilot` (F9) does this itself. `PlayerPrefs` writes from tooling are also blocked by the session's safety rules.
-- **Autopilot:** `DevAutopilot` is a perfect archer by the piano. Read its `[RunLog]` lines in the console or `runlog.csv`. It is easier than real play, so treat its results as an upper bound.
+- **Autopilot:** `DevAutopilot` is a perfect batter at the bird nearest the piano (it doesn't walk). Read its `[RunLog]` lines in the console or `runlog.csv`. It is easier than real play, so treat its results as an upper bound.
 - **Restore project settings after tests.** Setting `Application.runInBackground` during play writes `runInBackground: 1` into `ProjectSettings.asset`, and quality changes can stick too. Before handing back, check `git diff ProjectSettings/` and restore anything a test changed.
 - **The game view only updates while Unity is focused or set to run in the background.** If `Time.time` stops advancing during an MCP session, that is why.
 
@@ -132,9 +133,13 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
 `window.hawkesPlaytest.start(id)`), records it and has Claude review it.
 
 - **Bot:** `Assets/Scripts/Playtest.cs` registers product `theplacedepartment` at startup. Scenarios: `smoke` (menu,
-  Enter, about 30 s of play), `run` (until the musician falls, picking cards; capped at 15 min), `menus` (shop
+  Enter, about 30 s of play), `run` (until the musician falls, picking cards; capped at 15 min), `bat` (the bat's
+  three moves, each until it is seen: the 3-hit combo on wave 1's turkeys with one right-click lock switch, then a
+  ground smash on three hatchlings dropped in front of the player, then a home run into a line of four turkeys
+  dropped in front of the player (both drops are named `setup` events); then a minute of play. `bat` timeline
+  lines say what each swing did, and the report fails any move it didn't see), `menus` (shop
   clicks, start, one level-up card with a reroll), `touch` (touch only: menu layout check, tap Play, the stick,
-  Fire, Lock and Next wave pressed by the bot's fingers through `TouchControls.BotFinger`, a level-up card tapped,
+  Swing, Lock and Next wave pressed by the bot's fingers through `TouchControls.BotFinger`, a level-up card tapped,
   until wave 2 is under way; run it with `mobile` for portrait or at 844x390 for landscape), `site` (the website
   around the game: every page outside `Game/` has "Powered by HAWKES GEN" linking to hawkesgen.com, the landing page
   links to hawkesbiomedical.com. It checks the landing page, every page in the deploy's `site/pages.json` and every
@@ -148,17 +153,21 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
   setup shortcut, the testing wave key `=` to wave 30, then `spider-bot` with the Alpha Spider Bot's height and
   whether the boss bar is up; 30 s of fighting it). `settings` (Settings from the menu: sound off and on, both sliders, Done; then a run, the pause button, Settings
   from pause, Resume, P twice; layout checks `settings` and `pause`). `analytics` (Hawkes Analytics: a run, wave 1
-  cleared, then the bot holds fire from wave 2 so the bots take the musician; the "How was that run?" card must
+  cleared, then the bot stops swinging from wave 2 so the bots take the musician; the "How was that run?" card must
   show on the game-over screen and the bot rates it 4 stars; metrics `analyticsEvents` and `analyticsSent`). Every
   scenario first presses the page's "Tap to play" prompt (event `tap-prompt` with the audio state, metric
   `audioRunning`); in the editor there is none. Every scenario also logs each analytics event as it goes out
   (`analytics-config` once, with the product, build and env, then one `analytics` event each; see Analytics).
 - **Real input:** gameplay reads keys and the mouse through `PlayInput` (`Assets/Scripts/PlayInput.cs`), which is
   `UnityEngine.Input` plus whatever the bot holds. Use `PlayInput.GetKey...` in new gameplay input code, or the bot
-  can't press it. The bot holds Shift (lock-on) and the left button (shoot), walks back to the piano with WASD,
-  presses Enter to skip breaks and 1-3 for cards. It plays in `MetaProgress.EnterSandbox(true)`, so it never
+  can't press it. The bot walks with WASD to the nearest bird within guard range of the musician, holds Shift
+  (lock-on), clicks the left button for one frame per swing (a longer hold winds up a home run), walks back to the
+  piano when the birds are gone, presses F for climbers, Enter to skip breaks and 1-3 for cards. Every time the
+  lock lands on a bird it checks that it is the nearest (`lock-on` events; a warning if not). It plays in `MetaProgress.EnterSandbox(true)`, so it never
   touches the save.
-- **Report:** wave, kills, damage, shots, hits, level, levelUps, musician HP, coins, run seconds and fps. Problems:
+- **Report:** wave, kills, damage, swings, hits, hitRate, finishers, smashHits, homeRuns, homeRunKnocks,
+  knockedBack, lockNearest, lockWrong, level, levelUps, musician HP, coins, run seconds and fps. `bat` lines from
+  `BatEquipment.Events` go to the timeline (all of them in `bat`, the first 15 elsewhere). Problems:
   errors and exceptions (from the package), missing-asset warnings, menu art missing, "no kills for 45 s", a wave
   that doesn't end in 240 s, a level-up card that won't close, a game-over screen that doesn't return to the menu.
 - **Test:** `Assets/Tests/PlayMode/PlaytestSmokeTest.cs` runs `smoke` through `HawkesPlaytest.StartScenario`.
@@ -196,9 +205,9 @@ add another tracker (`com.unity.analytics` was removed for that reason).
 | `screen` | `menu`, `wave`, `level_up`, `chest`, `pause`, `settings`, `game_over` | MainMenu, LevelUpScreen, PauseMenu, SettingsPanel, `MusicianDown` |
 | `run_start` | The game scene starts a run: `run`, `start_wave`, `best_wave`, `shop`, `shop_ranks`, `coins`, `touch` | `WaveDirector.Start` |
 | `level_start` | A wave's fighting begins: `wave`, `birds`, `musician_hp`, `event`, `boss`, `fort` | `WaveDirector.BeginCombat` |
-| `level_end` | `complete` (cleared), `death`, `quit`, `restart` (the wave keys): `kills`, `damage_taken`, `musician_hp`, `arrows`, `hits`, `hit_rate`, `best_streak` | `TickCombat`, `Lose`, `GoToWave`, `OnDestroy` |
+| `level_end` | `complete` (cleared), `death`, `quit`, `restart` (the wave keys): `kills`, `damage_taken`, `musician_hp`, `swings`, `hits` (birds struck; one swing can hit several), `hit_rate` (share of swings that struck at least one bird), `best_streak` | `TickCombat`, `Lose`, `GoToWave`, `OnDestroy` |
 | `death` | The musician falls; `cause` is the bot kind that landed the last blow (`BotRoster.Slug`: `yo_bot`, `plated_yo_bot`, `spider_bot` … `titan_spider_bot`), with `boss`/`elite` and `worst` (the kind that did the most damage this run). Warrok can't fall | `Musician.Hurt(amount, by)` → `WaveDirector.Lose` |
-| `run_end` | `result` `lose` (cause `musician_down`) or `quit` (the scene left mid-run): `duration`, `score`/`wave`, `waves_cleared`, `killed_by`, `worst`, kills, arrows, `hit_rate`, damage, level, cards, rerolls, streak, coins, `upgrades` | `RunAnalytics.MusicianDown` / `RunAbandoned` |
+| `run_end` | `result` `lose` (cause `musician_down`) or `quit` (the scene left mid-run): `duration`, `score`/`wave`, `waves_cleared`, `killed_by`, `worst`, kills, `swings`, `hits`, `hit_rate`, damage, level, cards, rerolls, streak, coins, `upgrades` | `RunAnalytics.MusicianDown` / `RunAbandoned` |
 | `choice` | A card taken: node `level_up` or `chest`, option the `BoonId` | `LevelUpScreen.Choose` |
 | `card_pick` | The same pick with `offered` (all three), `slot`, `rarity`, `rank`, `evolution` | `LevelUpScreen.Choose` |
 | `feature` | `reroll`, `shop_buy` (`item`, `rank`, `cost`, `coins_left`), `settings` (sound, music, sfx on close) | LevelUpScreen, MainMenu, SettingsPanel |

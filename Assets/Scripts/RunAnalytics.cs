@@ -53,7 +53,8 @@ public static class RunAnalytics {
 
     // The wave.
     static int openWave;
-    static int waveShots;
+    static int waveSwings;
+    static int waveConnects;
     static int waveHits;
     static int waveKills;
     static int waveDamage;
@@ -157,7 +158,8 @@ public static class RunAnalytics {
             WaveEnd(openWave, "restart");
         }
         openWave = wave;
-        waveShots = RunLog.RunShots;
+        waveSwings = RunLog.RunSwings;
+        waveConnects = RunLog.RunConnects;
         waveHits = RunLog.RunHits;
         waveKills = RunLog.RunKills;
         waveDamage = Musician.Instance != null ? Musician.Instance.DamageTaken : 0;
@@ -187,13 +189,14 @@ public static class RunAnalytics {
         if (result == "complete") {
             cleared++;
         }
-        int shots = RunLog.RunShots - waveShots;
+        int swings = RunLog.RunSwings - waveSwings;
+        int connects = RunLog.RunConnects - waveConnects;
         int hits = RunLog.RunHits - waveHits;
         var props = new Dictionary<string, object> {
             { "wave", wave }, { "kills", RunLog.RunKills - waveKills },
             { "damage_taken", (Musician.Instance != null ? Musician.Instance.DamageTaken : 0) - waveDamage },
             { "musician_hp", Musician.Instance != null ? Musician.Instance.Health : 0 },
-            { "arrows", shots }, { "hits", hits }, { "hit_rate", shots > 0 ? Mathf.Round(100f * hits / shots) / 100f : 0f },
+            { "swings", swings }, { "hits", hits }, { "hit_rate", HitRate(swings, connects) },
             { "best_streak", Combo.Best }, { "player_level", RunBoons.Level }
         };
         HawkesAnalytics.LevelEnd(wave.ToString(), result, props);
@@ -243,13 +246,13 @@ public static class RunAnalytics {
 
     static void RunEnd(int wave, string result, string cause) {
         runOpen = false;
-        int shots = RunLog.RunShots;
+        int swings = RunLog.RunSwings;
         var props = new Dictionary<string, object> {
             { "result", result }, { "duration", Mathf.Round(Time.realtimeSinceStartup - runStartedAt) },
             { "score", wave }, { "wave", wave }, { "start_wave", runStartWave }, { "waves_cleared", cleared },
             { "cause", cause }, { "killed_by", lastHurtBy ?? "" }, { "worst", WorstBird() },
-            { "kills", RunLog.RunKills }, { "arrows", shots },
-            { "hit_rate", shots > 0 ? Mathf.Round(100f * RunLog.RunHits / shots) / 100f : 0f },
+            { "kills", RunLog.RunKills }, { "swings", swings }, { "hits", RunLog.RunHits },
+            { "hit_rate", HitRate(swings, RunLog.RunConnects) },
             { "damage_taken", Musician.Instance != null ? Musician.Instance.DamageTaken : 0 },
             { "musician_hp", Musician.Instance != null ? Musician.Instance.Health : 0 },
             { "player_level", RunBoons.Level }, { "cards", cardsTaken }, { "rerolls", rerolls },
@@ -259,6 +262,11 @@ public static class RunAnalytics {
         };
         HawkesAnalytics.Track("run_end", props);
         HawkesAnalytics.Flush();
+    }
+
+    // The share of swings that struck at least one bird, 0..1 to two places.
+    static float HitRate(int swings, int connects) {
+        return swings > 0 ? Mathf.Round(100f * connects / swings) / 100f : 0f;
     }
 
     // "How was that run?" on the game-over screen: stars and a comment, in the game's night colours.

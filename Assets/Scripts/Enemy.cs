@@ -94,6 +94,10 @@ public class Enemy : MonoBehaviour
     static readonly int FlashId = Shader.PropertyToID("_Flash");
 
     float verticalVelocity;
+    // A shove from the bat: slides off quickly on the ground, carries in the air. knockAir is low-gravity
+    // flight time left (a home run).
+    Vector3 knock;
+    float knockAir;
     float flightTimer;
     float nextFlightTimer = 0.6f;
     float flightStartY;
@@ -716,7 +720,17 @@ public class Enemy : MonoBehaviour
         }
         else
         {
-            verticalVelocity -= normalGravity * dt;
+            verticalVelocity -= (knockAir > 0f ? 9f : normalGravity) * dt;
+        }
+        if (knockAir > 0f)
+            knockAir -= dt;
+
+        if (knock.sqrMagnitude > 0.01f)
+        {
+            // Being shoved beats walking.
+            horizontal = horizontal * 0.15f + knock;
+            float drag = grounded ? 12f + knock.magnitude * 1.2f : 1.5f;
+            knock = Vector3.MoveTowards(knock, Vector3.zero, drag * dt);
         }
 
         if (blinker && !down && grounded && !flying)
@@ -829,6 +843,29 @@ public class Enemy : MonoBehaviour
         Damage(damage, DamageKind.Plain, false, damage, power);
     }
 
+    // The bat sends the bot along velocity (its y is the lift). airSeconds keeps it flying low-gravity, for a
+    // home run. Bosses barely move.
+    public void Knock(Vector3 velocity, float airSeconds = 0f)
+    {
+        if (down || ragdoll || climbing)
+            return;
+        if (Boss)
+            velocity *= 0.25f;
+        knock = new Vector3(velocity.x, 0f, velocity.z);
+        if (velocity.y > 0f)
+        {
+            verticalVelocity = Mathf.Max(verticalVelocity, velocity.y);
+            grounded = false;
+        }
+        flying = false;
+        knockAir = Mathf.Max(knockAir, Boss ? 0f : airSeconds);
+    }
+
+    public bool Knocked
+    {
+        get { return knock.sqrMagnitude > 1f || knockAir > 0f; }
+    }
+
     // Every source of harm comes through here. True when this blow dropped the bot.
     public bool Damage(float amount, DamageKind kind, bool crit, float shown = -1f, float power = 1f)
     {
@@ -846,6 +883,11 @@ public class Enemy : MonoBehaviour
             if (kind == DamageKind.Arrow || kind == DamageKind.Plain)
             {
                 GameAudio.Play("hit", crit ? 0.9f : 0.6f, crit ? 1.25f : Random.Range(0.92f, 1.08f));
+                UpgradeLook.MarkHit();
+            }
+            else if (kind == DamageKind.Bat)
+            {
+                // BatEquipment plays the crack once per swing, not once per bird.
                 UpgradeLook.MarkHit();
             }
         }

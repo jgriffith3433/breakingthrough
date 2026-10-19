@@ -105,6 +105,7 @@ public class WaveDirector : MonoBehaviour {
         Combo.BeginRun();
         Combat.BeginRun();
         RunLog.BeginRun();
+        BatEquipment.BeginRun();
         RunBoons.BeginRun();
         Pickups.BeginRun();
         Wave = MetaProgress.TakeStartWave();
@@ -695,9 +696,9 @@ public class WaveDirector : MonoBehaviour {
         string line = BotRoster.Intro(wave);
         int auto = MetaProgress.AutoWave();
         if (wave == auto) {
-            line += " Your bow fires on its own now.";
+            line += " Your bat swings on its own now.";
         } else if (wave > auto) {
-            line += "  Auto-shoot is on.";
+            line += "  Auto-swing is on.";
         }
         return line;
     }
@@ -790,8 +791,7 @@ public class WaveDirector : MonoBehaviour {
     string WaveLine() {
         string size = "";
         if (PlayerGrowth.Instance != null) {
-            string shot = MetaProgress.ShootsRockets() ? "Rocket" : "Arrow";
-            size = "   ·   Size " + PlayerGrowth.Instance.Scale.ToString("0.00") + "   ·   " + shot + " " + PlayerGrowth.Instance.ArrowDamage;
+            size = "   ·   Size " + PlayerGrowth.Instance.Scale.ToString("0.00") + "   ·   Bat " + PlayerGrowth.Instance.ArrowDamage;
         }
         if (phase == Phase.Intro) {
             return "Wave " + Wave + size;

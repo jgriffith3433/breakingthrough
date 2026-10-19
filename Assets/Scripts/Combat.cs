@@ -8,7 +8,8 @@ public enum DamageKind {
     Blast,
     Lightning,
     Blade,
-    Pulse
+    Pulse,
+    Bat
 }
 
 // What a hit does once boons are involved: crits, marks, fire, frost, lightning, bombs.
@@ -28,10 +29,21 @@ public static class Combat {
         return raw * RunBoons.DamageMult;
     }
 
-    // An arrow (or rocket) strikes a bird. Scale lets ricochets and splash hit softer.
-    public static void ArrowHit(Enemy foe, float power, float scale, bool allowChain) {
+    // One bat hit's base damage, before the swing's own multiplier.
+    public static float BatBase() {
+        return ArrowBase();
+    }
+
+    // The bat strikes a bird. Scale is the swing's multiplier (finisher, smash, home run, a bird knocked into
+    // another). Power is how hard a bird it drops is flung. True when this blow dropped the bird.
+    public static bool BatHit(Enemy foe, float scale, float power, bool allowChain) {
+        return Strike(foe, power, scale, allowChain, DamageKind.Bat);
+    }
+
+    // A hit with every boon on it: crits, marks, executes, fire, frost and lightning.
+    static bool Strike(Enemy foe, float power, float scale, bool allowChain, DamageKind kind) {
         if (foe == null || !foe.Alive) {
-            return;
+            return false;
         }
         float amount = ArrowBase() * scale;
         ZeldaStyleCamera cam = Juice.Cam;
@@ -49,7 +61,7 @@ public static class Combat {
         }
         RunLog.NoteHit(amount);
         Vector3 at = foe.transform.position;
-        bool dropped = foe.Damage(amount, DamageKind.Arrow, crit, -1f, power);
+        bool dropped = foe.Damage(amount, kind, crit, -1f, power);
         if (crit && dropped && (foe.BodyScale > 3f || foe.Elite)) {
             Juice.HitStop(0.05f);
         }
@@ -69,6 +81,7 @@ public static class Combat {
                 Lightning(at + Vector3.up, foe, storm ? 4 : 3, ArrowBase() * (storm ? 0.6f : 0.75f));
             }
         }
+        return dropped;
     }
 
     public static void Lightning(Vector3 from, Enemy skip, int jumps, float damage) {

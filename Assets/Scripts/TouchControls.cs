@@ -4,9 +4,9 @@ using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-// On-screen controls for phones and tablets: a stick on the left, Fire, Lock and Jump on the right, Shake once
-// birds climb, Next wave in breaks, and Turn in the build window. They press PlayInput's keys, so gameplay reads
-// them exactly like the keyboard and mouse. A drag on the right half (or on Fire) turns the camera; in the build
+// On-screen controls for phones and tablets: a stick on the left, Swing (hold it to wind up a home run), Lock and
+// Jump on the right, Shake once birds climb, Next wave in breaks, and Turn in the build window. They press PlayInput's keys, so gameplay reads
+// them exactly like the keyboard and mouse. A drag on the right half (or on Swing) turns the camera; in the build
 // window a drag shows the piece and letting go drops it. Hidden unless the device has touch.
 public class TouchControls : MonoBehaviour {
     public static TouchControls Instance { get; private set; }
@@ -21,7 +21,7 @@ public class TouchControls : MonoBehaviour {
         Stick,
         Look,
         Place,
-        Fire,
+        Swing,
         Lock,
         Jump,
         Shake,
@@ -102,7 +102,7 @@ public class TouchControls : MonoBehaviour {
         }
     }
 
-    // Where a control's middle is on screen, for the bot: "Stick", "Fire", "Lock", "Jump", "Shake", "Next".
+    // Where a control's middle is on screen, for the bot: "Stick", "Swing", "Lock", "Jump", "Shake", "Next".
     public static bool Spot(string name, out Vector2 screen) {
         screen = Vector2.zero;
         TouchControls touch = Instance;
@@ -254,7 +254,7 @@ public class TouchControls : MonoBehaviour {
             }
             Vector2 delta = pair.Value - finger.Last;
             finger.Last = pair.Value;
-            if (finger.Role == Role.Look || finger.Role == Role.Fire) {
+            if (finger.Role == Role.Look || finger.Role == Role.Swing) {
                 look += delta;
             } else if (finger.Role == Role.Place) {
                 PlayInput.PadPoint(pair.Value);
@@ -324,7 +324,7 @@ public class TouchControls : MonoBehaviour {
             case Role.Place:
                 PlayInput.PadPoint(finger.Start);
                 break;
-            case Role.Fire:
+            case Role.Swing:
                 PlayInput.PadHold(KeyCode.Mouse0, true);
                 break;
             case Role.Lock:
@@ -361,7 +361,7 @@ public class TouchControls : MonoBehaviour {
                 PlayInput.PadPoint(finger.Last);
                 PlayInput.PadTap(KeyCode.Mouse0);
                 break;
-            case Role.Fire:
+            case Role.Swing:
                 PlayInput.PadHold(KeyCode.Mouse0, false);
                 break;
             case Role.Jump:
@@ -459,7 +459,7 @@ public class TouchControls : MonoBehaviour {
         knob.anchorMin = new Vector2(0.5f, 0.5f);
         knob.anchorMax = new Vector2(0.5f, 0.5f);
 
-        fire = MakePad(Role.Fire, "Fire", 190f, 34, new Color(0.55f, 0.16f, 0.1f, 0.6f));
+        fire = MakePad(Role.Swing, "Swing", 190f, 34, new Color(0.55f, 0.16f, 0.1f, 0.6f));
         jump = MakePad(Role.Jump, "Jump", 130f, 26, new Color(0.12f, 0.2f, 0.32f, 0.6f));
         lockOn = MakePad(Role.Lock, "Lock", 130f, 26, new Color(0.24f, 0.14f, 0.34f, 0.6f));
         shake = MakePad(Role.Shake, "Shake", 120f, 24, new Color(0.3f, 0.24f, 0.1f, 0.6f));

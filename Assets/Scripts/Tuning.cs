@@ -12,6 +12,27 @@ public static class Tuning {
     // From ClimbWave, bots this many waves past their debut climb you instead of the musician.
     public const int ClimbGap = 5;
 
+    // The bat. Reach is meters at size 1 and grows with PlayerGrowth.Scale. Damage is times Combat.BatBase.
+    public const float BatReach = 3f;
+    public const float BatArc = 140f;
+    public const float BatArcFinisher = 170f;
+    public const float BatDamage = 1f;
+    public const float BatDamageFinisher = 1.8f;
+    // Swings 1 and 2 knock birds back a step, so the next swing still reaches them; the finisher sends them off.
+    public const float BatKnock = 3.5f;
+    public const float BatKnockFinisher = 12f;
+    // A target smaller than this share of your size gets the bat swung down at the ground instead.
+    public const float SmashBelow = 0.75f;
+    public const float SmashDamage = 1.3f;
+    // Hold past ChargeStart to wind up; a release from HomeRunMin of a full charge is a home run.
+    public const float ChargeStart = 0.22f;
+    public const float ChargeSeconds = 0.9f;
+    public const float HomeRunMin = 0.45f;
+    public const float HomeRunDamage = 3f;
+    public const float HomeRunSpeed = 26f;
+    // The next combo swing has to start within this long of the last one ending, or the combo starts over.
+    public const float ComboGap = 0.55f;
+
     // Breaks between waves. Space or Enter skips both.
     public const float BreakSeconds = 5f;
     public const float BuildSeconds = 30f;

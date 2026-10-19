@@ -1,7 +1,8 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Hit-stop: a blink of slow motion on big kills. There is deliberately no camera shake.
+// Hit-stop: a blink of slow motion on big kills and bat contact. The only camera shake is the bat's small
+// contact jolt (ZeldaStyleCamera.Shake), which J asked for with the bat.
 public class Juice : MonoBehaviour {
     static ZeldaStyleCamera cam;
     static float stopUntil;

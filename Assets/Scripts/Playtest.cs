@@ -8,18 +8,20 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 // The Hawkes playtest bot (contract v1, C:/Projects/hawkesstudio/docs/playtest.md). It plays through PlayInput,
-// the same keys and mouse a player uses: Enter on the menu, Shift to lock on, the left button to shoot, 1-3 for
-// cards, Enter to skip a break. Every scenario first presses the web page's "Tap to play" prompt. Setup only: it plays in MetaProgress's sandbox with fresh ranks, so it never
+// the same keys and mouse a player uses: Enter on the menu, WASD to walk to the nearest bird near the musician,
+// Shift to lock on, left clicks to swing the bat (held to wind up a home run), back to the piano when the birds
+// are gone, 1-3 for cards, Enter to skip a break. Every scenario first presses the web page's "Tap to play" prompt. Setup only: it plays in MetaProgress's sandbox with fresh ranks, so it never
 // touches the player's save, and it loads the menu scene if the game isn't on it. Nothing runs until a scenario starts.
 public static class Playtest {
     const string Product = "theplacedepartment";
     const float RunCap = 900f;
 
     static readonly PlaytestScenario[] Scenarios = {
-        new PlaytestScenario("smoke", "Boot, menu, start a run, survive about 30 s", 45, "smoke"),
-        new PlaytestScenario("run", "A full run until the musician falls, picking level-ups", 600, "full"),
+        new PlaytestScenario("smoke", "Boot, menu, start a run, about 30 s of play: the bot walks to birds near the musician and swings the bat (lock-on nearest, combo swings)", 45, "smoke"),
+        new PlaytestScenario("run", "A full run until the musician falls, picking level-ups: the bot guards the musician with the bat (walks to the nearest bird near the piano, locks on, swings, walks back). Should pass wave 5 without 'no kills for 45 s'", 600, "full"),
+        new PlaytestScenario("bat", "The bat: a 3-hit combo on wave 1's turkeys (hits and knockback, the third further), a ground smash on small hatchlings dropped in front of the player (setup), then a charged home run into a line of turkeys (setup) that bowls them over; lock-on picks the nearest bird throughout. Then a minute of play", 200, "full"),
         new PlaytestScenario("menus", "Shop menu, start a run, a level-up card, reroll and pick", 120, "menus"),
-        new PlaytestScenario("touch", "Touch only, for a phone-sized screen (mobile, or 844x390): the menu fits, tap Play, move and fire with the on-screen stick and buttons, tap a level-up card, play to wave 2", 330, "menus"),
+        new PlaytestScenario("touch", "Touch only, for a phone-sized screen (mobile, or 844x390): the menu fits, tap Play, walk to the birds with the on-screen stick and tap Swing, tap a level-up card, play to wave 2", 330, "menus"),
         new PlaytestScenario("settings", "Press Tap to play, open Settings from the menu: sound off and on, music and effects sliders, Done; start a run, pause (button, then P), Settings from the pause menu, resume, play a little. Any screen size", 100, "menus"),
         new PlaytestScenario("bots", "The bots: wave 1's small Yo Bots walk at the musician (their distance to him is logged as they come), destroyed bots drop bolts the bot picks up as XP, and the enemy list on the right names them. Setup shortcut: the testing wave key (=) jumps to wave 30, where the first Spider Bot arrives as the Alpha, a large enemy with the boss bar, then the bot fights it for 30 s", 300, "content"),
         new PlaytestScenario("analytics", "Hawkes Analytics: start a run, clear wave 1, then hold fire on wave 2 so the bots take the musician. Every analytics event is logged as it goes out (run_start, level_start and level_end per wave, card picks, the death and the bot kind that landed it, run_end) with the build version and env; on the game-over screen the \"How was that run?\" card must show, and the bot rates it 4 stars", 240, "full"),
@@ -77,6 +79,17 @@ public static class Playtest {
     static int analyticsEvents;
     static int analyticsSent;
     static bool analyticsConfig;
+    // The batter: one-frame clicks, the lock it last checked, bat lines told so far.
+    static bool tapHeld;
+    static float nextTapAt;
+    static float nextShakeAt;
+    static GameObject lastLock;
+    static int lockChecks;
+    static int lockNearest;
+    static int lockWrong;
+    static int batTold;
+    static bool batRun;
+    static int lockSwitchesSeen;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Install() {
@@ -113,6 +126,16 @@ public static class Playtest {
         analyticsEvents = 0;
         analyticsSent = 0;
         analyticsConfig = false;
+        tapHeld = false;
+        nextTapAt = 0f;
+        nextShakeAt = 0f;
+        lastLock = null;
+        lockChecks = 0;
+        lockNearest = 0;
+        lockWrong = 0;
+        batTold = 0;
+        batRun = id == "bat";
+        lockSwitchesSeen = ZeldaStyleCamera.LockSwitches;
         RunAnalytics.EnableDebug();
         PlayInput.Release();
         MetaProgress.EnterSandbox(true);
@@ -159,6 +182,14 @@ public static class Playtest {
                 yield return Play(options, 30f, false);
             } else if (id == "bots") {
                 yield return BotsRun(options);
+            } else if (id == "bat") {
+                yield return BatRun(options);
+                if (!run.Done) {
+                    yield return Play(options, 60f, false);
+                }
+                if (!run.Done) {
+                    BatReport();
+                }
             } else if (id == "run") {
                 yield return Play(options, RunCap, false);
             } else {
@@ -445,10 +476,10 @@ public static class Playtest {
         if (Object.FindAnyObjectByType<CharacterMovement>() == null) {
             run.Problem(PlaytestSeverity.Bug, "no player (CharacterMovement) in the game scene");
         }
-        if (Object.FindAnyObjectByType<BowEquipment>() == null) {
-            run.Problem(PlaytestSeverity.Warning, "no BowEquipment on the player");
-        }
         yield return null;
+        if (Object.FindAnyObjectByType<BatEquipment>() == null) {
+            run.Problem(PlaytestSeverity.Bug, "no bat (BatEquipment) on the player");
+        }
     }
 
     static IEnumerator Play(PlaytestOptions options, float seconds, bool menusOnly) {
@@ -534,14 +565,12 @@ public static class Playtest {
             }
             cardSeenAt = -1f;
 
-            // Shoot: Shift locks on to the biggest bot in reach, the left button draws and looses.
+            // The bat: walk to the nearest bird near the musician, lock on, swing; back to the piano when clear.
             bool building = WaveDirector.IsBuilding;
             bool holding = holdFireFrom > 0 && WaveDirector.Wave >= holdFireFrom;
-            PlayInput.Hold(KeyCode.LeftShift, !building && !holding && Enemy.Roster.Count > 0);
-            PlayInput.Hold(KeyCode.Mouse0, !building && !holding && !LevelUpScreen.HoldFire && Enemy.Roster.Count > 0);
-
-            // Stay by the piano: walk back with WASD (camera-relative) when drifted away.
-            Steer(player);
+            Batter(player, building || holding, null, true);
+            CheckLock(player);
+            TellBat();
 
             // Breaks and build phases: skip them with Enter, as a player in a hurry does.
             if ((building || Enemy.Roster.Count == 0) && now >= nextSkip) {
@@ -557,7 +586,7 @@ public static class Playtest {
                 lastWave = wave;
                 waveSince = now;
                 if (holdFireFrom > 0 && wave >= holdFireFrom) {
-                    run.Event("hold-fire", "wave " + wave + ": the bot stops shooting so the bots reach the musician");
+                    run.Event("hold-fire", "wave " + wave + ": the bot stops swinging so the bots reach the musician");
                 }
                 warnedKills = false;
                 run.Scene("Wave " + wave);
@@ -587,14 +616,91 @@ public static class Playtest {
         }
     }
 
-    static void Steer(CharacterMovement player) {
+    // ---------------------------------------------------------------- bat
+
+    // The batter, every frame of play. The target is the nearest bird within guard range of the musician (or of
+    // only, when given). Walk at it with WASD (camera-relative) until it is in the bat's reach, hold Shift so the
+    // lock is on, and click a swing every 0.12 s while it is in reach. With nothing near the musician, walk back to
+    // the piano. idle: no target and no swings (the build phase, or the analytics scenario holding fire).
+    static Enemy Batter(CharacterMovement player, bool idle, List<Enemy> only, bool lockOn) {
+        Enemy target = idle || player == null ? null : GuardTarget(player, only);
+        bool swing = false;
+        if (target != null) {
+            Vector3 to = target.transform.position - player.transform.position;
+            to.y = 0f;
+            float gap = to.magnitude - target.BodyScale * 0.3f;
+            float reach = BatEquipment.Reach;
+            Walk(player, target.transform.position, reach * 0.6f);
+            swing = gap <= reach * 0.95f && !LevelUpScreen.HoldFire;
+        } else if (player != null && Musician.Instance != null) {
+            Walk(player, Musician.Instance.transform.position, 9f);
+        } else {
+            Stand();
+        }
+        PlayInput.Hold(KeyCode.LeftShift, lockOn && target != null);
+        Click(swing);
+        float now = Time.realtimeSinceStartup;
+        if (!idle && Enemy.Climbers > 0 && now >= nextShakeAt) {
+            nextShakeAt = now + 1.5f;
+            PlayInput.Tap(KeyCode.F);
+        }
+        return target;
+    }
+
+    // One-frame clicks of the left button, so each is a swing and never a wind-up.
+    static void Click(bool swing) {
+        if (tapHeld) {
+            PlayInput.Hold(KeyCode.Mouse0, false);
+            tapHeld = false;
+            return;
+        }
+        float now = Time.realtimeSinceStartup;
+        if (swing && now >= nextTapAt) {
+            PlayInput.Hold(KeyCode.Mouse0, true);
+            tapHeld = true;
+            nextTapAt = now + 0.12f;
+        }
+    }
+
+    static Enemy GuardTarget(CharacterMovement player, List<Enemy> only) {
+        Vector3 piano = Musician.Instance != null ? Musician.Instance.transform.position : player.transform.position;
+        float guard = 32f + BatEquipment.Reach * 2f;
+        List<Enemy> pool = only != null ? only : Enemy.Roster;
+        Enemy best = null;
+        float bestDist = float.MaxValue;
+        for (int i = 0; i < pool.Count; i++) {
+            Enemy enemy = pool[i];
+            if (enemy == null || !enemy.Alive || enemy.Climbing) {
+                continue;
+            }
+            Vector3 fromPiano = enemy.transform.position - piano;
+            fromPiano.y = 0f;
+            if (only == null && fromPiano.magnitude > guard) {
+                continue;
+            }
+            float dist = (enemy.transform.position - player.transform.position).sqrMagnitude;
+            if (dist < bestDist) {
+                bestDist = dist;
+                best = enemy;
+            }
+        }
+        return best;
+    }
+
+    static void Stand() {
+        PlayInput.Axis("Horizontal", 0f);
+        PlayInput.Axis("Vertical", 0f);
+    }
+
+    // WASD toward a point, camera-relative, until within stop meters.
+    static void Walk(CharacterMovement player, Vector3 point, float stop) {
         float h = 0f;
         float v = 0f;
         Camera cam = Camera.main;
-        if (player != null && Musician.Instance != null && cam != null) {
-            Vector3 to = Musician.Instance.transform.position - player.transform.position;
+        if (player != null && cam != null) {
+            Vector3 to = point - player.transform.position;
             to.y = 0f;
-            if (to.magnitude > 9f) {
+            if (to.magnitude > stop) {
                 Vector3 fwd = cam.transform.forward;
                 fwd.y = 0f;
                 Vector3 right = cam.transform.right;
@@ -606,6 +712,364 @@ public static class Playtest {
         }
         PlayInput.Axis("Horizontal", h);
         PlayInput.Axis("Vertical", v);
+    }
+
+    // Each time the lock lands on a bird, it must be the nearest one in reach (unless right click switched it on
+    // to the next nearest).
+    static void CheckLock(CharacterMovement player) {
+        ZeldaStyleCamera cam = Juice.Cam;
+        if (cam == null || player == null) {
+            return;
+        }
+        GameObject locked = cam.LockedOnGameObject;
+        if (locked == lastLock) {
+            return;
+        }
+        bool hadOne = lastLock != null;
+        lastLock = locked;
+        if (locked == null) {
+            return;
+        }
+        Vector3 origin = player.transform.position;
+        float reach = cam.LockReach();
+        Enemy nearest = null;
+        float best = float.MaxValue;
+        int inReach = 0;
+        for (int i = 0; i < Enemy.Roster.Count; i++) {
+            Enemy enemy = Enemy.Roster[i];
+            if (enemy == null || !enemy.Alive || enemy.Climbing) {
+                continue;
+            }
+            float d = Vector3.Distance(origin, enemy.transform.position);
+            if (d > reach) {
+                continue;
+            }
+            inReach++;
+            if (d < best) {
+                best = d;
+                nearest = enemy;
+            }
+        }
+        float dist = Vector3.Distance(origin, locked.transform.position);
+        lockChecks++;
+        if (ZeldaStyleCamera.LockSwitches > lockSwitchesSeen) {
+            lockSwitchesSeen = ZeldaStyleCamera.LockSwitches;
+            run.Event("lock-switch", "right click: the lock moved to the next nearest bird, " + locked.name + " at " + dist.ToString("0.0") + " m (" + inReach + " in reach)");
+            return;
+        }
+        if (nearest == null || nearest.gameObject == locked || dist <= best + 0.75f) {
+            lockNearest++;
+            if (batRun || lockNearest <= 6) {
+                run.Event("lock-on", "the nearest bird: " + locked.name + " at " + dist.ToString("0.0") + " m of " + inReach + " in reach" + (hadOne ? " (the last one fell)" : ""));
+            }
+        } else {
+            lockWrong++;
+            if (lockWrong <= 3) {
+                run.Problem(PlaytestSeverity.Warning, "lock-on took " + locked.name + " at " + dist.ToString("0.0") + " m while " + nearest.name + " was " + best.ToString("0.0") + " m away");
+            }
+        }
+    }
+
+    // What the bat did, from BatEquipment's lines: all of them in the bat scenario, the first few elsewhere.
+    static void TellBat() {
+        for (int i = 0; i < BatEquipment.Events.Count; i++) {
+            string line = BatEquipment.Events[i];
+            if (batRun || batTold < 15) {
+                run.Event("bat", line);
+            } else {
+                run.Log("bat: " + line);
+            }
+            batTold++;
+        }
+        BatEquipment.Events.Clear();
+    }
+
+    // The bat scenario: the combo, a ground smash and a home run, each until it is seen, through the same clicks,
+    // Shift and WASD a player uses. Setup only: the birds for the smash and the home run are dropped in front of
+    // the player (named in the timeline).
+    static IEnumerator BatRun(PlaytestOptions options) {
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+        BatEquipment.Events.Clear();
+        lockSwitchesSeen = ZeldaStyleCamera.LockSwitches;
+
+        // 1. The combo on wave 1's turkeys, and one lock switch along the way.
+        run.Scene("Bat: the combo");
+        run.Note("swinging the 3-hit combo at wave 1's turkeys");
+        bool switched = false;
+        yield return Fight(player, () => {
+            if (!switched && BatEquipment.Finishers >= 1 && Juice.Cam != null && Juice.Cam.LockedOnGameObject != null && BirdsInLockReach(player) >= 2) {
+                switched = true;
+                PlayInput.Tap(KeyCode.Mouse1);
+            }
+            return BatEquipment.Finishers >= 2 && BatEquipment.KnockedBack >= 3;
+        }, 120f, "a 3-hit combo landing", null, true);
+        if (run.Done) {
+            yield break;
+        }
+        run.Event("combo", BatEquipment.Swings + " swings, " + BatEquipment.Finishers + " finishers (swing 3), " + BatEquipment.KnockedBack + " birds knocked back");
+        run.Progress(0.3f);
+
+        // 2. A ground smash: small birds get the bat swung down at the ground.
+        run.Scene("Bat: ground smash");
+        for (int attempt = 0; attempt < 3 && BatEquipment.SmashHits == 0 && !run.Done; attempt++) {
+            yield return Fight(player, () => !WaveDirector.IsBuilding && !LevelUpScreen.IsOpen, 40f, "a wave to fight in", null, true);
+            if (run.Done) {
+                yield break;
+            }
+            var chicks = new List<Enemy>();
+            Vector3 front = Forward(player);
+            Vector3 side = Vector3.Cross(Vector3.up, front);
+            for (int i = 0; i < 3; i++) {
+                chicks.Add(SpawnBird(player.transform.position + front * (5.5f + i * 0.6f) + side * (i - 1) * 1.1f, true));
+            }
+            run.Event("setup", "three hatchlings (size 0.58, under " + Tuning.SmashBelow.ToString("0.00") + " of the player's " + (PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f).ToString("0.00") + ") dropped 6 m in front of the player");
+            yield return Fight(player, () => BatEquipment.SmashHits > 0, 20f, "a ground smash on a hatchling", chicks, false);
+        }
+        if (run.Done) {
+            yield break;
+        }
+        run.Progress(0.55f);
+
+        // 3. A home run into a line of turkeys.
+        run.Scene("Bat: home run");
+        for (int attempt = 0; attempt < 3 && BatEquipment.HomeRunKnocks == 0 && !run.Done; attempt++) {
+            yield return HomeRunTry(player);
+        }
+        if (run.Done) {
+            yield break;
+        }
+        run.Progress(0.8f);
+        run.Scene("Wave " + WaveDirector.Wave);
+    }
+
+    // Walk out from the piano so the turkeys line up between the player and the dark, wind up, let go as the
+    // front one comes into reach.
+    static IEnumerator HomeRunTry(CharacterMovement player) {
+        yield return Fight(player, () => !WaveDirector.IsBuilding && !LevelUpScreen.IsOpen, 40f, "a wave to fight in", null, true);
+        if (run.Done || player == null) {
+            yield break;
+        }
+        Vector3 piano = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
+        Vector3 outward = player.transform.position - piano;
+        outward.y = 0f;
+        outward = outward.sqrMagnitude > 1f ? outward.normalized : Vector3.forward;
+        PlayInput.Hold(KeyCode.LeftShift, false);
+        Click(false);
+        PlayInput.Hold(KeyCode.Mouse0, false);
+        foreach (float distance in new[] { 3f, 8f }) {
+            float until = Time.realtimeSinceStartup + 12f;
+            while (!run.Done && Time.realtimeSinceStartup < until) {
+                if (WaveDirector.IsLost) {
+                    yield return GameOver();
+                    yield break;
+                }
+                if (LevelUpScreen.IsOpen) {
+                    yield return PickCard();
+                    continue;
+                }
+                Vector3 spot = piano + outward * distance;
+                Vector3 to = spot - player.transform.position;
+                to.y = 0f;
+                if (to.magnitude < 1f) {
+                    break;
+                }
+                Walk(player, spot, 0.5f);
+                yield return null;
+            }
+        }
+        Stand();
+        yield return new WaitForSecondsRealtime(0.3f);
+
+        Vector3 front = Forward(player);
+        var line = new List<Enemy>();
+        float[] at = { 6.5f, 9f, 10.5f, 12f };
+        for (int i = 0; i < at.Length; i++) {
+            line.Add(SpawnBird(player.transform.position + front * at[i] + Vector3.Cross(Vector3.up, front) * Random.Range(-0.3f, 0.3f), false));
+        }
+        run.Event("setup", "a line of 4 turkeys dropped 6.5 to 12 m in front of the player, walking in toward the piano");
+
+        // Hold to wind up, step toward the front turkey, let go once it is in reach and the charge is full.
+        int knocksBefore = BatEquipment.HomeRunKnocks;
+        int homeRunsBefore = BatEquipment.HomeRuns;
+        PlayInput.Hold(KeyCode.Mouse0, true);
+        run.Event("wind-up", "holding the swing button");
+        float start = Time.realtimeSinceStartup;
+        while (!run.Done && Time.realtimeSinceStartup - start < 6f) {
+            if (WaveDirector.IsLost) {
+                yield return GameOver();
+                yield break;
+            }
+            if (LevelUpScreen.IsOpen) {
+                yield return PickCard();
+                PlayInput.Hold(KeyCode.Mouse0, true);
+                continue;
+            }
+            Enemy first = line.Find(e => e != null && e.Alive);
+            if (first == null) {
+                break;
+            }
+            Vector3 to = first.transform.position - player.transform.position;
+            to.y = 0f;
+            float gap = to.magnitude - first.BodyScale * 0.3f;
+            Walk(player, first.transform.position, BatEquipment.Reach * 0.6f);
+            if (BatEquipment.Charge >= 1f && gap <= BatEquipment.Reach * 0.9f) {
+                break;
+            }
+            yield return null;
+        }
+        run.Event("release", "let go at " + Mathf.RoundToInt(BatEquipment.Charge * 100f) + "% charge");
+        PlayInput.Hold(KeyCode.Mouse0, false);
+        Stand();
+        float watch = Time.realtimeSinceStartup + 3f;
+        while (!run.Done && Time.realtimeSinceStartup < watch) {
+            TellBat();
+            yield return null;
+        }
+        TellBat();
+        if (BatEquipment.HomeRuns == homeRunsBefore) {
+            run.Log("the home run swing did not go off; trying again");
+        } else if (BatEquipment.HomeRunKnocks == knocksBefore) {
+            run.Log("the home run flew without hitting another bird; trying again");
+        }
+    }
+
+    // A level-up card during the bat steps: the first card, as in Play.
+    static IEnumerator PickCard() {
+        PlayInput.Hold(KeyCode.Mouse0, false);
+        tapHeld = false;
+        PlayInput.Hold(KeyCode.LeftShift, false);
+        PlayInput.Axis("Horizontal", 0f);
+        PlayInput.Axis("Vertical", 0f);
+        run.Event("level-up", "level " + RunBoons.Level);
+        yield return new WaitForSecondsRealtime(0.7f);
+        PlayInput.Tap(KeyCode.Alpha1);
+        yield return null;
+        yield return null;
+        if (LevelUpScreen.IsOpen) {
+            yield return new WaitForSecondsRealtime(1f);
+            if (LevelUpScreen.IsOpen) {
+                run.Problem(PlaytestSeverity.Bug, "the level-up card did not close after pressing a number key");
+                run.Finish(PlaytestOutcome.Stuck);
+                yield break;
+            }
+        }
+        levelUps++;
+        run.Add("levelUps");
+    }
+
+    // Plays (the batter, cards, skipping breaks) until goal is true. Not seeing it in time is a bug.
+    static IEnumerator Fight(CharacterMovement player, System.Func<bool> goal, float seconds, string what, List<Enemy> only, bool lockOn) {
+        float start = Time.realtimeSinceStartup;
+        float nextSkip = 0f;
+        float nextMetrics = 0f;
+        while (!run.Done && !goal()) {
+            float now = Time.realtimeSinceStartup;
+            SampleFps();
+            if (WaveDirector.IsLost) {
+                yield return GameOver();
+                yield break;
+            }
+            if (now - start > seconds) {
+                run.Problem(PlaytestSeverity.Bug, "the bat scenario did not see " + what + " in " + seconds.ToString("0") + " s");
+                yield break;
+            }
+            if (LevelUpScreen.IsOpen) {
+                yield return PickCard();
+                continue;
+            }
+            if (only != null) {
+                only.RemoveAll(e => e == null || !e.Alive);
+            }
+            bool building = WaveDirector.IsBuilding;
+            Batter(player, building, only != null && only.Count > 0 ? only : null, lockOn);
+            CheckLock(player);
+            TellBat();
+            if ((building || Enemy.Roster.Count == 0) && now >= nextSkip) {
+                nextSkip = now + 1.5f;
+                PlayInput.Tap(KeyCode.Return);
+            }
+            int wave = WaveDirector.Wave;
+            if (wave != lastWave) {
+                if (lastWave != 0) {
+                    run.Event("wave", wave.ToString());
+                }
+                lastWave = wave;
+            }
+            if (now >= nextMetrics) {
+                nextMetrics = now + 0.5f;
+                Metrics(now - run.StartTime);
+                AnalyticsTimeline();
+            }
+            yield return null;
+        }
+        TellBat();
+    }
+
+    static void BatReport() {
+        TellBat();
+        Metrics(Time.realtimeSinceStartup - run.StartTime);
+        if (BatEquipment.Finishers == 0) {
+            run.Problem(PlaytestSeverity.Bug, "no 3-hit combo landed (no swing 3 hit a bird)");
+        }
+        if (BatEquipment.KnockedBack == 0) {
+            run.Problem(PlaytestSeverity.Bug, "the bat hit no bird hard enough to knock it back");
+        }
+        if (BatEquipment.SmashHits == 0) {
+            run.Problem(PlaytestSeverity.Bug, "no ground smash hit a small bird");
+        }
+        if (BatEquipment.HomeRuns == 0) {
+            run.Problem(PlaytestSeverity.Bug, "no home run swing went off after holding the button");
+        } else if (BatEquipment.HomeRunKnocks == 0) {
+            run.Problem(PlaytestSeverity.Bug, "the home run launched a bird that knocked into no other bird");
+        }
+        run.Event("bat-report", BatEquipment.Swings + " swings, " + BatEquipment.Finishers + " finishers, " + BatEquipment.SmashHits + " smash hits, "
+            + BatEquipment.HomeRuns + " home runs knocking into " + BatEquipment.HomeRunKnocks + " birds, lock nearest " + lockNearest + " of " + lockChecks);
+    }
+
+    static int BirdsInLockReach(CharacterMovement player) {
+        ZeldaStyleCamera cam = Juice.Cam;
+        if (cam == null || player == null) {
+            return 0;
+        }
+        float reach = cam.LockReach();
+        int count = 0;
+        for (int i = 0; i < Enemy.Roster.Count; i++) {
+            Enemy enemy = Enemy.Roster[i];
+            if (enemy != null && enemy.Alive && !enemy.Climbing && Vector3.Distance(player.transform.position, enemy.transform.position) <= reach) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    static Vector3 Forward(CharacterMovement player) {
+        Vector3 front = player.transform.forward;
+        front.y = 0f;
+        return front.sqrMagnitude > 0.01f ? front.normalized : Vector3.forward;
+    }
+
+    // Setup for the bat scenario: a bird dropped on the ground at a spot, facing the musician, as WaveDirector
+    // spawns them.
+    static Enemy SpawnBird(Vector3 at, bool small) {
+        if (Physics.Raycast(at + Vector3.up * 30f, Vector3.down, out RaycastHit hit, 80f, 1 << 3, QueryTriggerInteraction.Ignore)) {
+            at.y = hit.point.y + 0.45f;
+        }
+        var go = new GameObject(small ? "Drone" : "Yo Bot");
+        go.tag = "enemy";
+        go.transform.position = at;
+        Vector3 piano = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
+        Vector3 look = piano - at;
+        look.y = 0f;
+        if (look.sqrMagnitude > 0.01f) {
+            go.transform.rotation = Quaternion.LookRotation(look);
+        }
+        Enemy enemy = go.AddComponent<Enemy>();
+        if (small) {
+            enemy.ApplyDrone();
+        } else {
+            enemy.ApplyBot(BotRoster.ForSpawn(BotKind.YoBot, WaveDirector.Wave));
+        }
+        return enemy;
     }
 
     // ---------------------------------------------------------------- bots
@@ -923,7 +1387,7 @@ public static class Playtest {
     }
 
     // Touch only, as on a phone: no keys at all. Taps on the menu and the cards go through the UI event system
-    // like a finger's; the stick, Fire, Lock and Next wave get the bot's fingers through TouchControls, the same
+    // like a finger's; the stick, Swing, Lock and Next wave get the bot's fingers through TouchControls, the same
     // path real touches take. Setup: touch controls are switched on (a phone has them on by itself) and the menu
     // is loaded fresh so it is built for touch.
     static IEnumerator TouchRun() {
@@ -975,6 +1439,7 @@ public static class Playtest {
         float waveTwoAt = -1f;
         bool stickDown = false;
         bool fireDown = false;
+        float nextSwing = 0f;
         bool tapping = false;
         int tapFinger = -1;
         bool checkedHud = false;
@@ -1064,8 +1529,18 @@ public static class Playtest {
             bool building = WaveDirector.IsBuilding;
             bool birds = Enemy.Roster.Count > 0;
 
-            // The stick: a lap around the start so the stick is seen working, then back to the piano when drifted.
-            Vector2 dir = elapsed < 5f ? new Vector2(Mathf.Sin(elapsed * 1.3f), Mathf.Cos(elapsed * 1.3f)) * 0.8f : SteerDir(player);
+            // The stick: a lap around the start so the stick is seen working, then to the nearest bird near the
+            // musician (back to the piano when there is none).
+            Enemy target = building || player == null ? null : GuardTarget(player, null);
+            float gap = float.MaxValue;
+            Vector2 toward = SteerDir(player);
+            if (target != null) {
+                Vector3 flat = target.transform.position - player.transform.position;
+                flat.y = 0f;
+                gap = flat.magnitude - target.BodyScale * 0.3f;
+                toward = gap > BatEquipment.Reach * 0.6f ? StickToward(flat) : Vector2.zero;
+            }
+            Vector2 dir = elapsed < 5f ? new Vector2(Mathf.Sin(elapsed * 1.3f), Mathf.Cos(elapsed * 1.3f)) * 0.8f : toward;
             if (building) {
                 dir = Vector2.zero;
             }
@@ -1083,14 +1558,15 @@ public static class Playtest {
                 stickDown = false;
             }
 
-            // Fire held while there are bots; Lock toggled on with them, off without.
-            bool shoot = !building && birds && !LevelUpScreen.HoldFire;
-            if (shoot && !fireDown && TouchControls.Spot("Fire", out Vector2 fireAt)) {
-                TouchControls.BotFinger(1, fireAt, true);
-                fireDown = true;
-            } else if (!shoot && fireDown) {
+            // Swing tapped while a bird is in the bat's reach; Lock toggled on with birds, off without.
+            bool swing = !building && target != null && gap <= BatEquipment.Reach * 0.95f && !LevelUpScreen.HoldFire;
+            if (fireDown) {
                 TouchControls.BotFinger(1, Vector2.zero, false);
                 fireDown = false;
+            } else if (swing && now >= nextSwing && TouchControls.Spot("Swing", out Vector2 swingAt)) {
+                TouchControls.BotFinger(1, swingAt, true);
+                fireDown = true;
+                nextSwing = now + 0.15f;
             }
             if (!tapping && now >= nextTap) {
                 Vector2 at;
@@ -1139,6 +1615,20 @@ public static class Playtest {
             }
             yield return null;
         }
+    }
+
+    // A ground direction as the stick would push it, camera-relative.
+    static Vector2 StickToward(Vector3 flat) {
+        Camera cam = Camera.main;
+        if (cam == null || flat.sqrMagnitude < 0.0001f) {
+            return Vector2.zero;
+        }
+        Vector3 fwd = cam.transform.forward;
+        fwd.y = 0f;
+        Vector3 right = cam.transform.right;
+        right.y = 0f;
+        flat.Normalize();
+        return new Vector2(Vector3.Dot(right.normalized, flat), Vector3.Dot(fwd.normalized, flat));
     }
 
     static Vector2 SteerDir(CharacterMovement player) {
@@ -1450,8 +1940,16 @@ public static class Playtest {
         run.Metric("wave", WaveDirector.Wave);
         run.Metric("kills", RunLog.RunKills);
         run.Metric("damage", Mathf.Round(RunLog.RunDamage));
-        run.Metric("shots", RunLog.RunShots);
+        run.Metric("swings", RunLog.RunSwings);
         run.Metric("hits", RunLog.RunHits);
+        run.Metric("hitRate", RunLog.RunSwings > 0 ? Mathf.Round(100f * RunLog.RunConnects / RunLog.RunSwings) / 100f : 0f);
+        run.Metric("finishers", BatEquipment.Finishers);
+        run.Metric("smashHits", BatEquipment.SmashHits);
+        run.Metric("homeRuns", BatEquipment.HomeRuns);
+        run.Metric("homeRunKnocks", BatEquipment.HomeRunKnocks);
+        run.Metric("knockedBack", BatEquipment.KnockedBack);
+        run.Metric("lockNearest", lockNearest);
+        run.Metric("lockWrong", lockWrong);
         run.Metric("level", RunBoons.Level);
         run.Metric("levelUps", levelUps);
         run.Metric("botsAlive", Enemy.Roster.Count);
