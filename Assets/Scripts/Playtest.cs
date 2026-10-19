@@ -25,6 +25,7 @@ public static class Playtest {
         new PlaytestScenario("settings", "Press Tap to play, open Settings from the menu: sound off and on, music and effects sliders, Done; start a run, pause (button, then P), Settings from the pause menu, resume, play a little. Any screen size", 100, "menus"),
         new PlaytestScenario("bots", "The bots: wave 1's small Yo Bots walk at the musician (their distance to him is logged as they come), destroyed bots drop bolts the bot picks up as XP, and the enemy list on the right names them. Setup shortcut: the testing wave key (=) jumps to wave 30, where the first Spider Bot arrives as the Alpha, a large enemy with the boss bar, then the bot fights it for 30 s", 300, "content"),
         new PlaytestScenario("analytics", "Hawkes Analytics: start a run, clear wave 1, then hold fire on wave 2 so the bots take the musician. Every analytics event is logged as it goes out (run_start, level_start and level_end per wave, card picks, the death and the bot kind that landed it, run_end) with the build version and env; on the game-over screen the \"How was that run?\" card must show, and the bot rates it 4 stars", 240, "full"),
+        new PlaytestScenario("upgrades", "The bat upgrades: the shop lists Corked Core and Aluminum! Not wood! (setup: both owned in the sandbox) and the metal bat is in the player's hands; wave 1's first level-up cards are read off the screen (bat upgrades, no arrows or bow); setup: the testing wave key (=) to wave 14 for tougher Plated Yo Bots and a handful of bat boons granted (Wide Arc, Pine Tar, Ice Bat, Live Wire, Grand Slam, Long Ball and more), each one's mark on the bat logged; then the bot plays until each effect is seen: a wider swing, bots burning, bots slowed, chain sparks shorting bots out, a 360 spin swing, batted bolts landing. Then Thunder Bat is granted for a lightning spin, and 30 s of play", 330, "content"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.com and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
     };
 
@@ -168,6 +169,9 @@ public static class Playtest {
             if (id == "menus") {
                 yield return ShopMenu();
             }
+            if (id == "upgrades") {
+                UpgradesShop();
+            }
             yield return StartRun();
             if (run.Done) {
                 yield break;
@@ -182,6 +186,12 @@ public static class Playtest {
                 yield return Play(options, 30f, false);
             } else if (id == "bots") {
                 yield return BotsRun(options);
+            } else if (id == "upgrades") {
+                yield return UpgradesRun(options);
+                if (!run.Done) {
+                    UpgradesReport();
+                    yield return Play(options, 30f, false);
+                }
             } else if (id == "bat") {
                 yield return BatRun(options);
                 if (!run.Done) {
@@ -958,7 +968,7 @@ public static class Playtest {
     }
 
     // Plays (the batter, cards, skipping breaks) until goal is true. Not seeing it in time is a bug.
-    static IEnumerator Fight(CharacterMovement player, System.Func<bool> goal, float seconds, string what, List<Enemy> only, bool lockOn) {
+    static IEnumerator Fight(CharacterMovement player, System.Func<bool> goal, float seconds, string what, List<Enemy> only, bool lockOn, bool bat = true) {
         float start = Time.realtimeSinceStartup;
         float nextSkip = 0f;
         float nextMetrics = 0f;
@@ -970,7 +980,7 @@ public static class Playtest {
                 yield break;
             }
             if (now - start > seconds) {
-                run.Problem(PlaytestSeverity.Bug, "the bat scenario did not see " + what + " in " + seconds.ToString("0") + " s");
+                run.Problem(PlaytestSeverity.Bug, "the " + (bat ? "bat" : "upgrades") + " scenario did not see " + what + " in " + seconds.ToString("0") + " s");
                 yield break;
             }
             if (LevelUpScreen.IsOpen) {
@@ -1070,6 +1080,214 @@ public static class Playtest {
             enemy.ApplyBot(BotRoster.ForSpawn(BotKind.YoBot, WaveDirector.Wave));
         }
         return enemy;
+    }
+
+    // ---------------------------------------------------------------- upgrades
+
+    static readonly System.Text.RegularExpressions.Regex BowWords = new System.Text.RegularExpressions.Regex(@"\b(arrows?|bows?|quivers?|fletching|archer)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    static readonly string[] Effects = { "wide-swing", "burning", "slowing", "chain-sparks", "spin-swing", "batted-bolt" };
+    static readonly HashSet<string> effectsSeen = new HashSet<string>();
+
+    // The shop rows read off the menu: both bat upgrades must be there, and nothing about arrows. Setup: the sandbox
+    // owns rank 1 of each (no coins spent, nothing saved), so the run starts with the metal bat.
+    static void UpgradesShop() {
+        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+        var shown = new List<string>();
+        bool bowWords = false;
+        if (menu != null) {
+            foreach (Text label in menu.GetComponentsInChildren<Text>(true)) {
+                for (int i = 0; i < MetaProgress.Catalog.Length; i++) {
+                    if (label.text == MetaProgress.Catalog[i].Name && !shown.Contains(label.text)) {
+                        shown.Add(label.text);
+                    }
+                }
+                if (BowWords.IsMatch(label.text)) {
+                    bowWords = true;
+                    run.Problem(PlaytestSeverity.Bug, "the shop still mentions arrows or the bow: \"" + label.text + "\"");
+                }
+            }
+        }
+        run.Event("shop-items", shown.Count + " upgrades on the menu: " + string.Join(", ", shown.ToArray()));
+        foreach (UpgradeId id in new[] { UpgradeId.Keen, UpgradeId.Blast }) {
+            string name = MetaProgress.Info(id).Name;
+            bool there = shown.Contains(name);
+            run.Metric(id == UpgradeId.Keen ? "shopCorkedCore" : "shopAluminum", there ? 1 : 0);
+            if (!there) {
+                run.Problem(PlaytestSeverity.Bug, "the shop does not show " + name);
+            }
+        }
+        run.Metric("shopBowWords", bowWords ? 1 : 0);
+        MetaProgress.SandboxRank(UpgradeId.Blast, 1);
+        MetaProgress.SandboxRank(UpgradeId.Keen, 1);
+        run.Event("setup", "the sandbox owns Aluminum! Not wood! 1 and Corked Core 1 (no coins spent, not saved)");
+    }
+
+    static IEnumerator UpgradesRun(PlaytestOptions options) {
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+        effectsSeen.Clear();
+
+        // 1. The metal bat in the player's hands.
+        run.Scene("Upgrades: the aluminum bat");
+        yield return new WaitForSecondsRealtime(1.5f);
+        string look = UpgradeLook.BatLine();
+        run.Event("metal-bat", MetaProgress.MetalBat() ? "the player holds an aluminum bat: " + look : "no metal bat: " + look);
+        run.Metric("metalBat", MetaProgress.MetalBat() && look.StartsWith("aluminum") ? 1 : 0);
+        if (!look.StartsWith("aluminum")) {
+            run.Problem(PlaytestSeverity.Bug, "Aluminum! Not wood! is owned but the bat is not metal (" + look + ")");
+        }
+
+        // 2. The first level-up's cards, read off the screen.
+        run.Scene("Upgrades: level-up cards");
+        yield return Fight(player, () => LevelUpScreen.IsOpen, 120f, "a level-up card", null, true, false);
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(0.8f);
+        ReadCards();
+        yield return PickCard();
+        if (run.Done) {
+            yield break;
+        }
+        CheckBoonTexts();
+
+        // 3. Setup: tougher bots (the testing wave key to wave 14: Plated Yo Bots outlast a hit, so burning and
+        // slowing show), and the boons granted.
+        run.Event("setup", "testing wave key (=) to wave 14");
+        PlayInput.Hold(KeyCode.Mouse0, false);
+        PlayInput.Hold(KeyCode.LeftShift, false);
+        tapHeld = false;
+        for (int guard = 0; guard < 40 && WaveDirector.Wave < 14 && !run.Done; guard++) {
+            if (LevelUpScreen.IsOpen) {
+                PlayInput.Tap(KeyCode.Alpha1);
+            } else {
+                PlayInput.Tap(KeyCode.Equals);
+            }
+            yield return new WaitForSecondsRealtime(0.15f);
+        }
+        lastWave = WaveDirector.Wave;
+        run.Event("wave", WaveDirector.Wave.ToString());
+        var grant = new[] {
+            BoonId.SplitShot, BoonId.SplitShot, BoonId.Firebrand, BoonId.Frost, BoonId.Chain, BoonId.Chain, BoonId.Chain,
+            BoonId.Volley, BoonId.Volley, BoonId.Volley, BoonId.Homing, BoonId.Homing, BoonId.Ricochet, BoonId.EagleEye,
+            BoonId.Pierce, BoonId.QuickDraw, BoonId.Mark, BoonId.Heavy
+        };
+        foreach (BoonId id in grant) {
+            RunBoons.Take(id);
+        }
+        run.Event("setup", "boons granted: " + RunBoons.Summary());
+        yield return null;
+        yield return null;
+        run.Event("bat-marks", UpgradeLook.BatLine());
+
+        // 4. Play until every effect has been seen.
+        run.Scene("Upgrades: effects");
+        yield return Fight(player, () => NoteEffects(), 150f, "every granted upgrade's effect", null, true, false);
+        if (run.Done) {
+            yield break;
+        }
+
+        // 5. Thunder Bat (Live Wire and Grand Slam are maxed): the spin calls lightning down.
+        RunBoons.Take(BoonId.StormQuiver);
+        run.Event("setup", "Thunder Bat granted (its parents Live Wire and Grand Slam are at max rank)");
+        yield return null;
+        run.Event("bat-marks", UpgradeLook.BatLine());
+        int spins = BatEquipment.Spins;
+        int arcs = Combat.Arcs;
+        yield return Fight(player, () => BatEquipment.Spins > spins && Combat.Arcs > arcs, 40f, "a Thunder Bat spin", null, true, false);
+        if (!run.Done && BatEquipment.Spins > spins) {
+            run.Event("thunder-bat", "spin " + BatEquipment.Spins + ": lightning arcs " + arcs + " -> " + Combat.Arcs);
+        }
+        run.Scene("Wave " + WaveDirector.Wave);
+    }
+
+    // The cards on screen: their titles must be boons, and no card text may mention arrows or the bow.
+    static void ReadCards() {
+        LevelUpScreen screen = Object.FindAnyObjectByType<LevelUpScreen>();
+        var titles = new List<string>();
+        if (screen != null) {
+            foreach (Text label in screen.GetComponentsInChildren<Text>(false)) {
+                for (int i = 0; i < RunBoons.All.Length; i++) {
+                    if (label.text == RunBoons.All[i].Name && !titles.Contains(label.text)) {
+                        titles.Add(label.text);
+                    }
+                }
+                if (BowWords.IsMatch(label.text)) {
+                    run.Problem(PlaytestSeverity.Bug, "a level-up card mentions arrows or the bow: \"" + label.text + "\"");
+                }
+            }
+        }
+        run.Event("cards", titles.Count > 0 ? string.Join(", ", titles.ToArray()) : "(no card titles read)");
+        run.Metric("cardsRead", titles.Count);
+        if (titles.Count == 0) {
+            run.Problem(PlaytestSeverity.Bug, "no boon card titles found on the level-up screen");
+        }
+    }
+
+    // Every boon a card can offer, checked for bow-era words.
+    static void CheckBoonTexts() {
+        int bad = 0;
+        for (int i = 0; i < RunBoons.All.Length; i++) {
+            BoonInfo info = RunBoons.All[i];
+            if (BowWords.IsMatch(info.Name) || BowWords.IsMatch(info.About)) {
+                bad++;
+                run.Problem(PlaytestSeverity.Bug, "boon " + info.Name + " still mentions arrows or the bow: " + info.About);
+            }
+        }
+        run.Metric("boonBowWords", bad);
+        run.Event("boon-texts", RunBoons.All.Length + " boons checked, " + bad + " mention arrows or the bow");
+    }
+
+    // Logs each effect the first time it shows; true once all have.
+    static bool NoteEffects() {
+        See("wide-swing", BatEquipment.WideSwings > 0, "Wide Arc: " + BatEquipment.WideSwings + " swings at " + (Tuning.BatArc + RunBoons.ArcBonus).ToString("0") + " degrees (base " + Tuning.BatArc.ToString("0") + "), with the swing trail");
+        See("burning", Combat.Burned > 0 && AnyBot(e => e.Burning), "Pine Tar: " + Combat.Burned + " hits set bots burning (orange glow)");
+        See("slowing", Combat.Slowed > 0 && AnyBot(e => e.Slowed), "Ice Bat: " + Combat.Slowed + " hits slowed bots (blue tint)");
+        See("chain-sparks", Combat.Arcs > 0 && Combat.Shorted > 0, "Live Wire: " + Combat.Arcs + " arcs between bots, " + Combat.Shorted + " shorted out");
+        See("spin-swing", BatEquipment.Spins > 0 && BatEquipment.SpinHits > 0, "Grand Slam: spin " + BatEquipment.Spins + " hit " + BatEquipment.SpinHits + " bots all around");
+        See("batted-bolt", BatEquipment.BoltsBatted > 0 && BatEquipment.BoltHits > 0, "Long Ball: " + BatEquipment.BoltsBatted + " bolts batted, " + BatEquipment.BoltHits + " landed");
+        return effectsSeen.Count >= Effects.Length;
+    }
+
+    static void See(string effect, bool seen, string line) {
+        if (seen && effectsSeen.Add(effect)) {
+            run.Event(effect, line);
+        }
+    }
+
+    static bool AnyBot(System.Func<Enemy, bool> test) {
+        for (int i = 0; i < Enemy.Roster.Count; i++) {
+            Enemy enemy = Enemy.Roster[i];
+            if (enemy != null && enemy.Alive && test(enemy)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static void UpgradesReport() {
+        NoteEffects();
+        Metrics(Time.realtimeSinceStartup - run.StartTime);
+        foreach (string effect in Effects) {
+            run.Metric("effect_" + effect.Replace("-", "_"), effectsSeen.Contains(effect) ? 1 : 0);
+            if (!effectsSeen.Contains(effect)) {
+                run.Problem(PlaytestSeverity.Bug, "the upgrades scenario never saw " + effect);
+            }
+        }
+        run.Metric("wideSwings", BatEquipment.WideSwings);
+        run.Metric("burned", Combat.Burned);
+        run.Metric("slowed", Combat.Slowed);
+        run.Metric("arcs", Combat.Arcs);
+        run.Metric("shorted", Combat.Shorted);
+        run.Metric("spins", BatEquipment.Spins);
+        run.Metric("spinHits", BatEquipment.SpinHits);
+        run.Metric("boltsBatted", BatEquipment.BoltsBatted);
+        run.Metric("boltHits", BatEquipment.BoltHits);
+        run.Metric("lineDriveHits", BatEquipment.LineDriveHits);
+        run.Metric("sweetSpots", Combat.SweetSpots);
+        run.Metric("calledBolts", Combat.CalledBolts);
+        run.Metric("metalBlasts", BatEquipment.MetalBlasts);
+        run.Event("upgrades-report", effectsSeen.Count + " of " + Effects.Length + " effects seen; line drives " + BatEquipment.LineDriveHits
+            + ", sweet spots " + Combat.SweetSpots + ", Called Shot bolts " + Combat.CalledBolts + ", metal-bat blasts " + BatEquipment.MetalBlasts);
     }
 
     // ---------------------------------------------------------------- bots
