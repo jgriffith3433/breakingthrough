@@ -1350,7 +1350,8 @@ public class Enemy : MonoBehaviour
             if (leg == null)
                 continue;
             int pair = i % 4;
-            float side = i < 4 ? -1f : 1f;
+            // Read the side from where the leg sits: the FBX import mirrors X.
+            float side = Mathf.Sign(leg.localPosition.x + 0.0001f);
             // Alternating fours: L1 R2 L3 R4 step together, then the other four.
             int group = (pair + (side > 0f ? 1 : 0)) % 2;
             float phase = stridePhase + group * Mathf.PI;
