@@ -879,11 +879,11 @@ public static class Playtest {
 
         Vector3 front = Forward(player);
         var line = new List<Enemy>();
-        float[] at = { 5f, 7.5f, 9f, 10.5f };
+        float[] at = { 6.5f, 9f, 10.5f, 12f };
         for (int i = 0; i < at.Length; i++) {
             line.Add(SpawnBird(player.transform.position + front * at[i] + Vector3.Cross(Vector3.up, front) * Random.Range(-0.3f, 0.3f), false));
         }
-        run.Event("setup", "a line of 4 turkeys dropped 5 to 10.5 m in front of the player, walking in toward the piano");
+        run.Event("setup", "a line of 4 turkeys dropped 6.5 to 12 m in front of the player, walking in toward the piano");
 
         // Hold to wind up, step toward the front turkey, let go once it is in reach and the charge is full.
         int knocksBefore = BatEquipment.HomeRunKnocks;

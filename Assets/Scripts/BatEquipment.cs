@@ -385,8 +385,8 @@ public class BatEquipment : MonoBehaviour {
         bool finisher = move == Move.Swing3;
         Gather(reach, ArcFor(move) * 0.5f, forward, hits);
         int count = Strike(hits, finisher ? Tuning.BatDamageFinisher : Tuning.BatDamage, finisher ? 4f : 2f,
-            finisher ? Tuning.BatKnockFinisher : Tuning.BatKnock, finisher ? 5f : 3f);
-        if (finisher) {
+            finisher ? Tuning.BatKnockFinisher : Tuning.BatKnock, finisher ? 5f : 2f);
+        if (finisher && count > 0) {
             Finishers++;
         }
         string name = move == Move.Swing1 ? "swing 1" : move == Move.Swing2 ? "swing 2" : "swing 3 (finisher)";

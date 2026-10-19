@@ -18,7 +18,8 @@ public static class Tuning {
     public const float BatArcFinisher = 170f;
     public const float BatDamage = 1f;
     public const float BatDamageFinisher = 1.8f;
-    public const float BatKnock = 6f;
+    // Swings 1 and 2 knock birds back a step, so the next swing still reaches them; the finisher sends them off.
+    public const float BatKnock = 3.5f;
     public const float BatKnockFinisher = 12f;
     // A target smaller than this share of your size gets the bat swung down at the ground instead.
     public const float SmashBelow = 0.75f;

@@ -1,6 +1,6 @@
 # Breaking Through
 
-A roguelike wave-defense game in Unity 6.3 LTS (`6000.3.7f1`) on the built-in render pipeline. You play Warrok, a bow-wielding brute in a moonlit hollow, and you protect a pirate playing the piano from endless waves of birds. You grow every wave, level up on feathers, and pick boons that build into a different run each time. Between runs, coins buy permanent upgrades.
+A roguelike wave-defense game in Unity 6.3 LTS (`6000.3.7f1`) on the built-in render pipeline. You play a brute with a baseball bat in a moonlit hollow (Warrok's model for now; Wallit's model replaces it next), and you protect a pirate playing the piano from endless waves of birds. You grow every wave, level up on feathers, and pick boons that build into a different run each time. Between runs, coins buy permanent upgrades.
 
 The project folder is `breakingthrough`. The Unity product name is still `Controller`.
 
@@ -11,7 +11,8 @@ The project folder is `breakingthrough`. The Unity product name is still `Contro
 - [Controls](#controls)
 - [Levels and boons](#levels-and-boons)
 - [Surprises](#surprises)
-- [Growth and arrows](#growth-and-arrows)
+- [The bat](#the-bat)
+- [Growth and damage](#growth-and-damage)
 - [Birds](#birds)
 - [Wave powers](#wave-powers)
 - [Building](#building)
@@ -53,8 +54,10 @@ The mouse orbits the camera. The cursor locks during waves and unlocks while you
 |---|---|
 | **W A S D** | Move relative to the camera |
 | **Mouse** | Orbit |
-| **Hold left click** | Shoot, one shot per draw |
-| **Hold Shift** | Lock onto the largest bird in range. Release to aim at the crosshair |
+| **Left click** | Swing the bat. Click again as it comes through for the next swing of the combo |
+| **Hold left click** | Wind up, then let go for a home run |
+| **Hold Shift** | Lock onto the nearest bird in reach. It stays on that bird until it falls or you let go |
+| **Right click / Tab** | While locked, move the lock to the next nearest bird |
 | **Space** | Jump. Before wave 8 you must release it between jumps. From wave 8, hold it to keep hopping |
 | **F** | Shake off climbing birds (from wave 25) |
 | **1 2 3 / click** | Pick a boon card |
@@ -67,7 +70,7 @@ The mouse orbits the camera. The cursor locks during waves and unlocks while you
 | **- / numpad -** | Testing: previous wave (not below 1) |
 | **F9** | Editor only: toggle the autopilot balance probe |
 
-Lock-on reaches 36 m, plus 1.25 m for each wave after the first, up to 170 m. You can shoot while jumping, because the bow lives on the upper-body animation layer. The tip at the bottom of the screen changes as new rules arrive.
+Lock-on reaches 26 m, plus 0.6 m for each wave after the first, up to 90 m, and more as you grow. You can swing while jumping. Touch screens have a Swing button (hold it to wind up) instead of Fire. The tip at the bottom of the screen changes as new rules arrive.
 
 ## Levels and boons
 
@@ -79,26 +82,26 @@ The level curve is `5 + 4L + 0.5L²` feathers for level L, which works out to ab
 
 | Boon | Rarity | Ranks | Effect |
 |---|---|---|---|
-| Heavy Heads | Common | 5 | +25% arrow damage |
-| Quick Draw | Common | 5 | +18% draw speed, through the `FireSpeed` animator parameter |
+| Heavy Heads | Common | 5 | +25% bat damage |
+| Quick Draw | Common | 5 | +18% swing and wind-up speed |
 | Standing Ovation | Common | 4 | Musician +15 max health, and heals 6 after each wave |
 | Lodestone | Common | 3 | Feathers pull from 70% farther |
 | Fleet Foot | Common | 3 | +12% move speed |
 | Hunter's Mark | Common | 3 | Your locked bird takes +35% damage |
-| Split Shot | Rare | 4 | +1 arrow per shot, fanned out |
-| Bodkin Points | Rare | 3 | Arrows pass through one more bird |
+| Split Shot | Rare | 4 | The swing arc is 20° wider per rank |
+| Bodkin Points | Rare | 3 | The bat reaches 10% farther per rank |
 | Eagle Eye | Rare | 5 | +10% crit chance. Crits deal 2x, plus 0.25x per rank |
-| Ricochet | Rare | 3 | Arrows bounce to one more nearby bird |
+| Ricochet | Rare | 3 | Birds you knock back bowl over one more bird per rank |
 | Firebrand | Rare | 3 | Hits set birds on fire. At rank 3, burning birds spread fire when they die |
 | Frost Tips | Rare | 3 | Hits slow birds by 25% per rank. Rank 3 can freeze them |
 | Bounty Hunter | Rare | 3 | A coin every 60, 45 or 30 kills |
-| Seeker Fletching | Rare | 2 | Arrows curve toward birds |
+| Seeker Fletching | Rare | 2 | You turn to face birds from 35% farther per rank |
 | Tower Song | Rare | 3 | +1 tower in stock, and towers fire 30% faster |
 | Chain Lightning | Epic | 3 | 15% chance per rank that lightning arcs to 3 more birds |
 | Powder Keg | Epic | 3 | Birds explode when they die, and explosions can chain |
 | Whirling Quills | Epic | 4 | Two quill blades per rank circle you and cut birds |
 | Encore | Epic | 3 | The piano sends out a damaging shockwave every few seconds |
-| Volley | Epic | 3 | Every 8th, 6th or 4th shot also fires a ring of arrows |
+| Volley | Epic | 3 | Every 8th, 6th or 4th swing also sends out a shockwave around you |
 | Executioner | Epic | 2 | Birds under 12% or 24% health die on the next hit (not bosses) |
 | Second Wind | Epic | 1 | Once a wave, if the musician drops below 25 health, a blast clears the stage and heals 20 |
 
@@ -106,10 +109,10 @@ When both parents of an evolution are at max rank, a gold evolution card shows u
 
 | Evolution | Parents | Effect |
 |---|---|---|
-| Storm Quiver | Split Shot + Chain Lightning | Every arrow chains lightning |
+| Storm Quiver | Split Shot + Chain Lightning | Every hit chains lightning |
 | Phoenix Arrows | Firebrand + Powder Keg | Burning birds explode in fire, and explosions set birds on fire |
 | Grand Finale | Encore + Standing Ovation | Encore fires twice as often, reaches twice as far, and heals |
-| Hailstorm | Frost Tips + Volley | Every 3rd shot is a volley, and volleys freeze |
+| Hailstorm | Frost Tips + Volley | Every 3rd swing sends a shockwave, and shockwaves freeze |
 
 ## Surprises
 
@@ -117,23 +120,36 @@ When both parents of an evolution are at max rank, a gold evolution card shows u
 - **Golden Gobbler.** On wave 4 and every 4th wave after, a gold turkey spends 22 seconds running from you. Catch it for a treasure chest and 3 coins. A chest opens a card pick that favors rare and epic boons.
 - **Alpha bosses.** On every 10th wave, one of that decade's birds arrives as an Alpha. It has 4x health, a red gem, and a boss bar at the top of the screen, and it calls in turkeys around itself. It drops a chest and 6 coins.
 - **Wave events.** From wave 6, a wave has a 40% chance to roll an event, never on boss or build waves. The events are Stampede, Air Raid, Feast, Golden Hour, Elite Surge and Blood Moon. The current event shows at the top left.
-- **Streaks.** Kills less than 2.4 seconds apart build a streak, shown next to the crosshair. Each kill in the streak adds 1% more feathers, up to +50%, and a long streak also makes you draw a little faster.
+- **Streaks.** Kills less than 2.4 seconds apart build a streak. Each kill in the streak adds 1% more feathers, up to +50%, and a long streak also makes you swing a little faster.
 
-## Growth and arrows
+## The bat
+
+The bat is pure melee: you walk up to birds and hit them. `Assets/Scripts/BatEquipment.cs` does all of it, and every number is in `Tuning.cs`.
+
+- **The combo.** Three swings: right to left, back the other way, then a big finisher. Each one hits every bird in an arc in front of you (140°, the finisher 170°) out to the bat's reach, 3 m at size 1 and growing with you. The first two hit for 1x and knock birds back a step, so the next swing still reaches them; the finisher hits for 1.8x and sends them flying. A click during a swing goes straight into the next one. Stop for more than about half a second and the combo starts again at swing 1.
+- **Ground smash.** When the bird you are swinging at is small (under 0.75 of your size), or most birds in the arc are, you swing down at the ground instead: a small area hit just in front of you for 1.3x. Early on that means hatchlings. As you grow, turkeys become small too.
+- **Home run.** Hold the button to wind up (a bar fills under the middle of the screen, and a ring flashes when it's full). Let go past halfway and you hit one bird, the locked one or the nearest in front, for up to 3x. It flies off low and far, and every bird it flies into is hit and shoved along.
+- **Contact.** Every hit has a crack, a blink of hit-stop and a small jolt of the camera. Big birds barely move when knocked back; bosses hardly at all.
+- **Facing.** Without a lock you turn to the nearest bird in the arc as the bat comes round. Walking is a little slower while a swing is out, and slower still while you wind up.
+- **Auto swing.** From wave 12 the bat swings by itself whenever a bird is in reach.
+
+The model is a stand-in until Wallit's: two capsules on the right hand, posed in code, and the old recoil clip on the upper body for each swing. The arrow boons below still carry their old names; until the upgrades task each one does a bat version of what it did.
+
+## Growth and damage
 
 You grow every wave. Size is `1 + progress × 0.11`, where progress is `wave - 1` plus a little for each kill this wave. Growth also speeds up movement and pulls the camera back.
 
-Arrow damage is `floor(1 + (wave - 1) × 0.5)`, plus 6 per Keen Arrows rank, plus a tiny bonus for kills this wave. Boons multiply it from there.
+Base damage is `floor(1 + (wave - 1) × 0.5)`, plus 6 per Keen Arrows rank, plus a tiny bonus for kills this wave. Boons multiply it from there.
 
 | Wave | 1 | 5 | 10 | 20 | 30 | 40 | 70 | 100 |
 |---|---|---|---|---|---|---|---|---|
 | Base damage | 1 | 3 | 5 | 10 | 15 | 20 | 35 | 50 |
 
-The **Rockets! Not arrows!** upgrade keeps the bow but swaps the arrow for a rocket. A rocket explodes on a bird or on the ground. The blast radius is about 4.2 m at rank 1, 7.4 m at rank 2 and 10.6 m at rank 3. Splash damage is 65% of a direct hit.
+The **Rockets! Not arrows!** upgrade makes the finisher and the home run explode around the bird they hit. The blast radius is about 4.2 m at rank 1, 7.4 m at rank 2 and 10.6 m at rank 3, plus a little for a home run. Splash damage is 65% of a base hit.
 
 ## Birds
 
-| Debut wave | Bird | Authored health | Arrows at debut |
+| Debut wave | Bird | Authored health | Plain hits at debut |
 |---|---|---|---|
 | 1 | Turkey | 3 | 3 |
 | 10 | Hen | 60 | 12 |
@@ -161,7 +177,7 @@ These unlock for everyone at fixed waves. The wave numbers are in `Tuning.cs`.
 | Wave | Power |
 |---|---|
 | 8 (`JumpWave`) | Landing a jump hurts birds whose species debuted at least 8 waves earlier (`JumpLandGap`). Turkeys count as debuting at wave 0 |
-| 12 (`AutoWave`) | The bow fires on its own |
+| 12 (`AutoWave`) | The bat swings on its own at birds in reach |
 | 16 (`StompWave`) | With a small turkey at your feet and you on the ground, you stomp in place |
 | 25 (`ClimbWave`) | Birds whose species debuted at least 5 waves earlier climb you instead of going for the piano. Jumping and stomping stop until you press **F** |
 
@@ -194,8 +210,8 @@ There are eight upgrades with three ranks each. The ranks cost 2, 5 and 8 coins.
 
 | Upgrade | Effect |
 |---|---|
-| Keen Arrows | +6 arrow damage per rank |
-| Rockets! Not arrows! | The bow fires rockets. Each rank widens the blast |
+| Keen Arrows | +6 bat damage per rank |
+| Rockets! Not arrows! | Finishers and home runs explode. Each rank widens the blast |
 | Long Stride | +25% move speed per rank |
 | Stone Pile | +5 starting walls and +8 stops per wall, per rank |
 | Watch Kit | +2 starting towers per rank. Towers shoot farther and faster, and last longer |
@@ -265,7 +281,7 @@ To rebuild a model, run the script in Blender and call `export("Turkey")` for a 
 
 ## Animation
 
-The player is the Warrok model (`Assets/Art/Warrok W Kurniawan.fbx`) on the object tagged `Player`. Its visible child is tagged `playerchild`. The bow is parented to the left hand at a fixed local pose (see AGENTS.md).
+The player is the Warrok model (`Assets/Art/Warrok W Kurniawan.fbx`) on the object tagged `Player`. Its visible child is tagged `playerchild`. The stand-in bat follows the right hand and is posed in code each frame (`BatEquipment.PoseBat`). The scene still has the old `BowEquipment` component on the player; it only adds `BatEquipment` and switches itself off.
 
 `Assets/Editor/SetupWarrok.cs` imports the Mixamo clips onto the Warrok avatar and writes `Assets/hero/Hero.controller`. The base layer is driven by the `State` integer:
 
@@ -279,20 +295,20 @@ The player is the Warrok model (`Assets/Art/Warrok W Kurniawan.fbx`) on the obje
 | 5 | Stomp |
 | 7 | Shake off |
 
-Shooting plays on a second layer, Upper Body (masked by `Assets/hero/UpperBody.mask`). The `Fire` trigger starts it, and its speed follows the `FireSpeed` float, which defaults to 1 and is raised by Quick Draw and streaks.
+Each swing plays the old shoot recoil on a second layer, Upper Body (masked by `Assets/hero/UpperBody.mask`), as a stand-in. The `Fire` trigger starts it, and its speed follows the `FireSpeed` float (1.4x swing speed, raised by Quick Draw and streaks).
 
 ## Run log and autopilot
 
 Each wave writes one line to `runlog.csv` in `Application.persistentDataPath`, and a `[RunLog]` line to the console. Each line records:
 - the outcome and how long the wave took
 - the musician's health before and after
-- kills by bird, shots and hits, and damage dealt
+- kills by bird, swings and birds hit, and damage dealt
 - level, best streak and coins
 - the wave event, boons picked that wave, and the full build
 
 Autopilot waves are tagged `-auto`.
 
-In the editor, **F9** turns on `DevAutopilot`. It plays as a perfect archer standing by the piano (80% accuracy), picks random cards, skips breaks and runs at 3x speed. It sandboxes `MetaProgress`, so it never writes coins or ranks to your real save. Use it to find roughly where builds fall apart, then play that stretch yourself.
+In the editor, **F9** turns on `DevAutopilot`. It plays as a perfect batter who is always at the bird nearest the piano without walking there (80% of swings connect, the combo's third swing is the finisher), picks random cards, skips breaks and runs at 3x speed. It sandboxes `MetaProgress`, so it never writes coins or ranks to your real save. Use it to find roughly where builds fall apart, then play that stretch yourself.
 
 ## Project layout
 
@@ -302,7 +318,7 @@ In the editor, **F9** turns on `DevAutopilot`. It plays as a perfect archer stan
 | `Assets/Editor/` | Editor-only setup: map builder, animator wiring, import rules, WebGL deploy |
 | `Assets/Resources/Models/` | Birds and props, loaded at runtime |
 | `Assets/Resources/Shaders/` | Post-process and particle shaders |
-| `Assets/Resources/Sfx/` | Sounds: `shot`, `hit`, `death`, `stomp`, `launch`, `coin`, `shake` |
+| `Assets/Resources/Sfx/` | Sounds: `shot`, `hit`, `death`, `stomp`, `launch`, `coin`, `shake`, and the bat's `batswing`, `batcrack`, `batsmash`, `homerun` |
 | `Assets/Resources/UI/` | Menu key art |
 | `Assets/Art/Arena/` | Map scenery models, and generated map meshes in `Generated/` |
 | `Assets/Art/Knoll/` | The world shader, sky shader and materials |
