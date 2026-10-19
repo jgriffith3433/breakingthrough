@@ -98,6 +98,7 @@ public class PauseMenu : MonoBehaviour {
         Time.timeScale = 0f;
         instance.root.SetActive(true);
         instance.hint.text = UiFit.Touch ? "" : "P or Esc resumes.";
+        RunAnalytics.Screen("pause");
         GameAudio.Play("shot", 0.35f, 0.7f);
     }
 
@@ -112,6 +113,7 @@ public class PauseMenu : MonoBehaviour {
             instance.root.SetActive(false);
         }
         Time.timeScale = WaveDirector.IsLost ? 0f : 1f;
+        RunAnalytics.Screen(WaveDirector.IsLost ? "game_over" : "wave");
     }
 
     void OpenSettings() {

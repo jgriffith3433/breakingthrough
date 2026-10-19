@@ -59,6 +59,26 @@ public static class MetaProgress {
         Toast = null;
     }
 
+    // For analytics: how much of the shop a player owns, as a number and as "Keen2 Clover1".
+    public static int TotalRanks() {
+        int total = 0;
+        foreach (UpgradeInfo info in Catalog) {
+            total += Rank(info.Id);
+        }
+        return total;
+    }
+
+    public static string ShopLine() {
+        var parts = new System.Collections.Generic.List<string>();
+        foreach (UpgradeInfo info in Catalog) {
+            int rank = Rank(info.Id);
+            if (rank > 0) {
+                parts.Add(info.Id + rank.ToString());
+            }
+        }
+        return string.Join(" ", parts.ToArray());
+    }
+
     public static int Rank(UpgradeId id) {
         Ensure();
         int index = (int)id;

@@ -56,6 +56,7 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 | The Settings screen | `SettingsPanel.cs`, opened from the main menu's Settings button and the pause menu |
 | Pausing a run | `PauseMenu.cs`: P or Escape, the pause button right of the musician's bar, or the browser freeing a locked mouse. Gameplay that must stop checks `PauseMenu.IsOpen` next to `LevelUpScreen.IsOpen` |
 | The website's "Tap to play" prompt | `Tools/Web/hawkes-sound.js`. `WebGlBuild.InstallSoundPrompt` copies it to `<site>/Game/` and adds its `<script data-hawkes-sound>` to `Game/index.html` on every deploy, so edit it here, never in the website |
+| Analytics events, the feedback card, the build stamp | `RunAnalytics.cs`, `Plugins/WebGL/HawkesAnalyticsPage.jslib`, `WebGlBuild.WriteBuildStamp`. See Analytics below |
 | The website's What's new page and release notes | `Tools/Web/`: `whatsnew.html`, `releases.json` (the first release), `hawkes-release.js`, and the link blocks `whatsnew-landing.html` (nav, before Play) and `whatsnew-game.html` (the version in the game's corner). `WebGlBuild.InstallWhatsNew` installs them on every deploy. The site's `releases.json` is written only when it has none: after that Hawkes Studio adds a release at each go live, so later notes go there, not here |
 
 ## Rules the code depends on
@@ -143,8 +144,12 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
   a layout check per screen (`menu`, `hud`, `cards`): text or buttons off screen, text over text or over a button,
   text under 11 px, buttons under 44 px, with `<screen>MinTextPx`, `<screen>MinTapPx` and `<screen>Overlaps`.
   `settings` (Settings from the menu: sound off and on, both sliders, Done; then a run, the pause button, Settings
-  from pause, Resume, P twice; layout checks `settings` and `pause`). Every scenario first presses the page's "Tap
-  to play" prompt (event `tap-prompt` with the audio state, metric `audioRunning`); in the editor there is none.
+  from pause, Resume, P twice; layout checks `settings` and `pause`). `analytics` (Hawkes Analytics: a run, wave 1
+  cleared, then the bot holds fire from wave 2 so the birds take the musician; the "How was that run?" card must
+  show on the game-over screen and the bot rates it 4 stars; metrics `analyticsEvents` and `analyticsSent`). Every
+  scenario first presses the page's "Tap to play" prompt (event `tap-prompt` with the audio state, metric
+  `audioRunning`); in the editor there is none. Every scenario also logs each analytics event as it goes out
+  (`analytics-config` once, with the product, build and env, then one `analytics` event each; see Analytics).
 - **Real input:** gameplay reads keys and the mouse through `PlayInput` (`Assets/Scripts/PlayInput.cs`), which is
   `UnityEngine.Input` plus whatever the bot holds. Use `PlayInput.GetKey...` in new gameplay input code, or the bot
   can't press it. The bot holds Shift (lock-on) and the left button (shoot), walks back to the piano with WASD,
@@ -157,6 +162,55 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
   With the editor closed:
   `Unity.exe -batchmode -projectPath C:/Projects/breakingthrough -runTests -testPlatform PlayMode -testResults <xml> -logFile <log>`
   (about 1.5 min). The report is the `[Playtest] smoke report:` line in the log.
+
+## Analytics
+
+Hawkes Analytics (Gen's `docs/analytics.md`) is the game's only analytics. Product id `theplacedepartment`. Never
+add another tracker (`com.unity.analytics` was removed for that reason).
+
+- **Package:** `Packages/com.hawkes.analytics` is an **embedded copy** of Gen's Unity bridge
+  (`hawkesgen/clients/unity/com.hawkes.analytics`, same `.meta` GUIDs) with one fix: Gen's `HawkesAnalytics.cs`
+  has raw U+2028/U+2029 characters in two char literals, which Roslyn reads as line breaks (CS1010), so the
+  `file:` package doesn't compile. Once Gen has `'\u2028'` / `'\u2029'` there, delete the folder and put
+  `"com.hawkes.analytics": "file:C:/Projects/hawkesgen/clients/unity/com.hawkes.analytics"` back in the manifest
+  (and the lock entry's `version`/`source` to that path and `local`). The bridge loads the SDK into the game page
+  itself, so the website repo needs nothing.
+- **`RunAnalytics.cs`** decides what is sent; gameplay calls one line of it at the real moment, never per frame.
+  `Plugins/WebGL/HawkesAnalyticsPage.jslib` is the page side the bridge lacks: the build stamp, debug mode, the
+  themed feedback card and the playtest's view of the SDK's debug log. It starts before the first scene with
+  product `theplacedepartment` (no settings asset: it makes one in code).
+- **Build:** `WebGlBuild.FullDeploy` writes `Assets/Resources/HawkesBuild.json` (`{ version: "1.0+v<n>", commit,
+  date }`) for the length of the build, then deletes it (git-ignored). RunAnalytics sets it as
+  `window.HAWKES_BUILD`. The commit is `HAWKES_COMMIT` when the build sets it, else HEAD when nothing tracked
+  differs; on the build server (merge base plus uploaded edits) beta builds have no commit, only the version.
+- **Context** on every event: `mode` (`waves`), `wave`, `level` (the wave, from levelStart), `upgrades` (the run's
+  boons, `Heavy2 SplitShot1`), `player_level`, `shop_ranks`, `best_wave`.
+- **Events and where they come from:**
+
+| Event | When | Called from |
+|---|---|---|
+| `game_ready` | The main menu is up (once per page load) | `MainMenu.Start` → `RunAnalytics.Menu` |
+| `screen` | `menu`, `wave`, `level_up`, `chest`, `pause`, `settings`, `game_over` | MainMenu, LevelUpScreen, PauseMenu, SettingsPanel, `MusicianDown` |
+| `run_start` | The game scene starts a run: `run`, `start_wave`, `best_wave`, `shop`, `shop_ranks`, `coins`, `touch` | `WaveDirector.Start` |
+| `level_start` | A wave's fighting begins: `wave`, `birds`, `musician_hp`, `event`, `boss`, `fort` | `WaveDirector.BeginCombat` |
+| `level_end` | `complete` (cleared), `death`, `quit`, `restart` (the wave keys): `kills`, `damage_taken`, `musician_hp`, `arrows`, `hits`, `hit_rate`, `best_streak` | `TickCombat`, `Lose`, `GoToWave`, `OnDestroy` |
+| `death` | The musician falls; `cause` is the bird kind that landed the last peck (`turkey`, `goose`…), with `boss`/`elite` and `worst` (the kind that did the most damage this run). Warrok can't fall | `Musician.Hurt(amount, by)` → `WaveDirector.Lose` |
+| `run_end` | `result` `lose` (cause `musician_down`) or `quit` (the scene left mid-run): `duration`, `score`/`wave`, `waves_cleared`, `killed_by`, `worst`, kills, arrows, `hit_rate`, damage, level, cards, rerolls, streak, coins, `upgrades` | `RunAnalytics.MusicianDown` / `RunAbandoned` |
+| `choice` | A card taken: node `level_up` or `chest`, option the `BoonId` | `LevelUpScreen.Choose` |
+| `card_pick` | The same pick with `offered` (all three), `slot`, `rarity`, `rank`, `evolution` | `LevelUpScreen.Choose` |
+| `feature` | `reroll`, `shop_buy` (`item`, `rank`, `cost`, `coins_left`), `settings` (sound, music, sfx on close) | LevelUpScreen, MainMenu, SettingsPanel |
+| `feedback` | The game-over card ("How was that run?", 1–5 stars and a comment, id `game-over`), sent by the SDK | `RunAnalytics.MusicianDown` → `Ask` |
+
+- **The feedback card** shows only on the game-over screen (never mid-play): the SDK's card in the game's night
+  colours, at most once a session and not for 7 days after a close. Its focus is handed back to the game so "press
+  any key" still works; a new run removes it.
+- **Debug and playtests:** `?hawkes-analytics-debug=1`, a `?playtest=` URL or a webdriver browser turns on the SDK's
+  debug log (`window.hawkesAnalytics.debugLog`); `Playtest.AnalyticsTimeline` turns it into timeline events.
+- **Privacy:** the Settings panel says "Anonymous gameplay statistics help improve the game. No cookies, no
+  personal data, no IP stored.", and `Tools/Web/site-footer.html` says it on every website page.
+- **Keep it true:** a new screen calls `RunAnalytics.Screen`; a new way to end a run or a wave goes through
+  `RunAnalytics`; anything that hurts the musician passes the bird to `Musician.Hurt`. Nothing personal and no
+  per-frame events. Custom event names must match `^[a-z][a-z0-9_]{1,39}$` (Gen keeps 50 per product).
 
 ## MCP servers
 

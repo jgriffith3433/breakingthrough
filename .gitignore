@@ -109,3 +109,7 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# Written by the WebGL deploy for the length of a build (WebGlBuild.WriteBuildStamp), then removed
+/Assets/Resources/HawkesBuild.json
+/Assets/Resources/HawkesBuild.json.meta

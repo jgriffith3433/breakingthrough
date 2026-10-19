@@ -49,6 +49,7 @@ public class MainMenu : MonoBehaviour {
         }
         Build();
         Refresh();
+        RunAnalytics.Menu();
     }
 
     void Update() {
@@ -368,7 +369,9 @@ public class MainMenu : MonoBehaviour {
 
     void Buy(int index) {
         UpgradeInfo info = MetaProgress.Catalog[index];
+        int cost = MetaProgress.Cost(info.Id);
         if (MetaProgress.TryBuy(info.Id)) {
+            RunAnalytics.ShopBuy(info, cost);
             GameAudio.Play("coin", 0.55f);
             flashRow = index;
             flash = 1f;

@@ -108,6 +108,7 @@ public class WaveDirector : MonoBehaviour {
         RunBoons.BeginRun();
         Wave = MetaProgress.TakeStartWave();
         MetaProgress.NoteReached(Wave);
+        RunAnalytics.RunStart(Wave);
         BeginIntro();
     }
 
@@ -115,6 +116,7 @@ public class WaveDirector : MonoBehaviour {
         if (Instance == this) {
             Instance = null;
         }
+        RunAnalytics.RunAbandoned(Wave);
         if (pausedGame) {
             Time.timeScale = 1f;
         }
@@ -200,6 +202,7 @@ public class WaveDirector : MonoBehaviour {
             ? Random.Range(4f, 10f)
             : -1f;
         RunLog.BeginWave();
+        RunAnalytics.WaveStart(Wave, Event, pending.Count);
         if (Event != WaveEvent.None) {
             UpgradeLook.Say(EventName, 2.6f, 230f);
             GameAudio.Play("launch", 0.4f, 0.7f);
@@ -313,6 +316,7 @@ public class WaveDirector : MonoBehaviour {
             cleared = Wave;
             UpgradeLook.WaveCleared(cleared);
             RunLog.EndWave(Wave, "cleared");
+            RunAnalytics.WaveEnd(Wave, "complete");
             MetaProgress.AddCoins(Tuning.CoinsForWave(Wave), Vector3.zero);
             Pickups.Vacuum();
             if (Musician.Instance != null) {
@@ -355,6 +359,7 @@ public class WaveDirector : MonoBehaviour {
     }
 
     void GoToWave(int wave) {
+        RunAnalytics.WaveEnd(Wave, "restart");
         Time.timeScale = 1f;
         pausedGame = false;
         IsLost = false;
@@ -408,6 +413,7 @@ public class WaveDirector : MonoBehaviour {
         string run = "Level " + RunBoons.Level + "   ·   Best streak " + Combo.Best;
         string boons = RunBoons.Summary();
         LastRun = "Fell on wave " + Wave + ", level " + RunBoons.Level + ", streak " + Combo.Best + ", +" + MetaProgress.CoinsThisRun + " coins.\n" + boons;
+        RunAnalytics.MusicianDown(Wave);
         lostBody.text = waves + "\n" + bestLine + "\n" + run + "\n\n" + earned + "\n" + purse
             + (string.IsNullOrEmpty(boons) ? "" : "\n\n<size=22>" + boons + "</size>") + (UiFit.Touch ? "\n\nTap to go on" : "\n\nPress any key");
     }

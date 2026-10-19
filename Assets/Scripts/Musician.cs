@@ -75,12 +75,14 @@ public class Musician : MonoBehaviour {
         }
     }
 
-    public void Hurt(int amount) {
+    // by: the bird that pecked, for analytics (the cause when he falls).
+    public void Hurt(int amount, Enemy by = null) {
         if (!Alive || amount <= 0) {
             return;
         }
         Health = Mathf.Max(0, Health - amount);
         DamageTaken += amount;
+        RunAnalytics.NoteHurt(by, amount);
         HitFlash = 1f;
         if (flinch <= 0f) {
             basePos = transform.localPosition;
