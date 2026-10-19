@@ -1,16 +1,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+// The ids keep their bow-era names and order: analytics (choice, card_pick, upgrades) and RunAnalytics read them, and
+// All is indexed by them. The comment is what each one is now.
 public enum BoonId {
-    Heavy,
-    QuickDraw,
-    SplitShot,
-    Pierce,
-    EagleEye,
-    Ricochet,
-    Firebrand,
-    Frost,
-    Chain,
+    Heavy, // Corked Bat
+    QuickDraw, // Quick Hands
+    SplitShot, // Wide Arc
+    Pierce, // Follow Through
+    EagleEye, // Sweet Spot
+    Ricochet, // Line Drive
+    Firebrand, // Pine Tar
+    Frost, // Ice Bat
+    Chain, // Live Wire
     BirdBomb,
     Orbit,
     Encore,
@@ -18,17 +20,17 @@ public enum BoonId {
     Magnet,
     Fleet,
     Bounty,
-    Mark,
-    Volley,
+    Mark, // Called Shot
+    Volley, // Grand Slam
     Executioner,
-    Homing,
+    Homing, // Long Ball
     Turret,
     SecondWind,
     // Evolutions. Offered once both parents are maxed.
-    StormQuiver,
-    Phoenix,
+    StormQuiver, // Thunder Bat
+    Phoenix, // Phoenix Bat
     GrandFinale,
-    Hailstorm
+    Hailstorm // Blizzard Bat
 }
 
 public enum Rarity {
@@ -52,32 +54,32 @@ public struct BoonInfo {
 // What you pick up during one run. Cleared when a run starts.
 public static class RunBoons {
     public static readonly BoonInfo[] All = {
-        B(BoonId.Heavy, "Heavy Heads", "+25% bat damage.", 5, Rarity.Common),
-        B(BoonId.QuickDraw, "Quick Draw", "+18% swing speed.", 5, Rarity.Common),
-        B(BoonId.SplitShot, "Split Shot", "The swing sweeps 20° wider per rank.", 4, Rarity.Rare),
-        B(BoonId.Pierce, "Bodkin Points", "The bat reaches 10% farther per rank.", 3, Rarity.Rare),
-        B(BoonId.EagleEye, "Eagle Eye", "+10% crit chance. Crits hit for double, more with rank.", 5, Rarity.Rare),
-        B(BoonId.Ricochet, "Ricochet", "Birds you knock back bowl over +1 more bird.", 3, Rarity.Rare),
-        B(BoonId.Firebrand, "Firebrand", "Hits set birds on fire. Burning birds spread it when they die at rank 3.", 3, Rarity.Rare),
-        B(BoonId.Frost, "Frost Tips", "Hits slow birds 25% per rank. Rank 3 freezes them for a moment.", 3, Rarity.Rare),
-        B(BoonId.Chain, "Chain Lightning", "15% per rank: a hit arcs lightning to 3 more birds.", 3, Rarity.Epic),
-        B(BoonId.BirdBomb, "Powder Keg", "Birds burst when they die, hurting the flock around them.", 3, Rarity.Epic),
-        B(BoonId.Orbit, "Whirling Quills", "Blades circle you and cut birds that come close. +1 blade per rank.", 4, Rarity.Epic),
+        B(BoonId.Heavy, "Corked Bat", "+25% bat damage.", 5, Rarity.Common),
+        B(BoonId.QuickDraw, "Quick Hands", "+18% swing speed.", 5, Rarity.Common),
+        B(BoonId.SplitShot, "Wide Arc", "The swing sweeps 20° wider per rank.", 4, Rarity.Rare),
+        B(BoonId.Pierce, "Follow Through", "Each swing hits 3 more bots per rank.", 3, Rarity.Rare),
+        B(BoonId.EagleEye, "Sweet Spot", "Hits on the bat's tip: +15% crit chance per rank. Crits hit harder with rank.", 5, Rarity.Rare),
+        B(BoonId.Ricochet, "Line Drive", "Bots you knock back hit +1 bot behind them per rank.", 3, Rarity.Rare),
+        B(BoonId.Firebrand, "Pine Tar", "Hits set bots burning. At rank 3, burning bots pass it on when they fall.", 3, Rarity.Rare),
+        B(BoonId.Frost, "Ice Bat", "Hits slow bots 25% per rank. Rank 3 freezes them for a moment.", 3, Rarity.Rare),
+        B(BoonId.Chain, "Live Wire", "15% per rank: a hit arcs to 3 more bots, and they short out.", 3, Rarity.Epic),
+        B(BoonId.BirdBomb, "Powder Keg", "Bots burst when they fall, hurting the bots around them.", 3, Rarity.Epic),
+        B(BoonId.Orbit, "Whirling Quills", "Blades circle you and cut bots that come close. +1 blade per rank.", 4, Rarity.Epic),
         B(BoonId.Encore, "Encore", "The piano thumps out a shockwave every few seconds.", 3, Rarity.Epic),
         B(BoonId.Ovation, "Standing Ovation", "Musician +15 max health and heals 6 after each wave.", 4, Rarity.Common),
-        B(BoonId.Magnet, "Lodestone", "Feathers fly to you from 70% farther.", 3, Rarity.Common),
+        B(BoonId.Magnet, "Lodestone", "Bolts fly to you from 70% farther.", 3, Rarity.Common),
         B(BoonId.Fleet, "Fleet Foot", "+12% move speed.", 3, Rarity.Common),
         B(BoonId.Bounty, "Bounty Hunter", "Every 60 kills drops a coin. Faster with rank.", 3, Rarity.Rare),
-        B(BoonId.Mark, "Hunter's Mark", "Your locked bird takes +35% damage per rank.", 3, Rarity.Common),
-        B(BoonId.Volley, "Volley", "Every 8th swing also sends out a shockwave. Sooner with rank.", 3, Rarity.Epic),
-        B(BoonId.Executioner, "Executioner", "Birds under 12% health per rank drop on the next hit.", 2, Rarity.Epic),
-        B(BoonId.Homing, "Seeker Fletching", "You turn to face birds from farther away.", 2, Rarity.Rare),
+        B(BoonId.Mark, "Called Shot", "Your locked bot takes +35% damage per rank and drops extra bolts.", 3, Rarity.Common),
+        B(BoonId.Volley, "Grand Slam", "Every 8th swing is a full spin that hits all around you. Sooner with rank.", 3, Rarity.Epic),
+        B(BoonId.Executioner, "Executioner", "Bots under 12% health per rank drop on the next hit.", 2, Rarity.Epic),
+        B(BoonId.Homing, "Long Ball", "Each swing also bats a bolt at the nearest bot out of reach.", 2, Rarity.Rare),
         B(BoonId.Turret, "Tower Song", "+1 tower in stock now. Towers shoot 30% faster per rank.", 3, Rarity.Rare),
         B(BoonId.SecondWind, "Second Wind", "Once per wave, if the musician drops below 25, a blast clears the stage and heals 20.", 1, Rarity.Epic),
-        E(BoonId.StormQuiver, "Storm Quiver", "Every hit chains lightning. Split Shot + Chain Lightning.", BoonId.SplitShot, BoonId.Chain),
-        E(BoonId.Phoenix, "Phoenix Arrows", "Burning birds explode in fire, and fire spreads from every blast. Firebrand + Powder Keg.", BoonId.Firebrand, BoonId.BirdBomb),
+        E(BoonId.StormQuiver, "Thunder Bat", "Every hit arcs, and every spin calls down lightning. Live Wire + Grand Slam.", BoonId.Chain, BoonId.Volley),
+        E(BoonId.Phoenix, "Phoenix Bat", "Burning bots explode in fire, and fire spreads from every blast. Pine Tar + Powder Keg.", BoonId.Firebrand, BoonId.BirdBomb),
         E(BoonId.GrandFinale, "Grand Finale", "Encore twice as often, twice as wide, and it heals the musician. Encore + Standing Ovation.", BoonId.Encore, BoonId.Ovation),
-        E(BoonId.Hailstorm, "Hailstorm", "Shockwaves freeze, and every 3rd swing sends one. Frost Tips + Volley.", BoonId.Frost, BoonId.Volley)
+        E(BoonId.Hailstorm, "Blizzard Bat", "Every swing blows frost through its arc, and finishers freeze. Ice Bat + Wide Arc.", BoonId.Frost, BoonId.SplitShot)
     };
 
     static readonly int[] ranks = new int[All.Length];
@@ -314,23 +316,31 @@ public static class RunBoons {
         get { return 1f + 0.18f * Rank(BoonId.QuickDraw) + Combo.DrawBonus; }
     }
 
-    public static int ExtraArrows {
-        get { return Rank(BoonId.SplitShot); }
+    // Wide Arc: degrees added to every swing's arc.
+    public static float ArcBonus {
+        get { return 20f * Rank(BoonId.SplitShot); }
     }
 
-    public static int PierceCount {
-        get { return Rank(BoonId.Pierce); }
+    // How many bots one combo swing can hit. Follow Through raises it; the smash and the spin hit everything.
+    public static int SwingHits(bool finisher) {
+        return (finisher ? Tuning.BatHitsFinisher : Tuning.BatHits) + 3 * Rank(BoonId.Pierce);
     }
 
+    // Base crit chance anywhere on the bat; Sweet Spot adds TipCrit on the outer part of the barrel.
     public static float CritChance {
-        get { return 0.05f + 0.1f * Rank(BoonId.EagleEye); }
+        get { return 0.05f; }
+    }
+
+    public static float TipCrit {
+        get { return 0.15f * Rank(BoonId.EagleEye); }
     }
 
     public static float CritMult {
         get { return 2f + 0.25f * Rank(BoonId.EagleEye); }
     }
 
-    public static int Bounces {
+    // Line Drive: how many bots a knocked-back bot hits on its way.
+    public static int LineDrive {
         get { return Rank(BoonId.Ricochet); }
     }
 
@@ -346,11 +356,9 @@ public static class RunBoons {
         get { return 1f + 0.3f * Rank(BoonId.Turret); }
     }
 
-    public static int VolleyEvery {
+    // Grand Slam: every Nth swing is a spin. 0 without it.
+    public static int SpinEvery {
         get {
-            if (Has(BoonId.Hailstorm)) {
-                return 3;
-            }
             int rank = Rank(BoonId.Volley);
             return rank <= 0 ? 0 : 10 - rank * 2;
         }

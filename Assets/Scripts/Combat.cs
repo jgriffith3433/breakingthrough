@@ -18,10 +18,24 @@ public static class Combat {
     static int bountyCount;
     static int bombDepth;
 
+    // What the bat boons did this run, for the playtest.
+    public static int Burned { get; private set; }
+    public static int Slowed { get; private set; }
+    public static int Arcs { get; private set; }
+    public static int Shorted { get; private set; }
+    public static int SweetSpots { get; private set; }
+    public static int CalledBolts { get; private set; }
+
     public static void BeginRun() {
         killCount = 0;
         bountyCount = 0;
         bombDepth = 0;
+        Burned = 0;
+        Slowed = 0;
+        Arcs = 0;
+        Shorted = 0;
+        SweetSpots = 0;
+        CalledBolts = 0;
     }
 
     public static float ArrowBase() {
@@ -34,25 +48,31 @@ public static class Combat {
         return ArrowBase();
     }
 
-    // The bat strikes a bird. Scale is the swing's multiplier (finisher, smash, home run, a bird knocked into
-    // another). Power is how hard a bird it drops is flung. True when this blow dropped the bird.
-    public static bool BatHit(Enemy foe, float scale, float power, bool allowChain) {
-        return Strike(foe, power, scale, allowChain, DamageKind.Bat);
+    // The bat strikes a bot. Scale is the swing's multiplier (finisher, smash, home run, a bot knocked into
+    // another). Power is how hard a bot it drops is flung. Tip: it met the bat's sweet spot. True when this blow
+    // dropped the bot.
+    public static bool BatHit(Enemy foe, float scale, float power, bool allowChain, bool tip = false) {
+        return Strike(foe, power, scale, allowChain, DamageKind.Bat, tip);
     }
 
-    // A hit with every boon on it: crits, marks, executes, fire, frost and lightning.
-    static bool Strike(Enemy foe, float power, float scale, bool allowChain, DamageKind kind) {
+    // A hit with every boon on it: crits, Called Shot, executes, Pine Tar, Ice Bat and Live Wire.
+    static bool Strike(Enemy foe, float power, float scale, bool allowChain, DamageKind kind, bool tip) {
         if (foe == null || !foe.Alive) {
             return false;
         }
         float amount = ArrowBase() * scale;
         ZeldaStyleCamera cam = Juice.Cam;
-        if (cam != null && cam.LockedOnGameObject == foe.gameObject) {
+        bool called = cam != null && cam.LockedOnGameObject == foe.gameObject;
+        if (called) {
             amount *= RunBoons.MarkMult;
         }
-        bool crit = Random.value < RunBoons.CritChance;
+        float tipCrit = tip ? RunBoons.TipCrit : 0f;
+        bool crit = Random.value < RunBoons.CritChance + tipCrit;
         if (crit) {
             amount *= RunBoons.CritMult;
+            if (tipCrit > 0f) {
+                SweetSpots++;
+            }
         }
         float execute = RunBoons.ExecuteBelow;
         if (execute > 0f && !foe.Boss && foe.Health01 - amount / Mathf.Max(1f, foe.HitsToDrop) < execute) {
@@ -65,14 +85,27 @@ public static class Combat {
         if (crit && dropped && (foe.BodyScale > 3f || foe.Elite)) {
             Juice.HitStop(0.05f);
         }
+        if (crit && tipCrit > 0f) {
+            Fx.Ring(at + Vector3.up * 0.2f, 1.6f * Mathf.Sqrt(Mathf.Max(1f, foe.BodyScale)), new Color(1f, 0.35f, 0.3f, 0.85f), 0.3f);
+        }
+
+        // Called Shot: the locked bot pays out extra bolts when it falls.
+        int callRank = RunBoons.Rank(BoonId.Mark);
+        if (called && dropped && callRank > 0) {
+            int extra = Mathf.Max(callRank, Mathf.CeilToInt(Tuning.BoltsFor(foe.Kind, foe.Elite || foe.Boss) * 0.25f * callRank));
+            Pickups.DropBolts(at, extra);
+            CalledBolts += extra;
+        }
 
         int fire = RunBoons.Rank(BoonId.Firebrand);
         if (fire > 0 && !dropped) {
             foe.Ignite(ArrowBase() * (0.25f + 0.15f * fire), 3f);
+            Burned++;
         }
         int frost = RunBoons.Rank(BoonId.Frost);
         if (frost > 0 && !dropped) {
             foe.Chill(0.25f * frost, 2f, frost >= 3 && Random.value < 0.2f ? 1.1f : 0f);
+            Slowed++;
         }
         if (allowChain) {
             bool storm = RunBoons.Has(BoonId.StormQuiver);
@@ -84,7 +117,18 @@ public static class Combat {
         return dropped;
     }
 
+    // Blizzard Bat: frost blown through the swing's arc. Slows everything in it; a finisher freezes.
+    public static void Frost(Enemy foe, bool freeze) {
+        if (foe == null || !foe.Alive) {
+            return;
+        }
+        foe.Chill(0.55f, 2.2f, freeze ? 1.2f : 0f);
+        Slowed++;
+    }
+
+    // Live Wire: lightning jumps bot to bot, and each one it reaches shorts out for a moment.
     public static void Lightning(Vector3 from, Enemy skip, int jumps, float damage) {
+        float shortFor = 0.35f + 0.2f * RunBoons.Rank(BoonId.Chain) + (RunBoons.Has(BoonId.StormQuiver) ? 0.3f : 0f);
         var struck = new List<Enemy>();
         if (skip != null) {
             struck.Add(skip);
@@ -98,8 +142,12 @@ public static class Combat {
             struck.Add(next);
             Vector3 to = next.transform.position + Vector3.up * 0.6f * Mathf.Max(1f, next.BodyScale);
             UpgradeLook.Zap(cursor, to);
-            next.Damage(damage, DamageKind.Lightning, false);
-            if (RunBoons.Rank(BoonId.Frost) >= 3 && RunBoons.Has(BoonId.Hailstorm)) {
+            Arcs++;
+            if (!next.Damage(damage, DamageKind.Lightning, false) && next != null) {
+                next.Short(shortFor);
+                Shorted++;
+            }
+            if (RunBoons.Has(BoonId.Hailstorm)) {
                 next.Chill(0.5f, 1.5f, 0f);
             }
             cursor = to;
@@ -127,7 +175,7 @@ public static class Combat {
         return best;
     }
 
-    // Splash damage around a point. Used by rockets, bombs, encore, second wind.
+    // Splash damage around a point. Used by the aluminum bat's blast, bombs, encore, second wind.
     public static void Burst(Vector3 point, float radius, float damage, DamageKind kind, Enemy skip) {
         List<Enemy> roster = Enemy.Roster;
         var caught = new List<Enemy>();

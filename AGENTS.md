@@ -31,13 +31,13 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 | Anything that damages a bot | `Enemy.Damage(amount, DamageKind, crit)`. The bat goes through `Combat.BatHit` (`DamageKind.Bat`), so crits, marks, executes, fire, frost and lightning apply. `Enemy.Hit` is one plain blow at base strength, used by spikes, towers and stomps. Deaths go through `Enemy.Die` → `Combat.OnKill` (bolts, chests, bombs, streak, run log). Shoving a bot is `Enemy.Knock(velocity, airSeconds)` |
 | The bat: combo, ground smash, home run, auto swing, facing, the stand-in bat | `BatEquipment.cs` (on the player; the scene's old `BowEquipment` slot adds it and switches off). Its numbers are the `Bat...`, `Smash...`, `Charge...` and `HomeRun...` values in `Tuning.cs` |
 | Lock-on | `ZeldaStyleCamera.AcquireTarget`: hold Shift for the nearest bird in `LockReach()` from `Enemy.Roster`; it sticks to that bird; right click or Tab moves it to the next nearest |
-| An in-run boon | `BoonId` and a row in `RunBoons.All`, **in enum order**, because the array is indexed by the enum. Read the boon's rank where it acts: `Combat` for hits and kills, `BatEquipment` for swing behavior, `BoonEffects` for things that tick on their own. An evolution uses `E(...)` and names two parents that have max ranks. The arrow boons keep their names and `BoonId`s; until the upgrades task they act as bat stand-ins (Split Shot: wider arc, Bodkin: reach, Ricochet: knocked birds bowl others over, Seeker: facing range, Volley/Hailstorm: a shockwave every Nth swing) |
+| An in-run boon | `BoonId` and a row in `RunBoons.All`, **in enum order**, because the array is indexed by the enum. Read the boon's rank where it acts: `Combat` for hits and kills, `BatEquipment` for swing behavior, `BoonEffects` for things that tick on their own. An evolution uses `E(...)` and names two parents that have max ranks. The bat boons kept their bow-era `BoonId` names (`Heavy` is Corked Bat, `SplitShot` Wide Arc, `Volley` Grand Slam, `Homing` Long Ball...; the enum comments say which), because analytics reports them by id: rename the display name, never the id. A boon that changes the bat gets a mark in `UpgradeLook.BatMarks` |
 | Level-up cards | `LevelUpScreen.cs` |
 | XP bar, streak counter, boss bar, boon list | `RunHud.cs` |
 | Streak and hit-stop | `Juice.cs` (`Combo`, `HitStop`) |
 | Bolts (XP) and chests | `Pickups.cs` (`DropBolts`; the hex bolt is built in code until `Models/Bolt` exists) |
 | Size, jump-landing, foot stomp, shake-off | `PlayerGrowth.cs` |
-| A shop upgrade | `UpgradeId` in `MetaProgress.cs` with a **new number at the end**, a `Catalog` row, a real caller, and a visible mark in `UpgradeLook.cs`. 10 is Four-Leaf Clover, 11 Opening Act, 12 Stage Hands. Rank costs come from `Cost` |
+| A shop upgrade | `UpgradeId` in `MetaProgress.cs` with a **new number at the end**, a `Catalog` row, a real caller, and a visible mark in `UpgradeLook.cs`. `Keen` (0) is Corked Core and `Blast` (4) is Aluminum! Not wood! (`MetaProgress.MetalBat`). 10 is Four-Leaf Clover, 11 Opening Act, 12 Stage Hands. Rank costs come from `Cost` |
 | A fort piece | `FortKind`, `FortStock`, `DefencePiece` and `BuildMode` in `Fort.cs` |
 | A combat or build tip | `ControlsHelp.cs` |
 | The wave-power list on the left | `AbilityList.cs` |
@@ -141,7 +141,12 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
   lines say what each swing did, and the report fails any move it didn't see), `musician` (the bar says Slice; the bot holds fire by the piano until wave 1's Yo Bots reach her and she has stabbed three times, one `stab` event each with damage and the gap since the last; then it clears the wave and waits for `slice-sits`; then it holds fire from wave 2, pressing `=` if she outlasts it, until the run ends), `menus` (shop
   clicks, start, one level-up card with a reroll), `touch` (touch only: menu layout check, tap Play, the stick,
   Swing, Lock and Next wave pressed by the bot's fingers through `TouchControls.BotFinger`, a level-up card tapped,
-  until wave 2 is under way; run it with `mobile` for portrait or at 844x390 for landscape), `site` (the website
+  until wave 2 is under way; run it with `mobile` for portrait or at 844x390 for landscape), `upgrades` (the bat
+  upgrades: shop rows read off the menu (`shop-items`), the sandbox owns Aluminum! Not wood! and Corked Core (setup)
+  and `metal-bat` says what the bat looks like; the first level-up's card titles are read off the screen (`cards`,
+  a problem if any card says arrow, bow or quiver); setup: the wave key to wave 14 and a dozen bat boons granted
+  (`bat-marks` lists each mark); then play until `wide-swing`, `burning`, `slowing`, `chain-sparks`, `spin-swing`
+  and `batted-bolt` have each been seen; then Thunder Bat for a lightning spin (`thunder-bat`) and 30 s of play), `site` (the website
   around the game: every page outside `Game/` has "Powered by HAWKES GEN" linking to hawkesgen.com, the landing page
   links to hawkesbiomedical.com. It checks the landing page, every page in the deploy's `site/pages.json` and every
   page they link to, looks for a blog at `/blog/`, `/blog.html`, `/news/` and `/posts/`, and logs `site-pages`,

@@ -1,11 +1,12 @@
 using UnityEngine;
 
+// The ids keep their old names (analytics' shop_ranks reads them, "Keen2 Blast1"); saved ranks are packed by number.
 public enum UpgradeId {
-    Keen = 0,
+    Keen = 0, // Corked Core
     Walls = 1,
     Draw = 2, // retired; slot stays so saved ranks do not shift
     Growth = 3, // retired
-    Blast = 4,
+    Blast = 4, // Aluminum! Not wood!
     Purse = 5, // retired
     Stride = 6,
     Stomp = 7, // retired
@@ -29,8 +30,8 @@ public static class MetaProgress {
     public const string GameScene = "scene2";
 
     public static readonly UpgradeInfo[] Catalog = {
-        new UpgradeInfo { Id = UpgradeId.Keen, Name = "Keen Arrows", About = "Each rank adds 6 bat damage.", MaxRank = 3 },
-        new UpgradeInfo { Id = UpgradeId.Blast, Name = "Rockets! Not arrows!", About = "Heavy swings and home runs explode. Each rank blasts wider.", MaxRank = 3 },
+        new UpgradeInfo { Id = UpgradeId.Keen, Name = "Corked Core", About = "A cork core in the barrel. Each rank adds 6 bat damage.", MaxRank = 3 },
+        new UpgradeInfo { Id = UpgradeId.Blast, Name = "Aluminum! Not wood!", About = "A metal bat: a louder crack, harder knockback, and the third combo hit blasts. Each rank blasts wider.", MaxRank = 3 },
         new UpgradeInfo { Id = UpgradeId.Stride, Name = "Long Stride", About = "Each rank is 25% more speed.", MaxRank = 3 },
         new UpgradeInfo { Id = UpgradeId.Walls, Name = "Stone Pile", About = "A much thicker wall line.", MaxRank = 3 },
         new UpgradeInfo { Id = UpgradeId.Towers, Name = "Watch Kit", About = "More towers. They shoot farther and faster.", MaxRank = 3 },
@@ -309,13 +310,15 @@ public static class MetaProgress {
         return Tuning.StompWave;
     }
 
-    public static bool ShootsRockets() {
+    // Aluminum! Not wood!: the bat is metal.
+    public static bool MetalBat() {
         return Rank(UpgradeId.Blast) > 0;
     }
 
-    public static float SplashRadius(float power) {
+    // The metal bat's small blast on the combo finisher, in meters at size 1.
+    public static float BlastRadius() {
         int rank = Mathf.Max(1, Rank(UpgradeId.Blast));
-        return 4.2f + (rank - 1) * 3.2f + Mathf.Max(0f, power - 1f) * 0.5f;
+        return 2.4f + (rank - 1) * 1.2f;
     }
 
     public static string RankLine(UpgradeId id) {
@@ -333,7 +336,7 @@ public static class MetaProgress {
                 int towers = StartTowers();
                 return "Start with " + towers + (towers == 1 ? " tower" : " towers") + ". Range " + TowerRange().ToString("0") + "m.";
             case UpgradeId.Blast:
-                return "Exploding heavy swings. Blast " + SplashRadius(1f).ToString("0.#") + "m.";
+                return "Metal bat. Finishers blast " + BlastRadius().ToString("0.#") + "m.";
             case UpgradeId.Stride:
                 return "+" + (rank * 25) + "% move speed";
             case UpgradeId.Clover:
@@ -406,6 +409,14 @@ public static class MetaProgress {
 
     // The autopilot plays without touching the real save.
     public static bool Sandbox { get; private set; }
+
+    // Playtest setup only: a shop rank in the sandbox, never saved.
+    public static void SandboxRank(UpgradeId id, int rank) {
+        if (!Sandbox) {
+            return;
+        }
+        ranks[(int)id] = Mathf.Clamp(rank, 0, Info(id).MaxRank);
+    }
 
     public static void EnterSandbox(bool freshRanks) {
         Ensure();

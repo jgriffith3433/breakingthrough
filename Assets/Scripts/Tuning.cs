@@ -32,6 +32,21 @@ public static class Tuning {
     public const float HomeRunSpeed = 26f;
     // The next combo swing has to start within this long of the last one ending, or the combo starts over.
     public const float ComboGap = 0.55f;
+    // Most bots one combo swing can hit (nearest first). Follow Through adds 3 a rank; smash and spin hit them all.
+    public const int BatHits = 6;
+    public const int BatHitsFinisher = 8;
+
+    // Bat boons. Sweet Spot's tip is the outer share of the bat's reach.
+    public const float SweetSpotFrom = 0.6f;
+    // Grand Slam's spin: reach times this, damage times BatBase.
+    public const float SpinReach = 1.2f;
+    public const float SpinDamage = 1.4f;
+    // Long Ball: a bolt batted at the nearest bot between the bat's reach and this far (meters, times your size).
+    public const float LongBallRange = 9f;
+    public const float LongBallSpeed = 38f;
+    // Aluminum! Not wood!: knockback times this, and a blast on the combo finisher.
+    public const float MetalKnock = 1.3f;
+    public const float MetalBlastDamage = 0.65f;
 
     // Breaks between waves. Space or Enter skips both.
     public const float BreakSeconds = 5f;
