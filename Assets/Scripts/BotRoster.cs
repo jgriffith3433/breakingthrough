@@ -53,7 +53,7 @@ public static class BotRoster {
             Weave = true,
             Tint = new Color(1.25f, 0.95f, 0.4f),
             UnlockWave = 1,
-            Blurb = "Yo Bots. Small, loud, and walking straight at the piano. You grow every time one drops."
+            Blurb = "Yo Bots. Small, loud, and walking straight at the piano. One chirps: Uploading victory."
         };
     }
 

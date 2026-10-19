@@ -25,16 +25,19 @@ public class WaveDirector : MonoBehaviour {
     public static string LastRun { get; private set; }
 
     public static string EventName {
-        get {
-            switch (Event) {
-                case WaveEvent.Stampede: return "Stampede: everything runs faster";
-                case WaveEvent.JumpJetWave: return "Jump-Jet Wave: they hop higher, and more often";
-                case WaveEvent.Feast: return "Feast: twice the Yo Bots, half the health";
-                case WaveEvent.GoldenHour: return "Golden Hour: double feathers";
-                case WaveEvent.EliteSurge: return "Elite Surge: crested birds everywhere";
-                case WaveEvent.BloodMoon: return "Blood Moon: tougher birds, more feathers";
-                default: return "";
-            }
+        get { return EventLine(Event); }
+    }
+
+    // Every event's line, including ones that are not up this wave. The words playtest reads them all.
+    public static string EventLine(WaveEvent ev) {
+        switch (ev) {
+            case WaveEvent.Stampede: return "Stampede: everything runs faster";
+            case WaveEvent.JumpJetWave: return "Jump-Jet Wave: they hop higher, and more often";
+            case WaveEvent.Feast: return "Feast: twice the Yo Bots, half the health";
+            case WaveEvent.GoldenHour: return "Golden Hour: double bolts";
+            case WaveEvent.EliteSurge: return "Elite Surge: traited Yo Bots everywhere";
+            case WaveEvent.BloodMoon: return "Blood Moon: tougher bots, more bolts";
+            default: return "";
         }
     }
 
@@ -750,14 +753,16 @@ public class WaveDirector : MonoBehaviour {
             detailText.text = Flavor(Wave);
         } else if (phase == Phase.Build) {
             waveText.text = "Build  ·  " + Mathf.CeilToInt(Mathf.Max(phaseLeft, 0f)) + "s   ·   " + StartHint();
-            detailText.text = Wave <= 5
+            detailText.text = !string.IsNullOrEmpty(PlayerGrowth.Banner)
+                ? PlayerGrowth.Banner
+                : Wave <= 5
                 ? "It's level 5, prepare."
                 : "It's level " + Wave + ", time to prepare.";
         } else if (phase == Phase.Break) {
             waveText.text = "Next wave in " + Mathf.CeilToInt(Mathf.Max(phaseLeft, 0f)) + "   ·   " + StartHint();
             detailText.text = Flavor(Wave);
         } else if (phase == Phase.Lost) {
-            waveText.text = "The musician fell";
+            waveText.text = "Slice fell";
             detailText.text = "";
         } else if (!string.IsNullOrEmpty(PlayerGrowth.Banner)) {
             waveText.text = WaveLine();

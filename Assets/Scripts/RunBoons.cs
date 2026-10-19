@@ -64,9 +64,9 @@ public static class RunBoons {
         B(BoonId.Frost, "Ice Bat", "Hits slow bots 25% per rank. Rank 3 freezes them for a moment.", 3, Rarity.Rare),
         B(BoonId.Chain, "Live Wire", "15% per rank: a hit arcs to 3 more bots, and they short out.", 3, Rarity.Epic),
         B(BoonId.BirdBomb, "Powder Keg", "Bots burst when they fall, hurting the bots around them.", 3, Rarity.Epic),
-        B(BoonId.Orbit, "Whirling Quills", "Blades circle you and cut bots that come close. +1 blade per rank.", 4, Rarity.Epic),
+        B(BoonId.Orbit, "Whirling Blades", "Blades circle you and cut bots that come close. +1 blade per rank.", 4, Rarity.Epic),
         B(BoonId.Encore, "Encore", "The piano thumps out a shockwave every few seconds.", 3, Rarity.Epic),
-        B(BoonId.Ovation, "Standing Ovation", "Musician +15 max health and heals 6 after each wave.", 4, Rarity.Common),
+        B(BoonId.Ovation, "Standing Ovation", "Slice +15 max health and heals 6 after each wave.", 4, Rarity.Common),
         B(BoonId.Magnet, "Lodestone", "Bolts fly to you from 70% farther.", 3, Rarity.Common),
         B(BoonId.Fleet, "Fleet Foot", "+12% move speed.", 3, Rarity.Common),
         B(BoonId.Bounty, "Bounty Hunter", "Every 60 kills drops a coin. Faster with rank.", 3, Rarity.Rare),
@@ -75,10 +75,10 @@ public static class RunBoons {
         B(BoonId.Executioner, "Executioner", "Bots under 12% health per rank drop on the next hit.", 2, Rarity.Epic),
         B(BoonId.Homing, "Long Ball", "Each swing also bats a bolt at the nearest bot out of reach.", 2, Rarity.Rare),
         B(BoonId.Turret, "Tower Song", "+1 tower in stock now. Towers shoot 30% faster per rank.", 3, Rarity.Rare),
-        B(BoonId.SecondWind, "Second Wind", "Once per wave, if the musician drops below 25, a blast clears the stage and heals 20.", 1, Rarity.Epic),
+        B(BoonId.SecondWind, "Second Wind", "Once per wave, if Slice drops below 25, a blast clears the stage and heals 20.", 1, Rarity.Epic),
         E(BoonId.StormQuiver, "Thunder Bat", "Every hit arcs, and every spin calls down lightning. Live Wire + Grand Slam.", BoonId.Chain, BoonId.Volley),
         E(BoonId.Phoenix, "Phoenix Bat", "Burning bots explode in fire, and fire spreads from every blast. Pine Tar + Powder Keg.", BoonId.Firebrand, BoonId.BirdBomb),
-        E(BoonId.GrandFinale, "Grand Finale", "Encore twice as often, twice as wide, and it heals the musician. Encore + Standing Ovation.", BoonId.Encore, BoonId.Ovation),
+        E(BoonId.GrandFinale, "Grand Finale", "Encore twice as often, twice as wide, and it heals Slice. Encore + Standing Ovation.", BoonId.Encore, BoonId.Ovation),
         E(BoonId.Hailstorm, "Blizzard Bat", "Every swing blows frost through its arc, and finishers freeze. Ice Bat + Wide Arc.", BoonId.Frost, BoonId.SplitShot)
     };
 

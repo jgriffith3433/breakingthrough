@@ -135,11 +135,11 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
 
 - **Bot:** `Assets/Scripts/Playtest.cs` registers product `theplacedepartment` at startup. Scenarios: `smoke` (menu,
   Enter, about 30 s of play), `run` (until the musician falls, picking cards; capped at 15 min), `bat` (the bat's
-  three moves, each until it is seen: the 3-hit combo on wave 1's turkeys with one right-click lock switch, then a
-  ground smash on three hatchlings dropped in front of the player, then a home run into a line of four turkeys
+  three moves, each until it is seen: the 3-hit combo on wave 1's Yo Bots with one right-click lock switch, then a
+  ground smash on three small Yo Bots dropped in front of the player, then a home run into a line of four Yo Bots
   dropped in front of the player (both drops are named `setup` events); then a minute of play. `bat` timeline
   lines say what each swing did, and the report fails any move it didn't see), `musician` (the bar says Slice; the bot holds fire by the piano until wave 1's Yo Bots reach her and she has stabbed three times, one `stab` event each with damage and the gap since the last; then it clears the wave and waits for `slice-sits`; then it holds fire from wave 2, pressing `=` if she outlasts it, until the run ends), `menus` (shop
-  clicks, start, one level-up card with a reroll), `touch` (touch only: menu layout check, tap Play, the stick,
+  clicks, start, one level-up card with a reroll), `words` (reads the menu, shop, help, build tips, pause, level-up cards and game over; each `old-words` event is 0), `touch` (touch only: menu layout check, tap Play, the stick,
   Swing, Lock and Next wave pressed by the bot's fingers through `TouchControls.BotFinger`, a level-up card tapped,
   until wave 2 is under way; run it with `mobile` for portrait or at 844x390 for landscape), `upgrades` (the bat
   upgrades: shop rows read off the menu (`shop-items`), the sandbox owns Aluminum! Not wood! and Corked Core (setup)

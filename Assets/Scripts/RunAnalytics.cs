@@ -12,6 +12,8 @@ using UnityEngine;
 public static class RunAnalytics {
     public const string Product = "theplacedepartment";
     public const string AskId = "game-over";
+    // Shown on the feedback card after a rating. Slice, clipped.
+    public const string Thanks = "Thanks. Clean. Slice will be at the piano.";
 
 #if UNITY_WEBGL && !UNITY_EDITOR
     [DllImport("__Internal")]
@@ -272,7 +274,7 @@ public static class RunAnalytics {
     // "How was that run?" on the game-over screen: stars and a comment, in the game's night colours.
     static void Ask(int wave) {
         string json = "{\"id\":\"" + AskId + "\",\"question\":\"How was that run?\",\"context\":\"wave " + wave + "\","
-            + "\"kind\":\"stars\",\"comment\":true,\"thanks\":\"Thanks! The pianist plays on.\","
+            + "\"kind\":\"stars\",\"comment\":true,\"thanks\":\"" + Thanks + "\","
             + "\"theme\":{\"background\":\"#141019\",\"color\":\"#f4ecdc\",\"accent\":\"#ffd14d\","
             + "\"font\":\"Arial, Helvetica, sans-serif\",\"radius\":\"14px\"}}";
         HawkesAnalyticsPageAsk(json);
