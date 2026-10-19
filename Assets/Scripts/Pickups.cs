@@ -1,11 +1,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Feathers that birds drop, and the treasure chests from bosses and golden gobblers.
+// Bolts that bots drop (your XP), and the treasure chests from bosses and golden bots.
 public class Pickups : MonoBehaviour {
     static readonly List<Pickups> live = new List<Pickups>();
-    static Material featherMat;
+    static Material boltMat;
+    static Material boltShankMat;
     static Material rareMat;
+    static Material rareShankMat;
+    static Mesh boltHead;
+    static Mesh boltShank;
     static float nextChime;
     static int chimeStep;
     static float chimeReset;
@@ -19,7 +23,14 @@ public class Pickups : MonoBehaviour {
     Vector3 rest;
     Transform spin;
 
-    public static void DropFeathers(Vector3 at, int total) {
+    // Bolts picked up this run, for the playtest's timeline.
+    public static int BoltsCollected { get; private set; }
+
+    public static void BeginRun() {
+        BoltsCollected = 0;
+    }
+
+    public static void DropBolts(Vector3 at, int total) {
         if (total <= 0) {
             return;
         }
@@ -53,7 +64,7 @@ public class Pickups : MonoBehaviour {
     }
 
     static void Spawn(Vector3 at, int value, bool chest) {
-        var go = new GameObject(chest ? "Chest" : "Feather");
+        var go = new GameObject(chest ? "Chest" : "Bolt");
         go.transform.position = at + Vector3.up * 0.6f;
         Pickups pickup = go.AddComponent<Pickups>();
         pickup.value = value;
@@ -88,40 +99,61 @@ public class Pickups : MonoBehaviour {
             return;
         }
 
-        GameObject gemModel = ArtLibrary.Make("Feather", true);
         bool rare = value >= 6;
-        if (gemModel != null) {
-            gemModel.transform.SetParent(transform, false);
-            gemModel.transform.localScale = Vector3.one * (rare ? 0.7f : 0.45f);
-            spin = gemModel.transform;
+        // A Blender bolt in Resources/Models/Bolt wins; until then a hex bolt is built here.
+        GameObject boltModel = ArtLibrary.Make("Bolt", true);
+        if (boltModel != null) {
+            boltModel.transform.SetParent(transform, false);
+            boltModel.transform.localScale = Vector3.one * (rare ? 0.7f : 0.45f);
+            spin = boltModel.transform;
             return;
         }
-        var gem = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        Destroy(gem.GetComponent<Collider>());
-        gem.transform.SetParent(transform, false);
-        gem.transform.localRotation = Quaternion.Euler(45f, 0f, 45f);
-        gem.transform.localScale = Vector3.one * (rare ? 0.36f : 0.22f);
-        Renderer skin = gem.GetComponent<Renderer>();
+        spin = new GameObject("Spin").transform;
+        spin.SetParent(transform, false);
+        var tilt = new GameObject("Bolt").transform;
+        tilt.SetParent(spin, false);
+        tilt.localRotation = Quaternion.Euler(0f, 0f, 35f);
+        tilt.localScale = Vector3.one * (rare ? 1.5f : 1f);
+        EnsureBoltMeshes();
+        BoltPart(tilt, boltHead, rare ? rareMat : boltMat);
+        BoltPart(tilt, boltShank, rare ? rareShankMat : boltShankMat);
+    }
+
+    // Unlit so bolts stay bright on the night hill: brass for small drops, cyan for big ones.
+    static void EnsureBoltMeshes() {
+        if (boltHead != null) {
+            return;
+        }
+        boltMat = Flat(new Color(1f, 0.82f, 0.4f));
+        boltShankMat = Flat(new Color(0.78f, 0.6f, 0.28f));
+        rareMat = Flat(new Color(0.45f, 0.95f, 1f));
+        rareShankMat = Flat(new Color(0.25f, 0.7f, 0.85f));
+        var head = new BotMesh();
+        head.Rod(new Vector3(0f, 0.1f, 0f), new Vector3(0f, 0.2f, 0f), 0.16f, Color.white);
+        boltHead = head.ToMesh("Bolt head");
+        var shank = new BotMesh();
+        shank.Rod(new Vector3(0f, -0.22f, 0f), new Vector3(0f, 0.1f, 0f), 0.065f, Color.white);
+        for (int i = 0; i < 3; i++) {
+            float y = -0.17f + i * 0.08f;
+            shank.Rod(new Vector3(0f, y, 0f), new Vector3(0f, y + 0.025f, 0f), 0.085f, Color.white);
+        }
+        boltShank = shank.ToMesh("Bolt shank");
+    }
+
+    static Material Flat(Color color) {
+        var material = new Material(Shader.Find("Unlit/Color"));
+        material.color = color;
+        return material;
+    }
+
+    static void BoltPart(Transform parent, Mesh mesh, Material material) {
+        var go = new GameObject(mesh.name);
+        go.transform.SetParent(parent, false);
+        go.AddComponent<MeshFilter>().sharedMesh = mesh;
+        var skin = go.AddComponent<MeshRenderer>();
+        skin.sharedMaterial = material;
         skin.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         skin.receiveShadows = false;
-        skin.sharedMaterial = rare ? RareMat() : FeatherMat();
-        spin = gem.transform;
-    }
-
-    static Material FeatherMat() {
-        if (featherMat == null) {
-            featherMat = new Material(Shader.Find("Unlit/Color"));
-            featherMat.color = new Color(0.45f, 0.95f, 1f);
-        }
-        return featherMat;
-    }
-
-    static Material RareMat() {
-        if (rareMat == null) {
-            rareMat = new Material(Shader.Find("Unlit/Color"));
-            rareMat.color = new Color(1f, 0.45f, 0.95f);
-        }
-        return rareMat;
     }
 
     static void Box(Transform parent, Vector3 pos, Vector3 size, Color color) {
@@ -193,6 +225,7 @@ public class Pickups : MonoBehaviour {
             UpgradeLook.Say("Treasure!", 1.2f, 40f);
             GameAudio.Play("coin", 0.9f, 1.2f);
         } else {
+            BoltsCollected++;
             RunBoons.AddFeathers(value);
             Chime();
         }
@@ -226,7 +259,7 @@ public static class ArtLibrary {
 
     static readonly Dictionary<string, Material> glow = new Dictionary<string, Material>();
 
-    // Unlit keeps feathers and quills bright on the night hill.
+    // Unlit keeps bolts and quills bright on the night hill.
     public static GameObject Make(string name, bool unlit = false) {
         GameObject source;
         if (!cache.TryGetValue(name, out source)) {

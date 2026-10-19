@@ -158,12 +158,12 @@ public static class Combat {
         RunLog.NoteKill(foe.Kind);
         Vector3 at = foe.transform.position;
 
-        Pickups.DropFeathers(at, Tuning.FeathersFor(foe.Kind, foe.Elite || foe.Boss) * (foe.Boss ? 5 : 1));
+        Pickups.DropBolts(at, Tuning.BoltsFor(foe.Kind, foe.Elite || foe.Boss) * (foe.Boss ? 5 : 1));
         if (foe.Golden || foe.Boss) {
             Pickups.DropChest(at);
             MetaProgress.AddCoins(foe.Boss ? Tuning.CoinsForBoss : Tuning.CoinsForGolden, at);
             Juice.HitStop(0.12f);
-            UpgradeLook.Say(foe.Golden ? "Golden Gobbler down!" : foe.Title + " falls!", 2.4f, 120f);
+            UpgradeLook.Say(foe.Golden ? "Golden Yo Bot down!" : foe.Title + " falls!", 2.4f, 120f);
         } else if (foe.Elite && Random.value < 0.08f) {
             Pickups.DropChest(at);
         }

@@ -354,17 +354,18 @@ public class UpgradeLook : MonoBehaviour {
         trail.endColor = new Color(tint.r, tint.g, tint.b, 0f);
     }
 
-    public static void Feathers(Vector3 point, int count, bool boss) {
-        Color feather = boss ? new Color(1f, 0.9f, 0.55f) : new Color(0.9f, 0.7f, 0.4f);
-        Fx.Emit(FxKind.Feather, point + Vector3.up * 0.6f, count, feather, boss ? 0.5f : 0.3f, boss ? 4.5f : 2.6f, 1.5f);
+    // A shower of plates, like a bot shaking loose as it leaves.
+    public static void Scrap(Vector3 point, int count, bool boss) {
+        Color plate = boss ? new Color(1f, 0.9f, 0.55f) : new Color(0.75f, 0.72f, 0.66f);
+        Fx.Emit(FxKind.Debris, point + Vector3.up * 0.6f, count, plate, boss ? 0.42f : 0.3f, boss ? 4.5f : 2.6f, 1.5f);
     }
 
     public static void WaveCleared(int wave) {
         Say("Wave " + wave + " cleared", 2.2f, 150f);
     }
 
-    public static void Arrive(string bird) {
-        Say(bird + " arrives", 2.6f);
+    public static void Arrive(string bot) {
+        Say(bot + " arrives", 2.6f);
     }
 
     public static void PlaceDust(Vector3 point) {

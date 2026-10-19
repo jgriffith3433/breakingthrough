@@ -13,7 +13,7 @@ The project folder is `breakingthrough`. The Unity product name is still `Contro
 - [Surprises](#surprises)
 - [The bat](#the-bat)
 - [Growth and damage](#growth-and-damage)
-- [Birds](#birds)
+- [Bots](#bots)
 - [Wave powers](#wave-powers)
 - [Building](#building)
 - [Shop](#shop)
@@ -74,7 +74,7 @@ Lock-on reaches 26 m, plus 0.6 m for each wave after the first, up to 90 m, and 
 
 ## Levels and boons
 
-Every bird drops feathers when it dies: 1 for a turkey, 6 for a hen, 10 for a rooster, and more for bigger birds. Elites and bosses drop four times as many. Walk near feathers to pull them in. When a wave ends, every feather left on the ground flies to you.
+Every bot drops bolts when it's destroyed: 1 for a Yo Bot, 6 for a Plated Yo Bot, 10 for a Mega Yo Bot, and 19 to 40 for the Spider Bots (`Tuning.BoltsFor`). Elites and bosses drop four times as many. Walk near bolts to pull them in. When a wave ends, every bolt left on the ground flies to you. Bolts are your XP.
 
 Feathers fill the level bar at the bottom of the screen. Each level pauses the game and offers three boons. Press **1**, **2** or **3**, or click a card. **R** rerolls. You get one reroll per run, plus one per Four-Leaf Clover rank. Boons you already hold show up more often, so a build takes shape over a run. Your boons are listed on the left.
 
@@ -116,11 +116,11 @@ When both parents of an evolution are at max rank, a gold evolution card shows u
 
 ## Surprises
 
-- **Elites.** From wave 3, some turkeys spawn with a trait and a spinning gem over their heads: Sprinter, Bruiser, Glider, Splitter, Charger, Blinker, Swarmer or Titan. They're tougher, drop four times the feathers, and occasionally drop a chest.
-- **Golden Gobbler.** On wave 4 and every 4th wave after, a gold turkey spends 22 seconds running from you. Catch it for a treasure chest and 3 coins. A chest opens a card pick that favors rare and epic boons.
-- **Alpha bosses.** On every 10th wave, one of that decade's birds arrives as an Alpha. It has 4x health, a red gem, and a boss bar at the top of the screen, and it calls in turkeys around itself. It drops a chest and 6 coins.
-- **Wave events.** From wave 6, a wave has a 40% chance to roll an event, never on boss or build waves. The events are Stampede, Air Raid, Feast, Golden Hour, Elite Surge and Blood Moon. The current event shows at the top left.
-- **Streaks.** Kills less than 2.4 seconds apart build a streak. Each kill in the streak adds 1% more feathers, up to +50%, and a long streak also makes you swing a little faster.
+- **Elites.** From wave 3, some Yo Bots spawn with a trait and a spinning gem over their heads: Sprinter, Bruiser, Jump-Jet, Splitter, Charger, Blinker, Swarmer or Juggernaut Yo Bot. They're tougher, drop four times the bolts, and occasionally drop a chest. A Splitter comes apart into two Drones.
+- **Golden Yo Bot.** On wave 4 and every 4th wave after, a gold Yo Bot spends 22 seconds running from you. Catch it for a treasure chest and 3 coins. A chest opens a card pick that favors rare and epic boons.
+- **Alpha bosses.** On every 10th wave, the bot that debuts that wave arrives as an Alpha (the first Spider Bot on wave 30). It has 4x health, a red gem, and a boss bar at the top of the screen, and it calls in Yo Bots around itself. It drops a chest and 6 coins.
+- **Wave events.** From wave 6, a wave has a 40% chance to roll an event, never on boss or build waves. The events are Stampede, Jump-Jet Wave, Feast, Golden Hour, Elite Surge and Blood Moon. The current event shows at the top left.
+- **Streaks.** Kills less than 2.4 seconds apart build a streak. Each kill in the streak adds 1% more bolts, up to +50%, and a long streak also makes you swing a little faster.
 
 ## The bat
 
@@ -147,28 +147,33 @@ Base damage is `floor(1 + (wave - 1) × 0.5)`, plus 6 per Keen Arrows rank, plus
 
 The **Rockets! Not arrows!** upgrade makes the finisher and the home run explode around the bird they hit. The blast radius is about 4.2 m at rank 1, 7.4 m at rank 2 and 10.6 m at rank 3, plus a little for a home run. Splash damage is 65% of a base hit.
 
-## Birds
+## Bots
 
-| Debut wave | Bird | Authored health | Plain hits at debut |
-|---|---|---|---|
-| 1 | Turkey | 3 | 3 |
-| 10 | Hen | 60 | 12 |
-| 20 | Rooster | 270 | 27 |
-| 30 | Goose | 480 | 32 |
-| 40 | Swan | 660 | 33 |
-| 50 | Emu | 840 | 34 |
-| 60 | Ostrich | 990 | 33 |
-| 70 | Cassowary | 1260 | 36 |
-| 80 | Terror | 1500 | 38 |
-| 90 | Roc | 1800 | 40 |
-| 100 | Thunderbird | 2700 | 54 |
+`BotRoster.cs` (`BotKind`, in this order: kill counts, the wave list and the coin tally are packed by it). Yo Bots are the small tiers: two legs, a jet pack, claws. Spider Bots are the large ones: eight legs, a big abdomen with rear jets, a head full of eyes. Each kind debuts as a pair, one of them the wave's Alpha with the boss bar.
+
+| Debut wave | Bot | Authored health | Bolts | Look and blurb |
+|---|---|---|---|---|
+| 1 | Yo Bot | 3 | 1 | Yellow, each with its own paint job. Small, loud, and walking straight at the piano |
+| 10 | Plated Yo Bot | 60 | 6 | Steel with shoulder plates. Your height, bolted shut, and slow to come apart |
+| 20 | Mega Yo Bot | 270 | 10 | Red, horned. As tall as you, and it rushes the piano in bursts |
+| 30 | Spider Bot | 480 | 19 | Teal, red eyes. Eight legs, twice the size of anything so far |
+| 40 | Stalker Spider Bot | 660 | 22 | Silver. Quiet on its legs, with a long health bar |
+| 50 | Runner Spider Bot | 840 | 25 | Orange, long legs. It closes the gap |
+| 60 | Rammer Spider Bot | 990 | 28 | Sand, with a ram plate. A running wall |
+| 70 | Shadow Spider Bot | 1260 | 31 | Near-black and violet. Dark, your height, and stubborn |
+| 80 | Crusher Spider Bot | 1500 | 34 | Rust, with pincers. Huge, and it does not stop |
+| 90 | Colossus Spider Bot | 1800 | 37 | Blue, with a ram plate. It stands over you |
+| 100 | Titan Spider Bot | 2700 | 40 | Bronze with glowing gold trim and a crown of spikes. The last boss |
+
+- **Attacks:** at the musician a Yo Bot swipes a claw and a Spider Bot stabs with a front leg. A Yo Bot's blow takes 1, an elite's 2, a boss's 3.
+- **Jump jets:** bots hop on their jets now and then (a soft puff under their feet). The Jump-Jet Wave event makes them hop higher and more often.
 
 - **Health scaling:** at spawn, health is multiplied by `Tuning.HealthScale(wave)`. That's about 1.2x at wave 10, 1.7x at 30, 3.3x at 50 and 12x at 100, so a build that snowballs still hits a wall eventually.
-- **Size scaling:** spawn size is multiplied by `1.18 + (wave - 1) × 0.012`, plus another 2.5% per wave after wave 100. The decade birds are meant to feel like bosses, about your height or bigger.
-- **Arrival:** birds come one at a time, mixed together, after a short pause at the start of a wave. Turkeys are about a third of a second apart, and bigger birds leave longer gaps.
+- **Size scaling:** spawn size is multiplied by `1.18 + (wave - 1) × 0.012`, plus another 2.5% per wave after wave 100. The bigger bots are meant to feel like bosses, about your height or bigger.
+- **Arrival:** bots come one at a time, mixed together, after a short pause at the start of a wave. Yo Bots are about a third of a second apart, and bigger bots leave longer gaps.
 - **How many at once:** about 16 early, rising to 120 in late waves.
-- **Spawn ring:** turkeys start 30–48 m out. Each later wave pushes the ring out by about half a meter and widens it, up to 150 m. Each spawn picks the most open spot in the ring.
-- **Movement:** birds walk in a straight line at the piano, with no pathfinding. Walls in the build ring stop them.
+- **Spawn ring:** Yo Bots start 30–48 m out. Each later wave pushes the ring out by about half a meter and widens it, up to 150 m. Each spawn picks the most open spot in the ring.
+- **Movement:** bots walk in a straight line at the piano, with no pathfinding. Walls in the build ring stop them.
 
 ## Wave powers
 
@@ -238,23 +243,24 @@ The game takes place in the **Moonlit Hollow**, an open meadow bowl centered on 
 
 The art direction is a moonlit blue night, warm lantern light, and soft magic.
 
-**Birds.** All 11 birds are low-poly Blender models in `Assets/Resources/Models/Birds/<Kind>.fbx`.
-- **Construction:** smooth-shaded and painted with smooth vertex-color gradients. Each is built from separate parts: `Body`, `Head`, `WingL`, `WingR`, `LegL` and `LegR`.
-- **Animation:** `Enemy.AnimateModel` animates the parts in code: a walk cycle, a waddle and bounce, a head bob, a peck when attacking, idle wing shuffles, and fast flapping in flight. Big birds kick up dust as they walk.
-- **Tints:** turkeys get one of eight subtle tints, elites lean toward their gem color, and the Golden Gobbler is solid gold.
-- **Hits and status:** a hit flashes the bird white. Burning, frozen, slowed and golden birds glow with a tint instead of spraying particles.
-- **Hit capsule:** fitted to each model's body and head.
+**Bots.** The 11 bots are stand-ins until the real models land: `BotArt` builds each kind in code from low-poly boxes, rods and balls, flat-shaded and painted with vertex colors. A Blender export of the same stand-ins (`Tools/Blender/bt_bots.py`, `export("<Kind>")`) in `Assets/Resources/Models/Bots/<Kind>.fbx` replaces the code-built one with no code change.
+- **Parts:** Yo Bots are `Body`, `Head`, `ClawL`, `ClawR`, `LegL` and `LegR`. Spider Bots are `Body`, `Head` and `LegL1`–`LegL4`, `LegR1`–`LegR4` (1 is the front pair).
+- **Animation:** `Enemy.AnimateModel` animates the parts in code: Yo Bots stomp, swing their arms, spread them in a jump-jet hop and swipe a claw when attacking. Spider Bots walk on alternating fours, fold their legs in a hop, and wind up and stab with a front leg. Big bots kick up dust as they walk.
+- **Tints:** each Yo Bot gets one of eight paint jobs, elites lean toward their gem color, and the Golden Yo Bot is solid gold.
+- **Hits and status:** a hit flashes the bot white. Burning, frozen, slowed and golden bots glow with a tint instead of spraying particles.
+- **Hit capsule:** fitted to each model's body, head and legs (not the claws).
 
-**Props.** `Chest.fbx`, `Feather.fbx`, `Quill.fbx` and `Lantern.fbx` are in `Assets/Resources/Models/`, loaded through `ArtLibrary.Make`. The feather pickups and the quill blades are drawn unlit, so they glow.
+**Props.** `Chest.fbx`, `Quill.fbx` and `Lantern.fbx` are in `Assets/Resources/Models/`, loaded through `ArtLibrary.Make`. Bolt pickups are hex bolts built in code (brass for small drops, cyan for big ones) until a `Models/Bolt.fbx` exists. Bolts and quill blades are drawn unlit, so they glow. The old bird models and `Feather.fbx` are still in `Resources/Models/` but nothing loads them.
 
 **Map scenery.** Pines, a broadleaf tree, rocks, a boulder, a bush, grass and flowers are in `Assets/Art/Arena/`.
 
 **Where the art comes from.** All the models come from scripts in `Tools/Blender/`:
-- `bt_birds.py` makes the birds and the lantern.
+- `bt_bots.py` makes the bot stand-ins (`export_all()` for all 11).
+- `bt_birds.py` made the old birds, and still makes the lantern.
 - `bt_arena.py` makes the map scenery.
 - `BT_Art.blend` holds the working scenes and the menu key-art scene.
 
-To rebuild a model, run the script in Blender and call `export("Turkey")` for a bird or `export_arena()` for the scenery. `Assets/Editor/ModelImportRules.cs` imports these models with smooth normals (a 60° crease angle), readable meshes and no imported materials.
+To rebuild a model, run the script in Blender and call `export("YoBot")` for a bot or `export_arena()` for the scenery. `Assets/Editor/ModelImportRules.cs` imports these models with smooth normals (a 60° crease angle), readable meshes and no imported materials.
 
 **Atmosphere.** `NightAtmosphere` builds the night at runtime:
 - cool moonlight, deep blue fog and trilight ambient light
@@ -265,7 +271,7 @@ To rebuild a model, run the script in Blender and call `export("Turkey")` for a 
 
 **Camera finish.** `NightGrade` on the main camera adds bloom, cool shadows with warm highlights, contrast, saturation and a vignette. Its fields can be tuned live in the inspector. Its shaders (`BTPost.shader`, `BTParticle.shader`) are in `Assets/Resources/Shaders/`, so WebGL builds include them.
 
-**Effects.** `Fx` runs one pooled particle system each for flash, smoke, feather, ring, note and dust, with textures drawn in code. The effects are deliberately calm. A hit is a soft flash, a death throws a few feathers in the bird's colors, and an explosion is a flash, smoke and a ground ring. There's no camera shake, and no spark, glitter or ember spray.
+**Effects.** `Fx` runs one pooled particle system each for flash, smoke, feather, ring, note, dust and debris, with textures drawn in code. The effects are deliberately calm. A hit is a soft flash, a destroyed bot gives a soft blue flash, a puff of dark smoke and a few chunky plates in its paint, a jump-jet hop is a small puff, and an explosion is a flash, smoke and a ground ring. There's no camera shake, and no spark, glitter or ember spray.
 
 **Shader.** Birds, scenery and the ground all use `Knoll/VertexColorLit`. On top of plain vertex color it adds:
 

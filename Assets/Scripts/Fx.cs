@@ -8,12 +8,13 @@ public enum FxKind {
     Feather,
     Ring,
     Note,
-    Dust
+    Dust,
+    Debris
 }
 
 // One pooled particle system per look. Callers emit bursts at a point; nothing is spawned per effect.
 // Textures are drawn in code, so the whole set needs no art files.
-// Kept deliberately calm: soft flashes, smoke, a few feathers, ground rings. No spark or glitter spray.
+// Kept deliberately calm: soft flashes, smoke, a few chunky plates off a broken bot, ground rings. No spark or glitter spray.
 public class Fx : MonoBehaviour {
     static Fx instance;
     readonly Dictionary<FxKind, ParticleSystem> systems = new Dictionary<FxKind, ParticleSystem>();
@@ -45,6 +46,7 @@ public class Fx : MonoBehaviour {
         Make(FxKind.Ring, "ring", true, 40, 0.45f, 0f, false, true);
         Make(FxKind.Note, "note", true, 60, 2.4f, -0.08f, false);
         Make(FxKind.Dust, "smoke", false, 200, 0.7f, -0.05f, false);
+        Make(FxKind.Debris, "plate", false, 200, 1.3f, 0.9f, false);
     }
 
     void OnDestroy() {
@@ -78,7 +80,7 @@ public class Fx : MonoBehaviour {
             new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
             kind == FxKind.Smoke || kind == FxKind.Dust
                 ? new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(0.7f, 0.15f), new GradientAlphaKey(0f, 1f) }
-                : kind == FxKind.Feather
+                : kind == FxKind.Feather || kind == FxKind.Debris
                     ? new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 0.7f), new GradientAlphaKey(0f, 1f) }
                     : new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0.8f, 0.4f), new GradientAlphaKey(0f, 1f) });
         colorOverLife.color = fade;
@@ -114,6 +116,11 @@ public class Fx : MonoBehaviour {
             var rot = ps.rotationOverLifetime;
             rot.enabled = true;
             rot.z = new ParticleSystem.MinMaxCurve(-3f, 3f);
+        }
+        if (kind == FxKind.Debris) {
+            var rot = ps.rotationOverLifetime;
+            rot.enabled = true;
+            rot.z = new ParticleSystem.MinMaxCurve(-6f, 6f);
         }
         if (kind == FxKind.Note) {
             var noise = ps.noise;
@@ -164,6 +171,8 @@ public class Fx : MonoBehaviour {
                 dir.y = Mathf.Abs(dir.y) + 0.6f;
             } else if (kind == FxKind.Feather) {
                 dir.y = Mathf.Abs(dir.y) * 1.2f + 0.2f;
+            } else if (kind == FxKind.Debris) {
+                dir.y = Mathf.Abs(dir.y) * 1.2f + 0.5f;
             }
             p.position = at + Random.insideUnitSphere * 0.15f * spread * size;
             p.velocity = dir.normalized * speed * Random.Range(0.5f, 1.1f);
@@ -203,14 +212,29 @@ public class Fx : MonoBehaviour {
         Emit(FxKind.Flash, at, 1, crit ? new Color(1f, 0.8f, 0.35f, 0.8f) : new Color(1f, 0.9f, 0.75f, 0.45f), (crit ? 1.1f : 0.55f) * s, 0f);
     }
 
-    public static void Death(Vector3 at, float scale, Color plumage, bool big) {
+    // A bot coming apart: a soft electric flash, a puff of dark smoke and a few plates in its paint.
+    public static void Death(Vector3 at, float scale, Color paint, bool big) {
         float s = Mathf.Clamp(scale, 0.6f, 12f);
-        int feathers = big ? 9 : 4;
-        Emit(FxKind.Feather, at + Vector3.up * 0.4f * s, feathers, plumage, 0.45f * Mathf.Sqrt(s), 3f * Mathf.Sqrt(s), 1.5f);
-        Emit(FxKind.Dust, at, big ? 10 : 4, new Color(0.75f, 0.72f, 0.65f, 0.6f), 0.9f * Mathf.Sqrt(s), 1.4f);
+        float root = Mathf.Sqrt(s);
+        Vector3 core = at + Vector3.up * 0.4f * s;
+        Emit(FxKind.Flash, core, 1, new Color(0.6f, 0.85f, 1f, 0.7f), (big ? 1.6f : 1f) * root, 0f);
+        Emit(FxKind.Smoke, core, big ? 4 : 2, new Color(0.2f, 0.2f, 0.22f, 0.5f), 0.7f * root, 0.8f, 1.2f);
+        Color dark = new Color(paint.r * 0.45f, paint.g * 0.45f, paint.b * 0.45f, 1f);
+        int plates = big ? 8 : 4;
+        Emit(FxKind.Debris, core, plates - plates / 3, paint, 0.32f * root, 3.4f * root, 1.5f);
+        Emit(FxKind.Debris, core, plates / 3, dark, 0.26f * root, 3f * root, 1.5f);
+        Emit(FxKind.Dust, at, big ? 10 : 4, new Color(0.75f, 0.72f, 0.65f, 0.6f), 0.9f * root, 1.4f);
         if (big) {
-            Ring(at, 4f * Mathf.Sqrt(s), new Color(1f, 0.85f, 0.55f, 0.8f), 0.6f);
+            Ring(at, 4f * root, new Color(0.65f, 0.85f, 1f, 0.8f), 0.6f);
         }
+    }
+
+    // The puff under a bot's jump jets as it lifts off.
+    public static void JetPuff(Vector3 at, float scale) {
+        float s = Mathf.Clamp(scale, 0.4f, 30f);
+        float root = Mathf.Sqrt(s);
+        Emit(FxKind.Flash, at + Vector3.up * 0.1f * s, 1, new Color(0.55f, 0.8f, 1f, 0.4f), 0.45f * root, 0f);
+        Emit(FxKind.Smoke, at + Vector3.up * 0.05f, 2, new Color(0.62f, 0.64f, 0.7f, 0.4f), 0.45f * root, 0.7f * root, 0.8f, 0.8f);
     }
 
     public static void Explosion(Vector3 at, float radius, Color color) {
@@ -254,6 +278,14 @@ public class Fx : MonoBehaviour {
                         a = Mathf.Clamp01(1f - Mathf.Abs(u) * 4f) * Mathf.Clamp01(1f - Mathf.Abs(v) * 1.1f);
                         a = a * a;
                         break;
+                    case "plate":
+                        // a chunky square plate with clipped corners, a bevel and a bolt hole
+                        float edge = Mathf.Max(Mathf.Abs(u), Mathf.Abs(v));
+                        float corner = Mathf.Abs(u) + Mathf.Abs(v);
+                        a = Mathf.Clamp01((0.72f - edge) * 24f) * Mathf.Clamp01((1.15f - corner) * 24f) * Mathf.Clamp01((r - 0.16f) * 24f);
+                        float bevel = edge > 0.58f || corner > 1.0f ? 0.7f : 1f;
+                        px[y * n + x] = new Color(bevel, bevel, bevel, a);
+                        continue;
                     case "ring":
                         a = Mathf.Clamp01(1f - Mathf.Abs(r - 0.82f) * 9f);
                         a = a * a * (r < 1f ? 1f : 0f) + Mathf.Clamp01(0.82f - r) * 0.15f;

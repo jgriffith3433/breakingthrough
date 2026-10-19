@@ -23,7 +23,8 @@ public static class Playtest {
         new PlaytestScenario("menus", "Shop menu, start a run, a level-up card, reroll and pick", 120, "menus"),
         new PlaytestScenario("touch", "Touch only, for a phone-sized screen (mobile, or 844x390): the menu fits, tap Play, walk to the birds with the on-screen stick and tap Swing, tap a level-up card, play to wave 2", 330, "menus"),
         new PlaytestScenario("settings", "Press Tap to play, open Settings from the menu: sound off and on, music and effects sliders, Done; start a run, pause (button, then P), Settings from the pause menu, resume, play a little. Any screen size", 100, "menus"),
-        new PlaytestScenario("analytics", "Hawkes Analytics: start a run, clear wave 1, then hold fire on wave 2 so the birds take the musician. Every analytics event is logged as it goes out (run_start, level_start and level_end per wave, card picks, the death and its bird, run_end) with the build version and env; on the game-over screen the \"How was that run?\" card must show, and the bot rates it 4 stars", 240, "full"),
+        new PlaytestScenario("bots", "The bots: wave 1's small Yo Bots walk at the musician (their distance to him is logged as they come), destroyed bots drop bolts the bot picks up as XP, and the enemy list on the right names them. Setup shortcut: the testing wave key (=) jumps to wave 30, where the first Spider Bot arrives as the Alpha, a large enemy with the boss bar, then the bot fights it for 30 s", 300, "content"),
+        new PlaytestScenario("analytics", "Hawkes Analytics: start a run, clear wave 1, then hold fire on wave 2 so the bots take the musician. Every analytics event is logged as it goes out (run_start, level_start and level_end per wave, card picks, the death and the bot kind that landed it, run_end) with the build version and env; on the game-over screen the \"How was that run?\" card must show, and the bot rates it 4 stars", 240, "full"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.com and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
     };
 
@@ -71,7 +72,7 @@ public static class Playtest {
     static int fpsFrames;
     static float worstFps = 999f;
     static float fpsNow;
-    // The analytics scenario: from this wave on the bot holds fire, so the birds end the run.
+    // The analytics scenario: from this wave on the bot holds fire, so the bots end the run.
     static int holdFireFrom;
     static bool analyticsRun;
     static int analyticsSeq;
@@ -179,6 +180,8 @@ public static class Playtest {
                 }
             } else if (id == "smoke") {
                 yield return Play(options, 30f, false);
+            } else if (id == "bots") {
+                yield return BotsRun(options);
             } else if (id == "bat") {
                 yield return BatRun(options);
                 if (!run.Done) {
@@ -583,7 +586,7 @@ public static class Playtest {
                 lastWave = wave;
                 waveSince = now;
                 if (holdFireFrom > 0 && wave >= holdFireFrom) {
-                    run.Event("hold-fire", "wave " + wave + ": the bot stops swinging so the birds reach the musician");
+                    run.Event("hold-fire", "wave " + wave + ": the bot stops swinging so the bots reach the musician");
                 }
                 warnedKills = false;
                 run.Scene("Wave " + wave);
@@ -594,10 +597,10 @@ public static class Playtest {
             }
             if (!warnedKills && holdFireFrom == 0 && Enemy.Roster.Count > 0 && now - lastKillAt > 45f) {
                 warnedKills = true;
-                run.Problem(PlaytestSeverity.Warning, "no kills for 45 s at wave " + wave + " with " + Enemy.Roster.Count + " birds alive");
+                run.Problem(PlaytestSeverity.Warning, "no kills for 45 s at wave " + wave + " with " + Enemy.Roster.Count + " bots alive");
             }
             if (now - waveSince > 240f) {
-                run.Problem(PlaytestSeverity.Bug, "wave " + wave + " did not end in 240 s (" + Enemy.Roster.Count + " birds alive)");
+                run.Problem(PlaytestSeverity.Bug, "wave " + wave + " did not end in 240 s (" + Enemy.Roster.Count + " bots alive)");
                 run.Finish(PlaytestOutcome.Stuck);
                 yield break;
             }
@@ -607,7 +610,7 @@ public static class Playtest {
                 Metrics(elapsed);
                 AnalyticsTimeline();
                 run.Progress(seconds > 0f ? elapsed / seconds : 0f);
-                run.Note(building ? "build phase" : Enemy.Roster.Count + " birds, musician " + (Musician.Instance != null ? Musician.Instance.Health : 0));
+                run.Note(building ? "build phase" : Enemy.Roster.Count + " bots, musician " + (Musician.Instance != null ? Musician.Instance.Health : 0));
             }
             yield return null;
         }
@@ -1051,7 +1054,7 @@ public static class Playtest {
         if (Physics.Raycast(at + Vector3.up * 30f, Vector3.down, out RaycastHit hit, 80f, 1 << 3, QueryTriggerInteraction.Ignore)) {
             at.y = hit.point.y + 0.45f;
         }
-        var go = new GameObject(small ? "Hatchling" : "Turkey");
+        var go = new GameObject(small ? "Drone" : "Yo Bot");
         go.tag = "enemy";
         go.transform.position = at;
         Vector3 piano = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
@@ -1062,11 +1065,171 @@ public static class Playtest {
         }
         Enemy enemy = go.AddComponent<Enemy>();
         if (small) {
-            enemy.ApplyHatchling();
+            enemy.ApplyDrone();
         } else {
-            enemy.ApplyFowl(FowlRoster.ForSpawn(FowlKind.Turkey, WaveDirector.Wave));
+            enemy.ApplyBot(BotRoster.ForSpawn(BotKind.YoBot, WaveDirector.Wave));
         }
         return enemy;
+    }
+
+    // ---------------------------------------------------------------- bots
+
+    // Wave 1 is Yo Bots walking at the musician; the bot fights them and picks up their bolts. Then the testing wave
+    // key takes it to wave 30, where the first Spider Bot arrives as the Alpha with the boss bar.
+    static IEnumerator BotsRun(PlaytestOptions options) {
+        yield return run.Until(() => YoBotsAlive() > 0, 20f, "wave 1's Yo Bots");
+        if (run.Done) {
+            yield break;
+        }
+        // Hold fire a few seconds so the footage shows them walking in.
+        PlayInput.Hold(KeyCode.Mouse0, false);
+        PlayInput.Hold(KeyCode.LeftShift, false);
+        float before = YoBotDistance();
+        int count = YoBotsAlive();
+        run.Scene("Wave 1: Yo Bots");
+        yield return new WaitForSecondsRealtime(3.5f);
+        float after = YoBotDistance();
+        run.Event("yo-bots", count + " Yo Bots, average distance to the musician " + before.ToString("0.0") + " m -> " + after.ToString("0.0") + " m");
+        run.Metric("yoBotsWave1", count);
+        run.Metric("yoBotClosing", Mathf.Round((before - after) * 10f) / 10f);
+        if (!(after < before - 0.3f)) {
+            run.Problem(PlaytestSeverity.Bug, "wave 1's Yo Bots are not walking toward the musician (" + before.ToString("0.0") + " m -> " + after.ToString("0.0") + " m)");
+        }
+        LogEnemyList("wave 1");
+
+        int levelBefore = RunBoons.Level;
+        int xpBefore = RunBoons.Feathers;
+        yield return Play(options, 30f, false);
+        if (run.Done) {
+            yield break;
+        }
+        int bolts = Pickups.BoltsCollected;
+        run.Metric("boltsCollected", bolts);
+        run.Event("bolts", bolts + " bolts picked up from " + RunLog.RunKills + " destroyed bots: level " + levelBefore + " (" + xpBefore + " XP) -> level " + RunBoons.Level + " (" + RunBoons.Feathers + " XP)");
+        if (bolts == 0) {
+            run.Problem(PlaytestSeverity.Bug, "no bolts picked up after " + RunLog.RunKills + " kills");
+        }
+
+        // Setup shortcut: the testing wave key, one press per wave, as a tester would.
+        run.Event("setup", "testing wave key (=) to wave 30");
+        PlayInput.Hold(KeyCode.Mouse0, false);
+        PlayInput.Hold(KeyCode.LeftShift, false);
+        for (int guard = 0; guard < 60 && WaveDirector.Wave < 30 && !run.Done; guard++) {
+            if (LevelUpScreen.IsOpen) {
+                PlayInput.Tap(KeyCode.Alpha1);
+            } else {
+                PlayInput.Tap(KeyCode.Equals);
+            }
+            yield return new WaitForSecondsRealtime(0.15f);
+        }
+        if (WaveDirector.Wave != 30) {
+            run.Problem(PlaytestSeverity.Bug, "the wave key did not reach wave 30 (wave " + WaveDirector.Wave + ")");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        run.Scene("Wave 30: Spider Bot");
+        run.Event("wave", "30");
+        lastWave = 30;
+        yield return run.Until(() => SpiderBoss() != null, 60f, "the Alpha Spider Bot on wave 30");
+        if (run.Done) {
+            yield break;
+        }
+        Enemy boss = SpiderBoss();
+        yield return new WaitForSecondsRealtime(1f);
+        if (boss != null) {
+            float tall = HeightOf(boss);
+            PlayerGrowth growth = PlayerGrowth.Instance;
+            float player = growth != null ? growth.BodyHeight : 0f;
+            bool bar = BossBarShows(boss.Title);
+            run.Event("spider-bot", boss.Title + ": " + tall.ToString("0.0") + " m tall (the player is " + player.ToString("0.0") + " m), boss bar " + (bar ? "up" : "missing"));
+            run.Metric("spiderBotHeight", Mathf.Round(tall * 10f) / 10f);
+            run.Metric("bossBar", bar ? 1 : 0);
+            if (!bar) {
+                run.Problem(PlaytestSeverity.Bug, "no boss bar for " + boss.Title);
+            }
+        }
+        LogEnemyList("wave 30");
+        yield return Play(options, 30f, false);
+    }
+
+    static int YoBotsAlive() {
+        int count = 0;
+        foreach (Enemy enemy in Enemy.Roster) {
+            if (enemy != null && enemy.Alive && enemy.Kind == BotKind.YoBot) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    static float YoBotDistance() {
+        if (Musician.Instance == null) {
+            return 0f;
+        }
+        Vector3 at = Musician.Instance.transform.position;
+        float sum = 0f;
+        int count = 0;
+        foreach (Enemy enemy in Enemy.Roster) {
+            if (enemy == null || !enemy.Alive || enemy.Kind != BotKind.YoBot) {
+                continue;
+            }
+            Vector3 flat = enemy.transform.position - at;
+            flat.y = 0f;
+            sum += flat.magnitude;
+            count++;
+        }
+        return count > 0 ? sum / count : 0f;
+    }
+
+    static Enemy SpiderBoss() {
+        foreach (Enemy enemy in Enemy.Roster) {
+            if (enemy != null && enemy.Alive && enemy.Boss && BotRoster.IsSpider(enemy.Kind)) {
+                return enemy;
+            }
+        }
+        return null;
+    }
+
+    static float HeightOf(Enemy enemy) {
+        float top = enemy.transform.position.y;
+        foreach (Renderer skin in enemy.GetComponentsInChildren<Renderer>()) {
+            if (skin is MeshRenderer && skin.transform.parent != null && skin.transform.parent.name == "Bot") {
+                top = Mathf.Max(top, skin.bounds.max.y);
+            }
+        }
+        return top - enemy.transform.position.y;
+    }
+
+    // The boss bar's name label, as drawn at the top of the screen.
+    static bool BossBarShows(string title) {
+        RunHud hud = Object.FindAnyObjectByType<RunHud>();
+        if (hud == null) {
+            return false;
+        }
+        foreach (Text label in hud.GetComponentsInChildren<Text>(false)) {
+            if (label.text == title && label.isActiveAndEnabled) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // The names in the list on the right, read from the screen.
+    static void LogEnemyList(string when) {
+        WaveRoster roster = Object.FindAnyObjectByType<WaveRoster>();
+        var names = new List<string>();
+        if (roster != null) {
+            foreach (Text label in roster.GetComponentsInChildren<Text>(false)) {
+                if (!label.isActiveAndEnabled || label.text.EndsWith(" left") || label.text == "This wave" || string.IsNullOrEmpty(label.text)) {
+                    continue;
+                }
+                names.Add(label.text);
+            }
+        }
+        run.Event("enemy-list", when + ": " + (names.Count > 0 ? string.Join(", ", names) : "(empty)"));
+        if (names.Count == 0) {
+            run.Problem(PlaytestSeverity.Bug, "the enemy list on the right is empty on " + when);
+        }
     }
 
     // ---------------------------------------------------------------- site
@@ -1448,7 +1611,7 @@ public static class Playtest {
                 Metrics(elapsed);
                 run.Metric("touchLocked", TouchControls.Locked ? 1 : 0);
                 run.Progress(Mathf.Clamp01((wave - 1 + (levelUps > 0 ? 0.5f : 0f)) / 2f));
-                run.Note(building ? "build phase" : Enemy.Roster.Count + " birds, musician " + (Musician.Instance != null ? Musician.Instance.Health : 0));
+                run.Note(building ? "build phase" : Enemy.Roster.Count + " bots, musician " + (Musician.Instance != null ? Musician.Instance.Health : 0));
             }
             yield return null;
         }
@@ -1789,7 +1952,7 @@ public static class Playtest {
         run.Metric("lockWrong", lockWrong);
         run.Metric("level", RunBoons.Level);
         run.Metric("levelUps", levelUps);
-        run.Metric("birdsAlive", Enemy.Roster.Count);
+        run.Metric("botsAlive", Enemy.Roster.Count);
         run.Metric("bestStreak", Combo.Best);
         run.Metric("coinsRun", MetaProgress.CoinsThisRun);
         run.Metric("runSeconds", Mathf.Round(elapsed));

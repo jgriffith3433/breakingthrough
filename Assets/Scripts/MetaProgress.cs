@@ -167,8 +167,9 @@ public static class MetaProgress {
         return wave;
     }
 
-    public static int NoteBird(FowlKind kind) {
-        if (kind != FowlKind.Hen) {
+    // Plated Yo Bots fill the coin tally (saved as HensToward, from when they were hens).
+    public static int NoteBot(BotKind kind) {
+        if (kind != BotKind.PlatedYoBot) {
             return 0;
         }
         Ensure();

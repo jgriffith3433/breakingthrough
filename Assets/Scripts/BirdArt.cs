@@ -1,13 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// The Blender birds in Resources/Models/Birds. Each has Body, Head, WingL, WingR, LegL and LegR parts.
-// They are painted with vertex colors and drawn with the knoll shader, so they sit in the same world.
+// The shared look for everything painted with vertex colors on the hill: the bots (BotArt) and the lantern glass.
+// Drawn with the knoll shader, so they sit in the same world.
 public static class BirdArt {
     static Material shared;
     static Material glowing;
 
-    // Same look, but warm yellow vertex colors glow: lantern glass, the Thunderbird's eyes and markings.
+    // Same look, but warm yellow vertex colors glow: lantern glass, the Titan Spider Bot's gold trim and eyes.
     public static Material Glowing {
         get {
             if (glowing == null) {
@@ -20,7 +20,6 @@ public static class BirdArt {
             return glowing;
         }
     }
-    static readonly Dictionary<string, GameObject> sources = new Dictionary<string, GameObject>();
     static readonly Dictionary<long, Mesh> tinted = new Dictionary<long, Mesh>();
 
     public static Material Shared {
@@ -48,43 +47,8 @@ public static class BirdArt {
         }
     }
 
-    static GameObject Source(FowlKind kind) {
-        string name = kind.ToString();
-        GameObject source;
-        if (!sources.TryGetValue(name, out source)) {
-            source = Resources.Load<GameObject>("Models/Birds/" + name);
-            sources[name] = source;
-        }
-        return source;
-    }
-
-    public static bool Has(FowlKind kind) {
-        return Source(kind) != null;
-    }
-
-    // tint is a hue to lean toward; amount 0 keeps the authored colors.
-    public static GameObject Make(FowlKind kind, Color tint, float amount) {
-        GameObject source = Source(kind);
-        if (source == null) {
-            return null;
-        }
-        GameObject made = Object.Instantiate(source);
-        made.name = "Turkey";
-        foreach (Collider collider in made.GetComponentsInChildren<Collider>()) {
-            Object.Destroy(collider);
-        }
-        foreach (MeshRenderer renderer in made.GetComponentsInChildren<MeshRenderer>()) {
-            renderer.sharedMaterial = kind == FowlKind.Thunderbird ? Glowing : Shared;
-            renderer.receiveShadows = true;
-            MeshFilter filter = renderer.GetComponent<MeshFilter>();
-            if (filter != null && amount > 0.001f) {
-                filter.sharedMesh = Tinted(filter.sharedMesh, tint, amount);
-            }
-        }
-        return made;
-    }
-
-    static Mesh Tinted(Mesh mesh, Color tint, float amount) {
+    // A copy of the mesh with its vertex colors leaned toward tint. Copies are cached, so a flock shares them.
+    public static Mesh Tinted(Mesh mesh, Color tint, float amount) {
         if (mesh == null) {
             return null;
         }

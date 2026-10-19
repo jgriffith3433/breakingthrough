@@ -202,7 +202,7 @@ public static class RunAnalytics {
         HawkesAnalytics.LevelEnd(wave.ToString(), result, props);
     }
 
-    // A bird pecked the musician (Musician.Hurt). The last one to land is the cause when he falls.
+    // A bot hit the musician (Musician.Hurt). The last one to land a blow is the cause when he falls.
     public static void NoteHurt(Enemy by, int amount) {
         if (by == null) {
             return;
@@ -215,7 +215,7 @@ public static class RunAnalytics {
         lastHurtElite = by.Elite;
     }
 
-    // The musician fell: the death (which bird), the wave's end, the run's end and the game-over screen.
+    // The musician fell: the death (which bot), the wave's end, the run's end and the game-over screen.
     public static void MusicianDown(int wave) {
         if (!runOpen) {
             return;
@@ -315,8 +315,9 @@ public static class RunAnalytics {
 
     // ---------------------------------------------------------------- helpers
 
-    static string Cause(FowlKind kind) {
-        return kind.ToString().ToLowerInvariant();
+    // yo_bot, plated_yo_bot, spider_bot ... titan_spider_bot.
+    static string Cause(BotKind kind) {
+        return BotRoster.Slug(kind);
     }
 
     static string WorstBird() {
