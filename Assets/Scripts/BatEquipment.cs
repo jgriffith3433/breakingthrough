@@ -5,8 +5,10 @@ using UnityEngine;
 // birds further). A small target, or an arc full of small ones, gets the bat swung down at the ground instead: a
 // small area hit. Hold to wind up and let go for a home run: one bird flies far and bowls over the birds it meets.
 // Without a lock you turn to the nearest bird in the arc. From the auto wave it swings by itself at birds in reach.
-// Every hit goes through Combat.BatHit, so the run's boons apply. Until the new model, the bat is a stand-in: two
-// capsules on the right hand, posed in code, with the old recoil clip as the body's swing.
+// Every hit goes through Combat.BatHit, so the run's boons apply; the bat boons that change the swing itself (Wide
+// Arc, Follow Through, Sweet Spot, Line Drive, Grand Slam's spin, Long Ball's bolts, Blizzard Bat's frost) and the
+// metal bat act here. Until the new model, the bat is a stand-in: two capsules on the right hand, posed in code, with
+// the old recoil clip as the body's swing. UpgradeLook.DressBat puts each boon's mark on it.
 public class BatEquipment : MonoBehaviour {
     public static BatEquipment Instance { get; private set; }
 
@@ -19,6 +21,16 @@ public class BatEquipment : MonoBehaviour {
     public static int HomeRuns { get; private set; }
     public static int HomeRunKnocks { get; private set; }
     public static int KnockedBack { get; private set; }
+    // The bat boons, for the playtest: wide swings, spins, bolts batted and landed, line-drive hits, frost gusts,
+    // metal-bat blasts.
+    public static int WideSwings { get; private set; }
+    public static int Spins { get; private set; }
+    public static int SpinHits { get; private set; }
+    public static int BoltsBatted { get; private set; }
+    public static int BoltHits { get; private set; }
+    public static int LineDriveHits { get; private set; }
+    public static int FrostGusts { get; private set; }
+    public static int MetalBlasts { get; private set; }
     // One line per thing worth seeing ("swing 3: 2 birds hit..."). The playtest drains it; capped so nobody has to.
     public static readonly List<string> Events = new List<string>();
 
@@ -28,7 +40,8 @@ public class BatEquipment : MonoBehaviour {
         Swing2,
         Swing3,
         Smash,
-        HomeRun
+        HomeRun,
+        Spin
     }
 
     Animator anim;
@@ -41,6 +54,7 @@ public class BatEquipment : MonoBehaviour {
     float moveTime;
     float moveLength;
     float windup;
+    float sweep = Sweep;
     bool contactDone;
     Enemy faceTarget;
     Vector2 poseFrom;
@@ -92,6 +106,14 @@ public class BatEquipment : MonoBehaviour {
         HomeRuns = 0;
         HomeRunKnocks = 0;
         KnockedBack = 0;
+        WideSwings = 0;
+        Spins = 0;
+        SpinHits = 0;
+        BoltsBatted = 0;
+        BoltHits = 0;
+        LineDriveHits = 0;
+        FrostGusts = 0;
+        MetalBlasts = 0;
         Events.Clear();
     }
 
@@ -118,7 +140,7 @@ public class BatEquipment : MonoBehaviour {
     public static float Reach {
         get {
             float grown = PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f;
-            return Tuning.BatReach * grown * (1f + 0.1f * RunBoons.PierceCount);
+            return Tuning.BatReach * grown;
         }
     }
 
@@ -159,12 +181,12 @@ public class BatEquipment : MonoBehaviour {
 
         if (move != Move.None) {
             moveTime += dt;
-            if (!contactDone && moveTime >= windup + Sweep * 0.5f) {
+            if (!contactDone && moveTime >= windup + sweep * 0.5f) {
                 contactDone = true;
                 Contact();
             }
             // A click during a swing waits for the bat to come through, then goes straight into the next one.
-            bool chainable = contactDone && moveTime >= windup + Sweep + 0.08f / Mathf.Max(0.3f, RunBoons.DrawSpeed);
+            bool chainable = contactDone && moveTime >= windup + sweep + 0.08f / Mathf.Max(0.3f, RunBoons.DrawSpeed);
             if (queued != Move.None && chainable) {
                 Begin(queued);
             } else if (moveTime >= moveLength) {
@@ -242,6 +264,12 @@ public class BatEquipment : MonoBehaviour {
             if (ShouldSmash(faceTarget)) {
                 next = Move.Smash;
             }
+            // Grand Slam: every Nth swing is a full spin instead.
+            int every = RunBoons.SpinEvery;
+            if (every > 0 && (swingCount + 1) % every == 0) {
+                next = Move.Spin;
+                comboStep = 0;
+            }
         } else {
             comboStep = 0;
         }
@@ -250,6 +278,7 @@ public class BatEquipment : MonoBehaviour {
         moveTime = 0f;
         contactDone = false;
         poseFrom = pose;
+        sweep = Sweep;
         float speed = Mathf.Max(0.3f, RunBoons.DrawSpeed);
         switch (next) {
             case Move.Swing1:
@@ -287,6 +316,22 @@ public class BatEquipment : MonoBehaviour {
                 sweepFrom = windPose;
                 sweepTo = new Vector2(-150f, 5f);
                 break;
+            case Move.Spin:
+                // All the way round: the bat goes from behind your right shoulder through 360 degrees.
+                windup = 0.08f;
+                moveLength = 0.6f;
+                sweep = 0.26f;
+                windPose = new Vector2(175f, 10f);
+                sweepFrom = windPose;
+                sweepTo = new Vector2(-185f, 5f);
+                break;
+        }
+        // Wide Arc: the combo swings come round further either side.
+        float wide = RunBoons.ArcBonus * 0.5f;
+        if (wide > 0f && (next == Move.Swing1 || next == Move.Swing2 || next == Move.Swing3)) {
+            windPose.x += Mathf.Sign(windPose.x) * wide;
+            sweepFrom = windPose;
+            sweepTo.x += Mathf.Sign(sweepTo.x) * wide;
         }
         windup /= speed;
         moveLength /= speed;
@@ -294,14 +339,10 @@ public class BatEquipment : MonoBehaviour {
         Swings++;
         swingCount++;
         RunLog.NoteSwing();
-        GameAudio.Play("batswing", next == Move.HomeRun || next == Move.Swing3 ? 0.6f : 0.42f, Random.Range(0.92f, 1.08f) * (next == Move.Swing3 ? 0.85f : 1f));
+        bool big = next == Move.HomeRun || next == Move.Swing3 || next == Move.Spin;
+        GameAudio.Play("batswing", big ? 0.6f : 0.42f, Random.Range(0.92f, 1.08f) * (next == Move.Swing3 ? 0.85f : next == Move.Spin ? 0.75f : 1f));
         if (anim != null && anim.layerCount > 1) {
             anim.SetTrigger("Fire");
-        }
-
-        int every = RunBoons.VolleyEvery;
-        if (every > 0 && swingCount % every == 0) {
-            Shockwave();
         }
     }
 
@@ -314,8 +355,7 @@ public class BatEquipment : MonoBehaviour {
                 return enemy;
             }
         }
-        float look = Reach * (1.35f + 0.35f * RunBoons.Rank(BoonId.Homing));
-        return Nearest(look, 100f);
+        return Nearest(Reach * 1.35f, 100f);
     }
 
     // Swing down at the ground when the target is small, or most birds in the arc are.
@@ -337,7 +377,7 @@ public class BatEquipment : MonoBehaviour {
 
     static float ArcFor(Move kind) {
         float arc = kind == Move.Swing3 ? Tuning.BatArcFinisher : Tuning.BatArc;
-        return Mathf.Min(300f, arc + 20f * RunBoons.ExtraArrows);
+        return Mathf.Min(300f, arc + RunBoons.ArcBonus);
     }
 
     // The moment the bat meets whatever is in front.
@@ -349,6 +389,12 @@ public class BatEquipment : MonoBehaviour {
 
         if (move == Move.HomeRun) {
             HomeRun(forward, reach, grown);
+            return;
+        }
+
+        if (move == Move.Spin) {
+            SpinContact(reach);
+            LongBall(reach);
             return;
         }
 
@@ -379,34 +425,65 @@ public class BatEquipment : MonoBehaviour {
                 Juice.HitStop(0.05f);
                 ZeldaStyleCamera.Shake(0.08f, 0.16f);
             }
+            LongBall(reach);
             return;
         }
 
         bool finisher = move == Move.Swing3;
-        Gather(reach, ArcFor(move) * 0.5f, forward, hits);
+        float halfArc = ArcFor(move) * 0.5f;
+        Gather(reach, halfArc, forward, hits);
+        // Follow Through: the nearest few in the arc; more with rank.
+        int most = RunBoons.SwingHits(finisher);
+        int inArc = hits.Count;
+        if (hits.Count > most) {
+            hits.RemoveRange(most, hits.Count - most);
+        }
+        if (RunBoons.ArcBonus > 0f) {
+            WideSwings++;
+        }
+        Blizzard(reach, halfArc, forward, finisher);
         int count = Strike(hits, finisher ? Tuning.BatDamageFinisher : Tuning.BatDamage, finisher ? 4f : 2f,
             finisher ? Tuning.BatKnockFinisher : Tuning.BatKnock, finisher ? 5f : 2f);
         if (finisher && count > 0) {
             Finishers++;
         }
         string name = move == Move.Swing1 ? "swing 1" : move == Move.Swing2 ? "swing 2" : "swing 3 (finisher)";
+        if (RunBoons.ArcBonus > 0f) {
+            name += " (" + ArcFor(move).ToString("0") + " degree arc)";
+        }
         if (count > 0) {
-            GameAudio.Play("batcrack", finisher ? 1f : 0.75f, finisher ? 0.9f : Random.Range(0.98f, 1.1f));
+            Crack(finisher ? 1f : 0.75f, finisher ? 0.9f : Random.Range(0.98f, 1.1f));
             Juice.HitStop(finisher ? 0.07f : 0.035f);
             ZeldaStyleCamera.Shake(finisher ? 0.11f : 0.05f, finisher ? 0.2f : 0.12f);
-            if (finisher && MetaProgress.ShootsRockets()) {
-                Rocket(hits[0].transform.position, hits[0], 4f);
+            if (finisher && MetaProgress.MetalBat()) {
+                MetalBlast(hits[0].transform.position, hits[0]);
             }
-            Say(name + ": " + count + " bird" + (count == 1 ? "" : "s") + " hit, knocked back " + (finisher ? Tuning.BatKnockFinisher : Tuning.BatKnock).ToString("0") + " m/s");
+            Say(name + ": " + count + " bot" + (count == 1 ? "" : "s") + " hit" + (inArc > count ? " (" + inArc + " in the arc, " + most + " a swing)" : "")
+                + ", knocked back " + (finisher ? Tuning.BatKnockFinisher : Tuning.BatKnock).ToString("0") + " m/s");
         } else {
             Say(name + ": a miss");
         }
+        LongBall(reach);
     }
 
-    // The bat on each bird in the list. Knock is meters per second along the swing, lift straight up. Returns the count.
+    // The crack of a hit. The metal bat rings higher and louder.
+    static void Crack(float volume, float pitch) {
+        if (MetaProgress.MetalBat()) {
+            GameAudio.Play("batcrack", Mathf.Min(1f, volume * 1.25f), pitch * 1.3f);
+        } else {
+            GameAudio.Play("batcrack", volume, pitch);
+        }
+    }
+
+    // The bat on each bot in the list. Knock is meters per second along the swing, lift straight up. A bot out on
+    // the bat's outer part is on the sweet spot. Returns the count.
     int Strike(List<Enemy> targets, float scale, float power, float knock, float lift) {
         int count = 0;
-        int ricochet = RunBoons.Bounces;
+        int lineDrive = RunBoons.LineDrive;
+        float sweetFrom = Reach * Tuning.SweetSpotFrom;
+        if (MetaProgress.MetalBat()) {
+            knock *= Tuning.MetalKnock;
+        }
         buffer.Clear();
         buffer.AddRange(targets);
         for (int i = 0; i < buffer.Count; i++) {
@@ -415,13 +492,14 @@ public class BatEquipment : MonoBehaviour {
                 continue;
             }
             count++;
-            bool dropped = Combat.BatHit(enemy, scale, power, true);
+            Vector3 away = Flat(enemy.transform.position - transform.position);
+            bool tip = away.magnitude - enemy.BodyScale * 0.3f >= sweetFrom;
+            bool dropped = Combat.BatHit(enemy, scale, power, true, tip);
             if (!dropped && enemy != null) {
-                Vector3 away = Flat(enemy.transform.position - transform.position);
                 enemy.Knock(KnockOf(enemy, away, knock, lift));
                 KnockedBack++;
-                if (ricochet > 0) {
-                    Track(enemy, 0.5f, ricochet, 0.5f, false);
+                if (lineDrive > 0) {
+                    Track(enemy, 0.6f, lineDrive, 0.6f + 0.15f * lineDrive, false);
                 }
             }
         }
@@ -466,9 +544,6 @@ public class BatEquipment : MonoBehaviour {
             }
         }
         Track(target, 2.2f, 8, 0.9f * power, true);
-        if (MetaProgress.ShootsRockets()) {
-            Rocket(target.transform.position, target, 6f);
-        }
         GameAudio.Play("homerun", 0.95f, Random.Range(0.97f, 1.03f));
         Fx.Ring(target.transform.position, 3f * Mathf.Sqrt(Mathf.Max(1f, target.BodyScale)), new Color(1f, 0.9f, 0.55f, 0.85f), 0.4f);
         Juice.HitStop(0.12f);
@@ -528,6 +603,11 @@ public class BatEquipment : MonoBehaviour {
                 flight.Bowled++;
                 if (flight.HomeRun) {
                     HomeRunKnocks++;
+                } else {
+                    LineDriveHits++;
+                    if (LineDriveHits <= 3) {
+                        Say("line drive: a knocked-back " + (flight.Bird.Title ?? "bot") + " hit " + (other.Title ?? "a bot") + " behind it");
+                    }
                 }
                 bool dropped = Combat.BatHit(other, flight.Scale, 5f, false);
                 if (!dropped && other != null) {
@@ -541,11 +621,10 @@ public class BatEquipment : MonoBehaviour {
         }
     }
 
-    // Volley's stand-in until the upgrades task: every Nth swing also sends a shockwave out from you.
-    void Shockwave() {
-        float radius = Reach * (1.4f + 0.2f * RunBoons.Rank(BoonId.Volley));
-        bool freeze = RunBoons.Has(BoonId.Hailstorm);
-        buffer.Clear();
+    // Grand Slam: the spin hits every bot around you, harder than a combo swing. Thunder Bat calls lightning too.
+    void SpinContact(float reach) {
+        float radius = reach * Tuning.SpinReach;
+        hits.Clear();
         List<Enemy> roster = Enemy.Roster;
         for (int i = 0; i < roster.Count; i++) {
             Enemy enemy = roster[i];
@@ -555,29 +634,94 @@ public class BatEquipment : MonoBehaviour {
             Vector3 to = Flat(enemy.transform.position - transform.position);
             float r = radius + enemy.BodyScale * 0.3f;
             if (to.sqrMagnitude <= r * r) {
-                buffer.Add(enemy);
+                hits.Add(enemy);
             }
         }
-        for (int i = 0; i < buffer.Count; i++) {
-            Enemy enemy = buffer[i];
-            if (enemy == null || !enemy.Alive) {
-                continue;
-            }
-            if (freeze) {
-                enemy.Chill(0.6f, 2f, 1f);
-            }
-            if (!enemy.Damage(Combat.BatBase() * 0.6f, DamageKind.Pulse, false) && enemy != null) {
-                enemy.Knock(KnockOf(enemy, Flat(enemy.transform.position - transform.position), 5f, 2f));
-            }
+        Spins++;
+        Blizzard(radius, 180f, Flat(transform.forward), false);
+        int count = Strike(hits, Tuning.SpinDamage, 4f, Tuning.BatKnockFinisher * 0.8f, 4f);
+        SpinHits += count;
+        bool thunder = RunBoons.Has(BoonId.StormQuiver);
+        Fx.Ring(transform.position + Vector3.up * 0.3f, radius * 2f, thunder ? new Color(0.6f, 0.82f, 1f, 0.85f) : new Color(1f, 0.88f, 0.6f, 0.8f), 0.45f);
+        if (thunder) {
+            Combat.Lightning(transform.position + Vector3.up * 2f * (PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f), null, 5, Combat.BatBase() * 0.8f);
         }
-        Fx.Ring(transform.position, radius * 2f, freeze ? new Color(0.7f, 0.9f, 1f, 0.8f) : new Color(1f, 0.88f, 0.6f, 0.75f), 0.45f);
+        if (count > 0) {
+            Crack(1f, 0.85f);
+            Juice.HitStop(0.06f);
+            ZeldaStyleCamera.Shake(0.1f, 0.18f);
+        }
+        Say("grand slam spin (360 degrees, " + radius.ToString("0.0") + " m): " + count + " bot" + (count == 1 ? "" : "s") + " hit" + (thunder ? ", lightning called down" : ""));
+        UpgradeLook.Say("GRAND SLAM!", 0.9f, -40f);
     }
 
-    // The rockets shop upgrade's stand-in: heavy hits burst around the bird.
-    static void Rocket(Vector3 point, Enemy skip, float power) {
-        float splash = MetaProgress.SplashRadius(power);
-        Combat.Burst(point, splash, Combat.BatBase() * 0.65f, DamageKind.Blast, skip);
-        UpgradeLook.Blast(point + Vector3.up * 0.4f, splash);
+    // Blizzard Bat: frost blows through the swing's arc a little past the bat, slowing everything in it; the
+    // finisher freezes.
+    void Blizzard(float reach, float halfArc, Vector3 forward, bool freeze) {
+        if (!RunBoons.Has(BoonId.Hailstorm)) {
+            return;
+        }
+        Gather(reach * 1.4f, halfArc, forward, buffer);
+        for (int i = 0; i < buffer.Count; i++) {
+            Combat.Frost(buffer[i], freeze);
+        }
+        FrostGusts++;
+        Fx.Emit(FxKind.Smoke, transform.position + forward * reach * 0.8f + Vector3.up * 0.6f, 4, new Color(0.82f, 0.93f, 1f, 0.5f), 1.4f * Mathf.Sqrt(Mathf.Max(1f, reach / Tuning.BatReach)), 2.5f, reach * 0.5f);
+        if (FrostGusts <= 2) {
+            Say("blizzard bat: frost through the arc, " + buffer.Count + " bot" + (buffer.Count == 1 ? "" : "s") + " slowed" + (freeze ? " and frozen" : ""));
+        }
+    }
+
+    // Long Ball: the swing also bats a bolt at the nearest bot out of the bat's reach.
+    void LongBall(float reach) {
+        int rank = RunBoons.Rank(BoonId.Homing);
+        if (rank <= 0) {
+            return;
+        }
+        float grown = PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f;
+        float far = reach + Tuning.LongBallRange * grown * (1f + 0.5f * (rank - 1));
+        Enemy best = null;
+        float bestDist = far * far;
+        List<Enemy> roster = Enemy.Roster;
+        for (int i = 0; i < roster.Count; i++) {
+            Enemy enemy = roster[i];
+            if (enemy == null || !enemy.Alive || enemy.Climbing) {
+                continue;
+            }
+            Vector3 to = Flat(enemy.transform.position - transform.position);
+            float d = to.sqrMagnitude;
+            float gap = to.magnitude - enemy.BodyScale * 0.3f;
+            if (gap <= reach || d >= bestDist) {
+                continue;
+            }
+            bestDist = d;
+            best = enemy;
+        }
+        if (best == null) {
+            return;
+        }
+        Vector3 from = root != null ? root.position + root.up * 0.8f * grown : transform.position + Vector3.up * grown;
+        BattedBolt.Launch(from, best, 0.55f + 0.25f * rank, grown);
+        BoltsBatted++;
+        if (BoltsBatted <= 3) {
+            Say("long ball: a bolt batted at " + (best.Title ?? "a bot") + " " + Mathf.Sqrt(bestDist).ToString("0") + " m away (reach " + reach.ToString("0.0") + " m)");
+        }
+    }
+
+    public static void NoteBoltHit() {
+        BoltHits++;
+    }
+
+    // Aluminum! Not wood!: the finisher's crack goes off in a small blast around the bot.
+    static void MetalBlast(Vector3 point, Enemy skip) {
+        float grown = PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f;
+        float radius = MetaProgress.BlastRadius() * Mathf.Sqrt(grown);
+        Combat.Burst(point, radius, Combat.BatBase() * Tuning.MetalBlastDamage, DamageKind.Blast, skip);
+        UpgradeLook.Blast(point + Vector3.up * 0.4f, radius);
+        MetalBlasts++;
+        if (MetalBlasts <= 2) {
+            Say("aluminum bat: the finisher blasts " + radius.ToString("0.0") + " m around the bot");
+        }
     }
 
     // Big birds barely budge; birds your size or smaller fly.
@@ -650,6 +794,7 @@ public class BatEquipment : MonoBehaviour {
         root.SetParent(transform, false);
         Part("Handle", new Vector3(0f, 0.17f, 0f), new Vector3(0.06f, 0.25f, 0.06f), new Color(0.12f, 0.09f, 0.08f));
         Part("Barrel", new Vector3(0f, 0.66f, 0f), new Vector3(0.11f, 0.36f, 0.11f), new Color(0.5f, 0.36f, 0.22f));
+        UpgradeLook.DressBat(root, transform);
         PoseBat();
     }
 
@@ -675,11 +820,11 @@ public class BatEquipment : MonoBehaviour {
             float wobble = chargeFull ? Mathf.Sin(Time.time * 38f) * 3f : 0f;
             pose = Vector2.Lerp(pose, new Vector2(155f, 20f + wobble), 1f - Mathf.Exp(-14f * dt));
         } else if (swinging) {
-            float sweepEnd = windup + Sweep;
+            float sweepEnd = windup + sweep;
             if (moveTime < windup) {
                 pose = Vector2.Lerp(poseFrom, windPose, Smooth(moveTime / Mathf.Max(0.001f, windup)));
             } else if (moveTime < sweepEnd) {
-                float k = (moveTime - windup) / Sweep;
+                float k = (moveTime - windup) / sweep;
                 pose = Vector2.Lerp(sweepFrom, sweepTo, 1f - (1f - k) * (1f - k));
             } else {
                 pose = Vector2.Lerp(sweepTo, Rest, Smooth((moveTime - sweepEnd) / Mathf.Max(0.001f, moveLength - sweepEnd)));
@@ -757,5 +902,47 @@ public class BatEquipment : MonoBehaviour {
             }
         }
         return null;
+    }
+}
+
+// Long Ball's bolt: a hex bolt batted off the barrel at a bot out of reach. It flies straight at the bot (a little
+// homing, so a walking bot is still met) and hits it as the bat would, so the run's boons ride along.
+public class BattedBolt : MonoBehaviour {
+    Enemy target;
+    float scale;
+    float speed;
+    float life = 1.6f;
+    Transform spin;
+
+    public static void Launch(Vector3 from, Enemy target, float scale, float grown) {
+        var go = new GameObject("BattedBolt");
+        go.transform.position = from;
+        BattedBolt bolt = go.AddComponent<BattedBolt>();
+        bolt.target = target;
+        bolt.scale = scale;
+        bolt.speed = Tuning.LongBallSpeed * Mathf.Sqrt(Mathf.Max(1f, grown));
+        bolt.spin = UpgradeLook.BuildBolt(go.transform, 0.9f * Mathf.Sqrt(Mathf.Max(1f, grown)));
+    }
+
+    void Update() {
+        life -= Time.deltaTime;
+        if (target == null || !target.Alive || life <= 0f) {
+            Destroy(gameObject);
+            return;
+        }
+        Vector3 aim = target.transform.position + Vector3.up * 0.6f * Mathf.Max(1f, target.BodyScale);
+        Vector3 to = aim - transform.position;
+        float step = speed * Time.deltaTime;
+        if (spin != null) {
+            spin.Rotate(720f * Time.deltaTime, 540f * Time.deltaTime, 0f, Space.Self);
+        }
+        if (to.magnitude <= step + 0.3f + target.BodyScale * 0.3f) {
+            Combat.BatHit(target, scale, 2f, false);
+            BatEquipment.NoteBoltHit();
+            GameAudio.Play("batcrack", 0.35f, 1.6f);
+            Destroy(gameObject);
+            return;
+        }
+        transform.position += to.normalized * step;
     }
 }

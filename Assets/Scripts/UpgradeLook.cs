@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -57,45 +58,38 @@ public class UpgradeLook : MonoBehaviour {
         go.AddComponent<LoadoutBanner>();
     }
 
-    public static GameObject BuildRocket() {
-        var root = new GameObject("Rocket");
-        Quaternion along = Quaternion.Euler(-90f, 0f, 0f);
-        Color body = new Color(0.72f, 0.16f, 0.12f);
-        Color metal = new Color(0.92f, 0.86f, 0.74f);
-        Part(root.transform, PrimitiveType.Cylinder, Vector3.zero, along, new Vector3(0.16f, 0.36f, 0.16f), body);
-        Part(root.transform, PrimitiveType.Sphere, new Vector3(0f, 0f, 0.46f), Quaternion.identity, Vector3.one * 0.2f, metal);
-        Part(root.transform, PrimitiveType.Cylinder, new Vector3(0f, 0f, 0.08f), along, new Vector3(0.2f, 0.045f, 0.2f), new Color(0.95f, 0.78f, 0.28f));
-        Part(root.transform, PrimitiveType.Cube, new Vector3(0.14f, 0f, -0.28f), Quaternion.identity, new Vector3(0.16f, 0.03f, 0.14f), body);
-        Part(root.transform, PrimitiveType.Cube, new Vector3(-0.14f, 0f, -0.28f), Quaternion.identity, new Vector3(0.16f, 0.03f, 0.14f), body);
-        Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 0.14f, -0.28f), Quaternion.identity, new Vector3(0.03f, 0.16f, 0.14f), body);
-        Part(root.transform, PrimitiveType.Cube, new Vector3(0f, -0.14f, -0.28f), Quaternion.identity, new Vector3(0.03f, 0.16f, 0.14f), body);
-        Part(root.transform, PrimitiveType.Sphere, new Vector3(0f, 0f, -0.46f), Quaternion.identity, Vector3.one * 0.1f, new Color(1f, 0.62f, 0.16f));
-        return root;
-    }
-
-    public static void LightRocket(GameObject shot, Vector3 longLocal) {
-        if (shot == null) {
+    // The bat wears what you picked: each bat boon and both bat shop upgrades leave a mark on it (or on Wallit).
+    public static void DressBat(Transform bat, Transform owner) {
+        if (bat == null || bat.GetComponent<BatMarks>() != null) {
             return;
         }
-        int rank = Mathf.Max(1, MetaProgress.Rank(UpgradeId.Blast));
-        var flame = new GameObject("Flame");
-        flame.transform.SetParent(shot.transform, false);
-        Vector3 tail = longLocal.sqrMagnitude > 0.0001f ? -longLocal.normalized : Vector3.back;
-        flame.transform.localPosition = tail * 0.36f;
-        TrailRenderer trail = flame.AddComponent<TrailRenderer>();
-        trail.time = 0.2f + 0.05f * rank;
-        trail.startWidth = 0.07f + 0.03f * rank;
-        trail.endWidth = 0f;
-        trail.minVertexDistance = 0.05f;
-        trail.numCapVertices = 4;
-        trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        trail.receiveShadows = false;
-        Shader shader = Shader.Find("Sprites/Default");
-        if (shader != null) {
-            trail.material = new Material(shader);
-        }
-        trail.startColor = new Color(1f, 0.55f, 0.12f, 1f);
-        trail.endColor = new Color(1f, 0.28f, 0.05f, 0f);
+        bat.gameObject.AddComponent<BatMarks>().Owner = owner;
+    }
+
+    // What the bat shows right now, for the playtest ("aluminum (2 dents), flames: Pine Tar, ...").
+    public static string BatLine() {
+        return BatMarks.Instance != null ? BatMarks.Instance.Line : "";
+    }
+
+    // A brass hex bolt, unlit like the pickups. Returns the part to spin.
+    public static Transform BuildBolt(Transform parent, float size) {
+        var spin = new GameObject("Bolt").transform;
+        spin.SetParent(parent, false);
+        spin.localScale = Vector3.one * size;
+        Part(spin, PrimitiveType.Cylinder, new Vector3(0f, 0.12f, 0f), Quaternion.identity, new Vector3(0.3f, 0.06f, 0.3f), new Color(1f, 0.82f, 0.4f));
+        Part(spin, PrimitiveType.Cylinder, new Vector3(0f, -0.08f, 0f), Quaternion.identity, new Vector3(0.12f, 0.17f, 0.12f), new Color(0.78f, 0.6f, 0.28f));
+        return spin;
+    }
+
+    public static GameObject MarkPart(Transform parent, PrimitiveType type, Vector3 localPos, Quaternion localRot, Vector3 localScale, Color color) {
+        return Part(parent, type, localPos, localRot, localScale, color);
+    }
+
+    // See-through, for glows and shells on the bat.
+    public static GameObject GlassPart(Transform parent, PrimitiveType type, Vector3 localPos, Quaternion localRot, Vector3 localScale, Color color) {
+        GameObject go = Part(parent, type, localPos, localRot, localScale, color);
+        Tint(go, color);
+        return go;
     }
 
     static GameObject Part(Transform parent, PrimitiveType type, Vector3 localPos, Quaternion localRot, Vector3 localScale, Color color) {
@@ -115,28 +109,6 @@ public class UpgradeLook : MonoBehaviour {
             renderer.receiveShadows = false;
         }
         return go;
-    }
-
-    public static void KeenArrow(GameObject shot) {
-        int rank = MetaProgress.Rank(UpgradeId.Keen);
-        if (rank <= 0 || shot == null) {
-            return;
-        }
-        shot.transform.localScale *= 1f + 0.22f * rank;
-        TrailRenderer trail = shot.AddComponent<TrailRenderer>();
-        trail.time = 0.16f + 0.03f * rank;
-        trail.startWidth = 0.05f + 0.018f * rank;
-        trail.endWidth = 0f;
-        trail.numCapVertices = 2;
-        trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        trail.receiveShadows = false;
-        Shader shader = Shader.Find("Sprites/Default");
-        if (shader != null) {
-            trail.material = new Material(shader);
-        }
-        Color gold = new Color(1f, 0.82f, 0.28f, 1f);
-        trail.startColor = gold;
-        trail.endColor = new Color(gold.r, gold.g, gold.b, 0f);
     }
 
     public static void Blast(Vector3 point, float radius) {
@@ -287,22 +259,30 @@ public class UpgradeLook : MonoBehaviour {
 
     // A jagged bolt between two points.
     public static void Zap(Vector3 from, Vector3 to) {
+        Zap(from, to, 0.14f, true);
+    }
+
+    // Width in meters at the start; flash: a soft flash where it lands.
+    public static void Zap(Vector3 from, Vector3 to, float width, bool flash) {
         var go = new GameObject("Zap");
         var line = go.AddComponent<LineRenderer>();
         int points = 7;
         line.positionCount = points;
         Vector3 side = Vector3.Cross((to - from).normalized, Vector3.up);
+        float jag = Mathf.Min(1f, width / 0.14f);
         for (int i = 0; i < points; i++) {
             float t = i / (float)(points - 1);
             Vector3 p = Vector3.Lerp(from, to, t);
             if (i > 0 && i < points - 1) {
-                p += side * Random.Range(-0.5f, 0.5f) + Vector3.up * Random.Range(-0.4f, 0.4f);
+                p += (side * Random.Range(-0.5f, 0.5f) + Vector3.up * Random.Range(-0.4f, 0.4f)) * jag;
             }
             line.SetPosition(i, p);
         }
-        line.startWidth = 0.14f;
-        line.endWidth = 0.06f;
-        Fx.Emit(FxKind.Flash, to, 1, new Color(0.55f, 0.8f, 1f, 0.9f), 1.1f, 0f);
+        line.startWidth = width;
+        line.endWidth = width * 0.43f;
+        if (flash) {
+            Fx.Emit(FxKind.Flash, to, 1, new Color(0.55f, 0.8f, 1f, 0.9f), 1.1f, 0f);
+        }
         line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         line.receiveShadows = false;
         Shader shader = Shader.Find("Sprites/Default");
@@ -320,38 +300,6 @@ public class UpgradeLook : MonoBehaviour {
     public static void Ring(Vector3 point, float radius, Color color, float life) {
         Fx.Ring(point, radius * 2f, new Color(color.r, color.g, color.b, 0.8f), life);
         Fx.Ring(point, radius * 1.6f, new Color(color.r, color.g, color.b, 0.4f), life * 0.8f);
-    }
-
-    // Arrows show what they carry: fire, frost, lightning.
-    public static void BoonTrail(GameObject shot, bool volley) {
-        if (shot == null || MetaProgress.Rank(UpgradeId.Keen) > 0) {
-            return;
-        }
-        Color tint;
-        if (RunBoons.Has(BoonId.Phoenix) || RunBoons.Has(BoonId.Firebrand)) {
-            tint = new Color(1f, 0.5f, 0.15f);
-        } else if (RunBoons.Has(BoonId.Frost) || (volley && RunBoons.Has(BoonId.Hailstorm))) {
-            tint = new Color(0.6f, 0.9f, 1f);
-        } else if (RunBoons.Has(BoonId.Chain) || RunBoons.Has(BoonId.StormQuiver)) {
-            tint = new Color(0.55f, 0.75f, 1f);
-        } else if (volley) {
-            tint = new Color(1f, 1f, 1f);
-        } else {
-            return;
-        }
-        TrailRenderer trail = shot.AddComponent<TrailRenderer>();
-        trail.time = 0.14f;
-        trail.startWidth = 0.08f;
-        trail.endWidth = 0f;
-        trail.numCapVertices = 2;
-        trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        trail.receiveShadows = false;
-        Shader shader = Shader.Find("Sprites/Default");
-        if (shader != null) {
-            trail.material = new Material(shader);
-        }
-        trail.startColor = tint;
-        trail.endColor = new Color(tint.r, tint.g, tint.b, 0f);
     }
 
     // A shower of plates, like a bot shaking loose as it leaves.
@@ -505,5 +453,313 @@ public class LoadoutBanner : MonoBehaviour {
         if (left <= 0f) {
             Destroy(gameObject);
         }
+    }
+}
+
+// The marks on the bat, rebuilt whenever a boon or a bat shop rank changes. The stand-in bat runs up its local y:
+// the handle from about -0.08 to 0.42, the barrel from 0.3 to 1.02 (0.11 across). Soft looks only (glow shells,
+// flame tongues, rings, a thin arc now and then): no spark or ember particles.
+public class BatMarks : MonoBehaviour {
+    public static BatMarks Instance { get; private set; }
+    public Transform Owner;
+    public string Line { get; private set; } = "";
+
+    static readonly Color Wood = new Color(0.5f, 0.36f, 0.22f);
+    static readonly Color Grip = new Color(0.12f, 0.09f, 0.08f);
+    static readonly Color Aluminum = new Color(0.76f, 0.79f, 0.84f);
+
+    Transform marks;
+    Transform pouch;
+    Transform trailTip;
+    int stamp = -1;
+    float zapIn;
+    readonly List<Transform> flames = new List<Transform>();
+    readonly List<Material> shells = new List<Material>();
+    readonly List<float> shellAlpha = new List<float>();
+
+    void Awake() {
+        Instance = this;
+    }
+
+    void OnDestroy() {
+        if (Instance == this) {
+            Instance = null;
+        }
+        if (pouch != null) {
+            Destroy(pouch.gameObject);
+        }
+    }
+
+    void Update() {
+        int now = Stamp();
+        if (now != stamp) {
+            stamp = now;
+            Rebuild();
+        }
+        float t = Time.time;
+        for (int i = 0; i < flames.Count; i++) {
+            if (flames[i] != null) {
+                Vector3 size = flames[i].localScale;
+                size.y = 0.13f * (1f + 0.3f * Mathf.Sin(t * 13f + i * 2.1f));
+                flames[i].localScale = size;
+            }
+        }
+        for (int i = 0; i < shells.Count; i++) {
+            if (shells[i] != null) {
+                Color c = shells[i].color;
+                c.a = shellAlpha[i] * (0.75f + 0.25f * Mathf.Sin(t * 5f + i));
+                shells[i].color = c;
+            }
+        }
+        // Live Wire: a thin arc crawls up the barrel now and then.
+        int wire = RunBoons.Rank(BoonId.Chain);
+        bool thunder = RunBoons.Has(BoonId.StormQuiver);
+        if (wire > 0 || thunder) {
+            zapIn -= Time.deltaTime;
+            if (zapIn <= 0f) {
+                zapIn = thunder ? Random.Range(0.25f, 0.5f) : Random.Range(0.9f, 1.5f) / wire;
+                float size = transform.lossyScale.y;
+                Vector3 from = transform.TransformPoint(new Vector3(Random.Range(-0.05f, 0.05f), 0.4f, 0f));
+                Vector3 to = transform.TransformPoint(new Vector3(Random.Range(-0.05f, 0.05f), 1f, Random.Range(-0.05f, 0.05f)));
+                UpgradeLook.Zap(from, to, 0.025f * size, false);
+            }
+        }
+        if (pouch != null && Owner != null) {
+            float grown = PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f;
+            float unit = Mathf.Max(0.0001f, Mathf.Abs(Owner.lossyScale.x));
+            pouch.localPosition = new Vector3(-0.3f, 0.95f, -0.12f) * grown / unit;
+            pouch.localScale = Vector3.one * grown / unit;
+        }
+    }
+
+    static int Stamp() {
+        int h = 17;
+        for (int i = 0; i < RunBoons.All.Length; i++) {
+            h = h * 7 + RunBoons.Rank((BoonId)i);
+        }
+        h = h * 5 + MetaProgress.Rank(UpgradeId.Keen);
+        h = h * 5 + MetaProgress.Rank(UpgradeId.Blast);
+        return h;
+    }
+
+    void Rebuild() {
+        flames.Clear();
+        shells.Clear();
+        shellAlpha.Clear();
+        if (marks != null) {
+            Destroy(marks.gameObject);
+        }
+        if (pouch != null) {
+            Destroy(pouch.gameObject);
+            pouch = null;
+        }
+        marks = new GameObject("Marks").transform;
+        marks.SetParent(transform, false);
+        var said = new List<string>();
+
+        int metal = MetaProgress.Rank(UpgradeId.Blast);
+        int corked = RunBoons.Rank(BoonId.Heavy);
+        bool tar = RunBoons.Has(BoonId.Firebrand) || RunBoons.Has(BoonId.Phoenix);
+        bool blizzard = RunBoons.Has(BoonId.Hailstorm);
+        bool thunder = RunBoons.Has(BoonId.StormQuiver);
+
+        // The bat itself: wood, or aluminum from the shop. Pine Tar darkens wood; the evolutions tint it.
+        Color barrel = metal > 0 ? Aluminum : Wood;
+        if (tar && metal == 0) {
+            barrel = Color.Lerp(barrel, new Color(0.22f, 0.13f, 0.07f), 0.55f);
+        }
+        if (blizzard) {
+            barrel = Color.Lerp(barrel, new Color(0.9f, 0.96f, 1f), 0.5f);
+        }
+        if (thunder) {
+            barrel = Color.Lerp(barrel, new Color(0.32f, 0.38f, 0.55f), 0.4f);
+        }
+        Transform barrelPart = transform.Find("Barrel");
+        Transform handlePart = transform.Find("Handle");
+        if (barrelPart != null) {
+            UpgradeLook.Paint(barrelPart.gameObject, barrel);
+            // Corked Bat: a fatter barrel each rank.
+            float thick = 0.11f * (1f + 0.07f * corked);
+            barrelPart.localScale = new Vector3(thick, 0.36f, thick);
+        }
+        if (handlePart != null) {
+            UpgradeLook.Paint(handlePart.gameObject, metal > 0 ? new Color(0.06f, 0.06f, 0.07f) : Grip);
+        }
+        float r = 0.055f * (1f + 0.07f * corked);
+        said.Add(metal > 0 ? "aluminum bat" : "wood bat");
+        if (corked > 0) {
+            said.Add("Corked Bat: barrel " + Mathf.RoundToInt(7f * corked) + "% fatter");
+        }
+        if (metal > 0) {
+            // Dents, more with rank, and a bright band where the metal catches the light.
+            for (int i = 0; i < 1 + metal; i++) {
+                float y = 0.5f + i * 0.17f;
+                float a = i * 2.3f;
+                Vector3 at = new Vector3(Mathf.Sin(a) * r * 0.85f, y, Mathf.Cos(a) * r * 0.85f);
+                UpgradeLook.MarkPart(marks, PrimitiveType.Sphere, at, Quaternion.LookRotation(new Vector3(at.x, 0f, at.z)), new Vector3(0.05f, 0.05f, 0.022f), new Color(0.48f, 0.5f, 0.55f));
+            }
+            Band(0.97f, r, 0.02f, new Color(0.95f, 0.97f, 1f));
+            said.Add("Aluminum! Not wood!: " + (1 + metal) + " dents");
+        }
+
+        // Corked Core (shop): a cork plug in the end of the barrel, wider each rank.
+        int core = MetaProgress.Rank(UpgradeId.Keen);
+        if (core > 0) {
+            float plug = r * (0.9f + 0.25f * core);
+            UpgradeLook.MarkPart(marks, PrimitiveType.Cylinder, new Vector3(0f, 1.02f, 0f), Quaternion.identity, new Vector3(plug, 0.025f, plug), new Color(0.78f, 0.6f, 0.38f));
+            said.Add("Corked Core: cork plug in the end");
+        }
+
+        // Quick Hands: white grip tape, a wrap per rank.
+        int quick = RunBoons.Rank(BoonId.QuickDraw);
+        for (int i = 0; i < quick; i++) {
+            UpgradeLook.MarkPart(marks, PrimitiveType.Cylinder, new Vector3(0f, 0.02f + i * 0.07f, 0f), Quaternion.Euler(12f, 0f, 0f), new Vector3(0.068f, 0.014f, 0.068f), new Color(0.95f, 0.95f, 0.92f));
+        }
+        if (quick > 0) {
+            said.Add("Quick Hands: grip tape");
+        }
+
+        // Follow Through: brass bands round the barrel.
+        int follow = RunBoons.Rank(BoonId.Pierce);
+        for (int i = 0; i < follow; i++) {
+            Band(0.46f + i * 0.06f, r, 0.016f, new Color(0.95f, 0.75f, 0.3f));
+        }
+        if (follow > 0) {
+            said.Add("Follow Through: " + follow + " brass band" + (follow == 1 ? "" : "s"));
+        }
+
+        // Sweet Spot: a red ring where the sweet spot starts, brighter with rank.
+        int sweet = RunBoons.Rank(BoonId.EagleEye);
+        if (sweet > 0) {
+            Band(0.8f, r, 0.03f, Color.Lerp(new Color(0.7f, 0.15f, 0.12f), new Color(1f, 0.3f, 0.25f), sweet / 5f));
+            said.Add("Sweet Spot: red ring on the tip");
+        }
+
+        // Line Drive: a chalk stripe along the barrel.
+        int line = RunBoons.Rank(BoonId.Ricochet);
+        if (line > 0) {
+            UpgradeLook.MarkPart(marks, PrimitiveType.Cube, new Vector3(r * 0.92f, 0.66f, 0f), Quaternion.identity, new Vector3(0.012f, 0.42f, 0.02f + 0.008f * line), new Color(0.98f, 0.98f, 0.96f));
+            said.Add("Line Drive: chalk stripe");
+        }
+
+        // Grand Slam: a gold knob.
+        int slam = RunBoons.Rank(BoonId.Volley);
+        if (slam > 0) {
+            UpgradeLook.MarkPart(marks, PrimitiveType.Sphere, new Vector3(0f, -0.09f, 0f), Quaternion.identity, Vector3.one * (0.08f + 0.012f * slam), new Color(1f, 0.82f, 0.3f));
+            said.Add("Grand Slam: gold knob");
+        }
+
+        // Called Shot: a red ribbon off the knob.
+        int called = RunBoons.Rank(BoonId.Mark);
+        if (called > 0) {
+            UpgradeLook.MarkPart(marks, PrimitiveType.Cube, new Vector3(0.03f, -0.18f, 0f), Quaternion.Euler(0f, 0f, 12f), new Vector3(0.012f, 0.16f + 0.03f * called, 0.04f), new Color(0.9f, 0.16f, 0.14f));
+            said.Add("Called Shot: red ribbon");
+        }
+
+        // Wide Arc: the bat leaves a pale swoosh through the air, wider with rank.
+        int wide = RunBoons.Rank(BoonId.SplitShot);
+        Trail(wide, blizzard);
+        if (wide > 0) {
+            said.Add("Wide Arc: swing trail");
+        }
+
+        // Pine Tar: flame tongues licking the barrel; Phoenix Bat makes them bigger and redder.
+        if (tar) {
+            bool phoenix = RunBoons.Has(BoonId.Phoenix);
+            Color flame = phoenix ? new Color(1f, 0.32f, 0.08f, 0.75f) : new Color(1f, 0.55f, 0.15f, 0.65f);
+            Shell(0.74f, r * 2.4f, 0.27f, new Color(1f, 0.5f, 0.15f, phoenix ? 0.3f : 0.2f));
+            int tongues = phoenix ? 6 : 4;
+            for (int i = 0; i < tongues; i++) {
+                float a = i * Mathf.PI * 2f / tongues;
+                Vector3 at = new Vector3(Mathf.Sin(a) * r * 1.1f, 0.62f + (i % 2) * 0.16f, Mathf.Cos(a) * r * 1.1f);
+                GameObject tongue = UpgradeLook.GlassPart(marks, PrimitiveType.Capsule, at, Quaternion.identity, new Vector3(0.05f, 0.13f, 0.05f) * (phoenix ? 1.3f : 1f), flame);
+                flames.Add(tongue.transform);
+            }
+            said.Add(phoenix ? "Phoenix Bat: big flames on the barrel" : "Pine Tar: flames on the barrel");
+        }
+
+        // Ice Bat: a frost shell and ice crystals; Blizzard Bat adds icicles.
+        if (RunBoons.Has(BoonId.Frost) || blizzard) {
+            Shell(0.7f, r * 2.3f, 0.3f, new Color(0.7f, 0.9f, 1f, blizzard ? 0.35f : 0.22f));
+            for (int i = 0; i < 4; i++) {
+                float a = i * 1.7f + 0.4f;
+                Vector3 at = new Vector3(Mathf.Sin(a) * r, 0.5f + i * 0.13f, Mathf.Cos(a) * r);
+                UpgradeLook.MarkPart(marks, PrimitiveType.Cube, at, Quaternion.Euler(45f, a * Mathf.Rad2Deg, 45f), Vector3.one * 0.035f, new Color(0.85f, 0.95f, 1f));
+            }
+            if (blizzard) {
+                for (int i = 0; i < 5; i++) {
+                    float a = i * 1.26f;
+                    UpgradeLook.MarkPart(marks, PrimitiveType.Cube, new Vector3(Mathf.Sin(a) * r * 1.1f, 0.85f - i * 0.08f, Mathf.Cos(a) * r * 1.1f), Quaternion.identity, new Vector3(0.018f, 0.09f, 0.018f), new Color(0.92f, 0.98f, 1f));
+                }
+            }
+            said.Add(blizzard ? "Blizzard Bat: frosted white with icicles" : "Ice Bat: frost on the barrel");
+        }
+
+        // Live Wire: a copper coil and a blue glow (and the arcs from Update); Thunder Bat glows brighter.
+        int wire = RunBoons.Rank(BoonId.Chain);
+        if (wire > 0 || thunder) {
+            for (int i = 0; i < 3 + wire; i++) {
+                UpgradeLook.MarkPart(marks, PrimitiveType.Cylinder, new Vector3(0f, 0.4f + i * 0.09f, 0f), Quaternion.Euler(18f, 0f, 0f), new Vector3(r * 2.1f, 0.008f, r * 2.1f), new Color(0.85f, 0.5f, 0.25f));
+            }
+            Shell(0.66f, r * 2.6f, 0.36f, new Color(0.55f, 0.8f, 1f, thunder ? 0.32f : 0.16f));
+            said.Add(thunder ? "Thunder Bat: crackling blue glow" : "Live Wire: copper coil and arcs");
+        }
+
+        // Long Ball: a pouch of bolts on Wallit's hip.
+        int longBall = RunBoons.Rank(BoonId.Homing);
+        if (longBall > 0 && Owner != null) {
+            pouch = new GameObject("BoltPouch").transform;
+            pouch.SetParent(Owner, false);
+            UpgradeLook.MarkPart(pouch, PrimitiveType.Cube, Vector3.zero, Quaternion.identity, new Vector3(0.16f, 0.2f, 0.12f), new Color(0.42f, 0.28f, 0.16f));
+            for (int i = 0; i < 1 + longBall; i++) {
+                Transform bolt = UpgradeLook.BuildBolt(pouch, 0.35f);
+                bolt.localPosition = new Vector3(-0.04f + i * 0.05f, 0.13f, 0f);
+            }
+            said.Add("Long Ball: bolt pouch on the hip");
+        }
+
+        Line = string.Join(", ", said.ToArray());
+    }
+
+    void Band(float y, float r, float height, Color color) {
+        UpgradeLook.MarkPart(marks, PrimitiveType.Cylinder, new Vector3(0f, y, 0f), Quaternion.identity, new Vector3(r * 2.12f, height, r * 2.12f), color);
+    }
+
+    void Shell(float y, float width, float height, Color color) {
+        GameObject shell = UpgradeLook.GlassPart(marks, PrimitiveType.Capsule, new Vector3(0f, y, 0f), Quaternion.identity, new Vector3(width, height, width), color);
+        Renderer skin = shell.GetComponent<Renderer>();
+        if (skin != null && skin.sharedMaterial != null) {
+            shells.Add(skin.sharedMaterial);
+            shellAlpha.Add(color.a);
+        }
+    }
+
+    // A swoosh behind the tip while the bat moves.
+    void Trail(int wide, bool frost) {
+        if (trailTip != null) {
+            Destroy(trailTip.gameObject);
+            trailTip = null;
+        }
+        if (wide <= 0) {
+            return;
+        }
+        trailTip = new GameObject("SwingTrail").transform;
+        trailTip.SetParent(transform, false);
+        trailTip.localPosition = new Vector3(0f, 0.95f, 0f);
+        TrailRenderer trail = trailTip.gameObject.AddComponent<TrailRenderer>();
+        trail.time = 0.16f + 0.03f * wide;
+        trail.widthMultiplier = 1f;
+        trail.startWidth = (0.12f + 0.04f * wide) * Mathf.Max(1f, transform.lossyScale.y);
+        trail.endWidth = 0f;
+        trail.minVertexDistance = 0.04f;
+        trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        trail.receiveShadows = false;
+        Shader shader = Shader.Find("Sprites/Default");
+        if (shader != null) {
+            trail.material = new Material(shader);
+        }
+        Color c = frost ? new Color(0.8f, 0.94f, 1f, 0.55f) : new Color(1f, 0.97f, 0.88f, 0.45f);
+        trail.startColor = c;
+        trail.endColor = new Color(c.r, c.g, c.b, 0f);
     }
 }

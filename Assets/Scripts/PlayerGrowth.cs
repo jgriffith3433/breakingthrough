@@ -157,9 +157,9 @@ public class PlayerGrowth : MonoBehaviour {
             toldStomp = true;
             Show("Stomp. Nearby turkeys, one foot at a time.", 5f);
         }
-        if (!toldBoom && MetaProgress.ShootsRockets()) {
+        if (!toldBoom && MetaProgress.MetalBat()) {
             toldBoom = true;
-            Show("Rockets in the bat. Heavy swings explode.", 5f);
+            Show("Aluminum bat. The third swing of a combo goes off.", 5f);
         }
         if (!toldClimb && wave >= ClimbWave) {
             toldClimb = true;
