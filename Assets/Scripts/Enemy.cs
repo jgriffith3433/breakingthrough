@@ -33,6 +33,8 @@ public class Enemy : MonoBehaviour
     public float Health01 { get { return Mathf.Clamp01(1f - taken / Mathf.Max(1f, HitsToDrop)); } }
     public float BodyScale { get { return bodyScale; } }
     public bool Burning { get { return burnLeft > 0f; } }
+    public bool Slowed { get { return slowLeft > 0f || frozenLeft > 0f; } }
+    public bool Shorted { get { return shortLeft > 0f; } }
 
     // Every bot on the hill, so effects do not have to search the scene.
     public static readonly List<Enemy> Roster = new List<Enemy>();
@@ -131,6 +133,7 @@ public class Enemy : MonoBehaviour
     float slowLeft;
     float slowAmount;
     float frozenLeft;
+    float shortLeft;
     float goldenLeft;
     float summonIn;
     Transform crest;
@@ -241,6 +244,12 @@ public class Enemy : MonoBehaviour
             return false;
         }
 
+        if (shortLeft > 0f)
+        {
+            shortLeft -= dt;
+            return false;
+        }
+
         if (Boss && !down)
         {
             summonIn -= dt;
@@ -296,6 +305,14 @@ public class Enemy : MonoBehaviour
         {
             frozenLeft = freeze;
         }
+    }
+
+    // Live Wire: the bot shorts out and stands twitching for a moment. Bosses shrug off most of it.
+    public void Short(float seconds)
+    {
+        if (down)
+            return;
+        shortLeft = Mathf.Max(shortLeft, Boss ? seconds * 0.3f : seconds);
     }
 
     void OnEnable()
@@ -1323,7 +1340,7 @@ public class Enemy : MonoBehaviour
         float scale = Mathf.Max(0.2f, transform.lossyScale.y);
         float speed = dt > 0f ? moved.magnitude / dt / scale : 0f;
         float walk = Mathf.Clamp01(speed / 2.5f);
-        if (down || frozenLeft > 0f)
+        if (down || frozenLeft > 0f || shortLeft > 0f)
             walk = 0f;
         stridePhase += dt * (spider ? 6f + speed * 4f : 5f + speed * 3.2f);
         float step = Mathf.Sin(stridePhase);
@@ -1433,7 +1450,12 @@ public class Enemy : MonoBehaviour
         // Status shows on the bird itself: embers for fire, ice for frost, shimmer for gold.
         float glowAmount = 0f;
         Color glowTint = Color.white;
-        if (burnLeft > 0f)
+        if (shortLeft > 0f)
+        {
+            glowTint = new Color(0.62f, 0.85f, 1f);
+            glowAmount = Mathf.Sin(Time.time * 40f + jukePhase) > 0f ? 0.6f : 0.25f;
+        }
+        else if (burnLeft > 0f)
         {
             glowTint = new Color(1f, 0.42f, 0.1f);
             glowAmount = 0.35f + 0.15f * Mathf.Sin(Time.time * 9f + jukePhase);

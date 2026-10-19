@@ -80,39 +80,43 @@ Feathers fill the level bar at the bottom of the screen. Each level pauses the g
 
 The level curve is `5 + 4L + 0.5L²` feathers for level L, which works out to about one level per wave in the mid game.
 
-| Boon | Rarity | Ranks | Effect |
-|---|---|---|---|
-| Heavy Heads | Common | 5 | +25% bat damage |
-| Quick Draw | Common | 5 | +18% swing and wind-up speed |
-| Standing Ovation | Common | 4 | Musician +15 max health, and heals 6 after each wave |
-| Lodestone | Common | 3 | Feathers pull from 70% farther |
-| Fleet Foot | Common | 3 | +12% move speed |
-| Hunter's Mark | Common | 3 | Your locked bird takes +35% damage |
-| Split Shot | Rare | 4 | The swing arc is 20° wider per rank |
-| Bodkin Points | Rare | 3 | The bat reaches 10% farther per rank |
-| Eagle Eye | Rare | 5 | +10% crit chance. Crits deal 2x, plus 0.25x per rank |
-| Ricochet | Rare | 3 | Birds you knock back bowl over one more bird per rank |
-| Firebrand | Rare | 3 | Hits set birds on fire. At rank 3, burning birds spread fire when they die |
-| Frost Tips | Rare | 3 | Hits slow birds by 25% per rank. Rank 3 can freeze them |
-| Bounty Hunter | Rare | 3 | A coin every 60, 45 or 30 kills |
-| Seeker Fletching | Rare | 2 | You turn to face birds from 35% farther per rank |
-| Tower Song | Rare | 3 | +1 tower in stock, and towers fire 30% faster |
-| Chain Lightning | Epic | 3 | 15% chance per rank that lightning arcs to 3 more birds |
-| Powder Keg | Epic | 3 | Birds explode when they die, and explosions can chain |
-| Whirling Quills | Epic | 4 | Two quill blades per rank circle you and cut birds |
-| Encore | Epic | 3 | The piano sends out a damaging shockwave every few seconds |
-| Volley | Epic | 3 | Every 8th, 6th or 4th swing also sends out a shockwave around you |
-| Executioner | Epic | 2 | Birds under 12% or 24% health die on the next hit (not bosses) |
-| Second Wind | Epic | 1 | Once a wave, if the musician drops below 25 health, a blast clears the stage and heals 20 |
+| Boon | Rarity | Ranks | Effect | Mark |
+|---|---|---|---|---|
+| Corked Bat | Common | 5 | +25% bat damage | The barrel gets 7% fatter per rank |
+| Quick Hands | Common | 5 | +18% swing and wind-up speed | White grip tape, a wrap per rank |
+| Standing Ovation | Common | 4 | Musician +15 max health, and heals 6 after each wave | |
+| Lodestone | Common | 3 | Bolts pull from 70% farther | |
+| Fleet Foot | Common | 3 | +12% move speed | |
+| Called Shot | Common | 3 | Your locked bot takes +35% damage per rank, and drops extra bolts when it falls (a quarter of its bolts per rank, at least 1 per rank) | A red ribbon off the knob |
+| Wide Arc | Rare | 4 | The combo swings sweep 20° wider per rank, and come round further | A pale swoosh trails the bat |
+| Follow Through | Rare | 3 | A combo swing hits the nearest 6 bots in its arc (the finisher 8); +3 per rank | A brass band per rank |
+| Sweet Spot | Rare | 5 | Bots met on the outer 40% of the bat's reach have +15% crit chance per rank (a red ring flashes on a sweet-spot crit). Crits deal 2x, plus 0.25x per rank | A red ring near the tip |
+| Line Drive | Rare | 3 | A bot you knock back hits one more bot behind it per rank, for 0.75x to 1.05x | A chalk stripe down the barrel |
+| Pine Tar | Rare | 3 | Hits set bots burning. At rank 3, burning bots pass the fire on when they fall | Darker wood and soft flame tongues on the barrel |
+| Ice Bat | Rare | 3 | Hits slow bots by 25% per rank. Rank 3 can freeze them | A frost shell and ice crystals |
+| Bounty Hunter | Rare | 3 | A coin every 60, 45 or 30 kills | |
+| Long Ball | Rare | 2 | Every swing also bats a bolt at the nearest bot out of reach (up to 9 m past the bat, 13.5 m at rank 2, times your size), for 0.8x or 1.05x. The only ranged option | A pouch of bolts on Wallit's hip |
+| Tower Song | Rare | 3 | +1 tower in stock, and towers fire 30% faster | |
+| Live Wire | Epic | 3 | 15% chance per rank that a hit arcs to 3 more bots; each one it reaches shorts out (stops, flickering blue) for a moment | A copper coil, a blue glow, and a thin arc up the barrel now and then |
+| Powder Keg | Epic | 3 | Bots burst when they fall, and bursts can chain | |
+| Whirling Quills | Epic | 4 | Two quill blades per rank circle you and cut bots | |
+| Encore | Epic | 3 | The piano sends out a damaging shockwave every few seconds | |
+| Grand Slam | Epic | 3 | Every 8th, 6th or 4th swing is a full 360° spin: it hits every bot within 1.2x reach for 1.4x and knocks them away | A gold knob |
+| Executioner | Epic | 2 | Bots under 12% or 24% health fall on the next hit (not bosses) | |
+| Second Wind | Epic | 1 | Once a wave, if the musician drops below 25 health, a blast clears the stage and heals 20 | |
 
 When both parents of an evolution are at max rank, a gold evolution card shows up almost every time:
 
-| Evolution | Parents | Effect |
-|---|---|---|
-| Storm Quiver | Split Shot + Chain Lightning | Every hit chains lightning |
-| Phoenix Arrows | Firebrand + Powder Keg | Burning birds explode in fire, and explosions set birds on fire |
-| Grand Finale | Encore + Standing Ovation | Encore fires twice as often, reaches twice as far, and heals |
-| Hailstorm | Frost Tips + Volley | Every 3rd swing sends a shockwave, and shockwaves freeze |
+| Evolution | Parents | Effect | Mark |
+|---|---|---|---|
+| Thunder Bat | Live Wire + Grand Slam | Every hit arcs, bots short out longer, and every spin calls lightning down on 5 bots | A storm-blue barrel with a bright crackling glow |
+| Phoenix Bat | Pine Tar + Powder Keg | Burning bots explode in fire, and explosions set bots on fire | Bigger, redder flames |
+| Grand Finale | Encore + Standing Ovation | Encore fires twice as often, reaches twice as far, and heals | |
+| Blizzard Bat | Ice Bat + Wide Arc | Every swing blows frost through its arc out to 1.4x reach, slowing every bot in it; finishers freeze them | A frosted white barrel with icicles |
+
+The marks are built in code on the stand-in bat (`UpgradeLook.BatMarks`) and follow J's art rules: glow shells, flame
+tongues and rings, no spark or ember particles. Boons that don't change the bat (the musician's, the piano's, the
+quills, towers and coins) show in the world instead.
 
 ## Surprises
 
@@ -133,19 +137,19 @@ The bat is pure melee: you walk up to birds and hit them. `Assets/Scripts/BatEqu
 - **Facing.** Without a lock you turn to the nearest bird in the arc as the bat comes round. Walking is a little slower while a swing is out, and slower still while you wind up.
 - **Auto swing.** From wave 12 the bat swings by itself whenever a bird is in reach.
 
-The model is a stand-in until Wallit's: two capsules on the right hand, posed in code, and the old recoil clip on the upper body for each swing. The arrow boons below still carry their old names; until the upgrades task each one does a bat version of what it did.
+The model is a stand-in until Wallit's: two capsules on the right hand, posed in code, and the old recoil clip on the upper body for each swing. The boons and the shop dress it (see the Mark column above).
 
 ## Growth and damage
 
 You grow every wave. Size is `1 + progress × 0.11`, where progress is `wave - 1` plus a little for each kill this wave. Growth also speeds up movement and pulls the camera back.
 
-Base damage is `floor(1 + (wave - 1) × 0.5)`, plus 6 per Keen Arrows rank, plus a tiny bonus for kills this wave. Boons multiply it from there.
+Base damage is `floor(1 + (wave - 1) × 0.5)`, plus 6 per Corked Core rank, plus a tiny bonus for kills this wave. Boons multiply it from there.
 
 | Wave | 1 | 5 | 10 | 20 | 30 | 40 | 70 | 100 |
 |---|---|---|---|---|---|---|---|---|
 | Base damage | 1 | 3 | 5 | 10 | 15 | 20 | 35 | 50 |
 
-The **Rockets! Not arrows!** upgrade makes the finisher and the home run explode around the bird they hit. The blast radius is about 4.2 m at rank 1, 7.4 m at rank 2 and 10.6 m at rank 3, plus a little for a home run. Splash damage is 65% of a base hit.
+The **Aluminum! Not wood!** upgrade swaps the wooden bat for a dented aluminum one: the crack rings higher and louder, knockback is 30% harder, and the third hit of the combo goes off in a small blast around the bot it hits. The blast radius is 2.4 m at rank 1, 3.6 m at rank 2 and 4.8 m at rank 3 (times the square root of your size). Splash damage is 65% of a base hit. The home run doesn't blast.
 
 ## Bots
 
@@ -215,8 +219,8 @@ There are eight upgrades with three ranks each. The ranks cost 2, 5 and 8 coins.
 
 | Upgrade | Effect |
 |---|---|
-| Keen Arrows | +6 bat damage per rank |
-| Rockets! Not arrows! | Finishers and home runs explode. Each rank widens the blast |
+| Corked Core | +6 bat damage per rank. A cork plug shows in the end of the barrel |
+| Aluminum! Not wood! | A metal bat: a louder crack, harder knockback, and a small blast on the combo finisher. Each rank widens the blast |
 | Long Stride | +25% move speed per rank |
 | Stone Pile | +5 starting walls and +8 stops per wall, per rank |
 | Watch Kit | +2 starting towers per rank. Towers shoot farther and faster, and last longer |
@@ -301,7 +305,7 @@ The player is the Warrok model (`Assets/Art/Warrok W Kurniawan.fbx`) on the obje
 | 5 | Stomp |
 | 7 | Shake off |
 
-Each swing plays the old shoot recoil on a second layer, Upper Body (masked by `Assets/hero/UpperBody.mask`), as a stand-in. The `Fire` trigger starts it, and its speed follows the `FireSpeed` float (1.4x swing speed, raised by Quick Draw and streaks).
+Each swing plays the old shoot recoil on a second layer, Upper Body (masked by `Assets/hero/UpperBody.mask`), as a stand-in. The `Fire` trigger starts it, and its speed follows the `FireSpeed` float (1.4x swing speed, raised by Quick Hands and streaks).
 
 ## Run log and autopilot
 
