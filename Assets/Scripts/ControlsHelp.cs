@@ -127,17 +127,17 @@ public class ControlsHelp : MonoBehaviour {
             return "Stomp turkeys at your feet.";
         }
         if (wave >= Tuning.AutoWave) {
-            return "The bow fires on its own.";
+            return "The bat swings on its own at birds in reach.";
         }
         if (wave >= Tuning.JumpWave) {
             return touch ? "Hold Jump to hop. Landings crush turkeys." : "Hold Space to hop. Landings crush turkeys.";
         }
         if (wave >= Tuning.GoldenFirstWave) {
-            return touch ? "Lock locks on. Chase gold turkeys for treasure." : "Shift locks on. Chase gold turkeys for treasure.";
+            return touch ? "Lock locks on. Chase gold turkeys for treasure." : "Shift locks on, right click switches. Chase gold turkeys for treasure.";
         }
         if (wave >= 2) {
             return "Walk over feathers to level up.";
         }
-        return touch ? "Hold Fire to shoot. Lock locks on." : "Click to shoot. Shift locks on.";
+        return touch ? "Tap Swing to swing. Hold it for a home run." : "Click to swing. Hold for a home run. Shift locks on.";
     }
 }

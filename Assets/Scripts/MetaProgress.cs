@@ -29,8 +29,8 @@ public static class MetaProgress {
     public const string GameScene = "scene2";
 
     public static readonly UpgradeInfo[] Catalog = {
-        new UpgradeInfo { Id = UpgradeId.Keen, Name = "Keen Arrows", About = "Each rank adds 6 arrow damage.", MaxRank = 3 },
-        new UpgradeInfo { Id = UpgradeId.Blast, Name = "Rockets! Not arrows!", About = "The bow shoots rockets. Each rank blasts wider.", MaxRank = 3 },
+        new UpgradeInfo { Id = UpgradeId.Keen, Name = "Keen Arrows", About = "Each rank adds 6 bat damage.", MaxRank = 3 },
+        new UpgradeInfo { Id = UpgradeId.Blast, Name = "Rockets! Not arrows!", About = "Heavy swings and home runs explode. Each rank blasts wider.", MaxRank = 3 },
         new UpgradeInfo { Id = UpgradeId.Stride, Name = "Long Stride", About = "Each rank is 25% more speed.", MaxRank = 3 },
         new UpgradeInfo { Id = UpgradeId.Walls, Name = "Stone Pile", About = "A much thicker wall line.", MaxRank = 3 },
         new UpgradeInfo { Id = UpgradeId.Towers, Name = "Watch Kit", About = "More towers. They shoot farther and faster.", MaxRank = 3 },
@@ -325,14 +325,14 @@ public static class MetaProgress {
         }
         switch (id) {
             case UpgradeId.Keen:
-                return "+" + (rank * 6) + " arrow damage";
+                return "+" + (rank * 6) + " bat damage";
             case UpgradeId.Walls:
                 return "Start with " + StartWalls() + " walls. Each stops " + WallStops() + ".";
             case UpgradeId.Towers:
                 int towers = StartTowers();
                 return "Start with " + towers + (towers == 1 ? " tower" : " towers") + ". Range " + TowerRange().ToString("0") + "m.";
             case UpgradeId.Blast:
-                return "Rockets from the bow. Blast " + SplashRadius(1f).ToString("0.#") + "m.";
+                return "Exploding heavy swings. Blast " + SplashRadius(1f).ToString("0.#") + "m.";
             case UpgradeId.Stride:
                 return "+" + (rank * 25) + "% move speed";
             case UpgradeId.Clover:

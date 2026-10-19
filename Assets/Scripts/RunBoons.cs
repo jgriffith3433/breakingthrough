@@ -52,12 +52,12 @@ public struct BoonInfo {
 // What you pick up during one run. Cleared when a run starts.
 public static class RunBoons {
     public static readonly BoonInfo[] All = {
-        B(BoonId.Heavy, "Heavy Heads", "+25% arrow damage.", 5, Rarity.Common),
-        B(BoonId.QuickDraw, "Quick Draw", "+18% draw speed.", 5, Rarity.Common),
-        B(BoonId.SplitShot, "Split Shot", "+1 arrow per shot, fanned.", 4, Rarity.Rare),
-        B(BoonId.Pierce, "Bodkin Points", "Arrows pass through +1 bird.", 3, Rarity.Rare),
+        B(BoonId.Heavy, "Heavy Heads", "+25% bat damage.", 5, Rarity.Common),
+        B(BoonId.QuickDraw, "Quick Draw", "+18% swing speed.", 5, Rarity.Common),
+        B(BoonId.SplitShot, "Split Shot", "The swing sweeps 20° wider per rank.", 4, Rarity.Rare),
+        B(BoonId.Pierce, "Bodkin Points", "The bat reaches 10% farther per rank.", 3, Rarity.Rare),
         B(BoonId.EagleEye, "Eagle Eye", "+10% crit chance. Crits hit for double, more with rank.", 5, Rarity.Rare),
-        B(BoonId.Ricochet, "Ricochet", "Arrows bounce to +1 nearby bird.", 3, Rarity.Rare),
+        B(BoonId.Ricochet, "Ricochet", "Birds you knock back bowl over +1 more bird.", 3, Rarity.Rare),
         B(BoonId.Firebrand, "Firebrand", "Hits set birds on fire. Burning birds spread it when they die at rank 3.", 3, Rarity.Rare),
         B(BoonId.Frost, "Frost Tips", "Hits slow birds 25% per rank. Rank 3 freezes them for a moment.", 3, Rarity.Rare),
         B(BoonId.Chain, "Chain Lightning", "15% per rank: a hit arcs lightning to 3 more birds.", 3, Rarity.Epic),
@@ -69,15 +69,15 @@ public static class RunBoons {
         B(BoonId.Fleet, "Fleet Foot", "+12% move speed.", 3, Rarity.Common),
         B(BoonId.Bounty, "Bounty Hunter", "Every 60 kills drops a coin. Faster with rank.", 3, Rarity.Rare),
         B(BoonId.Mark, "Hunter's Mark", "Your locked bird takes +35% damage per rank.", 3, Rarity.Common),
-        B(BoonId.Volley, "Volley", "Every 8th shot also looses a ring of arrows. Sooner with rank.", 3, Rarity.Epic),
+        B(BoonId.Volley, "Volley", "Every 8th swing also sends out a shockwave. Sooner with rank.", 3, Rarity.Epic),
         B(BoonId.Executioner, "Executioner", "Birds under 12% health per rank drop on the next hit.", 2, Rarity.Epic),
-        B(BoonId.Homing, "Seeker Fletching", "Arrows bend toward birds.", 2, Rarity.Rare),
+        B(BoonId.Homing, "Seeker Fletching", "You turn to face birds from farther away.", 2, Rarity.Rare),
         B(BoonId.Turret, "Tower Song", "+1 tower in stock now. Towers shoot 30% faster per rank.", 3, Rarity.Rare),
         B(BoonId.SecondWind, "Second Wind", "Once per wave, if the musician drops below 25, a blast clears the stage and heals 20.", 1, Rarity.Epic),
-        E(BoonId.StormQuiver, "Storm Quiver", "Every arrow chains lightning. Split Shot + Chain Lightning.", BoonId.SplitShot, BoonId.Chain),
+        E(BoonId.StormQuiver, "Storm Quiver", "Every hit chains lightning. Split Shot + Chain Lightning.", BoonId.SplitShot, BoonId.Chain),
         E(BoonId.Phoenix, "Phoenix Arrows", "Burning birds explode in fire, and fire spreads from every blast. Firebrand + Powder Keg.", BoonId.Firebrand, BoonId.BirdBomb),
         E(BoonId.GrandFinale, "Grand Finale", "Encore twice as often, twice as wide, and it heals the musician. Encore + Standing Ovation.", BoonId.Encore, BoonId.Ovation),
-        E(BoonId.Hailstorm, "Hailstorm", "Volleys freeze, and every 3rd shot is a volley. Frost Tips + Volley.", BoonId.Frost, BoonId.Volley)
+        E(BoonId.Hailstorm, "Hailstorm", "Shockwaves freeze, and every 3rd swing sends one. Frost Tips + Volley.", BoonId.Frost, BoonId.Volley)
     };
 
     static readonly int[] ranks = new int[All.Length];

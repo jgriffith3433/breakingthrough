@@ -10,11 +10,8 @@ public class CharacterMovement : MonoBehaviour {
     public float SpeedAttack = 1.5f;
     public float TurnSpeed = 20f;
     public float SpeedJump = 20f;
-    float autoShot;
     float jumpAnimLeft;
     bool jumpLengthPending;
-    bool shotLatch = true;
-    bool seenShot;
     private Vector3 Tar;
 
     [SerializeField]
@@ -95,34 +92,12 @@ public class CharacterMovement : MonoBehaviour {
 
     void MovementAndJumping() {
         if (Anim) {
-            autoShot -= Time.deltaTime;
-            bool building = WaveDirector.IsBuilding;
-            bool shooting = ShootingNow();
-            if (shooting) {
-                seenShot = true;
-            } else if (seenShot) {
-                shotLatch = true;
-                seenShot = false;
-            }
+            // Swinging is BatEquipment's: it reads the button and fires the upper layer's recoil clip as the
+            // stand-in swing. Swing speed boons speed that clip.
             if (hasFireSpeed) {
-                Anim.SetFloat(FireSpeedHash, RunBoons.DrawSpeed);
+                Anim.SetFloat(FireSpeedHash, 1.4f * RunBoons.DrawSpeed);
             }
-            bool menu = LevelUpScreen.IsOpen || LevelUpScreen.HoldFire || PauseMenu.IsOpen || PauseMenu.HoldFire;
-            bool holdShot = !building && !menu && PlayInput.GetMouseButton(0);
-            bool auto = !building && !menu && !holdShot && WaveDirector.Wave >= MetaProgress.AutoWave() && autoShot <= 0f;
-            if (!shooting && shotLatch && (holdShot || auto)) {
-                shotLatch = false;
-                Anim.speed = 1f;
-                if (Anim.layerCount > 1) {
-                    Anim.SetTrigger("Fire");
-                } else {
-                    Anim.SetInteger(PARAMETER_STATE, 2);
-                }
-                if (auto) {
-                    float grown = PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f;
-                    autoShot = Mathf.Lerp(0.7f, 0.32f, Mathf.Clamp01((grown - 1f) / 4f)) * MetaProgress.DrawHaste() / RunBoons.DrawSpeed;
-                }
-            } else if (Anim.layerCount < 2 && Anim.GetInteger(PARAMETER_STATE) == 2) {
+            if (Anim.layerCount < 2 && Anim.GetInteger(PARAMETER_STATE) == 2) {
                 AnimatorStateInfo info = Anim.GetCurrentAnimatorStateInfo(0);
                 if (info.IsName("Shoot") && info.normalizedTime >= 0.92f && !Anim.IsInTransition(0)) {
                     Anim.SetInteger(PARAMETER_STATE, 0);
@@ -146,7 +121,7 @@ public class CharacterMovement : MonoBehaviour {
                 playerRight += cameraRight * 4;
 
                 var directionToMove = ((cameraForward + playerForward) * vert) + ((cameraRight + playerRight) * hori);
-                directionToMove = directionToMove / 16 * Speed;
+                directionToMove = directionToMove / 16 * Speed * BatEquipment.MoveFactor;
 
 
                 if (directionTowardLockedOnObject.sqrMagnitude > 0.01f) {
@@ -161,7 +136,7 @@ public class CharacterMovement : MonoBehaviour {
                 var cameraForward = new Vector3(ZeldaCam.transform.forward.x * vert, 0, ZeldaCam.transform.forward.z * vert);
                 var cameraRight = new Vector3(ZeldaCam.transform.right.x * hori, 0, ZeldaCam.transform.right.z * hori);
                 var directionToMove = cameraForward + cameraRight;
-                directionToMove *= Speed;
+                directionToMove *= Speed * BatEquipment.MoveFactor;
 
                 if (directionToMove.sqrMagnitude > 0.001f) {
                     var newRotation = Quaternion.LookRotation(directionToMove.normalized);
@@ -189,16 +164,6 @@ public class CharacterMovement : MonoBehaviour {
                 jumpLengthPending = true;
             }
         }
-    }
-
-    bool ShootingNow() {
-        if (Anim.layerCount > 1) {
-            if (Anim.IsInTransition(1)) {
-                return true;
-            }
-            return Anim.GetCurrentAnimatorStateInfo(1).IsName("Shoot");
-        }
-        return Anim.GetInteger(PARAMETER_STATE) == 2;
     }
 }
 
