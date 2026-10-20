@@ -32,14 +32,14 @@ static class SetupBots
         TriangleBudget = YoBudget,
         Rename = new Dictionary<string, string>(System.StringComparer.OrdinalIgnoreCase)
         {
-            { "body", "Body" }, { "Body", "Body" },
-            { "head", "Head" }, { "Head", "Head" },
-            { "arm_l", "ClawL" }, { "Arm_L", "ClawL" }, { "ArmL", "ClawL" },
-            { "arm_r", "ClawR" }, { "Arm_R", "ClawR" }, { "ArmR", "ClawR" },
-            { "leg_fl", "LegFL" }, { "Leg_FL", "LegFL" },
-            { "leg_fr", "LegFR" }, { "Leg_FR", "LegFR" },
-            { "leg_bl", "LegBL" }, { "Leg_BL", "LegBL" },
-            { "leg_br", "LegBR" }, { "Leg_BR", "LegBR" },
+            { "body", "Body" },
+            { "head", "Head" },
+            { "arm_l", "ClawL" }, { "ArmL", "ClawL" },
+            { "arm_r", "ClawR" }, { "ArmR", "ClawR" },
+            { "leg_fl", "LegFL" },
+            { "leg_fr", "LegFR" },
+            { "leg_bl", "LegBL" },
+            { "leg_br", "LegBR" },
         }
     };
 
@@ -50,8 +50,8 @@ static class SetupBots
         TriangleBudget = SpiderBudget,
         Rename = new Dictionary<string, string>(System.StringComparer.OrdinalIgnoreCase)
         {
-            { "body", "Body" }, { "Body", "Body" },
-            { "head", "Head" }, { "Head", "Head" },
+            { "body", "Body" },
+            { "head", "Head" },
             { "leg1", "LegL1" }, { "leg2", "LegR1" },
             { "leg3", "LegL2" }, { "leg4", "LegR2" },
             { "leg5", "LegL3" }, { "leg6", "LegR3" },
