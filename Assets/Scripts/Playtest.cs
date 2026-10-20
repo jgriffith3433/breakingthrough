@@ -29,6 +29,7 @@ public static class Playtest {
         new PlaytestScenario("musician", "Slice, the musician (the pirate pianist's model stands in): her health bar is titled Slice. The bot holds fire by the piano so wave 1's Yo Bots reach her: she stands, stabs the one in reach with her knife (a pale slash; it takes damage) at most once every 2.5 s, logged per stab; then the bot clears the wave and she sits back down to play. Then it holds fire from wave 2 (setup: the testing wave key (=) if she outlasts it) until the bots empty her bar and the run ends", 330, "content"),
         new PlaytestScenario("slice", "Slice's model (not wired to gameplay yet): after Tap to play and a short run start, spawns the Slice prefab by the piano, checks bob / coat / boots / knife from front and side, then plays each clip on its Animator (piano, standUp, stab, slash, sitDown, idle, hurt, defeat) and logs torn-limb or missing-clip problems; piano clip should seat hands at bench height", 180, "content"),
         new PlaytestScenario("upgrades", "The bat upgrades: the shop lists Corked Core and Aluminum! Not wood! (setup: both owned in the sandbox) and the metal bat is in the player's hands; wave 1's first level-up cards are read off the screen (bat upgrades, no retired cast words); setup: the testing wave key (=) to wave 14 for tougher Plated Yo Bots and a handful of bat boons granted (Wide Arc, Pine Tar, Ice Bat, Live Wire, Grand Slam, Long Ball and more), each one's mark on the bat logged; then the bot plays until each effect is seen: a wider swing, bots burning, bots slowed, chain sparks shorting bots out, a 360 spin swing, batted bolts landing. Then Thunder Bat is granted for a lightning spin, and 30 s of play", 330, "content"),
+        new PlaytestScenario("wallit", "Wallit's model (not wired to gameplay yet): after Tap to play and a short run start, spawns the Wallit prefab by the piano, checks wallet body / bills / gloves / sneakers / bat from front and side, then plays each clip on its Animator (idle, run, strafes, back-pedal, swing 1-3, ground smash, home-run charge/release, jump, landing, hit, shake-off, victory, death) and logs torn-limb or missing-clip problems", 180, "content"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.com and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
     };
 
@@ -219,6 +220,8 @@ public static class Playtest {
                 if (!run.Done) {
                     BatReport();
                 }
+            } else if (id == "wallit") {
+                yield return WallitRun(options);
             } else if (id == "words") {
                 yield return WordsRun();
             } else if (id == "run") {
@@ -1055,6 +1058,151 @@ public static class Playtest {
         }
         run.Event("bat-report", BatEquipment.Swings + " swings, " + BatEquipment.Finishers + " finishers, " + BatEquipment.SmashHits + " smash hits, "
             + BatEquipment.HomeRuns + " home runs knocking into " + BatEquipment.HomeRunKnocks + " bots, lock nearest " + lockNearest + " of " + lockChecks);
+    }
+
+    // ---------------------------------------------------------------- wallit model
+
+    static readonly string[] WallitClips = {
+        "idle", "run", "strafeLeft", "strafeRight", "backPedal",
+        "swing1", "swing2", "swing3", "groundSmash",
+        "homeRunCharge", "homeRunRelease",
+        "jump", "landing", "hitReact", "shakeOff", "victory", "death"
+    };
+
+    // Spawns the Wallit prefab (Resources/Wallit/Wallit) by the piano, checks look, plays every clip. Not wired to
+    // the player — Warrok stays in control. Setup shortcut: none; needs the Gen bake committed under Assets/Art/Wallit.
+    static IEnumerator WallitRun(PlaytestOptions options) {
+        run.Scene("Wallit showcase");
+        // Hold the wave so bots don't crowd the shot.
+        PlayInput.PadKey(KeyCode.Equals, 0.05f);
+        yield return new WaitForSecondsRealtime(0.2f);
+        PlayInput.Release();
+
+        GameObject prefab = Resources.Load<GameObject>("Wallit/Wallit");
+        if (prefab == null) {
+            run.Event("wallit-prefab", "missing");
+            run.Problem(PlaytestSeverity.Bug, "Wallit prefab missing at Resources/Wallit/Wallit (run Tools → Wallit → Build Prefab after Gen's FBX lands in Assets/Art/Wallit)");
+            yield break;
+        }
+        run.Event("wallit-prefab", "loaded");
+
+        Vector3 at = Musician.Instance != null ? Musician.Instance.transform.position + Vector3.forward * 4f : Vector3.zero;
+        if (Physics.Raycast(at + Vector3.up * 20f, Vector3.down, out RaycastHit hit, 40f, 1 << 3, QueryTriggerInteraction.Ignore)) {
+            at.y = hit.point.y;
+        }
+        GameObject wallit = Object.Instantiate(prefab, at, Quaternion.identity);
+        wallit.name = "WallitShowcase";
+
+        Animator animator = wallit.GetComponentInChildren<Animator>();
+        if (animator == null) {
+            run.Problem(PlaytestSeverity.Bug, "Wallit prefab has no Animator");
+            Object.Destroy(wallit);
+            yield break;
+        }
+
+        bool human = animator.avatar != null && animator.avatar.isHuman && animator.avatar.isValid;
+        run.Event("wallit-humanoid", human
+            ? "avatar valid human (" + animator.avatar.name + ")"
+            : "avatar missing or not a valid Humanoid");
+        if (!human) {
+            run.Problem(PlaytestSeverity.Bug, "Wallit import is not a valid Humanoid avatar");
+        }
+
+        // Front and side looks: park the camera, log what renderers say about wallet / bills / bat.
+        yield return WallitLook(wallit, "front", at + wallit.transform.forward * 3.2f + Vector3.up * 1.2f);
+        yield return WallitLook(wallit, "side", at + wallit.transform.right * 3.2f + Vector3.up * 1.2f);
+
+        int played = 0;
+        int missing = 0;
+        for (int i = 0; i < WallitClips.Length; i++) {
+            string clip = WallitClips[i];
+            if (!AnimatorHasState(animator, 0, clip)) {
+                run.Event("wallit-clip", clip + ": missing");
+                missing++;
+                continue;
+            }
+            animator.SetInteger("Clip", i);
+            animator.Play(clip, 0, 0f);
+            yield return new WaitForSecondsRealtime(1.15f);
+            bool torn = WallitLooksTorn(wallit);
+            run.Event("wallit-clip", clip + (torn ? ": torn" : ": ok"));
+            if (torn) {
+                run.Problem(PlaytestSeverity.Bug, "Wallit clip '" + clip + "' looks torn (a limb or the bat stretched far from the body)");
+            }
+            played++;
+            run.Progress((i + 1f) / WallitClips.Length);
+        }
+        run.Metric("wallitClipsPlayed", played);
+        run.Metric("wallitClipsMissing", missing);
+        if (missing > 0) {
+            run.Problem(PlaytestSeverity.Bug, missing + " Wallit clips missing from the Animator");
+        }
+        run.Event("wallit-report", played + " clips played, " + missing + " missing, humanoid " + (human ? "ok" : "bad"));
+        Object.Destroy(wallit);
+    }
+
+    static IEnumerator WallitLook(GameObject wallit, string angle, Vector3 camPos) {
+        Camera cam = Camera.main;
+        if (cam != null) {
+            cam.transform.position = camPos;
+            cam.transform.LookAt(wallit.transform.position + Vector3.up * 0.9f);
+        }
+        yield return new WaitForSecondsRealtime(0.6f);
+        string parts = WallitPartLine(wallit);
+        run.Event("wallit-look-" + angle, parts);
+        if (parts.IndexOf("wallet") < 0 && parts.IndexOf("body") < 0) {
+            run.Problem(PlaytestSeverity.Warning, "Wallit " + angle + " view did not name a wallet/body mesh (" + parts + ")");
+        }
+    }
+
+    static string WallitPartLine(GameObject wallit) {
+        var bits = new List<string>();
+        foreach (Renderer r in wallit.GetComponentsInChildren<Renderer>()) {
+            string n = r.gameObject.name.ToLowerInvariant();
+            if (n.Contains("bill") || n.Contains("cash") || n.Contains("money"))
+                bits.Add("bills:" + r.gameObject.name);
+            else if (n.Contains("bat"))
+                bits.Add("bat:" + r.gameObject.name);
+            else if (n.Contains("glove") || n.Contains("hand"))
+                bits.Add("gloves:" + r.gameObject.name);
+            else if (n.Contains("shoe") || n.Contains("sneaker") || n.Contains("foot"))
+                bits.Add("sneakers:" + r.gameObject.name);
+            else if (n.Contains("wallet") || n.Contains("body") || n.Contains("torso") || n.Contains("head"))
+                bits.Add("wallet:" + r.gameObject.name);
+        }
+        if (bits.Count == 0) {
+            foreach (Renderer r in wallit.GetComponentsInChildren<Renderer>()) {
+                bits.Add(r.gameObject.name);
+                if (bits.Count >= 6)
+                    break;
+            }
+        }
+        return bits.Count > 0 ? string.Join(", ", bits.ToArray()) : "no renderers";
+    }
+
+    static bool WallitLooksTorn(GameObject wallit) {
+        // Heuristic: any skinned bone or renderer center more than 3.5 m from the root is a torn limb.
+        Vector3 root = wallit.transform.position;
+        foreach (Renderer r in wallit.GetComponentsInChildren<Renderer>()) {
+            if (Vector3.Distance(root, r.bounds.center) > 3.5f)
+                return true;
+        }
+        foreach (Transform t in wallit.GetComponentsInChildren<Transform>()) {
+            if (t.name.IndexOf("Hand", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || t.name.IndexOf("Foot", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || t.name.IndexOf("Head", System.StringComparison.OrdinalIgnoreCase) >= 0) {
+                if (Vector3.Distance(root, t.position) > 3.2f)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    static bool AnimatorHasState(Animator animator, int layer, string stateName) {
+        if (animator == null || animator.runtimeAnimatorController == null)
+            return false;
+        int hash = Animator.StringToHash(stateName);
+        return animator.HasState(layer, hash);
     }
 
     // ---------------------------------------------------------------- slice model
