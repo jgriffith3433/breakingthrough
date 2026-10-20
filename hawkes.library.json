@@ -1,5 +1,5 @@
 {
-  "_about": "The Place Department's birds in the Hawkes Gen library (hawkesgen/clients/js/hawkesgen-folders.mjs): one entity per bird model, its model slot the FBX. Picks write back to the same file.",
+  "_about": "The Place Department's birds in the Hawkes Gen library (hawkesgen/clients/js/hawkesgen-folders.mjs): one entity per bird model, its model slot the FBX. Picks write back to the same file. Wallit is Gen character3d entity theplacedepartment/wallit (not folder-mapped): bake export/fbx to Assets/Art/Wallit/Wallit.fbx, then Tools → Wallit → Build Prefab.",
   "project": "theplacedepartment",
   "kind": "bird",
   "layout": "files",
