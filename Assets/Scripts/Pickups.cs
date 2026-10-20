@@ -141,7 +141,7 @@ public class Pickups : MonoBehaviour {
     }
 
     static Material Flat(Color color) {
-        var material = new Material(Shader.Find("Unlit/Color"));
+        var material = new Material(SafeShader.Find("Unlit/Color"));
         material.color = color;
         return material;
     }
@@ -285,7 +285,7 @@ public static class ArtLibrary {
                 }
                 Material bright;
                 if (!glow.TryGetValue(mats[i].name, out bright)) {
-                    bright = new Material(Shader.Find("Unlit/Color"));
+                    bright = new Material(SafeShader.Find("Unlit/Color"));
                     bright.color = mats[i].HasProperty("_Color") ? mats[i].color : Color.white;
                     glow[mats[i].name] = bright;
                 }

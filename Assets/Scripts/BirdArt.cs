@@ -25,9 +25,9 @@ public static class BirdArt {
     public static Material Shared {
         get {
             if (shared == null) {
-                Shader shader = Shader.Find("Knoll/VertexColorLit");
+                Shader shader = SafeShader.Find("Knoll/VertexColorLit");
                 if (shader == null) {
-                    shader = Shader.Find("Standard");
+                    shader = SafeShader.Find("Standard");
                 }
                 shared = new Material(shader);
                 shared.name = "Birds (shared)";

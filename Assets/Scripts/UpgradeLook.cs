@@ -144,7 +144,7 @@ public class UpgradeLook : MonoBehaviour {
         line.endWidth = 0.01f;
         line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         line.receiveShadows = false;
-        Shader shader = Shader.Find("Sprites/Default");
+        Shader shader = SafeShader.Find("Sprites/Default");
         if (shader != null) {
             line.material = new Material(shader);
         }
@@ -180,7 +180,7 @@ public class UpgradeLook : MonoBehaviour {
 
     static void Tint(GameObject go, Color color) {
         Renderer renderer = go.GetComponent<Renderer>();
-        Shader shader = Shader.Find("Sprites/Default");
+        Shader shader = SafeShader.Find("Sprites/Default");
         if (renderer == null || shader == null) {
             Paint(go, color);
             return;
@@ -285,7 +285,7 @@ public class UpgradeLook : MonoBehaviour {
         }
         line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         line.receiveShadows = false;
-        Shader shader = Shader.Find("Sprites/Default");
+        Shader shader = SafeShader.Find("Sprites/Default");
         if (shader != null) {
             line.material = new Material(shader);
         }
@@ -362,7 +362,7 @@ public class UpgradeLook : MonoBehaviour {
 
     public static void Paint(GameObject go, Color color) {
         Renderer renderer = go.GetComponent<Renderer>();
-        Shader shader = Shader.Find("Unlit/Color");
+        Shader shader = SafeShader.Find("Unlit/Color");
         if (shader == null || renderer == null) {
             return;
         }
@@ -754,7 +754,7 @@ public class BatMarks : MonoBehaviour {
         trail.minVertexDistance = 0.04f;
         trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         trail.receiveShadows = false;
-        Shader shader = Shader.Find("Sprites/Default");
+        Shader shader = SafeShader.Find("Sprites/Default");
         if (shader != null) {
             trail.material = new Material(shader);
         }
