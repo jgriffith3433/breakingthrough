@@ -27,6 +27,7 @@ public static class Playtest {
         new PlaytestScenario("bots", "The bots: wave 1's small Yo Bots walk at the musician (their distance to him is logged as they come), destroyed bots drop bolts the bot picks up as XP, and the enemy list on the right names them. Setup shortcut: the testing wave key (=) jumps to wave 30, where the first Spider Bot arrives as the Alpha, a large enemy with the boss bar, then the bot fights it for 30 s", 300, "content"),
         new PlaytestScenario("analytics", "Hawkes Analytics: start a run, clear wave 1, then hold fire on wave 2 so the bots take the musician. Every analytics event is logged as it goes out (run_start, level_start and level_end per wave, card picks, the death and the bot kind that landed it, run_end) with the build version and env; on the game-over screen the \"How was that run?\" card must show, and the bot rates it 4 stars", 240, "full"),
         new PlaytestScenario("musician", "Slice, the musician (the pirate pianist's model stands in): her health bar is titled Slice. The bot holds fire by the piano so wave 1's Yo Bots reach her: she stands, stabs the one in reach with her knife (a pale slash; it takes damage) at most once every 2.5 s, logged per stab; then the bot clears the wave and she sits back down to play. Then it holds fire from wave 2 (setup: the testing wave key (=) if she outlasts it) until the bots empty her bar and the run ends", 330, "content"),
+        new PlaytestScenario("slice", "Slice's model (not wired to gameplay yet): after Tap to play and a short run start, spawns the Slice prefab by the piano, checks bob / coat / boots / knife from front and side, then plays each clip on its Animator (piano, standUp, stab, slash, sitDown, idle, hurt, defeat) and logs torn-limb or missing-clip problems; piano clip should seat hands at bench height", 180, "content"),
         new PlaytestScenario("upgrades", "The bat upgrades: the shop lists Corked Core and Aluminum! Not wood! (setup: both owned in the sandbox) and the metal bat is in the player's hands; wave 1's first level-up cards are read off the screen (bat upgrades, no retired cast words); setup: the testing wave key (=) to wave 14 for tougher Plated Yo Bots and a handful of bat boons granted (Wide Arc, Pine Tar, Ice Bat, Live Wire, Grand Slam, Long Ball and more), each one's mark on the bat logged; then the bot plays until each effect is seen: a wider swing, bots burning, bots slowed, chain sparks shorting bots out, a 360 spin swing, batted bolts landing. Then Thunder Bat is granted for a lightning spin, and 30 s of play", 330, "content"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.com and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
     };
@@ -202,6 +203,8 @@ public static class Playtest {
                 yield return BotsRun(options);
             } else if (id == "musician") {
                 yield return MusicianRun(options);
+            } else if (id == "slice") {
+                yield return SliceRun(options);
             } else if (id == "upgrades") {
                 yield return UpgradesRun(options);
                 if (!run.Done) {
@@ -1052,6 +1055,180 @@ public static class Playtest {
         }
         run.Event("bat-report", BatEquipment.Swings + " swings, " + BatEquipment.Finishers + " finishers, " + BatEquipment.SmashHits + " smash hits, "
             + BatEquipment.HomeRuns + " home runs knocking into " + BatEquipment.HomeRunKnocks + " bots, lock nearest " + lockNearest + " of " + lockChecks);
+    }
+
+    // ---------------------------------------------------------------- slice model
+
+    static readonly string[] SliceClips = {
+        "piano", "standUp", "stab", "slash", "sitDown", "idle", "hurt", "defeat"
+    };
+
+    // Spawns the Slice prefab (Resources/Slice/Slice) by the piano, checks look, plays every clip. Not wired to
+    // PianoRecital — the pirate stand-in stays. Needs the Gen bake committed under Assets/Art/Slice.
+    static IEnumerator SliceRun(PlaytestOptions options) {
+        run.Scene("Slice showcase");
+        // Hold the wave so bots don't crowd the shot.
+        PlayInput.PadKey(KeyCode.Equals, 0.05f);
+        yield return new WaitForSecondsRealtime(0.2f);
+        PlayInput.Release();
+
+        GameObject prefab = Resources.Load<GameObject>("Slice/Slice");
+        if (prefab == null) {
+            run.Event("slice-prefab", "missing");
+            run.Problem(PlaytestSeverity.Bug, "Slice prefab missing at Resources/Slice/Slice (run Tools → Slice → Build Prefab after Gen's FBX lands in Assets/Art/Slice)");
+            yield break;
+        }
+        run.Event("slice-prefab", "loaded");
+
+        Vector3 at = Musician.Instance != null ? Musician.Instance.transform.position + Vector3.right * 2.5f : Vector3.zero;
+        if (Physics.Raycast(at + Vector3.up * 20f, Vector3.down, out RaycastHit hit, 40f, 1 << 3, QueryTriggerInteraction.Ignore)) {
+            at.y = hit.point.y;
+        }
+        GameObject slice = Object.Instantiate(prefab, at, Quaternion.identity);
+        slice.name = "SliceShowcase";
+
+        Animator animator = slice.GetComponentInChildren<Animator>();
+        if (animator == null) {
+            run.Problem(PlaytestSeverity.Bug, "Slice prefab has no Animator");
+            Object.Destroy(slice);
+            yield break;
+        }
+
+        bool human = animator.avatar != null && animator.avatar.isHuman && animator.avatar.isValid;
+        run.Event("slice-humanoid", human
+            ? "avatar valid human (" + animator.avatar.name + ")"
+            : "avatar missing or not a valid Humanoid");
+        if (!human) {
+            run.Problem(PlaytestSeverity.Bug, "Slice import is not a valid Humanoid avatar");
+        }
+
+        yield return SliceLook(slice, "front", at + slice.transform.forward * 3.2f + Vector3.up * 1.2f);
+        yield return SliceLook(slice, "side", at + slice.transform.right * 3.2f + Vector3.up * 1.2f);
+
+        int played = 0;
+        int missing = 0;
+        for (int i = 0; i < SliceClips.Length; i++) {
+            string clip = SliceClips[i];
+            if (!SliceAnimatorHasState(animator, 0, clip)) {
+                run.Event("slice-clip", clip + ": missing");
+                missing++;
+                continue;
+            }
+            animator.SetInteger("Clip", i);
+            animator.Play(clip, 0, 0f);
+            yield return new WaitForSecondsRealtime(clip == "piano" || clip == "idle" ? 1.6f : 1.15f);
+            bool torn = SliceLooksTorn(slice);
+            string handNote = "";
+            if (clip == "piano") {
+                handNote = SlicePianoHandNote(slice);
+                run.Event("slice-piano-hands", handNote);
+            }
+            run.Event("slice-clip", clip + (torn ? ": torn" : ": ok") + (handNote.Length > 0 ? " (" + handNote + ")" : ""));
+            if (torn) {
+                run.Problem(PlaytestSeverity.Bug, "Slice clip '" + clip + "' looks torn (a limb or the knife stretched far from the body)");
+            }
+            if (clip == "stab" || clip == "slash") {
+                run.Event("slice-knife-read", clip + " played");
+            }
+            played++;
+            run.Progress((i + 1f) / SliceClips.Length);
+        }
+        run.Metric("sliceClipsPlayed", played);
+        run.Metric("sliceClipsMissing", missing);
+        if (missing > 0) {
+            run.Problem(PlaytestSeverity.Bug, missing + " Slice clips missing from the Animator");
+        }
+        run.Event("slice-report", played + " clips played, " + missing + " missing, humanoid " + (human ? "ok" : "bad"));
+        Object.Destroy(slice);
+    }
+
+    static IEnumerator SliceLook(GameObject slice, string angle, Vector3 camPos) {
+        Camera cam = Camera.main;
+        if (cam != null) {
+            cam.transform.position = camPos;
+            cam.transform.LookAt(slice.transform.position + Vector3.up * 0.9f);
+        }
+        yield return new WaitForSecondsRealtime(0.6f);
+        string parts = SlicePartLine(slice);
+        run.Event("slice-look-" + angle, parts);
+        if (parts.IndexOf("coat") < 0 && parts.IndexOf("body") < 0 && parts.IndexOf("dress") < 0) {
+            run.Problem(PlaytestSeverity.Warning, "Slice " + angle + " view did not name a coat/body mesh (" + parts + ")");
+        }
+        if (parts.IndexOf("knife") < 0 && parts.IndexOf("scalpel") < 0) {
+            run.Problem(PlaytestSeverity.Warning, "Slice " + angle + " view did not name a knife/scalpel mesh (" + parts + ")");
+        }
+    }
+
+    static string SlicePartLine(GameObject slice) {
+        var bits = new List<string>();
+        foreach (Renderer r in slice.GetComponentsInChildren<Renderer>()) {
+            string n = r.gameObject.name.ToLowerInvariant();
+            if (n.Contains("knife") || n.Contains("scalpel") || n.Contains("blade"))
+                bits.Add("knife:" + r.gameObject.name);
+            else if (n.Contains("coat") || n.Contains("jacket") || n.Contains("trench"))
+                bits.Add("coat:" + r.gameObject.name);
+            else if (n.Contains("boot") || n.Contains("shoe") || n.Contains("foot"))
+                bits.Add("boots:" + r.gameObject.name);
+            else if (n.Contains("hair") || n.Contains("bob") || n.Contains("head"))
+                bits.Add("bob:" + r.gameObject.name);
+            else if (n.Contains("dress") || n.Contains("body") || n.Contains("torso") || n.Contains("mesh"))
+                bits.Add("body:" + r.gameObject.name);
+        }
+        if (bits.Count == 0) {
+            foreach (Renderer r in slice.GetComponentsInChildren<Renderer>()) {
+                bits.Add(r.gameObject.name);
+                if (bits.Count >= 6)
+                    break;
+            }
+        }
+        return bits.Count > 0 ? string.Join(", ", bits.ToArray()) : "no renderers";
+    }
+
+    static string SlicePianoHandNote(GameObject slice) {
+        Transform left = null;
+        Transform right = null;
+        foreach (Transform t in slice.GetComponentsInChildren<Transform>()) {
+            string n = t.name;
+            if (n.IndexOf("LeftHand", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || n == "Left Hand" || n.EndsWith("Hand_L"))
+                left = t;
+            if (n.IndexOf("RightHand", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || n == "Right Hand" || n.EndsWith("Hand_R"))
+                right = t;
+        }
+        if (left == null || right == null)
+            return "hands not found";
+        float avgY = (left.position.y + right.position.y) * 0.5f;
+        float rootY = slice.transform.position.y;
+        float height = avgY - rootY;
+        // Bench-height keyboard: hands roughly 0.55–1.05 m above feet when seated.
+        if (height < 0.45f || height > 1.15f)
+            return "hands y=" + height.ToString("0.00") + "m (off bench)";
+        return "hands y=" + height.ToString("0.00") + "m (bench)";
+    }
+
+    static bool SliceLooksTorn(GameObject slice) {
+        Vector3 root = slice.transform.position;
+        foreach (Renderer r in slice.GetComponentsInChildren<Renderer>()) {
+            if (Vector3.Distance(root, r.bounds.center) > 3.5f)
+                return true;
+        }
+        foreach (Transform t in slice.GetComponentsInChildren<Transform>()) {
+            if (t.name.IndexOf("Hand", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || t.name.IndexOf("Foot", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || t.name.IndexOf("Head", System.StringComparison.OrdinalIgnoreCase) >= 0) {
+                if (Vector3.Distance(root, t.position) > 3.2f)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    static bool SliceAnimatorHasState(Animator animator, int layer, string stateName) {
+        if (animator == null || animator.runtimeAnimatorController == null)
+            return false;
+        int hash = Animator.StringToHash(stateName);
+        return animator.HasState(layer, hash);
     }
 
     static int BirdsInLockReach(CharacterMovement player) {
