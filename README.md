@@ -1,6 +1,6 @@
 # Breaking Through
 
-A roguelike wave-defense game in Unity 6.3 LTS (`6000.3.7f1`) on the built-in render pipeline. You play Wallit with a baseball bat in a moonlit hollow (Warrok's model for now; Wallit's model replaces it next), and you protect Slice, who plays the piano (the pirate pianist's model stands in until hers lands), from endless waves of Yo Bots and Spider Bots. You grow every wave, level up on bolts, and pick boons that build into a different run each time. Between runs, coins buy permanent upgrades.
+A roguelike wave-defense game in Unity 6.3 LTS (`6000.3.7f1`) on the built-in render pipeline. You play Wallit with a baseball bat in a moonlit hollow (Warrok's model for now; Wallit's model replaces it next), and you protect Slice, who plays the piano (the pirate pianist's model stands in until hers lands; Slice's Gen character3d model and prefab live under `Assets/Art/Slice/` and are not wired yet), from endless waves of Yo Bots and Spider Bots. You grow every wave, level up on bolts, and pick boons that build into a different run each time. Between runs, coins buy permanent upgrades.
 
 Voices stay short. Wallit talks money ("Pay up."). Slice is cool and clipped ("Clean."). Yo Bots are chirpy ("Uploading victory.").
 
@@ -293,6 +293,8 @@ To rebuild a model, run the script in Blender and call `export("YoBot")` for a b
 **UI.** `UiSkin` draws rounded, nine-sliced panels and pill-shaped bars in code, used by the menu, the boon cards and every bar. Boon cards rise in, and rare and epic cards get a pulsing halo. The menu backdrop, `Assets/Resources/UI/MenuArt.png`, is key art rendered in Blender, with a slow drift. It still shows the birds as they looked before they were smoothed.
 
 ## Animation
+
+**Slice (model, not wired yet).** Gen's `character3d` entity `theplacedepartment/slice` builds the goth pianist (DoD art: black blunt bob, patent-leather long coat, black dress, platform boots, silver chains; small scalpel knife as a RightHand prop). The Humanoid FBX, Animator and prefab land in `Assets/Art/Slice/` (`Tools → Slice → Build Prefab`); a copy under `Assets/Resources/Slice/` lets the `slice` playtest spawn her. Clips: piano (retarget of `Assets/Art/PianoPlayer/Piano Playing`), standUp, stab, slash, sitDown, idle (wary standing), hurt, defeat. Gameplay still uses the pirate pianist until a later task swaps her in.
 
 The player is the Warrok model (`Assets/Art/Warrok W Kurniawan.fbx`) on the object tagged `Player`. Its visible child is tagged `playerchild`. The stand-in bat follows the right hand and is posed in code each frame (`BatEquipment.PoseBat`). The scene still has the old `BowEquipment` component on the player; it only adds `BatEquipment` and switches itself off.
 
