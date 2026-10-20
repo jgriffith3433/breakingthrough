@@ -69,8 +69,11 @@ public class Enemy : MonoBehaviour
     Transform head;
     Transform legL;
     Transform legR;
+    // Gen quadarm Yo Bot: back pair (LegBL/LegBR). Stand-in only has LegL/LegR.
+    Transform legBL;
+    Transform legBR;
     Transform model;
-    // Spider Bots: LegL1..LegL4 then LegR1..LegR4, front pair first.
+    // Spider Bots: LegL1..LegL4 then LegR1..LegR4, front pair first (Gen spider has six: 1..3 per side).
     readonly Transform[] spiderLegs = new Transform[8];
     readonly Quaternion[] spiderLegRest = new Quaternion[8];
     bool spider;
@@ -79,6 +82,8 @@ public class Enemy : MonoBehaviour
     Quaternion clawRRest = Quaternion.identity;
     Quaternion legLRest = Quaternion.identity;
     Quaternion legRRest = Quaternion.identity;
+    Quaternion legBLRest = Quaternion.identity;
+    Quaternion legBRRest = Quaternion.identity;
     Quaternion headRestRot = Quaternion.identity;
     Quaternion modelRest = Quaternion.identity;
     bool modelled;
@@ -1376,12 +1381,18 @@ public class Enemy : MonoBehaviour
 
     void AnimateYoBotLimbs(float walk, float step, float strike)
     {
-        // Legs tuck under the jets in a hop.
+        // Legs tuck under the jets in a hop. Four-leg Gen models trot (FL+BR, FR+BL).
         float tuck = flying ? -28f : 0f;
+        float frontSwing = step * 30f * walk;
+        float backSwing = -step * 30f * walk;
         if (legL != null)
-            legL.localRotation = legLRest * Quaternion.Euler(tuck + step * 30f * walk, 0f, 0f);
+            legL.localRotation = legLRest * Quaternion.Euler(tuck + frontSwing, 0f, 0f);
         if (legR != null)
-            legR.localRotation = legRRest * Quaternion.Euler(tuck - step * 30f * walk, 0f, 0f);
+            legR.localRotation = legRRest * Quaternion.Euler(tuck - frontSwing, 0f, 0f);
+        if (legBL != null)
+            legBL.localRotation = legBLRest * Quaternion.Euler(tuck + backSwing, 0f, 0f);
+        if (legBR != null)
+            legBR.localRotation = legBRRest * Quaternion.Euler(tuck - backSwing, 0f, 0f);
 
         AnimateClaw(clawL, clawLRest, -step, walk, swipeLeft ? strike : 0f);
         AnimateClaw(clawR, clawRRest, step, walk, swipeLeft ? 0f : strike);
@@ -1514,17 +1525,7 @@ public class Enemy : MonoBehaviour
         made.transform.localPosition = Vector3.zero;
         model = made.transform;
         spider = BotRoster.IsSpider(look);
-        head = FindPart(model, "Head");
-        clawL = FindPart(model, "ClawL");
-        clawR = FindPart(model, "ClawR");
-        legL = FindPart(model, "LegL");
-        legR = FindPart(model, "LegR");
-        for (int i = 0; i < spiderLegs.Length; i++)
-        {
-            spiderLegs[i] = FindPart(model, (i < 4 ? "LegL" : "LegR") + (i % 4 + 1));
-            if (spiderLegs[i] != null)
-                spiderLegRest[i] = spiderLegs[i].localRotation;
-        }
+        BindParts(model, spider);
         // The head must lead. If the export axes ever flip, turn the model around.
         if (head != null && Vector3.Dot(head.position - transform.position, transform.forward) < 0f)
             model.localRotation = Quaternion.Euler(0f, 180f, 0f);
@@ -1533,6 +1534,8 @@ public class Enemy : MonoBehaviour
         if (clawR != null) clawRRest = clawR.localRotation;
         if (legL != null) legLRest = legL.localRotation;
         if (legR != null) legRRest = legR.localRotation;
+        if (legBL != null) legBLRest = legBL.localRotation;
+        if (legBR != null) legBRRest = legBR.localRotation;
         if (head != null)
             headRestRot = head.localRotation;
 
@@ -1542,7 +1545,7 @@ public class Enemy : MonoBehaviour
         foreach (MeshRenderer renderer in made.GetComponentsInChildren<MeshRenderer>())
         {
             string part = renderer.transform.name;
-            if (part.StartsWith("Claw"))
+            if (PartIsClaw(part))
                 continue;
             Bounds world = renderer.bounds;
             Vector3 min = transform.InverseTransformPoint(world.min);
@@ -1573,12 +1576,61 @@ public class Enemy : MonoBehaviour
         return true;
     }
 
-    static Transform FindPart(Transform root, string name)
+    // Stand-in names (Body/Head/ClawL…) plus Gen robot template roles (body/arm_l/leg_fl/leg1…).
+    void BindParts(Transform root, bool isSpider)
     {
-        foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+        head = FindPart(root, "Head", "head");
+        if (isSpider)
         {
-            if (t.name == name)
-                return t;
+            // Gen spider: leg1..leg6. Game stand-in: LegL1..4 / LegR1..4 (1 = front pair that stabs).
+            spiderLegs[0] = FindPart(root, "LegL1", "leg1");
+            spiderLegs[1] = FindPart(root, "LegL2", "leg3");
+            spiderLegs[2] = FindPart(root, "LegL3", "leg5");
+            spiderLegs[3] = FindPart(root, "LegL4");
+            spiderLegs[4] = FindPart(root, "LegR1", "leg2");
+            spiderLegs[5] = FindPart(root, "LegR2", "leg4");
+            spiderLegs[6] = FindPart(root, "LegR3", "leg6");
+            spiderLegs[7] = FindPart(root, "LegR4");
+            for (int i = 0; i < spiderLegs.Length; i++)
+            {
+                if (spiderLegs[i] != null)
+                    spiderLegRest[i] = spiderLegs[i].localRotation;
+            }
+            if (head == null)
+                head = FindPart(root, "Body", "body");
+            return;
+        }
+        clawL = FindPart(root, "ClawL", "arm_l", "Arm_L", "ArmL");
+        clawR = FindPart(root, "ClawR", "arm_r", "Arm_R", "ArmR");
+        legL = FindPart(root, "LegL", "LegFL", "leg_fl", "Leg_FL");
+        legR = FindPart(root, "LegR", "LegFR", "leg_fr", "Leg_FR");
+        legBL = FindPart(root, "LegBL", "leg_bl", "Leg_BL");
+        legBR = FindPart(root, "LegBR", "leg_br", "Leg_BR");
+    }
+
+    static bool PartIsClaw(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return false;
+        string n = name.ToLowerInvariant();
+        return n.StartsWith("claw") || n.StartsWith("arm_") || n == "arm_l" || n == "arm_r" || n == "arml" || n == "armr";
+    }
+
+    static Transform FindPart(Transform root, params string[] names)
+    {
+        if (root == null || names == null)
+            return null;
+        Transform[] all = root.GetComponentsInChildren<Transform>(true);
+        for (int n = 0; n < names.Length; n++)
+        {
+            string want = names[n];
+            if (string.IsNullOrEmpty(want))
+                continue;
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (string.Equals(all[i].name, want, System.StringComparison.OrdinalIgnoreCase))
+                    return all[i];
+            }
         }
         return null;
     }

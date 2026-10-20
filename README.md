@@ -1,6 +1,6 @@
 # Breaking Through
 
-A roguelike wave-defense game in Unity 6.3 LTS (`6000.3.7f1`) on the built-in render pipeline. You play Wallit with a baseball bat in a moonlit hollow (Warrok's model still drives gameplay; Wallit's Gen character3d model and prefab live under `Assets/Art/Wallit/` and are not wired to the player yet), and you protect Slice, who plays the piano (the pirate pianist's model stands in until hers lands), from endless waves of Yo Bots and Spider Bots. You grow every wave, level up on bolts, and pick boons that build into a different run each time. Between runs, coins buy permanent upgrades.
+A roguelike wave-defense game in Unity 6.3 LTS (`6000.3.7f1`) on the built-in render pipeline. You play Wallit with a baseball bat in a moonlit hollow (Warrok's model still drives gameplay; Wallit's Gen character3d model and prefab live under `Assets/Art/Wallit/` and are not wired to the player yet), and you protect Slice, who plays the piano (the pirate pianist's model stands in until hers lands; Slice's Gen character3d model and prefab live under `Assets/Art/Slice/` and are not wired yet), from endless waves of Yo Bots and Spider Bots. You grow every wave, level up on bolts, and pick boons that build into a different run each time. Between runs, coins buy permanent upgrades.
 
 Voices stay short. Wallit talks money ("Pay up."). Slice is cool and clipped ("Clean."). Yo Bots are chirpy ("Uploading victory.").
 
@@ -156,14 +156,14 @@ The **Aluminum! Not wood!** upgrade swaps the wooden bat for a dented aluminum o
 
 ## Bots
 
-`BotRoster.cs` (`BotKind`, in this order: kill counts, the wave list and the coin tally are packed by it). Yo Bots are the small tiers: two legs, a jet pack, claws. Spider Bots are the large ones: eight legs, a big abdomen with rear jets, a head full of eyes. Each kind debuts as a pair, one of them the wave's Alpha with the boss bar.
+`BotRoster.cs` (`BotKind`, in this order: kill counts, the wave list and the coin tally are packed by it). Yo Bots are the small tiers: an open laptop with a cyan HUD, claw arms and four jointed legs (jump-jets under the chassis). Spider Bots are the large ones: a navy glass cockpit pod with a pilot inside and six blade-tipped legs with cyan light strips. Each kind debuts as a pair, one of them the wave's Alpha with the boss bar.
 
 | Debut wave | Bot | Authored health | Bolts | Look and blurb |
 |---|---|---|---|---|
-| 1 | Yo Bot | 3 | 1 | Yellow, each with its own paint job. Small, loud, and walking straight at the piano |
+| 1 | Yo Bot | 3 | 1 | Gunmetal laptop with a cyan HUD, each with its own paint job. Small, loud, and walking straight at the piano |
 | 10 | Plated Yo Bot | 60 | 6 | Steel with shoulder plates. Your height, bolted shut, and slow to come apart |
 | 20 | Mega Yo Bot | 270 | 10 | Red, horned. As tall as you, and it rushes the piano in bursts |
-| 30 | Spider Bot | 480 | 19 | Teal, red eyes. Eight legs, twice the size of anything so far |
+| 30 | Spider Bot | 480 | 19 | Navy glass pod with a pilot, six blade legs. Twice the size of anything so far |
 | 40 | Stalker Spider Bot | 660 | 22 | Silver. Quiet on its legs, with a long health bar |
 | 50 | Runner Spider Bot | 840 | 25 | Orange, long legs. It closes the gap |
 | 60 | Rammer Spider Bot | 990 | 28 | Sand, with a ram plate. A running wall |
@@ -250,10 +250,10 @@ The game takes place in the **Moonlit Hollow**, an open meadow bowl centered on 
 
 The art direction is a moonlit blue night, warm lantern light, and soft magic.
 
-**Bots.** The 11 bots are stand-ins until the real models land: `BotArt` builds each kind in code from low-poly boxes, rods and balls, flat-shaded and painted with vertex colors. A Blender export of the same stand-ins (`Tools/Blender/bt_bots.py`, `export("<Kind>")`) in `Assets/Resources/Models/Bots/<Kind>.fbx` replaces the code-built one with no code change.
-- **Parts:** Yo Bots are `Body`, `Head`, `ClawL`, `ClawR`, `LegL` and `LegR`. Spider Bots are `Body`, `Head` and `LegL1`–`LegL4`, `LegR1`–`LegR4` (1 is the front pair).
-- **Animation:** `Enemy.AnimateModel` animates the parts in code: Yo Bots stomp, swing their arms, spread them in a jump-jet hop and swipe a claw when attacking. Spider Bots walk on alternating fours, fold their legs in a hop, and wind up and stab with a front leg. Big bots kick up dust as they walk.
-- **Tints:** each Yo Bot gets one of eight paint jobs, elites lean toward their gem color, and the Golden Yo Bot is solid gold.
+**Bots.** Real models come from Hawkes Gen's robot path (`character3d` with `form: robot`: Yo Bot `quadarm`, Spider Bot `spider`): textured meshes under ~4k / ~8k triangles, one 1K texture, rigid parts, procedural walk/run/idle/attack/hit/death/jump clips. They land as `Assets/Resources/Models/Bots/YoBot.fbx` and `SpiderBot.fbx`, with prefabs `BotYo` and `BotSpider` (`Tools → Bots → Build Prefabs`). Until those land, `BotArt` builds low-poly stand-ins in code (vertex colors); `Tools/Blender/bt_bots.py` can export the same.
+- **Parts:** Yo Bots are `Body`, `Head`, `ClawL`, `ClawR`, front `LegL`/`LegFL` and `LegR`/`LegFR`, and optional back `LegBL`/`LegBR`. Spider Bots are `Body`, `Head` and `LegL1`–`LegL4`, `LegR1`–`LegR4` (1 is the front pair; Gen's six legs fill 1–3 per side). `Enemy.BindParts` also accepts Gen template names (`arm_l`, `leg_fl`, `leg1`…).
+- **Animation:** gameplay still drives the parts in code (`Enemy.AnimateModel`) so dozens of bots stay cheap; Gen's clips live on the FBX for the library and previews. Yo Bots trot (four legs when present), swing claws, tuck for a jump-jet hop and swipe. Spider Bots walk on alternating groups, fold legs in a hop, and stab with a front leg.
+- **Tints:** each Yo Bot gets one of eight paint jobs, elites lean toward their gem color, and the Golden Yo Bot is solid gold. Authored textures keep their albedo; stand-ins use the knoll vertex-color shader.
 - **Hits and status:** a hit flashes the bot white. Burning, frozen, slowed and golden bots glow with a tint instead of spraying particles.
 - **Hit capsule:** fitted to each model's body, head and legs (not the claws).
 
@@ -295,6 +295,8 @@ To rebuild a model, run the script in Blender and call `export("YoBot")` for a b
 ## Animation
 
 **Wallit (model, not wired yet).** Gen's `character3d` entity `theplacedepartment/wallit` builds the wallet-bodied batter (DoD art: brown bifold wallet torso+head with angry face and green bills, stick limbs, white gloves and sneakers, wooden bat as a hand prop). The Humanoid FBX, Animator and prefab land in `Assets/Art/Wallit/` (`Tools → Wallit → Build Prefab`); a copy under `Assets/Resources/Wallit/` lets the `wallit` playtest spawn him. Clips: idle (bat on shoulder), run, strafe left/right, back-pedal, swing 1/2/3, ground smash, home-run charge/release, jump, landing, hit react, shake-off, victory, death. Gameplay still uses Warrok until a later task swaps him in.
+
+**Slice (model, not wired yet).** Gen's `character3d` entity `theplacedepartment/slice` builds the goth pianist (DoD art: black blunt bob, patent-leather long coat, black dress, platform boots, silver chains; small scalpel knife as a RightHand prop). The Humanoid FBX, Animator and prefab land in `Assets/Art/Slice/` (`Tools → Slice → Build Prefab`); a copy under `Assets/Resources/Slice/` lets the `slice` playtest spawn her. Clips: piano (retarget of `Assets/Art/PianoPlayer/Piano Playing`), standUp, stab, slash, sitDown, idle (wary standing), hurt, defeat. Gameplay still uses the pirate pianist until a later task swaps her in.
 
 The player is the Warrok model (`Assets/Art/Warrok W Kurniawan.fbx`) on the object tagged `Player`. Its visible child is tagged `playerchild`. The stand-in bat follows the right hand and is posed in code each frame (`BatEquipment.PoseBat`). The scene still has the old `BowEquipment` component on the player; it only adds `BatEquipment` and switches itself off.
 

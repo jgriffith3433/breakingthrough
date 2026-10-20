@@ -14,13 +14,24 @@ class ModelImportRules : AssetPostprocessor
             return;
         var importer = (ModelImporter)assetImporter;
         importer.isReadable = true;
-        importer.materialImportMode = ModelImporterMaterialImportMode.None;
-        importer.animationType = ModelImporterAnimationType.None;
-        importer.importAnimation = false;
         importer.importCameras = false;
         importer.importLights = false;
         importer.importNormals = ModelImporterNormals.Calculate;
         importer.normalSmoothingAngle = SmoothingAngle;
         importer.normalCalculationMode = ModelImporterNormalCalculationMode.AreaAndAngleWeighted;
+
+        // Gen robot bots (YoBot / SpiderBot): textured Generic rigs with procedural clips.
+        // Stand-in / Blender bird exports stay vertex-color, no animation.
+        if (assetPath.StartsWith("Assets/Resources/Models/Bots/"))
+        {
+            importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
+            importer.animationType = ModelImporterAnimationType.Generic;
+            importer.importAnimation = true;
+            return;
+        }
+
+        importer.materialImportMode = ModelImporterMaterialImportMode.None;
+        importer.animationType = ModelImporterAnimationType.None;
+        importer.importAnimation = false;
     }
 }

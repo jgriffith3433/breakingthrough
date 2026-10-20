@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// The bots. Until the real models land, each kind is a low-poly stand-in built here from boxes, rods and balls,
-// painted with vertex colors and drawn with the knoll shader like the rest of the hill. An export of
-// Tools/Blender/bt_bots.py in Resources/Models/Bots/<Kind> replaces the stand-in with no code change.
-// Parts are separate objects so Enemy can animate them:
-//   Yo Bots:     Body, Head, ClawL, ClawR, LegL, LegR
+// The bots. Prefer Gen robot exports (character3d form=robot): Resources/Models/Bots/BotYo and BotSpider
+// prefabs, or YoBot.fbx / SpiderBot.fbx. Until those land, each kind is a low-poly stand-in built here from
+// boxes, rods and balls (vertex colors, knoll shader). Tools/Blender/bt_bots.py can also export a stand-in FBX.
+// Parts are separate objects so Enemy can animate them (Gen template roles are aliased in Enemy.BindParts):
+//   Yo Bots:     Body, Head, ClawL, ClawR, LegL/LegFL, LegR/LegFR, optional LegBL/LegBR
 //   Spider Bots: Body, Head, LegL1..LegL4, LegR1..LegR4 (1 is the front pair, the one that stabs)
 // +Z is the front and the feet sit on y = 0.
 public static class BotArt {
@@ -35,10 +35,40 @@ public static class BotArt {
     static GameObject Source(BotKind kind) {
         GameObject source;
         if (!sources.TryGetValue(kind, out source)) {
-            source = Resources.Load<GameObject>("Models/Bots/" + kind);
+            // Prefabs first (BotYo / BotSpider), then the kind-named FBX Gen exports.
+            string prefab = PrefabName(kind);
+            if (prefab != null) {
+                source = Resources.Load<GameObject>("Models/Bots/" + prefab);
+            }
+            if (source == null) {
+                source = Resources.Load<GameObject>("Models/Bots/" + kind);
+            }
+            // Spider variants share the Spider Bot mesh until they get their own.
+            if (source == null && BotRoster.IsSpider(kind) && kind != BotKind.SpiderBot) {
+                source = Resources.Load<GameObject>("Models/Bots/BotSpider");
+                if (source == null) {
+                    source = Resources.Load<GameObject>("Models/Bots/SpiderBot");
+                }
+            }
+            if (source == null && !BotRoster.IsSpider(kind) && kind != BotKind.YoBot) {
+                source = Resources.Load<GameObject>("Models/Bots/BotYo");
+                if (source == null) {
+                    source = Resources.Load<GameObject>("Models/Bots/YoBot");
+                }
+            }
             sources[kind] = source;
         }
         return source;
+    }
+
+    static string PrefabName(BotKind kind) {
+        if (kind == BotKind.YoBot) {
+            return "BotYo";
+        }
+        if (kind == BotKind.SpiderBot) {
+            return "BotSpider";
+        }
+        return null;
     }
 
     static Look LookOf(BotKind kind) {
@@ -75,6 +105,33 @@ public static class BotArt {
         return LookOf(kind).Paint;
     }
 
+    // True when Resources/Models/Bots/<Kind> (or BotYo / BotSpider prefab) is present.
+    public static bool HasAuthoredModel(BotKind kind) {
+        return Source(kind) != null;
+    }
+
+    // Triangle count of the shared source mesh (0 for stand-ins built in code).
+    public static int TriangleCount(BotKind kind) {
+        GameObject source = Source(kind);
+        if (source == null) {
+            return 0;
+        }
+        int tris = 0;
+        foreach (MeshFilter filter in source.GetComponentsInChildren<MeshFilter>(true)) {
+            Mesh mesh = filter.sharedMesh;
+            if (mesh != null) {
+                tris += mesh.triangles.Length / 3;
+            }
+        }
+        foreach (SkinnedMeshRenderer skin in source.GetComponentsInChildren<SkinnedMeshRenderer>(true)) {
+            Mesh mesh = skin.sharedMesh;
+            if (mesh != null) {
+                tris += mesh.triangles.Length / 3;
+            }
+        }
+        return tris;
+    }
+
     // tint is a hue to lean toward; amount 0 keeps the authored colors.
     public static GameObject Make(BotKind kind, Color tint, float amount) {
         Material material = kind == BotKind.TitanSpiderBot ? BirdArt.Glowing : BirdArt.Shared;
@@ -84,6 +141,10 @@ public static class BotArt {
             made = Object.Instantiate(source);
             foreach (Collider collider in made.GetComponentsInChildren<Collider>()) {
                 Object.Destroy(collider);
+            }
+            // Gameplay drives limbs in code; strip any Gen Animator so 60 bots stay cheap.
+            foreach (Animator animator in made.GetComponentsInChildren<Animator>(true)) {
+                Object.Destroy(animator);
             }
         } else {
             made = new GameObject();
@@ -97,14 +158,43 @@ public static class BotArt {
         }
         made.name = "Bot";
         foreach (MeshRenderer renderer in made.GetComponentsInChildren<MeshRenderer>()) {
-            renderer.sharedMaterial = material;
             renderer.receiveShadows = true;
+            if (HasAlbedo(renderer.sharedMaterial)) {
+                if (amount > 0.001f) {
+                    renderer.material.color = Color.Lerp(Color.white, tint, amount);
+                }
+                continue;
+            }
+            renderer.sharedMaterial = material;
             MeshFilter filter = renderer.GetComponent<MeshFilter>();
             if (filter != null && amount > 0.001f) {
                 filter.sharedMesh = BirdArt.Tinted(filter.sharedMesh, tint, amount);
             }
         }
+        foreach (SkinnedMeshRenderer skin in made.GetComponentsInChildren<SkinnedMeshRenderer>()) {
+            skin.receiveShadows = true;
+            if (HasAlbedo(skin.sharedMaterial)) {
+                if (amount > 0.001f) {
+                    skin.material.color = Color.Lerp(Color.white, tint, amount);
+                }
+                continue;
+            }
+            skin.sharedMaterial = material;
+        }
         return made;
+    }
+
+    static bool HasAlbedo(Material mat) {
+        if (mat == null) {
+            return false;
+        }
+        if (mat.HasProperty("_BaseMap") && mat.GetTexture("_BaseMap") != null) {
+            return true;
+        }
+        if (mat.HasProperty("_MainTex") && mat.GetTexture("_MainTex") != null) {
+            return true;
+        }
+        return false;
     }
 
     // Built once per kind, then shared by every bot of that kind so they batch.
