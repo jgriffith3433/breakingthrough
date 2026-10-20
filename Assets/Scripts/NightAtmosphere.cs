@@ -123,7 +123,7 @@ public class NightAtmosphere : MonoBehaviour {
         wire.positionCount = points;
         wire.startWidth = 0.025f;
         wire.endWidth = 0.025f;
-        wire.material = new Material(Shader.Find("Unlit/Color"));
+        wire.material = new Material(SafeShader.Find("Unlit/Color"));
         wire.material.color = new Color(0.05f, 0.04f, 0.04f);
         wire.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         Color[] bulbs = { new Color(1f, 0.78f, 0.4f), new Color(1f, 0.5f, 0.35f), new Color(0.6f, 0.85f, 1f), new Color(0.75f, 1f, 0.55f) };
@@ -196,7 +196,7 @@ public class NightAtmosphere : MonoBehaviour {
     static void Particles(GameObject go, string texture, bool additive, float boost) {
         var renderer = go.GetComponent<ParticleSystemRenderer>();
         Shader shader = Shader.Find("BT/Particle");
-        var material = new Material(shader != null ? shader : Shader.Find("Sprites/Default"));
+        var material = new Material(shader != null ? shader : SafeShader.Find("Sprites/Default"));
         material.mainTexture = Fx.Texture(texture);
         material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
         material.SetFloat("_DstBlend", additive ? (float)UnityEngine.Rendering.BlendMode.One : (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
@@ -249,7 +249,7 @@ public class Halo : MonoBehaviour {
     public void Build(float size, Color color) {
         if (additive == null) {
             Shader shader = Shader.Find("BT/Particle");
-            additive = new Material(shader != null ? shader : Shader.Find("Sprites/Default"));
+            additive = new Material(shader != null ? shader : SafeShader.Find("Sprites/Default"));
             additive.mainTexture = Fx.Texture("glow");
             additive.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
             additive.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.One);

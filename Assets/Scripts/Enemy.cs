@@ -1264,9 +1264,9 @@ public class Enemy : MonoBehaviour
         barRoot.SetParent(transform, false);
         barRoot.localPosition = new Vector3(0f, 1.15f, 0f);
 
-        Shader shader = Shader.Find("Unlit/Color");
+        Shader shader = SafeShader.Find("Unlit/Color");
         if (shader == null)
-            shader = Shader.Find("Sprites/Default");
+            shader = SafeShader.Find("Sprites/Default");
 
         Transform back = MakeBarQuad("Back", shader, new Color(0.1f, 0.07f, 0.06f, 0.94f));
         back.SetParent(barRoot, false);

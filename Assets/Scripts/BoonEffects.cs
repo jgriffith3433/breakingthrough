@@ -94,7 +94,7 @@ public class BoonEffects : MonoBehaviour {
 
     Transform MakeBlade() {
         if (bladeMat == null) {
-            bladeMat = new Material(Shader.Find("Unlit/Color"));
+            bladeMat = new Material(SafeShader.Find("Unlit/Color"));
             bladeMat.color = new Color(0.75f, 0.95f, 1f);
         }
         GameObject model = ArtLibrary.Make("Quill", true);
@@ -114,7 +114,7 @@ public class BoonEffects : MonoBehaviour {
         trail.time = 0.12f;
         trail.startWidth = 0.14f;
         trail.endWidth = 0f;
-        trail.material = new Material(Shader.Find("Sprites/Default"));
+        trail.material = new Material(SafeShader.Find("Sprites/Default"));
         trail.startColor = new Color(0.7f, 0.95f, 1f, 0.8f);
         trail.endColor = new Color(0.7f, 0.95f, 1f, 0f);
         trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;

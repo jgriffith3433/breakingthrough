@@ -326,7 +326,7 @@ public class Musician : MonoBehaviour {
         var holder = new GameObject("Knife").transform;
         holder.SetParent(hand, false);
         holder.localPosition = new Vector3(0f, 0.08f, 0.02f);
-        var mat = new Material(Shader.Find("Unlit/Color"));
+        var mat = new Material(SafeShader.Find("Unlit/Color"));
         mat.color = new Color(0.82f, 0.86f, 0.9f);
         var blade = GameObject.CreatePrimitive(PrimitiveType.Cube);
         Destroy(blade.GetComponent<Collider>());
@@ -356,7 +356,7 @@ public class Musician : MonoBehaviour {
         slash.useWorldSpace = true;
         slash.positionCount = 0;
         slash.numCapVertices = 3;
-        slash.material = new Material(Shader.Find("Sprites/Default"));
+        slash.material = new Material(SafeShader.Find("Sprites/Default"));
         slash.widthCurve = new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(0.5f, 0.12f), new Keyframe(1f, 0f));
         slash.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         slash.receiveShadows = false;

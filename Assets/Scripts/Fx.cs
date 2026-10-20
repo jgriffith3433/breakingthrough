@@ -132,7 +132,7 @@ public class Fx : MonoBehaviour {
 
         var renderer = go.GetComponent<ParticleSystemRenderer>();
         Shader shader = Shader.Find("BT/Particle");
-        var material = new Material(shader != null ? shader : Shader.Find("Sprites/Default"));
+        var material = new Material(shader != null ? shader : SafeShader.Find("Sprites/Default"));
         material.mainTexture = Texture(texture);
         material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
         material.SetFloat("_DstBlend", additive ? (float)UnityEngine.Rendering.BlendMode.One : (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
