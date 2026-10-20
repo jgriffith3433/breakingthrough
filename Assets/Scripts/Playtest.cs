@@ -1075,7 +1075,7 @@ public static class Playtest {
         run.Scene("Wallit showcase");
         // Hold the wave so bots don't crowd the shot.
         PlayInput.PadKey(KeyCode.Equals, 0.05f);
-        yield return Wait(0.2f);
+        yield return new WaitForSecondsRealtime(0.2f);
         PlayInput.Release();
 
         GameObject prefab = Resources.Load<GameObject>("Wallit/Wallit");
@@ -1123,7 +1123,7 @@ public static class Playtest {
             }
             animator.SetInteger("Clip", i);
             animator.Play(clip, 0, 0f);
-            yield return Wait(1.15f);
+            yield return new WaitForSecondsRealtime(1.15f);
             bool torn = WallitLooksTorn(wallit);
             run.Event("wallit-clip", clip + (torn ? ": torn" : ": ok"));
             if (torn) {
@@ -1147,7 +1147,7 @@ public static class Playtest {
             cam.transform.position = camPos;
             cam.transform.LookAt(wallit.transform.position + Vector3.up * 0.9f);
         }
-        yield return Wait(0.6f);
+        yield return new WaitForSecondsRealtime(0.6f);
         string parts = WallitPartLine(wallit);
         run.Event("wallit-look-" + angle, parts);
         if (parts.IndexOf("wallet") < 0 && parts.IndexOf("body") < 0) {
