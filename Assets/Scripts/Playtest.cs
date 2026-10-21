@@ -627,18 +627,18 @@ public static class Playtest {
                         cardSeenAt = now;
                     } else {
                         int pick = Random.Range(0, 3);
-                        PlayInput.Tap(KeyCode.Alpha1 + pick);
                         int picksBefore = RunBoons.Picks;
+                        PlayInput.Tap(KeyCode.Alpha1 + pick);
                         yield return null;
                         yield return null;
-                        if (LevelUpScreen.IsOpen && pick > 0) {
+                        if (LevelUpScreen.IsOpen && RunBoons.Picks == picksBefore) {
                             PlayInput.Tap(KeyCode.Alpha1);
                             yield return null;
                             yield return null;
                         }
-                        if (LevelUpScreen.IsOpen) {
+                        if (LevelUpScreen.IsOpen && RunBoons.Picks == picksBefore) {
                             yield return new WaitForSecondsRealtime(1f);
-                            if (LevelUpScreen.IsOpen) {
+                            if (LevelUpScreen.IsOpen && RunBoons.Picks == picksBefore) {
                                 run.Problem(PlaytestSeverity.Bug, "the level-up card did not close after pressing a number key");
                                 run.Finish(PlaytestOutcome.Stuck);
                                 yield break;
@@ -649,12 +649,17 @@ public static class Playtest {
                         run.Log("picked card " + (pick + 1) + " (picks " + picksBefore + " -> " + RunBoons.Picks + ")");
                         cardSeenAt = -1f;
                         if (menusOnly) {
-                            yield return new WaitForSecondsRealtime(1.5f);
-                            if (Time.timeScale <= 0.01f) {
-                                run.Problem(PlaytestSeverity.Bug, "the game stayed paused after a level-up pick");
-                                run.Finish(PlaytestOutcome.Stuck);
+                            if (levelUps < 2) {
+                                RunBoons.AddFeathers(RunBoons.Need(RunBoons.Level));
+                                run.Event("setup", "back-to-back level-up granted right after pick");
+                            } else {
+                                yield return new WaitForSecondsRealtime(1.5f);
+                                if (Time.timeScale <= 0.01f && !LevelUpScreen.IsOpen) {
+                                    run.Problem(PlaytestSeverity.Bug, "the game stayed paused after a level-up pick");
+                                    run.Finish(PlaytestOutcome.Stuck);
+                                }
+                                yield break;
                             }
-                            yield break;
                         }
                     }
                 }
@@ -1101,14 +1106,20 @@ public static class Playtest {
         PlayInput.Hold(KeyCode.LeftShift, false);
         PlayInput.Axis("Horizontal", 0f);
         PlayInput.Axis("Vertical", 0f);
+        int picksBefore = RunBoons.Picks;
         run.Event("level-up", "level " + RunBoons.Level);
         yield return new WaitForSecondsRealtime(0.7f);
         PlayInput.Tap(KeyCode.Alpha1);
         yield return null;
         yield return null;
-        if (LevelUpScreen.IsOpen) {
+        if (LevelUpScreen.IsOpen && RunBoons.Picks == picksBefore) {
+            PlayInput.Tap(KeyCode.Alpha1);
+            yield return null;
+            yield return null;
+        }
+        if (LevelUpScreen.IsOpen && RunBoons.Picks == picksBefore) {
             yield return new WaitForSecondsRealtime(1f);
-            if (LevelUpScreen.IsOpen) {
+            if (LevelUpScreen.IsOpen && RunBoons.Picks == picksBefore) {
                 run.Problem(PlaytestSeverity.Bug, "the level-up card did not close after pressing a number key");
                 run.Finish(PlaytestOutcome.Stuck);
                 yield break;
@@ -3237,12 +3248,13 @@ public static class Playtest {
                         run.Finish(PlaytestOutcome.Stuck);
                         yield break;
                     }
+                    int picksBefore = RunBoons.Picks;
                     Tap(card.gameObject);
                     yield return null;
                     yield return null;
-                    if (LevelUpScreen.IsOpen) {
+                    if (LevelUpScreen.IsOpen && RunBoons.Picks == picksBefore) {
                         yield return new WaitForSecondsRealtime(1f);
-                        if (LevelUpScreen.IsOpen) {
+                        if (LevelUpScreen.IsOpen && RunBoons.Picks == picksBefore) {
                             run.Problem(PlaytestSeverity.Bug, "the level-up card did not close after a tap");
                             run.Finish(PlaytestOutcome.Stuck);
                             yield break;

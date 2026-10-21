@@ -18,6 +18,9 @@ public class LevelUpScreen : MonoBehaviour {
     List<BoonId> offer = new List<BoonId>();
     bool fromChest;
     float openedAt;
+    int openedFrame = -1;
+    int closedFrame = -1;
+    bool inputReady;
     CanvasScaler scaler;
     RectTransform deck;
     readonly Vector2[] homes = new Vector2[3];
@@ -73,6 +76,9 @@ public class LevelUpScreen : MonoBehaviour {
 
     void Awake() {
         instance = this;
+        openedFrame = -1;
+        closedFrame = -1;
+        inputReady = false;
     }
 
     void Start() {
@@ -89,6 +95,7 @@ public class LevelUpScreen : MonoBehaviour {
     void OnDestroy() {
         if (IsOpen) {
             IsOpen = false;
+            inputReady = false;
             Time.timeScale = 1f;
         }
     }
@@ -98,7 +105,7 @@ public class LevelUpScreen : MonoBehaviour {
             HoldFire = false;
         }
         if (!IsOpen) {
-            if (WaveDirector.IsLost || PauseMenu.IsOpen || root == null) {
+            if (WaveDirector.IsLost || PauseMenu.IsOpen || root == null || Time.frameCount <= closedFrame) {
                 return;
             }
             if (RunBoons.TakePendingChest()) {
@@ -131,14 +138,18 @@ public class LevelUpScreen : MonoBehaviour {
             halo.a = Mathf.Lerp(0.15f, 0.55f, 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 3f + i)) * ease;
             cards[i].Halo.color = halo;
         }
-        if (Time.unscaledTime - openedAt < 0.35f) {
+        if (!inputReady || Time.frameCount <= openedFrame) {
             return;
         }
-        for (int i = 0; i < offer.Count; i++) {
+        for (int i = 0; i < 3 && offer.Count > 0; i++) {
             if (PlayInput.GetKeyDown(KeyCode.Alpha1 + i) || PlayInput.GetKeyDown(KeyCode.Keypad1 + i)) {
-                Choose(i);
+                Choose(Mathf.Min(i, offer.Count - 1));
                 return;
             }
+        }
+        if (offer.Count > 0 && (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter))) {
+            Choose(0);
+            return;
         }
         if (PlayInput.GetKeyDown(KeyCode.R)) {
             Reroll();
@@ -150,12 +161,23 @@ public class LevelUpScreen : MonoBehaviour {
         offer = RunBoons.Roll(3, chest);
         if (offer.Count == 0) {
             // Everything is maxed. Pay out instead.
+            IsOpen = false;
+            inputReady = false;
+            if (root != null) {
+                root.SetActive(false);
+            }
+            Time.timeScale = WaveDirector.IsLost ? 0f : 1f;
             Musician.Instance?.Heal(10);
             return;
         }
         IsOpen = true;
-        RunAnalytics.CardsOpen(chest);
+        inputReady = true;
+        openedFrame = Time.frameCount;
         openedAt = Time.unscaledTime;
+        if (EventSystem.current != null) {
+            EventSystem.current.SetSelectedGameObject(null);
+        }
+        RunAnalytics.CardsOpen(chest);
         Time.timeScale = 0f;
         root.SetActive(true);
         heading.text = chest ? "Treasure!  Pick one" : "Level " + RunBoons.Level + "!  Pick one";
@@ -209,21 +231,31 @@ public class LevelUpScreen : MonoBehaviour {
         }
         RunAnalytics.Reroll();
         offer = RunBoons.Roll(3, fromChest);
+        if (offer.Count == 0) {
+            IsOpen = false;
+            inputReady = false;
+            closedFrame = Time.frameCount;
+            root.SetActive(false);
+            Time.timeScale = WaveDirector.IsLost ? 0f : 1f;
+            Musician.Instance?.Heal(10);
+            return;
+        }
+        inputReady = true;
         Fill();
         GameAudio.Play("shot", 0.4f, 1.4f);
     }
 
     void Choose(int index) {
-        if (!IsOpen || index < 0 || index >= offer.Count) {
+        if (!IsOpen || !inputReady || offer.Count == 0) {
             return;
         }
-        if (Time.unscaledTime - openedAt < 0.35f) {
-            return;
-        }
+        index = Mathf.Clamp(index, 0, offer.Count - 1);
         BoonInfo info = RunBoons.Info(offer[index]);
         RunBoons.Take(offer[index]);
         RunAnalytics.CardTaken(fromChest, offer, index);
         IsOpen = false;
+        inputReady = false;
+        closedFrame = Time.frameCount;
         HoldFire = true;
         root.SetActive(false);
         Time.timeScale = WaveDirector.IsLost ? 0f : 1f;
