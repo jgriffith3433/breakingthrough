@@ -53,7 +53,7 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 | The enemy list on the right | `WaveRoster.cs`, which reads `WaveDirector.CopyRoster` and names rows from `BotRoster.ForKind` |
 | A sound | `Assets/Resources/Sfx/Name.mp3`, played with `GameAudio.Play("Name", volume, pitch)`. The bat's are `batswing`, `batcrack`, `batsmash` and `homerun` (Hawkes Gen `audio.sfx`) |
 | A body animation | `Assets/Art/Wallit/Wallit.fbx`, listed in `SetupWallit.ClipNames` (`Assets/Editor/SetupWallit.cs`) and `CharacterMovement.ClipNames`, driven by the `Clip` integer |
-| Bot models | Stand-ins: `BotArt.cs` builds them in code. `Tools/Blender/bt_bots.py` makes the same in Blender (`export("<Kind>")`, `export_all()`) into `Assets/Resources/Models/Bots/`, which `BotArt` loads instead when present |
+| Bot models | Gen's `YoBot.fbx` and `SpiderBot.fbx` in `Assets/Resources/Models/Bots/`, drawn with the painted skins `YoBotSkin.png` / `SpiderBotSkin.png` (alpha = glow) on `Knoll/BotSkin` (`Resources/Shaders/BotSkin.shader`). `BotArt.Prepared` bakes each skinned part rigid onto its bone once, adds a `Front` marker and turns the Spider Bot so its glass leads. Repaint the skins with `Tools/Bots/paint.py` whenever an FBX is replaced (`Tools/Bots/README.md`). Stand-ins: `BotArt.cs` builds them in code when no FBX is there; `Tools/Blender/bt_bots.py` makes the same in Blender |
 | Map scenery models | `Tools/Blender/bt_arena.py`, then `export_arena()`. Output goes to `Assets/Art/Arena/` |
 | The map | `Assets/Editor/BuildArena.cs`, then **Tools → Arena → Rebuild Arena** |
 | Night lighting, lanterns, mist, notes | `NightAtmosphere.cs` |
@@ -76,7 +76,8 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 - **Bot models:**
   - Parts must stay named: Yo Bots `Body`, `Head`, `ClawL`, `ClawR`, `LegL`, `LegR`; Spider Bots `Body`, `Head`, `LegL1`–`LegL4`, `LegR1`–`LegR4` (1 is the front pair, which stabs). Each part pivots where it joins (hip, shoulder, neck).
   - The FBX import mirrors X, so the code reads each claw's and leg's side from its local position.
-  - +Z in the game (Blender's −Y) is the bot's front, feet on 0. `BuildModel` turns the model around if the head ends up behind.
+  - +Z in the game (Blender's −Y) is the bot's front, feet on 0. `BuildModel` turns the model around if its `Front` marker (or, for stand-ins, the head) ends up behind. The Yo Bot's lid sits behind its middle, so never go back to the head check for it.
+  - Never draw a Gen bot with its imported FBX material: Gen's bake is near black and the material glows white in Unity. That was the white-silhouette bug.
   - `BirdArt.Tinted` tints by copying meshes, so the meshes must stay readable. `ModelImportRules.cs` enforces that, together with smooth normals at a 60° crease angle.
 - **Shader:** bots use `BirdArt.Shared`, which is `Knoll/VertexColorLit` with `_GlowBand` 0 and a strong `_RimStrength`. Use `BirdArt.Glowing` only where warm vertex colors should emit (the Titan Spider Bot's gold trim, lantern glass). `KnollLit.mat` keeps `_RimStrength` near 0 so scenery does not glow.
 - **Hit flash:** it sets a `MaterialPropertyBlock` and clears it when the flash ends, so the bot batches with the rest again. Keep that cleanup.

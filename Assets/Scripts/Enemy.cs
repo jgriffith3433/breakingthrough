@@ -1536,8 +1536,12 @@ public class Enemy : MonoBehaviour
         model = made.transform;
         spider = BotRoster.IsSpider(look);
         BindParts(model, spider);
-        // The head must lead. If the export axes ever flip, turn the model around.
-        if (head != null && Vector3.Dot(head.position - transform.position, transform.forward) < 0f)
+        // The head must lead (Gen models mark their front instead: the Yo Bot's lid sits behind its middle).
+        // If the export axes ever flip, turn the model around.
+        Transform lead = FindPart(model, "Front");
+        if (lead == null)
+            lead = head;
+        if (lead != null && Vector3.Dot(lead.position - transform.position, transform.forward) < 0f)
             model.localRotation = Quaternion.Euler(0f, 180f, 0f);
         modelRest = model.localRotation;
         if (clawL != null) clawLRest = clawL.localRotation;
