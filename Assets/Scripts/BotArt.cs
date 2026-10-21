@@ -157,6 +157,7 @@ public static class BotArt {
             }
         }
         made.name = "Bot";
+        BirdArt.CalmEmission(made);
         foreach (MeshRenderer renderer in made.GetComponentsInChildren<MeshRenderer>()) {
             renderer.receiveShadows = true;
             if (HasAlbedo(renderer.sharedMaterial)) {

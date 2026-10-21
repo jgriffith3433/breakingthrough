@@ -145,6 +145,7 @@ public class CharacterMovement : MonoBehaviour {
         if (wallitPrefab != null) {
             GameObject wallit = Instantiate(wallitPrefab, player.transform);
             wallit.name = "Wallit";
+            BirdArt.CalmEmission(wallit);
             wallit.tag = "playerchild";
             wallit.transform.SetAsFirstSibling();
             wallit.transform.localPosition = Vector3.zero;
