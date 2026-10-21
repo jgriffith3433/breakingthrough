@@ -1074,7 +1074,7 @@ public static class Playtest {
     static IEnumerator WallitRun(PlaytestOptions options) {
         run.Scene("Wallit showcase");
         // Hold the wave so bots don't crowd the shot.
-        PlayInput.PadKey(KeyCode.Equals, 0.05f);
+        PlayInput.Tap(KeyCode.Equals);
         yield return new WaitForSecondsRealtime(0.2f);
         PlayInput.Release();
 
@@ -1216,7 +1216,7 @@ public static class Playtest {
     static IEnumerator SliceRun(PlaytestOptions options) {
         run.Scene("Slice showcase");
         // Hold the wave so bots don't crowd the shot.
-        PlayInput.PadKey(KeyCode.Equals, 0.05f);
+        PlayInput.Tap(KeyCode.Equals);
         yield return new WaitForSecondsRealtime(0.2f);
         PlayInput.Release();
 
