@@ -38,6 +38,17 @@ static class SetupWallit
         Build(force: true);
     }
 
+    public static void EnsureBuiltForDeploy()
+    {
+        if (!File.Exists(ModelPath))
+            return;
+        for (int pass = 0; pass < 3; pass++)
+        {
+            if (Build(force: true))
+                break;
+        }
+    }
+
     static void Run()
     {
         if (EditorApplication.isCompiling || EditorApplication.isUpdating || EditorApplication.isPlayingOrWillChangePlaymode)
