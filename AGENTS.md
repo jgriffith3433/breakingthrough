@@ -43,7 +43,7 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 | The wave-power list on the left | `AbilityList.cs` |
 | The enemy list on the right | `WaveRoster.cs`, which reads `WaveDirector.CopyRoster` and names rows from `BotRoster.ForKind` |
 | A sound | `Assets/Resources/Sfx/Name.mp3`, played with `GameAudio.Play("Name", volume, pitch)`. The bat's are `batswing`, `batcrack`, `batsmash` and `homerun` (Hawkes Gen `audio.sfx`) |
-| A body animation | A Mixamo humanoid FBX under `Assets/Art/`, listed in `SetupWarrok.Clips`, then a State id and `AddAction` |
+| A body animation | `Assets/Art/Wallit/Wallit.fbx`, listed in `SetupWallit.ClipNames` (`Assets/Editor/SetupWallit.cs`) and `CharacterMovement.ClipNames`, driven by the `Clip` integer |
 | Bot models | Stand-ins: `BotArt.cs` builds them in code. `Tools/Blender/bt_bots.py` makes the same in Blender (`export("<Kind>")`, `export_all()`) into `Assets/Resources/Models/Bots/`, which `BotArt` loads instead when present |
 | Map scenery models | `Tools/Blender/bt_arena.py`, then `export_arena()`. Output goes to `Assets/Art/Arena/` |
 | The map | `Assets/Editor/BuildArena.cs`, then **Tools → Arena → Rebuild Arena** |
@@ -92,23 +92,22 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 
 ## Animator
 
-- `applyRootMotion` is false. Gameplay calls `SetInteger("State", n)` and `CrossFade`.
-- Each bat swing calls `SetTrigger("Fire")` on the upper layer (the old shoot recoil, a stand-in until the new model) and must not set the base State to 2, or the jump is cancelled.
-- The upper-layer Shoot state's speed follows the `FireSpeed` float (default 1), which `CharacterMovement` sets every frame.
-- While `PlayerGrowth.Rooted` is set or `Enemy.Climbers > 0`, there is no jump, and `AnimationMove` must not overwrite State 5 or 7. Swinging can continue.
+- `applyRootMotion` is false. Gameplay calls `CharacterMovement.PlayClip` / `CharacterMovement.PlayWallitClip` (`SetInteger("Clip", n)` and `CrossFade`).
+- Each bat swing plays its own clip (`swing1`, `swing2`, `swing3`, `groundSmash`, `homeRunCharge`, `homeRunRelease`) and fires `OnBatContact` (`WallitAnimRelay` → `BatEquipment.OnBatContact`) at the contact frame.
+- Swing state speeds follow the `FireSpeed` float (default 1), which `CharacterMovement` sets every frame.
+- While `PlayerGrowth.Rooted` is set or `Enemy.Climbers > 0`, there is no jump, and `AnimationMove` must not overwrite action clips (`landing`, `shakeOff`, `hitReact`, `victory`, `death`). Swinging can continue.
 
 ## Editor scripts
 
-Many editor scripts run on load through `[InitializeOnLoad]`: `SetupWarrok`, `BuildArena`, `DressGrassyKnoll`, `PlacePianoPlayer`, `PlaceWaveDirector`, `PlaceEnemies`, `PlacePracticeTargets`, `RestoreOldPlayer`, `EquipBow`, `FixMixamoImport`, `SetupMainMenu`, `BlenderMcpSetup`, `ResetTimeScale` and `DisableXboxGdkPrompt`. When writing one:
+Many editor scripts run on load through `[InitializeOnLoad]`: `SetupWallit`, `SetupSlice`, `SetupBots`, `BuildArena`, `DressGrassyKnoll`, `PlaceWaveDirector`, `PlaceEnemies`, `PlacePracticeTargets`, `RestoreOldPlayer`, `EquipBow`, `SetupMainMenu`, `BlenderMcpSetup`, `ResetTimeScale` and `DisableXboxGdkPrompt` (`SetupWarrok`, `PlacePianoPlayer` and `FixMixamoImport` are retired no-op stubs). When writing one:
 
 - Reschedule on `EditorApplication.delayCall` while compiling, updating or playing.
 - Return immediately unless the open scene is `scene2`, if the script changes that scene.
-- Cap retries. For example, `FixMixamoImport` stops after 8 passes.
+- Cap retries. For example, `SetupWallit` and `SetupSlice` stop after 8 passes.
 
 Specific scripts:
 
-- **`SetupWarrok`** reimports clips, rewrites `Hero.controller` and saves the scene. Apply new states **after** the loop that sets `canTransitionToSelf` false, or the next editor load clears them. Its `InvalidOperationException` on `MarkSceneDirty` during play is expected.
-- **Kick clips:** do not retarget `Assets/hero/ANIM_HERO_*` onto Warrok. They are generic Bip01 clips.
+- **`SetupWallit`** configures `Assets/Art/Wallit/Wallit.fbx` as Humanoid with `OnBatContact` events on the swing clips, builds `Wallit.controller`, `Wallit.prefab`, `Assets/Resources/Wallit/Wallit.prefab`, and `Assets/Prefabs/Player.prefab` without rewriting the scene on load (`EnsureBuiltForDeploy` swaps the scene player at WebGL build time).
 - **`ResetTimeScale`** puts `Time.timeScale` back to 1 when play mode ends. Without it, stopping play while a level-up card is open can save 0 into `TimeManager.asset`, and the next Play starts frozen.
 
 While Unity is playing, script edits do not compile. Leave play mode first. Prefer an editor script over hand-editing `scene2.unity`, because Unity overwrites the YAML while the editor is open.
