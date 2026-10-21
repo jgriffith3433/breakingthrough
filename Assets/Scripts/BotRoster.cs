@@ -61,7 +61,7 @@ public static class BotRoster {
         switch (unlockWave) {
             case 10: return Make(BotKind.PlatedYoBot, "Plated Yo Bot", 60, 4.6f, 1.18f, 0.92f, 1.12f, 0.72f, 1.15f, 3.2f, 1.3f, false, false, new Color(0.95f, 1.1f, 1.25f), 10, "A Plated Yo Bot. Your height, bolted shut, and slow to come apart.");
             case 20: return Make(BotKind.MegaYoBot, "Mega Yo Bot", 270, 5.4f, 1f, 1.15f, 1f, 1.35f, 2.4f, 4.2f, 1.5f, true, true, new Color(1.65f, 0.32f, 0.22f), 20, "A Mega Yo Bot. As tall as you, and it rushes the piano in bursts.");
-            case 30: return Make(BotKind.SpiderBot, "Spider Bot", 480, 8.2f, 1.05f, 1f, 1.25f, 1.05f, 1.8f, 3.6f, 1.8f, true, false, new Color(0.55f, 1.05f, 1.1f), 30, "A Spider Bot. Eight legs, twice the size of anything so far, and a long way from scrap.");
+            case 30: return Make(BotKind.SpiderBot, "Spider Bot", 480, 8.2f, 1.05f, 1f, 1.25f, 1.05f, 1.8f, 3.6f, 1.8f, true, false, new Color(0.55f, 1.05f, 1.1f), 30, "A Spider Bot. Six legs, twice the size of anything so far, and a long way from scrap.");
             case 40: return Make(BotKind.StalkerSpiderBot, "Stalker Spider Bot", 660, 9.4f, 1f, 1.05f, 1.2f, 0.95f, 1.7f, 3.4f, 2.2f, false, false, new Color(1.6f, 1.62f, 1.75f), 40, "A Stalker Spider Bot. Quiet on its legs, with a long health bar.");
             case 50: return Make(BotKind.RunnerSpiderBot, "Runner Spider Bot", 840, 10.8f, 0.85f, 1.4f, 0.9f, 1.55f, 2.5f, 3.8f, 1.4f, true, true, new Color(1.6f, 0.82f, 0.3f), 50, "A Runner Spider Bot. Long legs, and it closes the gap.");
             case 60: return Make(BotKind.RammerSpiderBot, "Rammer Spider Bot", 990, 12.4f, 0.9f, 1.45f, 0.95f, 1.7f, 2.8f, 3.5f, 1.3f, false, true, new Color(1.3f, 1.12f, 0.8f), 60, "A Rammer Spider Bot. A running wall with a plate on the front.");
@@ -77,7 +77,7 @@ public static class BotRoster {
         return kind == BotKind.YoBot ? YoBot() : ForTier(UnlockOf(kind));
     }
 
-    // Yo Bots walk on two legs and swipe with claws; Spider Bots walk on eight and stab with the front pair.
+    // Yo Bots walk on two legs and swipe with claws; Spider Bots walk on six and stab with the front pair.
     public static bool IsSpider(BotKind kind) {
         return kind >= BotKind.SpiderBot;
     }

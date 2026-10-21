@@ -74,7 +74,7 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 
 - **`Enemy.Roster`** lists every live bot. Use it instead of `FindObjectsByType<Enemy>` in anything that runs every frame. Copy it before you damage bots in a loop, because a Splitter death adds drones mid-loop.
 - **Bot models:**
-  - Parts must stay named: Yo Bots `Body`, `Head`, `ClawL`, `ClawR`, `LegL`, `LegR`; Spider Bots `Body`, `Head`, `LegL1`–`LegL4`, `LegR1`–`LegR4` (1 is the front pair, which stabs). Each part pivots where it joins (hip, shoulder, neck).
+  - Parts must stay named: Yo Bots `Body`, `Head`, `ClawL`, `ClawR`, `LegL`, `LegR`; Spider Bots `Body`, `Head`, `LegL1`–`LegL3`, `LegR1`–`LegR3` (1 is the front pair, which stabs). Each part pivots where it joins (hip, shoulder, neck).
   - The FBX import mirrors X, so the code reads each claw's and leg's side from its local position.
   - +Z in the game (Blender's −Y) is the bot's front, feet on 0. `BuildModel` turns the model around if its `Front` marker (or, for stand-ins, the head) ends up behind. The Yo Bot's lid sits behind its middle, so never go back to the head check for it.
   - Never draw a Gen bot with its imported FBX material: Gen's bake is near black and the material glows white in Unity. That was the white-silhouette bug.
