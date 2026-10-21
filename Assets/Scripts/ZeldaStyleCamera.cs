@@ -90,8 +90,15 @@ public class ZeldaStyleCamera : MonoBehaviour {
         LockOn = GameObject.Find("LockOn").GetComponent<LockOn>();
         LookDir = FollowXForm.forward;
         orbitYaw = FollowXForm.eulerAngles.y;
-        Cursor.lockState = CursorLockMode.Locked;
+        LockMouse();
         Cursor.visible = false;
+    }
+
+    // Phones and tablets have no pointer lock: asking logs "Cursor locking is not supported on this browser." each frame.
+    static void LockMouse() {
+        if (!UiFit.Touch) {
+            Cursor.lockState = CursorLockMode.Locked;
+        }
     }
 
     void Update() {
@@ -114,7 +121,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         } else {
-            Cursor.lockState = CursorLockMode.Locked;
+            LockMouse();
             Cursor.visible = false;
         }
 
