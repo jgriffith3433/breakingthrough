@@ -1220,7 +1220,10 @@ public static class Playtest {
             yield break;
         }
         GameObject wallit = animator.gameObject;
+        CharacterMovement.ApplyWallitSkins(wallit);
+        run.Event("wallit-entity", "theplacedepartment/wallit in Gen library: mesh=v2 (19,174 tris: Body + Bat), rig=Mixamo humanoid + Bills1/Bills2, clips=17/17, still=a_c6b4dbd2efc03120, turntable=a_b8ea45e45ca23f3b (preview video)");
         run.Event("wallit-prefab", "loaded on live player (" + wallit.name + ")");
+        LogWallitSkin(wallit);
 
         bool human = animator.avatar != null && animator.avatar.isHuman && animator.avatar.isValid;
         run.Event("wallit-humanoid", human
@@ -1230,10 +1233,12 @@ public static class Playtest {
             run.Problem(PlaytestSeverity.Bug, "Wallit import is not a valid Humanoid avatar");
         }
 
-        // Front and side looks on the live player.
+        // Front and side close-up looks on the live player (holding ZeldaStyleCamera off so it does not pull back).
         Vector3 at = wallit.transform.position;
-        yield return WallitLook(player.gameObject, "front", at + wallit.transform.forward * 3.2f + Vector3.up * 1.2f);
-        yield return WallitLook(player.gameObject, "side", at + wallit.transform.right * 3.2f + Vector3.up * 1.2f);
+        Vector3 fwd = wallit.transform.forward.sqrMagnitude > 0.01f ? wallit.transform.forward.normalized : Vector3.forward;
+        Vector3 right = wallit.transform.right.sqrMagnitude > 0.01f ? wallit.transform.right.normalized : Vector3.right;
+        yield return WallitLook(wallit, "front", at + fwd * 2.35f + Vector3.up * 1.15f);
+        yield return WallitLook(wallit, "side", at + (right * 0.85f + fwd * 0.52f).normalized * 2.45f + Vector3.up * 1.15f);
 
         // Live gameplay: combo swings (swing1, swing2, swing3), groundSmash, homeRunCharge/homeRunRelease,
         // run, strafeLeft, strafeRight, backPedal, jump, landing, and hitReact.
@@ -1246,6 +1251,11 @@ public static class Playtest {
         // Step through all 17 clips on Wallit's Animator to verify every state is present and untorn.
         run.Scene("Wallit clips");
         PlayInput.Release();
+        ZeldaStyleCamera zcam = Juice.Cam;
+        bool zcamWas = zcam != null && zcam.enabled;
+        if (zcam != null) {
+            zcam.enabled = false;
+        }
         int played = 0;
         int missing = 0;
         for (int i = 0; i < WallitClips.Length; i++) {
@@ -1258,7 +1268,11 @@ public static class Playtest {
             CharacterMovement.PlayWallitClip(i, 1.0f);
             animator.SetInteger("Clip", i);
             animator.Play(clip, 0, 0f);
-            yield return new WaitForSecondsRealtime(0.65f);
+            float waitUntil = Time.realtimeSinceStartup + 0.65f;
+            while (Time.realtimeSinceStartup < waitUntil && !run.Done) {
+                FrameWallitCamera(wallit, wallit.transform.position + (wallit.transform.forward * 0.9f + wallit.transform.right * 0.35f).normalized * 2.6f + Vector3.up * 1.15f);
+                yield return null;
+            }
             bool torn = WallitLooksTorn(wallit);
             run.Event("wallit-clip", clip + (torn ? ": torn" : ": ok"));
             if (torn) {
@@ -1266,6 +1280,9 @@ public static class Playtest {
             }
             played++;
             run.Progress(0.8f + 0.2f * (i + 1f) / WallitClips.Length);
+        }
+        if (zcam != null) {
+            zcam.enabled = zcamWas;
         }
         CharacterMovement.ClearActionClip();
         run.Metric("wallitClipsPlayed", played);
@@ -1276,13 +1293,59 @@ public static class Playtest {
         run.Event("wallit-report", played + " clips played, " + missing + " missing, humanoid " + (human ? "ok" : "bad"));
     }
 
-    static IEnumerator WallitLook(GameObject wallit, string angle, Vector3 camPos) {
+    static void FrameWallitCamera(GameObject wallit, Vector3 camPos) {
         Camera cam = Camera.main;
-        if (cam != null) {
+        if (cam != null && wallit != null) {
             cam.transform.position = camPos;
-            cam.transform.LookAt(wallit.transform.position + Vector3.up * 0.9f);
+            cam.transform.LookAt(wallit.transform.position + Vector3.up * 0.92f);
         }
-        yield return new WaitForSecondsRealtime(0.6f);
+    }
+
+    static void LogWallitSkin(GameObject wallit) {
+        string bodyShader = "none";
+        string bodyTex = "none";
+        string batShader = "none";
+        string batTex = "none";
+        foreach (Renderer r in wallit.GetComponentsInChildren<Renderer>(true)) {
+            if (r == null || r.sharedMaterial == null) {
+                continue;
+            }
+            string n = r.gameObject.name.ToLowerInvariant();
+            if (n == "handle" || n == "barrel" || (r.transform.parent != null && r.transform.parent.name == "Marks")) {
+                continue;
+            }
+            Texture t = r.sharedMaterial.mainTexture;
+            string tdesc = t != null ? t.name + " (" + t.width + "x" + t.height + ")" : "none";
+            if (n.Contains("bat")) {
+                batShader = r.sharedMaterial.shader != null ? r.sharedMaterial.shader.name : "none";
+                batTex = tdesc;
+            } else if (n.Contains("body") || n.Contains("wallit")) {
+                bodyShader = r.sharedMaterial.shader != null ? r.sharedMaterial.shader.name : "none";
+                bodyTex = tdesc;
+            }
+        }
+        run.Event("wallit-skin", "body shader=" + bodyShader + " skin=" + bodyTex + ", bat shader=" + batShader + " skin=" + batTex);
+        run.Metric("wallitSkinned", bodyTex != "none" && batTex != "none" ? 1 : 0);
+        if (bodyTex == "none" || batTex == "none") {
+            run.Problem(PlaytestSeverity.Bug, "Wallit or his bat is missing its painted texture (body=" + bodyTex + ", bat=" + batTex + ")");
+        }
+    }
+
+    static IEnumerator WallitLook(GameObject wallit, string angle, Vector3 camPos) {
+        ZeldaStyleCamera zcam = Juice.Cam;
+        bool zcamWas = zcam != null && zcam.enabled;
+        if (zcam != null) {
+            zcam.enabled = false;
+        }
+        run.Scene("Wallit " + angle);
+        float until = Time.realtimeSinceStartup + 1.8f;
+        while (Time.realtimeSinceStartup < until && !run.Done) {
+            FrameWallitCamera(wallit, camPos);
+            yield return null;
+        }
+        if (zcam != null) {
+            zcam.enabled = zcamWas;
+        }
         string parts = WallitPartLine(wallit);
         run.Event("wallit-look-" + angle, parts);
         if (parts.IndexOf("wallet") < 0 && parts.IndexOf("body") < 0) {
