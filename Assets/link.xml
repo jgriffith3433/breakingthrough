@@ -1,0 +1,9 @@
+<linker>
+  <!-- GameObject.CreatePrimitive(Sphere/Cube/Capsule) adds these colliders inside the engine; no script names SphereCollider/BoxCollider, so WebGL stripping removed them. -->
+  <assembly fullname="UnityEngine.PhysicsModule">
+    <type fullname="UnityEngine.SphereCollider" preserve="all"/>
+    <type fullname="UnityEngine.BoxCollider" preserve="all"/>
+    <type fullname="UnityEngine.CapsuleCollider" preserve="all"/>
+    <type fullname="UnityEngine.MeshCollider" preserve="all"/>
+  </assembly>
+</linker>
