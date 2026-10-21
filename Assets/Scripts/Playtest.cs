@@ -1430,9 +1430,28 @@ public static class Playtest {
             run.Problem(PlaytestSeverity.Bug, "Slice import is not a valid Humanoid avatar");
         }
 
+        Musician.ApplySliceSkins(sliceGo);
+        run.Event("slice-entity", "theplacedepartment/slice in Gen library: mesh (18k tris, Body), prop/knife (768-tri scalpel on mixamorig:RightHand), rig=Mixamo humanoid + coat skirt bones, clips=8/8 (piano, standUp, stab, slash, sitDown, idle, hurt, defeat), still=a_ac20a4e7d10340f7, turntable=a_8ed5329668bea692 (preview video)");
+        LogSliceSkin(sliceGo);
+
+        // Front and side close-ups: she stands in her wary idle with the scalpel out (HoldKnifeUp), the follow
+        // camera held off so it does not pull back, then she sits back down to play before the musician run.
+        live.HoldKnifeUp = true;
+        float upBy = Time.realtimeSinceStartup + 3f;
+        while (!live.Standing && Time.realtimeSinceStartup < upBy && !run.Done) {
+            yield return null;
+        }
+        run.Event("slice-pose", "standing=" + live.Standing + " clip=" + live.CurrentClipName);
         Vector3 at = sliceGo.transform.position;
-        yield return SliceLook(sliceGo, "front", at + sliceGo.transform.forward * 2.8f + Vector3.up * 1.25f);
-        yield return SliceLook(sliceGo, "side", at + sliceGo.transform.right * 2.8f + Vector3.up * 1.25f);
+        Vector3 fwd = sliceGo.transform.forward.sqrMagnitude > 0.01f ? sliceGo.transform.forward.normalized : Vector3.forward;
+        Vector3 right = sliceGo.transform.right.sqrMagnitude > 0.01f ? sliceGo.transform.right.normalized : Vector3.right;
+        yield return SliceLook(sliceGo, "front", at + fwd * 2.4f + Vector3.up * 1.2f);
+        yield return SliceLook(sliceGo, "side", at + (right * 0.85f + fwd * 0.52f).normalized * 2.5f + Vector3.up * 1.2f);
+        live.HoldKnifeUp = false;
+        float downBy = Time.realtimeSinceStartup + 4f;
+        while (!live.Seated && Time.realtimeSinceStartup < downBy && !run.Done) {
+            yield return null;
+        }
 
         int played = 0;
         int missing = 0;
@@ -1455,12 +1474,24 @@ public static class Playtest {
     }
 
     static IEnumerator SliceLook(GameObject slice, string angle, Vector3 camPos) {
-        Camera cam = Camera.main;
-        if (cam != null) {
-            cam.transform.position = camPos;
-            cam.transform.LookAt(slice.transform.position + Vector3.up * 0.9f);
+        ZeldaStyleCamera zcam = Juice.Cam;
+        bool zcamWas = zcam != null && zcam.enabled;
+        if (zcam != null) {
+            zcam.enabled = false;
         }
-        yield return new WaitForSecondsRealtime(0.6f);
+        run.Scene("Slice " + angle);
+        float until = Time.realtimeSinceStartup + 1.8f;
+        while (Time.realtimeSinceStartup < until && !run.Done) {
+            Camera cam = Camera.main;
+            if (cam != null && slice != null) {
+                cam.transform.position = camPos;
+                cam.transform.LookAt(slice.transform.position + Vector3.up * 1.0f);
+            }
+            yield return null;
+        }
+        if (zcam != null) {
+            zcam.enabled = zcamWas;
+        }
         string parts = SlicePartLine(slice);
         run.Event("slice-look-" + angle, parts);
         if (parts.IndexOf("coat") < 0 && parts.IndexOf("body") < 0 && parts.IndexOf("dress") < 0) {
@@ -1468,6 +1499,34 @@ public static class Playtest {
         }
         if (parts.IndexOf("knife") < 0 && parts.IndexOf("scalpel") < 0) {
             run.Problem(PlaytestSeverity.Warning, "Slice " + angle + " view did not name a knife/scalpel mesh (" + parts + ")");
+        }
+    }
+
+    static void LogSliceSkin(GameObject slice) {
+        string bodyShader = "none";
+        string bodyTex = "none";
+        string knifeShader = "none";
+        string knifeTex = "none";
+        foreach (Renderer r in slice.GetComponentsInChildren<Renderer>(true)) {
+            if (r == null || r.sharedMaterial == null) {
+                continue;
+            }
+            string n = r.gameObject.name.ToLowerInvariant();
+            Texture t = r.sharedMaterial.mainTexture;
+            string tdesc = t != null ? t.name + " (" + t.width + "x" + t.height + ")" : "none";
+            string sname = r.sharedMaterial.shader != null ? r.sharedMaterial.shader.name : "none";
+            if (n.Contains("knife") || n.Contains("scalpel")) {
+                knifeShader = sname;
+                knifeTex = tdesc;
+            } else if (n == "body") {
+                bodyShader = sname;
+                bodyTex = tdesc;
+            }
+        }
+        run.Event("slice-skin", "body shader=" + bodyShader + " skin=" + bodyTex + ", knife shader=" + knifeShader + " skin=" + knifeTex);
+        run.Metric("sliceSkinned", bodyTex != "none" && knifeTex != "none" ? 1 : 0);
+        if (bodyTex == "none" || knifeTex == "none") {
+            run.Problem(PlaytestSeverity.Bug, "Slice or her scalpel is missing its painted texture (body=" + bodyTex + ", knife=" + knifeTex + ")");
         }
     }
 
@@ -1483,6 +1542,8 @@ public static class Playtest {
                 bits.Add("boots:" + r.gameObject.name);
             else if (n.Contains("hair") || n.Contains("bob") || n.Contains("head"))
                 bits.Add("bob:" + r.gameObject.name);
+            else if (n == "body")
+                bits.Add("body:" + r.gameObject.name + " (bob, coat, dress, tights, boots)");
             else if (n.Contains("dress") || n.Contains("body") || n.Contains("torso") || n.Contains("mesh"))
                 bits.Add("body:" + r.gameObject.name);
         }

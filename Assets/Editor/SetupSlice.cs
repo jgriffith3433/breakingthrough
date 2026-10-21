@@ -245,7 +245,7 @@ static class SetupSlice
     {
         var list = new List<TextureImporter>();
         string folder = Path.GetDirectoryName(modelPath).Replace('\\', '/');
-        foreach (string guid in AssetDatabase.FindAssets("t:Texture2D", new[] { folder }))
+        foreach (string guid in AssetDatabase.FindAssets("t:Texture2D", new[] { folder, "Assets/Resources/Slice" }))
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
             var importer = AssetImporter.GetAtPath(path) as TextureImporter;
