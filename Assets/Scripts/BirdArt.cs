@@ -20,6 +20,41 @@ public static class BirdArt {
             return glowing;
         }
     }
+    static readonly Dictionary<int, Material> calmed = new Dictionary<int, Material>();
+
+    // Gen's FBX exports write a white EmissiveColor with a zero EmissiveFactor. Unity's importer drops the factor, so
+    // the imported Standard materials glow pure white (Wallit and the bots read as flat white shapes). One dark-emission
+    // copy per source material, shared, so models still batch.
+    public static void CalmEmission(GameObject model) {
+        if (model == null) {
+            return;
+        }
+        foreach (Renderer renderer in model.GetComponentsInChildren<Renderer>(true)) {
+            Material[] mats = renderer.sharedMaterials;
+            bool changed = false;
+            for (int i = 0; i < mats.Length; i++) {
+                Material mat = mats[i];
+                if (mat == null || !mat.HasProperty("_EmissionColor") || mat.GetColor("_EmissionColor").maxColorComponent <= 0.001f) {
+                    continue;
+                }
+                Material dark;
+                if (!calmed.TryGetValue(mat.GetInstanceID(), out dark) || dark == null) {
+                    dark = new Material(mat);
+                    dark.name = mat.name + " (no emission)";
+                    dark.SetColor("_EmissionColor", Color.black);
+                    dark.DisableKeyword("_EMISSION");
+                    dark.globalIlluminationFlags = MaterialGlobalIlluminationFlags.EmissiveIsBlack;
+                    calmed[mat.GetInstanceID()] = dark;
+                }
+                mats[i] = dark;
+                changed = true;
+            }
+            if (changed) {
+                renderer.sharedMaterials = mats;
+            }
+        }
+    }
+
     static readonly Dictionary<long, Mesh> tinted = new Dictionary<long, Mesh>();
 
     public static Material Shared {
