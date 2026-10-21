@@ -31,8 +31,13 @@ public class BatEquipment : MonoBehaviour {
     public static int LineDriveHits { get; private set; }
     public static int FrostGusts { get; private set; }
     public static int MetalBlasts { get; private set; }
+    public static int AnimContacts { get; private set; }
     // One line per thing worth seeing ("swing 3: 2 birds hit..."). The playtest drains it; capped so nobody has to.
     public static readonly List<string> Events = new List<string>();
+
+    public static bool IsAnimatingAction {
+        get { return Instance != null && (Instance.move != Move.None || Instance.charging); }
+    }
 
     enum Move {
         None,
@@ -114,6 +119,7 @@ public class BatEquipment : MonoBehaviour {
         LineDriveHits = 0;
         FrostGusts = 0;
         MetalBlasts = 0;
+        AnimContacts = 0;
         Events.Clear();
     }
 
@@ -156,7 +162,7 @@ public class BatEquipment : MonoBehaviour {
     }
 
     void Start() {
-        anim = GetComponentInChildren<Animator>();
+        BindAnimator();
         CharacterMovement movement = GetComponent<CharacterMovement>();
         if (movement != null) {
             cam = movement.ZeldaCam;
@@ -164,7 +170,81 @@ public class BatEquipment : MonoBehaviour {
         BuildBat();
     }
 
+    void BindAnimator() {
+        Animator found = GetComponentInChildren<Animator>();
+        if (found == null || found == anim) {
+            return;
+        }
+        anim = found;
+        if (anim.gameObject.GetComponent<WallitAnimRelay>() == null) {
+            anim.gameObject.AddComponent<WallitAnimRelay>();
+        }
+        EnsureClipEvents(anim);
+        hand = FindBone(anim.transform, "RightHand");
+    }
+
+    static void EnsureClipEvents(Animator animator) {
+        if (animator == null || animator.runtimeAnimatorController == null) {
+            return;
+        }
+        AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
+        if (clips == null) {
+            return;
+        }
+        for (int i = 0; i < clips.Length; i++) {
+            AnimationClip clip = clips[i];
+            if (clip == null) {
+                continue;
+            }
+            float norm = ContactNormForClip(clip.name);
+            if (norm <= 0f) {
+                continue;
+            }
+            bool hasEvent = false;
+            AnimationEvent[] existing = clip.events;
+            if (existing != null) {
+                for (int e = 0; e < existing.Length; e++) {
+                    if (existing[e] != null && existing[e].functionName == "OnBatContact") {
+                        hasEvent = true;
+                        break;
+                    }
+                }
+            }
+            if (!hasEvent && clip.length > 0.05f) {
+                AnimationEvent ev = new AnimationEvent {
+                    functionName = "OnBatContact",
+                    time = clip.length * norm
+                };
+                clip.AddEvent(ev);
+            }
+        }
+    }
+
+    static float ContactNormForClip(string clipName) {
+        if (string.IsNullOrEmpty(clipName)) {
+            return -1f;
+        }
+        if (clipName.EndsWith("swing1")) return 0.42f;
+        if (clipName.EndsWith("swing2")) return 0.42f;
+        if (clipName.EndsWith("swing3")) return 0.45f;
+        if (clipName.EndsWith("groundSmash")) return 0.48f;
+        if (clipName.EndsWith("homeRunRelease")) return 0.35f;
+        return -1f;
+    }
+
+    // AnimationEvent receiver (relayed from Wallit's Animator by WallitAnimRelay) at the exact frame the bat connects.
+    public void OnBatContact() {
+        if (move != Move.None && !contactDone) {
+            contactDone = true;
+            AnimContacts++;
+            Contact();
+        }
+    }
+
     void Update() {
+        if (anim == null || !anim.gameObject.activeInHierarchy) {
+            BindAnimator();
+        }
         float dt = Time.deltaTime;
         TickFlights(dt);
 
@@ -183,6 +263,7 @@ public class BatEquipment : MonoBehaviour {
             moveTime += dt;
             if (!contactDone && moveTime >= windup + sweep * 0.5f) {
                 contactDone = true;
+                AnimContacts++;
                 Contact();
             }
             // A click during a swing waits for the bat to come through, then goes straight into the next one.
@@ -230,6 +311,9 @@ public class BatEquipment : MonoBehaviour {
                     charge = 0f;
                     chargeFull = false;
                     move = Move.None;
+                    CharacterMovement.PlayWallitClip(CharacterMovement.CLIP_HOMERUN_CHARGE);
+                } else if (anim != null) {
+                    anim.SetInteger("Clip", CharacterMovement.CLIP_HOMERUN_CHARGE);
                 }
                 charge = Mathf.Min(1f, charge + dt * RunBoons.DrawSpeed / Tuning.ChargeSeconds);
                 if (charge >= 1f && !chargeFull) {
@@ -280,6 +364,7 @@ public class BatEquipment : MonoBehaviour {
         poseFrom = pose;
         sweep = Sweep;
         float speed = Mathf.Max(0.3f, RunBoons.DrawSpeed);
+        int wallitClip = CharacterMovement.CLIP_SWING_1;
         switch (next) {
             case Move.Swing1:
                 windup = 0.09f;
@@ -287,6 +372,7 @@ public class BatEquipment : MonoBehaviour {
                 windPose = new Vector2(115f, 15f);
                 sweepFrom = windPose;
                 sweepTo = new Vector2(-115f, 0f);
+                wallitClip = CharacterMovement.CLIP_SWING_1;
                 break;
             case Move.Swing2:
                 windup = 0.09f;
@@ -294,6 +380,7 @@ public class BatEquipment : MonoBehaviour {
                 windPose = new Vector2(-120f, 20f);
                 sweepFrom = windPose;
                 sweepTo = new Vector2(110f, 0f);
+                wallitClip = CharacterMovement.CLIP_SWING_2;
                 break;
             case Move.Swing3:
                 windup = 0.15f;
@@ -301,6 +388,7 @@ public class BatEquipment : MonoBehaviour {
                 windPose = new Vector2(135f, 40f);
                 sweepFrom = windPose;
                 sweepTo = new Vector2(-135f, -15f);
+                wallitClip = CharacterMovement.CLIP_SWING_3;
                 break;
             case Move.Smash:
                 windup = 0.15f;
@@ -308,6 +396,7 @@ public class BatEquipment : MonoBehaviour {
                 windPose = new Vector2(0f, 105f);
                 sweepFrom = windPose;
                 sweepTo = new Vector2(0f, -55f);
+                wallitClip = CharacterMovement.CLIP_GROUND_SMASH;
                 break;
             case Move.HomeRun:
                 windup = 0.05f;
@@ -315,6 +404,7 @@ public class BatEquipment : MonoBehaviour {
                 windPose = new Vector2(155f, 20f);
                 sweepFrom = windPose;
                 sweepTo = new Vector2(-150f, 5f);
+                wallitClip = CharacterMovement.CLIP_HOMERUN_RELEASE;
                 break;
             case Move.Spin:
                 // All the way round: the bat goes from behind your right shoulder through 360 degrees.
@@ -324,6 +414,7 @@ public class BatEquipment : MonoBehaviour {
                 windPose = new Vector2(175f, 10f);
                 sweepFrom = windPose;
                 sweepTo = new Vector2(-185f, 5f);
+                wallitClip = CharacterMovement.CLIP_SWING_3;
                 break;
         }
         // Wide Arc: the combo swings come round further either side.
@@ -341,6 +432,7 @@ public class BatEquipment : MonoBehaviour {
         RunLog.NoteSwing();
         bool big = next == Move.HomeRun || next == Move.Swing3 || next == Move.Spin;
         GameAudio.Play("batswing", big ? 0.6f : 0.42f, Random.Range(0.92f, 1.08f) * (next == Move.Swing3 ? 0.85f : next == Move.Spin ? 0.75f : 1f));
+        CharacterMovement.PlayWallitClip(wallitClip, moveLength);
         if (anim != null && anim.layerCount > 1) {
             anim.SetTrigger("Fire");
         }
@@ -786,12 +878,19 @@ public class BatEquipment : MonoBehaviour {
     void BuildBat() {
         if (anim != null) {
             hand = FindBone(anim.transform, "RightHand");
+            if (hand != null) {
+                Transform placeholder = hand.Find("Bat");
+                if (placeholder != null) {
+                    Destroy(placeholder.gameObject);
+                }
+            }
         }
         if (hand == null) {
             Debug.LogWarning("Right hand bone was not found, so the bat is held at the chest.");
         }
+        Transform parent = anim != null ? anim.transform : transform;
         root = new GameObject("EquippedBat").transform;
-        root.SetParent(transform, false);
+        root.SetParent(parent, false);
         Part("Handle", new Vector3(0f, 0.17f, 0f), new Vector3(0.06f, 0.25f, 0.06f), new Color(0.12f, 0.09f, 0.08f));
         Part("Barrel", new Vector3(0f, 0.66f, 0f), new Vector3(0.11f, 0.36f, 0.11f), new Color(0.5f, 0.36f, 0.22f));
         UpgradeLook.DressBat(root, transform);
@@ -844,9 +943,9 @@ public class BatEquipment : MonoBehaviour {
         Vector3 held = hand != null ? hand.position : chest + transform.right * 0.3f * grown;
         Vector3 flatDir = Flat(dir);
         Vector3 swingGrip = chest + (flatDir.sqrMagnitude > 0.0001f ? flatDir.normalized : transform.forward) * 0.35f * grown + Vector3.up * dir.y * 0.25f * grown;
-        root.position = Vector3.Lerp(held, swingGrip, gripBlend);
+        root.position = hand != null ? Vector3.Lerp(held, swingGrip, gripBlend * 0.25f) : Vector3.Lerp(held, swingGrip, gripBlend);
         root.rotation = Quaternion.FromToRotation(Vector3.up, dir);
-        Vector3 parent = transform.lossyScale;
+        Vector3 parent = (root.parent != null ? root.parent : transform).lossyScale;
         float unit = Mathf.Max(0.0001f, Mathf.Abs(parent.x));
         root.localScale = Vector3.one * grown / unit;
     }
@@ -944,5 +1043,14 @@ public class BattedBolt : MonoBehaviour {
             return;
         }
         transform.position += to.normalized * step;
+    }
+}
+
+// Forwards OnBatContact animation events from Wallit's child Animator GameObject to BatEquipment on the Player root.
+public class WallitAnimRelay : MonoBehaviour {
+    public void OnBatContact() {
+        if (BatEquipment.Instance != null && transform.IsChildOf(BatEquipment.Instance.transform)) {
+            BatEquipment.Instance.OnBatContact();
+        }
     }
 }

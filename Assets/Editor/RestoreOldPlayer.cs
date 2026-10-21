@@ -23,9 +23,9 @@ static class RestoreOldPlayer
             return;
 
         GameObject elf = GameObject.Find("ElfArcher");
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (elf == null && player == null)
+        if (elf == null)
             return;
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
 
         bool changed = false;
         if (player != null)

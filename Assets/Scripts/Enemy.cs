@@ -702,7 +702,14 @@ public class Enemy : MonoBehaviour
         }
 
         bool atMusician = !diving && !Golden && distance <= Mathf.Max(reach, sceneryBlock ? 3.2f : reach);
-        if (!down && musician != null && musician.Alive && (wall != null || atMusician))
+        bool atPlayer = false;
+        if (!down && !Golden && knock.sqrMagnitude < 0.2f && PlayerGrowth.Instance != null)
+        {
+            Vector3 toPlayer = PlayerGrowth.Instance.transform.position - transform.position;
+            toPlayer.y = 0f;
+            atPlayer = toPlayer.magnitude <= PlayerGrowth.Instance.BodyRadius + 1.15f + bodyScale * 0.22f;
+        }
+        if (!down && musician != null && musician.Alive && (wall != null || atMusician || atPlayer))
         {
             peckIn -= dt;
             if (peckIn <= 0f)
@@ -715,6 +722,8 @@ public class Enemy : MonoBehaviour
                     wall.Stop(this);
                 else if (atMusician)
                     musician.Hurt(Boss ? 3 : Elite ? 2 : 1, this);
+                else if (atPlayer && PlayerGrowth.Instance != null)
+                    PlayerGrowth.Instance.OnHit(this);
                 verticalVelocity = Mathf.Max(verticalVelocity, 1.5f);
             }
         }
@@ -1147,6 +1156,7 @@ public class Enemy : MonoBehaviour
         Climbers++;
         climbHeight = Random.Range(0.35f, Mathf.Max(0.8f, growth.BodyHeight * 0.35f));
         flying = false;
+        growth.OnHit(this);
     }
 
     void TickClimb(float dt)

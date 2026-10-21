@@ -585,6 +585,16 @@ public class BatMarks : MonoBehaviour {
         if (handlePart != null) {
             UpgradeLook.Paint(handlePart.gameObject, metal > 0 ? new Color(0.06f, 0.06f, 0.07f) : Grip);
         }
+        if (Owner != null && (metal > 0 || tar || blizzard || thunder)) {
+            foreach (Renderer r in Owner.GetComponentsInChildren<Renderer>()) {
+                if (r == null || r.transform.IsChildOf(transform)) {
+                    continue;
+                }
+                if (r.gameObject.name.IndexOf("bat", System.StringComparison.OrdinalIgnoreCase) >= 0 && r.material != null) {
+                    r.material.color = barrel;
+                }
+            }
+        }
         float r = 0.055f * (1f + 0.07f * corked);
         said.Add(metal > 0 ? "aluminum bat" : "wood bat");
         if (corked > 0) {

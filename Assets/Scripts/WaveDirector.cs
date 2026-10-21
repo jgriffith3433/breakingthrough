@@ -345,6 +345,7 @@ public class WaveDirector : MonoBehaviour {
             }
             if (PlayerGrowth.Instance != null) {
                 PlayerGrowth.Instance.SyncToWave(Wave);
+                PlayerGrowth.Instance.OnVictory();
             }
             return;
         }
@@ -401,6 +402,9 @@ public class WaveDirector : MonoBehaviour {
         phase = Phase.Lost;
         IsLost = true;
         IsBuilding = false;
+        if (PlayerGrowth.Instance != null) {
+            PlayerGrowth.Instance.OnDeath();
+        }
         pausedGame = true;
         Time.timeScale = 0f;
         lostPanel.SetActive(true);

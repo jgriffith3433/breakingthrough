@@ -9,7 +9,6 @@ using UnityEngine;
 [InitializeOnLoad]
 static class FixMixamoImport
 {
-    const string WarrokPath = "Assets/Art/Warrok W Kurniawan.fbx";
     const string PiratePath = "Assets/Art/PianoPlayer/Pirate By P. Konstantinov.fbx";
     const string ClipPath = "Assets/Art/PianoPlayer/Piano Playing.fbx";
     const string ControllerPath = "Assets/Art/PianoPlayer/PianoPlayer.controller";
@@ -65,7 +64,6 @@ static class FixMixamoImport
         }
 
         bool busy = false;
-        busy |= PrepareModel(WarrokPath, false);
         busy |= PrepareModel(PiratePath, true);
         busy |= PrepareClip();
         if (busy)
@@ -104,7 +102,6 @@ static class FixMixamoImport
     static bool AssignTextures()
     {
         bool changed = false;
-        changed |= AssignSet(WarrokPath, "Assets/Art/WarrokTextures");
         changed |= AssignSet(PiratePath, "Assets/Art/PirateTextures");
         return changed;
     }
@@ -379,7 +376,6 @@ static class FixMixamoImport
             + (avatar != null && avatar.isValid ? "valid" : "still invalid")
             + ", piano clip "
             + (clip != null && clip.isHumanMotion ? "humanoid" : "not humanoid")
-            + ". Warrok " + ExternalTexture("Assets/Art/WarrokTextures")
             + ", pirate " + ExternalTexture("Assets/Art/PirateTextures") + ".";
     }
 
