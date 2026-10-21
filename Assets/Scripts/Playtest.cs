@@ -1579,7 +1579,7 @@ public static class Playtest {
 
         run.Scene("Slice: back to the keys");
         if (RunBoons.Rank(BoonId.Encore) == 0) {
-            RunBoons.Grant(BoonId.Encore);
+            RunBoons.Take(BoonId.Encore);
             run.Event("setup", "granted Encore (rank 1) to verify piano pulses during combat");
         }
         run.Event("fight", "the bot clears the wave; Slice should sit back down (sitDown) and play (piano)");
