@@ -30,6 +30,7 @@ public static class Playtest {
         new PlaytestScenario("slice", "Slice at the piano: inspects the live Slice on PianoRecital (bob / coat / boots / scalpel knife from front and side, hands on keys, piano music), runs the full musician scenario (standUp, stab, slash, sitDown, piano, hurt, defeat before game over), and verifies all 8 Animator clips", 220, "content"),
         new PlaytestScenario("upgrades", "The bat upgrades: the shop lists Corked Core and Aluminum! Not wood! (setup: both owned in the sandbox) and the metal bat is in the player's hands; wave 1's first level-up cards are read off the screen (bat upgrades, no retired cast words); setup: the testing wave key (=) to wave 14 for tougher Plated Yo Bots and a handful of bat boons granted (Wide Arc, Pine Tar, Ice Bat, Live Wire, Grand Slam, Long Ball and more), each one's mark on the bat logged; then the bot plays until each effect is seen: a wider swing, bots burning, bots slowed, chain sparks shorting bots out, a 360 spin swing, batted bolts landing. Then Thunder Bat is granted for a lightning spin, and 30 s of play", 330, "content"),
         new PlaytestScenario("wallit", "Wallit as the player: checks Wallit's wallet body, bills, gloves, sneakers and bat on the live player, exercises running, locked-on strafing (strafeLeft, strafeRight, backPedal), jumping (jump, landing), getting hit (hitReact), and every bat swing (swing1, swing2, swing3, groundSmash, homeRunCharge, homeRunRelease) with OnBatContact damage, then checks all 17 Animator clips", 200, "content"),
+        new PlaytestScenario("cast", "The new cast, in 90 s: the main menu with the key art up (MenuArt, its size and that the menu shows it), What's new opened from the site over the game with the release note naming Wallit, Slice and the bots (read from releases.json), then a run where the player is Wallit with his bat, the bar says Slice, and wave 1's Yo Bots close in and are batted. The AGENTS.md and README cast text lives in the repo, not the build: the review reads it from the diff", 120, "content"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.com and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
     };
 
@@ -181,6 +182,12 @@ public static class Playtest {
                 yield break;
             }
             yield return ToMenu();
+            if (id == "cast") {
+                yield return CastMenu();
+                if (run.Done) {
+                    yield break;
+                }
+            }
             if (id == "menus") {
                 yield return ShopMenu();
             }
@@ -222,6 +229,8 @@ public static class Playtest {
                 if (!run.Done) {
                     BatReport();
                 }
+            } else if (id == "cast") {
+                yield return CastRun(options);
             } else if (id == "wallit") {
                 yield return WallitRun(options);
             } else if (id == "words") {
@@ -2575,6 +2584,15 @@ public static class Playtest {
     static extern void HawkesSiteShow(string path);
 
     [System.Runtime.InteropServices.DllImport("__Internal")]
+    static extern void HawkesReleasesStart();
+
+    [System.Runtime.InteropServices.DllImport("__Internal")]
+    static extern string HawkesReleasesResult();
+
+    [System.Runtime.InteropServices.DllImport("__Internal")]
+    static extern void HawkesSiteShowTop(string path);
+
+    [System.Runtime.InteropServices.DllImport("__Internal")]
     static extern void HawkesSiteHide();
 
     const bool InBrowser = true;
@@ -2583,10 +2601,91 @@ public static class Playtest {
     static string HawkesSiteCheckResult() { return ""; }
     static int HawkesGamePageHasFooter() { return 0; }
     static void HawkesSiteShow(string path) { }
+    static void HawkesReleasesStart() { }
+    static string HawkesReleasesResult() { return ""; }
+    static void HawkesSiteShowTop(string path) { }
     static void HawkesSiteHide() { }
 
     const bool InBrowser = false;
 #endif
+
+    [System.Serializable]
+    class ReleaseItem {
+        public string version;
+        public string title;
+        public string[] notes;
+    }
+
+    [System.Serializable]
+    class ReleaseList {
+        public int status;
+        public ReleaseItem[] releases;
+    }
+
+    // The menu and What's new for the cast scenario: the key art is up behind the menu, then the site's What's new
+    // page is laid over the game and the release note is read off releases.json (newest first).
+    static IEnumerator CastMenu() {
+        Texture2D art = Resources.Load<Texture2D>("UI/MenuArt");
+        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+        bool shown = false;
+        foreach (UnityEngine.UI.RawImage image in Object.FindObjectsByType<UnityEngine.UI.RawImage>(FindObjectsSortMode.None)) {
+            if (image.texture == art && art != null && image.isActiveAndEnabled) {
+                shown = true;
+            }
+        }
+        if (art == null || menu == null || !shown) {
+            run.Problem(PlaytestSeverity.Bug, "the main menu is not showing the key art (Resources/UI/MenuArt)");
+        }
+        run.Event("menu-art", art != null ? "MenuArt " + art.width + "x" + art.height + (shown ? ", up behind the menu (Wallit, Slice and the bots)" : ", loaded but not on screen") : "no MenuArt");
+        run.Metric("menuArtShown", shown ? 1 : 0);
+        run.Progress(0.1f);
+        yield return new WaitForSecondsRealtime(4f);
+
+        if (!InBrowser) {
+            run.Problem(PlaytestSeverity.Warning, "What's new is read from the site in a browser; skipped here");
+            yield break;
+        }
+        run.Note("reading What's new");
+        HawkesReleasesStart();
+        yield return run.Until(() => HawkesReleasesResult() != "", 20f, "releases.json to load");
+        if (run.Done) {
+            yield break;
+        }
+        ReleaseList list = JsonUtility.FromJson<ReleaseList>(HawkesReleasesResult());
+        ReleaseItem[] releases = list != null && list.releases != null ? list.releases : new ReleaseItem[0];
+        if (list == null || list.status != 200 || releases.Length == 0) {
+            run.Problem(PlaytestSeverity.Bug, "What's new has no releases (releases.json HTTP " + (list != null ? list.status : 0) + ")");
+        }
+        bool cast = false;
+        foreach (ReleaseItem release in releases) {
+            string text = (release.title + " " + string.Join(" ", release.notes ?? new string[0])).ToLowerInvariant();
+            bool names = text.Contains("wallit") && text.Contains("slice") && text.Contains("bot");
+            cast |= names;
+            run.Event("release-note", release.version + " \"" + release.title + "\": " + string.Join(" / ", release.notes ?? new string[0]) + (names ? " [names the new cast]" : ""));
+        }
+        if (!cast) {
+            run.Problem(PlaytestSeverity.Bug, "no release note names Wallit, Slice and the bots");
+        }
+        run.Metric("releaseNotes", releases.Length);
+        run.Metric("castReleaseNote", cast ? 1 : 0);
+        run.Scene("What's new");
+        HawkesSiteShowTop("/whatsnew.html");
+        run.Event("whatsnew-shown", "What's new page over the game, from the top");
+        run.Progress(0.3f);
+        yield return new WaitForSecondsRealtime(6f);
+        HawkesSiteHide();
+        run.Scene("Main Menu");
+        yield return new WaitForSecondsRealtime(1f);
+    }
+
+    // The run for the cast scenario: Wallit and Slice are checked in StartRun; the bot guards the piano for a wave's
+    // first fights so the bots closing in and the bat are on camera.
+    static IEnumerator CastRun(PlaytestOptions options) {
+        Enemy[] bots = Object.FindObjectsByType<Enemy>(FindObjectsSortMode.None);
+        run.Event("cast-in-play", "Wallit with the bat is the player, Slice is the musician, " + bots.Length + " bot(s) up");
+        run.Progress(0.6f);
+        yield return Play(options, 45f, false);
+    }
 
     static IEnumerator SiteRun(PlaytestOptions options) {
         yield return ToMenu();
