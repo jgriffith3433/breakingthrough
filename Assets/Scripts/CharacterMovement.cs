@@ -113,6 +113,7 @@ public class CharacterMovement : MonoBehaviour {
         if (existing != null && existing.gameObject.activeSelf) {
             existing.gameObject.tag = "playerchild";
             BirdArt.CalmEmission(existing.gameObject);
+            ApplyWallitSkins(existing.gameObject);
             Animator existingAnim = existing.GetComponentInChildren<Animator>();
             if (existingAnim != null) {
                 if (existingAnim.gameObject.GetComponent<WallitAnimRelay>() == null) {
@@ -147,6 +148,7 @@ public class CharacterMovement : MonoBehaviour {
             GameObject wallit = Instantiate(wallitPrefab, player.transform);
             wallit.name = "Wallit";
             BirdArt.CalmEmission(wallit);
+            ApplyWallitSkins(wallit);
             wallit.tag = "playerchild";
             wallit.transform.SetAsFirstSibling();
             wallit.transform.localPosition = Vector3.zero;
@@ -175,6 +177,63 @@ public class CharacterMovement : MonoBehaviour {
         }
 
         return player.GetComponentInChildren<Animator>();
+    }
+
+    static Material wallitBodyMat;
+    static Material wallitBatMat;
+
+    // Binds the painted WallitSkin and WallitBatSkin textures on Knoll/BotSkin (with _Glow = 0) so Wallit and his
+    // bat never fall back to the FBX importer's white-silhouette material in WebGL.
+    public static void ApplyWallitSkins(GameObject wallit) {
+        if (wallit == null) {
+            return;
+        }
+        Shader shader = SafeShader.Find("Knoll/BotSkin");
+        if (shader == null) {
+            return;
+        }
+        if (wallitBodyMat == null) {
+            Texture2D bodySkin = Resources.Load<Texture2D>("Wallit/WallitSkin");
+            if (bodySkin != null) {
+                wallitBodyMat = new Material(shader);
+                wallitBodyMat.name = "WallitSkin";
+                wallitBodyMat.mainTexture = bodySkin;
+                wallitBodyMat.color = Color.white;
+                wallitBodyMat.SetFloat("_Lift", 1.18f);
+                wallitBodyMat.SetFloat("_AmbientBoost", 0.28f);
+                wallitBodyMat.SetFloat("_RimStrength", 0.25f);
+                wallitBodyMat.SetFloat("_Glow", 0f);
+            }
+        }
+        if (wallitBatMat == null) {
+            Texture2D batSkin = Resources.Load<Texture2D>("Wallit/WallitBatSkin");
+            if (batSkin != null) {
+                wallitBatMat = new Material(shader);
+                wallitBatMat.name = "WallitBatSkin";
+                wallitBatMat.mainTexture = batSkin;
+                wallitBatMat.color = Color.white;
+                wallitBatMat.SetFloat("_Lift", 1.18f);
+                wallitBatMat.SetFloat("_AmbientBoost", 0.28f);
+                wallitBatMat.SetFloat("_RimStrength", 0.22f);
+                wallitBatMat.SetFloat("_Glow", 0f);
+            }
+        }
+        foreach (Renderer r in wallit.GetComponentsInChildren<Renderer>(true)) {
+            if (r == null) {
+                continue;
+            }
+            string n = r.gameObject.name.ToLowerInvariant();
+            if (n == "handle" || n == "barrel" || r.transform.parent != null && r.transform.parent.name == "Marks") {
+                continue;
+            }
+            if (n.Contains("bat")) {
+                if (wallitBatMat != null) {
+                    r.sharedMaterial = wallitBatMat;
+                }
+            } else if (wallitBodyMat != null) {
+                r.sharedMaterial = wallitBodyMat;
+            }
+        }
     }
 
     static void FitWallitToPlayer(GameObject player, GameObject model) {
