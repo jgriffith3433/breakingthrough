@@ -585,13 +585,19 @@ public class BatMarks : MonoBehaviour {
         if (handlePart != null) {
             UpgradeLook.Paint(handlePart.gameObject, metal > 0 ? new Color(0.06f, 0.06f, 0.07f) : Grip);
         }
-        if (Owner != null && (metal > 0 || tar || blizzard || thunder)) {
-            foreach (Renderer r in Owner.GetComponentsInChildren<Renderer>()) {
-                if (r == null || r.transform.IsChildOf(transform)) {
+        if (Owner != null) {
+            foreach (Renderer batRen in Owner.GetComponentsInChildren<Renderer>()) {
+                if (batRen == null || batRen.transform.IsChildOf(transform)) {
                     continue;
                 }
-                if (r.gameObject.name.IndexOf("bat", System.StringComparison.OrdinalIgnoreCase) >= 0 && r.material != null) {
-                    r.material.color = barrel;
+                if (batRen.gameObject.name.IndexOf("bat", System.StringComparison.OrdinalIgnoreCase) >= 0 && batRen.material != null) {
+                    if (metal > 0 || tar || blizzard || thunder) {
+                        batRen.material.color = barrel;
+                    }
+                    if (corked > 0) {
+                        float widen = 1f + 0.07f * corked;
+                        batRen.transform.localScale = new Vector3(widen, widen, 1f);
+                    }
                 }
             }
         }

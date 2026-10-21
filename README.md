@@ -140,7 +140,7 @@ The bat is pure melee: you walk up to bots and hit them. `Assets/Scripts/BatEqui
 - **Facing.** Without a lock you turn to the nearest bot in the arc as the bat comes round. Walking is a little slower while a swing is out, and slower still while you wind up.
 - **Auto swing.** From wave 12 the bat swings by itself whenever a bot is in reach.
 
-The model is a stand-in until Wallit's: two capsules on the right hand, posed in code, and the old recoil clip on the upper body for each swing. The boons and the shop dress it (see the Mark column above).
+Wallit holds his bat in his right hand (`Assets/Art/Wallit/Wallit.fbx`), and `UpgradeLook.BatMarks` dresses it with the boons and shop upgrades (see the Mark column above). Each swing (`swing1`, `swing2`, `swing3`, `groundSmash`, `homeRunCharge`, `homeRunRelease`) fires an `OnBatContact` `AnimationEvent` at the contact frame so damage lands when the bat connects.
 
 ## Growth and damage
 
@@ -294,25 +294,9 @@ To rebuild a model, run the script in Blender and call `export("YoBot")` for a b
 
 ## Animation
 
-**Wallit (model, not wired yet).** Gen's `character3d` entity `theplacedepartment/wallit` builds the wallet-bodied batter (DoD art: brown bifold wallet torso+head with angry face and green bills, stick limbs, white gloves and sneakers, wooden bat as a hand prop). The Humanoid FBX, Animator and prefab land in `Assets/Art/Wallit/` (`Tools → Wallit → Build Prefab`); a copy under `Assets/Resources/Wallit/` lets the `wallit` playtest spawn him. Clips: idle (bat on shoulder), run, strafe left/right, back-pedal, swing 1/2/3, ground smash, home-run charge/release, jump, landing, hit react, shake-off, victory, death. Gameplay still uses Warrok until a later task swaps him in.
+**Wallit (`Assets/Art/Wallit/Wallit.fbx`).** Gen's `character3d` entity `theplacedepartment/wallit` builds the wallet-bodied batter (DoD art: brown bifold wallet torso+head with angry face and green bills, stick limbs, white gloves and sneakers, wooden bat as a `RightHand` prop). `Assets/Editor/SetupWallit.cs` (`Tools → Wallit → Build Prefab`, also invoked by `WebGlBuild` before deploy) builds `Assets/Art/Wallit/Wallit.controller`, `Assets/Art/Wallit/Wallit.prefab`, `Assets/Resources/Wallit/Wallit.prefab`, and `Assets/Prefabs/Player.prefab`. At runtime `CharacterMovement.EnsureWallitOn` ensures `Wallit` is active on the `Player` object (tagged `playerchild`) and drives the `Clip` integer across all 17 clips (`0` `idle`, `1` `run`, `2` `strafeLeft`, `3` `strafeRight`, `4` `backPedal`, `5` `swing1`, `6` `swing2`, `7` `swing3`, `8` `groundSmash`, `9` `homeRunCharge`, `10` `homeRunRelease`, `11` `jump`, `12` `landing`, `13` `hitReact`, `14` `shakeOff`, `15` `victory`, `16` `death`). Swing clips scale their speed by `FireSpeed` and fire `OnBatContact` (`WallitAnimRelay` → `BatEquipment.OnBatContact`) at the contact frame. `UpgradeLook.BatMarks` dresses Wallit's bat in his hand. The Mixamo Warrok stand-in (`Warrok W Kurniawan.fbx` and `Assets/Art/WarrokTextures/`) has been removed.
 
 **Slice (`Assets/Art/Slice/Slice.fbx`).** Gen's `character3d` entity `theplacedepartment/slice` builds the goth pianist (DoD art: black blunt bob, patent-leather long coat, black dress, platform boots, silver chains; small scalpel knife as a `RightHand` prop). `Assets/Editor/SetupSlice.cs` (`Tools → Slice → Build Prefab`, also invoked by `WebGlBuild` before deploy) builds `Assets/Art/Slice/Slice.controller`, `Assets/Art/Slice/Slice.prefab`, `Assets/Resources/Slice/Slice.prefab`, `Assets/Prefabs/PianoRecital.prefab`, and `Assets/Resources/Slice/PianoRecital.prefab`, and swaps `PianoRecital` in `scene2.unity`. `Musician` drives her `Clip` integer (`0` `piano`, `1` `standUp`, `2` `stab`, `3` `slash`, `4` `sitDown`, `5` `idle`, `6` `hurt`, `7` `defeat`) and receives `OnSliceKnifeHit` `AnimationEvent` callbacks via `SliceAnimRelay`. The Mixamo pirate pianist stand-in (`Pirate By P. Konstantinov.fbx` and `Assets/Art/PirateTextures/`) has been removed.
-
-The player is the Warrok model (`Assets/Art/Warrok W Kurniawan.fbx`) on the object tagged `Player`. Its visible child is tagged `playerchild`. The stand-in bat follows the right hand and is posed in code each frame (`BatEquipment.PoseBat`). The scene still has the old `BowEquipment` component on the player; it only adds `BatEquipment` and switches itself off.
-
-`Assets/Editor/SetupWarrok.cs` imports the Mixamo clips onto the Warrok avatar and writes `Assets/hero/Hero.controller`. The base layer is driven by the `State` integer:
-
-| State | Clip |
-|---|---|
-| 0 | Aim idle |
-| 1 | Walk |
-| 2 | Full-body shoot, used only if the upper-body layer is missing |
-| 3 | Jump |
-| 4 | Aim walk |
-| 5 | Stomp |
-| 7 | Shake off |
-
-Each swing plays the old shoot recoil on a second layer, Upper Body (masked by `Assets/hero/UpperBody.mask`), as a stand-in. The `Fire` trigger starts it, and its speed follows the `FireSpeed` float (1.4x swing speed, raised by Quick Hands and streaks).
 
 ## Run log and autopilot
 

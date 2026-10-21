@@ -52,6 +52,8 @@ public class BatEquipment : MonoBehaviour {
     Animator anim;
     ZeldaStyleCamera cam;
     Transform hand;
+    Transform modelBat;
+    Vector3 modelBatTip = new Vector3(0f, 0f, 0.85f);
     Transform root;
 
     Move move = Move.None;
@@ -181,6 +183,44 @@ public class BatEquipment : MonoBehaviour {
         }
         EnsureClipEvents(anim);
         hand = FindBone(anim.transform, "RightHand");
+        BindModelBat();
+        if (root != null && anim != null && root.parent != anim.transform) {
+            root.SetParent(anim.transform, false);
+        }
+    }
+
+    void BindModelBat() {
+        modelBat = null;
+        if (hand != null) {
+            Transform childBat = hand.Find("Bat");
+            if (childBat != null) {
+                MeshFilter mf = childBat.GetComponent<MeshFilter>();
+                if (mf != null && mf.sharedMesh != null && childBat.Find("Barrel") == null) {
+                    modelBat = childBat;
+                    Bounds b = mf.sharedMesh.bounds;
+                    if (b.size.z >= b.size.y && b.size.z >= b.size.x) {
+                        modelBatTip = new Vector3(0f, 0f, b.center.z >= 0f ? b.size.z : -b.size.z);
+                    } else if (b.size.y >= b.size.x) {
+                        modelBatTip = new Vector3(0f, b.center.y >= 0f ? b.size.y : -b.size.y, 0f);
+                    } else {
+                        modelBatTip = new Vector3(b.center.x >= 0f ? b.size.x : -b.size.x, 0f, 0f);
+                    }
+                } else {
+                    Destroy(childBat.gameObject);
+                }
+            }
+        }
+        if (root != null) {
+            bool showFallback = modelBat == null;
+            Transform handlePart = root.Find("Handle");
+            Transform barrelPart = root.Find("Barrel");
+            if (handlePart != null && handlePart.GetComponent<Renderer>() != null) {
+                handlePart.GetComponent<Renderer>().enabled = showFallback;
+            }
+            if (barrelPart != null && barrelPart.GetComponent<Renderer>() != null) {
+                barrelPart.GetComponent<Renderer>().enabled = showFallback;
+            }
+        }
     }
 
     static void EnsureClipEvents(Animator animator) {
@@ -878,12 +918,6 @@ public class BatEquipment : MonoBehaviour {
     void BuildBat() {
         if (anim != null) {
             hand = FindBone(anim.transform, "RightHand");
-            if (hand != null) {
-                Transform placeholder = hand.Find("Bat");
-                if (placeholder != null) {
-                    Destroy(placeholder.gameObject);
-                }
-            }
         }
         if (hand == null) {
             Debug.LogWarning("Right hand bone was not found, so the bat is held at the chest.");
@@ -893,6 +927,7 @@ public class BatEquipment : MonoBehaviour {
         root.SetParent(parent, false);
         Part("Handle", new Vector3(0f, 0.17f, 0f), new Vector3(0.06f, 0.25f, 0.06f), new Color(0.12f, 0.09f, 0.08f));
         Part("Barrel", new Vector3(0f, 0.66f, 0f), new Vector3(0.11f, 0.36f, 0.11f), new Color(0.5f, 0.36f, 0.22f));
+        BindModelBat();
         UpgradeLook.DressBat(root, transform);
         PoseBat();
     }
@@ -912,6 +947,17 @@ public class BatEquipment : MonoBehaviour {
     void PoseBat() {
         if (root == null) {
             return;
+        }
+        if (modelBat != null && modelBat.gameObject.activeInHierarchy) {
+            Vector3 worldTip = modelBat.TransformVector(modelBatTip);
+            if (worldTip.sqrMagnitude > 0.0001f) {
+                root.position = modelBat.position;
+                root.rotation = Quaternion.FromToRotation(Vector3.up, worldTip.normalized);
+                Vector3 parentScale = (root.parent != null ? root.parent : transform).lossyScale;
+                float unitScale = Mathf.Max(0.0001f, Mathf.Abs(parentScale.x));
+                root.localScale = Vector3.one * (worldTip.magnitude / unitScale);
+                return;
+            }
         }
         float dt = Time.deltaTime;
         bool swinging = move != Move.None;
@@ -943,7 +989,7 @@ public class BatEquipment : MonoBehaviour {
         Vector3 held = hand != null ? hand.position : chest + transform.right * 0.3f * grown;
         Vector3 flatDir = Flat(dir);
         Vector3 swingGrip = chest + (flatDir.sqrMagnitude > 0.0001f ? flatDir.normalized : transform.forward) * 0.35f * grown + Vector3.up * dir.y * 0.25f * grown;
-        root.position = hand != null ? Vector3.Lerp(held, swingGrip, gripBlend * 0.25f) : Vector3.Lerp(held, swingGrip, gripBlend);
+        root.position = hand != null ? held : Vector3.Lerp(held, swingGrip, gripBlend);
         root.rotation = Quaternion.FromToRotation(Vector3.up, dir);
         Vector3 parent = (root.parent != null ? root.parent : transform).lossyScale;
         float unit = Mathf.Max(0.0001f, Mathf.Abs(parent.x));

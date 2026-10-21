@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class CharacterMovement : MonoBehaviour {
+    public static CharacterMovement Instance { get; private set; }
+
     private MovementMotor motor;
     public float MoveMagnitude = 0.05f;
     public float Speed = 4.0f;
@@ -24,6 +26,8 @@ public class CharacterMovement : MonoBehaviour {
     public const int CLIP_RUN = 1;
     public const int CLIP_STRAFE_LEFT = 2;
     public const int CLIP_STRAFE_RIGHT = 3;
+    public const int CLIP_STRAFE_L = CLIP_STRAFE_LEFT;
+    public const int CLIP_STRAFE_R = CLIP_STRAFE_RIGHT;
     public const int CLIP_BACK_PEDAL = 4;
     public const int CLIP_SWING_1 = 5;
     public const int CLIP_SWING_2 = 6;
@@ -47,6 +51,7 @@ public class CharacterMovement : MonoBehaviour {
 
     public static readonly int[] ClipCounts = new int[17];
     public static int LastClip { get; private set; } = -1;
+    static float actionClipUntil;
 
     static readonly int ClipHash = Animator.StringToHash(PARAMETER_CLIP);
     static readonly int StateHash = Animator.StringToHash(PARAMETER_STATE);
@@ -58,6 +63,45 @@ public class CharacterMovement : MonoBehaviour {
             ClipCounts[i] = 0;
         }
         LastClip = -1;
+        actionClipUntil = 0f;
+    }
+
+    public static int ClipCount(int clipId) {
+        if (clipId < 0 || clipId >= ClipCounts.Length) {
+            return 0;
+        }
+        return ClipCounts[clipId];
+    }
+
+    public static void PlayWallitClip(int clipId, float duration = 0f) {
+        if (clipId < 0 || clipId >= ClipNames.Length) {
+            return;
+        }
+        Animator targetAnim = Instance != null ? Instance.Anim : null;
+        if (targetAnim == null) {
+            CharacterMovement cm = FindAnyObjectByType<CharacterMovement>();
+            if (cm != null) {
+                Instance = cm;
+                if (cm.Anim == null) {
+                    cm.Anim = EnsureWallitOn(cm.gameObject);
+                }
+                targetAnim = cm.Anim;
+            }
+        }
+        if (duration > 0f && !BatEquipment.IsAnimatingAction) {
+            actionClipUntil = Time.unscaledTime + duration;
+        }
+        if (targetAnim != null) {
+            targetAnim.speed = 1f;
+            PlayClip(targetAnim, clipId, true, 0.05f);
+        } else {
+            ClipCounts[clipId]++;
+            LastClip = clipId;
+        }
+    }
+
+    public static void ClearActionClip() {
+        actionClipUntil = 0f;
     }
 
     public static Animator EnsureWallitOn(GameObject player) {
@@ -198,12 +242,20 @@ public class CharacterMovement : MonoBehaviour {
     }
 
     void Awake() {
+        Instance = this;
         ResetClipCounts();
         motor = GetComponent<MovementMotor>();
         Anim = EnsureWallitOn(gameObject);
     }
 
+    void OnDestroy() {
+        if (Instance == this) {
+            Instance = null;
+        }
+    }
+
     void Start() {
+        Instance = this;
         if (Anim == null) {
             Anim = EnsureWallitOn(gameObject);
         }
@@ -229,6 +281,9 @@ public class CharacterMovement : MonoBehaviour {
             return;
         }
         if (BatEquipment.IsAnimatingAction) {
+            return;
+        }
+        if (Time.unscaledTime < actionClipUntil) {
             return;
         }
         if (PlayerGrowth.Instance != null && PlayerGrowth.Instance.IsPlayingActionClip) {
