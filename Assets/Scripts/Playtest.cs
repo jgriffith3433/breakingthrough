@@ -1214,13 +1214,13 @@ public static class Playtest {
             run.Problem(PlaytestSeverity.Bug, "no CharacterMovement player in scene");
             yield break;
         }
-        CharacterMovement.ApplyWallitSkins(player.gameObject);
         Animator animator = player.GetComponentInChildren<Animator>();
         if (animator == null) {
             run.Problem(PlaytestSeverity.Bug, "player Wallit has no Animator");
             yield break;
         }
         GameObject wallit = animator.gameObject;
+        CharacterMovement.ApplyWallitSkins(wallit);
         run.Event("wallit-entity", "theplacedepartment/wallit in Gen library: mesh=v2 (19,174 tris: Body + Bat), rig=Mixamo humanoid + Bills1/Bills2, clips=17/17, still=a_c6b4dbd2efc03120, turntable=a_b8ea45e45ca23f3b (preview video)");
         run.Event("wallit-prefab", "loaded on live player (" + wallit.name + ")");
         LogWallitSkin(wallit);
