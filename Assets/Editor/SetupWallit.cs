@@ -528,9 +528,6 @@ static class SetupWallit
         movement.SpeedJump = 20f;
 
         CharacterMovementController cmc = player.AddComponent<CharacterMovementController>();
-        cmc.DirectionDampTime = 0.25f;
-        cmc.DirectionSpeed = 3f;
-        cmc.RotationDegreePerSecond = 120f;
 
         player.AddComponent<BatEquipment>();
         player.AddComponent<PlayerGrowth>();
