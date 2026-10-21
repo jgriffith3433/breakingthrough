@@ -26,7 +26,7 @@ public static class Playtest {
         new PlaytestScenario("settings", "Press Tap to play, open Settings from the menu: sound off and on, music and effects sliders, Done; start a run, pause (button, then P), Settings from the pause menu, resume, play a little. Any screen size", 100, "menus"),
         new PlaytestScenario("bots", "The bots: wave 1's Yo Bots (authored Gen model when present) walk at the musician with feet planting; bolts drop; enemy list names them. Setup: drop 60 Yo Bots and log FPS for the WebGL budget, then the testing wave key (=) to wave 30 for the Spider Bot Alpha (glass pod, six legs when authored) and 30 s of fight", 360, "content"),
         new PlaytestScenario("analytics", "Hawkes Analytics: start a run, clear wave 1, then hold fire on wave 2 so the bots take the musician. Every analytics event is logged as it goes out (run_start, level_start and level_end per wave, card picks, the death and the bot kind that landed it, run_end) with the build version and env; on the game-over screen the \"How was that run?\" card must show, and the bot rates it 4 stars", 240, "full"),
-        new PlaytestScenario("musician", "Slice, the musician at the piano: her health bar is titled Slice, and she sits on the bench playing the piano clip with her hands on the keys while the piano music plays. The bot holds fire and frames Slice so wave 1's Yo Bots reach her: she stands (standUp), stabs and slashes the one in reach with her knife (stab / slash with OnSliceKnifeHit blade damage) at most once every 2.5 s, and flinches when hit (hurt); then the bot clears the wave (with Encore pulsing from PianoRecital) and she sits back down (sitDown) to play (piano). Then it holds fire from wave 2 until the bots empty her bar, she falls (defeat), and the game-over panel appears", 330, "content"),
+        new PlaytestScenario("musician", "Slice, the musician at the piano: her health bar is titled Slice, and she sits on the bench playing the piano clip with her hands on the keys while the piano music plays. The bot holds fire and frames Slice so wave 1's Yo Bots reach her: she stands (standUp), stabs and slashes the one in reach with her knife (stab / slash with OnSliceKnifeHit blade damage) at most once every 2.5 s, and flinches when hit (hurt); then the bot clears the wave (with Encore pulsing from PianoRecital) and she sits back down (sitDown) to play (piano). Then it holds fire from wave 2 (after 20 s, setup: a ring of Plated Yo Bots dropped around the bench, topped up every 8 s) until the bots empty her bar, she falls (defeat), and the game-over panel appears", 330, "content"),
         new PlaytestScenario("slice", "Slice at the piano: inspects the live Slice on PianoRecital (bob / coat / boots / scalpel knife from front and side, hands on keys, piano music), runs the full musician scenario (standUp, stab, slash, sitDown, piano, hurt, defeat before game over), and verifies all 8 Animator clips", 220, "content"),
         new PlaytestScenario("upgrades", "The bat upgrades: the shop lists Corked Core and Aluminum! Not wood! (setup: both owned in the sandbox) and the metal bat is in the player's hands; wave 1's first level-up cards are read off the screen (bat upgrades, no retired cast words); setup: the testing wave key (=) to wave 14 for tougher Plated Yo Bots and a handful of bat boons granted (Wide Arc, Pine Tar, Ice Bat, Live Wire, Grand Slam, Long Ball and more), each one's mark on the bat logged; then the bot plays until each effect is seen: a wider swing, bots burning, bots slowed, chain sparks shorting bots out, a 360 spin swing, batted bolts landing. Then Thunder Bat is granted for a lightning spin, and 30 s of play", 330, "content"),
         new PlaytestScenario("wallit", "Wallit as the player: checks Wallit's wallet body, bills, gloves, sneakers and bat on the live player, exercises running, locked-on strafing (strafeLeft, strafeRight, backPedal), jumping (jump, landing), getting hit (hitReact), and every bat swing (swing1, swing2, swing3, groundSmash, homeRunCharge, homeRunRelease) with OnBatContact damage, then checks all 17 Animator clips", 200, "content"),
@@ -1628,7 +1628,7 @@ public static class Playtest {
 
     // Setup for the bat scenario: a bird dropped on the ground at a spot, facing the musician, as WaveDirector
     // spawns them.
-    static Enemy SpawnBird(Vector3 at, bool small) {
+    static Enemy SpawnBird(Vector3 at, bool small, BotKind kind = BotKind.YoBot) {
         if (Physics.Raycast(at + Vector3.up * 30f, Vector3.down, out RaycastHit hit, 80f, 1 << 3, QueryTriggerInteraction.Ignore)) {
             at.y = hit.point.y + 0.45f;
         }
@@ -1645,7 +1645,7 @@ public static class Playtest {
         if (small) {
             enemy.ApplyDrone();
         } else {
-            enemy.ApplyBot(BotRoster.ForSpawn(BotKind.YoBot, WaveDirector.Wave));
+            enemy.ApplyBot(BotRoster.ForSpawn(kind, WaveDirector.Wave));
         }
         return enemy;
     }
@@ -1656,7 +1656,7 @@ public static class Playtest {
     // 1: Her health bar says Slice; she sits on the bench playing the piano clip with her hands on the keys while the piano music plays.
     // 2: The bot frames Slice and holds fire by the piano until wave 1's Yo Bots reach her, she stands (standUp), stabs and slashes three times (stab / slash with OnSliceKnifeHit blade damage), and flinches when hit (hurt).
     // 3: The bot clears the wave (with Encore pulsing from PianoRecital) and she sits back down (sitDown) to play (piano).
-    // 4: It holds fire from wave 2 until the bots empty her bar, she falls (defeat), and then the game-over panel shows.
+    // 4: It holds fire from wave 2 (after 20 s a setup siege of Plated Yo Bots rings the bench) until the bots empty her bar, she falls (defeat), and then the game-over panel shows.
     static IEnumerator MusicianRun(PlaytestOptions options) {
         Musician slice = Musician.Instance;
         var player = Object.FindAnyObjectByType<CharacterMovement>();
@@ -1731,7 +1731,8 @@ public static class Playtest {
         run.Event("hold-fire", "from here the bot holds fire and frames Slice, so the bots empty her bar and she plays defeat before game over");
         float holdStart = Time.realtimeSinceStartup;
         float nextSkip = 0f;
-        int skips = 0;
+        float nextSiege = 0f;
+        int sieges = 0;
         while (!run.Done) {
             float now = Time.realtimeSinceStartup;
             SampleFps();
@@ -1767,15 +1768,15 @@ public static class Playtest {
                 nextSkip = now + 1.5f;
                 PlayInput.Tap(KeyCode.Return);
             }
-            // Setup: if she outlasts the early waves, the testing wave key brings bigger ones.
-            if (now - holdStart > 60f + skips * 30f && skips < 4 && !slice.Defeating) {
-                skips++;
-                for (int i = 0; i < 3; i++) {
-                    PlayInput.Tap(KeyCode.Equals);
-                    yield return null;
-                    yield return null;
+            // Setup: her knife and Encore outlast wave 2 on their own, and the testing wave key clears the bots on
+            // her, so after 20 s a ring of Plated Yo Bots is dropped around the bench, topped up every 8 s.
+            if (now - holdStart > 20f && now >= nextSiege && slice.Alive && !slice.Defeating && !WaveDirector.IsBuilding) {
+                nextSiege = now + 8f;
+                int dropped = SiegeSlice(slice, 10);
+                if (dropped > 0) {
+                    sieges++;
+                    run.Event("setup", "siege #" + sieges + ": " + dropped + " Plated Yo Bots dropped around Slice (" + slice.Health + " / " + slice.MaxHealth + ")");
                 }
-                run.Event("setup", "testing wave key (=) three times: wave " + WaveDirector.Wave);
             }
             int wave = WaveDirector.Wave;
             if (wave != lastWave) {
@@ -1785,6 +1786,33 @@ public static class Playtest {
             }
             yield return null;
         }
+    }
+
+    // Setup for the musician scenario's end: Plated Yo Bots dropped in a ring just inside her knife's reach (away
+    // from the player's watch spot), so more bots claw at her than the knife and Encore can keep off. Tops up to
+    // want bots within 4 m; returns how many it dropped.
+    static int SiegeSlice(Musician slice, int want) {
+        Vector3 at = slice.transform.position;
+        int near = 0;
+        for (int i = 0; i < Enemy.Roster.Count; i++) {
+            Enemy enemy = Enemy.Roster[i];
+            if (enemy == null || !enemy.Alive) {
+                continue;
+            }
+            Vector3 to = enemy.transform.position - at;
+            to.y = 0f;
+            if (to.magnitude <= 4f) {
+                near++;
+            }
+        }
+        int dropped = 0;
+        for (int i = near; i < want; i++) {
+            float angle = (60f + i * 240f / want) * Mathf.Deg2Rad;
+            Vector3 spot = at + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * 1.6f;
+            SpawnBird(spot, false, BotKind.PlatedYoBot);
+            dropped++;
+        }
+        return dropped;
     }
 
     // Walks the player to a vantage point ~2.8 m from the piano and steers Mouse X so the camera looks across at Slice.
