@@ -173,6 +173,50 @@ mergeInto(LibraryManager.library, {
     document.body.appendChild(frame);
   },
 
+  // Reads the site's releases.json (What's new) for the `cast` playtest: "" while it loads, then
+  // {"status":200,"releases":[{"version","title","notes":[]}]} (status 0 when the fetch failed).
+  HawkesReleasesStart: function () {
+    var path = location.pathname;
+    var cut = path.indexOf("/Game/");
+    var root = location.origin + (cut >= 0 ? path.slice(0, cut + 1) : "/");
+    window.__hawkesReleases = null;
+    fetch(root + "releases.json", { cache: "no-store" })
+      .then(function (r) {
+        return r.text().then(function (body) {
+          var list = [];
+          try {
+            list = JSON.parse(body).releases || [];
+          } catch (e) {}
+          window.__hawkesReleases = JSON.stringify({ status: r.status, releases: list });
+        });
+      })
+      .catch(function () {
+        window.__hawkesReleases = JSON.stringify({ status: 0, releases: [] });
+      });
+  },
+
+  HawkesReleasesResult: function () {
+    var s = window.__hawkesReleases || "";
+    var size = lengthBytesUTF8(s) + 1;
+    var buf = _malloc(size);
+    stringToUTF8(s, buf, size);
+    return buf;
+  },
+
+  // Shows a site page over the game from its top (What's new), unlike HawkesSiteShow, which scrolls to the footer.
+  HawkesSiteShowTop: function (pathPtr) {
+    var path = UTF8ToString(pathPtr);
+    var old = document.getElementById("hawkes-site-view");
+    if (old) old.parentNode.removeChild(old);
+    var frame = document.createElement("iframe");
+    frame.id = "hawkes-site-view";
+    frame.title = "Site page (playtest)";
+    frame.style.cssText = "position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483000;background:#12100e;";
+    var cut = location.pathname.indexOf("/Game/");
+    frame.src = (cut >= 0 ? location.pathname.slice(0, cut) : "") + path;
+    document.body.appendChild(frame);
+  },
+
   HawkesSiteHide: function () {
     var old = document.getElementById("hawkes-site-view");
     if (old) old.parentNode.removeChild(old);

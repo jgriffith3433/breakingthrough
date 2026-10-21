@@ -155,7 +155,7 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
   and `metal-bat` says what the bat looks like; the first level-up's card titles are read off the screen (`cards`,
   a problem if any card says arrow, bow or quiver); setup: the wave key to wave 14 and a dozen bat boons granted
   (`bat-marks` lists each mark); then play until `wide-swing`, `burning`, `slowing`, `chain-sparks`, `spin-swing`
-  and `batted-bolt` have each been seen; then Thunder Bat for a lightning spin (`thunder-bat`) and 30 s of play), `site` (the website
+  and `batted-bolt` have each been seen; then Thunder Bat for a lightning spin (`thunder-bat`) and 30 s of play), `cast` (menu key art up and read, What's new laid over the game with the release note naming Wallit, Slice and the bots read from `releases.json`, then 45 s of play as Wallit guarding Slice; events `menu-art`, `release-note`, `whatsnew-shown`, `cast-in-play`), `site` (the website
   around the game: every page outside `Game/` has "Powered by HAWKES GEN" linking to hawkesgen.com, the landing page
   links to hawkesbiomedical.com. It checks the landing page, every page in the deploy's `site/pages.json` and every
   page they link to, looks for a blog at `/blog/`, `/blog.html`, `/news/` and `/posts/`, and logs `site-pages`,
