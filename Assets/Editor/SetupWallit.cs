@@ -400,6 +400,9 @@ static class SetupWallit
         if (animator.gameObject.GetComponent<WallitAnimRelay>() == null)
             animator.gameObject.AddComponent<WallitAnimRelay>();
 
+        foreach (Transform t in instance.GetComponentsInChildren<Transform>(true))
+            GameObjectUtility.RemoveMonoBehavioursWithMissingScript(t.gameObject);
+
         EnsureBatInHand(instance.transform);
 
         PrefabUtility.SaveAsPrefabAsset(instance, PrefabPath);
