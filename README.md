@@ -290,7 +290,7 @@ To rebuild a model, run the script in Blender and call `export("YoBot")` for a b
 
 `KnollLit.mat` is the double-sided world material.
 
-**UI.** `UiSkin` draws rounded, nine-sliced panels and pill-shaped bars in code, used by the menu, the boon cards and every bar. Boon cards rise in, and rare and epic cards get a pulsing halo. The menu backdrop, `Assets/Resources/UI/MenuArt.png`, is key art rendered in Blender, with a slow drift. It still shows the birds as they looked before they were smoothed.
+**UI.** `UiSkin` draws rounded, nine-sliced panels and pill-shaped bars in code, used by the menu, the boon cards and every bar. Boon cards rise in, and rare and epic cards get a pulsing halo. The menu backdrop, `Assets/Resources/UI/MenuArt.png`, is key art made with Hawkes Gen from the library renders (preset theplacedepartment): Wallit with his bat in front, Slice at the piano behind, Yo Bots and Spider Bots closing in. It drifts slowly.
 
 ## Animation
 
