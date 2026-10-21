@@ -1,14 +1,18 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Every turkey you drop makes you a little bigger. Size unlocks the later powers.
+// Every bot you drop makes you a little bigger. Size unlocks the later powers.
 public class PlayerGrowth : MonoBehaviour {
     public static PlayerGrowth Instance { get; private set; }
     public static string Banner { get; private set; }
+    public static int HitReacts { get; private set; }
+    public static int Landings { get; private set; }
 
     public const int ClimbWave = Tuning.ClimbWave;
 
     public bool Rooted { get; private set; }
+    public bool IsPlayingActionClip { get { return actionClipLeft > 0f; } }
+    public bool IsPlayingVictory { get { return actionClipLeft > 0f && currentActionClip == CharacterMovement.CLIP_VICTORY; } }
 
     public float Scale { get; private set; } = 1f;
     public float BodyRadius { get; private set; } = 0.5f;
@@ -17,7 +21,7 @@ public class PlayerGrowth : MonoBehaviour {
     CharacterController controller;
     CharacterMovement movement;
     Transform visual;
-    Vector3 baseVisual;
+    Vector3 baseVisual = Vector3.one;
     float baseHeight = 2f;
     float baseRadius = 0.5f;
     float baseCenter = 1f;
@@ -25,6 +29,9 @@ public class PlayerGrowth : MonoBehaviour {
     float bannerLeft;
     float stompIn;
     float rootedLeft;
+    float actionClipLeft;
+    int currentActionClip = -1;
+    float nextHitReactAt;
     bool stomping;
     float airTime;
     bool leftGround;
@@ -58,6 +65,9 @@ public class PlayerGrowth : MonoBehaviour {
 
     void Awake() {
         Instance = this;
+        HitReacts = 0;
+        Landings = 0;
+        CharacterMovement.EnsureWallitOn(gameObject);
     }
 
     void Start() {
@@ -96,6 +106,10 @@ public class PlayerGrowth : MonoBehaviour {
         }
         wave = next;
         killsThisWave = 0;
+        Animator anim = CharacterMovement.EnsureWallitOn(gameObject);
+        if (anim != null && anim.updateMode != AnimatorUpdateMode.Normal) {
+            anim.updateMode = AnimatorUpdateMode.Normal;
+        }
         ApplyScale();
     }
 
@@ -114,17 +128,15 @@ public class PlayerGrowth : MonoBehaviour {
     }
 
     void EnsureVisual() {
-        if (visual != null) {
+        if (visual != null && visual.gameObject.activeInHierarchy) {
             return;
         }
+        Animator animator = CharacterMovement.EnsureWallitOn(gameObject);
         GameObject marked = GameObject.FindGameObjectWithTag("playerchild");
         if (marked != null) {
             visual = marked.transform;
-        } else {
-            Animator animator = GetComponentInChildren<Animator>();
-            if (animator != null) {
-                visual = animator.transform;
-            }
+        } else if (animator != null) {
+            visual = animator.transform;
         }
         if (visual != null) {
             baseVisual = visual.localScale;
@@ -185,6 +197,18 @@ public class PlayerGrowth : MonoBehaviour {
             }
         }
 
+        if (actionClipLeft > 0f) {
+            if (BatEquipment.IsAnimatingAction && currentActionClip != CharacterMovement.CLIP_SHAKE_OFF) {
+                actionClipLeft = 0f;
+                currentActionClip = -1;
+            } else {
+                actionClipLeft -= Time.deltaTime;
+                if (actionClipLeft <= 0f) {
+                    currentActionClip = -1;
+                }
+            }
+        }
+
         if (controller == null) {
             return;
         }
@@ -193,9 +217,9 @@ public class PlayerGrowth : MonoBehaviour {
             rootedLeft -= Time.deltaTime;
             if (rootedLeft <= 0f) {
                 Rooted = false;
-                Animator anim = GetComponentInChildren<Animator>();
-                if (anim != null) {
-                    anim.SetInteger(CharacterMovement.PARAMETER_STATE, 0);
+                Animator anim = CharacterMovement.EnsureWallitOn(gameObject);
+                if (anim != null && !BatEquipment.IsAnimatingAction && !WaveDirector.IsLost) {
+                    CharacterMovement.PlayClip(anim, CharacterMovement.CLIP_IDLE, false, 0.08f);
                 }
             }
         }
@@ -223,7 +247,7 @@ public class PlayerGrowth : MonoBehaviour {
         if (!stomping) {
             stomping = true;
             stompIn = 0f;
-            PlayBody("Stomp", 5);
+            PlayActionClip(CharacterMovement.CLIP_LANDING, 0.45f);
         }
 
         Rooted = true;
@@ -239,8 +263,9 @@ public class PlayerGrowth : MonoBehaviour {
 
     bool TurkeyNear() {
         float radius = BodyRadius + 1.35f;
-        Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
-        foreach (Enemy enemy in enemies) {
+        List<Enemy> enemies = Enemy.Roster;
+        for (int i = 0; i < enemies.Count; i++) {
+            Enemy enemy = enemies[i];
             if (enemy == null || !enemy.Alive || enemy.Kind != BotKind.YoBot || enemy.Climbing) {
                 continue;
             }
@@ -255,8 +280,13 @@ public class PlayerGrowth : MonoBehaviour {
 
     void TrackLanding() {
         if (controller.isGrounded) {
-            if (leftGround && airTime > 0.18f && wave >= Tuning.JumpWave) {
-                LandStomp();
+            if (leftGround && airTime > 0.18f) {
+                Landings++;
+                if (wave >= Tuning.JumpWave) {
+                    LandStomp();
+                } else {
+                    PlayActionClip(CharacterMovement.CLIP_LANDING, 0.38f);
+                }
             }
             airTime = 0f;
             leftGround = false;
@@ -266,20 +296,23 @@ public class PlayerGrowth : MonoBehaviour {
         }
     }
 
-    void LandStomp() {
+    public void LandStomp() {
+        PlayActionClip(CharacterMovement.CLIP_LANDING, 0.45f);
         GameAudio.Play("stomp", 1f);
         Pound(BodyRadius + 1.15f * Scale, false, true);
     }
 
     void StompFoot() {
+        PlayActionClip(CharacterMovement.CLIP_LANDING, 0.4f);
         GameAudio.Play("stomp", 0.7f);
         Pound(BodyRadius + 1.35f, true, false);
     }
 
     void Pound(float radius, bool turkeysOnly, bool onlyOlder) {
         Vector3 origin = transform.position;
-        Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
-        foreach (Enemy enemy in enemies) {
+        var snapshot = new List<Enemy>(Enemy.Roster);
+        for (int i = 0; i < snapshot.Count; i++) {
+            Enemy enemy = snapshot[i];
             if (enemy == null || !enemy.Alive || enemy.Climbing) {
                 continue;
             }
@@ -300,24 +333,58 @@ public class PlayerGrowth : MonoBehaviour {
         Fx.Emit(FxKind.Dust, origin, 10, new Color(0.62f, 0.58f, 0.5f, 0.55f), 0.6f * Scale, 2.2f * Scale, radius * 0.6f);
     }
 
-    void Shake() {
+    public void Shake() {
         stomping = false;
         Rooted = true;
-        rootedLeft = 2.1f;
-        PlayBody("Shake", 7);
+        rootedLeft = 1.2f;
+        PlayActionClip(CharacterMovement.CLIP_SHAKE_OFF, 1.1f);
         Enemy.ShakeOffClimbers(Scale);
         GameAudio.Play("shake", 0.7f);
     }
 
-    void PlayBody(string stateName, int stateId) {
-        Animator anim = GetComponentInChildren<Animator>();
+    public void OnHit(Enemy by = null) {
+        if (WaveDirector.IsLost || BatEquipment.IsAnimatingAction || Time.time < nextHitReactAt) {
+            return;
+        }
+        nextHitReactAt = Time.time + 1.5f;
+        HitReacts++;
+        PlayActionClip(CharacterMovement.CLIP_HIT_REACT, 0.38f);
+    }
+
+    public void OnVictory() {
+        if (WaveDirector.IsLost || BatEquipment.IsAnimatingAction) {
+            return;
+        }
+        PlayActionClip(CharacterMovement.CLIP_VICTORY, 1.4f);
+    }
+
+    public void CancelVictory() {
+        if (currentActionClip == CharacterMovement.CLIP_VICTORY) {
+            actionClipLeft = 0f;
+            currentActionClip = -1;
+        }
+    }
+
+    public void OnDeath() {
+        actionClipLeft = 99f;
+        currentActionClip = CharacterMovement.CLIP_DEATH;
+        Animator anim = CharacterMovement.EnsureWallitOn(gameObject);
+        if (anim != null) {
+            anim.updateMode = AnimatorUpdateMode.UnscaledTime;
+            anim.speed = 1f;
+            CharacterMovement.PlayClip(anim, CharacterMovement.CLIP_DEATH, true, 0.06f);
+        }
+    }
+
+    void PlayActionClip(int clipId, float duration) {
+        Animator anim = CharacterMovement.EnsureWallitOn(gameObject);
         if (anim == null) {
             return;
         }
-        anim.SetInteger(CharacterMovement.PARAMETER_STATE, stateId);
-        if (anim.HasState(0, Animator.StringToHash(stateName))) {
-            anim.CrossFade(stateName, 0.05f, 0, 0f);
-        }
+        currentActionClip = clipId;
+        actionClipLeft = duration;
+        anim.speed = 1f;
+        CharacterMovement.PlayClip(anim, clipId, true, 0.05f);
     }
 
     void Show(string text, float seconds) {

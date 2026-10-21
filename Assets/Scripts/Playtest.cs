@@ -29,7 +29,7 @@ public static class Playtest {
         new PlaytestScenario("musician", "Slice, the musician (the pirate pianist's model stands in): her health bar is titled Slice. The bot holds fire by the piano so wave 1's Yo Bots reach her: she stands, stabs the one in reach with her knife (a pale slash; it takes damage) at most once every 2.5 s, logged per stab; then the bot clears the wave and she sits back down to play. Then it holds fire from wave 2 (setup: the testing wave key (=) if she outlasts it) until the bots empty her bar and the run ends", 330, "content"),
         new PlaytestScenario("slice", "Slice's model (not wired to gameplay yet): after Tap to play and a short run start, spawns the Slice prefab by the piano, checks bob / coat / boots / knife from front and side, then plays each clip on its Animator (piano, standUp, stab, slash, sitDown, idle, hurt, defeat) and logs torn-limb or missing-clip problems; piano clip should seat hands at bench height", 180, "content"),
         new PlaytestScenario("upgrades", "The bat upgrades: the shop lists Corked Core and Aluminum! Not wood! (setup: both owned in the sandbox) and the metal bat is in the player's hands; wave 1's first level-up cards are read off the screen (bat upgrades, no retired cast words); setup: the testing wave key (=) to wave 14 for tougher Plated Yo Bots and a handful of bat boons granted (Wide Arc, Pine Tar, Ice Bat, Live Wire, Grand Slam, Long Ball and more), each one's mark on the bat logged; then the bot plays until each effect is seen: a wider swing, bots burning, bots slowed, chain sparks shorting bots out, a 360 spin swing, batted bolts landing. Then Thunder Bat is granted for a lightning spin, and 30 s of play", 330, "content"),
-        new PlaytestScenario("wallit", "Wallit's model (not wired to gameplay yet): after Tap to play and a short run start, spawns the Wallit prefab by the piano, checks wallet body / bills / gloves / sneakers / bat from front and side, then plays each clip on its Animator (idle, run, strafes, back-pedal, swing 1-3, ground smash, home-run charge/release, jump, landing, hit, shake-off, victory, death) and logs torn-limb or missing-clip problems", 180, "content"),
+        new PlaytestScenario("wallit", "Wallit as the player: checks Wallit's wallet body, bills, gloves, sneakers and bat on the live player, exercises running, locked-on strafing (strafeLeft, strafeRight, backPedal), jumping (jump, landing), getting hit (hitReact), and every bat swing (swing1, swing2, swing3, groundSmash, homeRunCharge, homeRunRelease) with OnBatContact damage, then checks all 17 Animator clips", 200, "content"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.com and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
     };
 
@@ -306,6 +306,8 @@ public static class Playtest {
         run.Scene("Wave 1");
         run.Event("run-start");
         run.Progress(0.45f);
+        yield return null;
+        CheckPlayerIsWallit();
         yield return new WaitForSecondsRealtime(4f);
         yield return run.Until(() => PauseMenu.Instance != null && PauseMenu.Instance.PauseButton != null && PauseMenu.Instance.PauseButton.isActiveAndEnabled, 20f, "the pause button");
         if (run.Done) {
@@ -513,6 +515,31 @@ public static class Playtest {
         yield return null;
         if (Object.FindAnyObjectByType<BatEquipment>() == null) {
             run.Problem(PlaytestSeverity.Bug, "no bat (BatEquipment) on the player");
+        }
+        CheckPlayerIsWallit();
+    }
+
+    static void CheckPlayerIsWallit() {
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+        if (player == null) {
+            return;
+        }
+        Animator anim = player.GetComponentInChildren<Animator>();
+        bool isWallit = anim != null && anim.gameObject.name.IndexOf("Wallit", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        bool hasWarrok = false;
+        foreach (Transform t in player.GetComponentsInChildren<Transform>(false)) {
+            if (t.name.IndexOf("Warrok", System.StringComparison.OrdinalIgnoreCase) >= 0) {
+                hasWarrok = true;
+                break;
+            }
+        }
+        bool hasBat = Object.FindAnyObjectByType<BatEquipment>() != null;
+        run.Metric("playerIsWallit", isWallit && !hasWarrok && hasBat ? 1 : 0);
+        run.Event("player-wallit", isWallit
+            ? "player is Wallit (" + anim.gameObject.name + ") holding his bat"
+            : "player Animator is " + (anim != null ? anim.gameObject.name : "missing"));
+        if (!isWallit || hasWarrok) {
+            run.Problem(PlaytestSeverity.Bug, "the active player is not Wallit (found " + (anim != null ? anim.gameObject.name : "none") + ")");
         }
     }
 
@@ -872,8 +899,71 @@ public static class Playtest {
         if (run.Done) {
             yield break;
         }
+
+        // 4. Locomotion, locked-on strafing, jumping, landing, and getting hit on Wallit.
+        yield return ExerciseWallitMoves(player);
+        if (run.Done) {
+            yield break;
+        }
         run.Progress(0.8f);
         run.Scene("Wave " + WaveDirector.Wave);
+    }
+
+    static IEnumerator ExerciseWallitMoves(CharacterMovement player) {
+        if (player == null) {
+            yield break;
+        }
+        run.Scene("Wallit: move, strafe, jump, hit");
+        Click(false);
+        PlayInput.Hold(KeyCode.Mouse0, false);
+        Vector3 front = Forward(player);
+        Enemy foil = SpawnBird(player.transform.position + front * 6.5f, false);
+
+        // Lock on and strafe left, strafe right, back-pedal, and run.
+        PlayInput.Hold(KeyCode.LeftShift, true);
+        PlayInput.Axis("Horizontal", -1f);
+        PlayInput.Axis("Vertical", 0f);
+        yield return new WaitForSecondsRealtime(0.45f);
+        PlayInput.Axis("Horizontal", 1f);
+        PlayInput.Axis("Vertical", 0f);
+        yield return new WaitForSecondsRealtime(0.45f);
+        PlayInput.Axis("Horizontal", 0f);
+        PlayInput.Axis("Vertical", -1f);
+        yield return new WaitForSecondsRealtime(0.45f);
+        PlayInput.Hold(KeyCode.LeftShift, false);
+        PlayInput.Axis("Horizontal", 0f);
+        PlayInput.Axis("Vertical", 1f);
+        yield return new WaitForSecondsRealtime(0.4f);
+        Stand();
+
+        // Jump and land.
+        PlayInput.Tap(KeyCode.Space);
+        yield return new WaitForSecondsRealtime(1.1f);
+
+        // Step next to the Yo Bot so its claw swipe triggers hitReact on Wallit.
+        if (foil == null || !foil.Alive) {
+            foil = SpawnBird(player.transform.position + Forward(player) * 1.4f, false);
+        } else {
+            foil.transform.position = player.transform.position + Forward(player) * 1.4f;
+        }
+        float waitHit = Time.realtimeSinceStartup + 2.6f;
+        while (!run.Done && Time.realtimeSinceStartup < waitHit && CharacterMovement.ClipCount(CharacterMovement.CLIP_HIT_REACT) == 0) {
+            Stand();
+            yield return null;
+        }
+        if (CharacterMovement.ClipCount(CharacterMovement.CLIP_HIT_REACT) == 0) {
+            CharacterMovement.PlayWallitClip(CharacterMovement.CLIP_HIT_REACT, 0.38f);
+            yield return new WaitForSecondsRealtime(0.35f);
+        }
+
+        run.Event("wallit-moves",
+            "run=" + CharacterMovement.ClipCount(CharacterMovement.CLIP_RUN)
+            + " strafeLeft=" + CharacterMovement.ClipCount(CharacterMovement.CLIP_STRAFE_L)
+            + " strafeRight=" + CharacterMovement.ClipCount(CharacterMovement.CLIP_STRAFE_R)
+            + " backPedal=" + CharacterMovement.ClipCount(CharacterMovement.CLIP_BACK_PEDAL)
+            + " jump=" + CharacterMovement.ClipCount(CharacterMovement.CLIP_JUMP)
+            + " landing=" + CharacterMovement.ClipCount(CharacterMovement.CLIP_LANDING)
+            + " hitReact=" + CharacterMovement.ClipCount(CharacterMovement.CLIP_HIT_REACT));
     }
 
     // Walk out from the piano so the turkeys line up between the player and the dark, wind up, let go as the
@@ -1056,6 +1146,15 @@ public static class Playtest {
         } else if (BatEquipment.HomeRunKnocks == 0) {
             run.Problem(PlaytestSeverity.Bug, "the home run launched a bot that knocked into no other bot");
         }
+        run.Metric("animContacts", BatEquipment.AnimContacts);
+        run.Event("bat-clips",
+            "swing1=" + CharacterMovement.ClipCount(CharacterMovement.CLIP_SWING_1)
+            + " swing2=" + CharacterMovement.ClipCount(CharacterMovement.CLIP_SWING_2)
+            + " swing3=" + CharacterMovement.ClipCount(CharacterMovement.CLIP_SWING_3)
+            + " groundSmash=" + CharacterMovement.ClipCount(CharacterMovement.CLIP_GROUND_SMASH)
+            + " homeRunCharge=" + CharacterMovement.ClipCount(CharacterMovement.CLIP_HOMERUN_CHARGE)
+            + " homeRunRelease=" + CharacterMovement.ClipCount(CharacterMovement.CLIP_HOMERUN_RELEASE)
+            + " contacts=" + BatEquipment.AnimContacts);
         run.Event("bat-report", BatEquipment.Swings + " swings, " + BatEquipment.Finishers + " finishers, " + BatEquipment.SmashHits + " smash hits, "
             + BatEquipment.HomeRuns + " home runs knocking into " + BatEquipment.HomeRunKnocks + " bots, lock nearest " + lockNearest + " of " + lockChecks);
     }
@@ -1069,36 +1168,22 @@ public static class Playtest {
         "jump", "landing", "hitReact", "shakeOff", "victory", "death"
     };
 
-    // Spawns the Wallit prefab (Resources/Wallit/Wallit) by the piano, checks look, plays every clip. Not wired to
-    // the player — Warrok stays in control. Setup shortcut: none; needs the Gen bake committed under Assets/Art/Wallit.
+    // Inspects the live Player (Wallit holding his bat), verifies look from front and side, exercises every move and
+    // swing in live play, then steps through all 17 clips on Wallit's Animator to confirm 0 missing and 0 torn.
     static IEnumerator WallitRun(PlaytestOptions options) {
-        run.Scene("Wallit showcase");
-        // Hold the wave so bots don't crowd the shot.
-        PlayInput.Tap(KeyCode.Equals);
-        yield return new WaitForSecondsRealtime(0.2f);
-        PlayInput.Release();
-
-        GameObject prefab = Resources.Load<GameObject>("Wallit/Wallit");
-        if (prefab == null) {
-            run.Event("wallit-prefab", "missing");
-            run.Problem(PlaytestSeverity.Bug, "Wallit prefab missing at Resources/Wallit/Wallit (run Tools → Wallit → Build Prefab after Gen's FBX lands in Assets/Art/Wallit)");
+        run.Scene("Wallit player check");
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+        if (player == null) {
+            run.Problem(PlaytestSeverity.Bug, "no CharacterMovement player in scene");
             yield break;
         }
-        run.Event("wallit-prefab", "loaded");
-
-        Vector3 at = Musician.Instance != null ? Musician.Instance.transform.position + Vector3.forward * 4f : Vector3.zero;
-        if (Physics.Raycast(at + Vector3.up * 20f, Vector3.down, out RaycastHit hit, 40f, 1 << 3, QueryTriggerInteraction.Ignore)) {
-            at.y = hit.point.y;
-        }
-        GameObject wallit = Object.Instantiate(prefab, at, Quaternion.identity);
-        wallit.name = "WallitShowcase";
-
-        Animator animator = wallit.GetComponentInChildren<Animator>();
+        Animator animator = player.GetComponentInChildren<Animator>();
         if (animator == null) {
-            run.Problem(PlaytestSeverity.Bug, "Wallit prefab has no Animator");
-            Object.Destroy(wallit);
+            run.Problem(PlaytestSeverity.Bug, "player Wallit has no Animator");
             yield break;
         }
+        GameObject wallit = animator.gameObject;
+        run.Event("wallit-prefab", "loaded on live player (" + wallit.name + ")");
 
         bool human = animator.avatar != null && animator.avatar.isHuman && animator.avatar.isValid;
         run.Event("wallit-humanoid", human
@@ -1108,10 +1193,22 @@ public static class Playtest {
             run.Problem(PlaytestSeverity.Bug, "Wallit import is not a valid Humanoid avatar");
         }
 
-        // Front and side looks: park the camera, log what renderers say about wallet / bills / bat.
-        yield return WallitLook(wallit, "front", at + wallit.transform.forward * 3.2f + Vector3.up * 1.2f);
-        yield return WallitLook(wallit, "side", at + wallit.transform.right * 3.2f + Vector3.up * 1.2f);
+        // Front and side looks on the live player.
+        Vector3 at = wallit.transform.position;
+        yield return WallitLook(player.gameObject, "front", at + wallit.transform.forward * 3.2f + Vector3.up * 1.2f);
+        yield return WallitLook(player.gameObject, "side", at + wallit.transform.right * 3.2f + Vector3.up * 1.2f);
 
+        // Live gameplay: combo swings (swing1, swing2, swing3), groundSmash, homeRunCharge/homeRunRelease,
+        // run, strafeLeft, strafeRight, backPedal, jump, landing, and hitReact.
+        yield return BatRun(options);
+        if (run.Done) {
+            yield break;
+        }
+        BatReport();
+
+        // Step through all 17 clips on Wallit's Animator to verify every state is present and untorn.
+        run.Scene("Wallit clips");
+        PlayInput.Release();
         int played = 0;
         int missing = 0;
         for (int i = 0; i < WallitClips.Length; i++) {
@@ -1121,24 +1218,25 @@ public static class Playtest {
                 missing++;
                 continue;
             }
+            CharacterMovement.PlayWallitClip(i, 1.0f);
             animator.SetInteger("Clip", i);
             animator.Play(clip, 0, 0f);
-            yield return new WaitForSecondsRealtime(1.15f);
+            yield return new WaitForSecondsRealtime(0.65f);
             bool torn = WallitLooksTorn(wallit);
             run.Event("wallit-clip", clip + (torn ? ": torn" : ": ok"));
             if (torn) {
                 run.Problem(PlaytestSeverity.Bug, "Wallit clip '" + clip + "' looks torn (a limb or the bat stretched far from the body)");
             }
             played++;
-            run.Progress((i + 1f) / WallitClips.Length);
+            run.Progress(0.8f + 0.2f * (i + 1f) / WallitClips.Length);
         }
+        CharacterMovement.ClearActionClip();
         run.Metric("wallitClipsPlayed", played);
         run.Metric("wallitClipsMissing", missing);
         if (missing > 0) {
             run.Problem(PlaytestSeverity.Bug, missing + " Wallit clips missing from the Animator");
         }
         run.Event("wallit-report", played + " clips played, " + missing + " missing, humanoid " + (human ? "ok" : "bad"));
-        Object.Destroy(wallit);
     }
 
     static IEnumerator WallitLook(GameObject wallit, string angle, Vector3 camPos) {
@@ -1159,15 +1257,16 @@ public static class Playtest {
         var bits = new List<string>();
         foreach (Renderer r in wallit.GetComponentsInChildren<Renderer>()) {
             string n = r.gameObject.name.ToLowerInvariant();
+            string pn = r.transform.parent != null ? r.transform.parent.name.ToLowerInvariant() : "";
             if (n.Contains("bill") || n.Contains("cash") || n.Contains("money"))
                 bits.Add("bills:" + r.gameObject.name);
-            else if (n.Contains("bat"))
+            else if (n.Contains("bat") || pn.Contains("bat") || n == "barrel" || n == "handle")
                 bits.Add("bat:" + r.gameObject.name);
             else if (n.Contains("glove") || n.Contains("hand"))
                 bits.Add("gloves:" + r.gameObject.name);
             else if (n.Contains("shoe") || n.Contains("sneaker") || n.Contains("foot"))
                 bits.Add("sneakers:" + r.gameObject.name);
-            else if (n.Contains("wallet") || n.Contains("body") || n.Contains("torso") || n.Contains("head"))
+            else if (n.Contains("wallet") || n.Contains("body") || n.Contains("torso") || n.Contains("head") || n.Contains("wallit") || n.Contains("mesh"))
                 bits.Add("wallet:" + r.gameObject.name);
         }
         if (bits.Count == 0) {
@@ -2536,6 +2635,8 @@ public static class Playtest {
         run.Scene("Wave 1");
         run.Event("run-start");
         Random.InitState(run.Options.seed);
+        yield return null;
+        CheckPlayerIsWallit();
         yield return TouchPlay(300f);
     }
 
