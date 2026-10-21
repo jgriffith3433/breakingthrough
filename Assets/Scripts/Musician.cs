@@ -50,6 +50,8 @@ public class Musician : MonoBehaviour {
     public int FlinchCuts { get; private set; }
     public bool Standing { get { return stand >= 0.9f; } }
     public bool Seated { get { return stand <= 0f; } }
+    // Playtest look: keeps her up on her feet in the wary idle with the knife out, with no bot near.
+    public bool HoldKnifeUp { get; set; }
     public float LastStabAt { get; private set; } = -99f;
     public Enemy LastStabbed { get; private set; }
     public float LastStabDamage { get; private set; }
@@ -488,6 +490,7 @@ public class Musician : MonoBehaviour {
             return;
         }
         slice = found;
+        ApplySliceSkins(slice.gameObject);
         sliceBase = slice.localPosition;
         sliceTurn = slice.localRotation;
         if (pianoHands != null) {
@@ -607,6 +610,56 @@ public class Musician : MonoBehaviour {
         }
     }
 
+    static Material sliceBodyMat;
+    static Material sliceKnifeMat;
+
+    // Binds the SliceSkin and SliceKnifeSkin textures (the Gen bake, taken out of Slice.fbx) on Knoll/BotSkin with
+    // _Glow 0, so Slice and her scalpel never fall back to the FBX importer's white-silhouette material in WebGL.
+    public static void ApplySliceSkins(GameObject model) {
+        if (model == null) {
+            return;
+        }
+        Shader shader = SafeShader.Find("Knoll/BotSkin");
+        if (shader == null) {
+            return;
+        }
+        if (sliceBodyMat == null) {
+            sliceBodyMat = SkinMaterial(shader, "Slice/SliceSkin", 1.3f, 0.32f, 0.35f);
+        }
+        if (sliceKnifeMat == null) {
+            sliceKnifeMat = SkinMaterial(shader, "Slice/SliceKnifeSkin", 1f, 0.3f, 0.3f);
+        }
+        foreach (Renderer r in model.GetComponentsInChildren<Renderer>(true)) {
+            if (r == null) {
+                continue;
+            }
+            string n = r.gameObject.name.ToLowerInvariant();
+            if (n == "blade" || n == "grip") {
+                continue;
+            }
+            Material mat = n.Contains("knife") || n.Contains("scalpel") ? sliceKnifeMat : sliceBodyMat;
+            if (mat != null) {
+                r.sharedMaterial = mat;
+            }
+        }
+    }
+
+    static Material SkinMaterial(Shader shader, string resource, float lift, float ambient, float rim) {
+        Texture2D skin = Resources.Load<Texture2D>(resource);
+        if (skin == null) {
+            return null;
+        }
+        var mat = new Material(shader);
+        mat.name = skin.name;
+        mat.mainTexture = skin;
+        mat.color = Color.white;
+        mat.SetFloat("_Lift", lift);
+        mat.SetFloat("_AmbientBoost", ambient);
+        mat.SetFloat("_RimStrength", rim);
+        mat.SetFloat("_Glow", 0f);
+        return mat;
+    }
+
     // Fallback stand-in knife if the model has no Knife child.
     void BuildKnife(Transform hand) {
         if (hand == null) {
@@ -679,7 +732,7 @@ public class Musician : MonoBehaviour {
             quietFor += dt;
         }
 
-        bool wantUp = near != null || strikeLeft > 0f || (stand > 0f && quietFor < SitAfter);
+        bool wantUp = near != null || strikeLeft > 0f || HoldKnifeUp || (stand > 0f && quietFor < SitAfter);
         if (wantUp && !standingUp && stand < 1f) {
             standingUp = true;
             sittingDown = false;
