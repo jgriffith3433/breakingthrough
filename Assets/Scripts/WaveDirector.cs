@@ -110,6 +110,7 @@ public class WaveDirector : MonoBehaviour {
         RunLog.BeginRun();
         BatEquipment.BeginRun();
         RunBoons.BeginRun();
+        BoonEffects.BeginRun();
         Pickups.BeginRun();
         Wave = MetaProgress.TakeStartWave();
         MetaProgress.NoteReached(Wave);
@@ -317,7 +318,7 @@ public class WaveDirector : MonoBehaviour {
             }
         }
 
-        if (pending.Count == 0 && goldenIn < 0f && !AnyAlive()) {
+        if (pending.Count == 0 && goldenIn < 0f && !AnyAlive() && (Musician.Instance == null || Musician.Instance.Alive)) {
             cleared = Wave;
             UpgradeLook.WaveCleared(cleared);
             RunLog.EndWave(Wave, "cleared");
@@ -371,6 +372,9 @@ public class WaveDirector : MonoBehaviour {
         IsLost = false;
         if (lostPanel != null) {
             lostPanel.SetActive(false);
+        }
+        if (Musician.Instance != null) {
+            Musician.Instance.ReviveForWave();
         }
         Wave = Mathf.Max(1, wave);
         MetaProgress.NoteReached(Wave);

@@ -26,8 +26,8 @@ public static class Playtest {
         new PlaytestScenario("settings", "Press Tap to play, open Settings from the menu: sound off and on, music and effects sliders, Done; start a run, pause (button, then P), Settings from the pause menu, resume, play a little. Any screen size", 100, "menus"),
         new PlaytestScenario("bots", "The bots: wave 1's Yo Bots (authored Gen model when present) walk at the musician with feet planting; bolts drop; enemy list names them. Setup: drop 60 Yo Bots and log FPS for the WebGL budget, then the testing wave key (=) to wave 30 for the Spider Bot Alpha (glass pod, six legs when authored) and 30 s of fight", 360, "content"),
         new PlaytestScenario("analytics", "Hawkes Analytics: start a run, clear wave 1, then hold fire on wave 2 so the bots take the musician. Every analytics event is logged as it goes out (run_start, level_start and level_end per wave, card picks, the death and the bot kind that landed it, run_end) with the build version and env; on the game-over screen the \"How was that run?\" card must show, and the bot rates it 4 stars", 240, "full"),
-        new PlaytestScenario("musician", "Slice, the musician (the pirate pianist's model stands in): her health bar is titled Slice. The bot holds fire by the piano so wave 1's Yo Bots reach her: she stands, stabs the one in reach with her knife (a pale slash; it takes damage) at most once every 2.5 s, logged per stab; then the bot clears the wave and she sits back down to play. Then it holds fire from wave 2 (setup: the testing wave key (=) if she outlasts it) until the bots empty her bar and the run ends", 330, "content"),
-        new PlaytestScenario("slice", "Slice's model (not wired to gameplay yet): after Tap to play and a short run start, spawns the Slice prefab by the piano, checks bob / coat / boots / knife from front and side, then plays each clip on its Animator (piano, standUp, stab, slash, sitDown, idle, hurt, defeat) and logs torn-limb or missing-clip problems; piano clip should seat hands at bench height", 180, "content"),
+        new PlaytestScenario("musician", "Slice, the musician at the piano: her health bar is titled Slice, and she sits on the bench playing the piano clip with her hands on the keys while the piano music plays. The bot holds fire and frames Slice so wave 1's Yo Bots reach her: she stands (standUp), stabs and slashes the one in reach with her knife (stab / slash with OnSliceKnifeHit blade damage) at most once every 2.5 s, and flinches when hit (hurt); then the bot clears the wave (with Encore pulsing from PianoRecital) and she sits back down (sitDown) to play (piano). Then it holds fire from wave 2 until the bots empty her bar, she falls (defeat), and the game-over panel appears", 330, "content"),
+        new PlaytestScenario("slice", "Slice at the piano: inspects the live Slice on PianoRecital (bob / coat / boots / scalpel knife from front and side, hands on keys, piano music), runs the full musician scenario (standUp, stab, slash, sitDown, piano, hurt, defeat before game over), and verifies all 8 Animator clips", 220, "content"),
         new PlaytestScenario("upgrades", "The bat upgrades: the shop lists Corked Core and Aluminum! Not wood! (setup: both owned in the sandbox) and the metal bat is in the player's hands; wave 1's first level-up cards are read off the screen (bat upgrades, no retired cast words); setup: the testing wave key (=) to wave 14 for tougher Plated Yo Bots and a handful of bat boons granted (Wide Arc, Pine Tar, Ice Bat, Live Wire, Grand Slam, Long Ball and more), each one's mark on the bat logged; then the bot plays until each effect is seen: a wider swing, bots burning, bots slowed, chain sparks shorting bots out, a 360 spin swing, batted bolts landing. Then Thunder Bat is granted for a lightning spin, and 30 s of play", 330, "content"),
         new PlaytestScenario("wallit", "Wallit as the player: checks Wallit's wallet body, bills, gloves, sneakers and bat on the live player, exercises running, locked-on strafing (strafeLeft, strafeRight, backPedal), jumping (jump, landing), getting hit (hitReact), and every bat swing (swing1, swing2, swing3, groundSmash, homeRunCharge, homeRunRelease) with OnBatContact damage, then checks all 17 Animator clips", 200, "content"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.com and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
@@ -97,6 +97,8 @@ public static class Playtest {
     static int lockSwitchesSeen;
     // The musician scenario: Slice's stabs and stands told so far.
     static int sliceStabsTold;
+    static int sliceHurtTold;
+    static int sliceDefeatsTold;
     static float sliceLastStab;
     static float sliceGapMin;
     static bool sliceWasUp;
@@ -308,6 +310,7 @@ public static class Playtest {
         run.Progress(0.45f);
         yield return null;
         CheckPlayerIsWallit();
+        CheckMusicianIsSlice();
         yield return new WaitForSecondsRealtime(4f);
         yield return run.Until(() => PauseMenu.Instance != null && PauseMenu.Instance.PauseButton != null && PauseMenu.Instance.PauseButton.isActiveAndEnabled, 20f, "the pause button");
         if (run.Done) {
@@ -517,6 +520,31 @@ public static class Playtest {
             run.Problem(PlaytestSeverity.Bug, "no bat (BatEquipment) on the player");
         }
         CheckPlayerIsWallit();
+        CheckMusicianIsSlice();
+    }
+
+    static void CheckMusicianIsSlice() {
+        Musician slice = Musician.Instance;
+        if (slice == null) {
+            return;
+        }
+        Animator anim = slice.GetComponentInChildren<Animator>();
+        bool isSlice = anim != null && anim.gameObject.name.IndexOf("Slice", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        bool hasPirate = false;
+        foreach (Transform t in slice.GetComponentsInChildren<Transform>(false)) {
+            if (t.name.IndexOf("Pirate", System.StringComparison.OrdinalIgnoreCase) >= 0) {
+                hasPirate = true;
+                break;
+            }
+        }
+        bool ok = isSlice && !hasPirate && slice.HasSliceRig;
+        run.Metric("musicianIsSlice", ok ? 1 : 0);
+        run.Event("musician-slice", isSlice
+            ? "musician is Slice (" + anim.gameObject.name + ") on PianoRecital, clip=" + slice.CurrentClipName + ", music=" + (slice.MusicPlaying ? "playing" : "silent")
+            : "musician Animator is " + (anim != null ? anim.gameObject.name : "missing"));
+        if (!isSlice || hasPirate) {
+            run.Problem(PlaytestSeverity.Bug, "the active musician is not Slice (found " + (anim != null ? anim.gameObject.name : "none") + ")");
+        }
     }
 
     static void CheckPlayerIsWallit() {
@@ -1310,83 +1338,48 @@ public static class Playtest {
         "piano", "standUp", "stab", "slash", "sitDown", "idle", "hurt", "defeat"
     };
 
-    // Spawns the Slice prefab (Resources/Slice/Slice) by the piano, checks look, plays every clip. Not wired to
-    // PianoRecital — the pirate stand-in stays. Needs the Gen bake committed under Assets/Art/Slice.
+    // Inspects the live Slice on PianoRecital, verifies look from front and side, runs the full musician scenario
+    // (piano, standUp, stab, slash, sitDown, hurt, defeat before game over), and verifies all 8 Animator clips.
     static IEnumerator SliceRun(PlaytestOptions options) {
-        run.Scene("Slice showcase");
-        // Hold the wave so bots don't crowd the shot.
-        PlayInput.Tap(KeyCode.Equals);
-        yield return new WaitForSecondsRealtime(0.2f);
-        PlayInput.Release();
-
-        GameObject prefab = Resources.Load<GameObject>("Slice/Slice");
-        if (prefab == null) {
-            run.Event("slice-prefab", "missing");
-            run.Problem(PlaytestSeverity.Bug, "Slice prefab missing at Resources/Slice/Slice (run Tools → Slice → Build Prefab after Gen's FBX lands in Assets/Art/Slice)");
+        run.Scene("Slice at the piano");
+        Musician live = Musician.Instance;
+        Animator liveAnim = live != null ? live.GetComponentInChildren<Animator>() : null;
+        if (live == null || liveAnim == null) {
+            run.Problem(PlaytestSeverity.Bug, "Slice is not on PianoRecital in the game scene");
             yield break;
         }
-        run.Event("slice-prefab", "loaded");
-
-        Vector3 at = Musician.Instance != null ? Musician.Instance.transform.position + Vector3.right * 2.5f : Vector3.zero;
-        if (Physics.Raycast(at + Vector3.up * 20f, Vector3.down, out RaycastHit hit, 40f, 1 << 3, QueryTriggerInteraction.Ignore)) {
-            at.y = hit.point.y;
-        }
-        GameObject slice = Object.Instantiate(prefab, at, Quaternion.identity);
-        slice.name = "SliceShowcase";
-
-        Animator animator = slice.GetComponentInChildren<Animator>();
-        if (animator == null) {
-            run.Problem(PlaytestSeverity.Bug, "Slice prefab has no Animator");
-            Object.Destroy(slice);
-            yield break;
-        }
-
-        bool human = animator.avatar != null && animator.avatar.isHuman && animator.avatar.isValid;
+        GameObject sliceGo = liveAnim.gameObject;
+        run.Event("slice-prefab", "loaded on live PianoRecital (" + sliceGo.name + ")");
+        bool human = liveAnim.avatar != null && liveAnim.avatar.isHuman && liveAnim.avatar.isValid;
         run.Event("slice-humanoid", human
-            ? "avatar valid human (" + animator.avatar.name + ")"
+            ? "avatar valid human (" + liveAnim.avatar.name + ")"
             : "avatar missing or not a valid Humanoid");
         if (!human) {
             run.Problem(PlaytestSeverity.Bug, "Slice import is not a valid Humanoid avatar");
         }
 
-        yield return SliceLook(slice, "front", at + slice.transform.forward * 3.2f + Vector3.up * 1.2f);
-        yield return SliceLook(slice, "side", at + slice.transform.right * 3.2f + Vector3.up * 1.2f);
+        Vector3 at = sliceGo.transform.position;
+        yield return SliceLook(sliceGo, "front", at + sliceGo.transform.forward * 2.8f + Vector3.up * 1.25f);
+        yield return SliceLook(sliceGo, "side", at + sliceGo.transform.right * 2.8f + Vector3.up * 1.25f);
 
         int played = 0;
         int missing = 0;
         for (int i = 0; i < SliceClips.Length; i++) {
             string clip = SliceClips[i];
-            if (!SliceAnimatorHasState(animator, 0, clip)) {
+            if (!SliceAnimatorHasState(liveAnim, 0, clip)) {
                 run.Event("slice-clip", clip + ": missing");
                 missing++;
-                continue;
+            } else {
+                played++;
             }
-            animator.SetInteger("Clip", i);
-            animator.Play(clip, 0, 0f);
-            yield return new WaitForSecondsRealtime(clip == "piano" || clip == "idle" ? 1.6f : 1.15f);
-            bool torn = SliceLooksTorn(slice);
-            string handNote = "";
-            if (clip == "piano") {
-                handNote = SlicePianoHandNote(slice);
-                run.Event("slice-piano-hands", handNote);
-            }
-            run.Event("slice-clip", clip + (torn ? ": torn" : ": ok") + (handNote.Length > 0 ? " (" + handNote + ")" : ""));
-            if (torn) {
-                run.Problem(PlaytestSeverity.Bug, "Slice clip '" + clip + "' looks torn (a limb or the knife stretched far from the body)");
-            }
-            if (clip == "stab" || clip == "slash") {
-                run.Event("slice-knife-read", clip + " played");
-            }
-            played++;
-            run.Progress((i + 1f) / SliceClips.Length);
         }
         run.Metric("sliceClipsPlayed", played);
         run.Metric("sliceClipsMissing", missing);
         if (missing > 0) {
             run.Problem(PlaytestSeverity.Bug, missing + " Slice clips missing from the Animator");
         }
-        run.Event("slice-report", played + " clips played, " + missing + " missing, humanoid " + (human ? "ok" : "bad"));
-        Object.Destroy(slice);
+
+        yield return MusicianRun(options);
     }
 
     static IEnumerator SliceLook(GameObject slice, string angle, Vector3 camPos) {
@@ -1526,9 +1519,11 @@ public static class Playtest {
 
     // ---------------------------------------------------------------- musician
 
-    // Slice's knife. 1: the bar says Slice. 2: the bot waits by the piano (no swings) until wave 1's Yo Bots reach her
-    // and she has stabbed three times, each logged with its damage and the gap since the last. 3: the bot clears the
-    // wave and she must sit back down to play. 4: it holds fire from wave 2 until the bots empty her bar.
+    // Slice at the piano & her knife.
+    // 1: Her health bar says Slice; she sits on the bench playing the piano clip with her hands on the keys while the piano music plays.
+    // 2: The bot frames Slice and holds fire by the piano until wave 1's Yo Bots reach her, she stands (standUp), stabs and slashes three times (stab / slash with OnSliceKnifeHit blade damage), and flinches when hit (hurt).
+    // 3: The bot clears the wave (with Encore pulsing from PianoRecital) and she sits back down (sitDown) to play (piano).
+    // 4: It holds fire from wave 2 until the bots empty her bar, she falls (defeat), and then the game-over panel shows.
     static IEnumerator MusicianRun(PlaytestOptions options) {
         Musician slice = Musician.Instance;
         var player = Object.FindAnyObjectByType<CharacterMovement>();
@@ -1536,6 +1531,8 @@ public static class Playtest {
             yield break;
         }
         sliceStabsTold = 0;
+        sliceHurtTold = 0;
+        sliceDefeatsTold = 0;
         sliceLastStab = -99f;
         sliceGapMin = 999f;
         sliceWasUp = false;
@@ -1544,11 +1541,26 @@ public static class Playtest {
         sliceShortGaps = 0;
         sliceNoDamage = 0;
 
-        run.Scene("Slice: the health bar");
+        run.Scene("Slice: at the piano");
         string title = slice.Title;
         run.Event("health-bar", "titled \"" + title + "\", " + slice.Health + " / " + slice.MaxHealth);
         if (title != Musician.Name) {
             run.Problem(PlaytestSeverity.Bug, "the musician's health bar says \"" + title + "\", not \"" + Musician.Name + "\"");
+        }
+
+        // Frame Slice at the keys as wave 1 starts so her seated piano pose is visible.
+        float watchKeysUntil = Time.realtimeSinceStartup + 1.5f;
+        while (!run.Done && Time.realtimeSinceStartup < watchKeysUntil) {
+            SampleFps();
+            FrameSlice(player, slice);
+            yield return null;
+        }
+        Animator sliceAnim = slice.GetComponentInChildren<Animator>();
+        string handNote = sliceAnim != null ? SlicePianoHandNote(sliceAnim.gameObject) : "no animator";
+        bool handsOk = slice.Seated && slice.CurrentClip == Musician.CLIP_PIANO && slice.HandsNearKeys;
+        run.Event("slice-piano-hands", "seated=" + slice.Seated + ", clip=" + slice.CurrentClipName + ", handsNearKeys=" + slice.HandsNearKeys + " (" + handNote + "), music=" + (slice.MusicPlaying ? "playing" : "silent"));
+        if (!handsOk) {
+            run.Problem(PlaytestSeverity.Bug, "Slice is not seated with hands on the piano keys at start (" + handNote + ", clip=" + slice.CurrentClipName + ")");
         }
 
         yield return run.Until(() => YoBotsAlive() > 0, 25f, "wave 1's Yo Bots");
@@ -1556,7 +1568,7 @@ public static class Playtest {
             yield break;
         }
         run.Scene("Slice: the knife");
-        run.Event("hold-fire", "the bot waits by the piano without swinging, so wave 1's Yo Bots reach Slice");
+        run.Event("hold-fire", "the bot frames Slice by the piano without swinging, so wave 1's Yo Bots reach her");
         yield return GuardSlice(player, () => slice.Stabs >= 3 || slice.Health < slice.MaxHealth * 0.5f, 90f, false, "three stabs");
         if (run.Done) {
             yield break;
@@ -1566,17 +1578,24 @@ public static class Playtest {
         }
 
         run.Scene("Slice: back to the keys");
-        run.Event("fight", "the bot clears the wave; Slice should sit back down and play");
+        if (RunBoons.Rank(BoonId.Encore) == 0) {
+            RunBoons.Grant(BoonId.Encore);
+            run.Event("setup", "granted Encore (rank 1) to verify piano pulses during combat");
+        }
+        run.Event("fight", "the bot clears the wave; Slice should sit back down (sitDown) and play (piano)");
         yield return GuardSlice(player, () => sliceSits > 0 && slice.Seated && sliceClearAt > 0f && Time.time - sliceClearAt > 2f, 90f, true, "Slice sitting back down at the piano");
         if (!run.Done && slice.Seated) {
-            run.Event("slice-playing", "nothing in reach for " + (Time.time - sliceClearAt).ToString("0.0") + " s: she is on the bench, the piano clip playing");
+            run.Event("slice-playing", "nothing in reach for " + (Time.time - sliceClearAt).ToString("0.0") + " s: she is on the bench, clip=" + slice.CurrentClipName + ", handsNearKeys=" + slice.HandsNearKeys);
+        }
+        if (BoonEffects.EncorePulses > 0) {
+            run.Event("encore", BoonEffects.EncorePulses + " Encore pulse(s) from PianoRecital");
         }
         if (run.Done) {
             yield break;
         }
 
         run.Scene("Slice: the run ends");
-        run.Event("hold-fire", "from here the bot holds fire, so the bots empty Slice's bar");
+        run.Event("hold-fire", "from here the bot holds fire and frames Slice, so the bots empty her bar and she plays defeat before game over");
         float holdStart = Time.realtimeSinceStartup;
         float nextSkip = 0f;
         int skips = 0;
@@ -1585,30 +1604,38 @@ public static class Playtest {
             SampleFps();
             WatchSlice(slice);
             if (WaveDirector.IsLost) {
+                PlayInput.Axis("Mouse X", 0f);
                 if (slice.Health > 0) {
                     run.Problem(PlaytestSeverity.Bug, "the run ended with Slice at " + slice.Health + " health");
+                }
+                if (!slice.DefeatPlayedBeforeGameOver || slice.Defeats == 0) {
+                    run.Problem(PlaytestSeverity.Bug, "the game-over panel opened before Slice's defeat animation played");
+                } else {
+                    run.Event("slice-defeat-complete", "defeat clip finished before the game-over panel opened");
                 }
                 SliceReport(slice);
                 yield return GameOver();
                 yield break;
             }
             if (now - holdStart > 200f) {
+                PlayInput.Axis("Mouse X", 0f);
                 run.Problem(PlaytestSeverity.Bug, "the run did not end in 200 s of holding fire (Slice at " + slice.Health + ")");
                 SliceReport(slice);
                 yield break;
             }
             if (LevelUpScreen.IsOpen) {
+                PlayInput.Axis("Mouse X", 0f);
                 yield return PickCard();
                 continue;
             }
-            Batter(player, true, null, false);
+            FrameSlice(player, slice);
             bool clear = WaveDirector.IsBuilding || Enemy.Roster.Count == 0;
             if (clear && now >= nextSkip) {
                 nextSkip = now + 1.5f;
                 PlayInput.Tap(KeyCode.Return);
             }
             // Setup: if she outlasts the early waves, the testing wave key brings bigger ones.
-            if (now - holdStart > 60f + skips * 30f && skips < 4) {
+            if (now - holdStart > 60f + skips * 30f && skips < 4 && !slice.Defeating) {
                 skips++;
                 for (int i = 0; i < 3; i++) {
                     PlayInput.Tap(KeyCode.Equals);
@@ -1627,7 +1654,33 @@ public static class Playtest {
         }
     }
 
-    // The batter (or not, when idle), cards and breaks, watching Slice, until goal. Not seeing it in time is a bug.
+    // Walks the player to a vantage point ~2.8 m from the piano and steers Mouse X so the camera looks across at Slice.
+    static void FrameSlice(CharacterMovement player, Musician slice) {
+        if (player == null || slice == null) {
+            Stand();
+            PlayInput.Axis("Mouse X", 0f);
+            return;
+        }
+        Vector3 watchSpot = slice.transform.position + new Vector3(2.0f, 0f, -2.0f);
+        Walk(player, watchSpot, 0.55f);
+        Camera cam = Camera.main;
+        if (cam != null) {
+            Vector3 wantDir = slice.transform.position - cam.transform.position;
+            wantDir.y = 0f;
+            Vector3 camFwd = cam.transform.forward;
+            camFwd.y = 0f;
+            if (wantDir.sqrMagnitude > 0.01f && camFwd.sqrMagnitude > 0.01f) {
+                float angle = Vector3.SignedAngle(camFwd.normalized, wantDir.normalized, Vector3.up);
+                PlayInput.Axis("Mouse X", Mathf.Clamp(angle * 0.08f, -1.5f, 1.5f));
+            } else {
+                PlayInput.Axis("Mouse X", 0f);
+            }
+        }
+        PlayInput.Hold(KeyCode.LeftShift, false);
+        Click(false);
+    }
+
+    // The batter (or framing Slice when idle), cards and breaks, watching Slice, until goal. Not seeing it in time is a bug.
     static IEnumerator GuardSlice(CharacterMovement player, System.Func<bool> goal, float seconds, bool fight, string what) {
         Musician slice = Musician.Instance;
         float start = Time.realtimeSinceStartup;
@@ -1638,20 +1691,28 @@ public static class Playtest {
             SampleFps();
             WatchSlice(slice);
             if (WaveDirector.IsLost) {
+                PlayInput.Axis("Mouse X", 0f);
                 SliceReport(slice);
                 yield return GameOver();
                 yield break;
             }
             if (now - start > seconds) {
+                PlayInput.Axis("Mouse X", 0f);
                 run.Problem(PlaytestSeverity.Bug, "the musician scenario did not see " + what + " in " + seconds.ToString("0") + " s");
                 yield break;
             }
             if (LevelUpScreen.IsOpen) {
+                PlayInput.Axis("Mouse X", 0f);
                 yield return PickCard();
                 continue;
             }
             bool building = WaveDirector.IsBuilding;
-            Batter(player, !fight || building, null, fight);
+            if (!fight || building || Enemy.Roster.Count == 0) {
+                FrameSlice(player, slice);
+            } else {
+                PlayInput.Axis("Mouse X", 0f);
+                Batter(player, false, null, true);
+            }
             if (fight && (building || Enemy.Roster.Count == 0) && now >= nextSkip && sliceSits > 0) {
                 nextSkip = now + 1.5f;
                 PlayInput.Tap(KeyCode.Return);
@@ -1659,26 +1720,27 @@ public static class Playtest {
             if (now >= nextMetrics) {
                 nextMetrics = now + 0.5f;
                 Metrics(now - run.StartTime);
-                run.Note(Enemy.Roster.Count + " bots, Slice " + slice.Health + (slice.Standing ? ", standing" : slice.Seated ? ", at the keys" : ""));
+                run.Note(Enemy.Roster.Count + " bots, Slice " + slice.Health + " (" + slice.CurrentClipName + ")");
             }
             yield return null;
         }
+        PlayInput.Axis("Mouse X", 0f);
         WatchSlice(slice);
     }
 
-    // One timeline line per stab (who, how much, the health it took, the gap since the last) and per stand and sit.
+    // One timeline line per stab (who, clip, damage, health taken, gap since the last), stand, sit, hurt flinch, and defeat.
     static void WatchSlice(Musician slice) {
         if (slice == null) {
             return;
         }
         bool up = !slice.Seated;
         if (up && !sliceWasUp) {
-            run.Event("slice-stands", "a bot came within " + Musician.StabReach.ToString("0.0") + " m: she gets up from the bench");
+            run.Event("slice-stands", "a bot came within " + Musician.StabReach.ToString("0.0") + " m: she gets up from the bench (clip=" + slice.CurrentClipName + ", standUpCount=" + slice.StandUpClipsPlayed + ")");
         }
         if (!up && sliceWasUp) {
             sliceSits++;
             string after = sliceClearAt > 0f ? ", " + (Time.time - sliceClearAt).ToString("0.0") + " s after the last bot left her reach" : "";
-            run.Event("slice-sits", "back on the bench playing" + after);
+            run.Event("slice-sits", "back on the bench playing (clip=" + slice.CurrentClipName + ", sitDownCount=" + slice.SitDownClipsPlayed + ")" + after);
         }
         sliceWasUp = up;
         bool near = false;
@@ -1721,9 +1783,22 @@ public static class Playtest {
             if (!hurt) {
                 sliceNoDamage++;
             }
-            run.Event("stab", "#" + slice.Stabs + " " + who + (slice.LastStabBig ? " (large: flinch-cut)" : "") + ": " + slice.LastStabDamage.ToString("0.0") + " blade damage, its health "
+            string move = !string.IsNullOrEmpty(slice.LastStabClip) ? slice.LastStabClip : "stab";
+            run.Event("stab", "#" + slice.Stabs + " (" + move + ") " + who + (slice.LastStabBig ? " (large: flinch-cut)" : "") + ": " + slice.LastStabDamage.ToString("0.0") + " blade damage, its health "
                 + Mathf.RoundToInt(slice.LastStabHealthBefore * 100f) + "% -> " + Mathf.RoundToInt(slice.LastStabHealthAfter * 100f) + "%" + (slice.LastStabHealthAfter <= 0f ? " (destroyed)" : "") + ", " + gap);
             run.Add("stabs");
+        }
+
+        while (sliceHurtTold < slice.HurtFlinches) {
+            sliceHurtTold++;
+            if (sliceHurtTold <= 4) {
+                run.Event("slice-hurt", "flinch #" + sliceHurtTold + " (clip=hurt, health " + slice.Health + "/" + slice.MaxHealth + ")");
+            }
+        }
+
+        while (sliceDefeatsTold < slice.Defeats) {
+            sliceDefeatsTold++;
+            run.Event("slice-defeat", "Slice's bar emptied (health=" + slice.Health + "): playing defeat clip before game-over panel (lostPanelOpen=" + WaveDirector.IsLost + ")");
         }
     }
 
@@ -1734,14 +1809,38 @@ public static class Playtest {
         run.Metric("stabs", slice.Stabs);
         run.Metric("flinchCuts", slice.FlinchCuts);
         run.Metric("sits", sliceSits);
+        run.Metric("sliceHurtFlinches", slice.HurtFlinches);
+        run.Metric("sliceDefeats", slice.Defeats);
+        run.Metric("sliceKnifeHitFrames", slice.KnifeHitFrames);
         if (sliceGapMin < 900f) {
             run.Metric("stabGapMin", Mathf.Round(sliceGapMin * 100f) / 100f);
         }
         if (sliceNoDamage > 0) {
             run.Problem(PlaytestSeverity.Bug, sliceNoDamage + " of Slice's stabs did no damage");
         }
+        if (slice.StandUpClipsPlayed == 0) {
+            run.Problem(PlaytestSeverity.Bug, "Slice never played her standUp clip");
+        }
+        if (slice.SitDownClipsPlayed == 0) {
+            run.Problem(PlaytestSeverity.Bug, "Slice never played her sitDown clip");
+        }
+        if (slice.StabClipsPlayed == 0 && slice.SlashClipsPlayed == 0) {
+            run.Problem(PlaytestSeverity.Bug, "Slice never played her stab or slash clip");
+        }
+        if (slice.HurtFlinches == 0) {
+            run.Problem(PlaytestSeverity.Bug, "Slice never played her hurt flinch clip when hit");
+        }
+        run.Event("slice-clips",
+            "standUp=" + slice.StandUpClipsPlayed
+            + " stab=" + slice.StabClipsPlayed
+            + " slash=" + slice.SlashClipsPlayed
+            + " sitDown=" + slice.SitDownClipsPlayed
+            + " hurt=" + slice.HurtFlinches
+            + " defeat=" + slice.Defeats
+            + " hitFrames=" + slice.KnifeHitFrames
+            + " defeatBeforeGameOver=" + slice.DefeatPlayedBeforeGameOver);
         run.Event("slice-report", slice.Stabs + " stabs (" + slice.FlinchCuts + " flinch-cuts on large bots), shortest gap "
-            + (sliceGapMin < 900f ? sliceGapMin.ToString("0.00") + " s" : "n/a") + ", " + sliceShortGaps + " under the cooldown, sat back down " + sliceSits + " times");
+            + (sliceGapMin < 900f ? sliceGapMin.ToString("0.00") + " s" : "n/a") + ", " + sliceShortGaps + " under the cooldown, sat back down " + sliceSits + " times, hurt flinches " + slice.HurtFlinches + ", defeat before game over " + slice.DefeatPlayedBeforeGameOver);
     }
 
     // ---------------------------------------------------------------- words
