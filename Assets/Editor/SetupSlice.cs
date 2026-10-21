@@ -385,6 +385,9 @@ static class SetupSlice
         if (animator.gameObject.GetComponent<SliceAnimRelay>() == null)
             animator.gameObject.AddComponent<SliceAnimRelay>();
 
+        foreach (Transform t in instance.GetComponentsInChildren<Transform>(true))
+            GameObjectUtility.RemoveMonoBehavioursWithMissingScript(t.gameObject);
+
         EnsureKnifeInHand(instance.transform);
 
         PrefabUtility.SaveAsPrefabAsset(instance, PrefabPath);
