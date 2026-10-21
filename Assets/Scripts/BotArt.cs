@@ -2,7 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // The bots. Prefer Gen robot exports (character3d form=robot): Resources/Models/Bots/BotYo and BotSpider
-// prefabs, or YoBot.fbx / SpiderBot.fbx. Until those land, each kind is a low-poly stand-in built here from
+// prefabs, or YoBot.fbx / SpiderBot.fbx, drawn rigid with their painted skins (YoBotSkin / SpiderBotSkin on
+// Knoll/BotSkin; Tools/Bots paints them). Without a Gen model, each kind is a low-poly stand-in built here from
 // boxes, rods and balls (vertex colors, knoll shader). Tools/Blender/bt_bots.py can also export a stand-in FBX.
 // Parts are separate objects so Enemy can animate them (Gen template roles are aliased in Enemy.BindParts):
 //   Yo Bots:     Body, Head, ClawL, ClawR, LegL/LegFL, LegR/LegFR, optional LegBL/LegBR
@@ -137,6 +138,17 @@ public static class BotArt {
         Material material = kind == BotKind.TitanSpiderBot ? BirdArt.Glowing : BirdArt.Shared;
         GameObject source = Source(kind);
         GameObject made;
+        Material painted = source != null ? SkinFor(kind, tint, amount) : null;
+        if (painted != null) {
+            made = Object.Instantiate(Prepared(source, BotRoster.IsSpider(kind)));
+            made.SetActive(true);
+            made.name = "Bot";
+            foreach (Renderer renderer in made.GetComponentsInChildren<Renderer>()) {
+                renderer.sharedMaterial = painted;
+                renderer.receiveShadows = true;
+            }
+            return made;
+        }
         if (source != null) {
             made = Object.Instantiate(source);
             foreach (Collider collider in made.GetComponentsInChildren<Collider>()) {
@@ -183,6 +195,132 @@ public static class BotArt {
             skin.sharedMaterial = material;
         }
         return made;
+    }
+
+    static readonly Dictionary<GameObject, GameObject> prepared = new Dictionary<GameObject, GameObject>();
+    static readonly Dictionary<string, Material> skinMaterials = new Dictionary<string, Material>();
+
+    // The painted skin (Resources/Models/Bots/YoBotSkin or SpiderBotSkin, alpha = glow) on Knoll/BotSkin, one
+    // shared material per tint so a wave still instances. Null keeps the imported materials (another model).
+    static Material SkinFor(BotKind kind, Color tint, float amount) {
+        string texture = BotRoster.IsSpider(kind) ? "SpiderBotSkin" : "YoBotSkin";
+        Color color = amount > 0.001f ? Color.Lerp(Color.white, tint, amount) : Color.white;
+        string key = texture + ColorUtility.ToHtmlStringRGB(color);
+        Material mat;
+        if (skinMaterials.TryGetValue(key, out mat)) {
+            return mat;
+        }
+        Texture2D skin = Resources.Load<Texture2D>("Models/Bots/" + texture);
+        Shader shader = Shader.Find("Knoll/BotSkin");
+        if (skin != null && shader != null) {
+            mat = new Material(shader);
+            mat.name = texture + " " + key;
+            mat.mainTexture = skin;
+            mat.color = color;
+            mat.enableInstancing = true;
+        }
+        skinMaterials[key] = mat;
+        return mat;
+    }
+
+    // Gen robot exports are skinned, though every part is a rigid piece. Once per model, each part is baked onto
+    // its main bone as a plain mesh (shared by every bot), the Animator goes (Enemy moves the bones from code), and
+    // a "Front" marker shows Enemy which way the bot faces. The Spider Bot's glass front is its +X side in Blender,
+    // -X after the FBX import, so it turns a quarter to lead with the pilot.
+    static GameObject Prepared(GameObject source, bool isSpider) {
+        GameObject template;
+        if (prepared.TryGetValue(source, out template) && template != null) {
+            return template;
+        }
+        template = Object.Instantiate(source);
+        template.name = source.name;
+        template.SetActive(false);
+        Object.DontDestroyOnLoad(template);
+        foreach (Collider collider in template.GetComponentsInChildren<Collider>(true)) {
+            Object.DestroyImmediate(collider);
+        }
+        foreach (Animator animator in template.GetComponentsInChildren<Animator>(true)) {
+            Object.DestroyImmediate(animator);
+        }
+        foreach (SkinnedMeshRenderer skin in template.GetComponentsInChildren<SkinnedMeshRenderer>(true)) {
+            MakeRigid(skin);
+        }
+        if (isSpider) {
+            Quaternion turn = Quaternion.Euler(0f, 90f, 0f);
+            foreach (Transform child in template.transform) {
+                child.localPosition = turn * child.localPosition;
+                child.localRotation = turn * child.localRotation;
+            }
+        }
+        var front = new GameObject("Front");
+        front.transform.SetParent(template.transform, false);
+        front.transform.localPosition = new Vector3(0f, 0.4f, 0.6f);
+        prepared[source] = template;
+        return template;
+    }
+
+    static void MakeRigid(SkinnedMeshRenderer skin) {
+        Mesh mesh = skin.sharedMesh;
+        Transform[] bones = skin.bones;
+        if (mesh == null || !mesh.isReadable || bones == null || bones.Length == 0) {
+            return;
+        }
+        var total = new float[bones.Length];
+        foreach (BoneWeight w in mesh.boneWeights) {
+            AddWeight(total, w.boneIndex0, w.weight0);
+            AddWeight(total, w.boneIndex1, w.weight1);
+            AddWeight(total, w.boneIndex2, w.weight2);
+            AddWeight(total, w.boneIndex3, w.weight3);
+        }
+        int best = -1;
+        for (int i = 0; i < total.Length; i++) {
+            if (bones[i] != null && (best < 0 || total[i] > total[best])) {
+                best = i;
+            }
+        }
+        Transform bone = best >= 0 ? bones[best] : skin.rootBone;
+        if (bone == null) {
+            return;
+        }
+        // The mesh is stored in its bind shape: keep that shape exactly, now in the bone's space.
+        Matrix4x4 toBone = bone.worldToLocalMatrix * skin.transform.localToWorldMatrix;
+        Vector3[] vertices = mesh.vertices;
+        Vector3[] normals = mesh.normals;
+        for (int i = 0; i < vertices.Length; i++) {
+            vertices[i] = toBone.MultiplyPoint3x4(vertices[i]);
+        }
+        for (int i = 0; i < normals.Length; i++) {
+            normals[i] = toBone.MultiplyVector(normals[i]).normalized;
+        }
+        var rigid = new Mesh();
+        rigid.name = mesh.name + " (rigid)";
+        rigid.indexFormat = mesh.indexFormat;
+        rigid.vertices = vertices;
+        if (normals.Length == vertices.Length) {
+            rigid.normals = normals;
+        }
+        rigid.uv = mesh.uv;
+        rigid.subMeshCount = mesh.subMeshCount;
+        for (int s = 0; s < mesh.subMeshCount; s++) {
+            rigid.SetTriangles(mesh.GetTriangles(s), s);
+        }
+        rigid.RecalculateBounds();
+
+        var part = new GameObject(skin.name + "_shell");
+        part.transform.SetParent(bone, false);
+        part.AddComponent<MeshFilter>().sharedMesh = rigid;
+        part.AddComponent<MeshRenderer>().sharedMaterials = skin.sharedMaterials;
+        if (skin.transform.childCount == 0) {
+            Object.DestroyImmediate(skin.gameObject);
+        } else {
+            Object.DestroyImmediate(skin);
+        }
+    }
+
+    static void AddWeight(float[] total, int bone, float weight) {
+        if (bone >= 0 && bone < total.Length) {
+            total[bone] += weight;
+        }
     }
 
     static bool HasAlbedo(Material mat) {

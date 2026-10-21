@@ -2375,6 +2375,33 @@ public static class Playtest {
         }
         if (!authored) {
             run.Problem(PlaytestSeverity.Warning, label + " is still the stand-in; Gen FBX/prefab not loaded");
+            return;
+        }
+        LogBotLook(label, kind);
+    }
+
+    // How a live bot of this kind is drawn: rigid parts on the painted skin (Knoll/BotSkin), never the FBX's own
+    // white-glowing material or a skinned mesh.
+    static void LogBotLook(string label, BotKind kind) {
+        foreach (Enemy enemy in Enemy.Roster) {
+            if (enemy == null || BotRoster.IsSpider(enemy.Kind) != BotRoster.IsSpider(kind)) {
+                continue;
+            }
+            Transform bot = enemy.transform.Find("Bot");
+            if (bot == null) {
+                continue;
+            }
+            int rigid = bot.GetComponentsInChildren<MeshRenderer>(true).Length;
+            int skinned = bot.GetComponentsInChildren<SkinnedMeshRenderer>(true).Length;
+            Renderer first = bot.GetComponentInChildren<Renderer>();
+            string shader = first != null && first.sharedMaterial != null ? first.sharedMaterial.shader.name : "none";
+            Texture skin = first != null && first.sharedMaterial != null ? first.sharedMaterial.mainTexture : null;
+            bool front = bot.Find("Front") != null;
+            run.Event(label + "-look", rigid + " rigid parts, " + skinned + " skinned, shader " + shader + ", skin " + (skin != null ? skin.name : "none") + (front ? ", faces its Front marker" : ""));
+            if (skinned > 0 || shader != "Knoll/BotSkin" || skin == null) {
+                run.Problem(PlaytestSeverity.Bug, label + " is not drawn with its painted skin on rigid parts (" + shader + ", " + skinned + " skinned)");
+            }
+            return;
         }
     }
 
