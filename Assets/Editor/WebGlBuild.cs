@@ -550,6 +550,7 @@ public static class WebGlBuild
     {
         SetupWallit.EnsureBuiltForDeploy();
         SetupSlice.EnsureBuiltForDeploy();
+        SetupBots.EnsureBuiltForDeploy();
         if (Directory.Exists(buildPath))
         {
             Directory.Delete(buildPath, true);

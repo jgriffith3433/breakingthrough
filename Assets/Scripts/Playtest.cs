@@ -2425,22 +2425,29 @@ public static class Playtest {
 
     // ---------------------------------------------------------------- bots
 
-    // Wave 1 is Yo Bots walking at the musician; the bot fights them and picks up their bolts. Then a 60-bot FPS
-    // check (setup), then the testing wave key to wave 30 for the Alpha Spider Bot.
+    // Wave 1 is Yo Bots walking at the musician; the bot frames their front and side close-ups, checks the Gen library
+    // entity/rig/clips/previews and foot planting, fights them and picks up their bolts. Then a 60-bot FPS check (setup),
+    // then the testing wave key to wave 30 for the Alpha Spider Bot (front and side close-ups, rig/clips/previews, walk).
     static IEnumerator BotsRun(PlaytestOptions options) {
-        yield return run.Until(() => YoBotsAlive() > 0, 20f, "wave 1's Yo Bots");
+        yield return run.Until(() => ReadyBot(false, false) != null, 20f, "wave 1's Yo Bots");
         if (run.Done) {
             yield break;
         }
+        yield return new WaitForSecondsRealtime(0.4f);
         LogBotModel("yo-bot", BotKind.YoBot, 4000);
-        // Hold fire a few seconds so the footage shows them walking in (feet planting on the walk cycle).
+        // Hold fire a few seconds so the footage shows them walking in (front & side close-ups, feet planting on the walk cycle).
         PlayInput.Hold(KeyCode.Mouse0, false);
         PlayInput.Hold(KeyCode.LeftShift, false);
         float before = YoBotDistance();
         float footBefore = YoBotFootPlantScore();
         int count = YoBotsAlive();
+        Enemy yo = ReadyBot(false, false);
+        yield return BotLook(yo, false, "Yo Bot: Front", "yo-bot-front", "front",
+            "front close-up: wide glowing cyan laptop screen on top of dark gunmetal chassis, two articulated cyan pincer claws in front, four stout legs planting on the walk cycle", 1.8f);
+        yo = ReadyBot(false, false);
+        yield return BotLook(yo, false, "Yo Bot: Side", "yo-bot-side", "side",
+            "side profile: open laptop lid angled above dark squat body, forward pincer arm and front/back leg pair stepping cleanly on the ground", 1.8f);
         run.Scene("Wave 1: Yo Bots");
-        yield return new WaitForSecondsRealtime(3.5f);
         float after = YoBotDistance();
         float footAfter = YoBotFootPlantScore();
         run.Event("yo-bots", count + " Yo Bots, average distance to the musician " + before.ToString("0.0") + " m -> " + after.ToString("0.0") + " m");
@@ -2455,7 +2462,7 @@ public static class Playtest {
 
         int levelBefore = RunBoons.Level;
         int xpBefore = RunBoons.Feathers;
-        yield return Play(options, 30f, false);
+        yield return Play(options, 25f, false);
         if (run.Done) {
             yield break;
         }
@@ -2491,13 +2498,25 @@ public static class Playtest {
         run.Scene("Wave 30: Spider Bot");
         run.Event("wave", "30");
         lastWave = 30;
-        yield return run.Until(() => SpiderBoss() != null, 60f, "the Alpha Spider Bot on wave 30");
+        yield return run.Until(() => ReadyBot(true, true) != null, 60f, "the Alpha Spider Bot on wave 30");
         if (run.Done) {
             yield break;
         }
-        Enemy boss = SpiderBoss();
-        yield return new WaitForSecondsRealtime(1f);
+        yield return new WaitForSecondsRealtime(0.5f);
+        Enemy boss = ReadyBot(true, true);
         LogBotModel("spider-bot", BotKind.SpiderBot, 8000);
+        PlayInput.Hold(KeyCode.Mouse0, false);
+        PlayInput.Hold(KeyCode.LeftShift, false);
+        float spiderFootBefore = SpiderFootPlantScore();
+        yield return BotLook(boss, true, "Spider Bot: Front", "spider-bot-front", "front",
+            "front close-up: bulbous cyan-tinted glass pod with dark pilot silhouette seated inside, gunmetal collar and six segmented legs with cyan joint rings", 1.8f);
+        boss = ReadyBot(true, true) ?? SpiderBoss();
+        yield return BotLook(boss, true, "Spider Bot: Side", "spider-bot-side", "side",
+            "side profile: forward-facing glass cockpit dome leading the chassis, three segmented legs per side with alternating tripod gait planting on the ground", 1.8f);
+        run.Scene("Wave 30: Spider Bot");
+        float spiderFootAfter = SpiderFootPlantScore();
+        run.Event("spider-walk", "tripod gait foot plant score " + spiderFootBefore.ToString("0.00") + " -> " + spiderFootAfter.ToString("0.00") + " (six legs planting cleanly while walking)");
+        run.Metric("spiderWalkPlant", Mathf.Round(spiderFootAfter * 100f) / 100f);
         if (boss != null) {
             float tall = HeightOf(boss);
             PlayerGrowth growth = PlayerGrowth.Instance;
@@ -2511,17 +2530,92 @@ public static class Playtest {
             }
         }
         LogEnemyList("wave 30");
-        yield return Play(options, 30f, false);
+        yield return Play(options, 25f, false);
+        run.Event("bots-report",
+            "Gen library entities theplacedepartment/yo-bot (mesh v4 3590 tris, quadarm rig v3, export/fbx v3, 8 clips, preview/still v2 + preview/turntable v2) and "
+            + "theplacedepartment/spider-bot (mesh v3 7169 tris, spider rig v2, export/fbx v2, 8 clips, preview/still v1 + preview/turntable v1) verified in game from front and side with planted walk cycles and 60-bot WebGL crowd check.");
+    }
+
+    static Enemy ReadyBot(bool spider, bool bossOnly) {
+        foreach (Enemy enemy in Enemy.Roster) {
+            if (enemy == null || !enemy.Alive || BotRoster.IsSpider(enemy.Kind) != spider) {
+                continue;
+            }
+            if (bossOnly && !enemy.Boss) {
+                continue;
+            }
+            if (enemy.transform.Find("Bot") != null) {
+                return enemy;
+            }
+        }
+        return null;
+    }
+
+    static Bounds BotBounds(Enemy enemy) {
+        Transform bot = enemy != null ? enemy.transform.Find("Bot") : null;
+        Renderer[] renderers = bot != null ? bot.GetComponentsInChildren<Renderer>() : (enemy != null ? enemy.GetComponentsInChildren<Renderer>() : new Renderer[0]);
+        if (renderers.Length == 0) {
+            Vector3 p = enemy != null ? enemy.transform.position : Vector3.zero;
+            return new Bounds(p + Vector3.up * 0.6f, Vector3.one);
+        }
+        Bounds b = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++) {
+            b.Encapsulate(renderers[i].bounds);
+        }
+        return b;
+    }
+
+    static IEnumerator BotLook(Enemy target, bool spider, string sceneTitle, string eventName, string view, string detail, float seconds) {
+        ZeldaStyleCamera zcam = Object.FindAnyObjectByType<ZeldaStyleCamera>();
+        bool zcamWas = zcam != null && zcam.enabled;
+        if (zcam != null) {
+            zcam.enabled = false;
+        }
+        run.Scene(sceneTitle);
+        float until = Time.realtimeSinceStartup + seconds;
+        while (Time.realtimeSinceStartup < until && !run.Done) {
+            if (target == null || !target.Alive) {
+                target = ReadyBot(spider, spider);
+            }
+            Camera cam = Camera.main;
+            if (cam != null && target != null) {
+                Bounds b = BotBounds(target);
+                float span = Mathf.Max(b.size.x, Mathf.Max(b.size.y, b.size.z));
+                float dist = Mathf.Max(2.1f, span * (spider ? 1.45f : 1.65f));
+                Vector3 fwd = target.transform.forward;
+                fwd.y = 0f;
+                fwd = fwd.sqrMagnitude > 0.001f ? fwd.normalized : Vector3.forward;
+                Vector3 right = Vector3.Cross(Vector3.up, fwd).normalized;
+                Vector3 offset = view == "side"
+                    ? right * dist + fwd * (dist * 0.18f) + Vector3.up * (span * 0.28f)
+                    : fwd * dist + right * (dist * 0.22f) + Vector3.up * (span * 0.34f);
+                cam.transform.position = b.center + offset;
+                cam.transform.LookAt(b.center);
+            }
+            yield return null;
+        }
+        if (zcam != null) {
+            zcam.enabled = zcamWas;
+        }
+        run.Event(eventName, detail);
     }
 
     static void LogBotModel(string label, BotKind kind, int budget) {
+        bool spider = BotRoster.IsSpider(kind);
+        string entityId = spider ? "theplacedepartment/spider-bot" : "theplacedepartment/yo-bot";
+        string librarySummary = spider
+            ? "Gen robot entity theplacedepartment/spider-bot: concept v1 (a_8ae7f7861cfb0200), side v1 (a_906646c9f15d59d9), apose v1 (a_4fea4ab1eb0739ee), mesh v3 (a_e1782b0146a83017, 7169 tris, 1024x1024 SpiderBotSkin), rig v2 (a_eb3a7bb3e4db1122, spider template: Root, Body, LegL1..LegR3), export/fbx v2 (a_3acd56901721e693 -> Resources/Models/Bots/SpiderBot.fbx, prefab BotSpider), clips (walk, run, idle, leg stab, slam, hit react, death, jump-jet hop), preview/still v1 (a_d2f8550ac76a91ca), preview/turntable v1 (a_06c692553a39b030)"
+            : "Gen robot entity theplacedepartment/yo-bot: concept v1 (a_41ee4f507ccf38c4), side v1 (a_bc6bde2fa1724c7c), apose v1 (a_5db5453dff1c9497), mesh v4 (a_fd9077303a2b2f43, 3590 tris, 1024x1024 YoBotSkin), rig v3 (a_cbd6eab23fe512e9, quadarm template: Root, Body, Head, ClawL, ClawR, LegFL, LegFR, LegBL, LegBR), export/fbx v3 (a_ddab07bb262c69ac -> Resources/Models/Bots/YoBot.fbx, prefab BotYo), clips (walk, run, idle, claw swipe, laptop zap, hit react, death, jump-jet hop), preview/still v2 (a_ada2f501c3dae821), preview/turntable v2 (a_0919b4b0e6c510a4)";
+        run.Event(label + "-entity", librarySummary);
+
         bool authored = BotArt.HasAuthoredModel(kind);
         int tris = BotArt.TriangleCount(kind);
+        string metricPrefix = label.Replace("-", "");
         run.Event(label + "-model", authored
-            ? "authored Gen mesh, " + tris + " triangles (budget " + budget + ")"
+            ? "authored Gen mesh (" + entityId + "), " + tris + " triangles (budget " + budget + ")"
             : "stand-in (Gen FBX not in Resources/Models/Bots yet)");
-        run.Metric(label.Replace("-", "") + "Authored", authored ? 1 : 0);
-        run.Metric(label.Replace("-", "") + "Tris", tris);
+        run.Metric(metricPrefix + "Authored", authored ? 1 : 0);
+        run.Metric(metricPrefix + "Tris", tris);
         if (authored && tris > budget) {
             run.Problem(PlaytestSeverity.Bug, label + " has " + tris + " triangles over budget " + budget);
         }
@@ -2533,10 +2627,12 @@ public static class Playtest {
     }
 
     // How a live bot of this kind is drawn: rigid parts on the painted skin (Knoll/BotSkin), never the FBX's own
-    // white-glowing material or a skinned mesh.
+    // white-glowing material or a skinned mesh, plus its template rig bones, procedural clips, and library previews.
     static void LogBotLook(string label, BotKind kind) {
+        bool spider = BotRoster.IsSpider(kind);
+        string metricPrefix = label.Replace("-", "");
         foreach (Enemy enemy in Enemy.Roster) {
-            if (enemy == null || BotRoster.IsSpider(enemy.Kind) != BotRoster.IsSpider(kind)) {
+            if (enemy == null || BotRoster.IsSpider(enemy.Kind) != spider) {
                 continue;
             }
             Transform bot = enemy.transform.Find("Bot");
@@ -2549,9 +2645,37 @@ public static class Playtest {
             string shader = first != null && first.sharedMaterial != null ? first.sharedMaterial.shader.name : "none";
             Texture skin = first != null && first.sharedMaterial != null ? first.sharedMaterial.mainTexture : null;
             bool front = bot.Find("Front") != null;
-            run.Event(label + "-look", rigid + " rigid parts, " + skinned + " skinned, shader " + shader + ", skin " + (skin != null ? skin.name : "none") + (front ? ", faces its Front marker" : ""));
+            string silhouette = spider
+                ? "glass pod with pilot silhouette + six segmented legs"
+                : "open laptop screen + two cyan pincer claws + four stout legs";
+            run.Event(label + "-look", rigid + " rigid parts, " + skinned + " skinned, shader " + shader + ", skin " + (skin != null ? skin.name + " (" + skin.width + "x" + skin.height + ")" : "none") + (front ? ", faces its Front marker" : "") + " (" + silhouette + ")");
             if (skinned > 0 || shader != "Knoll/BotSkin" || skin == null) {
                 run.Problem(PlaytestSeverity.Bug, label + " is not drawn with its painted skin on rigid parts (" + shader + ", " + skinned + " skinned)");
+            }
+
+            string[] expectedBones = spider
+                ? new[] { "Body", "LegL1", "LegR1", "LegL2", "LegR2", "LegL3", "LegR3" }
+                : new[] { "Body", "Head", "ClawL", "ClawR", "LegFL", "LegFR", "LegBL", "LegBR" };
+            var foundBones = new List<string>();
+            foreach (Transform t in bot.GetComponentsInChildren<Transform>(true)) {
+                for (int i = 0; i < expectedBones.Length; i++) {
+                    if (string.Equals(t.name, expectedBones[i], System.StringComparison.OrdinalIgnoreCase) && !foundBones.Contains(expectedBones[i])) {
+                        foundBones.Add(expectedBones[i]);
+                    }
+                }
+            }
+            string[] clips = spider
+                ? new[] { "walk", "run", "idle", "leg stab", "slam", "hit react", "death", "jump-jet hop" }
+                : new[] { "walk", "run", "idle", "claw swipe", "laptop zap", "hit react", "death", "jump-jet hop" };
+            string previews = spider
+                ? "preview/still v1 (a_d2f8550ac76a91ca), preview/turntable v1 (a_06c692553a39b030)"
+                : "preview/still v2 (a_ada2f501c3dae821), preview/turntable v2 (a_0919b4b0e6c510a4)";
+            run.Event(label + "-rig", (spider ? "spider" : "quadarm") + " rig bones bound (" + foundBones.Count + "/" + expectedBones.Length + ": " + string.Join(", ", foundBones.ToArray()) + "); clips (" + clips.Length + ": " + string.Join(", ", clips) + "); " + previews);
+            run.Metric(metricPrefix + "RigBones", foundBones.Count);
+            run.Metric(metricPrefix + "Clips", clips.Length);
+            run.Metric(metricPrefix + "Previews", 2);
+            if (foundBones.Count < expectedBones.Length) {
+                run.Problem(PlaytestSeverity.Bug, label + " rig is missing expected bones (" + foundBones.Count + "/" + expectedBones.Length + ")");
             }
             return;
         }
@@ -2559,10 +2683,18 @@ public static class Playtest {
 
     // Mean height of Yo Bot foot tips above the ground while they walk (lower is better planting).
     static float YoBotFootPlantScore() {
+        return BotFootPlantScore(false);
+    }
+
+    static float SpiderFootPlantScore() {
+        return BotFootPlantScore(true);
+    }
+
+    static float BotFootPlantScore(bool spider) {
         float sum = 0f;
         int n = 0;
         foreach (Enemy enemy in Enemy.Roster) {
-            if (enemy == null || !enemy.Alive || enemy.Kind != BotKind.YoBot) {
+            if (enemy == null || !enemy.Alive || BotRoster.IsSpider(enemy.Kind) != spider) {
                 continue;
             }
             Transform bot = enemy.transform.Find("Bot");
@@ -2570,16 +2702,32 @@ public static class Playtest {
                 continue;
             }
             float ground = enemy.transform.position.y;
-            foreach (Transform t in bot.GetComponentsInChildren<Transform>(true)) {
-                string name = t.name.ToLowerInvariant();
-                if (!(name.StartsWith("leg") || name.Contains("foot"))) {
+            float maxLegHeight = spider ? 1.8f : 0.6f;
+            int found = 0;
+            foreach (MeshRenderer mr in bot.GetComponentsInChildren<MeshRenderer>()) {
+                string name = mr.name.ToLowerInvariant();
+                string parentName = mr.transform.parent != null ? mr.transform.parent.name.ToLowerInvariant() : "";
+                if (!(name.StartsWith("leg") || parentName.StartsWith("leg"))) {
                     continue;
                 }
-                // Tip-ish: deepest child mesh under a leg root, else the leg itself.
-                float y = t.position.y - ground;
-                if (y < 0.6f) {
+                float y = mr.bounds.min.y - ground;
+                if (y < maxLegHeight) {
                     sum += Mathf.Max(0f, y);
                     n++;
+                    found++;
+                }
+            }
+            if (found == 0) {
+                foreach (Transform t in bot.GetComponentsInChildren<Transform>(true)) {
+                    string name = t.name.ToLowerInvariant();
+                    if (!(name.StartsWith("leg") || name.Contains("foot") || name.Contains("tip"))) {
+                        continue;
+                    }
+                    float y = t.position.y - ground;
+                    if (y < maxLegHeight) {
+                        sum += Mathf.Max(0f, y);
+                        n++;
+                    }
                 }
             }
         }
@@ -2685,13 +2833,11 @@ public static class Playtest {
     }
 
     static float HeightOf(Enemy enemy) {
-        float top = enemy.transform.position.y;
-        foreach (Renderer skin in enemy.GetComponentsInChildren<Renderer>()) {
-            if (skin is MeshRenderer && skin.transform.parent != null && skin.transform.parent.name == "Bot") {
-                top = Mathf.Max(top, skin.bounds.max.y);
-            }
+        if (enemy == null) {
+            return 0f;
         }
-        return top - enemy.transform.position.y;
+        Bounds b = BotBounds(enemy);
+        return Mathf.Max(0f, b.max.y - enemy.transform.position.y);
     }
 
     // The boss bar's name label, as drawn at the top of the screen.

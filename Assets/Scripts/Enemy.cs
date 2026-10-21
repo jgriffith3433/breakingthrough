@@ -354,8 +354,8 @@ public class Enemy : MonoBehaviour
         maxFlightInterval = minFlightInterval + Random.Range(0.5f, 1.8f);
         juker = def.Kind == BotKind.YoBot ? Random.value < 0.55f : def.Weave && Random.value < 0.7f;
         charger = def.Charge;
-        // Every Yo Bot gets its own paint job; the bigger kinds keep their authored colors.
-        if (def.Kind == BotKind.YoBot)
+        // Authored Yo Bots keep their gunmetal/cyan skin and share one instanced material; stand-in Yo Bots get a random coat.
+        if (def.Kind == BotKind.YoBot && !BotArt.HasAuthoredModel(BotKind.YoBot))
         {
             modelTint = RandomPaint();
             modelTintAmount = 0.28f;

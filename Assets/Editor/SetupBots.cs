@@ -70,6 +70,11 @@ static class SetupBots
         Build(force: true);
     }
 
+    public static void EnsureBuiltForDeploy()
+    {
+        Build(force: true);
+    }
+
     static void Run()
     {
         if (EditorApplication.isCompiling || EditorApplication.isUpdating || EditorApplication.isPlayingOrWillChangePlaymode)
