@@ -548,6 +548,7 @@ public static class WebGlBuild
 
     public static void BuildWebGLTo(string buildPath)
     {
+        SetupWallit.EnsureBuiltForDeploy();
         if (Directory.Exists(buildPath))
         {
             Directory.Delete(buildPath, true);
