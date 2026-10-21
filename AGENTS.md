@@ -2,6 +2,15 @@
 
 Unity 6.3 LTS (`6000.3.7f1`), built-in render pipeline, old Input Manager (`activeInputHandler` 0). `README.md` explains how the game plays. This file explains how to change it without breaking it.
 
+## The cast
+
+The Place Department: Wallit defends Slice, a pianist, from waves of Yo Bots and Spider Bots.
+
+- **Wallit** is the player: a wallet-bodied batter with a wooden bat. He talks money ("Pay up.").
+- **Slice** is the goth pianist at the piano, the one thing to protect. She keeps a scalpel knife for bots that get close. Cool and clipped ("Clean.").
+- **Yo Bots** are the chirpy small robots ("Uploading victory."); **Spider Bots** are the big ones with leg stabs. Warrok, the bow and the birds are retired: don't write them into new content, lines or docs.
+- The menu key art (`Assets/Resources/UI/MenuArt.png`) shows Wallit and his bat in front, Slice at the piano behind, and bots closing in.
+
 The player is J. Prefer editing the scripts directly. Do not commit unless asked.
 
 ## Do not change
@@ -10,7 +19,7 @@ The player is J. Prefer editing the scripts directly. Do not commit unless asked
 - `Library/`, `Temp/`, `obj/`.
 - `Packages/manifest.json` must not gain `com.unity.purchasing`.
 - Existing files in `Assets/Resources/Sfx/`. Do not regenerate them.
-- The piano pirate and the bow textures, unless the task is about them.
+- Slice's piano and Wallit's bat and models (`Assets/Art/Slice`, `Assets/Art/Wallit`), unless the task is about them. The old pirate and bow textures are gone; don't bring them back.
 - Retired `UpgradeId` slots 2, 3, 5, 7 and 8. Never renumber or reuse them, because saved ranks are packed by index.
 - J's standing art rules:
   - No camera shake, except the bat's small contact jolt (`ZeldaStyleCamera.Shake`, called only from `BatEquipment`), which J asked for with the bat on 2026-10-19. Keep it that small and don't add others.
@@ -30,7 +39,7 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 | Bot behavior, health, status, elites (`BotTrait`), drones, golden Yo Bot, bosses, the claw swipe and leg stab | `Enemy.cs` (`ApplyBot`, `MakeElite`, `MakeGolden`, `MakeBoss`, `TickStatus`, `AnimateModel`) |
 | Anything that damages a bot | `Enemy.Damage(amount, DamageKind, crit)`. The bat goes through `Combat.BatHit` (`DamageKind.Bat`), so crits, marks, executes, fire, frost and lightning apply. `Enemy.Hit` is one plain blow at base strength, used by spikes, towers and stomps. Deaths go through `Enemy.Die` → `Combat.OnKill` (bolts, chests, bombs, streak, run log). Shoving a bot is `Enemy.Knock(velocity, airSeconds)` |
 | The bat: combo, ground smash, home run, auto swing, facing, the stand-in bat | `BatEquipment.cs` (on the player; the scene's old `BowEquipment` slot adds it and switches off). Its numbers are the `Bat...`, `Smash...`, `Charge...` and `HomeRun...` values in `Tuning.cs` |
-| Lock-on | `ZeldaStyleCamera.AcquireTarget`: hold Shift for the nearest bird in `LockReach()` from `Enemy.Roster`; it sticks to that bird; right click or Tab moves it to the next nearest |
+| Lock-on | `ZeldaStyleCamera.AcquireTarget`: hold Shift for the nearest bot in `LockReach()` from `Enemy.Roster`; it sticks to that bird; right click or Tab moves it to the next nearest |
 | An in-run boon | `BoonId` and a row in `RunBoons.All`, **in enum order**, because the array is indexed by the enum. Read the boon's rank where it acts: `Combat` for hits and kills, `BatEquipment` for swing behavior, `BoonEffects` for things that tick on their own. An evolution uses `E(...)` and names two parents that have max ranks. The bat boons kept their bow-era `BoonId` names (`Heavy` is Corked Bat, `SplitShot` Wide Arc, `Volley` Grand Slam, `Homing` Long Ball...; the enum comments say which), because analytics reports them by id: rename the display name, never the id. A boon that changes the bat gets a mark in `UpgradeLook.BatMarks` |
 | Level-up cards | `LevelUpScreen.cs` |
 | XP bar, streak counter, boss bar, boon list | `RunHud.cs` |
@@ -122,7 +131,7 @@ While Unity is playing, script edits do not compile. Leave play mode first. Pref
 ## Testing and balance
 
 - **Never write to J's save from a test.** Call `MetaProgress.EnterSandbox(freshRanks)` first. `DevAutopilot` (F9) does this itself. `PlayerPrefs` writes from tooling are also blocked by the session's safety rules.
-- **Autopilot:** `DevAutopilot` is a perfect batter at the bird nearest the piano (it doesn't walk). Read its `[RunLog]` lines in the console or `runlog.csv`. It is easier than real play, so treat its results as an upper bound.
+- **Autopilot:** `DevAutopilot` is a perfect batter at the bot nearest the piano (it doesn't walk). Read its `[RunLog]` lines in the console or `runlog.csv`. It is easier than real play, so treat its results as an upper bound.
 - **Restore project settings after tests.** Setting `Application.runInBackground` during play writes `runInBackground: 1` into `ProjectSettings.asset`, and quality changes can stick too. Before handing back, check `git diff ProjectSettings/` and restore anything a test changed.
 - **The game view only updates while Unity is focused or set to run in the background.** If `Time.time` stops advancing during an MCP session, that is why.
 
@@ -165,10 +174,10 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
   (`analytics-config` once, with the product, build and env, then one `analytics` event each; see Analytics).
 - **Real input:** gameplay reads keys and the mouse through `PlayInput` (`Assets/Scripts/PlayInput.cs`), which is
   `UnityEngine.Input` plus whatever the bot holds. Use `PlayInput.GetKey...` in new gameplay input code, or the bot
-  can't press it. The bot walks with WASD to the nearest bird within guard range of the musician, holds Shift
+  can't press it. The bot walks with WASD to the nearest bot within guard range of the musician, holds Shift
   (lock-on), clicks the left button for one frame per swing (a longer hold winds up a home run), walks back to the
-  piano when the birds are gone, presses F for climbers, Enter to skip breaks and 1-3 for cards. Every time the
-  lock lands on a bird it checks that it is the nearest (`lock-on` events; a warning if not). It plays in `MetaProgress.EnterSandbox(true)`, so it never
+  piano when the bots are gone, presses F for climbers, Enter to skip breaks and 1-3 for cards. Every time the
+  lock lands on a bot it checks that it is the nearest (`lock-on` events; a warning if not). It plays in `MetaProgress.EnterSandbox(true)`, so it never
   touches the save.
 - **Report:** wave, kills, damage, swings, hits, hitRate, finishers, smashHits, homeRuns, homeRunKnocks,
   knockedBack, lockNearest, lockWrong, level, levelUps, musician HP, coins, run seconds and fps. `bat` lines from
