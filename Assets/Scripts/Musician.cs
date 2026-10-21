@@ -2,15 +2,29 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-// Slice, at the piano (the pirate pianist's model stands in until hers lands). The bots are here for her. The run
-// ends when she does. She keeps a small knife: a bot in reach gets her up off the bench for a stab, and after a beat
-// with nothing near she sits back down and plays. The player is still the one defending her.
+// Slice, at the piano. The bots are here for her. The run ends when she does. She keeps her scalpel on her: a bot in
+// reach gets her up off the bench for a stab or backhand slash, and after a beat with nothing near she sits back down
+// and plays. The player is still the one defending her.
 public class Musician : MonoBehaviour {
     public const int BaseHealth = 100;
     public const string Name = "Slice";
     public const float StabReach = 1.8f;
     public const float StabCooldown = 2.5f;
     const float SitAfter = 1.2f;
+    const float DefeatDuration = 1.65f;
+
+    public const int CLIP_PIANO = 0;
+    public const int CLIP_STAND_UP = 1;
+    public const int CLIP_STAB = 2;
+    public const int CLIP_SLASH = 3;
+    public const int CLIP_SIT_DOWN = 4;
+    public const int CLIP_IDLE = 5;
+    public const int CLIP_HURT = 6;
+    public const int CLIP_DEFEAT = 7;
+
+    static readonly string[] ClipNames = {
+        "piano", "standUp", "stab", "slash", "sitDown", "idle", "hurt", "defeat"
+    };
 
     public static Musician Instance { get; private set; }
     public int MaxHealth { get; private set; } = BaseHealth;
@@ -42,10 +56,50 @@ public class Musician : MonoBehaviour {
     public bool LastStabBig { get; private set; }
     public float LastStabHealthBefore { get; private set; }
     public float LastStabHealthAfter { get; private set; }
+    public string LastStabClip { get; private set; } = "";
     public string Title { get { return title != null ? title.text : ""; } }
-    Transform pirate;
+
+    // Animation state & diagnostics for playtest verification.
+    readonly int[] clipCounts = new int[8];
+    public int CurrentClip { get; private set; } = CLIP_PIANO;
+    public string CurrentClipName {
+        get {
+            return CurrentClip >= 0 && CurrentClip < ClipNames.Length ? ClipNames[CurrentClip] : "unknown";
+        }
+    }
+    public int StandUpClipsPlayed { get { return clipCounts[CLIP_STAND_UP]; } }
+    public int SitDownClipsPlayed { get { return clipCounts[CLIP_SIT_DOWN]; } }
+    public int StabClipsPlayed { get { return clipCounts[CLIP_STAB]; } }
+    public int SlashClipsPlayed { get { return clipCounts[CLIP_SLASH]; } }
+    public int HurtFlinches { get; private set; }
+    public int Defeats { get; private set; }
+    public int KnifeHitFrames { get; private set; }
+    public bool Defeating { get { return defeating; } }
+    public bool DefeatPlayedBeforeGameOver { get; private set; }
+    public bool HasSliceRig { get { return hasSliceClips && slice != null && pianoHands != null; } }
+    public bool MusicPlaying {
+        get {
+            AudioSource src = GetComponent<AudioSource>();
+            return src != null && src.clip != null && src.isPlaying;
+        }
+    }
+    public bool HandsNearKeys {
+        get {
+            if (handL == null || handR == null) {
+                return slice != null;
+            }
+            Vector3 l = transform.InverseTransformPoint(handL.position);
+            Vector3 r = transform.InverseTransformPoint(handR.position);
+            return l.y > 0.5f && l.y < 0.95f && l.z > 0.05f && l.z < 0.55f
+                && r.y > 0.5f && r.y < 0.95f && r.z > 0.05f && r.z < 0.55f;
+        }
+    }
+
+    Transform slice;
     Animator pianoHands;
     Transform hips;
+    Transform handL;
+    Transform handR;
     Transform upperLegL;
     Transform upperLegR;
     Transform lowerLegL;
@@ -54,8 +108,8 @@ public class Musician : MonoBehaviour {
     Transform footR;
     Transform knife;
     LineRenderer slash;
-    Vector3 pirateBase;
-    Quaternion pirateTurn;
+    Vector3 sliceBase;
+    Quaternion sliceTurn;
     Vector3 threatDir;
     float stand;
     float quietFor;
@@ -64,6 +118,19 @@ public class Musician : MonoBehaviour {
     float slashLeft;
     Vector3 slashCenter;
     Vector3 slashDir;
+
+    bool hasSliceClips;
+    bool standingUp;
+    bool sittingDown;
+    bool nextIsSlash;
+    int strikeClip = CLIP_STAB;
+    Enemy strikeTarget;
+    float strikeLeft;
+    float strikeHitIn;
+    bool strikeHitDone;
+    float hurtLeft;
+    bool defeating;
+    float defeatLeft;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap() {
@@ -80,17 +147,65 @@ public class Musician : MonoBehaviour {
         if (SceneManager.GetActiveScene().name != MetaProgress.GameScene) {
             return;
         }
-        if (FindAnyObjectByType<Musician>() != null) {
-            return;
-        }
         GameObject recital = GameObject.Find("PianoRecital");
         if (recital == null) {
-            recital = GameObject.Find("Pirate");
+            GameObject oldPirate = GameObject.Find("Pirate");
+            if (oldPirate != null) {
+                recital = oldPirate.transform.parent != null ? oldPirate.transform.parent.gameObject : oldPirate;
+                recital.name = "PianoRecital";
+            }
+        }
+        if (recital == null) {
+            GameObject prefab = Resources.Load<GameObject>("Slice/PianoRecital");
+            if (prefab != null) {
+                recital = Instantiate(prefab, Vector3.zero, Quaternion.identity);
+                recital.name = "PianoRecital";
+            }
         }
         if (recital == null) {
             return;
         }
-        recital.AddComponent<Musician>();
+        EnsureSliceOn(recital);
+        if (recital.GetComponent<Musician>() == null) {
+            recital.AddComponent<Musician>();
+        }
+    }
+
+    static void EnsureSliceOn(GameObject recital) {
+        if (recital == null) {
+            return;
+        }
+        Transform oldPirate = recital.transform.Find("Pirate");
+        Transform sliceChild = recital.transform.Find("Slice");
+        if (sliceChild == null) {
+            GameObject slicePrefab = Resources.Load<GameObject>("Slice/Slice");
+            if (slicePrefab != null) {
+                GameObject instance = Instantiate(slicePrefab, recital.transform);
+                instance.name = "Slice";
+                instance.transform.localPosition = Vector3.zero;
+                instance.transform.localRotation = Quaternion.identity;
+                instance.transform.localScale = Vector3.one;
+                sliceChild = instance.transform;
+            }
+        }
+        if (oldPirate != null && sliceChild != null) {
+            Destroy(oldPirate.gameObject);
+        }
+        Transform bench = recital.transform.Find("PianoBench");
+        if (bench != null) {
+            bench.localPosition = new Vector3(0f, 0f, -0.02f);
+            bench.localRotation = Quaternion.identity;
+        }
+        Transform piano = recital.transform.Find("Piano");
+        if (piano != null) {
+            piano.localPosition = new Vector3(0f, 0f, 0.10f);
+            piano.localRotation = Quaternion.identity;
+        }
+        AudioSource audio = recital.GetComponent<AudioSource>();
+        if (audio != null && audio.clip != null && !audio.isPlaying) {
+            audio.loop = true;
+            audio.Play();
+        }
     }
 
     void Awake() {
@@ -106,8 +221,9 @@ public class Musician : MonoBehaviour {
     }
 
     void Start() {
+        EnsureSliceOn(gameObject);
         BuildBar();
-        FindPirate();
+        FindSlice();
     }
 
     void OnDestroy() {
@@ -116,7 +232,7 @@ public class Musician : MonoBehaviour {
         }
     }
 
-    // by: the bird that pecked, for analytics (the cause when he falls).
+    // by: the bot that struck her, for analytics (the cause when she falls).
     public void Hurt(int amount, Enemy by = null) {
         if (!Alive || amount <= 0) {
             return;
@@ -131,12 +247,68 @@ public class Musician : MonoBehaviour {
         flinch = 1f;
         GameAudio.Play("hit", 0.45f);
         RefreshBar();
-        if (!Alive) {
-            WaveDirector director = FindAnyObjectByType<WaveDirector>();
-            if (director != null) {
-                director.MusicianDown();
-            }
+        if (Alive) {
+            OnHurtFlinch();
+        } else {
+            BeginDefeat();
         }
+    }
+
+    void OnHurtFlinch() {
+        HurtFlinches++;
+        hurtLeft = 0.58f;
+        if (strikeLeft <= 0f && !standingUp && !sittingDown) {
+            PlayClip(CLIP_HURT, true);
+        }
+    }
+
+    void BeginDefeat() {
+        if (defeating) {
+            return;
+        }
+        defeating = true;
+        defeatLeft = DefeatDuration;
+        Defeats++;
+        strikeLeft = 0f;
+        strikeTarget = null;
+        standingUp = false;
+        sittingDown = false;
+        hurtLeft = 0f;
+        if (knife != null) {
+            knife.gameObject.SetActive(false);
+        }
+        AudioSource music = GetComponent<AudioSource>();
+        if (music != null && music.isPlaying) {
+            music.Stop();
+        }
+        if (pianoHands != null) {
+            pianoHands.updateMode = AnimatorUpdateMode.UnscaledTime;
+            pianoHands.speed = 1f;
+        }
+        PlayClip(CLIP_DEFEAT, true);
+    }
+
+    public void ReviveForWave() {
+        defeating = false;
+        defeatLeft = 0f;
+        if (Health <= 0) {
+            Health = MaxHealth;
+        }
+        if (pianoHands != null) {
+            pianoHands.updateMode = AnimatorUpdateMode.Normal;
+            pianoHands.speed = 1f;
+        }
+        AudioSource music = GetComponent<AudioSource>();
+        if (music != null && music.clip != null && !music.isPlaying) {
+            music.Play();
+        }
+        stand = 0f;
+        standingUp = false;
+        sittingDown = false;
+        strikeLeft = 0f;
+        strikeTarget = null;
+        PlayClip(CLIP_PIANO, true);
+        RefreshBar();
     }
 
     public void Heal(int amount) {
@@ -156,6 +328,16 @@ public class Musician : MonoBehaviour {
     }
 
     void Update() {
+        if (defeating && !WaveDirector.IsLost) {
+            defeatLeft -= Time.unscaledDeltaTime;
+            if (defeatLeft <= 0f) {
+                DefeatPlayedBeforeGameOver = true;
+                WaveDirector director = FindAnyObjectByType<WaveDirector>();
+                if (director != null) {
+                    director.MusicianDown();
+                }
+            }
+        }
         TickKnife();
         if (barScaler != null && barStamp != UiFit.Stamp) {
             LayoutBar();
@@ -291,10 +473,13 @@ public class Musician : MonoBehaviour {
         }
     }
 
-    // ---------------------------------------------------------------- the knife
+    // ---------------------------------------------------------------- Slice & her knife
 
-    void FindPirate() {
-        Transform found = transform.Find("Pirate");
+    void FindSlice() {
+        Transform found = transform.Find("Slice");
+        if (found == null) {
+            found = transform.Find("Pirate");
+        }
         pianoHands = found != null ? found.GetComponent<Animator>() : GetComponentInChildren<Animator>();
         if (found == null && pianoHands != null) {
             found = pianoHands.transform;
@@ -302,23 +487,127 @@ public class Musician : MonoBehaviour {
         if (found == null) {
             return;
         }
-        pirate = found;
-        pirateBase = pirate.localPosition;
-        pirateTurn = pirate.localRotation;
-        if (pianoHands != null && pianoHands.isHuman) {
-            hips = pianoHands.GetBoneTransform(HumanBodyBones.Hips);
-            upperLegL = pianoHands.GetBoneTransform(HumanBodyBones.LeftUpperLeg);
-            upperLegR = pianoHands.GetBoneTransform(HumanBodyBones.RightUpperLeg);
-            lowerLegL = pianoHands.GetBoneTransform(HumanBodyBones.LeftLowerLeg);
-            lowerLegR = pianoHands.GetBoneTransform(HumanBodyBones.RightLowerLeg);
-            footL = pianoHands.GetBoneTransform(HumanBodyBones.LeftFoot);
-            footR = pianoHands.GetBoneTransform(HumanBodyBones.RightFoot);
-            BuildKnife(pianoHands.GetBoneTransform(HumanBodyBones.RightHand));
+        slice = found;
+        sliceBase = slice.localPosition;
+        sliceTurn = slice.localRotation;
+        if (pianoHands != null) {
+            pianoHands.applyRootMotion = false;
+            pianoHands.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            if (pianoHands.GetComponent<SliceAnimRelay>() == null) {
+                pianoHands.gameObject.AddComponent<SliceAnimRelay>();
+            }
+            hasSliceClips = HasClipParameter(pianoHands);
+            EnsureClipEvents(pianoHands);
+            if (pianoHands.isHuman) {
+                hips = pianoHands.GetBoneTransform(HumanBodyBones.Hips);
+                handL = pianoHands.GetBoneTransform(HumanBodyBones.LeftHand);
+                handR = pianoHands.GetBoneTransform(HumanBodyBones.RightHand);
+                upperLegL = pianoHands.GetBoneTransform(HumanBodyBones.LeftUpperLeg);
+                upperLegR = pianoHands.GetBoneTransform(HumanBodyBones.RightUpperLeg);
+                lowerLegL = pianoHands.GetBoneTransform(HumanBodyBones.LeftLowerLeg);
+                lowerLegR = pianoHands.GetBoneTransform(HumanBodyBones.RightLowerLeg);
+                footL = pianoHands.GetBoneTransform(HumanBodyBones.LeftFoot);
+                footR = pianoHands.GetBoneTransform(HumanBodyBones.RightFoot);
+            }
+        }
+        knife = FindDeepChild(slice, "Knife");
+        if (knife == null && handR != null) {
+            BuildKnife(handR);
+        }
+        if (knife != null) {
+            knife.gameObject.SetActive(false);
         }
         BuildSlash();
+        PlayClip(CLIP_PIANO, true);
     }
 
-    // Her small knife (the scalpel), only out while she is up.
+    static bool HasClipParameter(Animator animator) {
+        if (animator == null || animator.runtimeAnimatorController == null) {
+            return false;
+        }
+        foreach (AnimatorControllerParameter param in animator.parameters) {
+            if (param.name == "Clip" && param.type == AnimatorControllerParameterType.Int) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static void EnsureClipEvents(Animator animator) {
+        if (animator == null || animator.runtimeAnimatorController == null) {
+            return;
+        }
+        AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
+        if (clips == null) {
+            return;
+        }
+        for (int i = 0; i < clips.Length; i++) {
+            AnimationClip clip = clips[i];
+            if (clip == null) {
+                continue;
+            }
+            float hitNormalized = clip.name == "stab" ? 0.35f : clip.name == "slash" ? 0.45f : -1f;
+            if (hitNormalized < 0f) {
+                continue;
+            }
+            bool exists = false;
+            AnimationEvent[] existing = clip.events;
+            for (int e = 0; e < existing.Length; e++) {
+                if (existing[e].functionName == "OnSliceKnifeHit") {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                var ev = new AnimationEvent {
+                    functionName = "OnSliceKnifeHit",
+                    time = Mathf.Clamp(clip.length * hitNormalized, 0.05f, Mathf.Max(0.05f, clip.length - 0.05f))
+                };
+                clip.AddEvent(ev);
+            }
+        }
+    }
+
+    static Transform FindDeepChild(Transform parent, string childName) {
+        if (parent == null) {
+            return null;
+        }
+        for (int i = 0; i < parent.childCount; i++) {
+            Transform child = parent.GetChild(i);
+            if (child.name == childName) {
+                return child;
+            }
+            Transform found = FindDeepChild(child, childName);
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
+    }
+
+    void PlayClip(int clip, bool restart = false) {
+        if (clip < 0 || clip >= ClipNames.Length) {
+            return;
+        }
+        bool changed = CurrentClip != clip;
+        CurrentClip = clip;
+        if (changed || restart) {
+            clipCounts[clip]++;
+        }
+        if (pianoHands == null) {
+            return;
+        }
+        if (hasSliceClips) {
+            pianoHands.speed = 1f;
+            pianoHands.SetInteger("Clip", clip);
+            if (changed || restart) {
+                float fade = clip == CLIP_STAB || clip == CLIP_SLASH || clip == CLIP_HURT || clip == CLIP_DEFEAT ? 0.06f : 0.12f;
+                pianoHands.CrossFadeInFixedTime(ClipNames[clip], fade, 0, 0f);
+            }
+        }
+    }
+
+    // Fallback stand-in knife if the model has no Knife child.
     void BuildKnife(Transform hand) {
         if (hand == null) {
             return;
@@ -363,7 +652,18 @@ public class Musician : MonoBehaviour {
     }
 
     void TickKnife() {
-        if (pirate == null || Time.deltaTime <= 0f) {
+        if (slice == null) {
+            return;
+        }
+        if (defeating) {
+            if (knife != null) {
+                knife.gameObject.SetActive(false);
+            }
+            lunge = Mathf.MoveTowards(lunge, 0f, Time.unscaledDeltaTime * 5f);
+            TickSlash(Time.unscaledDeltaTime);
+            return;
+        }
+        if (Time.deltaTime <= 0f) {
             return;
         }
         float dt = Time.deltaTime;
@@ -378,18 +678,62 @@ public class Musician : MonoBehaviour {
         } else {
             quietFor += dt;
         }
-        bool up = near != null || quietFor < SitAfter && stand > 0f;
-        stand = Mathf.MoveTowards(stand, up ? 1f : 0f, dt * (up ? 4f : 2f));
-        stabIn -= dt;
-        if (near != null && Standing && stabIn <= 0f) {
-            Stab(near);
+
+        bool wantUp = near != null || strikeLeft > 0f || (stand > 0f && quietFor < SitAfter);
+        if (wantUp && !standingUp && stand < 1f) {
+            standingUp = true;
+            sittingDown = false;
+            hurtLeft = 0f;
+            PlayClip(CLIP_STAND_UP, true);
+        } else if (!wantUp && !sittingDown && stand > 0f && strikeLeft <= 0f) {
+            sittingDown = true;
+            standingUp = false;
+            hurtLeft = 0f;
+            PlayClip(CLIP_SIT_DOWN, true);
         }
+
+        stand = Mathf.MoveTowards(stand, wantUp ? 1f : 0f, dt * (wantUp ? 2.2f : 1.6f));
+        if (standingUp && stand >= 1f) {
+            standingUp = false;
+        }
+        if (sittingDown && stand <= 0f) {
+            sittingDown = false;
+            PlayClip(CLIP_PIANO, true);
+        }
+
+        stabIn -= dt;
+        if (strikeLeft > 0f) {
+            strikeLeft -= dt;
+            strikeHitIn -= dt;
+            if (!strikeHitDone && strikeHitIn <= 0f) {
+                ExecuteStrikeHit();
+            }
+            if (strikeLeft <= 0f) {
+                strikeTarget = null;
+            }
+        } else if (near != null && Standing && !sittingDown && stabIn <= 0f) {
+            BeginStrike(near);
+        } else if (hurtLeft > 0f) {
+            hurtLeft -= dt;
+            if (hurtLeft <= 0f) {
+                if (Standing && !sittingDown) {
+                    PlayClip(CLIP_IDLE, true);
+                } else if (Seated && !standingUp) {
+                    PlayClip(CLIP_PIANO, true);
+                }
+            }
+        } else if (Standing && !sittingDown && CurrentClip != CLIP_IDLE) {
+            PlayClip(CLIP_IDLE);
+        } else if (Seated && !standingUp && CurrentClip != CLIP_PIANO) {
+            PlayClip(CLIP_PIANO);
+        }
+
         lunge = Mathf.MoveTowards(lunge, 0f, dt * 5f);
-        if (pianoHands != null) {
+        if (pianoHands != null && !hasSliceClips) {
             pianoHands.speed = stand > 0.02f ? 0f : 1f;
         }
         if (knife != null) {
-            knife.gameObject.SetActive(stand > 0.3f);
+            knife.gameObject.SetActive(Alive && (stand > 0.15f || standingUp || strikeLeft > 0f));
         }
         TickSlash(dt);
     }
@@ -415,10 +759,47 @@ public class Musician : MonoBehaviour {
         return best;
     }
 
+    void BeginStrike(Enemy foe) {
+        bool useSlash = nextIsSlash;
+        nextIsSlash = !nextIsSlash;
+        strikeClip = useSlash ? CLIP_SLASH : CLIP_STAB;
+        strikeTarget = foe;
+        strikeHitDone = false;
+        strikeHitIn = useSlash ? 0.36f : 0.34f;
+        strikeLeft = useSlash ? 0.78f : 0.90f;
+        stabIn = StabCooldown + strikeHitIn;
+        hurtLeft = 0f;
+        if (foe != null) {
+            Vector3 to = foe.transform.position - transform.position;
+            to.y = 0f;
+            if (to.sqrMagnitude > 0.01f) {
+                threatDir = to.normalized;
+            }
+        }
+        PlayClip(strikeClip, true);
+        GameAudio.Play("batswing", 0.4f, useSlash ? 1.55f : 1.7f);
+    }
+
+    // Fired by the AnimationEvent on Slice's stab and slash clips (via SliceAnimRelay).
+    public void OnSliceKnifeHit() {
+        KnifeHitFrames++;
+        if (!strikeHitDone && (strikeLeft > 0f || strikeTarget != null)) {
+            ExecuteStrikeHit();
+        }
+    }
+
     // Small bots take a real stab; the big ones (Spider Bots, heavies, the Alpha) only get a flinch-cut and a shove.
     // Stage Hands sharpens it a little.
-    void Stab(Enemy foe) {
+    void ExecuteStrikeHit() {
+        if (strikeHitDone) {
+            return;
+        }
+        strikeHitDone = true;
         stabIn = StabCooldown;
+        Enemy foe = strikeTarget != null && strikeTarget.Alive ? strikeTarget : NearestInReach();
+        if (foe == null || !foe.Alive) {
+            return;
+        }
         bool big = foe.Boss || foe.IsHeavy || BotRoster.IsSpider(foe.Kind);
         float amount = Mathf.Max(1f, Combat.ArrowBase() * 0.6f) * (1f + 0.15f * MetaProgress.Rank(UpgradeId.StageHands));
         if (big) {
@@ -433,7 +814,6 @@ public class Musician : MonoBehaviour {
         slashCenter = transform.position + dir * 0.9f + Vector3.up * 1f;
         slashDir = dir;
         slashLeft = 1f;
-        GameAudio.Play("batswing", 0.4f, 1.7f);
         foe.Damage(amount, DamageKind.Blade, false);
         if (big) {
             foe.Knock(dir * 3.5f);
@@ -448,6 +828,7 @@ public class Musician : MonoBehaviour {
         LastStabBig = big;
         LastStabHealthBefore = before;
         LastStabHealthAfter = foe.Alive ? foe.Health01 : 0f;
+        LastStabClip = strikeClip == CLIP_SLASH ? "slash" : "stab";
     }
 
     void TickSlash(float dt) {
@@ -474,14 +855,19 @@ public class Musician : MonoBehaviour {
         slash.endColor = steel;
     }
 
-    // After the piano clip poses her each frame: up on her feet, turned to the bot, a step out and a lunge on the stab.
+    // After the Animator poses her each frame: when up on her feet, turn to the bot, step clear of the bench, and lunge on the hit.
     void LateUpdate() {
-        if (pirate == null) {
+        if (slice == null) {
+            return;
+        }
+        if (defeating) {
+            Vector3 backStep = Vector3.back * 0.42f;
+            slice.localPosition = sliceBase + backStep;
             return;
         }
         if (stand <= 0f) {
-            pirate.localPosition = pirateBase;
-            pirate.localRotation = pirateTurn;
+            slice.localPosition = sliceBase;
+            slice.localRotation = sliceTurn;
             return;
         }
         float w = Mathf.SmoothStep(0f, 1f, stand);
@@ -493,11 +879,14 @@ public class Musician : MonoBehaviour {
             step.z = 0f;
         }
         step = step.sqrMagnitude > 0.01f ? step.normalized : Vector3.back;
-        Quaternion face = local.sqrMagnitude > 0.01f ? Quaternion.LookRotation(local.normalized) : pirateTurn;
-        pirate.localRotation = Quaternion.Slerp(pirateTurn, face, w);
-        pirate.localPosition = pirateBase + step * (0.45f * w) + local.normalized * (0.22f * lunge);
+        Quaternion face = local.sqrMagnitude > 0.01f ? Quaternion.LookRotation(local.normalized) : sliceTurn;
+        slice.localRotation = Quaternion.Slerp(sliceTurn, face, w);
+        slice.localPosition = sliceBase + step * (0.45f * w) + local.normalized * (0.22f * lunge);
+        if (hasSliceClips) {
+            return;
+        }
         if (hips == null || footL == null || footR == null) {
-            pirate.localPosition += Vector3.up * 0.35f * w;
+            slice.localPosition += Vector3.up * 0.35f * w;
             return;
         }
         float feetBefore = Mathf.Min(footL.position.y, footR.position.y);
@@ -506,10 +895,10 @@ public class Musician : MonoBehaviour {
         Straighten(lowerLegL, footL, w);
         Straighten(lowerLegR, footR, w);
         float feetAfter = Mathf.Min(footL.position.y, footR.position.y);
-        pirate.position += Vector3.up * (feetBefore - feetAfter);
+        slice.position += Vector3.up * (feetBefore - feetAfter);
     }
 
-    // Turn a leg bone so the next joint hangs straight below it.
+    // Turn a leg bone so the next joint hangs straight below it (fallback when no stand/sit clips exist).
     static void Straighten(Transform bone, Transform next, float w) {
         if (bone == null || next == null) {
             return;
@@ -542,5 +931,15 @@ public class Musician : MonoBehaviour {
         rect.anchoredPosition = position;
         rect.sizeDelta = sizeDelta;
         return text;
+    }
+}
+
+// Attached to Slice's Animator child so AnimationEvents on stab and slash reach Musician on PianoRecital.
+public class SliceAnimRelay : MonoBehaviour {
+    public void OnSliceKnifeHit() {
+        Musician m = GetComponentInParent<Musician>();
+        if (m != null) {
+            m.OnSliceKnifeHit();
+        }
     }
 }

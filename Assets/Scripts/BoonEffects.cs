@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 
 // Boons that act on their own: whirling quills around the player, the piano's encore, second wind.
 public class BoonEffects : MonoBehaviour {
+    public static int EncorePulses { get; private set; }
     readonly List<Transform> blades = new List<Transform>();
     readonly Dictionary<Enemy, float> bladeCooldown = new Dictionary<Enemy, float>();
     readonly List<Enemy> expired = new List<Enemy>();
@@ -12,6 +13,10 @@ public class BoonEffects : MonoBehaviour {
     bool windUsed;
     int windWave = -1;
     Material bladeMat;
+
+    public static void BeginRun() {
+        EncorePulses = 0;
+    }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap() {
@@ -143,6 +148,7 @@ public class BoonEffects : MonoBehaviour {
             musician.Heal(1);
         }
         Vector3 at = musician.transform.position;
+        EncorePulses++;
         UpgradeLook.Ring(at + Vector3.up * 0.2f, radius, new Color(1f, 0.85f, 0.5f), 0.45f);
         Combat.Burst(at, radius, Combat.ArrowBase() * (0.8f + 0.4f * rank), DamageKind.Pulse, null);
         GameAudio.Play("stomp", 0.35f, 1.4f);
