@@ -112,6 +112,7 @@ public class CharacterMovement : MonoBehaviour {
         Transform existing = player.transform.Find("Wallit");
         if (existing != null && existing.gameObject.activeSelf) {
             existing.gameObject.tag = "playerchild";
+            BirdArt.CalmEmission(existing.gameObject);
             Animator existingAnim = existing.GetComponentInChildren<Animator>();
             if (existingAnim != null) {
                 if (existingAnim.gameObject.GetComponent<WallitAnimRelay>() == null) {
