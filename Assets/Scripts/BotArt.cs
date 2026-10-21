@@ -211,7 +211,7 @@ public static class BotArt {
             return mat;
         }
         Texture2D skin = Resources.Load<Texture2D>("Models/Bots/" + texture);
-        Shader shader = Shader.Find("Knoll/BotSkin");
+        Shader shader = Shader.Find("Knoll/BotSkin") ?? Resources.Load<Shader>("Shaders/BotSkin");
         if (skin != null && shader != null) {
             mat = new Material(shader);
             mat.name = texture + " " + key;
@@ -242,9 +242,6 @@ public static class BotArt {
         foreach (Animator animator in template.GetComponentsInChildren<Animator>(true)) {
             Object.DestroyImmediate(animator);
         }
-        foreach (SkinnedMeshRenderer skin in template.GetComponentsInChildren<SkinnedMeshRenderer>(true)) {
-            MakeRigid(skin);
-        }
         if (isSpider) {
             Quaternion turn = Quaternion.Euler(0f, 90f, 0f);
             foreach (Transform child in template.transform) {
@@ -252,11 +249,36 @@ public static class BotArt {
                 child.localRotation = turn * child.localRotation;
             }
         }
+        AlignRigAxes(template.transform);
+        foreach (SkinnedMeshRenderer skin in template.GetComponentsInChildren<SkinnedMeshRenderer>(true)) {
+            MakeRigid(skin);
+        }
         var front = new GameObject("Front");
         front.transform.SetParent(template.transform, false);
         front.transform.localPosition = new Vector3(0f, 0.4f, 0.6f);
         prepared[source] = template;
         return template;
+    }
+
+    // Gen's template armatures carry bone-shaft rotations on the limbs. Before baking each skinned part rigid onto
+    // its bone, align every bone's local axes with the bot's own axes (+X right, +Y up, +Z forward) while preserving
+    // its world pivot position, so Enemy's procedural walk and attack rotations swing on clean axes without changing
+    // the rest pose.
+    static void AlignRigAxes(Transform root) {
+        Transform robot = root.Find("Robot");
+        if (robot == null) {
+            return;
+        }
+        Transform[] all = robot.GetComponentsInChildren<Transform>(true);
+        var positions = new Vector3[all.Length];
+        for (int i = 0; i < all.Length; i++) {
+            positions[i] = all[i].position;
+        }
+        Quaternion basis = root.rotation;
+        for (int i = 0; i < all.Length; i++) {
+            all[i].rotation = basis;
+            all[i].position = positions[i];
+        }
     }
 
     static void MakeRigid(SkinnedMeshRenderer skin) {
