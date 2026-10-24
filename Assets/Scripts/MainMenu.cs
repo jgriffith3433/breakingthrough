@@ -27,6 +27,17 @@ public class MainMenu : MonoBehaviour {
     GameObject canvasRoot;
     UiMode builtMode;
     int builtStamp = -1;
+    bool builtOnce;
+    float builtAt;
+    Image artShade;
+    RectTransform drift1;
+    RectTransform drift2;
+    RectTransform copier;
+
+    // One palette for the whole menu: ledger gold for headings and money, paper cream for text.
+    static readonly Color Gold = new Color(1f, 0.84f, 0.35f);
+    static readonly Color Paper = new Color(1f, 0.96f, 0.86f);
+    static readonly Color Stamp = new Color(0.7f, 0.9f, 1f, 0.9f);
 
     // The Play and Settings buttons, for the playtest's touch and settings scenarios.
     public Button PlayButton { get; private set; }
@@ -67,6 +78,7 @@ public class MainMenu : MonoBehaviour {
             float zoom = 0.94f + Mathf.Sin(t * 0.05f) * 0.02f;
             art.uvRect = new Rect((1f - zoom) * 0.5f + Mathf.Sin(t * 0.07f) * 0.02f, (1f - zoom) * 0.5f + Mathf.Cos(t * 0.05f) * 0.01f, zoom, zoom);
         }
+        TickAmbient();
         if (flash > 0f && flashRow >= 0 && flashRow < rows.Length && rows[flashRow] != null) {
             flash -= Time.deltaTime;
             rows[flashRow].color = Color.Lerp(new Color(0.1f, 0.09f, 0.13f, 0.78f), new Color(0.55f, 0.4f, 0.12f, 0.9f), Mathf.Clamp01(flash));
@@ -131,47 +143,56 @@ public class MainMenu : MonoBehaviour {
             art.texture = artTexture;
             art.raycastTarget = false;
             Stretch(art.rectTransform);
-            var shade = Image(canvasGo.transform, new Color(0.02f, 0.03f, 0.06f, 0.25f));
-            Stretch(shade.rectTransform);
+            artShade = Image(canvasGo.transform, new Color(0.02f, 0.03f, 0.06f, 0.25f));
+            Stretch(artShade.rectTransform);
         }
+        BuildAmbient(canvasGo.transform);
+        // The entrance plays once; turning a phone rebuilds the menu without replaying it.
+        builtAt = builtOnce ? -10f : Time.unscaledTime;
+        builtOnce = true;
 
         if (builtMode != UiMode.Desktop) {
             BuildCompact(canvasGo.transform, builtMode == UiMode.Tall);
             return;
         }
 
-        var left = Panel(canvasGo.transform, new Color(0.03f, 0.04f, 0.08f, 0.66f), new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(60f, 0f), new Vector2(620f, -120f));
-        Label(left, "Breaking Through", 64, FontStyle.Bold, new Color(1f, 0.96f, 0.86f), new Vector2(36f, -36f), new Vector2(540f, 80f), TextAnchor.UpperLeft);
-        Label(left, "Protect Slice. Level up on bolts, pick boons, build a run. Coins buy a stronger start.", 24, FontStyle.Normal, new Color(1f, 0.9f, 0.72f, 0.9f), new Vector2(36f, -124f), new Vector2(540f, 80f), TextAnchor.UpperLeft);
+        var left = Panel(canvasGo.transform, new Color(0.03f, 0.04f, 0.08f, 0.7f), new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(60f, 0f), new Vector2(620f, -120f));
+        Label(left, "THE PLACE DEPARTMENT", 24, FontStyle.Bold, Gold, new Vector2(36f, -30f), new Vector2(540f, 30f), TextAnchor.UpperLeft);
+        Label(left, "Breaking Through", 64, FontStyle.Bold, Paper, new Vector2(36f, -58f), new Vector2(540f, 80f), TextAnchor.UpperLeft);
+        Rule(left, new Vector2(36f, -140f), 120f);
+        Label(left, "Where things that should not exist are given an address.", 22, FontStyle.Italic, Gold, new Vector2(36f, -154f), new Vector2(540f, 56f), TextAnchor.UpperLeft);
+        Label(left, "Protect Slice. Level up on bolts, pick boons, build a run. Coins buy a stronger start.", 22, FontStyle.Normal, new Color(1f, 0.9f, 0.72f, 0.9f), new Vector2(36f, -214f), new Vector2(540f, 60f), TextAnchor.UpperLeft);
 
-        coinText = Label(left, "", 36, FontStyle.Bold, new Color(1f, 0.84f, 0.35f), new Vector2(36f, -220f), new Vector2(540f, 48f), TextAnchor.UpperLeft);
-        bestText = Label(left, "", 28, FontStyle.Normal, new Color(0.85f, 0.95f, 0.8f), new Vector2(36f, -274f), new Vector2(540f, 40f), TextAnchor.UpperLeft);
-        purseText = Label(left, "", 24, FontStyle.Normal, new Color(1f, 0.96f, 0.88f, 0.88f), new Vector2(36f, -330f), new Vector2(540f, 90f), TextAnchor.UpperLeft);
-        celebrate = Label(left, "", 28, FontStyle.Bold, new Color(1f, 0.84f, 0.35f), new Vector2(36f, -430f), new Vector2(540f, 64f), TextAnchor.UpperLeft);
+        coinText = Label(left, "", 36, FontStyle.Bold, Gold, new Vector2(36f, -284f), new Vector2(540f, 48f), TextAnchor.UpperLeft);
+        bestText = Label(left, "", 28, FontStyle.Normal, new Color(0.85f, 0.95f, 0.8f), new Vector2(36f, -334f), new Vector2(540f, 40f), TextAnchor.UpperLeft);
+        purseText = Label(left, "", 22, FontStyle.Normal, new Color(1f, 0.96f, 0.88f, 0.88f), new Vector2(36f, -376f), new Vector2(540f, 84f), TextAnchor.UpperLeft);
+        celebrate = Label(left, "", 28, FontStyle.Bold, Gold, new Vector2(36f, -462f), new Vector2(540f, 62f), TextAnchor.UpperLeft);
 
-        Label(left, "Start later", 22, FontStyle.Bold, new Color(1f, 0.94f, 0.8f), new Vector2(36f, -500f), new Vector2(540f, 28f), TextAnchor.UpperLeft);
-        startText = Label(left, "", 22, FontStyle.Normal, new Color(1f, 0.96f, 0.88f, 0.9f), new Vector2(36f, -530f), new Vector2(540f, 52f), TextAnchor.UpperLeft);
-        lowerStart = Button(left, "-10", new Vector2(36f, -588f), new Vector2(110f, 46f), 22, LowerStart);
-        raiseStart = Button(left, "+10", new Vector2(158f, -588f), new Vector2(110f, 46f), 22, RaiseStart);
+        Label(left, "Start later", 22, FontStyle.Bold, new Color(1f, 0.94f, 0.8f), new Vector2(36f, -540f), new Vector2(540f, 28f), TextAnchor.UpperLeft);
+        startText = Label(left, "", 22, FontStyle.Normal, new Color(1f, 0.96f, 0.88f, 0.9f), new Vector2(36f, -568f), new Vector2(540f, 52f), TextAnchor.UpperLeft);
+        lowerStart = Button(left, "-10", new Vector2(36f, -626f), new Vector2(110f, 46f), 22, LowerStart);
+        raiseStart = Button(left, "+10", new Vector2(158f, -626f), new Vector2(110f, 46f), 22, RaiseStart);
 
-        var play = Button(left, "Play", new Vector2(36f, -656f), new Vector2(280f, 72f), 32, Play);
-        var playImage = play.GetComponent<Image>();
-        playImage.color = new Color(0.22f, 0.38f, 0.22f, 1f);
+        var play = Button(left, "Play", new Vector2(36f, -694f), new Vector2(280f, 76f), 34, Play, true);
         PlayButton = play;
-        SettingsButton = Button(left, "Settings", new Vector2(332f, -656f), new Vector2(220f, 72f), 28, OpenSettings);
+        SettingsButton = Button(left, "Settings", new Vector2(332f, -694f), new Vector2(220f, 76f), 28, OpenSettings);
 
-        Label(left, UiFit.Touch ? "Tap Play to start. After a run, you come back here." : "Enter or click Play. After a run, M brings you back here.", 22, FontStyle.Italic, new Color(1f, 0.96f, 0.88f, 0.7f), new Vector2(36f, -742f), new Vector2(540f, 70f), TextAnchor.UpperLeft);
+        Label(left, UiFit.Touch ? "Tap Play to start. After a run, you come back here." : "Enter or click Play. After a run, M brings you back here.", 22, FontStyle.Italic, new Color(1f, 0.96f, 0.88f, 0.7f), new Vector2(36f, -782f), new Vector2(540f, 56f), TextAnchor.UpperLeft);
         if (!string.IsNullOrEmpty(WaveDirector.LastRun)) {
-            Label(left, "Last run\n" + WaveDirector.LastRun, 20, FontStyle.Normal, new Color(0.7f, 0.9f, 1f, 0.9f), new Vector2(36f, -800f), new Vector2(540f, 140f), TextAnchor.UpperLeft);
+            Label(left, "Last run\n" + WaveDirector.LastRun, 20, FontStyle.Normal, Stamp, new Vector2(36f, -842f), new Vector2(540f, 100f), TextAnchor.UpperLeft);
         }
+        Enter(left, new Vector2(-70f, 0f), 0f);
+        Enter(play.GetComponent<RectTransform>(), new Vector2(0f, -24f), 0.45f);
 
-        float rightHeight = 110f + MetaProgress.Catalog.Length * 76f;
+        float rightHeight = 116f + MetaProgress.Catalog.Length * 76f;
         var right = Panel(canvasGo.transform, new Color(0.04f, 0.04f, 0.07f, 0.72f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-60f, -60f), new Vector2(900f, rightHeight));
         Label(right, "Upgrades", 42, FontStyle.Bold, new Color(1f, 0.94f, 0.8f), new Vector2(32f, -24f), new Vector2(900f, 56f), TextAnchor.UpperLeft);
+        Rule(right, new Vector2(34f, -76f), 80f);
+        Enter(right, new Vector2(70f, 0f), 0.12f);
 
         for (int i = 0; i < MetaProgress.Catalog.Length; i++) {
             float y = -90f - i * 76f;
-            var row = Panel(right, new Color(0.1f, 0.09f, 0.13f, 0.78f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(-48f, 72f));
+            var row = Panel(right, new Color(0.1f, 0.09f, 0.13f, 0.78f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, y - 6f), new Vector2(-48f, 72f));
             rows[i] = row.GetComponent<Image>();
             UpgradeInfo info = MetaProgress.Catalog[i];
             titles[i] = Label(row, info.Name, 26, FontStyle.Bold, new Color(1f, 0.95f, 0.84f), new Vector2(18f, -8f), new Vector2(520f, 32f), TextAnchor.UpperLeft);
@@ -209,11 +230,11 @@ public class MainMenu : MonoBehaviour {
             shop.offsetMax = new Vector2(-20f, -20f);
         }
 
-        Label(info, "Breaking Through", 46, FontStyle.Bold, new Color(1f, 0.96f, 0.86f), new Vector2(24f, -18f), new Vector2(infoWidth - 48f, 60f), TextAnchor.UpperLeft);
+        Label(info, "Breaking Through", 46, FontStyle.Bold, Paper, new Vector2(24f, -16f), new Vector2(infoWidth - 48f, 60f), TextAnchor.UpperLeft);
+        Rule(info, new Vector2(26f, -74f), 90f);
 
         // Pinned to the bottom: Play, and the later-start buttons above it.
-        var play = Button(info, "Play", Vector2.zero, new Vector2(280f, 96f), 36, Play);
-        play.GetComponent<Image>().color = new Color(0.22f, 0.38f, 0.22f, 1f);
+        var play = Button(info, "Play", Vector2.zero, new Vector2(280f, 96f), 36, Play, true);
         PinBottom(play, new Vector2(24f, 20f));
         PlayButton = play;
         SettingsButton = Button(info, "Settings", Vector2.zero, new Vector2(Mathf.Min(200f, infoWidth - 340f), 96f), 28, OpenSettings);
@@ -229,18 +250,23 @@ public class MainMenu : MonoBehaviour {
         later.rectTransform.anchoredPosition = new Vector2(292f, 128f);
 
         RectTransform about = Scroller(info, new Vector2(12f, 228f), new Vector2(-12f, -84f), 10f);
+        Flow(about, "Where things that should not exist are given an address.", 22, FontStyle.Italic, Gold);
         Flow(about, "Protect Slice. Level up on bolts, pick boons, build a run. Coins buy a stronger start.", 22, FontStyle.Normal, new Color(1f, 0.9f, 0.72f, 0.9f));
-        coinText = Flow(about, "", 32, FontStyle.Bold, new Color(1f, 0.84f, 0.35f));
+        coinText = Flow(about, "", 32, FontStyle.Bold, Gold);
         bestText = Flow(about, "", 24, FontStyle.Normal, new Color(0.85f, 0.95f, 0.8f));
-        celebrate = Flow(about, "", 26, FontStyle.Bold, new Color(1f, 0.84f, 0.35f));
+        celebrate = Flow(about, "", 26, FontStyle.Bold, Gold);
         startText = Flow(about, "", 22, FontStyle.Normal, new Color(1f, 0.96f, 0.88f, 0.9f));
         purseText = Flow(about, "", 22, FontStyle.Normal, new Color(1f, 0.96f, 0.88f, 0.88f));
         Flow(about, UiFit.Touch ? "Tap Play to start. After a run, you come back here." : "Enter or click Play. After a run, M brings you back here.", 22, FontStyle.Italic, new Color(1f, 0.96f, 0.88f, 0.7f));
         if (!string.IsNullOrEmpty(WaveDirector.LastRun)) {
-            Flow(about, "Last run\n" + WaveDirector.LastRun, 20, FontStyle.Normal, new Color(0.7f, 0.9f, 1f, 0.9f));
+            Flow(about, "Last run\n" + WaveDirector.LastRun, 20, FontStyle.Normal, Stamp);
         }
 
         Label(shop, "Upgrades", 40, FontStyle.Bold, new Color(1f, 0.94f, 0.8f), new Vector2(24f, -16f), new Vector2(600f, 52f), TextAnchor.UpperLeft);
+        Rule(shop, new Vector2(26f, -68f), 70f);
+        Enter(info, tall ? new Vector2(0f, 60f) : new Vector2(-60f, 0f), 0f);
+        Enter(shop, tall ? new Vector2(0f, -60f) : new Vector2(60f, 0f), 0.12f);
+        Enter(play.GetComponent<RectTransform>(), new Vector2(0f, -20f), 0.45f);
         RectTransform list = Scroller(shop, new Vector2(12f, 12f), new Vector2(-12f, -76f), 8f);
         float rowHeight = tall ? 170f : 186f;
         for (int i = 0; i < MetaProgress.Catalog.Length; i++) {
@@ -410,6 +436,69 @@ public class MainMenu : MonoBehaviour {
         }
     }
 
+    // A short gold rule under a heading.
+    void Rule(Transform parent, Vector2 position, float width) {
+        var rule = Image(parent, new Color(Gold.r, Gold.g, Gold.b, 0.85f));
+        var rect = rule.rectTransform;
+        rect.anchorMin = new Vector2(0f, 1f);
+        rect.anchorMax = new Vector2(0f, 1f);
+        rect.pivot = new Vector2(0f, 1f);
+        rect.anchoredPosition = position;
+        rect.sizeDelta = new Vector2(width, 4f);
+    }
+
+    // Slides a panel or button in from an offset and fades it up, after a delay.
+    void Enter(RectTransform rect, Vector2 offset, float delay) {
+        if (builtAt < 0f) {
+            return;
+        }
+        rect.gameObject.AddComponent<MenuEntrance>().Setup(offset, delay);
+    }
+
+    // Two huge soft lights that wander behind the panels and a faint copier-light band that sweeps down the
+    // screen now and then. All of it is slow, wide and low in contrast; no small moving specks.
+    void BuildAmbient(Transform canvas) {
+        drift1 = Glow(canvas, new Color(1f, 0.72f, 0.3f, 0.1f), 1300f);
+        drift2 = Glow(canvas, new Color(0.35f, 0.55f, 1f, 0.1f), 1500f);
+        copier = Glow(canvas, new Color(0.8f, 0.9f, 1f, 0.07f), 0f);
+        copier.anchorMin = new Vector2(0f, 0.5f);
+        copier.anchorMax = new Vector2(1f, 0.5f);
+        copier.sizeDelta = new Vector2(0f, 260f);
+    }
+
+    RectTransform Glow(Transform parent, Color color, float size) {
+        var glow = Image(parent, color);
+        glow.sprite = UiSkin.Glow;
+        glow.type = UnityEngine.UI.Image.Type.Sliced;
+        var rect = glow.rectTransform;
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.sizeDelta = new Vector2(size, size);
+        return rect;
+    }
+
+    void TickAmbient() {
+        float t = Time.unscaledTime;
+        float appear = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - builtAt) / 1.1f));
+        if (art != null) {
+            art.color = new Color(1f, 1f, 1f, appear);
+        }
+        if (drift1 != null) {
+            drift1.anchoredPosition = new Vector2(-420f + Mathf.Sin(t * 0.11f) * 160f, -200f + Mathf.Cos(t * 0.09f) * 110f);
+        }
+        if (drift2 != null) {
+            drift2.anchoredPosition = new Vector2(480f + Mathf.Cos(t * 0.08f) * 180f, 220f + Mathf.Sin(t * 0.1f) * 120f);
+        }
+        if (copier != null) {
+            // Eleven seconds a pass: nine of them travelling top to bottom, two of rest below the screen.
+            float f = Mathf.Repeat(t, 11f) / 9f;
+            float y = Mathf.Lerp(1.15f, -0.15f, Mathf.Clamp01(f));
+            copier.anchorMin = new Vector2(0f, y);
+            copier.anchorMax = new Vector2(1f, y);
+        }
+    }
+
     Text Label(Transform parent, string value, int size, FontStyle style, Color color, Vector2 position, Vector2 sizeDelta, TextAnchor anchor) {
         var go = new GameObject("Text");
         go.transform.SetParent(parent, false);
@@ -464,18 +553,30 @@ public class MainMenu : MonoBehaviour {
         rect.offsetMax = Vector2.zero;
     }
 
-    Button Button(Transform parent, string label, Vector2 position, Vector2 size, int fontSize, UnityEngine.Events.UnityAction click) {
+    Button Button(Transform parent, string label, Vector2 position, Vector2 size, int fontSize, UnityEngine.Events.UnityAction click, bool primary = false) {
         var go = new GameObject(label);
         go.transform.SetParent(parent, false);
+        // A soft gold halo behind the button: it lights on hover and breathes on the primary one.
+        var halo = new GameObject("Halo", typeof(RectTransform)).AddComponent<Image>();
+        halo.transform.SetParent(go.transform, false);
+        halo.sprite = UiSkin.Glow;
+        halo.type = UnityEngine.UI.Image.Type.Sliced;
+        halo.raycastTarget = false;
+        halo.color = new Color(Gold.r, Gold.g, Gold.b, 0f);
+        halo.rectTransform.anchorMin = Vector2.zero;
+        halo.rectTransform.anchorMax = Vector2.one;
+        halo.rectTransform.offsetMin = new Vector2(-14f, -14f);
+        halo.rectTransform.offsetMax = new Vector2(14f, 14f);
         var image = go.AddComponent<Image>();
         UiSkin.Round(image, 0.6f);
-        image.color = new Color(0.28f, 0.22f, 0.12f, 1f);
+        image.color = primary ? new Color(0.22f, 0.38f, 0.22f, 1f) : new Color(0.28f, 0.22f, 0.12f, 1f);
         var button = go.AddComponent<Button>();
         button.targetGraphic = image;
         var colors = button.colors;
         colors.normalColor = Color.white;
         colors.highlightedColor = new Color(1.15f, 1.08f, 0.85f);
-        colors.pressedColor = new Color(0.85f, 0.75f, 0.45f);
+        colors.pressedColor = new Color(0.8f, 0.7f, 0.42f);
+        colors.fadeDuration = 0.08f;
         colors.disabledColor = new Color(0.45f, 0.45f, 0.45f, 0.55f);
         button.colors = colors;
         button.onClick.AddListener(click);
@@ -493,13 +594,101 @@ public class MainMenu : MonoBehaviour {
         text.text = label;
         text.fontSize = fontSize;
         text.alignment = TextAnchor.MiddleCenter;
-        text.color = new Color(1f, 0.96f, 0.86f);
+        text.color = Paper;
+        text.fontStyle = primary ? FontStyle.Bold : FontStyle.Normal;
         text.raycastTarget = false;
         var textRect = text.rectTransform;
         textRect.anchorMin = Vector2.zero;
         textRect.anchorMax = Vector2.one;
         textRect.offsetMin = Vector2.zero;
         textRect.offsetMax = Vector2.zero;
+        var fx = go.AddComponent<MenuButtonFx>();
+        fx.Setup(button, halo, primary);
         return button;
+    }
+}
+
+// Hover lifts a button and lights its halo, a press sinks it, and the Play button breathes. Clicks tick.
+public class MenuButtonFx : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler {
+    Button button;
+    Image halo;
+    bool primary;
+    bool over;
+    bool down;
+    float hover;
+    float press;
+
+    public void Setup(Button target, Image glow, bool main) {
+        button = target;
+        halo = glow;
+        primary = main;
+    }
+
+    public void OnPointerEnter(PointerEventData eventData) {
+        over = true;
+        if (button != null && button.interactable) {
+            GameAudio.Play("hit", 0.06f, 2f);
+        }
+    }
+
+    public void OnPointerExit(PointerEventData eventData) {
+        over = false;
+        down = false;
+    }
+
+    public void OnPointerDown(PointerEventData eventData) {
+        down = true;
+        if (button != null && button.interactable) {
+            GameAudio.Play("hit", 0.14f, 1.4f);
+        }
+    }
+
+    public void OnPointerUp(PointerEventData eventData) {
+        down = false;
+    }
+
+    void Update() {
+        bool live = button != null && button.interactable;
+        float dt = Time.unscaledDeltaTime;
+        hover = Mathf.MoveTowards(hover, over && live ? 1f : 0f, dt * 8f);
+        press = Mathf.MoveTowards(press, down && live ? 1f : 0f, dt * 14f);
+        float breathe = primary && live ? (Mathf.Sin(Time.unscaledTime * 2.2f) * 0.5f + 0.5f) : 0f;
+        float scale = 1f + hover * 0.045f - press * 0.075f + breathe * 0.012f;
+        transform.localScale = new Vector3(scale, scale, 1f);
+        if (halo != null) {
+            float a = hover * 0.28f + breathe * 0.14f;
+            halo.color = new Color(1f, 0.84f, 0.35f, a);
+        }
+    }
+}
+
+// Fades a panel or button up while it slides from an offset to where it was built.
+public class MenuEntrance : MonoBehaviour {
+    const float Length = 0.55f;
+    RectTransform rect;
+    CanvasGroup group;
+    Vector2 home;
+    Vector2 offset;
+    float start;
+
+    public void Setup(Vector2 from, float delay) {
+        rect = (RectTransform)transform;
+        group = gameObject.AddComponent<CanvasGroup>();
+        group.alpha = 0f;
+        home = rect.anchoredPosition;
+        offset = from;
+        start = Time.unscaledTime + delay;
+        rect.anchoredPosition = home + offset;
+    }
+
+    void Update() {
+        float k = Mathf.Clamp01((Time.unscaledTime - start) / Length);
+        float e = 1f - (1f - k) * (1f - k) * (1f - k);
+        group.alpha = e;
+        rect.anchoredPosition = home + offset * (1f - e);
+        if (k >= 1f) {
+            Destroy(group);
+            Destroy(this);
+        }
     }
 }
