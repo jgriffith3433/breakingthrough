@@ -79,6 +79,9 @@ public class WaveDirector : MonoBehaviour {
     float returnReadyAt;
     bool bossPending;
     float goldenIn = -1f;
+    StoryScreen story;
+    bool introShown;
+    bool finaleSeen;
 
     Text timerText;
     Text waveText;
@@ -100,6 +103,7 @@ public class WaveDirector : MonoBehaviour {
         }
 
         BuildHud();
+        story = StoryScreen.Ensure();
         IsLost = false;
         Waiting = false;
         Event = WaveEvent.None;
@@ -116,6 +120,10 @@ public class WaveDirector : MonoBehaviour {
         MetaProgress.NoteReached(Wave);
         RunAnalytics.RunStart(Wave);
         BeginIntro();
+        if (Wave == 1 && !introShown) {
+            introShown = true;
+            story.ShowIntro(null);
+        }
     }
 
     void OnDestroy() {
@@ -147,7 +155,7 @@ public class WaveDirector : MonoBehaviour {
             return;
         }
         // Paused: the world, the clock and the wave keys wait.
-        if (PauseMenu.IsOpen) {
+        if (PauseMenu.IsOpen || StoryScreen.IsOpen) {
             return;
         }
 
@@ -210,6 +218,7 @@ public class WaveDirector : MonoBehaviour {
         RunLog.BeginWave();
         RunAnalytics.WaveStart(Wave, Event, pending.Count);
         SliceVoice.OnWave(Wave);
+        story.StartWave(Wave);
         if (Event != WaveEvent.None) {
             UpgradeLook.Say(EventName, 2.6f, 230f);
             GameAudio.Play("launch", 0.4f, 0.7f);
@@ -349,8 +358,39 @@ public class WaveDirector : MonoBehaviour {
                 PlayerGrowth.Instance.SyncToWave(Wave);
                 PlayerGrowth.Instance.OnVictory();
             }
+            if (cleared == Story.FinalWave && !finaleSeen) {
+                finaleSeen = true;
+                story.ShowFinale(EndingStats(), AfterEnding);
+            }
             return;
         }
+    }
+
+    string EndingStats() {
+        return "Waves cleared: " + cleared + "\nLevel " + RunBoons.Level + "   ·   Best streak " + Combo.Best
+            + "\n+" + MetaProgress.CoinsThisRun + " coins this run";
+    }
+
+    // Keep going plays on into overtime; otherwise the run ends here as a win and the menu opens.
+    void AfterEnding(bool keepGoing) {
+        if (keepGoing) {
+            return;
+        }
+        RunAnalytics.RunWon(cleared);
+        Time.timeScale = 1f;
+        pausedGame = false;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        string scene = Application.CanStreamedLevelBeLoaded(MetaProgress.MenuScene)
+            ? MetaProgress.MenuScene
+            : MetaProgress.GameScene;
+        SceneManager.LoadScene(scene);
+    }
+
+    // Playtest setup only: drops the wave's waiting bots except the boss kind, so the finale scenario reaches the boss.
+    public void TrimForPlaytest() {
+        BotKind boss = BossKind(Wave);
+        pending.RemoveAll(kind => kind != boss);
     }
 
     public void DevSkipBreak() {

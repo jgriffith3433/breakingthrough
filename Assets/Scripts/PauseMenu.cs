@@ -67,7 +67,7 @@ public class PauseMenu : MonoBehaviour {
 
     // Nothing to pause during a level-up card, after the musician falls, or before the run is set up.
     static bool CanPause {
-        get { return WaveDirector.Instance != null && !WaveDirector.IsLost && !LevelUpScreen.IsOpen; }
+        get { return WaveDirector.Instance != null && !WaveDirector.IsLost && !LevelUpScreen.IsOpen && !StoryScreen.IsOpen; }
     }
 
     void Awake() {

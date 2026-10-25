@@ -105,7 +105,7 @@ public class LevelUpScreen : MonoBehaviour {
             HoldFire = false;
         }
         if (!IsOpen) {
-            if (WaveDirector.IsLost || PauseMenu.IsOpen || root == null || Time.frameCount <= closedFrame) {
+            if (WaveDirector.IsLost || PauseMenu.IsOpen || StoryScreen.IsOpen || root == null || Time.frameCount <= closedFrame) {
                 return;
             }
             if (RunBoons.TakePendingChest()) {
