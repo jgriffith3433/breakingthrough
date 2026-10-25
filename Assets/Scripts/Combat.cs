@@ -204,6 +204,7 @@ public static class Combat {
         killCount++;
         Combo.Kill();
         RunLog.NoteKill(foe.Kind);
+        SliceVoice.OnKill(foe);
         Vector3 at = foe.transform.position;
 
         Pickups.DropBolts(at, Tuning.BoltsFor(foe.Kind, foe.Elite || foe.Boss) * (foe.Boss ? 5 : 1));

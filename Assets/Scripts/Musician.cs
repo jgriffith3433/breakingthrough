@@ -50,6 +50,7 @@ public class Musician : MonoBehaviour {
     public int FlinchCuts { get; private set; }
     public bool Standing { get { return stand >= 0.9f; } }
     public bool Seated { get { return stand <= 0f; } }
+    public float QuietFor { get { return quietFor; } }
     // Playtest look: keeps her up on her feet in the wary idle with the knife out, with no bot near.
     public bool HoldKnifeUp { get; set; }
     public float LastStabAt { get; private set; } = -99f;
@@ -230,6 +231,7 @@ public class Musician : MonoBehaviour {
         EnsureSliceOn(gameObject);
         BuildBar();
         FindSlice();
+        SliceVoice.Ensure(this);
     }
 
     void OnDestroy() {
@@ -914,6 +916,9 @@ public class Musician : MonoBehaviour {
         Quaternion face = local.sqrMagnitude > 0.01f ? Quaternion.LookRotation(local.normalized) : sliceTurn;
         slice.localRotation = Quaternion.Slerp(sliceTurn, face, w);
         slice.localPosition = sliceBase + step * (0.45f * w) + local.normalized * (0.22f * lunge);
+        if (SliceVoice.Instance != null) {
+            SliceVoice.Instance.ApplyPose(slice);
+        }
         if (hasSliceClips) {
             return;
         }

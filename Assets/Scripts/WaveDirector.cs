@@ -209,6 +209,7 @@ public class WaveDirector : MonoBehaviour {
             : -1f;
         RunLog.BeginWave();
         RunAnalytics.WaveStart(Wave, Event, pending.Count);
+        SliceVoice.OnWave(Wave);
         if (Event != WaveEvent.None) {
             UpgradeLook.Say(EventName, 2.6f, 230f);
             GameAudio.Play("launch", 0.4f, 0.7f);

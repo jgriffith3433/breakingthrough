@@ -28,6 +28,7 @@ public static class Playtest {
         new PlaytestScenario("analytics", "Hawkes Analytics: start a run, clear wave 1, then hold fire on wave 2 so the bots take the musician. Every analytics event is logged as it goes out (run_start, level_start and level_end per wave, card picks, the death and the bot kind that landed it, run_end) with the build version and env; on the game-over screen the \"How was that run?\" card must show, and the bot rates it 4 stars", 240, "full"),
         new PlaytestScenario("musician", "Slice, the musician at the piano: her health bar is titled Slice, and she sits on the bench playing the piano clip with her hands on the keys while the piano music plays. The bot holds fire and frames Slice so wave 1's Yo Bots reach her: she stands (standUp), stabs and slashes the one in reach with her knife (stab / slash with OnSliceKnifeHit blade damage) at most once every 2.5 s, and flinches when hit (hurt); then the bot clears the wave (with Encore pulsing from PianoRecital) and she sits back down (sitDown) to play (piano). Then it holds fire from wave 2 (after 20 s, setup: a ring of Plated Yo Bots dropped around the bench, topped up every 8 s) until the bots empty her bar, she falls (defeat), and the game-over panel appears", 330, "content"),
         new PlaytestScenario("slice", "Slice guarding the circle: inspects the live Slice on PianoRecital (bob / coat / boots / scalpel knife from front and side, hands on keys, piano music), runs the full musician scenario (standUp, stab, slash, sitDown, piano, hurt, defeat before game over), and verifies all 8 Animator clips", 220, "content"),
+        new PlaytestScenario("personality", "Slice's personality: she speaks short clipped lines (subtitles; the log shows each) at wave starts, kills, near-misses and when hurt or low, never the same line twice in a row, and shows distinct body behaviors (idle scan / knife flip, ready at a wave, kill flourish, glance, stagger, hunch when low). Wallit and Slice trade a short exchange. Real input: the bot fights wave 1 with the bat; then it holds fire, and from 15 s on (setup) a ring of Plated Yo Bots is dropped on her until she is low", 240, "content"),
         new PlaytestScenario("upgrades", "The bat upgrades: the shop lists Corked Core and Aluminum! Not wood! (setup: both owned in the sandbox) and the metal bat is in the player's hands; wave 1's first level-up cards are read off the screen (bat upgrades, no retired cast words); setup: the testing wave key (=) to wave 14 for tougher Plated Yo Bots and a handful of bat boons granted (Wide Arc, Pine Tar, Ice Bat, Live Wire, Grand Slam, Long Ball and more), each one's mark on the bat logged; then the bot plays until each effect is seen: a wider swing, bots burning, bots slowed, chain sparks shorting bots out, a 360 spin swing, batted bolts landing. Then Thunder Bat is granted for a lightning spin, and 30 s of play", 330, "content"),
         new PlaytestScenario("wallit", "Wallit as the player: checks Wallit's wallet body, bills, gloves, sneakers and bat on the live player, exercises running, locked-on strafing (strafeLeft, strafeRight, backPedal), jumping (jump, landing), getting hit (hitReact), and every bat swing (swing1, swing2, swing3, groundSmash, homeRunCharge, homeRunRelease) with OnBatContact damage, then checks all 17 Animator clips", 200, "content"),
         new PlaytestScenario("locomotion", "Wallit's feet on the ground: walks, runs, starts, stops and turns free, then locked on to a Yo Bot strafes left and right, back pedals, runs at it and stops, all through the keys. Each segment logs the planted foot's slide and the hips' largest jump (`loco` events; a slide or a pop is a bug)", 75, "content"),
@@ -214,6 +215,8 @@ public static class Playtest {
                 yield return BotsRun(options);
             } else if (id == "musician") {
                 yield return MusicianRun(options);
+            } else if (id == "personality") {
+                yield return PersonalityRun(options);
             } else if (id == "slice") {
                 yield return SliceRun(options);
             } else if (id == "upgrades") {
@@ -1945,6 +1948,96 @@ public static class Playtest {
                 run.Scene("Wave " + wave);
             }
             yield return null;
+        }
+    }
+
+    // Slice's personality: wave 1 fought for real, then a siege until she is low; reports what she said and did.
+    static IEnumerator PersonalityRun(PlaytestOptions options) {
+        Musician slice = Musician.Instance;
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+        if (slice == null || SliceVoice.Instance == null) {
+            run.Problem(PlaytestSeverity.Bug, "no Slice or no SliceVoice in the run");
+            yield break;
+        }
+        run.Scene("Slice: personality");
+        int told = 0;
+        float start = Time.realtimeSinceStartup;
+        float fightUntil = start + 60f;
+        float nextSiege = 0f;
+        float nextSkip = 0f;
+        float lowSince = -1f;
+        while (!run.Done) {
+            float now = Time.realtimeSinceStartup;
+            SampleFps();
+            while (told < SliceVoice.Events.Count) {
+                string[] bits = SliceVoice.Events[told++].Split('|');
+                string detail = bits.Length > 2 ? bits[1] + ": " + bits[2] : bits[1];
+                run.Event(bits[0] == "behavior" ? "slice-behavior" : bits[0] == "line" ? "slice-line" : bits[0] == "wallit" ? "wallit-line" : "banter", detail);
+            }
+            if (WaveDirector.IsLost || !slice.Alive) {
+                break;
+            }
+            if (LevelUpScreen.IsOpen) {
+                PlayInput.Axis("Mouse X", 0f);
+                yield return PickCard();
+                continue;
+            }
+            bool clear = WaveDirector.IsBuilding || Enemy.Roster.Count == 0;
+            if (clear && now >= nextSkip) {
+                nextSkip = now + 1.5f;
+                PlayInput.Tap(KeyCode.Return);
+            }
+            if (now < fightUntil) {
+                if (clear) {
+                    FrameSlice(player, slice);
+                } else {
+                    PlayInput.Axis("Mouse X", 0f);
+                    Batter(player, false, null, true);
+                }
+            } else {
+                FrameSlice(player, slice);
+                if (now - fightUntil > 15f && now >= nextSiege && !WaveDirector.IsBuilding && slice.Health > SliceVoice.LowHealth) {
+                    nextSiege = now + 8f;
+                    int dropped = SiegeSlice(slice, 10);
+                    if (dropped > 0) {
+                        run.Event("setup", "siege: " + dropped + " Plated Yo Bots dropped around Slice (" + slice.Health + " / " + slice.MaxHealth + ")");
+                    }
+                }
+            }
+            if (slice.Health <= SliceVoice.LowHealth && lowSince < 0f) {
+                lowSince = now;
+            }
+            if (lowSince > 0f && now - lowSince > 6f) {
+                break;
+            }
+            if (now - start > 220f) {
+                break;
+            }
+            yield return null;
+        }
+        PlayInput.Axis("Mouse X", 0f);
+        SliceVoice voice = SliceVoice.Instance;
+        int kinds = voice.Behaviors.Count;
+        run.Event("slice-personality", kinds + " behaviors (" + string.Join(", ", voice.Behaviors) + "), " + voice.LinesSpoken + " lines, " + voice.Exchanges + " exchange(s), " + voice.BackToBack + " back-to-back repeats");
+        if (kinds < 4) {
+            run.Problem(PlaytestSeverity.Bug, "Slice showed only " + kinds + " distinct behaviors: " + string.Join(", ", voice.Behaviors));
+        }
+        if (voice.BackToBack > 0) {
+            run.Problem(PlaytestSeverity.Bug, "Slice or Wallit said the same line twice in a row " + voice.BackToBack + " time(s)");
+        }
+        if (voice.Exchanges == 0) {
+            run.Problem(PlaytestSeverity.Bug, "Wallit and Slice never traded an exchange");
+        }
+        bool wave = false;
+        bool hurt = false;
+        bool kill = false;
+        for (int i = 0; i < SliceVoice.Events.Count; i++) {
+            wave |= SliceVoice.Events[i].StartsWith("line|wave|");
+            hurt |= SliceVoice.Events[i].StartsWith("line|hurt|") || SliceVoice.Events[i].StartsWith("line|low|");
+            kill |= SliceVoice.Events[i].StartsWith("line|kill|");
+        }
+        if (!wave || !hurt || !kill) {
+            run.Problem(PlaytestSeverity.Bug, "Slice was missing lines: wave=" + wave + ", kill=" + kill + ", hurt/low=" + hurt);
         }
     }
 
