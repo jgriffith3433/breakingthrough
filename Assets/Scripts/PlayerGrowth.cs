@@ -344,6 +344,7 @@ public class PlayerGrowth : MonoBehaviour {
     }
 
     public void OnHit(Enemy by = null) {
+        WallitVoice.OnHurt();
         if (WaveDirector.IsLost || BatEquipment.IsAnimatingAction || Time.time < nextHitReactAt) {
             return;
         }

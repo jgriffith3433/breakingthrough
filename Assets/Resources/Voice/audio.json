@@ -1,0 +1,504 @@
+{
+ "schemaVersion": 1,
+ "outputFolder": "Resources/Voice",
+ "defaultVoiceId": "CwhRBWXzGAHq8TQ4Fs17",
+ "voices": [
+  {
+   "name": "wallit",
+   "description": "Wallit, the wallet: brash, angry, always about money. His Dose Of Destruction voice (doseofdestructionwebsite/content/voice.json).",
+   "voiceId": "CwhRBWXzGAHq8TQ4Fs17",
+   "model": "eleven_v4",
+   "stability": 0.35,
+   "style": 0.6
+  }
+ ],
+ "lines": [
+  {
+   "id": "wallit_pay_up",
+   "voice": "wallit",
+   "text": "Pay up.",
+   "asset": "a_e77e878a64d3da39"
+  },
+  {
+   "id": "wallit_paid_in_full",
+   "voice": "wallit",
+   "text": "Paid in full.",
+   "asset": "a_7d90f5c6a556027b"
+  },
+  {
+   "id": "wallit_cha_ching",
+   "voice": "wallit",
+   "text": "Cha-ching.",
+   "asset": "a_1be07891f285d12e"
+  },
+  {
+   "id": "wallit_next",
+   "voice": "wallit",
+   "text": "Next!",
+   "asset": "a_037cb7d2a8470731"
+  },
+  {
+   "id": "wallit_exact_change",
+   "voice": "wallit",
+   "text": "Exact change.",
+   "asset": "a_b596b82a8ab98633"
+  },
+  {
+   "id": "wallit_keep_the_change",
+   "voice": "wallit",
+   "text": "Keep the change.",
+   "asset": "a_77df6cd1eef55df7"
+  },
+  {
+   "id": "wallit_sold",
+   "voice": "wallit",
+   "text": "Sold!",
+   "asset": "a_e700a90e30cce123"
+  },
+  {
+   "id": "wallit_no_refunds",
+   "voice": "wallit",
+   "text": "No refunds.",
+   "asset": "a_d084db86886abccd"
+  },
+  {
+   "id": "wallit_streak_tip_jar_s_full",
+   "voice": "wallit",
+   "text": "Streak! Tip jar's full!",
+   "asset": "a_32cee2d048ffd50d"
+  },
+  {
+   "id": "wallit_cash_rain",
+   "voice": "wallit",
+   "text": "Cash rain!",
+   "asset": "a_b8b4e9ece3b5929e"
+  },
+  {
+   "id": "wallit_count_em",
+   "voice": "wallit",
+   "text": "Count 'em!",
+   "asset": "a_3b09c1a60a79a0d3"
+  },
+  {
+   "id": "wallit_jackpot",
+   "voice": "wallit",
+   "text": "Jackpot!",
+   "asset": "a_8db0f06595b1ccac"
+  },
+  {
+   "id": "wallit_compound_interest",
+   "voice": "wallit",
+   "text": "Compound interest!",
+   "asset": "a_d3df33c4e5bf8100"
+  },
+  {
+   "id": "wallit_don_t_stop_don_t_stop",
+   "voice": "wallit",
+   "text": "Don't stop, don't stop!",
+   "asset": "a_92f11044e56a7f0e"
+  },
+  {
+   "id": "wallit_interest_due",
+   "voice": "wallit",
+   "text": "Interest due!",
+   "asset": "a_346a2211477d5a0e"
+  },
+  {
+   "id": "wallit_collected",
+   "voice": "wallit",
+   "text": "Collected!",
+   "asset": "a_d7ea8272592f5381"
+  },
+  {
+   "id": "wallit_feel_that",
+   "voice": "wallit",
+   "text": "Feel that?",
+   "asset": "a_54553a0504225feb"
+  },
+  {
+   "id": "wallit_that_s_the_fee",
+   "voice": "wallit",
+   "text": "That's the fee!",
+   "asset": "a_af7118befa05f0cd"
+  },
+  {
+   "id": "wallit_read_the_fine_print",
+   "voice": "wallit",
+   "text": "Read the fine print!",
+   "asset": "a_b18cc9f1fd05113a"
+  },
+  {
+   "id": "wallit_smash_and_grab",
+   "voice": "wallit",
+   "text": "Smash and grab!",
+   "asset": "a_ccbc1f734e2c2e99"
+  },
+  {
+   "id": "wallit_overdue",
+   "voice": "wallit",
+   "text": "Overdue!",
+   "asset": "a_1226978a5a8adc35"
+  },
+  {
+   "id": "wallit_home_run_pay_up",
+   "voice": "wallit",
+   "text": "Home run! Pay up!",
+   "asset": "a_0826e380fa49135e"
+  },
+  {
+   "id": "wallit_out_of_the_park",
+   "voice": "wallit",
+   "text": "Out of the park!",
+   "asset": "a_02a1c56f2c2ba47e"
+  },
+  {
+   "id": "wallit_gone_no_refund",
+   "voice": "wallit",
+   "text": "Gone! No refund!",
+   "asset": "a_505b42147d75d8ee"
+  },
+  {
+   "id": "wallit_grand_slam",
+   "voice": "wallit",
+   "text": "Grand slam!",
+   "asset": "a_dbbc510906f86ecf"
+  },
+  {
+   "id": "wallit_returned_to_sender",
+   "voice": "wallit",
+   "text": "Returned to sender!",
+   "asset": "a_4ee886dc1144f033"
+  },
+  {
+   "id": "wallit_ow_that_s_extra",
+   "voice": "wallit",
+   "text": "Ow! That's extra!",
+   "asset": "a_e84c128a4f1b9e5c"
+  },
+  {
+   "id": "wallit_hey_watch_the_leather",
+   "voice": "wallit",
+   "text": "Hey! Watch the leather!",
+   "asset": "a_33b97ec53be24e9b"
+  },
+  {
+   "id": "wallit_you_ll_pay_for_that",
+   "voice": "wallit",
+   "text": "You'll pay for that!",
+   "asset": "a_eb95fa752dcfeba6"
+  },
+  {
+   "id": "wallit_ow_charging_you",
+   "voice": "wallit",
+   "text": "Ow. Charging you.",
+   "asset": "a_3930e974a18f1ff5"
+  },
+  {
+   "id": "wallit_rude",
+   "voice": "wallit",
+   "text": "Rude!",
+   "asset": "a_0b2adececf80d08a"
+  },
+  {
+   "id": "wallit_bruised_my_billfold",
+   "voice": "wallit",
+   "text": "Bruised my billfold!",
+   "asset": "a_eccab07fe4745066"
+  },
+  {
+   "id": "wallit_hands_off",
+   "voice": "wallit",
+   "text": "Hands off!",
+   "asset": "a_cb79c1f73b421ea2"
+  },
+  {
+   "id": "wallit_that_s_going_on_your_tab",
+   "voice": "wallit",
+   "text": "That's going on your tab!",
+   "asset": "a_cb88dc0b0425c0a4"
+  },
+  {
+   "id": "wallit_here_we_go_pay_up",
+   "voice": "wallit",
+   "text": "Here we go. Pay up.",
+   "asset": "a_41d5f5adfce63de7"
+  },
+  {
+   "id": "wallit_line_up_bots",
+   "voice": "wallit",
+   "text": "Line up, bots.",
+   "asset": "a_42a9f4c528214511"
+  },
+  {
+   "id": "wallit_open_for_business",
+   "voice": "wallit",
+   "text": "Open for business.",
+   "asset": "a_bf4308c00435d981"
+  },
+  {
+   "id": "wallit_cash_only",
+   "voice": "wallit",
+   "text": "Cash only!",
+   "asset": "a_b42065f784d41dad"
+  },
+  {
+   "id": "wallit_round_two_bring_cash",
+   "voice": "wallit",
+   "text": "Round two. Bring cash.",
+   "asset": "a_06aa179090d6e3ad"
+  },
+  {
+   "id": "wallit_come_on_then",
+   "voice": "wallit",
+   "text": "Come on, then!",
+   "asset": "a_04a011c2fa7c843b"
+  },
+  {
+   "id": "wallit_step_up_pay_up",
+   "voice": "wallit",
+   "text": "Step up, pay up.",
+   "asset": "a_498ee69c1acc090a"
+  },
+  {
+   "id": "wallit_ready_to_collect",
+   "voice": "wallit",
+   "text": "Ready to collect.",
+   "asset": "a_c516f2f43150559a"
+  },
+  {
+   "id": "wallit_level_up_raise",
+   "voice": "wallit",
+   "text": "Level up! Raise!",
+   "asset": "a_7bab0b3a054b0c6e"
+  },
+  {
+   "id": "wallit_profit",
+   "voice": "wallit",
+   "text": "Profit!",
+   "asset": "a_80489c8bac5c4c55"
+  },
+  {
+   "id": "wallit_upgrade_me_i_m_good_for_it",
+   "voice": "wallit",
+   "text": "Upgrade me. I'm good for it.",
+   "asset": "a_575ebbc6a1dd5224"
+  },
+  {
+   "id": "wallit_bonus_time",
+   "voice": "wallit",
+   "text": "Bonus time!",
+   "asset": "a_a5a8f3caf28aacdd"
+  },
+  {
+   "id": "wallit_now_we_re_rich",
+   "voice": "wallit",
+   "text": "Now we're rich.",
+   "asset": "a_5a2e702d6b90a1c1"
+  },
+  {
+   "id": "wallit_treasure_mine",
+   "voice": "wallit",
+   "text": "Treasure! Mine!",
+   "asset": "a_8798f77c26db2fc5"
+  },
+  {
+   "id": "wallit_open_it_open_it",
+   "voice": "wallit",
+   "text": "Open it! Open it!",
+   "asset": "a_53db2202629b44ae"
+  },
+  {
+   "id": "wallit_finders_keepers",
+   "voice": "wallit",
+   "text": "Finders keepers!",
+   "asset": "a_98c4b1b8d7394bed"
+  },
+  {
+   "id": "wallit_slice_hold_on",
+   "voice": "wallit",
+   "text": "Slice! Hold on!",
+   "asset": "a_9f64a4d55c3bc194"
+  },
+  {
+   "id": "wallit_i_m_coming",
+   "voice": "wallit",
+   "text": "I'm coming!",
+   "asset": "a_9e7d84126360392f"
+  },
+  {
+   "id": "wallit_not_on_my_tab",
+   "voice": "wallit",
+   "text": "Not on my tab!",
+   "asset": "a_9eec1cac6d414920"
+  },
+  {
+   "id": "wallit_nobody_collects_her",
+   "voice": "wallit",
+   "text": "Nobody collects her!",
+   "asset": "a_e06395c7d7cc1cbc"
+  },
+  {
+   "id": "wallit_big_bill_big_payday",
+   "voice": "wallit",
+   "text": "Big bill. Big payday.",
+   "asset": "a_501518155c2dc08e"
+  },
+  {
+   "id": "wallit_good_bigger_tip",
+   "voice": "wallit",
+   "text": "Good. Bigger tip.",
+   "asset": "a_d9cb5f414a9b3ec2"
+  },
+  {
+   "id": "wallit_gold_mine",
+   "voice": "wallit",
+   "text": "Gold! Mine!",
+   "asset": "a_b2df34c08804080d"
+  },
+  {
+   "id": "wallit_shiny_mine",
+   "voice": "wallit",
+   "text": "Shiny. Mine.",
+   "asset": "a_c6d5bb964ff6de75"
+  },
+  {
+   "id": "wallit_that_one_pays_double",
+   "voice": "wallit",
+   "text": "That one pays double.",
+   "asset": "a_cc6edf4a893e9986"
+  },
+  {
+   "id": "wallit_pay_up_bots",
+   "voice": "wallit",
+   "text": "Pay up, bots.",
+   "asset": "a_ac75f43a05e41354"
+  },
+  {
+   "id": "wallit_they_ll_feel_it",
+   "voice": "wallit",
+   "text": "They'll feel it.",
+   "asset": "a_2a467a96e31fd9b6"
+  },
+  {
+   "id": "wallit_i_know_pay_up",
+   "voice": "wallit",
+   "text": "I know. Pay up!",
+   "asset": "a_a2ccd769c3f660a1"
+  },
+  {
+   "id": "wallit_nobody_touches_her",
+   "voice": "wallit",
+   "text": "Nobody touches her.",
+   "asset": "a_e2bd296d45d3a539"
+  },
+  {
+   "id": "wallit_still_mine_to_guard",
+   "voice": "wallit",
+   "text": "Still mine to guard.",
+   "asset": "a_0c26bdc1d3c30824"
+  },
+  {
+   "id": "wallit_coins_bolts_mine",
+   "voice": "wallit",
+   "text": "Coins. Bolts. Mine.",
+   "asset": "a_bf176b925835545a"
+  },
+  {
+   "id": "wallit_you_good_slice",
+   "voice": "wallit",
+   "text": "You good, Slice?",
+   "asset": "a_0bd68f9534421094"
+  },
+  {
+   "id": "wallit_bolts_are_wages_collect",
+   "voice": "wallit",
+   "text": "Bolts are wages. Collect.",
+   "asset": "a_00642c38f7afff1e"
+  },
+  {
+   "id": "wallit_walls_cost_worth_it",
+   "voice": "wallit",
+   "text": "Walls cost. Worth it.",
+   "asset": "a_334b5a0d43051e26"
+  },
+  {
+   "id": "wallit_that_s_a_tip_i_keep_tips",
+   "voice": "wallit",
+   "text": "That's a tip. I keep tips.",
+   "asset": "a_e44288a16edf6c2b"
+  },
+  {
+   "id": "wallit_they_want_her_circle_not_on_my_watch",
+   "voice": "wallit",
+   "text": "They want her circle. Not on my watch.",
+   "asset": "a_e7f8263db9c0c6e1"
+  },
+  {
+   "id": "wallit_plates_cost_more_pay_up",
+   "voice": "wallit",
+   "text": "Plates cost more. Pay up.",
+   "asset": "a_bc17271150f5da53"
+  },
+  {
+   "id": "wallit_you_re_bleeding_slice",
+   "voice": "wallit",
+   "text": "You're bleeding, Slice.",
+   "asset": "a_12d1ecb8cb38d45c"
+  },
+  {
+   "id": "wallit_i_m_covering_you_tab_s_open",
+   "voice": "wallit",
+   "text": "I'm covering you. Tab's open.",
+   "asset": "a_479058f8459de174"
+  },
+  {
+   "id": "wallit_nobody_touches_her_nobody",
+   "voice": "wallit",
+   "text": "Nobody touches her. Nobody.",
+   "asset": "a_dc16bea0e9da2028"
+  },
+  {
+   "id": "wallit_something_big_s_coming_i_can_smell_the_invoice",
+   "voice": "wallit",
+   "text": "Something big's coming. I can smell the invoice.",
+   "asset": "a_f412a70dcc6a6a7d"
+  },
+  {
+   "id": "wallit_then_i_m_reading_mine_pay_up",
+   "voice": "wallit",
+   "text": "Then I'm reading mine. Pay up.",
+   "asset": "a_138fc7f8195db562"
+  },
+  {
+   "id": "wallit_holding_slice",
+   "voice": "wallit",
+   "text": "Holding, Slice?",
+   "asset": "a_634b9b86fbbb037e"
+  },
+  {
+   "id": "wallit_twenty_five_waves_i_m_owed_a_bonus",
+   "voice": "wallit",
+   "text": "Twenty-five waves. I'm owed a bonus.",
+   "asset": "a_5a4434f90eb1e128"
+  },
+  {
+   "id": "wallit_last_stretch_pay_up",
+   "voice": "wallit",
+   "text": "Last stretch. Pay up.",
+   "asset": "a_b6327de754decc47"
+  },
+  {
+   "id": "wallit_then_it_carries_my_bill",
+   "voice": "wallit",
+   "text": "Then it carries my bill.",
+   "asset": "a_a20be1a0aff25739"
+  },
+  {
+   "id": "wallit_overtime_pays_double",
+   "voice": "wallit",
+   "text": "Overtime pays double.",
+   "asset": "a_d888c9442c6398c2"
+  }
+ ],
+ "note": "Made through Hawkes Gen audio.voice (project theplacedepartment). Ids match WallitVoice.LineId. Slice's slice_<line>.mp3 files are not made yet and stay optional."
+}

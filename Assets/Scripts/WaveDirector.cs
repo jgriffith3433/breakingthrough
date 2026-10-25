@@ -218,6 +218,7 @@ public class WaveDirector : MonoBehaviour {
         RunLog.BeginWave();
         RunAnalytics.WaveStart(Wave, Event, pending.Count);
         SliceVoice.OnWave(Wave);
+        WallitVoice.OnWave(Wave);
         story.StartWave(Wave);
         if (Event != WaveEvent.None) {
             UpgradeLook.Say(EventName, 2.6f, 230f);

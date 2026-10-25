@@ -262,6 +262,9 @@ public class StoryScreen : MonoBehaviour {
         beatLeft = BeatSeconds;
         BeatsShown++;
         Events.Add("beat|" + beatWave + "|" + speaker + "|" + Story.Text(line));
+        if (speaker == "W") {
+            WallitVoice.OnBeat(Story.Text(line));
+        }
     }
 
     // ---------------------------------------------------------------- build

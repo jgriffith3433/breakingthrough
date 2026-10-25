@@ -73,6 +73,16 @@ public static class Story {
         return new[] { Overtime[wave % Overtime.Length] };
     }
 
+    // True when the wave's beat already has a Wallit line (WallitVoice then skips its own wave bark).
+    public static bool HasWallitBeat(int wave) {
+        foreach (string line in BeatFor(wave)) {
+            if (Speaker(line) == "W") {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static string Speaker(string line) {
         return line.Substring(0, line.IndexOf('|'));
     }

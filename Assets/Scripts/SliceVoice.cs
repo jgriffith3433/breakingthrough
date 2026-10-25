@@ -48,6 +48,7 @@ public class SliceVoice : MonoBehaviour {
     public int Exchanges { get; private set; }
     public int BackToBack { get; private set; }
     public string LastLine { get; private set; } = "";
+    public bool BanterRunning { get { return banterRunning; } }
 
     Text sliceText;
     Text wallitText;
@@ -244,9 +245,9 @@ public class SliceVoice : MonoBehaviour {
         for (int i = 0; i < pair.Length; i++) {
             string[] bits = pair[i].Split('|');
             bool wallit = bits[0] == "W";
-            Show(wallit, bits[1], "banter");
+            float spoke = Show(wallit, bits[1], "banter");
             spoken++;
-            float wait = 1.9f;
+            float wait = Mathf.Max(1.9f, spoke + 0.4f);
             while (wait > 0f) {
                 wait -= Time.deltaTime;
                 yield return null;
@@ -268,6 +269,10 @@ public class SliceVoice : MonoBehaviour {
         if (!force && Time.time < nextLineAt) {
             return;
         }
+        // One voice at a time: not over Wallit.
+        if (!WallitVoice.FloorFree && WallitVoice.FloorOwner != "slice") {
+            return;
+        }
         string line = bank[Random.Range(0, bank.Length)];
         int guard = 0;
         while (line == LastLine && guard++ < 8) {
@@ -280,13 +285,20 @@ public class SliceVoice : MonoBehaviour {
         Show(false, line, why);
     }
 
-    void Show(bool wallit, string line, string why) {
+    // Returns how long the line takes to say.
+    float Show(bool wallit, string line, string why) {
         if (line == LastLine) {
             BackToBack++;
         }
         LastLine = line;
         LinesSpoken++;
         string id = LineId(line);
+        if (wallit && WallitVoice.Instance != null) {
+            // His own voice, mouth and subtitle (WallitVoice); the log keeps the exchange in order.
+            float len = WallitVoice.Banter(line);
+            Note("wallit", why + "|" + line);
+            return len;
+        }
         if (wallit) {
             wallitShown = 2.4f;
             if (wallitText != null) {
@@ -301,8 +313,14 @@ public class SliceVoice : MonoBehaviour {
             if (clip != null && audioOut != null && SoundSettings.EffectsLevel > 0f) {
                 audioOut.PlayOneShot(clip, SoundSettings.EffectsLevel);
             }
+            float len = clip != null ? clip.length : WallitVoice.EstimateSeconds(line);
+            WallitVoice.Claim("slice", len);
+            Note("line", why + "|" + line);
+            WallitVoice.OnSliceSaid(why);
+            return len;
         }
-        Note(wallit ? "wallit" : "line", why + "|" + line);
+        Note("wallit", why + "|" + line);
+        return WallitVoice.EstimateSeconds(line);
     }
 
     // "Here they come." -> slice_here_they_come (audio.json keys / Resources/Voice file names)
