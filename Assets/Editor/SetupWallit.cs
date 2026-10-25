@@ -147,7 +147,8 @@ static class SetupWallit
         if (importer == null)
             return false;
 
-        bool ok = importer.animationType == ModelImporterAnimationType.Human
+        bool ok = importer.isReadable
+            && importer.animationType == ModelImporterAnimationType.Human
             && importer.avatarSetup == ModelImporterAvatarSetup.CreateFromThisModel
             && importer.materialImportMode != ModelImporterMaterialImportMode.None
             && ClipsConfigured(importer);
@@ -168,6 +169,7 @@ static class SetupWallit
         if (ok && texturesOk)
             return true;
 
+        importer.isReadable = true; // WallitMeshClean drops the FBX's duplicate shell at load
         importer.animationType = ModelImporterAnimationType.Human;
         importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
         importer.animationCompression = ModelImporterAnimationCompression.Optimal;

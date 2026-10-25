@@ -1250,6 +1250,9 @@ public static class Playtest {
         Vector3 right = wallit.transform.right.sqrMagnitude > 0.01f ? wallit.transform.right.normalized : Vector3.right;
         yield return WallitLook(wallit, "front", at + fwd * 2.35f + Vector3.up * 1.15f);
         yield return WallitLook(wallit, "side", at + (right * 0.85f + fwd * 0.52f).normalized * 2.45f + Vector3.up * 1.15f);
+        yield return WallitLook(wallit, "back", at - fwd * 2.35f + Vector3.up * 1.15f);
+        yield return WallitLook(wallit, "top", at + fwd * 0.35f + Vector3.up * 3.6f);
+        LogWallitMesh(wallit);
 
         // Live gameplay: combo swings (swing1, swing2, swing3), groundSmash, homeRunCharge/homeRunRelease,
         // run, strafeLeft, strafeRight, backPedal, jump, landing, and hitReact.
@@ -1302,6 +1305,26 @@ public static class Playtest {
             run.Problem(PlaytestSeverity.Bug, missing + " Wallit clips missing from the Animator");
         }
         run.Event("wallit-report", played + " clips played, " + missing + " missing, humanoid " + (human ? "ok" : "bad"));
+    }
+
+    // Wallit.fbx draws the character twice; WallitMeshClean drops the second shell so nothing z-fights.
+    static void LogWallitMesh(GameObject wallit) {
+        int bodyTris = 0;
+        int bodyMeshes = 0;
+        foreach (SkinnedMeshRenderer smr in wallit.GetComponentsInChildren<SkinnedMeshRenderer>(true)) {
+            if (smr.sharedMesh == null || smr.gameObject.name.ToLowerInvariant().Contains("bat")) {
+                continue;
+            }
+            bodyMeshes++;
+            bodyTris += smr.sharedMesh.triangles.Length / 3;
+        }
+        bool clean = WallitMeshClean.LastDropped > 0;
+        run.Metric("wallitDuplicateShellTris", WallitMeshClean.LastDropped);
+        run.Event("wallit-mesh", bodyMeshes + " body mesh(es), " + bodyTris + " tris drawn, " + WallitMeshClean.LastShells
+            + " shells found, duplicate shell " + (clean ? "dropped (" + WallitMeshClean.LastDropped + " tris)" : "not present or mesh not readable"));
+        if (!clean) {
+            run.Problem(PlaytestSeverity.Warning, "Wallit's duplicate body shell was not removed: expect z-fighting (is Wallit.fbx readable?)");
+        }
     }
 
     static void FrameWallitCamera(GameObject wallit, Vector3 camPos) {
