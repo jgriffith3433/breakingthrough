@@ -52,7 +52,7 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 | A combat or build tip | `ControlsHelp.cs` |
 | The wave-power list on the left | `AbilityList.cs` |
 | The enemy list on the right | `WaveRoster.cs`, which reads `WaveDirector.CopyRoster` and names rows from `BotRoster.ForKind` |
-| A sound | `Assets/Resources/Sfx/Name.mp3`, played with `GameAudio.Play("Name", volume, pitch)`. The bat's are `batswing`, `batcrack`, `batsmash` and `homerun` (Hawkes Gen `audio.sfx`) |
+| A sound | `Assets/Resources/Sfx/Name.mp3`, played with `GameAudio.Play("Name", volume, pitch)`. `GameAudio` is the mix: one sound per voice (12), the same sound stacked softer (x0.6 each) and capped at 3 within 50 ms, and effects at 0.7 while Wallit or Slice holds the floor. The bat's are `batswing`, `batcrack`, `batsmash` and `homerun` (Hawkes Gen `audio.sfx`) |
 | A body animation | `Assets/Art/Wallit/Wallit.fbx`, listed in `SetupWallit.ClipNames` (`Assets/Editor/SetupWallit.cs`) and `CharacterMovement.ClipNames`, driven by the `Clip` integer |
 | Bot models | Gen's `YoBot.fbx` and `SpiderBot.fbx` in `Assets/Resources/Models/Bots/`, drawn with the painted skins `YoBotSkin.png` / `SpiderBotSkin.png` (alpha = glow) on `Knoll/BotSkin` (`Resources/Shaders/BotSkin.shader`). `BotArt.Prepared` bakes each skinned part rigid onto its bone once, adds a `Front` marker and turns the Spider Bot so its glass leads. Repaint the skins with `Tools/Bots/paint.py` whenever an FBX is replaced (`Tools/Bots/README.md`). Stand-ins: `BotArt.cs` builds them in code when no FBX is there; `Tools/Blender/bt_bots.py` makes the same in Blender |
 | Map scenery models | `Tools/Blender/bt_arena.py`, then `export_arena()`. Output goes to `Assets/Art/Arena/` |
@@ -60,7 +60,7 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 | Night lighting, lanterns, mist, notes | `NightAtmosphere.cs` |
 | Bloom and color grade | `NightGrade.cs` with `Resources/Shaders/BTPost.shader` |
 | A particle effect | `Fx.cs`: add an `FxKind` and a `Make(...)` line, or reuse a recipe. Never spawn primitive spheres for effects. Status (burning, frozen, golden) is a tint on the bot in `Enemy.TickFlash`, not particles. Bot deaths are `Fx.Death` (flash, smoke, `Debris` plates); jump-jet hops are `Fx.JetPuff` |
-| UI panels and bars | `UiSkin.Round` and `UiSkin.Bar` |
+| UI panels and bars | `UiSkin.Round` and `UiSkin.Bar`. Every button gets the menu's hover lift and press sink: `MenuButtonFx.Add(button)` (in `MainMenu.cs`) |
 | Touch controls (stick, Swing, Lock, Jump, Shake, Next wave, Turn) | `TouchControls.cs`. They press keys through `PlayInput.Pad...`, so gameplay needs no touch code |
 | Phone and tablet layouts | `UiFit.cs` picks the layout (`Mode`: Desktop, Wide, Tall) and the canvas scale (`Apply`). Each screen has a `Layout()` that redoes positions when `UiFit.Stamp` changes |
 | Sound on/off, music and effects volume | `SoundSettings.cs` (saved as JSON `{ on, music, sfx }` under `hawkes.sound`: localStorage on the web, PlayerPrefs too). Music is every looping `AudioSource` (none now: the piano loop is gone); effects are `GameAudio`, which multiplies by `SoundSettings.EffectsLevel` |
@@ -171,7 +171,7 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
   `bots` (wave 1's Yo Bots walking at the musician, event `yo-bots` with their distance closing; 30 s of play, then
   `bolts` with bolts picked up and the XP gained; `enemy-list` with the names read off the list on the right; the
   setup shortcut, the testing wave key `=` to wave 30, then `spider-bot` with the Alpha Spider Bot's height and
-  whether the boss bar is up; 30 s of fighting it). `settings` (Settings from the menu: sound off and on, both sliders, Done; then a run, the pause button, Settings
+  whether the boss bar is up; 30 s of fighting it). `polish` (the final polish pass on any screen size: menu, wave 1 HUD, level-up cards (setup: a level of bolts), pause by its button and Resume, 40 s of play, then hold fire until Slice falls (setup: Plated Yo Bots ring her) and the game-over panel reads Address struck off; each screen logs `layout`, `stale-words` (piano words left) and `button-feel` (buttons with `MenuButtonFx`), and `audio-mix` gives effects played, stacked softer, capped and dipped under a voice line). `settings` (Settings from the menu: sound off and on, both sliders, Done; then a run, the pause button, Settings
   from pause, Resume, P twice; layout checks `settings` and `pause`). `analytics` (Hawkes Analytics: a run, wave 1
   cleared, then the bot stops swinging from wave 2 so the bots take the musician; the "How was that run?" card must
   show on the game-over screen and the bot rates it 4 stars; metrics `analyticsEvents` and `analyticsSent`). Every
