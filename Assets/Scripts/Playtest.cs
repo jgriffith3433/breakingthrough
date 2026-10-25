@@ -1453,6 +1453,7 @@ public static class Playtest {
         }
         bool clean = WallitMeshClean.LastDropped > 0;
         run.Metric("wallitDuplicateShellTris", WallitMeshClean.LastDropped);
+        run.Metric("wallitSoftenedSeamVerts", WallitMeshClean.LastSoftened);
         run.Event("wallit-mesh", bodyMeshes + " body mesh(es), " + bodyTris + " tris drawn, " + WallitMeshClean.LastShells
             + " shells found, duplicate shell " + (clean ? "dropped (" + WallitMeshClean.LastDropped + " tris)" : "not present or mesh not readable"));
         if (!clean) {
