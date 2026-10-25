@@ -384,6 +384,7 @@ public class StoryScreen : MonoBehaviour {
         button.colors = colors;
         button.onClick.AddListener(click);
         image.rectTransform.sizeDelta = size;
+        MenuButtonFx.Add(button);
         Text text = MakeText(go.transform, label, fontSize, FontStyle.Bold, TextAnchor.MiddleCenter);
         var tr = text.rectTransform;
         tr.anchorMin = Vector2.zero;

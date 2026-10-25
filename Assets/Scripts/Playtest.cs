@@ -35,6 +35,7 @@ public static class Playtest {
         new PlaytestScenario("locomotion", "Wallit's feet on the ground: walks, runs, starts, stops and turns free, then locked on to a Yo Bot strafes left and right, back pedals, runs at it and stops, all through the keys. Each segment logs the planted foot's slide and the hips' largest jump (`loco` events; a slide or a pop is a bug)", 75, "content"),
         new PlaytestScenario("cast", "The new cast, in 90 s: the main menu with the key art up (MenuArt, its size and that the menu shows it), What's new opened from the site over the game with the release note naming Wallit, Slice and the bots (read from releases.json), then a run where the player is Wallit with his bat, the bar says Slice, and wave 1's Yo Bots close in and are batted. The AGENTS.md and README cast text lives in the repo, not the build: the review reads it from the diff", 120, "content"),
         new PlaytestScenario("story", "The story: the intro over the frozen Hollow (read page by page: who Wallit is, what the circle is, why Slice must not fall; a Skip button is on it), wave 1's story beats in canon voices, then setup: the testing wave key to wave 10 and wave 30 for the boss-wave title cards and beats (Yo Bots chirpy, Wallit on money, Slice clipped), and setup: wave 30's waiting bots trimmed to the boss and Slice topped up so the bat can finish it with real swings. Clearing wave 30 plays the finale pages and the ADDRESS FILED ending screen; the bot presses Keep going into overtime. Events intro-*, beat, finale-*, ending", 600, "content"),
+        new PlaytestScenario("polish", "The final polish pass, on any screen size (run it on desktop and on the phone): the main menu, the HUD in wave 1, the level-up cards (setup: a level of bolts granted), the pause menu by its button, Resume, 40 s of real play, then the bot holds fire until Slice falls (setup: Plated Yo Bots ring her after 20 s) and the game-over panel reads Address struck off. Each screen gets a layout check (menu, hud, cards, pause, gameover), a stale-words check (no piano, keys or music-stopped words left), and a button-feel check (every button lifts on hover and sinks on press like the menu's); the audio-mix event says how many sounds played, how many stacked softer, how many were capped and how many dipped under a voice line", 420, "full"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.com and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
     };
 
@@ -174,6 +175,13 @@ public static class Playtest {
             }
             if (id == "touch") {
                 yield return TouchRun();
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "polish") {
+                yield return PolishRun(options);
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
                 }
@@ -3942,6 +3950,179 @@ public static class Playtest {
         }
         return cards.Count == 0 ? null : cards[Mathf.Min(index, cards.Count - 1)];
     }
+
+    // ---------------------------------------------------------------- polish
+
+    // The final polish pass: every screen a player meets in a run, each checked for layout, leftover piano words and
+    // the shared button feel, then the effects mix after real play, and the game-over panel's title.
+    static IEnumerator PolishRun(PlaytestOptions options) {
+        yield return ToMenu();
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1.5f);
+        PolishScreen("menu", 0, false);
+        run.Progress(0.1f);
+
+        yield return StartRun();
+        if (run.Done) {
+            yield break;
+        }
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+        yield return new WaitForSecondsRealtime(4f);
+        PolishScreen("hud", 0, false);
+        run.Progress(0.2f);
+
+        run.Scene("Level-up cards");
+        RunBoons.AddFeathers(RunBoons.Need(RunBoons.Level));
+        run.Event("setup", "a level's worth of bolts granted so the level-up cards open");
+        yield return run.Until(() => LevelUpScreen.IsOpen, 10f, "the level-up cards");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        PolishScreen("cards", 400, true);
+        yield return PickCard();
+        if (run.Done) {
+            yield break;
+        }
+        run.Progress(0.35f);
+
+        run.Scene("Wave " + WaveDirector.Wave);
+        yield return new WaitForSecondsRealtime(2f);
+        yield return run.Until(() => PauseMenu.Instance != null && PauseMenu.Instance.PauseButton != null && PauseMenu.Instance.PauseButton.isActiveAndEnabled, 20f, "the pause button");
+        if (run.Done) {
+            yield break;
+        }
+        Tap(PauseMenu.Instance.PauseButton.gameObject);
+        run.Event("tap", "Pause");
+        yield return run.Until(() => PauseMenu.IsOpen, 5f, "the pause menu after tapping the pause button");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Paused");
+        yield return new WaitForSecondsRealtime(1f);
+        PolishScreen("pause", 450, true);
+        Tap(PauseMenu.Instance.ResumeButton.gameObject);
+        run.Event("tap", "Resume");
+        yield return run.Until(() => !PauseMenu.IsOpen && Time.timeScale > 0.01f, 5f, "play to resume after Resume");
+        if (run.Done) {
+            yield break;
+        }
+        run.Progress(0.45f);
+
+        run.Scene("Wave " + WaveDirector.Wave);
+        int played = GameAudio.Played;
+        int softened = GameAudio.Softened;
+        int capped = GameAudio.Capped;
+        int ducked = GameAudio.Ducked;
+        yield return Play(options, 40f, false);
+        if (run.Done) {
+            yield break;
+        }
+        played = GameAudio.Played - played;
+        softened = GameAudio.Softened - softened;
+        capped = GameAudio.Capped - capped;
+        ducked = GameAudio.Ducked - ducked;
+        run.Metric("sfxPlayed", played);
+        run.Metric("sfxSoftened", softened);
+        run.Metric("sfxCapped", capped);
+        run.Metric("sfxDucked", ducked);
+        run.Event("audio-mix", played + " effects in 40 s, " + softened + " stacked softer, " + capped + " capped, " + ducked + " dipped under a voice line");
+        if (played == 0 && SoundSettings.EffectsLevel > 0f) {
+            run.Problem(PlaytestSeverity.Bug, "no sound effects played in 40 s of play");
+        }
+        run.Progress(0.65f);
+
+        run.Scene("Slice falls");
+        run.Event("hold-fire", "the bot stops swinging so the bots reach Slice and the game-over panel opens");
+        Musician slice = Musician.Instance;
+        float holdStart = Time.realtimeSinceStartup;
+        float nextSkip = 0f;
+        float nextSiege = 0f;
+        while (!run.Done && !WaveDirector.IsLost) {
+            float now = Time.realtimeSinceStartup;
+            SampleFps();
+            if (now - holdStart > 200f) {
+                run.Problem(PlaytestSeverity.Bug, "the run did not end in 200 s of holding fire");
+                yield break;
+            }
+            if (LevelUpScreen.IsOpen) {
+                yield return PickCard();
+                continue;
+            }
+            Batter(player, true, null, false);
+            if ((WaveDirector.IsBuilding || Enemy.Roster.Count == 0) && now >= nextSkip) {
+                nextSkip = now + 1.5f;
+                PlayInput.Tap(KeyCode.Return);
+            }
+            // Setup: her knife outlasts a wave on its own, so after 20 s Plated Yo Bots ring her, topped up every 8 s.
+            if (slice != null && now - holdStart > 20f && now >= nextSiege && slice.Alive && !slice.Defeating && !WaveDirector.IsBuilding) {
+                nextSiege = now + 8f;
+                int dropped = SiegeSlice(slice, 10);
+                if (dropped > 0) {
+                    run.Event("setup", dropped + " Plated Yo Bots dropped around Slice (" + slice.Health + " / " + slice.MaxHealth + ")");
+                }
+            }
+            yield return null;
+        }
+        if (run.Done) {
+            yield break;
+        }
+        PlayInput.Release();
+        run.Scene("Game Over");
+        yield return new WaitForSecondsRealtime(1.2f);
+        bool titled = false;
+        foreach (Text text in Object.FindObjectsByType<Text>(FindObjectsSortMode.None)) {
+            if (text.isActiveAndEnabled && text.text == "Address struck off") {
+                titled = true;
+                break;
+            }
+        }
+        run.Event("game-over-title", titled ? "Address struck off" : "not found");
+        if (!titled) {
+            run.Problem(PlaytestSeverity.Polish, "the game-over panel does not read \"Address struck off\"");
+        }
+        PolishScreen("gameover", 0, false);
+        run.Progress(0.9f);
+        yield return GameOver();
+    }
+
+    // One screen of the polish pass: layout, leftover words and (where every button should have it) the button feel.
+    static void PolishScreen(string where, int minOrder, bool feelRequired) {
+        CheckScreen(where, minOrder);
+        int stale = 0;
+        foreach (Text text in Object.FindObjectsByType<Text>(FindObjectsSortMode.None)) {
+            if (!text.isActiveAndEnabled || string.IsNullOrEmpty(text.text) || !StaleWords.IsMatch(text.text)) {
+                continue;
+            }
+            Canvas canvas = text.canvas;
+            if (canvas == null || canvas.rootCanvas.sortingOrder < minOrder) {
+                continue;
+            }
+            stale++;
+            run.Problem(PlaytestSeverity.Polish, where + ": the piano is gone but the screen still says \"" + Clip(text.text) + "\"");
+        }
+        run.Event("stale-words", where + ": " + stale);
+        int buttons = 0;
+        int felt = 0;
+        foreach (Button button in Object.FindObjectsByType<Button>(FindObjectsSortMode.None)) {
+            Canvas holder = button.GetComponentInParent<Canvas>();
+            if (!button.isActiveAndEnabled || holder == null || holder.rootCanvas.sortingOrder < minOrder) {
+                continue;
+            }
+            buttons++;
+            if (button.GetComponent<MenuButtonFx>() != null) {
+                felt++;
+            }
+        }
+        run.Event("button-feel", where + ": " + felt + " of " + buttons + " buttons lift on hover and sink on press");
+        if (feelRequired && felt < buttons) {
+            run.Problem(PlaytestSeverity.Polish, where + ": " + (buttons - felt) + " button(s) don't share the menu's hover and press feel");
+        }
+    }
+
+    static readonly System.Text.RegularExpressions.Regex StaleWords = new System.Text.RegularExpressions.Regex(@"\b(piano|pianist|music stopped|off the keys)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
     // A finger's tap on a UI button: down, up, click.
     static void Tap(GameObject target) {

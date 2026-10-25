@@ -70,7 +70,7 @@ public class MainMenu : MonoBehaviour {
         { "Slice", "Clean." },
         { "Yo Bot", "Uploading victory." },
         { "Wallit", "Coins first. Questions never." },
-        { "Slice", "Keep them off the keys." },
+        { "Slice", "Keep them out of the ring." },
         { "Yo Bot", "Please take a number!" }
     };
 
@@ -971,7 +971,16 @@ public class MainMenu : MonoBehaviour {
 }
 
 // Hover lifts a button and lights its halo, a press sinks it, and the Play button breathes. Clicks tick.
+// The pause, settings, level-up and story screens use it too (no halo), so every button in the game feels the same.
 public class MenuButtonFx : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler {
+    // Adds the feel to a button built elsewhere.
+    public static void Add(Button target, bool main = false) {
+        if (target == null || target.GetComponent<MenuButtonFx>() != null) {
+            return;
+        }
+        target.gameObject.AddComponent<MenuButtonFx>().Setup(target, null, main);
+    }
+
     Button button;
     Image halo;
     bool primary;
@@ -1013,6 +1022,16 @@ public class MenuButtonFx : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
             kick = 1f;
         }
         down = false;
+    }
+
+    // A screen that closes under the pointer gets no exit event, so it would reopen with the button still lifted.
+    void OnDisable() {
+        over = false;
+        down = false;
+        hover = 0f;
+        press = 0f;
+        kick = 0f;
+        transform.localScale = Vector3.one;
     }
 
     void Update() {

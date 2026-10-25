@@ -307,6 +307,7 @@ public class SettingsPanel : MonoBehaviour {
         button.colors = colors;
         button.onClick.AddListener(click);
         image.rectTransform.sizeDelta = size;
+        MenuButtonFx.Add(button);
         Text text = MakeText(go.transform, label, 32, FontStyle.Bold, TextAnchor.MiddleCenter);
         Stretch(text.rectTransform);
         return button;

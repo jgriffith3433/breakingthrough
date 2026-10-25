@@ -22,7 +22,7 @@ any more.
 
 The circle is the only address in the Hollow. Wallit has none, so while he is inside it he is on the books: he exists,
 he can be hurt, he can be paid. If Slice falls, the circle is struck off and everything in it is cleared with her. The
-run ends when Slice falls. That is the whole game: Wallit swings, Slice holds the ring.
+run ends when Slice falls. That is the whole game: Wallit swings, Slice holds the ring. The game-over panel says so: **Address struck off**.
 
 ## Who comes
 

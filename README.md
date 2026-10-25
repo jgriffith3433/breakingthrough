@@ -105,7 +105,7 @@ The level curve is `5 + 4L + 0.5L²` bolts for level L, which works out to about
 | Live Wire | Epic | 3 | 15% chance per rank that a hit arcs to 3 more bots; each one it reaches shorts out (stops, flickering blue) for a moment | A copper coil, a blue glow, and a thin arc up the barrel now and then |
 | Powder Keg | Epic | 3 | Bots burst when they fall, and bursts can chain | |
 | Whirling Blades | Epic | 4 | Blades circle you and cut bots that come close. +1 blade per rank | |
-| Encore | Epic | 3 | The piano sends out a damaging shockwave every few seconds | |
+| Encore | Epic | 3 | The circle sends out a damaging shockwave around Slice every few seconds | |
 | Grand Slam | Epic | 3 | Every 8th, 6th or 4th swing is a full 360° spin: it hits every bot within 1.2x reach for 1.4x and knocks them away | A gold knob |
 | Executioner | Epic | 2 | Bots under 12% or 24% health fall on the next hit (not bosses) | |
 | Second Wind | Epic | 1 | Once a wave, if Slice drops below 25 health, a blast clears the stage and heals 20 | |
@@ -162,9 +162,9 @@ The **Aluminum! Not wood!** upgrade swaps the wooden bat for a dented aluminum o
 
 | Debut wave | Bot | Authored health | Bolts | Look and blurb |
 |---|---|---|---|---|
-| 1 | Yo Bot | 3 | 1 | Gunmetal laptop with a cyan HUD, each with its own paint job. Small, loud, and walking straight at the piano |
+| 1 | Yo Bot | 3 | 1 | Gunmetal laptop with a cyan HUD, each with its own paint job. Small, loud, and walking straight at the circle |
 | 10 | Plated Yo Bot | 60 | 6 | Steel with shoulder plates. Your height, bolted shut, and slow to come apart |
-| 20 | Mega Yo Bot | 270 | 10 | Red, horned. As tall as you, and it rushes the piano in bursts |
+| 20 | Mega Yo Bot | 270 | 10 | Red, horned. As tall as you, and it rushes the circle in bursts |
 | 30 | Spider Bot | 480 | 19 | Navy glass pod with a pilot, six blade legs. Twice the size of anything so far |
 | 40 | Stalker Spider Bot | 660 | 22 | Silver. Quiet on its legs, with a long health bar |
 | 50 | Runner Spider Bot | 840 | 25 | Orange, long legs. It closes the gap |

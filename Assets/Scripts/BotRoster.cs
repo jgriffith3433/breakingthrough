@@ -53,14 +53,14 @@ public static class BotRoster {
             Weave = true,
             Tint = new Color(1.25f, 0.95f, 0.4f),
             UnlockWave = 1,
-            Blurb = "Yo Bots. Small, loud, and walking straight at the piano. One chirps: Uploading victory."
+            Blurb = "Yo Bots. Small, loud, and walking straight at the circle. One chirps: Uploading victory."
         };
     }
 
     public static BotDef ForTier(int unlockWave) {
         switch (unlockWave) {
             case 10: return Make(BotKind.PlatedYoBot, "Plated Yo Bot", 60, 4.6f, 1.18f, 0.92f, 1.12f, 0.72f, 1.15f, 3.2f, 1.3f, false, false, new Color(0.95f, 1.1f, 1.25f), 10, "A Plated Yo Bot. Your height, bolted shut, and slow to come apart.");
-            case 20: return Make(BotKind.MegaYoBot, "Mega Yo Bot", 270, 5.4f, 1f, 1.15f, 1f, 1.35f, 2.4f, 4.2f, 1.5f, true, true, new Color(1.65f, 0.32f, 0.22f), 20, "A Mega Yo Bot. As tall as you, and it rushes the piano in bursts.");
+            case 20: return Make(BotKind.MegaYoBot, "Mega Yo Bot", 270, 5.4f, 1f, 1.15f, 1f, 1.35f, 2.4f, 4.2f, 1.5f, true, true, new Color(1.65f, 0.32f, 0.22f), 20, "A Mega Yo Bot. As tall as you, and it rushes the circle in bursts.");
             case 30: return Make(BotKind.SpiderBot, "Spider Bot", 480, 8.2f, 1.05f, 1f, 1.25f, 1.05f, 1.8f, 3.6f, 1.8f, true, false, new Color(0.55f, 1.05f, 1.1f), 30, "A Spider Bot. Six legs, twice the size of anything so far, and a long way from scrap.");
             case 40: return Make(BotKind.StalkerSpiderBot, "Stalker Spider Bot", 660, 9.4f, 1f, 1.05f, 1.2f, 0.95f, 1.7f, 3.4f, 2.2f, false, false, new Color(1.6f, 1.62f, 1.75f), 40, "A Stalker Spider Bot. Quiet on its legs, with a long health bar.");
             case 50: return Make(BotKind.RunnerSpiderBot, "Runner Spider Bot", 840, 10.8f, 0.85f, 1.4f, 0.9f, 1.55f, 2.5f, 3.8f, 1.4f, true, true, new Color(1.6f, 0.82f, 0.3f), 50, "A Runner Spider Bot. Long legs, and it closes the gap.");
