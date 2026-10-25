@@ -25,3 +25,8 @@ if __name__=='__main__':
         mx=sorted(max(px[i*bpp:i*bpp+3]) for i in range(0,n,7))
         m=len(mx)
         print(f,'mean',[round(sum(px[i*bpp+k] for i in range(0,n,7))/m) for k in range(3)],'p50',mx[m//2],'p90',mx[int(m*.9)],'p97',mx[int(m*.97)],'>140 %',round(sum(1 for v in mx if v>140)/m*100,1))
+def save(path, w, h, bpp, px):
+    ct = {3: 2, 4: 6}[bpp]
+    raw = b''.join(b'\x00' + bytes(px[y*w*bpp:(y+1)*w*bpp]) for y in range(h))
+    def chunk(t, d): return struct.pack('>I', len(d)) + t + d + struct.pack('>I', zlib.crc32(t + d) & 0xffffffff)
+    open(path, 'wb').write(b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, ct, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(raw, 9)) + chunk(b'IEND', b''))
