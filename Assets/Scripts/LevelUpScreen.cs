@@ -178,6 +178,7 @@ public class LevelUpScreen : MonoBehaviour {
             EventSystem.current.SetSelectedGameObject(null);
         }
         RunAnalytics.CardsOpen(chest);
+        WallitVoice.OnLevelUp(chest);
         Time.timeScale = 0f;
         root.SetActive(true);
         heading.text = chest ? "Treasure!  Pick one" : "Level " + RunBoons.Level + "!  Pick one";

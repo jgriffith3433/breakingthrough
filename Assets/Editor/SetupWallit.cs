@@ -438,6 +438,10 @@ static class SetupWallit
 
         EnsureBatInHand(instance.transform);
 
+        // The mouth is built in code on the painted grin at load (WallitMouth); the prefab just carries the component.
+        if (instance.GetComponent<WallitMouth>() == null)
+            instance.AddComponent<WallitMouth>();
+
         PrefabUtility.SaveAsPrefabAsset(instance, PrefabPath);
         PrefabUtility.SaveAsPrefabAsset(instance, ResourcesPrefabPath);
         Object.DestroyImmediate(instance);

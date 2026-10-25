@@ -60,6 +60,17 @@ Shown once at the start of a run that begins at wave 1, over the frozen Hollow. 
 4. Slice says why it matters.
 5. A Yo Bot arrives. Wallit says what to do.
 
+## Wallit talks
+
+Wallit barks while he fights, in `WallitVoice.cs` (banks) and by voice file (`Resources/Voice/wallit_<line>.mp3`, ids in
+`Resources/Voice/audio.json`, made with Hawkes Gen `audio.voice` in his Dose Of Destruction voice). He is brash and angry and
+everything is money: a kill is "Paid in full." or "Exact change.", a streak is "Cash rain!", a big hit is "Interest due!",
+a home run is "Returned to sender!", a hit on him is "Ow! That's extra!", a wave start is "Cash only!", a level-up is
+"Profit!", a chest is "Finders keepers!", and when Slice runs low he answers "Slice! Hold on!". No jokes about work, and
+the wave beats' Wallit lines above are spoken too. One voice at a time: he waits for Slice to finish and never repeats a
+line back to back. His mouth is a part on the painted face (`WallitMouth.cs`) that opens and closes with the loudness of
+what he says.
+
 ## Canon established here
 
 - The circle is the one filed address in the Moonlit Hollow; whatever is inside it exists.

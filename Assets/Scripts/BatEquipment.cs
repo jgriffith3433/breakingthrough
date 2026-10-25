@@ -554,6 +554,7 @@ public class BatEquipment : MonoBehaviour {
             SmashHits += struck;
             Say("ground smash (target " + Size(faceTarget) + " under " + Tuning.SmashBelow.ToString("0.00") + " of yours): " + struck + " bot" + (struck == 1 ? "" : "s") + " hit");
             if (struck > 0) {
+                WallitVoice.OnBigHit("smash");
                 Juice.HitStop(0.05f);
                 ZeldaStyleCamera.Shake(0.08f, 0.16f);
             }
@@ -578,6 +579,7 @@ public class BatEquipment : MonoBehaviour {
             finisher ? Tuning.BatKnockFinisher : Tuning.BatKnock, finisher ? 5f : 2f);
         if (finisher && count > 0) {
             Finishers++;
+            WallitVoice.OnBigHit("finisher");
         }
         string name = move == Move.Swing1 ? "swing 1" : move == Move.Swing2 ? "swing 2" : "swing 3 (finisher)";
         if (RunBoons.ArcBonus > 0f) {
@@ -682,6 +684,7 @@ public class BatEquipment : MonoBehaviour {
         ZeldaStyleCamera.Shake(0.2f, 0.28f);
         Say("home run (charge " + Mathf.RoundToInt(homeRunCharge * 100f) + "%): " + kind + " launched at " + launch.magnitude.ToString("0") + " m/s" + (dropped ? ", dropped" : ""));
         UpgradeLook.Say("HOME RUN!", 1.2f, -40f);
+        WallitVoice.OnHomeRun();
     }
 
     // Follows a bird the bat sent flying and hits whatever it flies into.

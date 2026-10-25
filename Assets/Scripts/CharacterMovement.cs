@@ -147,6 +147,7 @@ public class CharacterMovement : MonoBehaviour {
             existing.gameObject.tag = "playerchild";
             BirdArt.CalmEmission(existing.gameObject);
             ApplyWallitSkins(existing.gameObject);
+            WallitMouth.Attach(existing.gameObject);
             Animator existingAnim = existing.GetComponentInChildren<Animator>();
             if (existingAnim != null) {
                 if (existingAnim.gameObject.GetComponent<WallitAnimRelay>() == null) {
@@ -182,6 +183,7 @@ public class CharacterMovement : MonoBehaviour {
             wallit.name = "Wallit";
             BirdArt.CalmEmission(wallit);
             ApplyWallitSkins(wallit);
+            WallitMouth.Attach(wallit);
             wallit.tag = "playerchild";
             wallit.transform.SetAsFirstSibling();
             wallit.transform.localPosition = Vector3.zero;
