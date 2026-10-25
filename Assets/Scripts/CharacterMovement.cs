@@ -188,6 +188,7 @@ public class CharacterMovement : MonoBehaviour {
         if (wallit == null) {
             return;
         }
+        WallitMeshClean.Apply(wallit);
         Shader shader = SafeShader.Find("Knoll/BotSkin");
         if (shader == null) {
             return;
