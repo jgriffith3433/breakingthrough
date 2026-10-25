@@ -11,6 +11,13 @@ public class CharacterMovement : MonoBehaviour {
     public float SpeedMoveWhileAttack = 0.1f;
     public float SpeedAttack = 1.5f;
     public float TurnSpeed = 20f;
+    // Free running turns smoothly instead of snapping; the legs are bent to the real direction of travel meanwhile.
+    public float FreeTurnSpeed = 12f;
+    // Locomotion: m/s the body must move to start or keep the move clips, and the most the legs are bent to travel.
+    public float StartSpeed = 0.6f;
+    public float StopSpeed = 0.3f;
+    public float StopHold = 0.1f;
+    public float MaxWarp = 60f;
     public float SpeedJump = 20f;
     float jumpAnimLeft;
     private Vector3 Tar;
@@ -49,6 +56,11 @@ public class CharacterMovement : MonoBehaviour {
         "jump", "landing", "hitReact", "shakeOff", "victory", "death"
     };
 
+    // Ground speed each locomotion clip covers at playback speed 1, for a Wallit at scale 1. Starting guesses: the
+    // planted foot is measured every frame (WallitStride) and these are pulled toward what the rig really does.
+    static readonly float[] DefaultStride = { 0f, 4.4f, 2.6f, 2.6f, 2.4f };
+    readonly float[] stride = (float[])DefaultStride.Clone();
+
     public static readonly int[] ClipCounts = new int[17];
     public static int LastClip { get; private set; } = -1;
     static float actionClipUntil;
@@ -56,7 +68,28 @@ public class CharacterMovement : MonoBehaviour {
     static readonly int ClipHash = Animator.StringToHash(PARAMETER_CLIP);
     static readonly int StateHash = Animator.StringToHash(PARAMETER_STATE);
     static readonly int FireSpeedHash = Animator.StringToHash("FireSpeed");
+    static readonly int MoveSpeedHash = Animator.StringToHash("MoveSpeed");
     bool hasFireSpeed;
+    bool hasMoveSpeed;
+
+    // Locomotion state.
+    Transform model;
+    Transform footL;
+    Transform footR;
+    Transform hips;
+    Vector3 footLLocal, footRLocal, footLWorld, footRWorld, hipsLocal;
+    bool haveFeet;
+    float footFloor = 999f;
+    bool moving;
+    float stopTimer;
+    int moveClip = CLIP_RUN;
+    Vector3 travel = Vector3.forward;
+    float warp;
+    float warpVel;
+    float animSpeed = 1f;
+    float animSpeedVel;
+    public static float GroundSpeed { get; private set; }
+    public static float AnimSpeed { get; private set; }
 
     public static void ResetClipCounts() {
         for (int i = 0; i < ClipCounts.Length; i++) {
@@ -261,7 +294,43 @@ public class CharacterMovement : MonoBehaviour {
         }
     }
 
-    public static void PlayClip(Animator anim, int clipId, bool forceRestart = false, float crossFade = 0.06f) {
+    public static bool IsLocomotion(int clipId) {
+        return clipId >= CLIP_RUN && clipId <= CLIP_BACK_PEDAL;
+    }
+
+    static readonly Dictionary<string, float> clipLengths = new Dictionary<string, float>();
+
+    static float ClipLength(Animator anim, string stateName) {
+        float length;
+        if (clipLengths.TryGetValue(stateName, out length)) {
+            return length;
+        }
+        length = 0f;
+        if (anim.runtimeAnimatorController != null) {
+            foreach (AnimationClip c in anim.runtimeAnimatorController.animationClips) {
+                if (c != null && c.name == stateName) {
+                    length = c.length;
+                }
+            }
+        }
+        if (length > 0f) {
+            clipLengths[stateName] = length;
+        }
+        return length;
+    }
+
+    // Moves between locomotion clips at the same point of the stride (so a foot does not jump to the start of a new
+    // cycle), over a fixed time in seconds; every other change starts the clip from its beginning.
+    public static void PlayLoco(Animator anim, int clipId, float seconds) {
+        float phase = 0f;
+        if (IsLocomotion(LastClip) && IsLocomotion(clipId) && LastClip != clipId) {
+            AnimatorStateInfo from = anim.IsInTransition(0) ? anim.GetNextAnimatorStateInfo(0) : anim.GetCurrentAnimatorStateInfo(0);
+            phase = from.normalizedTime - Mathf.Floor(from.normalizedTime);
+        }
+        PlayClip(anim, clipId, false, seconds, phase);
+    }
+
+    public static void PlayClip(Animator anim, int clipId, bool forceRestart = false, float crossFade = 0.06f, float phase = -1f) {
         if (anim == null || clipId < 0 || clipId >= ClipNames.Length) {
             return;
         }
@@ -282,7 +351,8 @@ public class CharacterMovement : MonoBehaviour {
         }
 
         if (hasClip) {
-            anim.SetInteger(ClipHash, clipId);
+            // A timed cross fade below is the whole move; an Any State hit on this Clip would restart the clip at 0.
+            anim.SetInteger(ClipHash, phase >= 0f ? -1 : clipId);
         }
         if (hasState) {
             int legacyState = clipId == CLIP_IDLE ? 0 : clipId == CLIP_JUMP ? 3 : clipId == CLIP_SHAKE_OFF ? 7 : clipId == CLIP_LANDING ? 5 : 1;
@@ -297,7 +367,12 @@ public class CharacterMovement : MonoBehaviour {
             } else if (changed) {
                 AnimatorStateInfo cur = anim.GetCurrentAnimatorStateInfo(0);
                 if (!cur.IsName(stateName)) {
-                    anim.CrossFade(stateHash, crossFade, 0, 0f);
+                    float length = phase >= 0f ? ClipLength(anim, stateName) : 0f;
+                    if (length > 0f) {
+                        anim.CrossFadeInFixedTime(stateHash, crossFade, 0, phase * length);
+                    } else {
+                        anim.CrossFade(stateHash, crossFade, 0, 0f);
+                    }
                 }
             }
         }
@@ -327,15 +402,37 @@ public class CharacterMovement : MonoBehaviour {
                 if (parameter.nameHash == FireSpeedHash) {
                     hasFireSpeed = true;
                 }
+                if (parameter.nameHash == MoveSpeedHash) {
+                    hasMoveSpeed = true;
+                }
             }
         }
     }
 
     void Update() {
+        warpTarget = 0f;
         MovementAndJumping();
     }
 
-    void AnimationMove(float magnitude, Vector3 worldMove, float hori, float vert) {
+    float warpTarget;
+
+    // The legs run along the clip's own axis (forward, left, right, back). When travel is between two axes the
+    // body is turned a little toward the travel direction so the clip's foot speed lands along the real motion.
+    static float ClipAxis(int clip) {
+        return clip == CLIP_STRAFE_RIGHT ? 90f : clip == CLIP_STRAFE_LEFT ? -90f : clip == CLIP_BACK_PEDAL ? 180f : 0f;
+    }
+
+    void SetMoveSpeed(float s) {
+        AnimSpeed = s;
+        if (hasMoveSpeed) {
+            Anim.SetFloat(MoveSpeedHash, s);
+            Anim.speed = 1f;
+        } else {
+            Anim.speed = s;
+        }
+    }
+
+    void AnimationMove(Vector3 velocity) {
         if (Anim == null) {
             return;
         }
@@ -349,7 +446,7 @@ public class CharacterMovement : MonoBehaviour {
             return;
         }
         if (PlayerGrowth.Instance != null && PlayerGrowth.Instance.IsPlayingActionClip) {
-            if (magnitude > MoveMagnitude && PlayerGrowth.Instance.IsPlayingVictory) {
+            if (velocity.sqrMagnitude > MoveMagnitude * MoveMagnitude * 100f && PlayerGrowth.Instance.IsPlayingVictory) {
                 PlayerGrowth.Instance.CancelVictory();
             } else {
                 return;
@@ -372,36 +469,163 @@ public class CharacterMovement : MonoBehaviour {
             return;
         }
 
-        if (magnitude > MoveMagnitude) {
-            float speedAnimation = Mathf.Clamp(magnitude * 1.6f, 1f, 1.45f);
-            Anim.speed = speedAnimation;
-            if (Aiming()) {
-                Vector3 flat = new Vector3(worldMove.x, 0f, worldMove.z);
-                Vector3 local = flat.sqrMagnitude > 0.0001f
-                    ? transform.InverseTransformDirection(flat.normalized)
-                    : new Vector3(hori, 0f, vert);
-                int clip;
-                if (Mathf.Abs(hori) > 0.2f && Mathf.Abs(hori) >= Mathf.Abs(vert) * 0.65f) {
-                    clip = hori < 0f ? CLIP_STRAFE_LEFT : CLIP_STRAFE_RIGHT;
-                } else if (Mathf.Abs(local.x) > 0.25f && Mathf.Abs(local.x) >= Mathf.Abs(local.z) * 0.65f) {
-                    clip = local.x < 0f ? CLIP_STRAFE_LEFT : CLIP_STRAFE_RIGHT;
-                } else if (vert < -0.2f || local.z < -0.2f) {
-                    clip = CLIP_BACK_PEDAL;
-                } else {
-                    clip = CLIP_RUN;
-                }
-                PlayClip(Anim, clip, false, 0.08f);
-            } else {
-                PlayClip(Anim, CLIP_RUN, false, 0.08f);
-            }
-        } else {
-            Anim.speed = 1f;
-            PlayClip(Anim, CLIP_IDLE, false, 0.08f);
+        Locomote(velocity, Aiming());
+    }
+
+    // Idle, run, strafe or back pedal, matched to how fast the body really moves over the ground: the playback speed
+    // is the ground speed over the speed the clip covers, so a planted foot stays planted; the clip follows the
+    // direction of travel against the body (with a hold so it does not flicker at the diagonals); a start or a stop
+    // is a short cross fade (a stop waits a moment so a turn through zero speed does not drop to idle).
+    void Locomote(Vector3 velocity, bool aiming) {
+        Vector3 flat = new Vector3(velocity.x, 0f, velocity.z);
+        float speed = flat.magnitude;
+        GroundSpeed = speed;
+        float scale = VisualScale;
+        if (speed > 0.05f) {
+            travel = flat / speed;
         }
+
+        bool started = false;
+        if (moving) {
+            stopTimer = speed < StopSpeed ? stopTimer + Time.deltaTime : 0f;
+            if (stopTimer >= StopHold) {
+                moving = false;
+            }
+        } else if (speed > StartSpeed) {
+            moving = true;
+            started = true;
+            stopTimer = 0f;
+        }
+        if (!moving) {
+            SetMoveSpeed(1f);
+            PlayLoco(Anim, CLIP_IDLE, 0.2f);
+            return;
+        }
+
+        Vector3 local = transform.InverseTransformDirection(travel);
+        float angle = Mathf.Atan2(local.x, local.z) * Mathf.Rad2Deg;
+        int clip = CLIP_RUN;
+        if (aiming) {
+            if (IsLocomotion(moveClip) && Mathf.Abs(Mathf.DeltaAngle(ClipAxis(moveClip), angle)) < 60f) {
+                clip = moveClip;
+            } else if (Mathf.Abs(angle) <= 45f) {
+                clip = CLIP_RUN;
+            } else if (angle > 45f && angle < 135f) {
+                clip = CLIP_STRAFE_RIGHT;
+            } else if (angle < -45f && angle > -135f) {
+                clip = CLIP_STRAFE_LEFT;
+            } else {
+                clip = CLIP_BACK_PEDAL;
+            }
+        }
+        moveClip = clip;
+        warpTarget = Mathf.Clamp(Mathf.DeltaAngle(ClipAxis(clip), angle), -MaxWarp, MaxWarp);
+
+        float want = Mathf.Clamp(speed / (Mathf.Max(0.5f, stride[clip]) * scale), 0.45f, 1.8f);
+        animSpeed = started ? want : Mathf.SmoothDamp(animSpeed, want, ref animSpeedVel, 0.06f);
+        SetMoveSpeed(animSpeed);
+        PlayLoco(Anim, clip, 0.14f);
+    }
+
+    void LateUpdate() {
+        if (Anim == null) {
+            return;
+        }
+        if (model == null && Anim.transform != transform) {
+            model = Anim.transform;
+        }
+        if (model != null) {
+            warp = Mathf.SmoothDampAngle(warp, warpTarget, ref warpVel, 0.09f);
+            model.localRotation = Quaternion.Euler(0f, warp, 0f);
+        }
+        TrackFeet();
+    }
+
+    // Reads the planted foot off the posed rig, after the Animator has run: how fast it moves over the ground (a
+    // slide) and against the body (the stride the clip really covers). The stride pulls the playback speed in line.
+    void TrackFeet() {
+        if (model == null || !Anim.isHuman) {
+            return;
+        }
+        if (footL == null || footR == null) {
+            footL = Anim.GetBoneTransform(HumanBodyBones.LeftFoot);
+            footR = Anim.GetBoneTransform(HumanBodyBones.RightFoot);
+            hips = Anim.GetBoneTransform(HumanBodyBones.Hips);
+            haveFeet = false;
+            if (footL == null || footR == null) {
+                return;
+            }
+        }
+        float dt = Time.deltaTime;
+        Vector3 wl = footL.position;
+        Vector3 wr = footR.position;
+        Vector3 ll = model.InverseTransformPoint(wl);
+        Vector3 lr = model.InverseTransformPoint(wr);
+        Vector3 lh = hips != null ? model.InverseTransformPoint(hips.position) : Vector3.zero;
+        footFloor = Mathf.Min(footFloor + 0.05f * dt, Mathf.Min(wl.y, wr.y));
+        float scale = VisualScale;
+
+        if (haveFeet && dt > 0.0001f && Time.timeScale > 0.9f) {
+            AnimatorStateInfo cur = Anim.GetCurrentAnimatorStateInfo(0);
+            bool transition = Anim.IsInTransition(0);
+            if (hips != null && OnFoot(cur) && (!transition || OnFoot(Anim.GetNextAnimatorStateInfo(0)))) {
+                float jump = (lh - hipsLocal).magnitude / scale;
+                WallitStride.AddPop(jump, jump > 0.2f);
+            }
+            if (moving && IsLocomotion(moveClip) && !transition && cur.IsName(ClipNames[moveClip])) {
+                bool leftLower = wl.y <= wr.y;
+                Vector3 now = leftLower ? wl : wr;
+                Vector3 before = leftLower ? footLWorld : footRWorld;
+                Vector3 nowLocal = leftLower ? ll : lr;
+                Vector3 beforeLocal = leftLower ? footLLocal : footRLocal;
+                if (now.y - footFloor < WallitStride.PlantHeight * scale) {
+                    Vector3 world = (now - before) / dt;
+                    Vector3 body = (nowLocal - beforeLocal) / dt;
+                    world.y = 0f;
+                    body.y = 0f;
+                    // At playback speed 1, for a Wallit at scale 1.
+                    float implied = body.magnitude / Mathf.Max(0.3f, AnimSpeed);
+                    WallitStride.Add(moveClip, world.magnitude / scale, implied);
+                    float d = DefaultStride[moveClip];
+                    if (implied > d * 0.5f && implied < d * 2f) {
+                        stride[moveClip] = Mathf.Lerp(stride[moveClip], implied, 0.03f);
+                    }
+                }
+            }
+        }
+        footLWorld = wl;
+        footRWorld = wr;
+        footLLocal = ll;
+        footRLocal = lr;
+        hipsLocal = lh;
+        haveFeet = true;
+    }
+
+    // Idle or a locomotion clip: the poses where the hips have no business jumping.
+    static bool OnFoot(AnimatorStateInfo info) {
+        for (int i = CLIP_IDLE; i <= CLIP_BACK_PEDAL; i++) {
+            if (info.IsName(ClipNames[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    float VisualScale {
+        get { return Mathf.Max(0.2f, model != null ? model.lossyScale.y : transform.lossyScale.y); }
+    }
+
+    public float Stride(int clip) {
+        return clip >= 0 && clip < stride.Length ? stride[clip] : 0f;
     }
 
     bool Aiming() {
         return ZeldaCam != null && ZeldaCam.LockedOnGameObject != null;
+    }
+
+    // Frame-rate independent ease toward a facing (a plain Slerp by deltaTime * rate snaps once a frame is long).
+    void FaceToward(Quaternion target, float rate) {
+        transform.rotation = Quaternion.Slerp(transform.rotation, target, 1f - Mathf.Exp(-rate * Time.deltaTime));
     }
 
     void MovementAndJumping() {
@@ -416,45 +640,36 @@ public class CharacterMovement : MonoBehaviour {
             bool rooted = PlayerGrowth.Instance != null && PlayerGrowth.Instance.Rooted;
             if (rooted) {
                 motor.Move(Vector3.zero);
-                AnimationMove(0f, Vector3.zero, 0f, 0f);
+                AnimationMove(Vector3.zero);
             } else if (ZeldaCam != null && ZeldaCam.LockedOnGameObject != null) {
-                var vert = PlayInput.GetAxis("Vertical");
-                var hori = PlayInput.GetAxis("Horizontal");
-                var directionTowardLockedOnObject = ZeldaCam.LockedOnGameObject.transform.position - transform.position;
-                directionTowardLockedOnObject.y = 0;
+                Vector2 input = Vector2.ClampMagnitude(new Vector2(PlayInput.GetAxis("Horizontal"), PlayInput.GetAxis("Vertical")), 1f);
+                Vector3 toward = ZeldaCam.LockedOnGameObject.transform.position - transform.position;
+                toward.y = 0;
 
-                var cameraForward = new Vector3(ZeldaCam.transform.forward.x, 0, ZeldaCam.transform.forward.z) * 4;
-                var cameraRight = new Vector3(ZeldaCam.transform.right.x, 0, ZeldaCam.transform.right.z) * 4;
-                var playerForward = new Vector3(transform.forward.x, 0, transform.forward.z);
-                var playerRight = new Vector3(transform.right.x, 0, transform.right.z);
-                playerForward += cameraForward * 4;
-                playerRight += cameraRight * 4;
+                // Locked on, forward is toward the target and left and right circle it, whatever the camera lags to.
+                Vector3 fwd = toward.sqrMagnitude > 0.01f ? toward.normalized : new Vector3(transform.forward.x, 0, transform.forward.z).normalized;
+                Vector3 right = new Vector3(fwd.z, 0, -fwd.x);
+                var directionToMove = (fwd * input.y + right * input.x) * (Speed * 1.15f * BatEquipment.MoveFactor);
 
-                var directionToMove = ((cameraForward + playerForward) * vert) + ((cameraRight + playerRight) * hori);
-                directionToMove = directionToMove / 16 * Speed * BatEquipment.MoveFactor;
-
-                if (directionTowardLockedOnObject.sqrMagnitude > 0.01f) {
-                    var newRotation = Quaternion.LookRotation(directionTowardLockedOnObject.normalized);
-                    transform.rotation = Quaternion.Slerp(transform.rotation, newRotation, Time.deltaTime * TurnSpeed);
+                if (toward.sqrMagnitude > 0.01f) {
+                    FaceToward(Quaternion.LookRotation(toward.normalized), TurnSpeed);
                 }
                 motor.Move(directionToMove);
-                AnimationMove(motor.charController.velocity.magnitude * 0.1f, directionToMove, hori, vert);
+                AnimationMove(motor.charController.velocity);
             } else {
-                var vert = PlayInput.GetAxis("Vertical");
-                var hori = PlayInput.GetAxis("Horizontal");
+                Vector2 input = Vector2.ClampMagnitude(new Vector2(PlayInput.GetAxis("Horizontal"), PlayInput.GetAxis("Vertical")), 1f);
                 Vector3 camFwd = ZeldaCam != null ? ZeldaCam.transform.forward : transform.forward;
                 Vector3 camRight = ZeldaCam != null ? ZeldaCam.transform.right : transform.right;
-                var cameraForward = new Vector3(camFwd.x * vert, 0, camFwd.z * vert);
-                var cameraRight = new Vector3(camRight.x * hori, 0, camRight.z * hori);
+                var cameraForward = new Vector3(camFwd.x * input.y, 0, camFwd.z * input.y);
+                var cameraRight = new Vector3(camRight.x * input.x, 0, camRight.z * input.x);
                 var directionToMove = cameraForward + cameraRight;
                 directionToMove *= Speed * BatEquipment.MoveFactor;
 
                 if (directionToMove.sqrMagnitude > 0.001f) {
-                    var newRotation = Quaternion.LookRotation(directionToMove.normalized);
-                    transform.rotation = Quaternion.Slerp(transform.rotation, newRotation, Time.deltaTime * TurnSpeed);
+                    FaceToward(Quaternion.LookRotation(directionToMove.normalized), FreeTurnSpeed);
                 }
                 motor.Move(directionToMove);
-                AnimationMove(motor.charController.velocity.magnitude * 0.1f, directionToMove, hori, vert);
+                AnimationMove(motor.charController.velocity);
             }
 
             if (motor.charController.velocity.sqrMagnitude > 1.2f) {

@@ -136,6 +136,11 @@ static class SetupWallit
         }
     }
 
+    static bool IsMoveSpeedClip(string key)
+    {
+        return key == "run" || key == "strafeLeft" || key == "strafeRight" || key == "backPedal";
+    }
+
     static bool IsSwingSpeedClip(string key)
     {
         return key == "swing1" || key == "swing2" || key == "swing3" || key == "groundSmash" || key == "homeRunRelease";
@@ -306,12 +311,15 @@ static class SetupWallit
 
         bool hasClipParam = false;
         bool hasFireSpeed = false;
+        bool hasMoveSpeed = false;
         foreach (AnimatorControllerParameter p in controller.parameters)
         {
             if (p.name == "Clip")
                 hasClipParam = true;
             if (p.name == "FireSpeed")
                 hasFireSpeed = true;
+            if (p.name == "MoveSpeed")
+                hasMoveSpeed = true;
         }
         if (!hasClipParam)
             controller.AddParameter("Clip", AnimatorControllerParameterType.Int);
@@ -320,6 +328,17 @@ static class SetupWallit
             controller.AddParameter(new AnimatorControllerParameter
             {
                 name = "FireSpeed",
+                type = AnimatorControllerParameterType.Float,
+                defaultFloat = 1f
+            });
+        }
+
+        // Locomotion playback speed: CharacterMovement sets it from the real ground speed, so the feet match the floor.
+        if (!hasMoveSpeed)
+        {
+            controller.AddParameter(new AnimatorControllerParameter
+            {
+                name = "MoveSpeed",
                 type = AnimatorControllerParameterType.Float,
                 defaultFloat = 1f
             });
@@ -343,6 +362,11 @@ static class SetupWallit
                 state.speedParameter = "FireSpeed";
                 state.speedParameterActive = true;
             }
+            if (IsMoveSpeedClip(name))
+            {
+                state.speedParameter = "MoveSpeed";
+                state.speedParameterActive = true;
+            }
             if (defaultState == null || name == "idle")
                 defaultState = state;
 
@@ -353,12 +377,19 @@ static class SetupWallit
                 if (t.destinationState == state)
                     enter = t;
             }
+            if (enter != null && IsLoopClip(name))
+            {
+                // Starts, stops and turns blend over a fixed 0.14 s (idle 0.2 s), not a fraction of the clip.
+                enter.hasFixedDuration = true;
+                enter.duration = name == "idle" ? 0.2f : 0.14f;
+            }
             if (enter == null)
             {
                 enter = machine.AddAnyStateTransition(state);
                 enter.AddCondition(AnimatorConditionMode.Equals, i, "Clip");
                 enter.hasExitTime = false;
-                enter.duration = 0.08f;
+                enter.hasFixedDuration = true;
+                enter.duration = IsLoopClip(name) ? (name == "idle" ? 0.2f : 0.14f) : 0.08f;
                 enter.canTransitionToSelf = false;
             }
         }
