@@ -52,7 +52,9 @@ Shader "Knoll/BotSkin"
             float rim = pow(1.0 - saturate(dot(viewDir, normal)), 4.0);
             float3 rimLight = _RimColor.rgb * rim * _RimStrength;
 
-            o.Emission = albedo * skin.a * _Glow + albedo * _AmbientBoost * 0.35 + rimLight + _Flash.rgb * _Flash.a;
+            // Capped so a bright texel can never burn to a flat white shape or bleed past the silhouette.
+            float3 lit = albedo * skin.a * _Glow + albedo * _AmbientBoost * 0.35 + rimLight;
+            o.Emission = min(lit, float3(0.85, 0.9, 0.95)) + _Flash.rgb * _Flash.a;
         }
         ENDCG
     }
