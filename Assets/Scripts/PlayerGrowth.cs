@@ -176,7 +176,7 @@ public class PlayerGrowth : MonoBehaviour {
         }
         if (!toldClimb && wave >= ClimbWave) {
             toldClimb = true;
-            Show("Older bots climb you now instead of the piano. Press F.", 6f);
+            Show("Older bots climb you now instead of the circle. Press F.", 6f);
         }
     }
 

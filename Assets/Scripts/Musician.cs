@@ -2,9 +2,9 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-// Slice, at the piano. The bots are here for her. The run ends when she does. She keeps her scalpel on her: a bot in
-// reach gets her up off the bench for a stab or backhand slash, and after a beat with nothing near she sits back down
-// and plays. The player is still the one defending her.
+// Slice, guarding the circle. The bots are here for her. The run ends when she does. She stands in the wary idle with
+// her scalpel out: a bot in reach gets a stab or backhand slash. There is no piano; the clip slots keep their old
+// numbers because the Animator and analytics use them. The player is still the one defending her.
 public class Musician : MonoBehaviour {
     public const int BaseHealth = 100;
     public const string Name = "Slice";
@@ -63,7 +63,7 @@ public class Musician : MonoBehaviour {
 
     // Animation state & diagnostics for playtest verification.
     readonly int[] clipCounts = new int[8];
-    public int CurrentClip { get; private set; } = CLIP_PIANO;
+    public int CurrentClip { get; private set; } = CLIP_IDLE;
     public string CurrentClipName {
         get {
             return CurrentClip >= 0 && CurrentClip < ClipNames.Length ? ClipNames[CurrentClip] : "unknown";
@@ -113,7 +113,7 @@ public class Musician : MonoBehaviour {
     Vector3 sliceBase;
     Quaternion sliceTurn;
     Vector3 threatDir;
-    float stand;
+    float stand = 1f;
     float quietFor;
     float stabIn;
     float lunge;
@@ -193,20 +193,24 @@ public class Musician : MonoBehaviour {
         if (oldPirate != null && sliceChild != null) {
             Destroy(oldPirate.gameObject);
         }
+        // No piano: the bench and the keys are switched off, and the old piano loop never plays.
         Transform bench = recital.transform.Find("PianoBench");
         if (bench != null) {
-            bench.localPosition = new Vector3(0f, 0f, -0.02f);
-            bench.localRotation = Quaternion.identity;
+            bench.gameObject.SetActive(false);
         }
         Transform piano = recital.transform.Find("Piano");
         if (piano != null) {
-            piano.localPosition = new Vector3(0f, 0f, 0.10f);
-            piano.localRotation = Quaternion.identity;
+            piano.gameObject.SetActive(false);
+        }
+        Transform lamp = recital.transform.Find("PianoLight");
+        if (lamp != null) {
+            lamp.gameObject.SetActive(false);
         }
         AudioSource audio = recital.GetComponent<AudioSource>();
-        if (audio != null && audio.clip != null && !audio.isPlaying) {
-            audio.loop = true;
-            audio.Play();
+        if (audio != null) {
+            audio.Stop();
+            audio.playOnAwake = false;
+            audio.enabled = false;
         }
     }
 
@@ -300,16 +304,12 @@ public class Musician : MonoBehaviour {
             pianoHands.updateMode = AnimatorUpdateMode.Normal;
             pianoHands.speed = 1f;
         }
-        AudioSource music = GetComponent<AudioSource>();
-        if (music != null && music.clip != null && !music.isPlaying) {
-            music.Play();
-        }
-        stand = 0f;
+        stand = 1f;
         standingUp = false;
         sittingDown = false;
         strikeLeft = 0f;
         strikeTarget = null;
-        PlayClip(CLIP_PIANO, true);
+        PlayClip(CLIP_IDLE, true);
         RefreshBar();
     }
 
@@ -521,7 +521,7 @@ public class Musician : MonoBehaviour {
             knife.gameObject.SetActive(false);
         }
         BuildSlash();
-        PlayClip(CLIP_PIANO, true);
+        PlayClip(CLIP_IDLE, true);
     }
 
     static bool HasClipParameter(Animator animator) {
@@ -732,27 +732,10 @@ public class Musician : MonoBehaviour {
             quietFor += dt;
         }
 
-        bool wantUp = near != null || strikeLeft > 0f || HoldKnifeUp || (stand > 0f && quietFor < SitAfter);
-        if (wantUp && !standingUp && stand < 1f) {
-            standingUp = true;
-            sittingDown = false;
-            hurtLeft = 0f;
-            PlayClip(CLIP_STAND_UP, true);
-        } else if (!wantUp && !sittingDown && stand > 0f && strikeLeft <= 0f) {
-            sittingDown = true;
-            standingUp = false;
-            hurtLeft = 0f;
-            PlayClip(CLIP_SIT_DOWN, true);
-        }
-
-        stand = Mathf.MoveTowards(stand, wantUp ? 1f : 0f, dt * (wantUp ? 2.2f : 1.6f));
-        if (standingUp && stand >= 1f) {
-            standingUp = false;
-        }
-        if (sittingDown && stand <= 0f) {
-            sittingDown = false;
-            PlayClip(CLIP_PIANO, true);
-        }
+        // She never sits: guarding the circle, she is always up.
+        stand = 1f;
+        standingUp = false;
+        sittingDown = false;
 
         stabIn -= dt;
         if (strikeLeft > 0f) {
@@ -771,14 +754,10 @@ public class Musician : MonoBehaviour {
             if (hurtLeft <= 0f) {
                 if (Standing && !sittingDown) {
                     PlayClip(CLIP_IDLE, true);
-                } else if (Seated && !standingUp) {
-                    PlayClip(CLIP_PIANO, true);
                 }
             }
         } else if (Standing && !sittingDown && CurrentClip != CLIP_IDLE) {
             PlayClip(CLIP_IDLE);
-        } else if (Seated && !standingUp && CurrentClip != CLIP_PIANO) {
-            PlayClip(CLIP_PIANO);
         }
 
         lunge = Mathf.MoveTowards(lunge, 0f, dt * 5f);

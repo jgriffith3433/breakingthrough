@@ -323,8 +323,8 @@ static class SetupSlice
             if (state == null)
                 state = machine.AddState(name, new Vector3(240f, i * 48f, 0f));
             state.motion = motion;
-            if (name == "piano")
-                pianoState = state;
+            if (name == "idle")
+                pianoState = state; // Slice stands guard: idle is the default state
             if (fallbackState == null)
                 fallbackState = state;
 
@@ -481,7 +481,7 @@ static class SetupSlice
             return false;
 
         Material lit = AssetDatabase.LoadAssetAtPath<Material>(MaterialPath);
-        AudioClip music = AssetDatabase.LoadAssetAtPath<AudioClip>(MusicPath);
+        AudioClip music = null; // no piano loop: Slice guards the circle
         Mesh benchMesh = EnsureMeshAsset(BenchMeshPath, () => BuildBench(0.48f));
         Mesh pianoMesh = EnsureMeshAsset(PianoMeshPath, () => BuildPiano(0.68f));
 
@@ -491,7 +491,7 @@ static class SetupSlice
         AudioSource source = root.AddComponent<AudioSource>();
         source.clip = music;
         source.loop = true;
-        source.playOnAwake = true;
+        source.playOnAwake = false;
         source.spatialBlend = 0.22f;
         source.volume = 0.45f;
         source.minDistance = 5f;

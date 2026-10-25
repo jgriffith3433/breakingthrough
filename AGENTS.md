@@ -7,9 +7,9 @@ Unity 6.3 LTS (`6000.3.7f1`), built-in render pipeline, old Input Manager (`acti
 The Place Department: Wallit defends Slice, a pianist, from waves of Yo Bots and Spider Bots.
 
 - **Wallit** is the player: a wallet-bodied batter with a wooden bat. He talks money ("Pay up.").
-- **Slice** is the goth pianist at the piano, the one thing to protect. She keeps a scalpel knife for bots that get close. Cool and clipped ("Clean.").
+- **Slice** is the goth guard of the circle (the base), the one thing to protect. She stands there with her scalpel knife out for bots that get close. She no longer plays the piano. Cool and clipped ("Clean.").
 - **Yo Bots** are the chirpy small robots ("Uploading victory."); **Spider Bots** are the big ones with leg stabs. Warrok, the bow and the birds are retired: don't write them into new content, lines or docs.
-- The menu key art (`Assets/Resources/UI/MenuArt.png`) shows Wallit and his bat in front, Slice at the piano behind, and bots closing in.
+- The menu key art (`Assets/Resources/UI/MenuArt.png`) shows Wallit and his bat in front, Slice standing guard behind, and bots closing in.
 
 The player is J. Prefer editing the scripts directly. Do not commit unless asked.
 
@@ -19,7 +19,7 @@ The player is J. Prefer editing the scripts directly. Do not commit unless asked
 - `Library/`, `Temp/`, `obj/`.
 - `Packages/manifest.json` must not gain `com.unity.purchasing`.
 - Existing files in `Assets/Resources/Sfx/`. Do not regenerate them.
-- Slice's piano and Wallit's bat and models (`Assets/Art/Slice`, `Assets/Art/Wallit`), unless the task is about them. The old pirate and bow textures are gone; don't bring them back.
+- Slice's models and Wallit's bat and models (`Assets/Art/Slice`, `Assets/Art/Wallit`), unless the task is about them. The old pirate and bow textures are gone; don't bring them back.
 - Retired `UpgradeId` slots 2, 3, 5, 7 and 8. Never renumber or reuse them, because saved ranks are packed by index.
 - J's standing art rules:
   - No camera shake, except the bat's small contact jolt (`ZeldaStyleCamera.Shake`, called only from `BatEquipment`), which J asked for with the bat on 2026-10-19. Keep it that small and don't add others.
@@ -62,10 +62,10 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 | UI panels and bars | `UiSkin.Round` and `UiSkin.Bar` |
 | Touch controls (stick, Swing, Lock, Jump, Shake, Next wave, Turn) | `TouchControls.cs`. They press keys through `PlayInput.Pad...`, so gameplay needs no touch code |
 | Phone and tablet layouts | `UiFit.cs` picks the layout (`Mode`: Desktop, Wide, Tall) and the canvas scale (`Apply`). Each screen has a `Layout()` that redoes positions when `UiFit.Stamp` changes |
-| Sound on/off, music and effects volume | `SoundSettings.cs` (saved as JSON `{ on, music, sfx }` under `hawkes.sound`: localStorage on the web, PlayerPrefs too). Music is every looping `AudioSource` (the piano); effects are `GameAudio`, which multiplies by `SoundSettings.EffectsLevel` |
+| Sound on/off, music and effects volume | `SoundSettings.cs` (saved as JSON `{ on, music, sfx }` under `hawkes.sound`: localStorage on the web, PlayerPrefs too). Music is every looping `AudioSource` (none now: the piano loop is gone); effects are `GameAudio`, which multiplies by `SoundSettings.EffectsLevel` |
 | The Settings screen | `SettingsPanel.cs`, opened from the main menu's Settings button and the pause menu |
 | Pausing a run | `PauseMenu.cs`: P or Escape, the pause button right of the musician's bar, or the browser freeing a locked mouse. Gameplay that must stop checks `PauseMenu.IsOpen` next to `LevelUpScreen.IsOpen` |
-| Slice's knife (stand, stab, slash, sit back down), hurt/defeat clips and her health bar | `Musician.cs` (`TickKnife`, `BeginStrike`, `OnSliceKnifeHit`, `ExecuteStrikeHit`, `OnHurtFlinch`, `BeginDefeat`, `SliceAnimRelay`) and `Assets/Editor/SetupSlice.cs` (`PianoRecital.prefab`, `Slice.prefab`, `Slice.controller`). Reach, cooldown and the bar's title are its `StabReach`, `StabCooldown` and `Name`. Her look is `Musician.ApplySliceSkins`: `Resources/Slice/SliceSkin.png` and `SliceKnifeSkin.png` (the Gen bake taken out of `Slice.fbx`) on `Knoll/BotSkin`, never the FBX's imported material (white silhouette). Re-extract both whenever `Slice.fbx` is replaced |
+| Slice's knife (always standing guard, stab, slash), hurt/defeat clips and her health bar | `Musician.cs` (`TickKnife`, `BeginStrike`, `OnSliceKnifeHit`, `ExecuteStrikeHit`, `OnHurtFlinch`, `BeginDefeat`, `SliceAnimRelay`) and `Assets/Editor/SetupSlice.cs` (`PianoRecital.prefab`, `Slice.prefab`, `Slice.controller`). Reach, cooldown and the bar's title are its `StabReach`, `StabCooldown` and `Name`. Her look is `Musician.ApplySliceSkins`: `Resources/Slice/SliceSkin.png` and `SliceKnifeSkin.png` (the Gen bake taken out of `Slice.fbx`) on `Knoll/BotSkin`, never the FBX's imported material (white silhouette). Re-extract both whenever `Slice.fbx` is replaced |
 | The website's "Tap to play" prompt | `Tools/Web/hawkes-sound.js`. `WebGlBuild.InstallSoundPrompt` copies it to `<site>/Game/` and adds its `<script data-hawkes-sound>` to `Game/index.html` on every deploy, so edit it here, never in the website |
 | Analytics events, the feedback card, the build stamp | `RunAnalytics.cs`, `Plugins/WebGL/HawkesAnalyticsPage.jslib`, `WebGlBuild.WriteBuildStamp`. See Analytics below |
 | The website's What's new page and release notes | `Tools/Web/`: `whatsnew.html`, `releases.json` (the first release), `hawkes-release.js`, and the link blocks `whatsnew-landing.html` (nav, before Play) and `whatsnew-game.html` (the version in the game's corner). `WebGlBuild.InstallWhatsNew` installs them on every deploy. The site's `releases.json` is written only when it has none: after that Hawkes Studio adds a release at each go live, so later notes go there, not here |
