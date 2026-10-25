@@ -5,6 +5,12 @@ using UnityEngine;
 public class MovementMotor : MonoBehaviour {
     public float GravityMultiplier = 1f;
     public float LerpTime = 10f;
+    // Ground speed ramps in a straight line, so a start, stop or turn is one smooth change (m/s per second). The
+    // walk animation follows the speed that results, so the feet keep up with it.
+    public float Accel = 28f;
+    public float Decel = 36f;
+    // The ground velocity the controller moved at last frame, without the fall.
+    public Vector3 GroundVelocity { get; private set; }
     public Animator Anim;
     private Vector3 MoveDirection = Vector3.zero;
     private Vector3 TargetDirection = Vector3.zero;
@@ -44,8 +50,12 @@ public class MovementMotor : MonoBehaviour {
             FallVelocity = -40f;
         }
 
-        MoveDirection = Vector3.Lerp(MoveDirection, TargetDirection, Time.deltaTime * LerpTime);
-        MoveDirection.y = FallVelocity;
+        Vector3 flat = new Vector3(MoveDirection.x, 0f, MoveDirection.z);
+        Vector3 want = new Vector3(TargetDirection.x, 0f, TargetDirection.z);
+        float rate = want.sqrMagnitude >= flat.sqrMagnitude ? Accel : Decel;
+        flat = Vector3.MoveTowards(flat, want, rate * Time.deltaTime);
+        MoveDirection = new Vector3(flat.x, FallVelocity, flat.z);
+        GroundVelocity = flat;
         charController.Move(MoveDirection * Time.deltaTime);
     }
 
@@ -75,6 +85,7 @@ public class MovementMotor : MonoBehaviour {
     public void Stop() {
         MoveDirection = Vector3.zero;
         TargetDirection = Vector3.zero;
+        GroundVelocity = Vector3.zero;
     }
 
     public bool Airborne {

@@ -30,6 +30,7 @@ public static class Playtest {
         new PlaytestScenario("slice", "Slice at the piano: inspects the live Slice on PianoRecital (bob / coat / boots / scalpel knife from front and side, hands on keys, piano music), runs the full musician scenario (standUp, stab, slash, sitDown, piano, hurt, defeat before game over), and verifies all 8 Animator clips", 220, "content"),
         new PlaytestScenario("upgrades", "The bat upgrades: the shop lists Corked Core and Aluminum! Not wood! (setup: both owned in the sandbox) and the metal bat is in the player's hands; wave 1's first level-up cards are read off the screen (bat upgrades, no retired cast words); setup: the testing wave key (=) to wave 14 for tougher Plated Yo Bots and a handful of bat boons granted (Wide Arc, Pine Tar, Ice Bat, Live Wire, Grand Slam, Long Ball and more), each one's mark on the bat logged; then the bot plays until each effect is seen: a wider swing, bots burning, bots slowed, chain sparks shorting bots out, a 360 spin swing, batted bolts landing. Then Thunder Bat is granted for a lightning spin, and 30 s of play", 330, "content"),
         new PlaytestScenario("wallit", "Wallit as the player: checks Wallit's wallet body, bills, gloves, sneakers and bat on the live player, exercises running, locked-on strafing (strafeLeft, strafeRight, backPedal), jumping (jump, landing), getting hit (hitReact), and every bat swing (swing1, swing2, swing3, groundSmash, homeRunCharge, homeRunRelease) with OnBatContact damage, then checks all 17 Animator clips", 200, "content"),
+        new PlaytestScenario("locomotion", "Wallit's feet on the ground: walks, runs, starts, stops and turns free, then locked on to a Yo Bot strafes left and right, back pedals, runs at it and stops, all through the keys. Each segment logs the planted foot's slide and the hips' largest jump (`loco` events; a slide or a pop is a bug)", 75, "content"),
         new PlaytestScenario("cast", "The new cast, in 90 s: the main menu with the key art up (MenuArt, its size and that the menu shows it), What's new opened from the site over the game with the release note naming Wallit, Slice and the bots (read from releases.json), then a run where the player is Wallit with his bat, the bar says Slice, and wave 1's Yo Bots close in and are batted. The AGENTS.md and README cast text lives in the repo, not the build: the review reads it from the diff", 120, "content"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.com and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
     };
@@ -233,6 +234,8 @@ public static class Playtest {
                 yield return CastRun(options);
             } else if (id == "wallit") {
                 yield return WallitRun(options);
+            } else if (id == "locomotion") {
+                yield return LocomotionRun(options);
             } else if (id == "words") {
                 yield return WordsRun();
             } else if (id == "run") {
@@ -1305,6 +1308,133 @@ public static class Playtest {
             run.Problem(PlaytestSeverity.Bug, missing + " Wallit clips missing from the Animator");
         }
         run.Event("wallit-report", played + " clips played, " + missing + " missing, humanoid " + (human ? "ok" : "bad"));
+    }
+
+    // Walking, running, strafing and backpedaling on the real keys, free and locked on, judged by the planted foot.
+    // The foot is read off the rig every frame (CharacterMovement.TrackFeet): a foot that is down should not move over
+    // the floor, so its world speed is the slide. The hips' jump from one frame to the next is the pop.
+    static int locoDone;
+
+    static IEnumerator LocomotionRun(PlaytestOptions options) {
+        locoDone = 0;
+        run.Scene("Locomotion");
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+        if (player == null) {
+            run.Problem(PlaytestSeverity.Bug, "no CharacterMovement player in scene");
+            yield break;
+        }
+        Animator animator = player.GetComponentInChildren<Animator>();
+        if (animator == null || !animator.isHuman) {
+            run.Problem(PlaytestSeverity.Bug, "Wallit has no humanoid Animator to read the feet from");
+            yield break;
+        }
+        PlayInput.Hold(KeyCode.Mouse0, false);
+        PlayInput.Hold(KeyCode.LeftShift, false);
+        Stand();
+        yield return new WaitForSecondsRealtime(1.5f);
+        WallitStride.Reset();
+
+        run.Scene("Locomotion: free");
+        yield return LocoSegment(player, "walk", 0f, 0.4f, 2.4f, CharacterMovement.CLIP_RUN);
+        yield return LocoSegment(player, "run", 0f, 1f, 2.6f, CharacterMovement.CLIP_RUN);
+        yield return LocoSegment(player, "turn right", 1f, 0f, 1.8f, CharacterMovement.CLIP_RUN);
+        yield return LocoSegment(player, "turn about", 0f, -1f, 2f, CharacterMovement.CLIP_RUN);
+        yield return LocoSegment(player, "stop", 0f, 0f, 1.2f, -1);
+        yield return LocoSegment(player, "start", 0f, 1f, 1.8f, CharacterMovement.CLIP_RUN);
+        yield return LocoSegment(player, "stop", 0f, 0f, 1.2f, -1);
+        if (run.Done) {
+            yield break;
+        }
+
+        run.Scene("Locomotion: locked on");
+        Enemy foil = SpawnBird(player.transform.position + Forward(player) * 7f, false);
+        PlayInput.Hold(KeyCode.LeftShift, true);
+        float lockBy = Time.realtimeSinceStartup + 3f;
+        while (!run.Done && Time.realtimeSinceStartup < lockBy && (Juice.Cam == null || Juice.Cam.LockedOnGameObject == null)) {
+            yield return null;
+        }
+        bool locked = Juice.Cam != null && Juice.Cam.LockedOnGameObject != null;
+        run.Event("loco-lock", locked ? "locked on to " + Juice.Cam.LockedOnGameObject.name : "no lock");
+        if (!locked) {
+            run.Problem(PlaytestSeverity.Bug, "Shift did not lock on to a bird for the locked-on locomotion check");
+        }
+        yield return LocoSegment(player, "strafe left", -1f, 0f, 2.6f, CharacterMovement.CLIP_STRAFE_LEFT);
+        yield return LocoSegment(player, "strafe right", 1f, 0f, 2.6f, CharacterMovement.CLIP_STRAFE_RIGHT);
+        yield return LocoSegment(player, "back pedal", 0f, -1f, 2.4f, CharacterMovement.CLIP_BACK_PEDAL);
+        yield return LocoSegment(player, "stop", 0f, 0f, 1f, -1);
+        yield return LocoSegment(player, "toward", 0f, 1f, 1.8f, CharacterMovement.CLIP_RUN);
+        yield return LocoSegment(player, "strafe left", -1f, 0f, 2f, CharacterMovement.CLIP_STRAFE_LEFT);
+        yield return LocoSegment(player, "strafe right (switch)", 1f, 0f, 2f, CharacterMovement.CLIP_STRAFE_RIGHT);
+        yield return LocoSegment(player, "diagonal back left", -1f, -1f, 2f, -1);
+        yield return LocoSegment(player, "diagonal forward right", 1f, 1f, 2f, -1);
+        yield return LocoSegment(player, "stop", 0f, 0f, 1.2f, -1);
+        PlayInput.Hold(KeyCode.LeftShift, false);
+        Stand();
+        if (foil != null && foil.Alive) {
+            foil.Damage(99999f, DamageKind.Bat, false);
+        }
+
+        run.Metric("hipsPopMax", Mathf.Round(WallitStride.PopMax * 1000f) / 1000f);
+        run.Metric("hipsPopFrames", WallitStride.PopFrames);
+        string summary = "";
+        for (int i = CharacterMovement.CLIP_RUN; i <= CharacterMovement.CLIP_BACK_PEDAL; i++) {
+            summary += (summary.Length > 0 ? ", " : "") + CharacterMovement.ClipNames[i] + " slide " + WallitStride.SlideMean(i).ToString("0.00")
+                + " m/s over " + WallitStride.Samples(i) + " frames (stride " + player.Stride(i).ToString("0.00") + ")";
+        }
+        run.Event("loco-report", summary + "; hips jump max " + WallitStride.PopMax.ToString("0.000"));
+        if (WallitStride.PopFrames > 0) {
+            run.Problem(PlaytestSeverity.Bug, "Wallit's hips popped on " + WallitStride.PopFrames + " frames (largest jump " + WallitStride.PopMax.ToString("0.00") + " of his height scale)");
+        }
+    }
+
+    // One held direction for a while, then the verdict for the clip it should have used (-1: just log it).
+    static IEnumerator LocoSegment(CharacterMovement player, string what, float h, float v, float seconds, int clip) {
+        Vector3 piano = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
+        if (Vector3.Distance(player.transform.position, piano) > 70f) {
+            Stand();
+            float until = Time.realtimeSinceStartup + 10f;
+            while (!run.Done && Time.realtimeSinceStartup < until && Vector3.Distance(player.transform.position, piano) > 35f) {
+                Walk(player, piano, 30f);
+                yield return null;
+            }
+            Stand();
+        }
+        WallitStride.Reset();
+        float maxAccel = 0f;
+        float lastSpeed = CharacterMovement.GroundSpeed;
+        float speedPeak = 0f;
+        PlayInput.Axis("Horizontal", h);
+        PlayInput.Axis("Vertical", v);
+        float end = Time.realtimeSinceStartup + seconds;
+        while (!run.Done && Time.realtimeSinceStartup < end) {
+            yield return null;
+            float dt = Time.unscaledDeltaTime;
+            float speed = CharacterMovement.GroundSpeed;
+            if (dt > 0.0001f) {
+                maxAccel = Mathf.Max(maxAccel, Mathf.Abs(speed - lastSpeed) / dt);
+            }
+            speedPeak = Mathf.Max(speedPeak, speed);
+            lastSpeed = speed;
+        }
+        Stand();
+        if (run.Done) {
+            yield break;
+        }
+        string line = what + ": ground speed " + speedPeak.ToString("0.0") + " m/s, playback " + CharacterMovement.AnimSpeed.ToString("0.00")
+            + ", hardest speed change " + maxAccel.ToString("0") + " m/s2, hips jump max " + WallitStride.PopMax.ToString("0.000");
+        if (clip >= 0) {
+            int frames = WallitStride.Samples(clip);
+            float slide = WallitStride.SlideMean(clip);
+            line += ", " + CharacterMovement.ClipNames[clip] + " planted foot slide " + slide.ToString("0.00") + " m/s (worst " + WallitStride.SlideMax(clip).ToString("0.00") + ") over " + frames + " frames";
+            run.Metric("slide_" + CharacterMovement.ClipNames[clip], Mathf.Round(slide * 1000f) / 1000f);
+            if (frames < 5) {
+                run.Problem(PlaytestSeverity.Warning, "locomotion '" + what + "' never showed " + CharacterMovement.ClipNames[clip] + " with a planted foot (" + frames + " frames)");
+            } else if (slide > 0.4f) {
+                run.Problem(PlaytestSeverity.Bug, "Wallit's feet slide while '" + what + "': the planted foot moves " + slide.ToString("0.00") + " m/s over the ground");
+            }
+        }
+        run.Event("loco", line);
+        run.Progress(Mathf.Min(0.95f, 0.05f + locoDone++ / 20f));
     }
 
     // Wallit.fbx draws the character twice; WallitMeshClean drops the second shell so nothing z-fights.

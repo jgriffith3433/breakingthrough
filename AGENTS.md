@@ -88,6 +88,7 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
   - The ground ray is Ground only and ignores triggers.
   - `MovementMotor` must keep applying gravity while `FallVelocity > 0.5`, or the player rockets upward.
   - Jump only when grounded, cooled down and not rising.
+  - **Feet:** ground speed ramps in a straight line (`MovementMotor.Accel` / `Decel`). `CharacterMovement.Locomote` picks `run`, `strafeLeft`, `strafeRight` or `backPedal` from the direction of travel against the body (locked on, forward is toward the target, not the camera), sets playback speed to ground speed over the clip's stride (the Animator float `MoveSpeed` on the four loop states, added by `SetupWallit`), and bends the model up to `MaxWarp` degrees so a diagonal still runs along its clip's axis. Strides start as guesses (`DefaultStride`) and are learned from the planted ankle in `TrackFeet`; `WallitStride` keeps the slide and hips-jump numbers the `locomotion` playtest reports. Locomotion cross fades are timed in seconds and phase-synced (`PlayLoco`), and set `Clip` to -1 so the controller's Any State hop does not restart the clip.
 - **Phones and tablets:** every overlay canvas calls `UiFit.Apply(scaler)`. Desktop (`UiMode.Desktop`) is the
   1920x1080 layout exactly as drawn: never change its numbers for phones. Wide (landscape under 500 CSS px tall, or
   a touch tablet) and Tall (portrait) use a canvas at least 660 units across its short side, so 22-unit text is
@@ -163,6 +164,7 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
   `Plugins/WebGL/HawkesSite.jslib` and plays 20 s). Every touch run reports
   a layout check per screen (`menu`, `hud`, `cards`): text or buttons off screen, text over text or over a button,
   text under 11 px, buttons under 44 px, with `<screen>MinTextPx`, `<screen>MinTapPx` and `<screen>Overlaps`.
+  `locomotion` (Wallit walks, runs, starts, stops and turns free, then locked on strafes, back pedals and runs at a bot; each `loco` event gives the planted foot's slide, the hips' jump and the speed change, and a slide over 0.4 m/s or a hips pop is a bug).
   `bots` (wave 1's Yo Bots walking at the musician, event `yo-bots` with their distance closing; 30 s of play, then
   `bolts` with bolts picked up and the XP gained; `enemy-list` with the names read off the list on the right; the
   setup shortcut, the testing wave key `=` to wave 30, then `spider-bot` with the Alpha Spider Bot's height and
