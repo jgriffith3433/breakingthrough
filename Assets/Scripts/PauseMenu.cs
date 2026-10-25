@@ -259,6 +259,7 @@ public class PauseMenu : MonoBehaviour {
         button.colors = colors;
         button.onClick.AddListener(click);
         image.rectTransform.sizeDelta = size;
+        MenuButtonFx.Add(button);
         Text text = MakeText(go.transform, label, fontSize, FontStyle.Bold);
         Stretch(text.rectTransform);
         return button;

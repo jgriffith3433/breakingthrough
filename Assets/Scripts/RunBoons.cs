@@ -65,7 +65,7 @@ public static class RunBoons {
         B(BoonId.Chain, "Live Wire", "15% per rank: a hit arcs to 3 more bots, and they short out.", 3, Rarity.Epic),
         B(BoonId.BirdBomb, "Powder Keg", "Bots burst when they fall, hurting the bots around them.", 3, Rarity.Epic),
         B(BoonId.Orbit, "Whirling Blades", "Blades circle you and cut bots that come close. +1 blade per rank.", 4, Rarity.Epic),
-        B(BoonId.Encore, "Encore", "The piano thumps out a shockwave every few seconds.", 3, Rarity.Epic),
+        B(BoonId.Encore, "Encore", "The circle thumps out a shockwave around Slice every few seconds.", 3, Rarity.Epic),
         B(BoonId.Ovation, "Standing Ovation", "Slice +15 max health and heals 6 after each wave.", 4, Rarity.Common),
         B(BoonId.Magnet, "Lodestone", "Bolts fly to you from 70% farther.", 3, Rarity.Common),
         B(BoonId.Fleet, "Fleet Foot", "+12% move speed.", 3, Rarity.Common),

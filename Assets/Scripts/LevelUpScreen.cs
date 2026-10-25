@@ -134,8 +134,10 @@ public class LevelUpScreen : MonoBehaviour {
             Vector2 home = homes[i];
             cards[i].Frame.rectTransform.anchoredPosition = home + Vector2.down * (1f - ease) * 120f;
             cards[i].Halo.rectTransform.anchoredPosition = cards[i].Frame.rectTransform.anchoredPosition;
+            // A common card's halo stays a faint, still glow, so the rare ones stand out.
             Color halo = cards[i].Halo.color;
-            halo.a = Mathf.Lerp(0.15f, 0.55f, 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 3f + i)) * ease;
+            bool rare = i < offer.Count && RunBoons.Info(offer[i]).Rarity != Rarity.Common;
+            halo.a = (rare ? Mathf.Lerp(0.15f, 0.55f, 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 3f + i)) : 0.16f) * ease;
             cards[i].Halo.color = halo;
         }
         if (!inputReady || Time.frameCount <= openedFrame) {
@@ -316,6 +318,7 @@ public class LevelUpScreen : MonoBehaviour {
         var rerollButton = reroll.AddComponent<Button>();
         rerollButton.targetGraphic = rerollImage;
         rerollButton.onClick.AddListener(Reroll);
+        MenuButtonFx.Add(rerollButton);
         rerollLabel = MakeText(reroll.transform, "Reroll", 28, FontStyle.Bold, TextAnchor.MiddleCenter);
         Stretch(rerollLabel.rectTransform);
         reroll.SetActive(false);
@@ -390,11 +393,12 @@ public class LevelUpScreen : MonoBehaviour {
         var button = card.Go.AddComponent<Button>();
         button.targetGraphic = card.Frame;
         var colors = button.colors;
-        colors.highlightedColor = new Color(1.3f, 1.3f, 1.3f);
-        colors.pressedColor = new Color(0.8f, 0.8f, 0.8f);
+        colors.highlightedColor = new Color(1.15f, 1.08f, 0.85f);
+        colors.pressedColor = new Color(0.85f, 0.75f, 0.45f);
         button.colors = colors;
         int captured = index;
         button.onClick.AddListener(() => Choose(captured));
+        MenuButtonFx.Add(button);
 
         var faceGo = new GameObject("Face");
         faceGo.transform.SetParent(card.Go.transform, false);

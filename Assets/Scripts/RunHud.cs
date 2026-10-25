@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-// Level bar, streak counter, boss bar, golden gobbler clock, and the boons you hold.
+// Level bar, streak counter, boss bar, golden Yo Bot clock, and the boons you hold.
 public class RunHud : MonoBehaviour {
     Font font;
     Image xpFill;
@@ -176,6 +176,8 @@ public class RunHud : MonoBehaviour {
             shownXp = target;
         }
         xpFill.rectTransform.sizeDelta = new Vector2(xpWidth * shownXp, 10f);
+        // A pill narrower than it is tall squashes into a blob at the bar's end: show the fill once it is a bar.
+        xpFill.enabled = xpWidth * shownXp >= 10f;
         levelText.text = hidden ? "" : "Lv " + RunBoons.Level;
 
         int combo = Combo.Count;
@@ -214,6 +216,7 @@ public class RunHud : MonoBehaviour {
         if (showBoss) {
             bossName.text = boss.Title;
             bossFill.rectTransform.sizeDelta = new Vector2(bossWidth * boss.Health01, 16f);
+            bossFill.enabled = bossWidth * boss.Health01 >= 16f;
         }
         goldenText.text = golden != null && !hidden
             ? "Golden Yo Bot!  Catch it:  " + Mathf.CeilToInt(golden.GoldenLeft) + "s"
