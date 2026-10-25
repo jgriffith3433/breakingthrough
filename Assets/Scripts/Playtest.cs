@@ -27,7 +27,7 @@ public static class Playtest {
         new PlaytestScenario("bots", "The bots: wave 1's Yo Bots (authored Gen model when present) walk at the musician with feet planting; bolts drop; enemy list names them. Setup: drop 60 Yo Bots and log FPS for the WebGL budget, then the testing wave key (=) to wave 30 for the Spider Bot Alpha (glass pod, six legs when authored) and 30 s of fight", 360, "content"),
         new PlaytestScenario("analytics", "Hawkes Analytics: start a run, clear wave 1, then hold fire on wave 2 so the bots take the musician. Every analytics event is logged as it goes out (run_start, level_start and level_end per wave, card picks, the death and the bot kind that landed it, run_end) with the build version and env; on the game-over screen the \"How was that run?\" card must show, and the bot rates it 4 stars", 240, "full"),
         new PlaytestScenario("musician", "Slice, the musician at the piano: her health bar is titled Slice, and she sits on the bench playing the piano clip with her hands on the keys while the piano music plays. The bot holds fire and frames Slice so wave 1's Yo Bots reach her: she stands (standUp), stabs and slashes the one in reach with her knife (stab / slash with OnSliceKnifeHit blade damage) at most once every 2.5 s, and flinches when hit (hurt); then the bot clears the wave (with Encore pulsing from PianoRecital) and she sits back down (sitDown) to play (piano). Then it holds fire from wave 2 (after 20 s, setup: a ring of Plated Yo Bots dropped around the bench, topped up every 8 s) until the bots empty her bar, she falls (defeat), and the game-over panel appears", 330, "content"),
-        new PlaytestScenario("slice", "Slice at the piano: inspects the live Slice on PianoRecital (bob / coat / boots / scalpel knife from front and side, hands on keys, piano music), runs the full musician scenario (standUp, stab, slash, sitDown, piano, hurt, defeat before game over), and verifies all 8 Animator clips", 220, "content"),
+        new PlaytestScenario("slice", "Slice guarding the circle: inspects the live Slice on PianoRecital (bob / coat / boots / scalpel knife from front and side, hands on keys, piano music), runs the full musician scenario (standUp, stab, slash, sitDown, piano, hurt, defeat before game over), and verifies all 8 Animator clips", 220, "content"),
         new PlaytestScenario("upgrades", "The bat upgrades: the shop lists Corked Core and Aluminum! Not wood! (setup: both owned in the sandbox) and the metal bat is in the player's hands; wave 1's first level-up cards are read off the screen (bat upgrades, no retired cast words); setup: the testing wave key (=) to wave 14 for tougher Plated Yo Bots and a handful of bat boons granted (Wide Arc, Pine Tar, Ice Bat, Live Wire, Grand Slam, Long Ball and more), each one's mark on the bat logged; then the bot plays until each effect is seen: a wider swing, bots burning, bots slowed, chain sparks shorting bots out, a 360 spin swing, batted bolts landing. Then Thunder Bat is granted for a lightning spin, and 30 s of play", 330, "content"),
         new PlaytestScenario("wallit", "Wallit as the player: checks Wallit's wallet body, bills, gloves, sneakers and bat on the live player, exercises running, locked-on strafing (strafeLeft, strafeRight, backPedal), jumping (jump, landing), getting hit (hitReact), and every bat swing (swing1, swing2, swing3, groundSmash, homeRunCharge, homeRunRelease) with OnBatContact damage, then checks all 17 Animator clips", 200, "content"),
         new PlaytestScenario("locomotion", "Wallit's feet on the ground: walks, runs, starts, stops and turns free, then locked on to a Yo Bot strafes left and right, back pedals, runs at it and stops, all through the keys. Each segment logs the planted foot's slide and the hips' largest jump (`loco` events; a slide or a pop is a bug)", 75, "content"),
@@ -1577,7 +1577,7 @@ public static class Playtest {
     // Inspects the live Slice on PianoRecital, verifies look from front and side, runs the full musician scenario
     // (piano, standUp, stab, slash, sitDown, hurt, defeat before game over), and verifies all 8 Animator clips.
     static IEnumerator SliceRun(PlaytestOptions options) {
-        run.Scene("Slice at the piano");
+        run.Scene("Slice guarding the circle");
         Musician live = Musician.Instance;
         Animator liveAnim = live != null ? live.GetComponentInChildren<Animator>() : null;
         if (live == null || liveAnim == null) {
@@ -1612,10 +1612,6 @@ public static class Playtest {
         yield return SliceLook(sliceGo, "front", at + fwd * 2.4f + Vector3.up * 1.2f);
         yield return SliceLook(sliceGo, "side", at + (right * 0.85f + fwd * 0.52f).normalized * 2.5f + Vector3.up * 1.2f);
         live.HoldKnifeUp = false;
-        float downBy = Time.realtimeSinceStartup + 4f;
-        while (!live.Seated && Time.realtimeSinceStartup < downBy && !run.Done) {
-            yield return null;
-        }
 
         int played = 0;
         int missing = 0;
@@ -1816,7 +1812,7 @@ public static class Playtest {
 
     // ---------------------------------------------------------------- musician
 
-    // Slice at the piano & her knife.
+    // Slice guarding the circle & her knife.
     // 1: Her health bar says Slice; she sits on the bench playing the piano clip with her hands on the keys while the piano music plays.
     // 2: The bot frames Slice and holds fire by the piano until wave 1's Yo Bots reach her, she stands (standUp), stabs and slashes three times (stab / slash with OnSliceKnifeHit blade damage), and flinches when hit (hurt).
     // 3: The bot clears the wave (with Encore pulsing from PianoRecital) and she sits back down (sitDown) to play (piano).
@@ -1838,7 +1834,7 @@ public static class Playtest {
         sliceShortGaps = 0;
         sliceNoDamage = 0;
 
-        run.Scene("Slice: at the piano");
+        run.Scene("Slice: guarding the circle");
         string title = slice.Title;
         run.Event("health-bar", "titled \"" + title + "\", " + slice.Health + " / " + slice.MaxHealth);
         if (title != Musician.Name) {
@@ -1854,10 +1850,10 @@ public static class Playtest {
         }
         Animator sliceAnim = slice.GetComponentInChildren<Animator>();
         string handNote = sliceAnim != null ? SlicePianoHandNote(sliceAnim.gameObject) : "no animator";
-        bool handsOk = slice.Seated && slice.CurrentClip == Musician.CLIP_PIANO && slice.HandsNearKeys;
-        run.Event("slice-piano-hands", "seated=" + slice.Seated + ", clip=" + slice.CurrentClipName + ", handsNearKeys=" + slice.HandsNearKeys + " (" + handNote + "), music=" + (slice.MusicPlaying ? "playing" : "silent"));
+        bool handsOk = slice.Standing && slice.CurrentClip == Musician.CLIP_IDLE && !slice.MusicPlaying;
+        run.Event("slice-guarding", "standing=" + slice.Standing + ", clip=" + slice.CurrentClipName + ", handsNearKeys=" + slice.HandsNearKeys + " (" + handNote + "), music=" + (slice.MusicPlaying ? "playing" : "silent"));
         if (!handsOk) {
-            run.Problem(PlaytestSeverity.Bug, "Slice is not seated with hands on the piano keys at start (" + handNote + ", clip=" + slice.CurrentClipName + ")");
+            run.Problem(PlaytestSeverity.Bug, "Slice is not standing guard in the idle pose, or music is playing, at start (" + handNote + ", clip=" + slice.CurrentClipName + ")");
         }
 
         yield return run.Until(() => YoBotsAlive() > 0, 25f, "wave 1's Yo Bots");
@@ -1880,9 +1876,9 @@ public static class Playtest {
             run.Event("setup", "granted Encore (rank 1) to verify piano pulses during combat");
         }
         run.Event("fight", "the bot clears the wave; Slice should sit back down (sitDown) and play (piano)");
-        yield return GuardSlice(player, () => sliceSits > 0 && slice.Seated && sliceClearAt > 0f && Time.time - sliceClearAt > 2f, 90f, true, "Slice sitting back down at the piano");
-        if (!run.Done && slice.Seated) {
-            run.Event("slice-playing", "nothing in reach for " + (Time.time - sliceClearAt).ToString("0.0") + " s: she is on the bench, clip=" + slice.CurrentClipName + ", handsNearKeys=" + slice.HandsNearKeys);
+        yield return GuardSlice(player, () => sliceClearAt > 0f && Time.time - sliceClearAt > 2f, 90f, true, "Slice still guarding after the wave");
+        if (!run.Done && slice.Standing) {
+            run.Event("slice-playing", "nothing in reach for " + (Time.time - sliceClearAt).ToString("0.0") + " s: she is still standing guard at the circle, clip=" + slice.CurrentClipName + ", handsNearKeys=" + slice.HandsNearKeys);
         }
         if (BoonEffects.EncorePulses > 0) {
             run.Event("encore", BoonEffects.EncorePulses + " Encore pulse(s) from PianoRecital");
@@ -2038,7 +2034,7 @@ public static class Playtest {
                 PlayInput.Axis("Mouse X", 0f);
                 Batter(player, false, null, true);
             }
-            if (fight && (building || Enemy.Roster.Count == 0) && now >= nextSkip && sliceSits > 0) {
+            if (fight && (building || Enemy.Roster.Count == 0) && now >= nextSkip && sliceClearAt > 0f) {
                 nextSkip = now + 1.5f;
                 PlayInput.Tap(KeyCode.Return);
             }
@@ -2060,12 +2056,12 @@ public static class Playtest {
         }
         bool up = !slice.Seated;
         if (up && !sliceWasUp) {
-            run.Event("slice-stands", "a bot came within " + Musician.StabReach.ToString("0.0") + " m: she gets up from the bench (clip=" + slice.CurrentClipName + ", standUpCount=" + slice.StandUpClipsPlayed + ")");
+            run.Event("slice-stands", "a bot came within " + Musician.StabReach.ToString("0.0") + " m: she is on guard (clip=" + slice.CurrentClipName + ", standUpCount=" + slice.StandUpClipsPlayed + ")");
         }
         if (!up && sliceWasUp) {
             sliceSits++;
             string after = sliceClearAt > 0f ? ", " + (Time.time - sliceClearAt).ToString("0.0") + " s after the last bot left her reach" : "";
-            run.Event("slice-sits", "back on the bench playing (clip=" + slice.CurrentClipName + ", sitDownCount=" + slice.SitDownClipsPlayed + ")" + after);
+            run.Event("slice-sits", "(unused) " + slice.CurrentClipName + ", sitDownCount=" + slice.SitDownClipsPlayed + ")" + after);
         }
         sliceWasUp = up;
         bool near = false;

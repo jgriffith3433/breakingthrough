@@ -13,7 +13,7 @@ public static class RunAnalytics {
     public const string Product = "theplacedepartment";
     public const string AskId = "game-over";
     // Shown on the feedback card after a rating. Slice, clipped.
-    public const string Thanks = "Thanks. Clean. Slice will be at the piano.";
+    public const string Thanks = "Thanks. Clean. Slice will be at the circle.";
 
 #if UNITY_WEBGL && !UNITY_EDITOR
     [DllImport("__Internal")]

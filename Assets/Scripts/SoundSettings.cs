@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 
 // Sound on/off, music and effects volume: the studio's standard settings. Saved as JSON { on, music, sfx } (0-1)
 // under "hawkes.sound": in the browser's localStorage on the web (where every Hawkes game keeps it), PlayerPrefs
-// too. Music is every looping AudioSource in the scene (the piano); effects are GameAudio's voices.
+// too. Music is every looping AudioSource in the scene (none now: Slice's piano loop is gone); effects are GameAudio's voices.
 public static class SoundSettings {
     const string Key = "hawkes.sound";
 
