@@ -33,6 +33,7 @@ public static class Playtest {
         new PlaytestScenario("wallit", "Wallit as the player: checks Wallit's wallet body, bills, gloves, sneakers and bat on the live player, exercises running, locked-on strafing (strafeLeft, strafeRight, backPedal), jumping (jump, landing), getting hit (hitReact), and every bat swing (swing1, swing2, swing3, groundSmash, homeRunCharge, homeRunRelease) with OnBatContact damage, then checks all 17 Animator clips", 200, "content"),
         new PlaytestScenario("locomotion", "Wallit's feet on the ground: walks, runs, starts, stops and turns free, then locked on to a Yo Bot strafes left and right, back pedals, runs at it and stops, all through the keys. Each segment logs the planted foot's slide and the hips' largest jump (`loco` events; a slide or a pop is a bug)", 75, "content"),
         new PlaytestScenario("cast", "The new cast, in 90 s: the main menu with the key art up (MenuArt, its size and that the menu shows it), What's new opened from the site over the game with the release note naming Wallit, Slice and the bots (read from releases.json), then a run where the player is Wallit with his bat, the bar says Slice, and wave 1's Yo Bots close in and are batted. The AGENTS.md and README cast text lives in the repo, not the build: the review reads it from the diff", 120, "content"),
+        new PlaytestScenario("story", "The story: the intro over the frozen Hollow (read page by page: who Wallit is, what the circle is, why Slice must not fall; a Skip button is on it), wave 1's story beats in canon voices, then setup: the testing wave key to wave 10 and wave 30 for the boss-wave title cards and beats (Yo Bots chirpy, Wallit on money, Slice clipped), and setup: wave 30's waiting bots trimmed to the boss and Slice topped up so the bat can finish it with real swings. Clearing wave 30 plays the finale pages and the ADDRESS FILED ending screen; the bot presses Keep going into overtime. Events intro-*, beat, finale-*, ending", 600, "content"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.com and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
     };
 
@@ -156,6 +157,7 @@ public static class Playtest {
         batRun = id == "bat";
         lockSwitchesSeen = ZeldaStyleCamera.LockSwitches;
         RunAnalytics.EnableDebug();
+        StoryScreen.SuppressIntro = id != "story";
         PlayInput.Release();
         MetaProgress.EnterSandbox(true);
         Random.InitState(options.seed);
@@ -233,6 +235,8 @@ public static class Playtest {
                 if (!run.Done) {
                     BatReport();
                 }
+            } else if (id == "story") {
+                yield return StoryRun(options);
             } else if (id == "cast") {
                 yield return CastRun(options);
             } else if (id == "wallit") {
@@ -250,6 +254,7 @@ public static class Playtest {
                 run.Finish(PlaytestOutcome.Done);
             }
         } finally {
+            StoryScreen.SuppressIntro = false;
             Application.logMessageReceived -= OnLog;
             Stop();
         }
@@ -1211,6 +1216,116 @@ public static class Playtest {
             + " contacts=" + BatEquipment.AnimContacts);
         run.Event("bat-report", BatEquipment.Swings + " swings, " + BatEquipment.Finishers + " finishers, " + BatEquipment.SmashHits + " smash hits, "
             + BatEquipment.HomeRuns + " home runs knocking into " + BatEquipment.HomeRunKnocks + " bots, lock nearest " + lockNearest + " of " + lockChecks);
+    }
+
+    // ---------------------------------------------------------------- story
+
+    static int storyTold;
+
+    static void TellStory() {
+        for (; storyTold < StoryScreen.Events.Count; storyTold++) {
+            run.Event("story", StoryScreen.Events[storyTold]);
+        }
+    }
+
+    static bool StorySaw(string prefix) {
+        return StoryScreen.Events.Exists(e => e.StartsWith(prefix));
+    }
+
+    // The story: intro page by page, wave beats, boss-wave cards, the finale and the ending screen.
+    static IEnumerator StoryRun(PlaytestOptions options) {
+        storyTold = 0;
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+        yield return run.Until(() => StoryScreen.IsOpen, 10f, "the intro to open on a new run");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Intro");
+        StoryScreen screen = StoryScreen.Instance;
+        bool skipOk = screen.SkipButton != null && screen.SkipButton.isActiveAndEnabled && Inside(ScreenRect((RectTransform)screen.SkipButton.transform));
+        run.Event("intro-shown", "run starts frozen on the intro; Skip button " + (skipOk ? "on screen" : "MISSING"));
+        if (!skipOk) {
+            run.Problem(PlaytestSeverity.Bug, "the intro has no Skip button on screen");
+        }
+        string all = "";
+        for (int i = 0; i < Story.Intro.Length && !run.Done; i++) {
+            yield return new WaitForSecondsRealtime(1.5f);
+            all += " " + screen.PageText;
+            run.Event("intro-page", (i + 1) + " of " + Story.Intro.Length + ": " + screen.PageText.Replace('\n', ' '));
+            PlayInput.Tap(KeyCode.Space);
+            yield return null;
+            yield return null;
+        }
+        yield return run.Until(() => !StoryScreen.IsOpen, 5f, "the intro to close after its last page");
+        TellStory();
+        bool names = all.Contains("Wallit") && all.Contains("circle") && all.Contains("fall");
+        run.Metric("introTellsStory", names ? 1 : 0);
+        if (!names) {
+            run.Problem(PlaytestSeverity.Bug, "the intro does not say who the player is, what the circle is and why to defend it");
+        }
+
+        run.Scene("Wave 1: story beats");
+        yield return Fight(player, () => StoryScreen.BeatsShown >= 2, 40f, "wave 1's story beats", null, true);
+        TellStory();
+
+        run.Event("setup", "testing wave key to wave 10 (boss-wave beat)");
+        yield return GoWave(10);
+        run.Scene("Wave 10: boss beat");
+        yield return Fight(player, () => StorySaw("beat|10|T") && StoryScreen.BeatsShown >= 4 && StorySaw("beat|10|W"), 40f, "wave 10's boss beat", null, true);
+        TellStory();
+
+        run.Event("setup", "testing wave key to wave 30 (the finale wave)");
+        yield return GoWave(30);
+        run.Scene("Wave 30: the order");
+        yield return Fight(player, () => StorySaw("beat|30|W"), 40f, "wave 30's boss beat", null, true);
+        TellStory();
+        run.Event("setup", "wave 30's waiting bots trimmed to the boss, Slice topped up every 4 s");
+        WaveDirector.Instance.TrimForPlaytest();
+        float nextHeal = 0f;
+        yield return Fight(player, () => {
+            if (Time.realtimeSinceStartup >= nextHeal && Musician.Instance != null && Musician.Instance.Alive) {
+                nextHeal = Time.realtimeSinceStartup + 4f;
+                Musician.Instance.Heal(100);
+            }
+            TellStory();
+            return StoryScreen.IsOpen;
+        }, 240f, "the finale after clearing wave 30", null, true);
+        TellStory();
+        if (run.Done || WaveDirector.IsLost) {
+            yield break;
+        }
+        PlayInput.Release();
+        run.Scene("Finale");
+        run.Event("finale-shown", "wave 30 cleared, the finale plays over the frozen Hollow");
+        for (int i = 0; i < Story.Finale.Length && !run.Done; i++) {
+            yield return new WaitForSecondsRealtime(1.5f);
+            run.Event("finale-page", (i + 1) + " of " + Story.Finale.Length + ": " + screen.PageText.Replace('\n', ' '));
+            PlayInput.Tap(KeyCode.Space);
+            yield return null;
+            yield return null;
+        }
+        yield return run.Until(() => StoryScreen.EndingOpen, 5f, "the ending screen after the finale");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Ending");
+        yield return new WaitForSecondsRealtime(2f);
+        TellStory();
+        bool keepOk = screen.KeepButton != null && screen.KeepButton.isActiveAndEnabled && Inside(ScreenRect((RectTransform)screen.KeepButton.transform))
+            && screen.MenuButton != null && Inside(ScreenRect((RectTransform)screen.MenuButton.transform));
+        run.Event("ending-shown", Story.EndingTitle + ": " + Story.EndingLine + " Keep going and Menu buttons " + (keepOk ? "on screen" : "MISSING"));
+        run.Metric("endingShown", StoryScreen.EndingsShown);
+        if (!keepOk) {
+            run.Problem(PlaytestSeverity.Bug, "the ending screen's buttons are not on screen");
+        }
+        Tap(screen.KeepButton.gameObject);
+        yield return new WaitForSecondsRealtime(1f);
+        TellStory();
+        run.Event("overtime", "Keep going pressed; wave " + WaveDirector.Wave + ", game " + (StoryScreen.IsOpen ? "still frozen" : "running"));
+        if (StoryScreen.IsOpen) {
+            run.Problem(PlaytestSeverity.Bug, "Keep going did not close the ending screen");
+        }
+        yield return Play(options, 8f, false);
     }
 
     // ---------------------------------------------------------------- wallit model

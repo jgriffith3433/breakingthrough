@@ -41,6 +41,7 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 | The bat: combo, ground smash, home run, auto swing, facing, the stand-in bat | `BatEquipment.cs` (on the player; the scene's old `BowEquipment` slot adds it and switches off). Its numbers are the `Bat...`, `Smash...`, `Charge...` and `HomeRun...` values in `Tuning.cs` |
 | Lock-on | `ZeldaStyleCamera.AcquireTarget`: hold Shift for the nearest bot in `LockReach()` from `Enemy.Roster`; it sticks to that bird; right click or Tab moves it to the next nearest |
 | An in-run boon | `BoonId` and a row in `RunBoons.All`, **in enum order**, because the array is indexed by the enum. Read the boon's rank where it acts: `Combat` for hits and kills, `BatEquipment` for swing behavior, `BoonEffects` for things that tick on their own. An evolution uses `E(...)` and names two parents that have max ranks. The bat boons kept their bow-era `BoonId` names (`Heavy` is Corked Bat, `SplitShot` Wide Arc, `Volley` Grand Slam, `Homing` Long Ball...; the enum comments say which), because analytics reports them by id: rename the display name, never the id. A boon that changes the bat gets a mark in `UpgradeLook.BatMarks` |
+| The story: intro, wave-start beats, boss-wave cards, finale and ending screen | `Docs/Story.md` first, then its lines in `Story.cs` (data) and the screens in `StoryScreen.cs`. `WaveDirector` calls it (`ShowIntro` at a wave 1 start, `StartWave` at each wave's combat, `ShowFinale` when `Story.FinalWave` (30) is cleared). Voices: Wallit money, Slice clipped, Yo Bots chirpy |
 | Level-up cards | `LevelUpScreen.cs` |
 | XP bar, streak counter, boss bar, boon list | `RunHud.cs` |
 | Streak and hit-stop | `Juice.cs` (`Combo`, `HitStop`) |
@@ -157,7 +158,7 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
   and `metal-bat` says what the bat looks like; the first level-up's card titles are read off the screen (`cards`,
   a problem if any card says arrow, bow or quiver); setup: the wave key to wave 14 and a dozen bat boons granted
   (`bat-marks` lists each mark); then play until `wide-swing`, `burning`, `slowing`, `chain-sparks`, `spin-swing`
-  and `batted-bolt` have each been seen; then Thunder Bat for a lightning spin (`thunder-bat`) and 30 s of play), `cast` (menu key art up and read, What's new laid over the game with the release note naming Wallit, Slice and the bots read from `releases.json`, then 45 s of play as Wallit guarding Slice; events `menu-art`, `release-note`, `whatsnew-shown`, `cast-in-play`), `site` (the website
+  and `batted-bolt` have each been seen; then Thunder Bat for a lightning spin (`thunder-bat`) and 30 s of play), `story` (the intro read page by page over the frozen Hollow, Skip button, wave 1 beats, then setup: wave key to 10 and 30 for the boss-wave cards, wave 30 trimmed to the boss and Slice topped up; clearing it plays the finale and the ADDRESS FILED ending screen, then Keep going; events `story` (intro-*, beat, finale-*, ending), `intro-shown`, `finale-shown`, `ending-shown`; every other scenario sets `StoryScreen.SuppressIntro` so the intro does not wait for a key), `cast` (menu key art up and read, What's new laid over the game with the release note naming Wallit, Slice and the bots read from `releases.json`, then 45 s of play as Wallit guarding Slice; events `menu-art`, `release-note`, `whatsnew-shown`, `cast-in-play`), `site` (the website
   around the game: every page outside `Game/` has "Powered by HAWKES GEN" linking to hawkesgen.com, the landing page
   links to hawkesbiomedical.com. It checks the landing page, every page in the deploy's `site/pages.json` and every
   page they link to, looks for a blog at `/blog/`, `/blog.html`, `/news/` and `/posts/`, and logs `site-pages`,
@@ -220,12 +221,12 @@ add another tracker (`com.unity.analytics` was removed for that reason).
 | Event | When | Called from |
 |---|---|---|
 | `game_ready` | The main menu is up (once per page load) | `MainMenu.Start` → `RunAnalytics.Menu` |
-| `screen` | `menu`, `wave`, `level_up`, `chest`, `pause`, `settings`, `game_over` | MainMenu, LevelUpScreen, PauseMenu, SettingsPanel, `MusicianDown` |
+| `screen` | `menu`, `wave`, `level_up`, `chest`, `pause`, `settings`, `game_over`, `intro`, `finale`, `ending` | MainMenu, LevelUpScreen, PauseMenu, SettingsPanel, `MusicianDown` |
 | `run_start` | The game scene starts a run: `run`, `start_wave`, `best_wave`, `shop`, `shop_ranks`, `coins`, `touch` | `WaveDirector.Start` |
 | `level_start` | A wave's fighting begins: `wave`, `birds`, `musician_hp`, `event`, `boss`, `fort` | `WaveDirector.BeginCombat` |
 | `level_end` | `complete` (cleared), `death`, `quit`, `restart` (the wave keys): `kills`, `damage_taken`, `musician_hp`, `swings`, `hits` (birds struck; one swing can hit several), `hit_rate` (share of swings that struck at least one bird), `best_streak` | `TickCombat`, `Lose`, `GoToWave`, `OnDestroy` |
 | `death` | The musician falls; `cause` is the bot kind that landed the last blow (`BotRoster.Slug`: `yo_bot`, `plated_yo_bot`, `spider_bot` … `titan_spider_bot`), with `boss`/`elite` and `worst` (the kind that did the most damage this run). Warrok can't fall | `Musician.Hurt(amount, by)` → `WaveDirector.Lose` |
-| `run_end` | `result` `lose` (cause `musician_down`) or `quit` (the scene left mid-run): `duration`, `score`/`wave`, `waves_cleared`, `killed_by`, `worst`, kills, `swings`, `hits`, `hit_rate`, damage, level, cards, rerolls, streak, coins, `upgrades` | `RunAnalytics.MusicianDown` / `RunAbandoned` |
+| `run_end` | `result` `lose` (cause `musician_down`), `win` (cause `finale`: wave 30 cleared and the player left the ending screen for the menu) or `quit` (the scene left mid-run): `duration`, `score`/`wave`, `waves_cleared`, `killed_by`, `worst`, kills, `swings`, `hits`, `hit_rate`, damage, level, cards, rerolls, streak, coins, `upgrades` | `RunAnalytics.MusicianDown` / `RunAbandoned` |
 | `choice` | A card taken: node `level_up` or `chest`, option the `BoonId` | `LevelUpScreen.Choose` |
 | `card_pick` | The same pick with `offered` (all three), `slot`, `rarity`, `rank`, `evolution` | `LevelUpScreen.Choose` |
 | `feature` | `reroll`, `shop_buy` (`item`, `rank`, `cost`, `coins_left`), `settings` (sound, music, sfx on close) | LevelUpScreen, MainMenu, SettingsPanel |

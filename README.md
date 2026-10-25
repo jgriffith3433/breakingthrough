@@ -2,6 +2,8 @@
 
 A roguelike wave-defense game in Unity 6.3 LTS (`6000.3.7f1`) on the built-in render pipeline. You play Wallit with a baseball bat in a moonlit hollow, and you protect Slice, who guards the circle with a scalpel (`Assets/Art/Slice/Slice.fbx` on `Assets/Prefabs/PianoRecital.prefab` and `Assets/Resources/Slice/PianoRecital.prefab`), from endless waves of Yo Bots and Spider Bots. You grow every wave, level up on bolts, and pick boons that build into a different run each time. Between runs, coins buy permanent upgrades.
 
+The story is in `Docs/Story.md`: a short skippable intro, a beat at each wave start, boss-wave cards on 10, 20 and 30, and a finale and ADDRESS FILED ending screen when wave 30 is cleared (Enter keeps going into overtime).
+
 Voices stay short. Wallit talks money ("Pay up."). Slice is cool and clipped ("Clean."). Yo Bots are chirpy ("Uploading victory.").
 
 The project folder is `breakingthrough`. The Unity product name is still `Controller`.

@@ -237,6 +237,14 @@ public static class RunAnalytics {
         Ask(wave);
     }
 
+    // The finale was played and the player left for the menu.
+    public static void RunWon(int wave) {
+        if (!runOpen) {
+            return;
+        }
+        RunEnd(wave, "win", "finale");
+    }
+
     // The game scene went away with the run still going (the page went to the menu some other way).
     public static void RunAbandoned(int wave) {
         if (!runOpen) {
