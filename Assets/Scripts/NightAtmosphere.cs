@@ -39,7 +39,7 @@ public class NightAtmosphere : MonoBehaviour {
         Moonlight();
         Camera cam = Camera.main;
         if (cam != null && cam.GetComponent<NightGrade>() == null) {
-            cam.allowHDR = true;
+            cam.allowHDR = !UiFit.Touch;
             cam.gameObject.AddComponent<NightGrade>();
         }
         GameObject player = GameObject.FindGameObjectWithTag("Player");
@@ -64,7 +64,7 @@ public class NightAtmosphere : MonoBehaviour {
                 light.shadowStrength = 0.75f;
             }
         }
-        QualitySettings.pixelLightCount = Mathf.Max(QualitySettings.pixelLightCount, 6);
+        QualitySettings.pixelLightCount = UiFit.Touch ? 3 : Mathf.Max(QualitySettings.pixelLightCount, 6);
     }
 
     void Stage() {
