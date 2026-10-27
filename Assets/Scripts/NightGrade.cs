@@ -50,14 +50,18 @@ public class NightGrade : MonoBehaviour {
         material.SetColor(HighlightsId, Highlights);
         material.SetColor(LiftId, Lift);
 
-        int width = source.width / 2;
-        int height = source.height / 2;
+        // A phone's screen is 3x its CSS size: start the bloom at a quarter and stop after four steps, or the
+        // fill rate alone stalls an iPhone.
+        bool phone = UiFit.Touch;
+        int iterations = phone ? Mathf.Min(Iterations, 4) : Iterations;
+        int width = source.width / (phone ? 4 : 2);
+        int height = source.height / (phone ? 4 : 2);
         RenderTextureFormat format = source.format;
         RenderTexture current = RenderTexture.GetTemporary(width, height, 0, format);
         levels[0] = current;
         Graphics.Blit(source, current, material, 0);
         int i = 1;
-        for (; i < Iterations; i++) {
+        for (; i < iterations; i++) {
             width /= 2;
             height /= 2;
             if (height < 2 || width < 2) {
