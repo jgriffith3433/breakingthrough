@@ -160,7 +160,7 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
   a problem if any card says arrow, bow or quiver); setup: the wave key to wave 14 and a dozen bat boons granted
   (`bat-marks` lists each mark); then play until `wide-swing`, `burning`, `slowing`, `chain-sparks`, `spin-swing`
   and `batted-bolt` have each been seen; then Thunder Bat for a lightning spin (`thunder-bat`) and 30 s of play), `story` (the intro read page by page over the frozen Hollow, Skip button, wave 1 beats, then setup: wave key to 10 and 30 for the boss-wave cards, wave 30 trimmed to the boss and Slice topped up; clearing it plays the finale and the ADDRESS FILED ending screen, then Keep going; events `story` (intro-*, beat, finale-*, ending), `intro-shown`, `finale-shown`, `ending-shown`; every other scenario sets `StoryScreen.SuppressIntro` so the intro does not wait for a key), `cast` (menu key art up and read, What's new laid over the game with the release note naming Wallit, Slice and the bots read from `releases.json`, then 45 s of play as Wallit guarding Slice; events `menu-art`, `release-note`, `whatsnew-shown`, `cast-in-play`), `site` (the website
-  around the game: every page outside `Game/` has "Powered by HAWKES GEN" linking to hawkesgen.com, the landing page
+  around the game: every page outside `Game/` has "Powered by HAWKES GEN" linking to hawkesgen.ai, the landing page
   links to hawkesbiomedical.com. It checks the landing page, every page in the deploy's `site/pages.json` and every
   page they link to, looks for a blog at `/blog/`, `/blog.html`, `/news/` and `/posts/`, and logs `site-pages`,
   `sub-pages` and `blog` events saying what exists. Then it lays each page over the game for 4 s via

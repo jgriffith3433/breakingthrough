@@ -51,7 +51,7 @@ namespace Hawkes
         }
 
         /// <summary>Start without a settings asset. The page's HAWKES_BUILD, when it sets one, wins over Application.version.</summary>
-        public static void Init(string product, string sdkUrl = "https://gen.hawkesgen.com/sdk/analytics@1.js", string endpoint = "", bool debug = false)
+        public static void Init(string product, string sdkUrl = "https://gen.hawkesgen.ai/sdk/analytics@1.js", string endpoint = "", bool debug = false)
         {
             started = true;
             if (!Live) { Log("init", product); return; }

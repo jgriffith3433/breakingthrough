@@ -13,9 +13,9 @@ namespace Hawkes
         public string product = "";
 
         [Tooltip("Where the page loads the SDK from when it hasn't loaded it itself.")]
-        public string sdkUrl = "https://gen.hawkesgen.com/sdk/analytics@1.js";
+        public string sdkUrl = "https://gen.hawkesgen.ai/sdk/analytics@1.js";
 
-        [Tooltip("Leave empty for the default (https://gen.hawkesgen.com/v1/analytics/collect).")]
+        [Tooltip("Leave empty for the default (https://gen.hawkesgen.ai/v1/analytics/collect).")]
         public string endpoint = "";
 
         [Tooltip("Log each event in the browser console and keep them on window.hawkesAnalytics.debugLog.")]

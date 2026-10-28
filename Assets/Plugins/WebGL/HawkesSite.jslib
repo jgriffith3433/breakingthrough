@@ -99,7 +99,7 @@ mergeInto(LibraryManager.library, {
           var doc = new DOMParser().parseFromString(res.body, "text/html");
           var links = Array.prototype.slice.call(doc.querySelectorAll("a[href]"));
           var powered = links.filter(function (a) {
-            return host(a) === "hawkesgen.com" && /powered by hawkes gen/i.test(text(a));
+            return host(a) === "hawkesgen.ai" && /powered by hawkes gen/i.test(text(a));
           });
           var parent = links.filter(function (a) {
             return host(a) === "hawkesbiomedical.com";

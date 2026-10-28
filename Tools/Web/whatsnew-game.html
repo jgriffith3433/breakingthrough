@@ -31,7 +31,7 @@
     if (window.hawkesRelease) window.hawkesRelease.then(function (r) {
       var top = r && r.releases && r.releases[0];
       if (!top) return;
-      var beta = /\.hawkesgen\.com$/.test(location.hostname) || location.hostname === "localhost" || location.hostname === "127.0.0.1";
+      var beta = /\.hawkesgen\.ai$/.test(location.hostname) || location.hostname === "localhost" || location.hostname === "127.0.0.1";
       show("v" + top.version + (beta ? " beta" : "") + " · build " + build.replace(/^v/, "") + " · What's new");
     });
   })();
