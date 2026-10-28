@@ -95,8 +95,21 @@ public class ZeldaStyleCamera : MonoBehaviour {
     }
 
     // Phones and tablets have no pointer lock: asking logs "Cursor locking is not supported on this browser." each frame.
+#if UNITY_WEBGL && !UNITY_EDITOR
+    [System.Runtime.InteropServices.DllImport("__Internal")]
+    static extern void HawkesGuardPointerLock();
+    static bool pointerGuarded;
+#endif
+
     static void LockMouse() {
         if (!UiFit.Touch) {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            // The browser rejects a lock asked for without a click; keep that from being an unhandled rejection.
+            if (!pointerGuarded) {
+                pointerGuarded = true;
+                HawkesGuardPointerLock();
+            }
+#endif
             Cursor.lockState = CursorLockMode.Locked;
         }
     }
