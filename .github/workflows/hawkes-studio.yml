@@ -4,11 +4,14 @@ name: Hawkes Studio
 # - beta: the beta site https://<product>.hawkesgen.ai rebuilds (a Unity game is built on the build server).
 # - main: going live. GitHub Pages publishes web sites itself; for a Unity game Studio publishes the build to its
 #   website repo. Studio records the deploy and playtests the live site.
+# - a tag build-<anything> (git tag build-1 && git push origin build-1): Studio has Hawkes Gen build that exact commit
+#   in the cloud and push it to the website repo's beta (never main), then playtests it. Going live stays DEPLOY.
 # No secrets: the workflow proves which repo and branch it is with GitHub's signed OIDC token.
 
 on:
   push:
     branches: [beta, main]
+    tags: ['build-*']
   workflow_dispatch:
 
 permissions:
