@@ -242,6 +242,10 @@ public class MainMenu : MonoBehaviour {
         for (int t = 0; t < blocks.Length; t++) {
             blocks[t].Clear();
         }
+        // Pieces only some layouts have: forget the last build's.
+        quoteText = null;
+        art = null;
+        flashRow = -1;
 
         // The entrance plays once; turning a phone rebuilds the menu without replaying it.
         builtAt = builtOnce ? -10f : Time.unscaledTime;
