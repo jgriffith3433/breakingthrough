@@ -1,67 +1,114 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-// The shop between runs. Coins bought here are already in MetaProgress.
+// The front desk between runs, after hours. The key art fills the screen; the run setup sits on the left (on top
+// when a phone is upright) and the case file on the right holds the upgrades, the briefing and the last run.
+// Nothing scrolls: whatever doesn't fit the case file goes on another page (Prev and Next, the arrow keys, the
+// mouse wheel or a swipe). Coins bought here are already in MetaProgress.
 public class MainMenu : MonoBehaviour {
+    const int TabUpgrades = 0;
+    const int TabBriefing = 1;
+    const int TabLastRun = 2;
+    static readonly string[] TabNames = { "Upgrades", "Briefing", "Last run" };
+
+    // A thing on a case-file page: an upgrade form or a paragraph. Pages are packed from these, top down.
+    class Block {
+        public RectTransform rect;
+        public float height;
+        public float top;
+        public int page;
+    }
+
     Font font;
+    GameObject canvasRoot;
+    UiMode builtMode;
+    int builtStamp = -1;
+    Rect builtSafe;
+    float rebuildAt = -1f;
+    bool builtOnce;
+    float builtAt;
+    bool cuePaper;
+
+    // The shapes of this build, in canvas units.
+    Vector2 size;
+    bool compact;
+    float textSmall;
+    float textBody;
+    float buttonHeight;
+
     Text coinText;
     Text bestText;
-    Text purseText;
+    Text nextText;
+    Text startText;
+    Text statusText;
+    Text quoteText;
+    Text pageText;
+    string hint = "";
+    float statusUntil;
+    Button lowerStart;
+    Button raiseStart;
+    Button prevButton;
+    Button nextButton;
+    int startWave = 1;
+    float playReadyAt;
+
     readonly Text[] titles = new Text[MetaProgress.Catalog.Length];
     readonly Text[] abouts = new Text[MetaProgress.Catalog.Length];
     readonly Text[] ranks = new Text[MetaProgress.Catalog.Length];
     readonly Text[] costs = new Text[MetaProgress.Catalog.Length];
     readonly Button[] buttons = new Button[MetaProgress.Catalog.Length];
     readonly Image[] rows = new Image[MetaProgress.Catalog.Length];
-    Text celebrate;
-    RawImage art;
-    Text startText;
-    Button lowerStart;
-    Button raiseStart;
-    int startWave = 1;
+    readonly RectTransform[] pipBoxes = new RectTransform[MetaProgress.Catalog.Length];
+    readonly MenuStamp[] stamps = new MenuStamp[MetaProgress.Catalog.Length];
     int flashRow = -1;
     float flash;
-    float playReadyAt;
-    GameObject canvasRoot;
-    UiMode builtMode;
-    int builtStamp = -1;
-    bool builtOnce;
-    float builtAt;
-    RectTransform copier;
-    RectTransform sun;
-    RectTransform shafts;
-    RectTransform cabinets;
-    RectTransform secondHand;
-    RectTransform minuteHand;
-    RectTransform hourHand;
-    Image boardDot;
-    Text boardNumber;
-    Text quoteWho;
-    Text quoteLine;
-    readonly MenuStamp[] stamps = new MenuStamp[MetaProgress.Catalog.Length];
-    Vector2 parallax;
+
+    // The case file: its tabs, the page area and what is on each tab.
+    readonly List<Block>[] blocks = { new List<Block>(), new List<Block>(), new List<Block>() };
+    readonly Button[] tabButtons = new Button[3];
+    RectTransform body;
+    float bodyWidth;
+    float bodyHeight;
+    float rowPad;
+    float rowTextWidth;
+    float titleHeight;
+    int tab;
+    int page;
+    int pageCount = 1;
+    float flipReadyAt;
+
+    RawImage art;
+    float artFocus = 0.5f;
+    float artWide = 1f;
+    float artTall = 1f;
+    RectTransform moon;
+    RectTransform mistLow;
+    RectTransform mistHigh;
     int quoteIndex;
     float quoteAt;
-    bool cuePaper;
-    bool cueThunk;
 
-    // One palette for the whole menu: the records room by daylight. Ink on paper, red and blue stamp pads,
-    // manila folders, a clipboard's brown board.
-    static readonly Color Ink = new Color(0.17f, 0.14f, 0.12f);
-    static readonly Color InkSoft = new Color(0.36f, 0.31f, 0.26f);
-    static readonly Color Gold = new Color(0.58f, 0.38f, 0.02f);
-    static readonly Color Paper = new Color(0.98f, 0.95f, 0.85f);
-    static readonly Color RowPaper = new Color(0.99f, 0.97f, 0.9f, 0.98f);
-    static readonly Color Manila = new Color(0.91f, 0.77f, 0.49f);
-    static readonly Color Board = new Color(0.4f, 0.29f, 0.19f);
-    static readonly Color StampRed = new Color(0.72f, 0.16f, 0.13f);
-    static readonly Color StampBlue = new Color(0.14f, 0.3f, 0.6f);
-    static readonly Color Leaf = new Color(0.17f, 0.38f, 0.2f);
-    static readonly Color Amber = new Color(1f, 0.74f, 0.2f);
+    // After hours at the Department: night ink, moonlight, brass fittings, manila folders and red stamp ink.
+    static readonly Color Night = new Color(0.03f, 0.04f, 0.07f, 1f);
+    static readonly Color CardFill = new Color(0.06f, 0.07f, 0.11f, 0.9f);
+    static readonly Color RowFill = new Color(0.12f, 0.13f, 0.19f, 0.96f);
+    static readonly Color RowLit = new Color(0.34f, 0.28f, 0.14f, 1f);
+    static readonly Color ChipFill = new Color(0.07f, 0.08f, 0.12f, 0.86f);
+    static readonly Color Brass = new Color(0.8f, 0.63f, 0.33f, 1f);
+    static readonly Color BrassDim = new Color(0.5f, 0.4f, 0.22f, 0.9f);
+    static readonly Color Moon = new Color(0.87f, 0.91f, 1f, 1f);
+    static readonly Color MoonSoft = new Color(0.66f, 0.72f, 0.84f, 1f);
+    static readonly Color Gold = new Color(1f, 0.82f, 0.38f, 1f);
+    static readonly Color GoldDeep = new Color(0.9f, 0.52f, 0.12f, 1f);
+    static readonly Color Paper = new Color(0.97f, 0.94f, 0.86f, 1f);
+    static readonly Color Manila = new Color(0.91f, 0.77f, 0.49f, 1f);
+    static readonly Color Ink = new Color(0.14f, 0.11f, 0.09f, 1f);
+    static readonly Color StampRed = new Color(0.76f, 0.17f, 0.14f, 1f);
+    static readonly Color Glass = new Color(0.45f, 0.95f, 0.84f, 1f);
     static readonly Color[] Tabs = {
-        new Color(0.78f, 0.25f, 0.2f), new Color(0.22f, 0.4f, 0.7f), new Color(0.3f, 0.55f, 0.3f), new Color(0.9f, 0.6f, 0.18f), new Color(0.55f, 0.35f, 0.62f)
+        new Color(0.86f, 0.3f, 0.24f), new Color(0.32f, 0.52f, 0.86f), new Color(0.38f, 0.7f, 0.4f), new Color(0.95f, 0.66f, 0.22f), new Color(0.68f, 0.46f, 0.82f)
     };
 
     // Who talks at the front desk, in turn. Wallit talks money, Slice is clipped, the Yo Bots chirp.
@@ -100,26 +147,41 @@ public class MainMenu : MonoBehaviour {
 
     void Update() {
         UiFit.Notice();
-        bool compact = builtMode != UiMode.Desktop || UiFit.Compact;
-        if (canvasRoot != null && builtStamp != UiFit.Stamp && compact) {
-            // The phone turned or its toolbar moved: build the menu again for the new shape.
-            Destroy(canvasRoot);
-            Build();
-            Refresh();
-        }
-        if (art != null) {
-            // A slow drift across the key art so the menu breathes.
-            float t = Time.unscaledTime;
-            float zoom = 0.94f + Mathf.Sin(t * 0.05f) * 0.02f;
-            art.uvRect = new Rect((1f - zoom) * 0.5f + Mathf.Sin(t * 0.07f) * 0.02f, (1f - zoom) * 0.5f + Mathf.Cos(t * 0.05f) * 0.01f, zoom, zoom);
+        if (canvasRoot != null && (builtStamp != UiFit.Stamp || builtSafe != UnityEngine.Screen.safeArea)) {
+            // The phone turned, its toolbar moved or the window was resized: lay the menu out again for the new
+            // shape once it settles.
+            if (rebuildAt < 0f) {
+                rebuildAt = Time.unscaledTime + 0.2f;
+            } else if (Time.unscaledTime >= rebuildAt) {
+                rebuildAt = -1f;
+                Destroy(canvasRoot);
+                Build();
+                Refresh();
+            }
         }
         TickAmbient();
         if (flash > 0f && flashRow >= 0 && flashRow < rows.Length && rows[flashRow] != null) {
-            flash -= Time.deltaTime;
-            rows[flashRow].color = Color.Lerp(RowPaper, new Color(1f, 0.84f, 0.4f, 1f), Mathf.Clamp01(flash));
+            flash -= Time.unscaledDeltaTime;
+            rows[flashRow].color = Color.Lerp(RowFill, RowLit, Mathf.Clamp01(flash));
+        }
+        if (statusText != null && statusUntil > 0f && Time.unscaledTime >= statusUntil) {
+            statusUntil = 0f;
+            statusText.text = hint;
+            statusText.color = MoonSoft;
         }
         if (SettingsPanel.IsOpen || SettingsPanel.ClosedFrame == Time.frameCount) {
             return;
+        }
+        if (PlayInput.GetKeyDown(KeyCode.RightArrow) || PlayInput.GetKeyDown(KeyCode.PageDown)) {
+            Flip(1);
+        } else if (PlayInput.GetKeyDown(KeyCode.LeftArrow) || PlayInput.GetKeyDown(KeyCode.PageUp)) {
+            Flip(-1);
+        }
+        // The wheel turns pages instead of scrolling.
+        float wheel = Input.mouseScrollDelta.y;
+        if (Mathf.Abs(wheel) > 0.1f && Time.unscaledTime >= flipReadyAt) {
+            flipReadyAt = Time.unscaledTime + 0.3f;
+            Flip(wheel < 0f ? 1 : -1);
         }
         if (Time.unscaledTime >= playReadyAt && (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.Space))) {
             Play();
@@ -154,333 +216,537 @@ public class MainMenu : MonoBehaviour {
         Refresh();
     }
 
+    // ---------------------------------------------------------------- building
+
     void Build() {
         var canvasGo = new GameObject("Menu Canvas");
+        // Under the menu, so whatever reads the menu (the playtest's shop check) finds its words.
+        canvasGo.transform.SetParent(transform, false);
         canvasRoot = canvasGo;
         builtMode = UiFit.Mode;
         builtStamp = UiFit.Stamp;
+        builtSafe = UnityEngine.Screen.safeArea;
         var canvas = canvasGo.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 50;
         var scaler = canvasGo.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
-        UiFit.Apply(scaler);
+        // On a desktop the menu keys off the height, so a short or wide window still fits it without scrolling.
+        UiFit.Apply(scaler, 1f);
         canvasGo.AddComponent<GraphicRaycaster>();
 
-        BuildRoom(canvasGo.transform, builtMode != UiMode.Desktop);
-        Texture2D artTexture = Resources.Load<Texture2D>("UI/MenuArt");
+        compact = builtMode != UiMode.Desktop;
+        size = CanvasSize();
+        textSmall = 20f;
+        textBody = compact ? 21f : 22f;
+        buttonHeight = compact ? 88f : 64f;
+        for (int t = 0; t < blocks.Length; t++) {
+            blocks[t].Clear();
+        }
+
         // The entrance plays once; turning a phone rebuilds the menu without replaying it.
         builtAt = builtOnce ? -10f : Time.unscaledTime;
         builtOnce = true;
         cuePaper = builtAt < 0f;
-        cueThunk = builtAt < 0f;
         quoteAt = Time.unscaledTime + 5.5f;
 
-        if (builtMode != UiMode.Desktop) {
-            BuildCompact(canvasGo.transform, builtMode == UiMode.Tall, artTexture);
+        Texture2D artTexture = Resources.Load<Texture2D>("UI/MenuArt");
+        BuildBackdrop(canvasGo.transform, artTexture);
+
+        // Everything else sits inside the screen's safe area, with a margin.
+        float margin = compact ? 20f : 48f;
+        Vector4 inset = SafeInsets();
+        var desk = Node(canvasGo.transform, "Desk");
+        desk.anchorMin = Vector2.zero;
+        desk.anchorMax = Vector2.one;
+        desk.offsetMin = new Vector2(inset.x + margin, inset.w + margin);
+        desk.offsetMax = new Vector2(-(inset.y + margin), -(inset.z + margin));
+        float w = size.x - inset.x - inset.y - margin * 2f;
+        float h = size.y - inset.z - inset.w - margin * 2f;
+
+        hint = UiFit.Touch ? "Tap Play to start. Swipe the case file to turn its pages." : "Enter plays. Arrow keys or the wheel turn the case file's pages.";
+        if (builtMode == UiMode.Tall) {
+            BuildTall(desk, w, h);
+        } else {
+            BuildSide(desk, w, h);
+        }
+    }
+
+    // Desktop and phones held sideways: the run setup on the left, the case file on the right.
+    void BuildSide(RectTransform desk, float w, float h) {
+        bool desktop = !compact;
+        float gap = desktop ? 60f : 16f;
+        float left = desktop ? Mathf.Clamp(w * 0.36f, 520f, 660f) : Mathf.Clamp(w * 0.4f, 420f, 560f);
+        float card = desktop ? Mathf.Clamp(w - left - gap, 640f, 880f) : w - left - gap;
+        card = Mathf.Min(card, w - left - gap);
+
+        // Shade behind the left column so its words read over the art.
+        var shade = Shade(desk.parent, new Color(Night.r, Night.g, Night.b, 0.82f), new Color(Night.r, Night.g, Night.b, 0f), true);
+        shade.anchorMin = Vector2.zero;
+        shade.anchorMax = new Vector2(0f, 1f);
+        shade.pivot = new Vector2(0f, 0.5f);
+        shade.anchoredPosition = Vector2.zero;
+        shade.sizeDelta = new Vector2(left + (desktop ? 340f : 120f), 0f);
+        shade.SetSiblingIndex(desk.GetSiblingIndex());
+
+        var column = Node(desk, "Run Setup");
+        Place(column, 0f, 0f, left, h);
+        float y = 0f;
+        y = BuildHeader(column, left, desktop ? 330f : (h >= 760f ? 200f : 168f), desktop, y);
+        y += desktop ? 26f : 12f;
+        float chipHeight = desktop ? 120f : 92f;
+        BuildChips(column, 0f, y, left, chipHeight);
+        y += chipHeight;
+
+        // From the bottom up: Play and Settings, the later start, the status line.
+        float playHeight = desktop ? 108f : 100f;
+        float laterHeight = desktop ? 72f : 88f;
+        float statusHeight = desktop ? 34f : 30f;
+        float bottom = h;
+        bottom -= playHeight;
+        BuildPlayRow(column, 0f, bottom, left, playHeight);
+        bottom -= (desktop ? 18f : 12f) + laterHeight;
+        BuildLater(column, 0f, bottom, left, laterHeight);
+        bottom -= (desktop ? 14f : 10f) + statusHeight;
+        statusText = Label(column, hint, (int)textSmall, FontStyle.Italic, MoonSoft, 0f, bottom, left, statusHeight, TextAnchor.MiddleLeft);
+        statusText.horizontalOverflow = HorizontalWrapMode.Wrap;
+        statusText.verticalOverflow = VerticalWrapMode.Truncate;
+        statusText.resizeTextForBestFit = true;
+        statusText.resizeTextMinSize = (int)textSmall;
+        statusText.resizeTextMaxSize = (int)textBody;
+
+        // The front desk's voices, where there's room for them.
+        float spare = bottom - y;
+        if (spare >= 64f) {
+            float quoteHeight = Mathf.Min(desktop ? 110f : 70f, spare - 24f);
+            quoteText = Label(column, "", desktop ? 34 : 26, FontStyle.BoldAndItalic, Moon, 0f, y + (spare - quoteHeight) * 0.5f, left, quoteHeight, TextAnchor.MiddleLeft);
+            quoteText.verticalOverflow = VerticalWrapMode.Truncate;
+            quoteText.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.6f);
+            ShowQuote(quoteIndex);
+        }
+        Enter(column, new Vector2(-50f, 0f), 0f);
+
+        var file = BuildCaseFile(desk, w - card, 0f, card, h);
+        Enter(file, new Vector2(60f, 0f), 0.12f);
+    }
+
+    // A phone held upright: the title and numbers on top, the case file in the middle, Play at the bottom.
+    void BuildTall(RectTransform desk, float w, float h) {
+        var shade = Shade(desk.parent, new Color(Night.r, Night.g, Night.b, 0f), new Color(Night.r, Night.g, Night.b, 0.75f), false);
+        shade.anchorMin = new Vector2(0f, 1f);
+        shade.anchorMax = Vector2.one;
+        shade.pivot = new Vector2(0.5f, 1f);
+        shade.anchoredPosition = Vector2.zero;
+        shade.sizeDelta = new Vector2(0f, 560f);
+        shade.SetSiblingIndex(desk.GetSiblingIndex());
+
+        var top = Node(desk, "Run Setup");
+        Place(top, 0f, 0f, w, h);
+        float y = BuildHeader(top, w, h >= 1300f ? 230f : 168f, false, 0f);
+        y += 14f;
+        BuildChips(top, 0f, y, w, 92f);
+        y += 92f + 14f;
+
+        float bottom = h;
+        bottom -= 100f;
+        BuildPlayRow(top, 0f, bottom, w, 100f);
+        bottom -= 12f + 88f;
+        BuildLater(top, 0f, bottom, w, 88f);
+        bottom -= 8f + 30f;
+        statusText = Label(top, hint, (int)textSmall, FontStyle.Italic, MoonSoft, 0f, bottom, w, 30f, TextAnchor.MiddleCenter);
+        statusText.verticalOverflow = VerticalWrapMode.Truncate;
+        statusText.resizeTextForBestFit = true;
+        statusText.resizeTextMinSize = (int)textSmall;
+        statusText.resizeTextMaxSize = (int)textBody;
+        bottom -= 12f;
+        Enter(top, new Vector2(0f, 40f), 0f);
+
+        var file = BuildCaseFile(desk, 0f, y, w, Mathf.Max(300f, bottom - y));
+        Enter(file, new Vector2(0f, -50f), 0.12f);
+    }
+
+    // The department's name, the game's title in gold leaf, and the tagline. Returns where it ends.
+    float BuildHeader(RectTransform parent, float w, float height, bool desktop, float y) {
+        float kicker = desktop ? 26f : 24f;
+        var dept = Label(parent, "THE  PLACE  DEPARTMENT", (int)kicker, FontStyle.Bold, Moon, 0f, y, w, kicker + 8f, TextAnchor.UpperLeft);
+        dept.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.7f);
+        var rule = Fill(parent, new Color(StampRed.r, StampRed.g, StampRed.b, 0.95f));
+        Place(rule.rectTransform, 0f, y + kicker + 12f, desktop ? 150f : 110f, 4f);
+        y += kicker + 22f;
+
+        float tagHeight = desktop ? 64f : 52f;
+        float titleBox = Mathf.Max(70f, height - (kicker + 22f) - tagHeight);
+        var title = Label(parent, "BREAKING THROUGH", desktop ? 120 : 96, FontStyle.Bold, Color.white, 0f, y, w, titleBox, TextAnchor.UpperLeft);
+        title.verticalOverflow = VerticalWrapMode.Truncate;
+        title.resizeTextForBestFit = true;
+        title.resizeTextMinSize = 36;
+        title.resizeTextMaxSize = desktop ? 120 : 96;
+        title.lineSpacing = 0.9f;
+        var foil = title.gameObject.AddComponent<MenuGradient>();
+        foil.top = new Color(1f, 0.93f, 0.62f, 1f);
+        foil.bottom = GoldDeep;
+        var outline = title.gameObject.AddComponent<Outline>();
+        outline.effectColor = new Color(0.16f, 0.07f, 0.02f, 0.95f);
+        outline.effectDistance = new Vector2(2f, -2f);
+        var drop = title.gameObject.AddComponent<Shadow>();
+        drop.effectColor = new Color(0f, 0f, 0f, 0.65f);
+        drop.effectDistance = new Vector2(4f, -6f);
+        y += titleBox;
+
+        var tag = Label(parent, "Where things that should not exist are given an address.", desktop ? 26 : 22, FontStyle.Italic, Gold, 0f, y, w, tagHeight, TextAnchor.UpperLeft);
+        tag.verticalOverflow = VerticalWrapMode.Truncate;
+        tag.resizeTextForBestFit = true;
+        tag.resizeTextMinSize = (int)textSmall;
+        tag.resizeTextMaxSize = desktop ? 26 : 22;
+        tag.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.7f);
+        y += tagHeight;
+
+        if (desktop) {
+            // Stamped beside the department's name, clear of the title.
+            var open = Stamp(parent, "NOW OPEN", 30, StampRed, new Vector2(w - 110f, -22f), new Vector2(190f, 50f), -9f, 0.9f);
+            open.Slam(builtAt < 0f ? -1f : 1.3f, builtAt < 0f);
+        }
+        return y;
+    }
+
+    // Three counters under the title: coins, the best wave and the ticket now serving.
+    void BuildChips(RectTransform parent, float x, float y, float w, float h) {
+        float gap = compact ? 10f : 14f;
+        float chip = (w - gap * 2f) / 3f;
+        coinText = Chip(parent, "COINS", Gold, x, y, chip, h);
+        bestText = Chip(parent, "BEST", Glass, x + chip + gap, y, chip, h);
+        nextText = Chip(parent, "TICKET", Moon, x + (chip + gap) * 2f, y, chip, h);
+        nextText.text = "No. " + (MetaProgress.BestWave + 1).ToString("000");
+    }
+
+    Text Chip(RectTransform parent, string caption, Color tint, float x, float y, float w, float h) {
+        var chip = Framed(parent, ChipFill, BrassDim, x, y, w, h);
+        float captionSize = 20f;
+        Label(chip, caption, (int)captionSize, FontStyle.Bold, MoonSoft, 14f, 10f, w - 28f, captionSize + 6f, TextAnchor.UpperLeft);
+        var value = Label(chip, "", compact ? 36 : 48, FontStyle.Bold, tint, 14f, captionSize + 14f, w - 28f, h - captionSize - 22f, TextAnchor.MiddleLeft);
+        value.verticalOverflow = VerticalWrapMode.Truncate;
+        value.horizontalOverflow = HorizontalWrapMode.Wrap;
+        value.resizeTextForBestFit = true;
+        value.resizeTextMinSize = 22;
+        value.resizeTextMaxSize = compact ? 36 : 48;
+        return value;
+    }
+
+    // Play, the big red stamp, and Settings beside it.
+    void BuildPlayRow(RectTransform parent, float x, float y, float w, float h) {
+        float gap = compact ? 12f : 16f;
+        float playWidth = Mathf.Round((w - gap) * 0.62f);
+        var play = MakeButton(parent, "Play", x, y, playWidth, h, compact ? 40 : 44, Play, true);
+        PlayButton = play;
+        SettingsButton = MakeButton(parent, "Settings", x + playWidth + gap, y, w - playWidth - gap, h, compact ? 28 : 30, OpenSettings);
+        Enter(play.GetComponent<RectTransform>(), new Vector2(0f, -24f), 0.45f);
+    }
+
+    // The later start: -10, +10 and what the run will cost.
+    void BuildLater(RectTransform parent, float x, float y, float w, float h) {
+        float step = compact ? 110f : 96f;
+        lowerStart = MakeButton(parent, "-10", x, y, step, h, compact ? 26 : 24, LowerStart);
+        raiseStart = MakeButton(parent, "+10", x + step + 10f, y, step, h, compact ? 26 : 24, RaiseStart);
+        float textX = x + step * 2f + 26f;
+        startText = Label(parent, "", (int)textBody, FontStyle.Normal, Moon, textX, y, Mathf.Max(60f, w - (textX - x)), h, TextAnchor.MiddleLeft);
+        startText.verticalOverflow = VerticalWrapMode.Truncate;
+        startText.resizeTextForBestFit = true;
+        startText.resizeTextMinSize = (int)textSmall;
+        startText.resizeTextMaxSize = (int)textBody;
+        startText.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.6f);
+    }
+
+    // The case file: folder tabs along the top, the page in the middle, Prev and Next along the bottom.
+    RectTransform BuildCaseFile(RectTransform parent, float x, float y, float w, float h) {
+        var file = Framed(parent, CardFill, Brass, x, y, w, h, compact ? 6f : 10f);
+        file.name = "Case File";
+        float pad = compact ? 14f : 22f;
+        float tabHeight = compact ? 88f : 64f;
+        float footHeight = compact ? 88f : 60f;
+
+        bool hasLastRun = !string.IsNullOrEmpty(WaveDirector.LastRun);
+        int tabCount = hasLastRun ? 3 : 2;
+        if (!hasLastRun && tab == TabLastRun) {
+            tab = TabUpgrades;
+        }
+        float tabGap = compact ? 8f : 10f;
+        float tabWidth = Mathf.Min(compact ? 260f : 230f, (w - pad * 2f - tabGap * (tabCount - 1)) / tabCount);
+        for (int i = 0; i < 3; i++) {
+            tabButtons[i] = null;
+        }
+        for (int i = 0; i < tabCount; i++) {
+            int captured = i;
+            tabButtons[i] = MakeButton(file, TabNames[i], pad + i * (tabWidth + tabGap), pad, tabWidth, tabHeight, compact ? 24 : 24, () => ShowTab(captured));
+        }
+        var rule = Fill(file, new Color(Brass.r, Brass.g, Brass.b, 0.45f));
+        Place(rule.rectTransform, pad, pad + tabHeight + (compact ? 6f : 10f), w - pad * 2f, 2f);
+
+        float bodyTop = pad + tabHeight + (compact ? 16f : 24f);
+        float footTop = h - pad - footHeight;
+        bodyWidth = w - pad * 2f;
+        bodyHeight = Mathf.Max(120f, footTop - (compact ? 10f : 16f) - bodyTop);
+        body = Node(file, "Page");
+        Place(body, pad, bodyTop, bodyWidth, bodyHeight);
+        // A clear backing, so a swipe anywhere on the page turns it.
+        var catcher = body.gameObject.AddComponent<Image>();
+        catcher.color = new Color(0f, 0f, 0f, 0f);
+        body.gameObject.AddComponent<MenuSwipe>().Setup(Flip);
+
+        float footButton = compact ? 160f : 140f;
+        prevButton = MakeButton(file, "Prev", pad, footTop, footButton, footHeight, compact ? 26 : 24, () => Flip(-1));
+        nextButton = MakeButton(file, "Next", w - pad - footButton, footTop, footButton, footHeight, compact ? 26 : 24, () => Flip(1));
+        pageText = Label(file, "", (int)textBody, FontStyle.Bold, MoonSoft, pad + footButton + 10f, footTop, w - pad * 2f - footButton * 2f - 20f, footHeight, TextAnchor.MiddleCenter);
+
+        BuildUpgrades();
+        BuildBriefing();
+        if (hasLastRun) {
+            BuildLastRun();
+        }
+        for (int t = 0; t < blocks.Length; t++) {
+            Pack(t);
+        }
+        return file;
+    }
+
+    // One requisition form per upgrade: a colored folder edge, the name, rank pips, what the rank does now, what
+    // it is, and Buy on the right.
+    void BuildUpgrades() {
+        rowPad = compact ? 12f : 10f;
+        float buyWidth = compact ? 170f : 150f;
+        float buyHeight = compact ? 88f : 58f;
+        titleHeight = compact ? 32f : 34f;
+        rowTextWidth = bodyWidth - 26f - buyWidth - rowPad * 2f;
+        for (int i = 0; i < MetaProgress.Catalog.Length; i++) {
+            UpgradeInfo info = MetaProgress.Catalog[i];
+            var row = Node(body, "Form " + info.Name);
+            Place(row, 0f, 0f, bodyWidth, 100f);
+            var fill = Fill(row, RowFill);
+            UiSkin.Round(fill, 0.7f);
+            Stretch(fill.rectTransform);
+            rows[i] = fill;
+            var edge = Fill(row, Tabs[i % Tabs.Length]);
+            UiSkin.Round(edge, 0.4f);
+            edge.rectTransform.anchorMin = Vector2.zero;
+            edge.rectTransform.anchorMax = new Vector2(0f, 1f);
+            edge.rectTransform.pivot = new Vector2(0f, 0.5f);
+            edge.rectTransform.anchoredPosition = Vector2.zero;
+            edge.rectTransform.sizeDelta = new Vector2(10f, 0f);
+
+            titles[i] = Label(row, info.Name, compact ? 26 : 28, FontStyle.Bold, Paper, 26f, rowPad, rowTextWidth - 70f, titleHeight, TextAnchor.UpperLeft);
+            titles[i].verticalOverflow = VerticalWrapMode.Truncate;
+            titles[i].resizeTextForBestFit = true;
+            titles[i].resizeTextMinSize = 20;
+            titles[i].resizeTextMaxSize = compact ? 26 : 28;
+            pipBoxes[i] = Node(row, "Rank");
+            Place(pipBoxes[i], 26f + rowTextWidth - 62f, rowPad + (titleHeight - 16f) * 0.5f, 62f, 16f);
+            for (int p = 0; p < info.MaxRank; p++) {
+                var pip = Fill(pipBoxes[i], new Color(1f, 1f, 1f, 0.15f));
+                UiSkin.Disc(pip, 16f);
+                Place(pip.rectTransform, 62f - (info.MaxRank - p) * 21f + 5f, 0f, 16f, 16f);
+            }
+            ranks[i] = Label(row, "", (int)textSmall, FontStyle.Bold, Glass, 26f, 0f, rowTextWidth, 24f, TextAnchor.UpperLeft);
+            abouts[i] = Label(row, info.About, (int)textSmall, FontStyle.Normal, MoonSoft, 26f, 0f, rowTextWidth, 40f, TextAnchor.UpperLeft);
+
+            int captured = i;
+            buttons[i] = MakeButton(row, "Buy", 0f, 0f, buyWidth, buyHeight, compact ? 24 : 22, () => Buy(captured), false, StampRed);
+            var buttonRect = buttons[i].GetComponent<RectTransform>();
+            buttonRect.anchorMin = new Vector2(1f, 0.5f);
+            buttonRect.anchorMax = new Vector2(1f, 0.5f);
+            buttonRect.pivot = new Vector2(1f, 0.5f);
+            buttonRect.anchoredPosition = new Vector2(-rowPad, 0f);
+            costs[i] = buttons[i].GetComponentInChildren<Text>();
+            stamps[i] = Stamp(row, "APPROVED", compact ? 26 : 28, StampRed, new Vector2(26f + rowTextWidth * 0.55f, -50f), new Vector2(190f, 46f), -7f, 0f);
+            blocks[TabUpgrades].Add(new Block { rect = row, height = 100f });
+        }
+    }
+
+    // What the game is, who is in it, how coins work and how to play.
+    void BuildBriefing() {
+        int heading = compact ? 26 : 30;
+        Paragraph(TabBriefing, "The case", heading, FontStyle.Bold, Gold);
+        Paragraph(TabBriefing, "Things that should not exist keep turning up in the Hollow. The Place Department files them. Tonight the Yo Bots and Spider Bots are coming for the circle, and you are the one with the bat.", (int)textBody, FontStyle.Normal, Moon);
+        Paragraph(TabBriefing, "Protect Slice. Level up on bolts, pick boons, build a run. Coins buy a stronger start.", (int)textBody, FontStyle.Normal, Moon);
+        Paragraph(TabBriefing, "On file", heading, FontStyle.Bold, Gold);
+        Paragraph(TabBriefing, "Wallit. A wallet with a bat. Talks money: \"Pay up.\"", (int)textBody, FontStyle.Normal, Paper);
+        Paragraph(TabBriefing, "Slice. Guard of the circle, scalpel out. Clipped: \"Clean.\"", (int)textBody, FontStyle.Normal, Paper);
+        Paragraph(TabBriefing, "Yo Bots and Spider Bots. Small and chirpy, big and leggy: \"Uploading victory.\"", (int)textBody, FontStyle.Normal, Paper);
+        Paragraph(TabBriefing, "Coins", heading, FontStyle.Bold, Gold);
+        Paragraph(TabBriefing, "Waves pay coins. Bosses and the Golden Yo Bot pay more. Every " + MetaProgress.RangeLabel() + " drops one. Spend them on upgrades, or on a later start once you've reached wave 10.", (int)textBody, FontStyle.Normal, Moon);
+        Paragraph(TabBriefing, "How to play", heading, FontStyle.Bold, Gold);
+        Paragraph(TabBriefing, UiFit.Touch
+            ? "The stick moves Wallit. Swing, Lock and Jump are on the right. Tap Play to start; after a run you come back here."
+            : "WASD moves, click swings, hold to wind up a home run, Shift locks on. Enter or Play starts; after a run, M brings you back here.", (int)textBody, FontStyle.Normal, Moon);
+    }
+
+    void BuildLastRun() {
+        string last = WaveDirector.LastRun;
+        int split = last.IndexOf('\n');
+        string headline = split >= 0 ? last.Substring(0, split) : last;
+        string boons = split >= 0 ? last.Substring(split + 1).Trim() : "";
+        int heading = compact ? 26 : 30;
+        Paragraph(TabLastRun, "Last run", heading, FontStyle.Bold, Gold);
+        Paragraph(TabLastRun, headline, compact ? 24 : 26, FontStyle.Bold, Paper);
+        if (boons.Length > 0) {
+            Paragraph(TabLastRun, "Boons held", heading, FontStyle.Bold, Gold);
+            Paragraph(TabLastRun, boons, (int)textBody, FontStyle.Normal, Moon);
+        }
+    }
+
+    // A paragraph on a case-file page. One too tall for a page is split into parts at commas or full stops.
+    void Paragraph(int onTab, string value, int fontSize, FontStyle style, Color color) {
+        var text = Label(body, value, fontSize, style, color, 0f, 0f, bodyWidth, 10f, TextAnchor.UpperLeft);
+        float height = Measure(text, value, bodyWidth);
+        if (height > bodyHeight && value.Length > 40) {
+            DestroyImmediate(text.gameObject);
+            int cut = SplitPoint(value);
+            Paragraph(onTab, value.Substring(0, cut).Trim(), fontSize, style, color);
+            Paragraph(onTab, value.Substring(cut).Trim(), fontSize, style, color);
             return;
         }
+        text.rectTransform.sizeDelta = new Vector2(bodyWidth, height);
+        text.verticalOverflow = VerticalWrapMode.Truncate;
+        blocks[onTab].Add(new Block { rect = text.rectTransform, height = Mathf.Min(height, bodyHeight) });
+    }
 
-        // The board over the desk: the next ticket in line is the wave after the best one cleared.
-        var board = Panel(canvasGo.transform, new Color(0.11f, 0.1f, 0.09f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(650f, -70f), new Vector2(340f, 176f), 4f);
-        for (int w = 0; w < 2; w++) {
-            var cable = Image(canvasGo.transform, new Color(0.2f, 0.18f, 0.16f));
-            var cableRect = cable.rectTransform;
-            cableRect.anchorMin = new Vector2(0f, 1f);
-            cableRect.anchorMax = new Vector2(0f, 1f);
-            cableRect.pivot = new Vector2(0.5f, 1f);
-            cableRect.anchoredPosition = new Vector2(w == 0 ? 706f : 934f, 0f);
-            cableRect.sizeDelta = new Vector2(6f, 70f);
-            cable.transform.SetSiblingIndex(board.GetSiblingIndex());
+    // Where to cut a long paragraph in two: the comma or full stop nearest its middle, else the nearest space.
+    static int SplitPoint(string value) {
+        int middle = value.Length / 2;
+        int best = -1;
+        for (int i = 1; i < value.Length - 1; i++) {
+            char c = value[i];
+            if ((c == ',' || c == '.') && value[i + 1] == ' ' && (best < 0 || Mathf.Abs(i - middle) < Mathf.Abs(best - middle))) {
+                best = i + 1;
+            }
         }
-        boardDot = Image(board, Amber);
-        UiSkin.Disc(boardDot, 14f);
-        PlaceTopLeft(boardDot.rectTransform, new Vector2(62f, -23f), new Vector2(14f, 14f));
-        Label(board, "NOW SERVING", 24, FontStyle.Bold, new Color(Amber.r, Amber.g, Amber.b, 0.9f), new Vector2(86f, -14f), new Vector2(230f, 32f), TextAnchor.UpperLeft);
-        boardNumber = Label(board, "No. 000", 84, FontStyle.Bold, Amber, new Vector2(0f, -42f), new Vector2(340f, 100f), TextAnchor.UpperCenter);
-        Label(board, TicketLine(), 20, FontStyle.Normal, new Color(Amber.r, Amber.g, Amber.b, 0.65f), new Vector2(0f, -142f), new Vector2(340f, 28f), TextAnchor.UpperCenter);
-        Enter(board, new Vector2(0f, 150f), 0.2f);
-
-        // The key art, pinned up as an exhibit photo.
-        var photo = Panel(canvasGo.transform, new Color(0.99f, 0.98f, 0.94f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0.5f, 0.5f), new Vector2(820f, -392f), new Vector2(330f, 224f), 6f);
-        photo.localRotation = Quaternion.Euler(0f, 0f, -3.5f);
-        BuildPhoto(photo, artTexture, new Vector2(306f, 172f), new Vector2(12f, -12f));
-        Label(photo, "EXHIBIT A  (after hours)", 20, FontStyle.Italic, InkSoft, new Vector2(12f, -190f), new Vector2(306f, 26f), TextAnchor.UpperCenter);
-        var tape = Image(photo, new Color(1f, 0.94f, 0.55f, 0.75f));
-        PlaceTopLeft(tape.rectTransform, new Vector2(120f, 10f), new Vector2(92f, 30f));
-        tape.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 7f);
-        Enter(photo, new Vector2(0f, 0f), 0.55f, 1.4f);
-
-        var note = Panel(canvasGo.transform, new Color(1f, 0.92f, 0.45f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0.5f, 0.5f), new Vector2(820f, -604f), new Vector2(300f, 140f), 4f);
-        note.localRotation = Quaternion.Euler(0f, 0f, 2.5f);
-        quoteWho = Label(note, "", 22, FontStyle.Bold, InkSoft, new Vector2(18f, -12f), new Vector2(264f, 28f), TextAnchor.UpperLeft);
-        quoteLine = Label(note, "", 36, FontStyle.BoldAndItalic, Ink, new Vector2(18f, -42f), new Vector2(264f, 92f), TextAnchor.UpperLeft);
-        ShowQuote(0);
-        Enter(note, new Vector2(0f, 0f), 0.95f, 0.6f);
-
-        BuildClock(canvasGo.transform, new Vector2(820f, -826f), 150f);
-
-        // The folder: a manila cover with its tab, and the front-desk sheet inside it.
-        var left = Panel(canvasGo.transform, Manila, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(40f, -20f), new Vector2(600f, -140f), 8f);
-        var tab = Panel(left, Manila, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 0f), new Vector2(40f, -6f), new Vector2(280f, 50f));
-        Label(tab, "FORM 7-B  FRONT DESK", 22, FontStyle.Bold, Ink, new Vector2(0f, -12f), new Vector2(280f, 30f), TextAnchor.UpperCenter);
-        var sheet = Panel(left, RowPaper, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-        sheet.offsetMin = new Vector2(16f, 16f);
-        sheet.offsetMax = new Vector2(-16f, -16f);
-        Label(sheet, "THE PLACE DEPARTMENT", 24, FontStyle.Bold, StampBlue, new Vector2(36f, -30f), new Vector2(330f, 30f), TextAnchor.UpperLeft);
-        Label(sheet, "Breaking Through", 64, FontStyle.Bold, Ink, new Vector2(36f, -58f), new Vector2(520f, 80f), TextAnchor.UpperLeft);
-        Rule(sheet, new Vector2(36f, -140f), 120f);
-        Label(sheet, "Where things that should not exist are given an address.", 22, FontStyle.Italic, StampRed, new Vector2(36f, -154f), new Vector2(510f, 56f), TextAnchor.UpperLeft);
-        Label(sheet, "Protect Slice. Level up on bolts, pick boons, build a run. Coins buy a stronger start.", 22, FontStyle.Normal, InkSoft, new Vector2(36f, -214f), new Vector2(510f, 60f), TextAnchor.UpperLeft);
-
-        coinText = Label(sheet, "", 36, FontStyle.Bold, Gold, new Vector2(36f, -284f), new Vector2(510f, 48f), TextAnchor.UpperLeft);
-        bestText = Label(sheet, "", 28, FontStyle.Normal, Leaf, new Vector2(36f, -334f), new Vector2(510f, 40f), TextAnchor.UpperLeft);
-        purseText = Label(sheet, "", 22, FontStyle.Normal, InkSoft, new Vector2(36f, -376f), new Vector2(510f, 84f), TextAnchor.UpperLeft);
-        celebrate = Label(sheet, "", 28, FontStyle.Bold, StampRed, new Vector2(36f, -462f), new Vector2(510f, 62f), TextAnchor.UpperLeft);
-
-        Label(sheet, "Start later", 22, FontStyle.Bold, Ink, new Vector2(36f, -540f), new Vector2(510f, 28f), TextAnchor.UpperLeft);
-        startText = Label(sheet, "", 22, FontStyle.Normal, InkSoft, new Vector2(36f, -568f), new Vector2(510f, 52f), TextAnchor.UpperLeft);
-        lowerStart = Button(sheet, "-10", new Vector2(36f, -626f), new Vector2(110f, 46f), 22, LowerStart);
-        raiseStart = Button(sheet, "+10", new Vector2(158f, -626f), new Vector2(110f, 46f), 22, RaiseStart);
-
-        var play = Button(sheet, "Play", new Vector2(36f, -694f), new Vector2(280f, 76f), 34, Play, true);
-        PlayButton = play;
-        SettingsButton = Button(sheet, "Settings", new Vector2(332f, -694f), new Vector2(210f, 76f), 28, OpenSettings);
-
-        Label(sheet, UiFit.Touch ? "Tap Play to start. After a run, you come back here." : "Enter or click Play. After a run, M brings you back here.", 22, FontStyle.Italic, InkSoft, new Vector2(36f, -782f), new Vector2(510f, 56f), TextAnchor.UpperLeft);
-        if (!string.IsNullOrEmpty(WaveDirector.LastRun)) {
-            Label(sheet, "Last run\n" + WaveDirector.LastRun, 20, FontStyle.Normal, StampBlue, new Vector2(36f, -842f), new Vector2(510f, 100f), TextAnchor.UpperLeft);
+        if (best < 0) {
+            best = value.LastIndexOf(' ', middle);
         }
-        var open = Stamp(sheet, "NOW OPEN", 30, StampRed, new Vector2(466f, -44f), new Vector2(190f, 50f), -9f, 0.85f);
-        open.Slam(builtAt < 0f ? -1f : 1.5f, builtAt < 0f);
-        Enter(left, new Vector2(-70f, 0f), 0f);
-        Enter(play.GetComponent<RectTransform>(), new Vector2(0f, -24f), 0.45f);
+        return best > 0 ? best : middle;
+    }
 
-        // The clipboard: the upgrades are forms, each with a folder tab, filed with a stamp.
-        float rightHeight = 116f + MetaProgress.Catalog.Length * 76f + 84f;
-        var right = Panel(canvasGo.transform, Board, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -60f), new Vector2(880f, rightHeight), 8f);
-        var clip = Panel(right, new Color(0.72f, 0.72f, 0.74f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -6f), new Vector2(170f, 44f), 3f);
-        var clipBar = Panel(clip, new Color(0.45f, 0.45f, 0.48f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -4f), new Vector2(110f, 12f));
-        clipBar.name = "Clip Bar";
-        var paper = Panel(right, RowPaper, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-        paper.offsetMin = new Vector2(22f, 22f);
-        paper.offsetMax = new Vector2(-22f, -50f);
-        Label(paper, "Upgrades", 42, FontStyle.Bold, Ink, new Vector2(32f, -16f), new Vector2(500f, 56f), TextAnchor.UpperLeft);
-        Label(paper, "Requisition forms. Stamp one to file it.", 20, FontStyle.Italic, InkSoft, new Vector2(300f, -34f), new Vector2(500f, 28f), TextAnchor.UpperLeft);
-        Rule(paper, new Vector2(34f, -68f), 80f);
-        Enter(right, new Vector2(70f, 0f), 0.12f);
+    // ---------------------------------------------------------------- pages
 
+    // The upgrade forms change height as their rank lines come and go: measure each one again.
+    void MeasureRows() {
         for (int i = 0; i < MetaProgress.Catalog.Length; i++) {
-            float y = -84f - i * 76f;
-            var row = Panel(paper, new Color(1f, 0.99f, 0.95f, 1f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, y - 6f), new Vector2(-48f, 72f), 2f);
-            rows[i] = row.GetComponent<Image>();
-            Panel(row, Tabs[i % Tabs.Length], new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(12f, 0f)).name = "Folder Tab";
-            UpgradeInfo info = MetaProgress.Catalog[i];
-            titles[i] = Label(row, info.Name, 26, FontStyle.Bold, Ink, new Vector2(26f, -8f), new Vector2(520f, 32f), TextAnchor.UpperLeft);
-            abouts[i] = Label(row, info.About, 20, FontStyle.Normal, InkSoft, new Vector2(26f, -42f), new Vector2(560f, 36f), TextAnchor.UpperLeft);
-            ranks[i] = Label(row, "", 20, FontStyle.Bold, Leaf, new Vector2(340f, -8f), new Vector2(250f, 32f), TextAnchor.UpperRight);
-            int captured = i;
-            buttons[i] = Button(row, "Buy", new Vector2(-168f, -18f), new Vector2(150f, 52f), 22, () => Buy(captured), false, StampRed);
-            var buttonRect = buttons[i].GetComponent<RectTransform>();
-            buttonRect.anchorMin = new Vector2(1f, 0.5f);
-            buttonRect.anchorMax = new Vector2(1f, 0.5f);
-            buttonRect.pivot = new Vector2(1f, 0.5f);
-            buttonRect.anchoredPosition = new Vector2(-16f, -8f);
-            costs[i] = buttons[i].GetComponentInChildren<Text>();
-            stamps[i] = Stamp(row, "APPROVED", 28, StampRed, new Vector2(500f, -36f), new Vector2(190f, 46f), -7f, 0f);
+            if (titles[i] == null) {
+                continue;
+            }
+            float y = rowPad + titleHeight + 4f;
+            string rankLine = ranks[i].text;
+            ranks[i].gameObject.SetActive(rankLine.Length > 0);
+            if (rankLine.Length > 0) {
+                float rh = Measure(ranks[i], rankLine, rowTextWidth);
+                Place(ranks[i].rectTransform, 26f, y, rowTextWidth, rh);
+                y += rh + 2f;
+            }
+            float ah = Measure(abouts[i], abouts[i].text, rowTextWidth);
+            Place(abouts[i].rectTransform, 26f, y, rowTextWidth, ah);
+            y += ah + rowPad;
+            float minimum = buttons[i].GetComponent<RectTransform>().sizeDelta.y + rowPad * 2f;
+            float height = Mathf.Min(bodyHeight, Mathf.Max(y, minimum));
+            Block block = blocks[TabUpgrades][i];
+            block.height = height;
+            block.rect.sizeDelta = new Vector2(bodyWidth, height);
+            ((RectTransform)stamps[i].transform).anchoredPosition = new Vector2(26f + rowTextWidth * 0.55f, -height * 0.5f);
         }
     }
 
-    // Phones: two panels, side by side when held sideways and stacked when upright. The left (or top) one keeps
-    // the title and Play always in view and scrolls the rest; the upgrades scroll in the other.
-    void BuildCompact(Transform canvas, bool tall, Texture2D artTexture) {
-        Vector2 size = UiFit.Size;
-        float infoHeight = 600f;
-        float infoWidth = tall ? size.x - 40f : Mathf.Min(600f, size.x * 0.46f);
-
-        RectTransform info;
-        RectTransform shop;
-        if (tall) {
-            info = Panel(canvas, Manila, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -20f), new Vector2(-40f, infoHeight), 6f);
-            shop = Panel(canvas, Board, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, 6f);
-            shop.offsetMin = new Vector2(20f, 20f);
-            shop.offsetMax = new Vector2(-20f, -(20f + infoHeight + 16f));
-        } else {
-            info = Panel(canvas, Manila, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(20f, 0f), new Vector2(infoWidth, -40f), 6f);
-            shop = Panel(canvas, Board, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, 6f);
-            shop.offsetMin = new Vector2(20f + infoWidth + 16f, 20f);
-            shop.offsetMax = new Vector2(-20f, -20f);
+    // Fills pages top down: a block that would run past the bottom starts the next page.
+    void Pack(int onTab) {
+        float gap = 10f;
+        float y = 0f;
+        int p = 0;
+        foreach (Block block in blocks[onTab]) {
+            if (y > 0f && y + block.height > bodyHeight + 0.5f) {
+                p++;
+                y = 0f;
+            }
+            block.page = p;
+            block.top = y;
+            y += block.height + gap;
         }
-
-        Label(info, "Breaking Through", 46, FontStyle.Bold, Ink, new Vector2(24f, -16f), new Vector2(infoWidth - 48f, 60f), TextAnchor.UpperLeft);
-        Rule(info, new Vector2(26f, -74f), 90f);
-
-        // Pinned to the bottom: Play, and the later-start buttons above it.
-        var play = Button(info, "Play", Vector2.zero, new Vector2(280f, 96f), 36, Play, true);
-        PinBottom(play, new Vector2(24f, 20f));
-        PlayButton = play;
-        SettingsButton = Button(info, "Settings", Vector2.zero, new Vector2(Mathf.Min(200f, infoWidth - 340f), 96f), 28, OpenSettings);
-        PinBottom(SettingsButton, new Vector2(316f, 20f));
-        lowerStart = Button(info, "-10", Vector2.zero, new Vector2(120f, 88f), 26, LowerStart);
-        PinBottom(lowerStart, new Vector2(24f, 128f));
-        raiseStart = Button(info, "+10", Vector2.zero, new Vector2(120f, 88f), 26, RaiseStart);
-        PinBottom(raiseStart, new Vector2(156f, 128f));
-        var later = Label(info, "Start later", 24, FontStyle.Bold, Ink, Vector2.zero, new Vector2(infoWidth - 314f, 88f), TextAnchor.MiddleLeft);
-        later.rectTransform.anchorMin = Vector2.zero;
-        later.rectTransform.anchorMax = Vector2.zero;
-        later.rectTransform.pivot = Vector2.zero;
-        later.rectTransform.anchoredPosition = new Vector2(292f, 128f);
-
-        RectTransform about = Scroller(info, new Vector2(12f, 228f), new Vector2(-12f, -84f), 10f);
-        Flow(about, "NOW SERVING  " + TicketLine(), 28, FontStyle.Bold, StampBlue);
-        quoteLine = Flow(about, "", 24, FontStyle.BoldAndItalic, Ink);
-        ShowQuote(0);
-        FlowPhoto(about, artTexture, 190f);
-        Flow(about, "Where things that should not exist are given an address.", 22, FontStyle.Italic, StampRed);
-        Flow(about, "Protect Slice. Level up on bolts, pick boons, build a run. Coins buy a stronger start.", 22, FontStyle.Normal, InkSoft);
-        coinText = Flow(about, "", 32, FontStyle.Bold, Gold);
-        bestText = Flow(about, "", 24, FontStyle.Normal, Leaf);
-        celebrate = Flow(about, "", 26, FontStyle.Bold, StampRed);
-        startText = Flow(about, "", 22, FontStyle.Normal, InkSoft);
-        purseText = Flow(about, "", 22, FontStyle.Normal, InkSoft);
-        Flow(about, UiFit.Touch ? "Tap Play to start. After a run, you come back here." : "Enter or click Play. After a run, M brings you back here.", 22, FontStyle.Italic, InkSoft);
-        if (!string.IsNullOrEmpty(WaveDirector.LastRun)) {
-            Flow(about, "Last run\n" + WaveDirector.LastRun, 20, FontStyle.Normal, StampBlue);
-        }
-
-        Label(shop, "Upgrades", 40, FontStyle.Bold, Paper, new Vector2(24f, -16f), new Vector2(600f, 52f), TextAnchor.UpperLeft);
-        Rule(shop, new Vector2(26f, -68f), 70f);
-        Enter(info, tall ? new Vector2(0f, 60f) : new Vector2(-60f, 0f), 0f);
-        Enter(shop, tall ? new Vector2(0f, -60f) : new Vector2(60f, 0f), 0.12f);
-        Enter(play.GetComponent<RectTransform>(), new Vector2(0f, -20f), 0.45f);
-        RectTransform list = Scroller(shop, new Vector2(12f, 12f), new Vector2(-12f, -76f), 8f);
-        float rowHeight = tall ? 170f : 186f;
-        for (int i = 0; i < MetaProgress.Catalog.Length; i++) {
-            var row = Panel(list, new Color(1f, 0.99f, 0.95f, 1f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, rowHeight));
-            row.gameObject.AddComponent<LayoutElement>().preferredHeight = rowHeight;
-            rows[i] = row.GetComponent<Image>();
-            Panel(row, Tabs[i % Tabs.Length], new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(14f, 0f)).name = "Folder Tab";
-            UpgradeInfo info2 = MetaProgress.Catalog[i];
-            titles[i] = Label(row, info2.Name, 28, FontStyle.Bold, Ink, Vector2.zero, Vector2.zero, TextAnchor.UpperLeft);
-            Column(titles[i].rectTransform, -10f, 36f);
-            ranks[i] = Label(row, "", 22, FontStyle.Bold, Leaf, Vector2.zero, Vector2.zero, TextAnchor.UpperLeft);
-            Column(ranks[i].rectTransform, -48f, 28f);
-            abouts[i] = Label(row, info2.About, 21, FontStyle.Normal, InkSoft, Vector2.zero, Vector2.zero, TextAnchor.UpperLeft);
-            Column(abouts[i].rectTransform, -80f, rowHeight - 90f);
-            int captured = i;
-            buttons[i] = Button(row, "Buy", Vector2.zero, new Vector2(180f, 88f), 24, () => Buy(captured), false, StampRed);
-            var buttonRect = buttons[i].GetComponent<RectTransform>();
-            buttonRect.anchorMin = new Vector2(1f, 0.5f);
-            buttonRect.anchorMax = new Vector2(1f, 0.5f);
-            buttonRect.pivot = new Vector2(1f, 0.5f);
-            buttonRect.anchoredPosition = new Vector2(-14f, 0f);
-            costs[i] = buttons[i].GetComponentInChildren<Text>();
-            stamps[i] = Stamp(row, "APPROVED", 28, StampRed, new Vector2((tall ? size.x - 40f : size.x - 60f - infoWidth) * 0.36f, -rowHeight * 0.5f), new Vector2(190f, 46f), -7f, 0f);
+        if (onTab == tab) {
+            pageCount = p + 1;
         }
     }
 
-    // A row's text column: full width left of the Buy button.
-    static void Column(RectTransform rect, float top, float height) {
-        rect.anchorMin = new Vector2(0f, 1f);
-        rect.anchorMax = new Vector2(1f, 1f);
-        rect.pivot = new Vector2(0f, 1f);
-        rect.offsetMin = new Vector2(24f, top - height);
-        rect.offsetMax = new Vector2(-208f, top);
+    int PagesOf(int onTab) {
+        List<Block> list = blocks[onTab];
+        return list.Count == 0 ? 1 : list[list.Count - 1].page + 1;
     }
 
-    static void PinBottom(Button button, Vector2 position) {
-        var rect = button.GetComponent<RectTransform>();
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.zero;
-        rect.pivot = Vector2.zero;
-        rect.anchoredPosition = position;
+    void ShowTab(int next) {
+        if (next == tab || tabButtons[next] == null) {
+            return;
+        }
+        int dir = next > tab ? 1 : -1;
+        tab = next;
+        page = 0;
+        MenuSfx.Paper(0.35f);
+        ShowPage(dir);
     }
 
-    // A text that takes its own height in a scrolling column.
-    Text Flow(RectTransform content, string value, int size, FontStyle style, Color color) {
-        return Label(content, value, size, style, color, Vector2.zero, Vector2.zero, TextAnchor.UpperLeft);
+    void Flip(int dir) {
+        int next = Mathf.Clamp(page + dir, 0, pageCount - 1);
+        if (next == page) {
+            return;
+        }
+        page = next;
+        MenuSfx.Paper(0.35f);
+        ShowPage(dir);
     }
 
-    // A vertical scroll view inside a panel, with a scrollbar that is always shown. Returns the content,
-    // which stacks its children top down and grows to fit them.
-    RectTransform Scroller(Transform parent, Vector2 offsetMin, Vector2 offsetMax, float spacing) {
-        var scrollGo = new GameObject("Scroll", typeof(RectTransform));
-        scrollGo.transform.SetParent(parent, false);
-        var scrollRect = (RectTransform)scrollGo.transform;
-        scrollRect.anchorMin = Vector2.zero;
-        scrollRect.anchorMax = Vector2.one;
-        scrollRect.offsetMin = offsetMin;
-        scrollRect.offsetMax = offsetMax;
-        var scroll = scrollGo.AddComponent<ScrollRect>();
-        scroll.horizontal = false;
-        scroll.vertical = true;
-        scroll.movementType = ScrollRect.MovementType.Elastic;
-        scroll.scrollSensitivity = 40f;
-
-        var viewGo = new GameObject("Viewport", typeof(RectTransform));
-        viewGo.transform.SetParent(scrollGo.transform, false);
-        var view = (RectTransform)viewGo.transform;
-        view.anchorMin = Vector2.zero;
-        view.anchorMax = Vector2.one;
-        view.offsetMin = Vector2.zero;
-        view.offsetMax = new Vector2(-26f, 0f);
-        var catcher = viewGo.AddComponent<Image>();
-        catcher.color = new Color(0f, 0f, 0f, 0f);
-        viewGo.AddComponent<RectMask2D>();
-
-        var contentGo = new GameObject("Content", typeof(RectTransform));
-        contentGo.transform.SetParent(viewGo.transform, false);
-        var content = (RectTransform)contentGo.transform;
-        content.anchorMin = new Vector2(0f, 1f);
-        content.anchorMax = new Vector2(1f, 1f);
-        content.pivot = new Vector2(0.5f, 1f);
-        content.sizeDelta = Vector2.zero;
-        var stack = contentGo.AddComponent<VerticalLayoutGroup>();
-        stack.padding = new RectOffset(12, 12, 8, 12);
-        stack.spacing = spacing;
-        stack.childControlWidth = true;
-        stack.childControlHeight = true;
-        stack.childForceExpandWidth = true;
-        stack.childForceExpandHeight = false;
-        contentGo.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-        var barGo = new GameObject("Scrollbar", typeof(RectTransform));
-        barGo.transform.SetParent(scrollGo.transform, false);
-        var barRect = (RectTransform)barGo.transform;
-        barRect.anchorMin = new Vector2(1f, 0f);
-        barRect.anchorMax = new Vector2(1f, 1f);
-        barRect.pivot = new Vector2(1f, 0.5f);
-        barRect.anchoredPosition = Vector2.zero;
-        barRect.sizeDelta = new Vector2(16f, -8f);
-        var track = barGo.AddComponent<Image>();
-        UiSkin.Bar(track);
-        track.color = new Color(1f, 0.96f, 0.88f, 0.14f);
-        var bar = barGo.AddComponent<Scrollbar>();
-        var areaGo = new GameObject("Sliding Area", typeof(RectTransform));
-        areaGo.transform.SetParent(barGo.transform, false);
-        var area = (RectTransform)areaGo.transform;
-        area.anchorMin = Vector2.zero;
-        area.anchorMax = Vector2.one;
-        area.offsetMin = Vector2.zero;
-        area.offsetMax = Vector2.zero;
-        var handleGo = new GameObject("Handle", typeof(RectTransform));
-        handleGo.transform.SetParent(areaGo.transform, false);
-        var handle = handleGo.AddComponent<Image>();
-        UiSkin.Bar(handle);
-        handle.color = new Color(1f, 0.84f, 0.35f, 0.85f);
-        handle.rectTransform.offsetMin = Vector2.zero;
-        handle.rectTransform.offsetMax = Vector2.zero;
-        bar.handleRect = handle.rectTransform;
-        bar.targetGraphic = handle;
-        bar.direction = Scrollbar.Direction.BottomToTop;
-
-        scroll.viewport = view;
-        scroll.content = content;
-        scroll.verticalScrollbar = bar;
-        scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
-        return content;
+    // Shows the current tab's current page; dir slides it in from that side (0: no slide).
+    void ShowPage(int dir) {
+        if (body == null) {
+            return;
+        }
+        pageCount = PagesOf(tab);
+        page = Mathf.Clamp(page, 0, pageCount - 1);
+        for (int t = 0; t < blocks.Length; t++) {
+            foreach (Block block in blocks[t]) {
+                bool on = t == tab && block.page == page;
+                if (block.rect.gameObject.activeSelf != on) {
+                    block.rect.gameObject.SetActive(on);
+                }
+                if (!on) {
+                    continue;
+                }
+                var old = block.rect.GetComponent<MenuEntrance>();
+                if (old != null) {
+                    DestroyImmediate(old);
+                    var group = block.rect.GetComponent<CanvasGroup>();
+                    if (group != null) {
+                        DestroyImmediate(group);
+                    }
+                }
+                block.rect.anchoredPosition = new Vector2(0f, -block.top);
+                if (dir != 0) {
+                    block.rect.gameObject.AddComponent<MenuEntrance>().Setup(new Vector2(dir * 46f, 0f), 0f);
+                }
+            }
+        }
+        bool paged = pageCount > 1;
+        prevButton.gameObject.SetActive(paged);
+        nextButton.gameObject.SetActive(paged);
+        pageText.gameObject.SetActive(paged);
+        prevButton.interactable = page > 0;
+        nextButton.interactable = page < pageCount - 1;
+        pageText.text = "Page " + (page + 1) + " of " + pageCount;
+        for (int i = 0; i < tabButtons.Length; i++) {
+            if (tabButtons[i] == null) {
+                continue;
+            }
+            bool active = i == tab;
+            var image = tabButtons[i].GetComponent<Image>();
+            image.color = active ? Manila : new Color(0.16f, 0.17f, 0.24f, 1f);
+            var label = tabButtons[i].GetComponentInChildren<Text>();
+            label.color = active ? Ink : MoonSoft;
+            label.fontStyle = active ? FontStyle.Bold : FontStyle.Normal;
+        }
     }
+
+    // ---------------------------------------------------------------- the shop
 
     void Buy(int index) {
         UpgradeInfo info = MetaProgress.Catalog[index];
@@ -493,9 +759,24 @@ public class MainMenu : MonoBehaviour {
             if (stamps[index] != null) {
                 stamps[index].Slam(0f, false);
             }
-            celebrate.text = info.Name + "\n" + MetaProgress.RankLine(info.Id);
+            Status("Filed: " + info.Name + ". " + MetaProgress.RankLine(info.Id), Gold);
         }
         Refresh();
+        if (tab == TabUpgrades && index < blocks[TabUpgrades].Count && blocks[TabUpgrades][index].page != page) {
+            // The form grew onto the next page: follow it.
+            page = blocks[TabUpgrades][index].page;
+            ShowPage(0);
+        }
+    }
+
+    void Status(string line, Color color) {
+        if (statusText == null) {
+            return;
+        }
+        statusText.text = line;
+        statusText.color = color;
+        statusUntil = Time.unscaledTime + 3.5f;
+        statusText.gameObject.AddComponent<MenuPop>();
     }
 
     void Refresh() {
@@ -504,43 +785,203 @@ public class MainMenu : MonoBehaviour {
             startWave -= 10;
         }
         if (maxStart < 10) {
-            startText.text = "Reach wave 10 to buy a later start.";
+            startText.text = "Reach wave 10 to start a run later.";
         } else if (startWave <= 1) {
-            startText.text = "This run starts at wave 1. Later starts cost 10 coins per 10 waves.";
+            startText.text = "Starts at wave 1. Later starts cost 10 coins per 10 waves.";
         } else {
-            startText.text = "This run starts at wave " + startWave + ". Play spends " + startWave + " coins.";
+            startText.text = "Starts at wave " + startWave + ". Play spends " + startWave + " coins.";
         }
         lowerStart.interactable = startWave > 1;
         raiseStart.interactable = startWave + 10 <= maxStart && MetaProgress.Coins >= startWave + 10;
 
-        coinText.text = MetaProgress.Coins + (MetaProgress.Coins == 1 ? " coin" : " coins");
-        bestText.text = MetaProgress.BestWave > 0 ? "Best wave cleared: " + MetaProgress.BestWave : "No wave cleared yet.";
-        purseText.text = "Waves pay coins. Bosses and the Golden Yo Bot pay more. Every " + MetaProgress.RangeLabel() + " drops one. Pay up.";
+        coinText.text = MetaProgress.Coins.ToString();
+        bestText.text = MetaProgress.BestWave > 0 ? MetaProgress.BestWave.ToString() : "None";
 
         for (int i = 0; i < MetaProgress.Catalog.Length; i++) {
             UpgradeInfo info = MetaProgress.Catalog[i];
             int rank = MetaProgress.Rank(info.Id);
             bool maxed = rank >= info.MaxRank;
-            ranks[i].text = rank + " / " + info.MaxRank;
-            abouts[i].text = info.About + "  " + (rank > 0 ? MetaProgress.RankLine(info.Id) : "");
+            ranks[i].text = rank > 0 ? MetaProgress.RankLine(info.Id) : "";
+            abouts[i].text = info.About;
             costs[i].text = maxed ? "Maxed" : "Buy  " + MetaProgress.Cost(info.Id);
             buttons[i].interactable = MetaProgress.CanBuy(info.Id);
+            for (int p = 0; p < pipBoxes[i].childCount; p++) {
+                var pip = pipBoxes[i].GetChild(p).GetComponent<Image>();
+                pip.color = p < rank ? Gold : new Color(1f, 1f, 1f, 0.15f);
+            }
+        }
+        MeasureRows();
+        Pack(TabUpgrades);
+        ShowPage(0);
+    }
+
+    // ---------------------------------------------------------------- the backdrop
+
+    // The key art fills the screen, cropped to its shape and drifting slowly; night shades top and bottom, a cool
+    // moon glow and two slow banks of mist. Nothing small moves.
+    void BuildBackdrop(Transform canvas, Texture2D texture) {
+        var night = Fill(canvas, Night);
+        Stretch(night.rectTransform);
+        if (texture != null) {
+            var artGo = new GameObject("Key Art", typeof(RectTransform));
+            artGo.transform.SetParent(canvas, false);
+            art = artGo.AddComponent<RawImage>();
+            art.texture = texture;
+            art.raycastTarget = false;
+            Stretch(art.rectTransform);
+            float artAspect = texture.width / (float)Mathf.Max(1, texture.height);
+            float aspect = size.x / Mathf.Max(1f, size.y);
+            artWide = aspect >= artAspect ? 1f : aspect / artAspect;
+            artTall = aspect >= artAspect ? artAspect / aspect : 1f;
+            // Upright phones see a slice of it: keep Wallit and Slice in it.
+            artFocus = builtMode == UiMode.Tall ? 0.36f : 0.5f;
+        }
+        moon = Glow(canvas, new Color(0.62f, 0.74f, 1f, 0.12f), Mathf.Max(size.x, size.y) * 0.8f);
+        moon.anchorMin = new Vector2(0.4f, 0.85f);
+        moon.anchorMax = new Vector2(0.4f, 0.85f);
+        mistLow = Mist(canvas, 0.2f, 0.09f);
+        mistHigh = Mist(canvas, 0.42f, 0.05f);
+
+        var top = Shade(canvas, new Color(Night.r, Night.g, Night.b, 0f), new Color(Night.r, Night.g, Night.b, 0.7f), false);
+        top.anchorMin = new Vector2(0f, 1f);
+        top.anchorMax = Vector2.one;
+        top.pivot = new Vector2(0.5f, 1f);
+        top.anchoredPosition = Vector2.zero;
+        top.sizeDelta = new Vector2(0f, size.y * 0.3f);
+        var foot = Shade(canvas, new Color(Night.r, Night.g, Night.b, 0.85f), new Color(Night.r, Night.g, Night.b, 0f), false);
+        foot.anchorMin = Vector2.zero;
+        foot.anchorMax = new Vector2(1f, 0f);
+        foot.pivot = new Vector2(0.5f, 0f);
+        foot.anchoredPosition = Vector2.zero;
+        foot.sizeDelta = new Vector2(0f, size.y * 0.4f);
+    }
+
+    RectTransform Mist(Transform canvas, float height, float alpha) {
+        var mist = Glow(canvas, new Color(0.78f, 0.84f, 0.95f, alpha), 0f);
+        mist.anchorMin = new Vector2(0.5f, height);
+        mist.anchorMax = new Vector2(0.5f, height);
+        mist.sizeDelta = new Vector2(size.x * 1.6f, size.y * 0.22f);
+        return mist;
+    }
+
+    // A full-width or full-height gradient between two colors (vertex colored, no texture).
+    RectTransform Shade(Transform parent, Color from, Color to, bool horizontal) {
+        var go = new GameObject("Shade", typeof(RectTransform));
+        go.transform.SetParent(parent, false);
+        var image = go.AddComponent<Image>();
+        image.raycastTarget = false;
+        var ramp = go.AddComponent<MenuGradient>();
+        // Bottom (or left) is from, top (or right) is to.
+        ramp.horizontal = horizontal;
+        ramp.bottom = from;
+        ramp.top = to;
+        return image.rectTransform;
+    }
+
+    void TickAmbient() {
+        float t = Time.unscaledTime;
+        float appear = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - builtAt) / 0.9f));
+        if (!cuePaper && t >= builtAt + 0.05f) {
+            cuePaper = true;
+            MenuSfx.Paper(0.5f);
+        }
+        if (art != null) {
+            // A slow push and drift across the key art so the menu breathes.
+            float zoom = 0.93f + Mathf.Sin(t * 0.05f) * 0.025f;
+            float w = artWide * zoom;
+            float h = artTall * zoom;
+            float cx = Mathf.Clamp(artFocus + Mathf.Sin(t * 0.07f) * 0.025f, w * 0.5f, 1f - w * 0.5f);
+            float cy = Mathf.Clamp(0.5f + Mathf.Cos(t * 0.05f) * 0.015f, h * 0.5f, 1f - h * 0.5f);
+            art.uvRect = new Rect(cx - w * 0.5f, cy - h * 0.5f, w, h);
+            art.color = new Color(1f, 1f, 1f, appear);
+        }
+        if (moon != null) {
+            var image = moon.GetComponent<Image>();
+            image.color = new Color(0.62f, 0.74f, 1f, (0.08f + Mathf.Sin(t * 0.4f) * 0.03f) * appear);
+        }
+        if (mistLow != null) {
+            mistLow.anchoredPosition = new Vector2(Mathf.Sin(t * 0.045f) * size.x * 0.12f, 0f);
+        }
+        if (mistHigh != null) {
+            mistHigh.anchoredPosition = new Vector2(Mathf.Sin(t * 0.03f + 2f) * size.x * 0.15f, 0f);
+        }
+        if (nextText != null && builtAt > 0f && t - builtAt < 1.6f) {
+            float count = Mathf.Clamp01((t - builtAt - 0.5f) / 0.9f);
+            int shown = Mathf.RoundToInt((MetaProgress.BestWave + 1) * Mathf.SmoothStep(0f, 1f, count));
+            nextText.text = "No. " + Mathf.Max(1, shown).ToString("000");
+        }
+        if (quoteText != null && t >= quoteAt) {
+            quoteAt = t + 5.5f;
+            ShowQuote(quoteIndex + 1);
+            quoteText.gameObject.AddComponent<MenuPop>();
         }
     }
 
-    // A short gold rule under a heading.
-    void Rule(Transform parent, Vector2 position, float width) {
-        var rule = Image(parent, new Color(StampRed.r, StampRed.g, StampRed.b, 0.85f));
-        var rect = rule.rectTransform;
+    void ShowQuote(int index) {
+        quoteIndex = index % (Quotes.Length / 2);
+        if (quoteText != null) {
+            quoteText.text = "\"" + Quotes[quoteIndex, 1] + "\"  " + Quotes[quoteIndex, 0];
+        }
+    }
+
+    // ---------------------------------------------------------------- pieces
+
+    // The canvas in units, as the scaler lays it out: compact modes from UiFit, desktop 1080 tall.
+    static Vector2 CanvasSize() {
+        if (UiFit.Compact) {
+            return UiFit.Size;
+        }
+        float w = Mathf.Max(1, UnityEngine.Screen.width);
+        float h = Mathf.Max(1, UnityEngine.Screen.height);
+        return new Vector2(1080f * w / h, 1080f);
+    }
+
+    // The screen's notch and rounded corners, in canvas units: left, right, top, bottom.
+    Vector4 SafeInsets() {
+        float sw = UnityEngine.Screen.width;
+        float sh = UnityEngine.Screen.height;
+        Rect safe = UnityEngine.Screen.safeArea;
+        if (sw <= 0f || sh <= 0f || safe.width <= 0f || safe.height <= 0f) {
+            return Vector4.zero;
+        }
+        return new Vector4(
+            Mathf.Max(0f, safe.xMin) / sw * size.x,
+            Mathf.Max(0f, sw - safe.xMax) / sw * size.x,
+            Mathf.Max(0f, sh - safe.yMax) / sh * size.y,
+            Mathf.Max(0f, safe.yMin) / sh * size.y);
+    }
+
+    // How tall a text is at a width, in canvas units, with a little room to spare.
+    static float Measure(Text text, string value, float width) {
+        TextGenerationSettings settings = text.GetGenerationSettings(new Vector2(width, 0f));
+        float unit = Mathf.Max(0.0001f, text.pixelsPerUnit);
+        float h = text.cachedTextGeneratorForLayout.GetPreferredHeight(value, settings) / unit;
+        return Mathf.Ceil(h * 1.04f + 2f);
+    }
+
+    // Top-left placement in a parent's units, y counting down.
+    static void Place(RectTransform rect, float x, float y, float w, float h) {
         rect.anchorMin = new Vector2(0f, 1f);
         rect.anchorMax = new Vector2(0f, 1f);
         rect.pivot = new Vector2(0f, 1f);
-        rect.anchoredPosition = position;
-        rect.sizeDelta = new Vector2(width, 4f);
+        rect.anchoredPosition = new Vector2(x, -y);
+        rect.sizeDelta = new Vector2(w, h);
     }
 
-    // Slides a panel or button in from an offset and fades it up, after a delay. A scale above 1 drops it in
-    // like a pinned photo.
+    static void Stretch(RectTransform rect) {
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+    }
+
+    static RectTransform Node(Transform parent, string name) {
+        var go = new GameObject(name, typeof(RectTransform));
+        go.transform.SetParent(parent, false);
+        return (RectTransform)go.transform;
+    }
+
+    // Slides a panel or button in from an offset and fades it up, after a delay. Only on the first build.
     void Enter(RectTransform rect, Vector2 offset, float delay, float scaleFrom = 1f) {
         if (builtAt < 0f) {
             return;
@@ -548,207 +989,65 @@ public class MainMenu : MonoBehaviour {
         rect.gameObject.AddComponent<MenuEntrance>().Setup(offset, delay, scaleFrom);
     }
 
-    string TicketLine() {
-        int next = MetaProgress.BestWave + 1;
-        return "No. " + next.ToString("000") + (MetaProgress.BestWave > 0 ? "  (wave " + next + " is next)" : "  (wave 1)");
-    }
-
-    void ShowQuote(int index) {
-        quoteIndex = index % (Quotes.Length / 2);
-        string who = Quotes[quoteIndex, 0];
-        string line = Quotes[quoteIndex, 1];
-        if (quoteWho != null) {
-            quoteWho.text = who.ToUpper();
-            quoteLine.text = line;
-        } else if (quoteLine != null) {
-            quoteLine.text = who + ": " + line;
+    // A panel with a thin edge: the edge color behind, the fill inset over it. Children go on the returned rect.
+    RectTransform Framed(Transform parent, Color fill, Color edge, float x, float y, float w, float h, float lift = 0f) {
+        var outer = Fill(parent, edge);
+        UiSkin.Round(outer, 0.8f);
+        Place(outer.rectTransform, x, y, w, h);
+        if (lift > 0f) {
+            var shadow = outer.gameObject.AddComponent<Shadow>();
+            shadow.effectDistance = new Vector2(lift * 0.5f, -lift);
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.45f);
         }
+        var inner = Fill(outer.transform, fill);
+        UiSkin.Round(inner, 0.8f);
+        Stretch(inner.rectTransform);
+        inner.rectTransform.offsetMin = new Vector2(2f, 2f);
+        inner.rectTransform.offsetMax = new Vector2(-2f, -2f);
+        return outer.rectTransform;
     }
 
-    static void PlaceTopLeft(RectTransform rect, Vector2 position, Vector2 size) {
-        rect.anchorMin = new Vector2(0f, 1f);
-        rect.anchorMax = new Vector2(0f, 1f);
-        rect.pivot = new Vector2(0f, 1f);
-        rect.anchoredPosition = position;
-        rect.sizeDelta = size;
+    Text Label(Transform parent, string value, int fontSize, FontStyle style, Color color, float x, float y, float w, float h, TextAnchor anchor) {
+        var go = new GameObject("Text", typeof(RectTransform));
+        go.transform.SetParent(parent, false);
+        var text = go.AddComponent<Text>();
+        text.font = font;
+        text.text = value;
+        text.fontSize = fontSize;
+        text.fontStyle = style;
+        text.alignment = anchor;
+        text.color = color;
+        text.raycastTarget = false;
+        text.horizontalOverflow = HorizontalWrapMode.Wrap;
+        text.verticalOverflow = VerticalWrapMode.Overflow;
+        Place(text.rectTransform, x, y, w, h);
+        return text;
     }
 
-    // The key art, in a frame, drifting slowly inside it.
-    void BuildPhoto(Transform parent, Texture2D texture, Vector2 size, Vector2 position) {
-        if (texture == null) {
-            return;
-        }
-        var artGo = new GameObject("Key Art");
-        artGo.transform.SetParent(parent, false);
-        art = artGo.AddComponent<RawImage>();
-        art.texture = texture;
-        art.raycastTarget = false;
-        PlaceTopLeft(art.rectTransform, position, size);
-        artGo.AddComponent<RectMask2D>();
+    Image Fill(Transform parent, Color color) {
+        var go = new GameObject("Image", typeof(RectTransform));
+        go.transform.SetParent(parent, false);
+        var image = go.AddComponent<Image>();
+        image.color = color;
+        image.raycastTarget = false;
+        return image;
     }
 
-    // Phones: the photo is one more line in the scrolling desk notes.
-    void FlowPhoto(RectTransform content, Texture2D texture, float height) {
-        var frame = Panel(content, new Color(0.99f, 0.98f, 0.94f, 1f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, height), 4f);
-        frame.gameObject.AddComponent<LayoutElement>().preferredHeight = height;
-        if (texture == null) {
-            return;
-        }
-        var artGo = new GameObject("Key Art");
-        artGo.transform.SetParent(frame, false);
-        art = artGo.AddComponent<RawImage>();
-        art.texture = texture;
-        art.raycastTarget = false;
-        art.rectTransform.anchorMin = Vector2.zero;
-        art.rectTransform.anchorMax = Vector2.one;
-        art.rectTransform.offsetMin = new Vector2(10f, 34f);
-        art.rectTransform.offsetMax = new Vector2(-10f, -10f);
-        artGo.AddComponent<RectMask2D>();
-        var caption = Label(frame, "EXHIBIT A  (after hours)", 20, FontStyle.Italic, InkSoft, Vector2.zero, new Vector2(0f, 28f), TextAnchor.LowerCenter);
-        caption.rectTransform.anchorMin = new Vector2(0f, 0f);
-        caption.rectTransform.anchorMax = new Vector2(1f, 0f);
-        caption.rectTransform.pivot = new Vector2(0.5f, 0f);
-        caption.rectTransform.anchoredPosition = new Vector2(0f, 2f);
-        caption.rectTransform.sizeDelta = new Vector2(0f, 30f);
-    }
-
-    // The records room by daylight: green wall, sun and window light, a row of filing cabinets that slide a
-    // little with the mouse, and the floor. Everything is slow and soft; no small moving specks.
-    void BuildRoom(Transform canvas, bool compact) {
-        var wall = Image(canvas, new Color(0.78f, 0.83f, 0.73f, 1f));
-        Stretch(wall.rectTransform);
-        sun = Glow(canvas, new Color(1f, 0.96f, 0.76f, 0.5f), 1800f);
-        sun.anchoredPosition = new Vector2(-300f, 380f);
-
-        shafts = new GameObject("Light Shafts", typeof(RectTransform)).GetComponent<RectTransform>();
-        shafts.SetParent(canvas, false);
-        Stretch(shafts);
-        for (int i = 0; i < 3; i++) {
-            var shaft = Glow(shafts, new Color(1f, 0.97f, 0.82f, 0.16f), 280f);
-            shaft.sizeDelta = new Vector2(300f + i * 90f, 2000f);
-            shaft.localRotation = Quaternion.Euler(0f, 0f, 24f);
-            shaft.anchoredPosition = new Vector2(-500f + i * 560f, 100f);
-        }
-
-        cabinets = new GameObject("Filing Cabinets", typeof(RectTransform)).GetComponent<RectTransform>();
-        cabinets.SetParent(canvas, false);
-        cabinets.anchorMin = Vector2.zero;
-        cabinets.anchorMax = Vector2.one;
-        cabinets.offsetMin = new Vector2(-70f, 0f);
-        cabinets.offsetMax = new Vector2(70f, 0f);
-        int count = compact ? 4 : 8;
-        float scale = compact ? 0.7f : 1f;
-        float[] heights = { 420f, 540f, 480f, 600f, 450f, 560f, 500f, 430f };
-        string[] labels = { "A-F", "G-M", "N-S", "T-Z", "LOST", "FOUND", "UNFILED", "MISC" };
-        for (int i = 0; i < count; i++) {
-            float h = heights[i % heights.Length] * scale;
-            Cabinet(cabinets, (i + 0.5f) / count, 1f / count, h, labels[i % labels.Length], i, compact ? 70f : 150f);
-        }
-
-        var floor = Image(canvas, new Color(0.52f, 0.39f, 0.28f, 1f));
-        var floorRect = floor.rectTransform;
-        floorRect.anchorMin = Vector2.zero;
-        floorRect.anchorMax = new Vector2(1f, 0f);
-        floorRect.pivot = new Vector2(0.5f, 0f);
-        floorRect.anchoredPosition = Vector2.zero;
-        floorRect.sizeDelta = new Vector2(0f, compact ? 70f : 150f);
-        var skirting = Image(floor.transform, new Color(0.34f, 0.25f, 0.18f, 1f));
-        skirting.rectTransform.anchorMin = new Vector2(0f, 1f);
-        skirting.rectTransform.anchorMax = Vector2.one;
-        skirting.rectTransform.pivot = new Vector2(0.5f, 0f);
-        skirting.rectTransform.anchoredPosition = Vector2.zero;
-        skirting.rectTransform.sizeDelta = new Vector2(0f, 16f);
-
-        // A faint copier-light band that sweeps down the screen now and then.
-        copier = Glow(canvas, new Color(1f, 0.98f, 0.88f, 0.1f), 0f);
-        copier.anchorMin = new Vector2(0f, 0.5f);
-        copier.anchorMax = new Vector2(1f, 0.5f);
-        copier.sizeDelta = new Vector2(0f, 260f);
-    }
-
-    void Cabinet(RectTransform parent, float x, float share, float height, string label, int seed, float floorHeight) {
-        var body = Image(parent, Color.Lerp(new Color(0.5f, 0.57f, 0.55f), new Color(0.58f, 0.62f, 0.56f), (seed % 3) * 0.5f));
-        UiSkin.Round(body, 0.5f);
-        var rect = body.rectTransform;
-        rect.anchorMin = new Vector2(x, 0f);
-        rect.anchorMax = new Vector2(x, 0f);
-        rect.pivot = new Vector2(0.5f, 0f);
-        rect.sizeDelta = new Vector2(Mathf.Min(250f, 1960f * share * 0.88f), height);
-        rect.anchoredPosition = new Vector2(0f, floorHeight - 12f);
-        int drawers = Mathf.Max(3, Mathf.RoundToInt(height / 130f));
-        float drawerHeight = (height - 36f) / drawers;
-        for (int i = 0; i < drawers; i++) {
-            var front = Image(body.transform, new Color(0.62f, 0.69f, 0.65f, 1f));
-            UiSkin.Round(front, 0.5f);
-            var fr = front.rectTransform;
-            fr.anchorMin = new Vector2(0f, 1f);
-            fr.anchorMax = new Vector2(1f, 1f);
-            fr.pivot = new Vector2(0.5f, 1f);
-            fr.offsetMin = new Vector2(12f, -18f - (i + 1) * drawerHeight + 8f);
-            fr.offsetMax = new Vector2(-12f, -18f - i * drawerHeight);
-            var card = Image(front.transform, new Color(0.97f, 0.94f, 0.84f, 1f));
-            card.rectTransform.anchorMin = new Vector2(0.5f, 1f);
-            card.rectTransform.anchorMax = new Vector2(0.5f, 1f);
-            card.rectTransform.pivot = new Vector2(0.5f, 1f);
-            card.rectTransform.anchoredPosition = new Vector2(0f, -14f);
-            card.rectTransform.sizeDelta = new Vector2(84f, 26f);
-            var tag = Label(card.transform, i == 0 ? label : (i % 2 == 0 ? "FORMS" : "COPIES"), 15, FontStyle.Bold, InkSoft, Vector2.zero, Vector2.zero, TextAnchor.MiddleCenter);
-            tag.rectTransform.anchorMin = Vector2.zero;
-            tag.rectTransform.anchorMax = Vector2.one;
-            tag.rectTransform.offsetMin = Vector2.zero;
-            tag.rectTransform.offsetMax = Vector2.zero;
-            var handle = Image(front.transform, new Color(0.3f, 0.34f, 0.33f, 1f));
-            UiSkin.Bar(handle);
-            handle.rectTransform.anchorMin = new Vector2(0.5f, 0f);
-            handle.rectTransform.anchorMax = new Vector2(0.5f, 0f);
-            handle.rectTransform.pivot = new Vector2(0.5f, 0f);
-            handle.rectTransform.anchoredPosition = new Vector2(0f, 14f);
-            handle.rectTransform.sizeDelta = new Vector2(70f, 10f);
-        }
-    }
-
-    // A wall clock whose second hand ticks.
-    void BuildClock(Transform canvas, Vector2 center, float diameter) {
-        var rim = Image(canvas, new Color(0.2f, 0.17f, 0.15f, 1f));
-        UiSkin.Disc(rim, diameter + 14f);
-        PlaceCenter(rim.rectTransform, Vector2.zero, new Vector2(diameter + 14f, diameter + 14f));
-        rim.rectTransform.anchorMin = new Vector2(0f, 1f);
-        rim.rectTransform.anchorMax = new Vector2(0f, 1f);
-        rim.rectTransform.anchoredPosition = center;
-        var face = Image(rim.transform, new Color(0.98f, 0.96f, 0.9f, 1f));
-        UiSkin.Disc(face, diameter);
-        PlaceCenter(face.rectTransform, Vector2.zero, new Vector2(diameter, diameter));
-        for (int i = 0; i < 4; i++) {
-            var tick = Image(face.transform, Ink);
-            PlaceCenter(tick.rectTransform, new Vector2(Mathf.Sin(i * Mathf.PI * 0.5f), Mathf.Cos(i * Mathf.PI * 0.5f)) * (diameter * 0.4f), new Vector2(8f, 8f));
-        }
-        hourHand = Hand(face.transform, diameter * 0.26f, 7f, Ink);
-        minuteHand = Hand(face.transform, diameter * 0.38f, 5f, Ink);
-        secondHand = Hand(face.transform, diameter * 0.42f, 3f, StampRed);
-        Enter(rim.rectTransform, new Vector2(0f, 0f), 1.1f, 1.2f);
-    }
-
-    RectTransform Hand(Transform parent, float length, float width, Color color) {
-        var hand = Image(parent, color);
-        var rect = hand.rectTransform;
-        rect.anchorMin = new Vector2(0.5f, 0.5f);
-        rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.pivot = new Vector2(0.5f, 0f);
-        rect.anchoredPosition = Vector2.zero;
-        rect.sizeDelta = new Vector2(width, length);
-        return rect;
-    }
-
-    static void PlaceCenter(RectTransform rect, Vector2 position, Vector2 size) {
+    RectTransform Glow(Transform parent, Color color, float diameter) {
+        // Stretched whole, so a wide glow stays a soft oval, never a band with hard sides.
+        var glow = Fill(parent, color);
+        glow.sprite = UiSkin.Glow;
+        glow.type = Image.Type.Simple;
+        var rect = glow.rectTransform;
         rect.anchorMin = new Vector2(0.5f, 0.5f);
         rect.anchorMax = new Vector2(0.5f, 0.5f);
         rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = position;
-        rect.sizeDelta = size;
+        rect.sizeDelta = new Vector2(diameter, diameter);
+        return rect;
     }
 
     // A rubber stamp: bold ink between two rules, slammed down on cue. It rests at the given strength.
-    MenuStamp Stamp(Transform parent, string word, int size, Color color, Vector2 center, Vector2 area, float angle, float rest) {
+    MenuStamp Stamp(Transform parent, string word, int fontSize, Color color, Vector2 center, Vector2 area, float angle, float rest) {
         var go = new GameObject("Stamp " + word, typeof(RectTransform));
         go.transform.SetParent(parent, false);
         var rect = (RectTransform)go.transform;
@@ -759,214 +1058,129 @@ public class MainMenu : MonoBehaviour {
         rect.sizeDelta = area;
         rect.localRotation = Quaternion.Euler(0f, 0f, angle);
         for (int i = 0; i < 2; i++) {
-            var rule = Image(go.transform, color);
+            var rule = Fill(go.transform, color);
             rule.rectTransform.anchorMin = new Vector2(0f, i == 0 ? 1f : 0f);
             rule.rectTransform.anchorMax = new Vector2(1f, i == 0 ? 1f : 0f);
             rule.rectTransform.pivot = new Vector2(0.5f, i == 0 ? 1f : 0f);
             rule.rectTransform.anchoredPosition = Vector2.zero;
             rule.rectTransform.sizeDelta = new Vector2(0f, 4f);
         }
-        var text = Label(go.transform, word, size, FontStyle.Bold, color, Vector2.zero, Vector2.zero, TextAnchor.MiddleCenter);
+        var text = Label(go.transform, word, fontSize, FontStyle.Bold, color, 0f, 0f, 0f, 0f, TextAnchor.MiddleCenter);
         text.horizontalOverflow = HorizontalWrapMode.Overflow;
-        text.rectTransform.anchorMin = Vector2.zero;
-        text.rectTransform.anchorMax = Vector2.one;
-        text.rectTransform.offsetMin = Vector2.zero;
-        text.rectTransform.offsetMax = Vector2.zero;
+        Stretch(text.rectTransform);
         var stamp = go.AddComponent<MenuStamp>();
         stamp.Setup(rest);
         return stamp;
     }
 
-    RectTransform Glow(Transform parent, Color color, float size) {
-        var glow = Image(parent, color);
-        glow.sprite = UiSkin.Glow;
-        glow.type = UnityEngine.UI.Image.Type.Sliced;
-        var rect = glow.rectTransform;
-        rect.anchorMin = new Vector2(0.5f, 0.5f);
-        rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.sizeDelta = new Vector2(size, size);
-        return rect;
-    }
-
-    void TickAmbient() {
-        float t = Time.unscaledTime;
-        float dt = Time.unscaledDeltaTime;
-        float appear = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - builtAt) / 0.9f));
-        if (art != null) {
-            art.color = new Color(1f, 1f, 1f, appear);
-        }
-        if (!cuePaper && t >= builtAt + 0.05f) {
-            cuePaper = true;
-            MenuSfx.Paper(0.5f);
-        }
-        if (!cueThunk && t >= builtAt + 1.1f) {
-            // The photo lands on the wall.
-            cueThunk = true;
-            MenuSfx.Thunk(0.35f);
-        }
-
-        // Camera drift: the room slides against the desk with the mouse, and breathes on its own.
-        Vector2 target = Vector2.zero;
-        if (!UiFit.Touch && Screen.width > 0 && Screen.height > 0) {
-            Vector3 mouse = PlayInput.MousePosition;
-            target = new Vector2(Mathf.Clamp(mouse.x / Screen.width - 0.5f, -0.5f, 0.5f), Mathf.Clamp(mouse.y / Screen.height - 0.5f, -0.5f, 0.5f));
-        }
-        parallax = Vector2.Lerp(parallax, target, Mathf.Clamp01(dt * 2.5f));
-        if (cabinets != null) {
-            cabinets.anchoredPosition = new Vector2(-parallax.x * 60f + Mathf.Sin(t * 0.12f) * 22f, -parallax.y * 16f);
-        }
-        if (shafts != null) {
-            shafts.anchoredPosition = new Vector2(-parallax.x * 24f + Mathf.Sin(t * 0.09f) * 40f, 0f);
-        }
-        if (sun != null) {
-            sun.anchoredPosition = new Vector2(-300f + Mathf.Sin(t * 0.07f) * 90f - parallax.x * 14f, 380f + Mathf.Cos(t * 0.06f) * 40f);
-        }
-        if (copier != null) {
-            // Eleven seconds a pass: nine of them travelling top to bottom, two of rest below the screen.
-            float f = Mathf.Repeat(t, 11f) / 9f;
-            float y = Mathf.Lerp(1.15f, -0.15f, Mathf.Clamp01(f));
-            copier.anchorMin = new Vector2(0f, y);
-            copier.anchorMax = new Vector2(1f, y);
-        }
-
-        if (boardNumber != null) {
-            float count = Mathf.Clamp01((t - builtAt - 0.5f) / 0.9f);
-            int shown = Mathf.RoundToInt((MetaProgress.BestWave + 1) * Mathf.SmoothStep(0f, 1f, count));
-            boardNumber.text = "No. " + shown.ToString("000");
-        }
-        if (boardDot != null) {
-            boardDot.color = new Color(Amber.r, Amber.g, Amber.b, Mathf.Repeat(t, 1.6f) < 1.1f ? 1f : 0.25f);
-        }
-        if (secondHand != null) {
-            System.DateTime now = System.DateTime.Now;
-            // The second hand ticks, overshooting a hair before it settles.
-            float settle = Mathf.Clamp01(now.Millisecond / 180f);
-            secondHand.localRotation = Quaternion.Euler(0f, 0f, -now.Second * 6f - (1f - settle) * 4f * Mathf.Sin(settle * Mathf.PI));
-            minuteHand.localRotation = Quaternion.Euler(0f, 0f, -(now.Minute + now.Second / 60f) * 6f);
-            hourHand.localRotation = Quaternion.Euler(0f, 0f, -((now.Hour % 12) + now.Minute / 60f) * 30f);
-        }
-        if ((quoteWho != null || quoteLine != null) && t >= quoteAt) {
-            quoteAt = t + 5.5f;
-            ShowQuote(quoteIndex + 1);
-            if (quoteLine != null && quoteWho != null) {
-                quoteLine.rectTransform.parent.gameObject.AddComponent<MenuPop>();
-            }
-        }
-    }
-
-    Text Label(Transform parent, string value, int size, FontStyle style, Color color, Vector2 position, Vector2 sizeDelta, TextAnchor anchor) {
-        var go = new GameObject("Text");
-        go.transform.SetParent(parent, false);
-        var text = go.AddComponent<Text>();
-        text.font = font;
-        text.text = value;
-        text.fontSize = size;
-        text.fontStyle = style;
-        text.alignment = anchor;
-        text.color = color;
-        text.raycastTarget = false;
-        text.horizontalOverflow = HorizontalWrapMode.Wrap;
-        text.verticalOverflow = VerticalWrapMode.Overflow;
-        var rect = text.rectTransform;
-        rect.anchorMin = new Vector2(0f, 1f);
-        rect.anchorMax = new Vector2(0f, 1f);
-        rect.pivot = new Vector2(0f, 1f);
-        rect.anchoredPosition = position;
-        rect.sizeDelta = sizeDelta;
-        return text;
-    }
-
-    Image Image(Transform parent, Color color) {
-        var go = new GameObject("Image");
-        go.transform.SetParent(parent, false);
-        var image = go.AddComponent<Image>();
-        image.color = color;
-        image.raycastTarget = false;
-        return image;
-    }
-
-    RectTransform Panel(Transform parent, Color color, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 position, Vector2 sizeDelta, float lift = 0f) {
-        var go = new GameObject("Panel");
-        go.transform.SetParent(parent, false);
-        var image = go.AddComponent<Image>();
-        UiSkin.Round(image);
-        image.color = color;
-        image.raycastTarget = false;
-        if (lift > 0f) {
-            // Paper sits above what is behind it: a soft drop shadow.
-            var shadow = go.AddComponent<Shadow>();
-            shadow.effectDistance = new Vector2(lift * 0.6f, -lift);
-            shadow.effectColor = new Color(0.1f, 0.08f, 0.04f, 0.28f);
-        }
-        var rect = image.rectTransform;
-        rect.anchorMin = anchorMin;
-        rect.anchorMax = anchorMax;
-        rect.pivot = pivot;
-        rect.anchoredPosition = position;
-        rect.sizeDelta = sizeDelta;
-        return rect;
-    }
-
-    void Stretch(RectTransform rect) {
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.one;
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
-    }
-
-    Button Button(Transform parent, string label, Vector2 position, Vector2 size, int fontSize, UnityEngine.Events.UnityAction click, bool primary = false, Color? tint = null) {
-        var go = new GameObject(label);
+    // Primary is the red Play stamp; others are dark with a brass edge, or tinted.
+    Button MakeButton(Transform parent, string label, float x, float y, float w, float h, int fontSize, UnityEngine.Events.UnityAction click, bool primary = false, Color? tint = null) {
+        var go = new GameObject(label, typeof(RectTransform));
         go.transform.SetParent(parent, false);
         // A soft gold halo behind the button: it lights on hover and breathes on the primary one.
         var halo = new GameObject("Halo", typeof(RectTransform)).AddComponent<Image>();
         halo.transform.SetParent(go.transform, false);
         halo.sprite = UiSkin.Glow;
-        halo.type = UnityEngine.UI.Image.Type.Sliced;
+        halo.type = Image.Type.Sliced;
         halo.raycastTarget = false;
         halo.color = new Color(1f, 0.84f, 0.35f, 0f);
         halo.rectTransform.anchorMin = Vector2.zero;
         halo.rectTransform.anchorMax = Vector2.one;
-        halo.rectTransform.offsetMin = new Vector2(-14f, -14f);
-        halo.rectTransform.offsetMax = new Vector2(14f, 14f);
+        halo.rectTransform.offsetMin = new Vector2(-16f, -16f);
+        halo.rectTransform.offsetMax = new Vector2(16f, 16f);
         var image = go.AddComponent<Image>();
-        UiSkin.Round(image, 0.6f);
-        image.color = tint ?? (primary ? Leaf : new Color(0.33f, 0.26f, 0.18f, 1f));
+        UiSkin.Round(image, primary ? 0.8f : 0.6f);
+        image.color = tint ?? (primary ? StampRed : new Color(0.13f, 0.14f, 0.2f, 1f));
+        var edge = go.AddComponent<Outline>();
+        edge.effectColor = primary ? new Color(1f, 0.72f, 0.4f, 0.75f) : new Color(Brass.r, Brass.g, Brass.b, tint.HasValue ? 0.35f : 0.7f);
+        edge.effectDistance = new Vector2(2f, -2f);
         var button = go.AddComponent<Button>();
         button.targetGraphic = image;
         var colors = button.colors;
         colors.normalColor = Color.white;
-        colors.highlightedColor = new Color(1.15f, 1.08f, 0.85f);
-        colors.pressedColor = new Color(0.8f, 0.7f, 0.42f);
+        colors.highlightedColor = new Color(1.18f, 1.1f, 0.9f);
+        colors.pressedColor = new Color(0.8f, 0.7f, 0.5f);
+        colors.selectedColor = Color.white;
         colors.fadeDuration = 0.08f;
-        colors.disabledColor = new Color(0.45f, 0.45f, 0.45f, 0.55f);
+        colors.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
         button.colors = colors;
+        // No keyboard focus: Enter plays, it doesn't press whichever button was clicked last.
+        var nav = button.navigation;
+        nav.mode = Navigation.Mode.None;
+        button.navigation = nav;
         button.onClick.AddListener(click);
-        var rect = image.rectTransform;
-        rect.anchorMin = new Vector2(0f, 1f);
-        rect.anchorMax = new Vector2(0f, 1f);
-        rect.pivot = new Vector2(0f, 1f);
-        rect.anchoredPosition = position;
-        rect.sizeDelta = size;
+        Place(image.rectTransform, x, y, w, h);
 
-        var textGo = new GameObject("Label");
-        textGo.transform.SetParent(go.transform, false);
-        var text = textGo.AddComponent<Text>();
-        text.font = font;
-        text.text = label;
-        text.fontSize = fontSize;
-        text.alignment = TextAnchor.MiddleCenter;
-        text.color = Paper;
-        text.fontStyle = primary ? FontStyle.Bold : FontStyle.Normal;
-        text.raycastTarget = false;
-        var textRect = text.rectTransform;
-        textRect.anchorMin = Vector2.zero;
-        textRect.anchorMax = Vector2.one;
-        textRect.offsetMin = Vector2.zero;
-        textRect.offsetMax = Vector2.zero;
+        var text = Label(go.transform, label, fontSize, primary ? FontStyle.Bold : FontStyle.Normal, Paper, 0f, 0f, 0f, 0f, TextAnchor.MiddleCenter);
+        text.verticalOverflow = VerticalWrapMode.Truncate;
+        Stretch(text.rectTransform);
+        if (primary) {
+            var lift = text.gameObject.AddComponent<Shadow>();
+            lift.effectColor = new Color(0.25f, 0.03f, 0.02f, 0.8f);
+            lift.effectDistance = new Vector2(2f, -3f);
+        }
         var fx = go.AddComponent<MenuButtonFx>();
         fx.Setup(button, halo, primary);
         return button;
+    }
+}
+
+// Colors a graphic from one color to another, bottom to top (or left to right). On text each letter gets its
+// own sweep, like gold leaf; on a plain image it's one sweep across.
+public class MenuGradient : BaseMeshEffect {
+    public Color top = Color.white;
+    public Color bottom = Color.white;
+    public bool horizontal;
+
+    public override void ModifyMesh(VertexHelper vh) {
+        if (!IsActive()) {
+            return;
+        }
+        int count = vh.currentVertCount;
+        var vertex = new UIVertex();
+        for (int start = 0; start + 3 < count; start += 4) {
+            float min = float.MaxValue;
+            float max = float.MinValue;
+            for (int i = start; i < start + 4; i++) {
+                vh.PopulateUIVertex(ref vertex, i);
+                float at = horizontal ? vertex.position.x : vertex.position.y;
+                min = Mathf.Min(min, at);
+                max = Mathf.Max(max, at);
+            }
+            float span = Mathf.Max(0.0001f, max - min);
+            for (int i = start; i < start + 4; i++) {
+                vh.PopulateUIVertex(ref vertex, i);
+                float at = horizontal ? vertex.position.x : vertex.position.y;
+                Color shade = Color.Lerp(bottom, top, (at - min) / span);
+                vertex.color = (Color32)(shade * (Color)vertex.color);
+                vh.SetUIVertex(vertex, i);
+            }
+        }
+    }
+}
+
+// A swipe across the case file turns its page.
+public class MenuSwipe : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler {
+    System.Action<int> flip;
+    Vector2 from;
+
+    public void Setup(System.Action<int> onFlip) {
+        flip = onFlip;
+    }
+
+    public void OnBeginDrag(PointerEventData eventData) {
+        from = eventData.position;
+    }
+
+    public void OnDrag(PointerEventData eventData) {
+    }
+
+    public void OnEndDrag(PointerEventData eventData) {
+        Vector2 move = eventData.position - from;
+        float need = Mathf.Max(40f, UnityEngine.Screen.width * 0.06f);
+        if (flip != null && Mathf.Abs(move.x) > need && Mathf.Abs(move.x) > Mathf.Abs(move.y) * 1.2f) {
+            flip(move.x < 0f ? 1 : -1);
+        }
     }
 }
 
@@ -1088,7 +1302,8 @@ public class MenuEntrance : MonoBehaviour {
 }
 
 // A rubber stamp that slams onto the page: it drops in large, lands with a thunk and settles to its resting
-// strength after a short hold.
+// strength after a short hold. One that rests invisible is switched off between slams, so it never sits over
+// the words under it.
 public class MenuStamp : MonoBehaviour {
     const float Drop = 0.14f;
     RectTransform rect;
@@ -1104,10 +1319,17 @@ public class MenuStamp : MonoBehaviour {
         group.alpha = 0f;
         group.blocksRaycasts = false;
         rest = restAlpha;
+        if (rest <= 0f) {
+            gameObject.SetActive(false);
+        }
     }
 
     // A negative delay just shows the stamp at rest, with no slam.
     public void Slam(float delay, bool quiet) {
+        if (rest <= 0f && (delay < 0f || quiet)) {
+            return;
+        }
+        gameObject.SetActive(true);
         if (delay < 0f || quiet) {
             startAt = -1f;
             group.alpha = rest;
@@ -1147,6 +1369,9 @@ public class MenuStamp : MonoBehaviour {
             rect.localScale = Vector3.one;
             group.alpha = rest;
             startAt = -1f;
+            if (rest <= 0f) {
+                gameObject.SetActive(false);
+            }
         }
     }
 }
