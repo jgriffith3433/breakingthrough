@@ -139,9 +139,28 @@ public class StoryScreen : MonoBehaviour {
         nameText.color = SpeakerColor(speaker);
         lineText.text = Story.Text(line);
         lineText.fontStyle = speaker == "N" ? FontStyle.Bold : FontStyle.Normal;
-        hintText.text = (page + 1) + " / " + pages.Length + "     " + (UiFit.Touch ? "Tap: next" : "Any key: next   ·   Enter: skip");
+        SetHint();
         readyAt = Time.unscaledTime + PageGap;
         Events.Add((mode == Mode.Intro ? "intro" : "finale") + "-page|" + (page + 1) + "|" + speaker + "|" + Story.Text(line).Replace('\n', ' '));
+    }
+
+    void SetHint() {
+        if (pages == null || hintText == null) {
+            return;
+        }
+        string count = (page + 1) + " / " + pages.Length;
+        if (UiFit.Touch) {
+            hintText.text = count + (UiFit.Mode == UiMode.Tall ? "\n" : "     ") + "Tap to continue   ·   Tap Skip to skip";
+        } else {
+            hintText.text = count + "     Any key: next   ·   Enter: skip";
+        }
+    }
+
+    // A tap on the Skip button belongs to the button, not to "next page".
+    bool TapOnSkip() {
+        Vector2 at = Input.touchCount > 0 ? Input.GetTouch(0).position : (Vector2)Input.mousePosition;
+        return SkipButton != null && SkipButton.gameObject.activeInHierarchy
+            && RectTransformUtility.RectangleContainsScreenPoint((RectTransform)SkipButton.transform, at, null);
     }
 
     void Next() {
@@ -207,7 +226,9 @@ public class StoryScreen : MonoBehaviour {
         if (stamp != UiFit.Stamp && scaler != null) {
             stamp = UiFit.Stamp;
             UiFit.Apply(scaler);
+            Layout();
         }
+        UiFit.Notice();
         if (mode == Mode.None) {
             TickBeats();
             return;
@@ -228,6 +249,9 @@ public class StoryScreen : MonoBehaviour {
         if (enter) {
             Finish(true);
         } else if (PlayInput.AnyKeyDown) {
+            if (UiFit.Touch && TapOnSkip()) {
+                return;
+            }
             Next();
         }
     }
@@ -326,6 +350,90 @@ public class StoryScreen : MonoBehaviour {
         MenuButton = MakeButton(endPanel.transform, "Menu", "Menu (Esc)", new Vector2(380f, 84f), 30, () => Leave(false));
         Anchor((RectTransform)MenuButton.transform, new Vector2(0.5f, 0f), new Vector2(210f, 60f), new Vector2(380f, 84f));
         root.SetActive(false);
+        Layout();
+    }
+
+    // Desktop keeps the 1920x1080 numbers. Phones (Wide and Tall) fit the 660-unit short side: 20+ unit text, 88 unit buttons.
+    void Layout() {
+        UiMode ui = UiFit.Mode;
+        Vector2 size = UiFit.Size;
+        var pageRect = (RectTransform)pagePanel.transform;
+        var endRect = (RectTransform)endPanel.transform;
+        var skipRect = (RectTransform)SkipButton.transform;
+        var keepRect = (RectTransform)KeepButton.transform;
+        var menuRect = (RectTransform)MenuButton.transform;
+        Text skipLabel = SkipButton.GetComponentInChildren<Text>();
+        Text keepLabel = KeepButton.GetComponentInChildren<Text>();
+        Text menuLabel = MenuButton.GetComponentInChildren<Text>();
+        bool touch = UiFit.Touch;
+        if (ui == UiMode.Desktop) {
+            pageRect.sizeDelta = new Vector2(1300f, 460f);
+            SetText(nameText, 40, new Vector2(0.5f, 1f), new Vector2(0f, -30f), new Vector2(1100f, 52f));
+            SetText(lineText, 44, new Vector2(0.5f, 0.5f), new Vector2(0f, -10f), new Vector2(1160f, 260f));
+            SetText(hintText, 24, new Vector2(0.5f, 0f), new Vector2(0f, 28f), new Vector2(1000f, 36f));
+            Anchor(skipRect, new Vector2(1f, 0f), new Vector2(-130f, 60f), new Vector2(190f, 64f));
+            skipLabel.fontSize = 28;
+            endRect.sizeDelta = new Vector2(1000f, 640f);
+            SetText(titleText, 72, new Vector2(0.5f, 1f), new Vector2(0f, -40f), new Vector2(900f, 100f));
+            SetText(endBody, 32, new Vector2(0.5f, 1f), new Vector2(0f, -170f), new Vector2(880f, 280f));
+            Anchor(keepRect, new Vector2(0.5f, 0f), new Vector2(-210f, 60f), new Vector2(380f, 84f));
+            Anchor(menuRect, new Vector2(0.5f, 0f), new Vector2(210f, 60f), new Vector2(380f, 84f));
+            keepLabel.fontSize = 30;
+            menuLabel.fontSize = 30;
+        } else if (ui == UiMode.Wide) {
+            float pw = Mathf.Min(1300f, size.x - 40f);
+            pageRect.sizeDelta = new Vector2(pw, 580f);
+            SetText(nameText, 32, new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(pw - 60f, 42f));
+            SetText(lineText, 38, new Vector2(0.5f, 0.5f), new Vector2(0f, 20f), new Vector2(pw - 80f, 320f));
+            SetText(hintText, 22, new Vector2(0f, 0f), new Vector2(30f, 36f), new Vector2(pw - 340f, 60f));
+            hintText.alignment = TextAnchor.LowerLeft;
+            hintText.rectTransform.pivot = new Vector2(0f, 0f);
+            Anchor(skipRect, new Vector2(1f, 0f), new Vector2(-150f, 24f + 44f), new Vector2(240f, 88f));
+            skipLabel.fontSize = 34;
+            float ew = Mathf.Min(1000f, size.x - 40f);
+            endRect.sizeDelta = new Vector2(ew, 580f);
+            SetText(titleText, 52, new Vector2(0.5f, 1f), new Vector2(0f, -20f), new Vector2(ew - 60f, 70f));
+            SetText(endBody, 26, new Vector2(0.5f, 1f), new Vector2(0f, -100f), new Vector2(ew - 80f, 300f));
+            float bw = Mathf.Min(380f, (ew - 80f) / 2f);
+            Anchor(keepRect, new Vector2(0.5f, 0f), new Vector2(-(bw / 2f + 10f), 24f + 44f), new Vector2(bw, 88f));
+            Anchor(menuRect, new Vector2(0.5f, 0f), new Vector2(bw / 2f + 10f, 24f + 44f), new Vector2(bw, 88f));
+            keepLabel.fontSize = 28;
+            menuLabel.fontSize = 28;
+        } else {
+            float pw = Mathf.Min(620f, size.x - 20f);
+            float ph = Mathf.Min(900f, size.y - 120f);
+            pageRect.sizeDelta = new Vector2(pw, ph);
+            SetText(nameText, 32, new Vector2(0.5f, 1f), new Vector2(0f, -20f), new Vector2(pw - 40f, 42f));
+            SetText(lineText, 36, new Vector2(0.5f, 0.5f), new Vector2(0f, 40f), new Vector2(pw - 50f, ph - 340f));
+            SetText(hintText, 22, new Vector2(0.5f, 0f), new Vector2(0f, 130f), new Vector2(pw - 40f, 70f));
+            Anchor(skipRect, new Vector2(0.5f, 0f), new Vector2(0f, 24f + 44f), new Vector2(Mathf.Min(300f, pw - 40f), 88f));
+            skipLabel.fontSize = 34;
+            float ew = Mathf.Min(620f, size.x - 20f);
+            endRect.sizeDelta = new Vector2(ew, Mathf.Min(820f, size.y - 120f));
+            SetText(titleText, 48, new Vector2(0.5f, 1f), new Vector2(0f, -24f), new Vector2(ew - 40f, 64f));
+            SetText(endBody, 26, new Vector2(0.5f, 1f), new Vector2(0f, -100f), new Vector2(ew - 50f, endRect.sizeDelta.y - 330f));
+            float bw = Mathf.Min(380f, ew - 40f);
+            Anchor(keepRect, new Vector2(0.5f, 0f), new Vector2(0f, 24f + 44f + 100f), new Vector2(bw, 88f));
+            Anchor(menuRect, new Vector2(0.5f, 0f), new Vector2(0f, 24f + 44f), new Vector2(bw, 88f));
+            keepLabel.fontSize = 30;
+            menuLabel.fontSize = 30;
+        }
+        if (ui == UiMode.Desktop) {
+            hintText.alignment = TextAnchor.LowerCenter;
+            hintText.rectTransform.pivot = new Vector2(0.5f, 0f);
+        } else if (ui == UiMode.Tall) {
+            hintText.alignment = TextAnchor.LowerCenter;
+            hintText.rectTransform.pivot = new Vector2(0.5f, 0f);
+        }
+        skipLabel.text = "Skip";
+        keepLabel.text = touch ? "Keep going" : "Keep going (Enter)";
+        menuLabel.text = touch ? "Menu" : "Menu (Esc)";
+        SetHint();
+    }
+
+    static void SetText(Text text, int size, Vector2 anchor, Vector2 position, Vector2 box) {
+        text.fontSize = size;
+        Anchor(text.rectTransform, anchor, position, box);
     }
 
     GameObject Panel(Transform parent, string name, Vector2 size) {

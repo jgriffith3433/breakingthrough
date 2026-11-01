@@ -10,6 +10,27 @@ mergeInto(LibraryManager.library, {
     return document.pointerLockElement ? 1 : 0;
   },
 
+  // Asking for pointer lock without a click or key just before (the run starts from a timer, not a click) makes the
+  // browser reject the request's promise, and nothing catches it. The game asks again every frame and the lock lands
+  // on the player's first click, so the rejection is expected: catch it so it is not an unhandled error.
+  HawkesGuardPointerLock: function () {
+    try {
+      var proto = Element.prototype;
+      if (proto.requestPointerLock && !proto.requestPointerLock.hawkesGuarded) {
+        var original = proto.requestPointerLock;
+        var guarded = function () {
+          var result = original.apply(this, arguments);
+          if (result && typeof result.catch === "function") {
+            result.catch(function () {});
+          }
+          return result;
+        };
+        guarded.hawkesGuarded = true;
+        proto.requestPointerLock = guarded;
+      }
+    } catch (e) {}
+  },
+
   HawkesCoarsePointer: function () {
     try {
       return window.matchMedia && window.matchMedia("(pointer: coarse)").matches ? 1 : 0;

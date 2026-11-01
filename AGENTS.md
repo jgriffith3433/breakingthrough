@@ -1,5 +1,7 @@
 # Agent guide
 
+**Lanes, local dev and deploys:** `LANES.md` (branches dev -> beta -> main; `dev.bat`, `deploy-beta.bat`, `deploy-prod.bat`, `status.bat`, `links.bat`, `sync.bat`; beta and live links).
+
 Unity 6.3 LTS (`6000.3.7f1`), built-in render pipeline, old Input Manager (`activeInputHandler` 0). `README.md` explains how the game plays. This file explains how to change it without breaking it.
 
 ## The cast
@@ -61,6 +63,7 @@ Runtime gameplay is in `Assets/Scripts/`. Editor wiring is in `Assets/Editor/`. 
 | Bloom and color grade | `NightGrade.cs` with `Resources/Shaders/BTPost.shader` |
 | A particle effect | `Fx.cs`: add an `FxKind` and a `Make(...)` line, or reuse a recipe. Never spawn primitive spheres for effects. Status (burning, frozen, golden) is a tint on the bot in `Enemy.TickFlash`, not particles. Bot deaths are `Fx.Death` (flash, smoke, `Debris` plates); jump-jet hops are `Fx.JetPuff` |
 | UI panels and bars | `UiSkin.Round` and `UiSkin.Bar`. Every button gets the menu's hover lift and press sink: `MenuButtonFx.Add(button)` (in `MainMenu.cs`) |
+| The main menu | `MainMenu.cs`. The key art fills the screen (cropped to fit, slow drift); the run setup (title, coins, best, ticket, later start, Play, Settings) is on the left, or on top in portrait; the case file holds the Upgrades, Briefing and Last run tabs. Nothing scrolls: `Paragraph` and the upgrade forms are measured (`Measure`) and packed into pages (`Pack`), turned with Prev/Next, the arrow keys, the wheel or a swipe (`MenuSwipe`). The canvas is a child of the `MainMenu` object so the playtest can read the shop. Desktop keys the canvas off the height (1080 units tall) so short windows fit |
 | Touch controls (stick, Swing, Lock, Jump, Shake, Next wave, Turn) | `TouchControls.cs`. They press keys through `PlayInput.Pad...`, so gameplay needs no touch code |
 | Phone and tablet layouts | `UiFit.cs` picks the layout (`Mode`: Desktop, Wide, Tall) and the canvas scale (`Apply`). Each screen has a `Layout()` that redoes positions when `UiFit.Stamp` changes |
 | Sound on/off, music and effects volume | `SoundSettings.cs` (saved as JSON `{ on, music, sfx }` under `hawkes.sound`: localStorage on the web, PlayerPrefs too). Music is every looping `AudioSource` (none now: the piano loop is gone); effects are `GameAudio`, which multiplies by `SoundSettings.EffectsLevel` |
@@ -160,7 +163,7 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
   a problem if any card says arrow, bow or quiver); setup: the wave key to wave 14 and a dozen bat boons granted
   (`bat-marks` lists each mark); then play until `wide-swing`, `burning`, `slowing`, `chain-sparks`, `spin-swing`
   and `batted-bolt` have each been seen; then Thunder Bat for a lightning spin (`thunder-bat`) and 30 s of play), `story` (the intro read page by page over the frozen Hollow, Skip button, wave 1 beats, then setup: wave key to 10 and 30 for the boss-wave cards, wave 30 trimmed to the boss and Slice topped up; clearing it plays the finale and the ADDRESS FILED ending screen, then Keep going; events `story` (intro-*, beat, finale-*, ending), `intro-shown`, `finale-shown`, `ending-shown`; every other scenario sets `StoryScreen.SuppressIntro` so the intro does not wait for a key), `cast` (menu key art up and read, What's new laid over the game with the release note naming Wallit, Slice and the bots read from `releases.json`, then 45 s of play as Wallit guarding Slice; events `menu-art`, `release-note`, `whatsnew-shown`, `cast-in-play`), `site` (the website
-  around the game: every page outside `Game/` has "Powered by HAWKES GEN" linking to hawkesgen.com, the landing page
+  around the game: every page outside `Game/` has "Powered by HAWKES GEN" linking to hawkesgen.ai, the landing page
   links to hawkesbiomedical.com. It checks the landing page, every page in the deploy's `site/pages.json` and every
   page they link to, looks for a blog at `/blog/`, `/blog.html`, `/news/` and `/posts/`, and logs `site-pages`,
   `sub-pages` and `blog` events saying what exists. Then it lays each page over the game for 4 s via

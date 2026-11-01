@@ -1,0 +1,8 @@
+{
+  "name": "com.hawkes.gen",
+  "version": "0.2.1",
+  "displayName": "Hawkes Gen",
+  "description": "Use Hawkes Gen (the shared generative AI service on this PC, http://127.0.0.1:8790) from the Unity editor: run any tool or preset (images, textures, video, 3D, music, voice, sound, Claude), browse the library and its entities (characters, stages, shots: their slots and every version), make and revise takes, and import results into Assets. Editor only; nothing ships in builds.",
+  "unity": "2021.3",
+  "author": { "name": "Hawkes Gen" }
+}
