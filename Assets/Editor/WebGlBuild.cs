@@ -387,6 +387,52 @@ public static class WebGlBuild
         FullDeploy();
     }
 
+    /// The cloud build (Hawkes Studio's project build entry, method "WebGlBuild.CloudBuild"): Hawkes Gen runs it with
+    /// env HAWKES_OUT, the folder whose contents are the build, and no website checkout. It builds the same player as
+    /// FullDeploy into HAWKES_OUT/PlaceDepartment (laid out like the website's Game/v(n)/) and changes no website: Studio
+    /// writes Game/build.json and window.HAWKES_BUILD_URL into the site's own Game/index.html (publish.page "site").
+    public static void CloudBuild()
+    {
+        bool batch = Application.isBatchMode;
+        try
+        {
+            string outDir = Environment.GetEnvironmentVariable("HAWKES_OUT");
+            if (string.IsNullOrEmpty(outDir))
+            {
+                throw new Exception("HAWKES_OUT is not set (the cloud build names the folder the build goes into)");
+            }
+            Directory.CreateDirectory(outDir);
+            int version = 0;
+            int.TryParse(Environment.GetEnvironmentVariable("BUILD_VERSION") ?? "", out version);
+            WriteBuildStamp(version);
+            try
+            {
+                BuildWebGLTo(Path.Combine(outDir, DefaultGameName));
+            }
+            finally
+            {
+                RemoveBuildStamp();
+            }
+            Debug.Log("[WebGlBuild] Cloud build done in " + outDir);
+            if (batch)
+            {
+                EditorApplication.Exit(0);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("[WebGlBuild] Cloud build FAILED: " + ex.Message + "\n" + ex.StackTrace);
+            if (batch)
+            {
+                EditorApplication.Exit(1);
+            }
+            else
+            {
+                throw;
+            }
+        }
+    }
+
     public static void FullDeploy()
     {
         bool batch = Application.isBatchMode;
