@@ -413,6 +413,10 @@ public static class WebGlBuild
             {
                 RemoveBuildStamp();
             }
+            // A file beside the game's folder, so the build is never one lone folder: Studio unwraps an output that is a
+            // single folder, and the site's page loads PlaceDepartment/Build/... from the build's address.
+            File.WriteAllText(Path.Combine(outDir, "hawkes-build.json"),
+                "{\"game\":\"" + DefaultGameName + "\",\"commit\":\"" + (Environment.GetEnvironmentVariable("HAWKES_COMMIT") ?? "") + "\"}\n");
             Debug.Log("[WebGlBuild] Cloud build done in " + outDir);
             if (batch)
             {
