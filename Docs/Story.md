@@ -87,7 +87,7 @@ and Slice has no refund for him). The chapters after it are not written yet.
 - Slice: "No sender. No refund. Stay in the circle."
 
 `Assets/Scripts/Story.cs` holds the chapter data (`Story.Chapters`); `CampaignSave.cs` holds the case files;
-`CampaignPanel.cs` is the slot screen; `ChapterScene.cs` builds the placeholder in `Assets/Campaign.unity`.
+The full plan for the six chapters (spine, bot origins, bosses, open questions) is in `Docs/CampaignBible.md`. `CampaignPanel.cs` is the slot screen; `ChapterScene.cs` builds the placeholder in `Assets/Campaign.unity`.
 
 ## Canon established here
 
