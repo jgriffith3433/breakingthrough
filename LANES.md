@@ -9,11 +9,11 @@ Agents' fixes land on `beta` (pull requests Studio merges); `sync.bat` brings th
 | | Address |
 |---|---|
 | Local | [http://localhost:4173/Game/](http://localhost:4173/Game/) |
-| Beta | [https://placedept.hawkesgen.ai/Game/](https://placedept.hawkesgen.ai/Game/) |
+| Beta | [https://sites.hawkesgen.ai/o/j-studio-4f12/the-place-department/Game/](https://sites.hawkesgen.ai/o/j-studio-4f12/the-place-department/Game/) (the website's beta, playing the newest build); this project's own build page: [https://sites.hawkesgen.ai/o/j-studio-4f12/place-department-unity/](https://sites.hawkesgen.ai/o/j-studio-4f12/place-department-unity/) |
 | Live | [https://theplacedepartment.com/](https://theplacedepartment.com/), [https://theplacedepartment.com/Game/](https://theplacedepartment.com/Game/) |
 | Deploys (GitHub Actions) | [github.com/jgriffith3433/breakingthrough/actions](https://github.com/jgriffith3433/breakingthrough/actions) |
 
-**How it deploys:** Push beta plus a build-* tag (deploy-beta does both): Gen builds that commit on Cloud Run and pushes Game/v<n> to theplacedepartmentwebsite's beta; Studio playtests it. Push main: Studio publishes that build to theplacedepartmentwebsite's main (GitHub Pages, live).
+**How it deploys:** Push beta plus a build-* tag (deploy-beta does both), or build from Studio: Gen builds that commit on Cloud Run (`WebGlBuild.CloudBuild`) and Studio keeps the build at its own public address (`sites.hawkesgen.ai/builds/o/j-studio-4f12/place-department-unity/b/web/<n>/`). It commits only a pointer onto theplacedepartmentwebsite's beta: `Game/build.json` and `window.HAWKES_BUILD_URL` in `Game/index.html`. Beta and live never share a file that changes: each build number is its own folder, beta's page names the newest, live's names the one that went live. Going live (Studio) fast-forwards both repos' main, so theplacedepartment.com/Game/ then names that build.
 
 | Command (double-click, or run in a terminal here) | What it does |
 |---|---|
