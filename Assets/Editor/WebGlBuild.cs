@@ -413,10 +413,23 @@ public static class WebGlBuild
             {
                 RemoveBuildStamp();
             }
+            // The website's Game page loads <build address>PlaceDepartment/Build/PlaceDepartment.loader.js: a build without
+            // it would publish and then 404 on the site (build web 5 did), so it fails here instead.
+            string loader = Path.Combine(outDir, DefaultGameName, "Build", DefaultGameName + ".loader.js");
+            if (!File.Exists(loader))
+            {
+                throw new Exception("the build has no " + DefaultGameName + "/Build/" + DefaultGameName + ".loader.js (the Game page loads it from there)");
+            }
             // A file beside the game's folder, so the build is never one lone folder: Studio unwraps an output that is a
             // single folder, and the site's page loads PlaceDepartment/Build/... from the build's address.
             File.WriteAllText(Path.Combine(outDir, "hawkes-build.json"),
                 "{\"game\":\"" + DefaultGameName + "\",\"commit\":\"" + (Environment.GetEnvironmentVariable("HAWKES_COMMIT") ?? "") + "\"}\n");
+            // The Unity project's own beta address in Studio serves this folder's root: send it to the game's own page in
+            // PlaceDepartment/ (Unity's template), keeping the query (playtest flags), so it plays instead of "Not found".
+            File.WriteAllText(Path.Combine(outDir, "index.html"),
+                "<!doctype html>\n<meta charset=\"utf-8\">\n<title>The Place Department</title>\n" +
+                "<script>location.replace(\"" + DefaultGameName + "/index.html\" + location.search + location.hash);</script>\n" +
+                "<p><a href=\"" + DefaultGameName + "/index.html\">Play The Place Department</a></p>\n");
             Debug.Log("[WebGlBuild] Cloud build done in " + outDir);
             if (batch)
             {
