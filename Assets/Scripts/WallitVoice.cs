@@ -190,7 +190,8 @@ public class WallitVoice : MonoBehaviour {
         if (Story.HasWallitBeat(wave)) {
             return;
         }
-        Instance.Queue(Instance.Pick(wave % 10 == 0 ? BossWave : Wave), "wave", 4.5f);
+        bool boss = wave % 10 == 0;
+        Instance.Queue(Instance.Pick(boss ? BossWave : Wave), boss ? "boss-wave" : "wave", 4.5f);
     }
 
     public static void OnLevelUp(bool chest) {
@@ -310,6 +311,7 @@ public class WallitVoice : MonoBehaviour {
         lineStart = Time.unscaledTime;
         liveMax = 0f;
         Claim("wallit", lineLength);
+        VoiceDirector.Spoke(line, why, VoiceDirector.PriorityOf(why));
         Speaking = true;
         Current = line;
         if (lineHasFile && audioOut != null && SoundSettings.EffectsLevel > 0f) {
@@ -438,10 +440,18 @@ public class WallitVoice : MonoBehaviour {
                 Dropped++;
             }
         }
+        // The VoiceDirector decides: the most important waiting line first; a bark that is too soon is dropped, a key line
+        // that has to wait for the floor stays queued until it expires.
         if (pending.Count > 0 && FloorFree && !Speaking && !BanterRunning && !WaveDirector.IsLost) {
-            Pending next = pending[0];
-            pending.RemoveAt(0);
-            if (next.Line != LastLine) {
+            int best = 0;
+            for (int i = 1; i < pending.Count; i++) {
+                if (VoiceDirector.PriorityOf(pending[i].Why) > VoiceDirector.PriorityOf(pending[best].Why)) {
+                    best = i;
+                }
+            }
+            Pending next = pending[best];
+            pending.RemoveAt(best);
+            if (next.Line != LastLine && VoiceDirector.Allow(next.Line, next.Why, VoiceDirector.PriorityOf(next.Why))) {
                 Speak(next.Line, next.Why);
             } else {
                 Dropped++;

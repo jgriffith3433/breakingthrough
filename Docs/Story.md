@@ -68,7 +68,7 @@ everything is money: a kill is "Paid in full." or "Exact change.", a streak is "
 a home run is "Returned to sender!", a hit on him is "Ow! That's extra!", a wave start is "Cash only!", a level-up is
 "Profit!", a chest is "Finders keepers!", and when Slice runs low he answers "Slice! Hold on!". No jokes about work, and
 the wave beats' Wallit lines above are spoken too. One voice at a time: he waits for Slice to finish and never repeats a
-line back to back. His mouth is a part on the painted face (`WallitMouth.cs`) that opens and closes with the loudness of
+line back to back. Nobody talks all the time: `VoiceDirector.cs` gates every line (Slice's and his). Story beats, boss waves and Slice running low are key and always play; wave starts, level-ups, chests and home runs follow after a short gap; kill, streak, hurt, idle and banter barks need 16 s of quiet and a cooldown per line and per reason. His mouth is a part on the painted face (`WallitMouth.cs`) that opens and closes with the loudness of
 what he says.
 
 ## Canon established here

@@ -144,7 +144,7 @@ public class SliceVoice : MonoBehaviour {
         lastReadyAt = Time.time;
         Begin(BReady, 1.3f);
         string[] bank = wave % 10 == 0 ? BossWave : Wave;
-        Say(bank, "wave", 2, true);
+        Say(bank, wave % 10 == 0 ? "boss-wave" : "wave");
     }
 
     void Killed(Enemy foe) {
@@ -158,7 +158,7 @@ public class SliceVoice : MonoBehaviour {
             lastNearAt = Time.time;
             LookAtWallit();
             Begin(BGlance, 1.1f);
-            Say(Near, "near-miss", 2, false);
+            Say(Near, "near-miss");
             return;
         }
         killsSince++;
@@ -166,7 +166,7 @@ public class SliceVoice : MonoBehaviour {
             killsSince = 0;
             lastKillLineAt = Time.time;
             Begin(BFlourish, 0.7f);
-            Say(Kill, "kill", 1, false);
+            Say(Kill, "kill");
         }
     }
 
@@ -204,7 +204,7 @@ public class SliceVoice : MonoBehaviour {
         if (slice.Health < lastHealth) {
             Begin(BStagger, 0.6f);
             if (slice.Health > LowHealth) {
-                Say(Hurt, "hurt", 3, true);
+                Say(Hurt, "hurt");
             }
         }
         lastHealth = slice.Health;
@@ -214,7 +214,7 @@ public class SliceVoice : MonoBehaviour {
             lowSaid = true;
             Note("behavior", BHunch);
             Behaviors.Add(BHunch);
-            Say(Low, "low", 3, true);
+            Say(Low, "low");
         } else if (!low && slice.Health > LowHealth + 25) {
             lowSaid = false;
         }
@@ -228,11 +228,21 @@ public class SliceVoice : MonoBehaviour {
                 Begin(BFlip, 0.7f);
             }
             if (Random.value < 0.6f) {
-                Say(Idle, "idle", 1, false);
+                Say(Idle, "idle");
             }
         }
+        if (keyBank != null && Time.time < keyUntil && WallitVoice.FloorFree) {
+            string[] bank = keyBank;
+            keyBank = null;
+            Say(bank, keyWhy);
+        }
         if (!banterRunning && quiet && !low && Time.time >= nextBanterAt && Time.time >= nextLineAt) {
-            StartCoroutine(TradeLines());
+            // Banter is ambient: the director may say not now, and she tries again later.
+            if (WallitVoice.FloorFree && VoiceDirector.Allow("banter", "banter", VoiceDirector.Priority.Bark)) {
+                StartCoroutine(TradeLines());
+            } else {
+                nextBanterAt = Time.time + 8f;
+            }
         }
     }
 
@@ -262,15 +272,26 @@ public class SliceVoice : MonoBehaviour {
     // ---------------------------------------------------------------- speaking
 
     // Picks a line from the bank that is not the last one said (by anyone, any bank): no repeats back to back.
-    void Say(string[] bank, string why, int priority, bool force) {
+    // The VoiceDirector gates it: barks are dropped when it is too soon or busy, a key line waits for the floor.
+    string[] keyBank;
+    string keyWhy;
+    float keyUntil;
+
+    void Say(string[] bank, string why) {
+        VoiceDirector.Priority priority = VoiceDirector.PriorityOf(why);
         if (banterRunning) {
             return;
         }
-        if (!force && Time.time < nextLineAt) {
+        if (priority == VoiceDirector.Priority.Bark && Time.time < nextLineAt) {
             return;
         }
-        // One voice at a time: not over Wallit.
-        if (!WallitVoice.FloorFree && WallitVoice.FloorOwner != "slice") {
+        // One voice at a time, nobody over anybody (Wallit's included).
+        if (!WallitVoice.FloorFree) {
+            if (priority == VoiceDirector.Priority.Key) {
+                keyBank = bank;
+                keyWhy = why;
+                keyUntil = Time.time + 5f;
+            }
             return;
         }
         string line = bank[Random.Range(0, bank.Length)];
@@ -278,7 +299,7 @@ public class SliceVoice : MonoBehaviour {
         while (line == LastLine && guard++ < 8) {
             line = bank[Random.Range(0, bank.Length)];
         }
-        if (line == LastLine) {
+        if (line == LastLine || !VoiceDirector.Allow(line, why, priority)) {
             return;
         }
         nextLineAt = Time.time + 3.2f;
@@ -315,6 +336,7 @@ public class SliceVoice : MonoBehaviour {
             }
             float len = clip != null ? clip.length : WallitVoice.EstimateSeconds(line);
             WallitVoice.Claim("slice", len);
+            VoiceDirector.Spoke(line, why, VoiceDirector.PriorityOf(why));
             Note("line", why + "|" + line);
             WallitVoice.OnSliceSaid(why);
             return len;
