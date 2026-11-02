@@ -29,6 +29,7 @@ public static class Playtest {
         new PlaytestScenario("musician", "Slice, the musician at the piano: her health bar is titled Slice, and she sits on the bench playing the piano clip with her hands on the keys while the piano music plays. The bot holds fire and frames Slice so wave 1's Yo Bots reach her: she stands (standUp), stabs and slashes the one in reach with her knife (stab / slash with OnSliceKnifeHit blade damage) at most once every 2.5 s, and flinches when hit (hurt); then the bot clears the wave (with Encore pulsing from PianoRecital) and she sits back down (sitDown) to play (piano). Then it holds fire from wave 2 (after 20 s, setup: a ring of Plated Yo Bots dropped around the bench, topped up every 8 s) until the bots empty her bar, she falls (defeat), and the game-over panel appears", 330, "content"),
         new PlaytestScenario("slice", "Slice guarding the circle: inspects the live Slice on PianoRecital (bob / coat / boots / scalpel knife from front and side, hands on keys, piano music), runs the full musician scenario (standUp, stab, slash, sitDown, piano, hurt, defeat before game over), and verifies all 8 Animator clips", 220, "content"),
         new PlaytestScenario("personality", "Slice's personality: she speaks short clipped lines (subtitles; the log shows each) at wave starts, kills, near-misses and when hurt or low, never the same line twice in a row, and shows distinct body behaviors (idle scan / knife flip, ready at a wave, kill flourish, glance, stagger, hunch when low). Wallit and Slice trade a short exchange. Real input: the bot fights wave 1 with the bat; then it holds fire, and from 15 s on (setup) a ring of Plated Yo Bots is dropped on her until she is low", 240, "content"),
+        new PlaytestScenario("voice-gap", "The voice director: five minutes of real wave defense with the default numbers (barks at least VoiceDirector.BarkGap apart, same line and same reason on a cooldown, story and boss-wave lines always through, never two lines at once). Real input: the bot fights with the bat. Events voice-line (each line with its priority), voice-drop (barks the director held back), voice-gap (lines per minute, smallest gaps, overlaps, key lines)", 330, "content"),
         new PlaytestScenario("voice", "Wallit talks: he barks short money lines (subtitles; the log shows each, with why) at kills and streaks, big hits and home runs, getting hurt, wave starts and level-ups, never the same line twice in a row and never over Slice; his mouth opens and closes with each line, in the game camera and in a close-up (events wallit-line, wallit-mouth, wallit-voice). Real input: the bot fights with the bat until each kind of line was heard, then stands and takes a hit, then a close-up of his face while he speaks (setup: one line is asked for)", 300, "content"),
         new PlaytestScenario("upgrades", "The bat upgrades: the shop lists Corked Core and Aluminum! Not wood! (setup: both owned in the sandbox) and the metal bat is in the player's hands; wave 1's first level-up cards are read off the screen (bat upgrades, no retired cast words); setup: the testing wave key (=) to wave 14 for tougher Plated Yo Bots and a handful of bat boons granted (Wide Arc, Pine Tar, Ice Bat, Live Wire, Grand Slam, Long Ball and more), each one's mark on the bat logged; then the bot plays until each effect is seen: a wider swing, bots burning, bots slowed, chain sparks shorting bots out, a 360 spin swing, batted bolts landing. Then Thunder Bat is granted for a lightning spin, and 30 s of play", 330, "content"),
         new PlaytestScenario("wallit", "Wallit as the player: checks Wallit's wallet body, bills, gloves, sneakers and bat on the live player, exercises running, locked-on strafing (strafeLeft, strafeRight, backPedal), jumping (jump, landing), getting hit (hitReact), and every bat swing (swing1, swing2, swing3, groundSmash, homeRunCharge, homeRunRelease) with OnBatContact damage, then checks all 17 Animator clips", 200, "content"),
@@ -228,6 +229,8 @@ public static class Playtest {
                 yield return MusicianRun(options);
             } else if (id == "personality") {
                 yield return PersonalityRun(options);
+            } else if (id == "voice-gap") {
+                yield return VoiceGapRun(options);
             } else if (id == "voice") {
                 yield return VoiceRun(options);
             } else if (id == "slice") {
@@ -1250,6 +1253,51 @@ public static class Playtest {
 
     static int sliceVoiceTold;
 
+    // The voice director over five minutes of real play at the default numbers.
+    static IEnumerator VoiceGapRun(PlaytestOptions options) {
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+        if (player == null || WallitVoice.Instance == null) {
+            run.Problem(PlaytestSeverity.Bug, "no Wallit player or no WallitVoice in the run");
+            yield break;
+        }
+        run.Scene("Voice director");
+        run.Event("voice-numbers", "bark gap " + VoiceDirector.BarkGap + " s, normal gap " + VoiceDirector.NormalGap + " s, line cooldown " + VoiceDirector.LineCooldown + " s, reason cooldown " + VoiceDirector.ReasonCooldown + " s");
+        float start = Time.realtimeSinceStartup;
+        int told = 0;
+        int drops = 0;
+        yield return Fight(player, () => {
+            while (told < VoiceDirector.Events.Count) {
+                string[] bits = VoiceDirector.Events[told++].Split('|');
+                if (bits[0] == "play") {
+                    run.Event("voice-line", bits[1] + " (" + bits[2] + "): " + bits[3]);
+                } else {
+                    drops++;
+                    if (drops <= 12) {
+                        run.Event("voice-drop", bits[1] + " held back (" + bits[2] + ")");
+                    }
+                }
+            }
+            return Time.realtimeSinceStartup - start >= 300f;
+        }, 400f, "five minutes of play", null, true);
+        float minutes = Mathf.Max(0.1f, (Time.realtimeSinceStartup - start) / 60f);
+        run.Event("voice-gap", VoiceDirector.Played + " lines in " + minutes.ToString("0.0") + " min (" + (VoiceDirector.Played / minutes).ToString("0.0") + " a minute), "
+            + VoiceDirector.KeyPlayed + " key, " + VoiceDirector.Denied + " barks held back, smallest bark gap " + VoiceDirector.SmallestBarkGap.ToString("0.0")
+            + " s, smallest gap of any kind " + VoiceDirector.SmallestGap.ToString("0.0") + " s, " + WallitVoice.Overlaps + " overlaps");
+        run.Metric("voiceLines", VoiceDirector.Played);
+        run.Metric("voiceKeyLines", VoiceDirector.KeyPlayed);
+        run.Metric("voiceHeldBack", VoiceDirector.Denied);
+        run.Metric("voiceOverlaps", WallitVoice.Overlaps);
+        if (WallitVoice.Overlaps > 0) {
+            run.Problem(PlaytestSeverity.Bug, "two voice lines played at once " + WallitVoice.Overlaps + " time(s)");
+        }
+        if (VoiceDirector.SmallestBarkGap < VoiceDirector.BarkGap - 0.5f) {
+            run.Problem(PlaytestSeverity.Bug, "a bark came " + VoiceDirector.SmallestBarkGap.ToString("0.0") + " s after another line (minimum " + VoiceDirector.BarkGap + " s)");
+        }
+        if (VoiceDirector.KeyPlayed == 0) {
+            run.Problem(PlaytestSeverity.Bug, "no key-moment line (story beat, boss wave, Slice low) was spoken");
+        }
+    }
+
     static bool Heard(params string[] reasons) {
         foreach (string reason in reasons) {
             int n;
@@ -1269,6 +1317,10 @@ public static class Playtest {
             yield break;
         }
         run.Scene("Wallit: voice");
+        // This scenario wants to hear every kind of bark, so the director's gaps are set short for it (a setup shortcut).
+        VoiceDirector.BarkGap = 2f;
+        VoiceDirector.LineCooldown = 5f;
+        VoiceDirector.ReasonCooldown = 2f;
         voiceTold = 0;
         sliceVoiceTold = 0;
         WallitMouth mouth = player.GetComponentInChildren<WallitMouth>();
@@ -1280,7 +1332,7 @@ public static class Playtest {
         // 1. The real fight, in the game camera: kills, big hits, the wave starts, a level-up.
         yield return Fight(player, () => {
             TellVoice();
-            return Heard("kill", "streak", "golden") && Heard("finisher", "smash", "home-run") && Heard("wave", "beat") && Heard("level-up", "chest");
+            return Heard("kill", "streak", "golden") && Heard("finisher", "smash", "home-run") && Heard("wave", "boss-wave", "beat") && Heard("level-up", "chest");
         }, 200f, "Wallit's kill, big-hit, wave and level-up lines", null, true);
         if (run.Done) {
             yield break;
@@ -2262,6 +2314,9 @@ public static class Playtest {
             yield break;
         }
         run.Scene("Slice: personality");
+        VoiceDirector.BarkGap = 2f;
+        VoiceDirector.LineCooldown = 5f;
+        VoiceDirector.ReasonCooldown = 2f;
         int told = 0;
         float start = Time.realtimeSinceStartup;
         float fightUntil = start + 60f;

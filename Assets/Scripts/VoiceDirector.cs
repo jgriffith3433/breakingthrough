@@ -1,0 +1,120 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+// The one voice director. Every spoken line in the game (WallitVoice's barks, beats and replies, SliceVoice's lines and
+// banter) asks Allow() before it speaks. Three priorities:
+//   Key    story beats, boss waves, Slice running low and Wallit's answer: always play. If the floor is busy they wait
+//          for it (never over another line), and they ignore the gaps.
+//   Normal wave starts, level-ups, chests, home runs, golden kills, the opening hello: play when the floor is free and
+//          the short NormalGap has passed since the last line.
+//   Bark   ambient and combat chatter (kills, streaks, big hits, hurt, near-misses, idle, banter): dropped when anyone is
+//          talking, when less than BarkGap seconds have passed since the last line of any priority, or when the same
+//          line or reason spoke inside its cooldown.
+// The numbers are public fields so they can be tuned in one place. Runs on unscaled time.
+public static class VoiceDirector {
+    public enum Priority { Bark = 0, Normal = 1, Key = 2 }
+
+    // Global minimum gap between a bark and the last line of any kind.
+    public static float BarkGap = 16f;
+    // Minimum gap before a Normal line.
+    public static float NormalGap = 3f;
+    // The same line may not play again inside this many seconds (Bark and Normal).
+    public static float LineCooldown = 60f;
+    // One reason ("kill", "hurt", "idle"...) may not bark again inside this many seconds.
+    public static float ReasonCooldown = 30f;
+
+    // Playtest and diagnostics.
+    public static int Played { get; private set; }
+    public static int Denied { get; private set; }
+    public static int KeyPlayed { get; private set; }
+    public static float LastLineAt { get; private set; } = -999f;
+    public static float SmallestGap { get; private set; } = 999f;
+    public static float SmallestBarkGap { get; private set; } = 999f;
+    public static readonly List<string> Events = new List<string>();
+
+    static readonly Dictionary<string, float> lineAt = new Dictionary<string, float>();
+    static readonly Dictionary<string, float> reasonAt = new Dictionary<string, float>();
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    public static void Reset() {
+        Played = 0;
+        Denied = 0;
+        KeyPlayed = 0;
+        LastLineAt = -999f;
+        SmallestGap = 999f;
+        SmallestBarkGap = 999f;
+        Events.Clear();
+        lineAt.Clear();
+        reasonAt.Clear();
+    }
+
+    // Which priority a reason (the "why" a line is said for) has.
+    public static Priority PriorityOf(string why) {
+        switch (why) {
+            case "beat":
+            case "boss-wave":
+            case "low":
+            case "slice-low":
+                return Priority.Key;
+            case "wave":
+            case "level-up":
+            case "chest":
+            case "home-run":
+            case "golden":
+            case "setup":
+                return Priority.Normal;
+            default:
+                return Priority.Bark;
+        }
+    }
+
+    // True when a line may be said right now. Every priority needs a free floor (Key lines wait for it, they are not
+    // dropped). A line that is allowed is not yet logged: call Spoke() when it really starts.
+    public static bool Allow(string line, string why, Priority priority) {
+        float now = Time.unscaledTime;
+        if (!WallitVoice.FloorFree) {
+            return false;
+        }
+        if (priority == Priority.Key) {
+            return true;
+        }
+        float since = now - LastLineAt;
+        if (since < (priority == Priority.Bark ? BarkGap : NormalGap)) {
+            return Deny(why, "gap");
+        }
+        float at;
+        if (lineAt.TryGetValue(line, out at) && now - at < LineCooldown) {
+            return Deny(why, "line-cooldown");
+        }
+        if (priority == Priority.Bark && reasonAt.TryGetValue(why, out at) && now - at < ReasonCooldown) {
+            return Deny(why, "reason-cooldown");
+        }
+        return true;
+    }
+
+    static bool Deny(string why, string cause) {
+        Denied++;
+        Events.Add("drop|" + why + "|" + cause);
+        return false;
+    }
+
+    // A line started: stamp the gaps.
+    public static void Spoke(string line, string why, Priority priority) {
+        float now = Time.unscaledTime;
+        float since = now - LastLineAt;
+        if (LastLineAt > -900f) {
+            SmallestGap = Mathf.Min(SmallestGap, since);
+            if (priority == Priority.Bark) {
+                SmallestBarkGap = Mathf.Min(SmallestBarkGap, since);
+            }
+        }
+        LastLineAt = now;
+        lineAt[line] = now;
+        reasonAt[why] = now;
+        Played++;
+        if (priority == Priority.Key) {
+            KeyPlayed++;
+        }
+        Events.Add("play|" + why + "|" + priority + "|" + line);
+    }
+}
