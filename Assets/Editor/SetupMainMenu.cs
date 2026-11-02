@@ -64,9 +64,10 @@ static class SetupMainMenu {
     }
 
     static void EnsureBuild() {
-        var scenes = new EditorBuildSettingsScene[2];
+        var scenes = new EditorBuildSettingsScene[3];
         scenes[0] = new EditorBuildSettingsScene(ScenePath, true);
         scenes[1] = new EditorBuildSettingsScene("Assets/scene2.unity", true);
+        scenes[2] = new EditorBuildSettingsScene("Assets/Campaign.unity", true);
         EditorBuildSettings.scenes = scenes;
         AssetDatabase.SaveAssets();
     }

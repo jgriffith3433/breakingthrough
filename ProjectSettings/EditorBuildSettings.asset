@@ -11,5 +11,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/scene2.unity
     guid: 78d60f5ba286e834db08e1352fc0553d
+  - enabled: 1
+    path: Assets/Campaign.unity
+    guid: 47a9da6566f04ee5990bc50d24efed3b
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0
