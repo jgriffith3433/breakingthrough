@@ -32,7 +32,8 @@ The project folder is `breakingthrough`. The Unity product name is still `Contro
 | Scene | Role |
 |---|---|
 | `Assets/MainMenu.unity` | Shop and run setup. Build index 0 |
-| `Assets/scene2.unity` | The Moonlit Hollow, where runs happen. Build index 1 |
+| `Assets/scene2.unity` | The Moonlit Hollow, where Arcade runs happen. Build index 1 |
+| `Assets/Campaign.unity` | Campaign's chapter scene, an empty scene the game fills in code (`ChapterScene.cs`). Build index 2 |
 
 A build starts at the menu. Pressing Play with `scene2` open skips the menu and starts a run. After a loss, any key returns to the shop.
 

@@ -35,6 +35,7 @@ public static class Playtest {
         new PlaytestScenario("wallit", "Wallit as the player: checks Wallit's wallet body, bills, gloves, sneakers and bat on the live player, exercises running, locked-on strafing (strafeLeft, strafeRight, backPedal), jumping (jump, landing), getting hit (hitReact), and every bat swing (swing1, swing2, swing3, groundSmash, homeRunCharge, homeRunRelease) with OnBatContact damage, then checks all 17 Animator clips", 200, "content"),
         new PlaytestScenario("locomotion", "Wallit's feet on the ground: walks, runs, starts, stops and turns free, then locked on to a Yo Bot strafes left and right, back pedals, runs at it and stops, all through the keys. Each segment logs the planted foot's slide and the hips' largest jump (`loco` events; a slide or a pop is a bug)", 75, "content"),
         new PlaytestScenario("cast", "The new cast, in 90 s: the main menu with the key art up (MenuArt, its size and that the menu shows it), What's new opened from the site over the game with the release note naming Wallit, Slice and the bots (read from releases.json), then a run where the player is Wallit with his bat, the bar says Slice, and wave 1's Yo Bots close in and are batted. The AGENTS.md and README cast text lives in the repo, not the build: the review reads it from the diff", 120, "content"),
+        new PlaytestScenario("modes", "The mode select: the main menu shows Campaign and Arcade; Campaign opens the three case files (save slots, setup: the sandbox keeps them off the real save), opening an empty file loads the placeholder Chapter 1 scene with Wallit and Slice's lines, Menu returns and the file now reads Chapter 1 with its time on the books, Erase (asked twice) empties it; then Arcade starts today's wave defense and the bot plays 40 s of it with the bat. Events mode-select, campaign-files, chapter-open, chapter-lines, campaign-saved, campaign-erased, arcade-start", 200, "content"),
         new PlaytestScenario("story", "The story: the intro over the frozen Hollow (read page by page: who Wallit is, what the circle is, why Slice must not fall; a Skip button is on it), wave 1's story beats in canon voices, then setup: the testing wave key to wave 10 and wave 30 for the boss-wave title cards and beats (Yo Bots chirpy, Wallit on money, Slice clipped), and setup: wave 30's waiting bots trimmed to the boss and Slice topped up so the bat can finish it with real swings. Clearing wave 30 plays the finale pages and the ADDRESS FILED ending screen; the bot presses Keep going into overtime. Events intro-*, beat, finale-*, ending", 600, "content"),
         new PlaytestScenario("polish", "The final polish pass, on any screen size (run it on desktop and on the phone): the main menu, the HUD in wave 1, the level-up cards (setup: a level of bolts granted), the pause menu by its button, Resume, 40 s of real play, then the bot holds fire until Slice falls (setup: Plated Yo Bots ring her after 20 s) and the game-over panel reads Address struck off. Each screen gets a layout check (menu, hud, cards, pause, gameover), a stale-words check (no piano, keys or music-stopped words left), and a button-feel check (every button lifts on hover and sinks on press like the menu's); the audio-mix event says how many sounds played, how many stacked softer, how many were capped and how many dipped under a voice line", 420, "full"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.ai and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
@@ -202,6 +203,12 @@ public static class Playtest {
                     yield break;
                 }
             }
+            if (id == "modes") {
+                yield return ModesMenu();
+                if (run.Done) {
+                    yield break;
+                }
+            }
             if (id == "menus") {
                 yield return ShopMenu();
             }
@@ -251,6 +258,9 @@ public static class Playtest {
                 }
             } else if (id == "story") {
                 yield return StoryRun(options);
+            } else if (id == "modes") {
+                run.Event("arcade-start", "Arcade runs the wave defense: wave " + WaveDirector.Wave + ", the player is Wallit, the musician is Slice");
+                yield return Play(options, 40f, false);
             } else if (id == "cast") {
                 yield return CastRun(options);
             } else if (id == "wallit") {
@@ -488,6 +498,96 @@ public static class Playtest {
             run.Problem(PlaytestSeverity.Polish, "menu key art Resources/UI/MenuArt is missing");
         }
         yield return new WaitForSecondsRealtime(1f);
+    }
+
+    // The mode select, played through the buttons like a mouse. The sandbox keeps the case files off the real save.
+    static IEnumerator ModesMenu() {
+        MetaProgress.EnterSandbox(true);
+        CampaignSave.EnterSandbox();
+        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+        if (menu == null || menu.CampaignButton == null || menu.ArcadeButton == null) {
+            run.Problem(PlaytestSeverity.Bug, "the main menu has no Campaign and Arcade buttons");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        CheckScreen("menu");
+        run.Event("mode-select", "main menu shows \"" + menu.CampaignButton.GetComponentInChildren<Text>().text + "\" and \"" + menu.ArcadeButton.GetComponentInChildren<Text>().text + "\"");
+        run.Metric("modeButtons", 2);
+        run.Progress(0.1f);
+        yield return new WaitForSecondsRealtime(2f);
+
+        run.Note("opening Campaign");
+        Tap(menu.CampaignButton.gameObject);
+        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files");
+        if (run.Done) {
+            yield break;
+        }
+        CheckScreen("campaign-files", 590);
+        CampaignPanel panel = CampaignPanel.Instance;
+        string[] titles = new string[CampaignSave.SlotCount];
+        for (int i = 0; i < titles.Length; i++) {
+            titles[i] = panel.SlotButtons[i].GetComponentsInChildren<Text>()[0].text + " / " + panel.SlotButtons[i].GetComponentsInChildren<Text>()[1].text;
+        }
+        run.Event("campaign-files", CampaignSave.SlotCount + " case files: " + string.Join(" | ", titles));
+        run.Metric("campaignSlots", CampaignSave.SlotCount);
+        yield return new WaitForSecondsRealtime(2f);
+
+        run.Note("opening case file 1");
+        Tap(panel.SlotButtons[0].gameObject);
+        yield return run.Until(() => ChapterScene.Instance != null && SceneManager.GetActiveScene().name == CampaignSave.Scene, 30f, "the chapter scene");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Chapter 1");
+        ChapterScene chapter = ChapterScene.Instance;
+        run.Event("chapter-open", chapter.Title + " (scene " + CampaignSave.Scene + ", case file " + (CampaignSave.Active + 1) + ")");
+        yield return run.Until(() => chapter.LinesShown >= chapter.LineCount, 20f, "the chapter's lines");
+        if (run.Done) {
+            yield break;
+        }
+        CheckScreen("chapter");
+        run.Event("chapter-lines", chapter.LinesShown + " of " + chapter.LineCount + " lines shown (placeholder chapter)");
+        run.Metric("chapterScene", 1);
+        yield return new WaitForSecondsRealtime(3f);
+        Tap(chapter.MenuButton.gameObject);
+        yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu after the chapter");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Main Menu");
+        yield return new WaitForSecondsRealtime(1f);
+        menu = Object.FindAnyObjectByType<MainMenu>();
+        Tap(menu.CampaignButton.gameObject);
+        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files again");
+        if (run.Done) {
+            yield break;
+        }
+        panel = CampaignPanel.Instance;
+        CampaignSave.Slot slot = CampaignSave.Get(0);
+        string info = panel.SlotButtons[0].GetComponentsInChildren<Text>()[0].text + " / " + panel.SlotButtons[0].GetComponentsInChildren<Text>()[1].text;
+        run.Event("campaign-saved", info);
+        if (!slot.used) {
+            run.Problem(PlaytestSeverity.Bug, "case file 1 did not keep the chapter");
+        }
+        yield return new WaitForSecondsRealtime(2f);
+        Tap(panel.EraseButtons[0].gameObject);
+        yield return null;
+        Tap(panel.EraseButtons[0].gameObject);
+        yield return null;
+        run.Event("campaign-erased", "case file 1 now reads: " + panel.SlotButtons[0].GetComponentsInChildren<Text>()[1].text);
+        if (CampaignSave.Get(0).used) {
+            run.Problem(PlaytestSeverity.Bug, "Erase did not empty case file 1");
+        }
+        yield return new WaitForSecondsRealtime(1.5f);
+        Tap(panel.BackButton.gameObject);
+        yield return null;
+        yield return new WaitForSecondsRealtime(0.5f);
+
+        run.Note("starting Arcade");
+        run.Progress(0.4f);
+        Tap(menu.ArcadeButton.gameObject);
+        run.Event("tap", "Arcade");
+        yield return run.Until(() => WaveDirector.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the game scene after tapping Arcade");
     }
 
     static IEnumerator ShopMenu() {

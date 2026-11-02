@@ -124,6 +124,9 @@ public class MainMenu : MonoBehaviour {
     // The Play and Settings buttons, for the playtest's touch and settings scenarios.
     public Button PlayButton { get; private set; }
     public Button SettingsButton { get; private set; }
+    // The two modes: Campaign opens the case files, Arcade starts today's wave defense (PlayButton is the same button).
+    public Button CampaignButton { get; private set; }
+    public Button ArcadeButton { get { return PlayButton; } }
 
     void Awake() {
         Time.timeScale = 1f;
@@ -169,7 +172,7 @@ public class MainMenu : MonoBehaviour {
             statusText.text = hint;
             statusText.color = MoonSoft;
         }
-        if (SettingsPanel.IsOpen || SettingsPanel.ClosedFrame == Time.frameCount) {
+        if (SettingsPanel.IsOpen || SettingsPanel.ClosedFrame == Time.frameCount || CampaignPanel.IsOpen || CampaignPanel.ClosedFrame == Time.frameCount) {
             return;
         }
         if (PlayInput.GetKeyDown(KeyCode.RightArrow) || PlayInput.GetKeyDown(KeyCode.PageDown)) {
@@ -197,6 +200,10 @@ public class MainMenu : MonoBehaviour {
             GameAudio.Play("coin", 0.55f);
         }
         SceneManager.LoadScene(MetaProgress.GameScene);
+    }
+
+    void OpenCampaign() {
+        CampaignPanel.Open();
     }
 
     void OpenSettings() {
@@ -267,7 +274,7 @@ public class MainMenu : MonoBehaviour {
         float w = size.x - inset.x - inset.y - margin * 2f;
         float h = size.y - inset.z - inset.w - margin * 2f;
 
-        hint = UiFit.Touch ? "Tap Play to start. Swipe the case file to turn its pages." : "Enter plays. Arrow keys or the wheel turn the case file's pages.";
+        hint = UiFit.Touch ? "Campaign tells the story; Arcade is the endless wave defense. Swipe the case file to turn its pages." : "Campaign is the story; Arcade (Enter) is the wave defense. Arrow keys or the wheel turn the case file's pages.";
         if (builtMode == UiMode.Tall) {
             BuildTall(desk, w, h);
         } else {
@@ -435,13 +442,18 @@ public class MainMenu : MonoBehaviour {
         return value;
     }
 
-    // Play, the big red stamp, and Settings beside it.
+    // The mode select: Campaign (the case files) and Arcade (today's wave defense, the big red stamp), then Settings.
     void BuildPlayRow(RectTransform parent, float x, float y, float w, float h) {
-        float gap = compact ? 12f : 16f;
-        float playWidth = Mathf.Round((w - gap) * 0.62f);
-        var play = MakeButton(parent, "Play", x, y, playWidth, h, compact ? 40 : 44, Play, true);
+        float gap = compact ? 10f : 14f;
+        float campaignWidth = Mathf.Round((w - gap * 2f) * 0.34f);
+        float arcadeWidth = Mathf.Round((w - gap * 2f) * 0.38f);
+        float settingsWidth = w - campaignWidth - arcadeWidth - gap * 2f;
+        int size = compact ? 28 : 32;
+        CampaignButton = MakeButton(parent, "Campaign", x, y, campaignWidth, h, size, OpenCampaign, false, new Color(Tabs[1].r * 0.5f, Tabs[1].g * 0.5f, Tabs[1].b * 0.5f, 1f));
+        var play = MakeButton(parent, "Arcade", x + campaignWidth + gap, y, arcadeWidth, h, size + 4, Play, true);
         PlayButton = play;
-        SettingsButton = MakeButton(parent, "Settings", x + playWidth + gap, y, w - playWidth - gap, h, compact ? 28 : 30, OpenSettings);
+        SettingsButton = MakeButton(parent, "Settings", x + campaignWidth + arcadeWidth + gap * 2f, y, settingsWidth, h, compact ? 24 : 26, OpenSettings);
+        Enter(CampaignButton.GetComponent<RectTransform>(), new Vector2(0f, -24f), 0.4f);
         Enter(play.GetComponent<RectTransform>(), new Vector2(0f, -24f), 0.45f);
     }
 
@@ -577,8 +589,8 @@ public class MainMenu : MonoBehaviour {
         Paragraph(TabBriefing, "Waves pay coins. Bosses and the Golden Yo Bot pay more. Every " + MetaProgress.RangeLabel() + " drops one. Spend them on upgrades, or on a later start once you've reached wave 10.", (int)textBody, FontStyle.Normal, Moon);
         Paragraph(TabBriefing, "How to play", heading, FontStyle.Bold, Gold);
         Paragraph(TabBriefing, UiFit.Touch
-            ? "The stick moves Wallit. Swing, Lock and Jump are on the right. Tap Play to start; after a run you come back here."
-            : "WASD moves, click swings, hold to wind up a home run, Shift locks on. Enter or Play starts; after a run, M brings you back here.", (int)textBody, FontStyle.Normal, Moon);
+            ? "The stick moves Wallit. Swing, Lock and Jump are on the right. Campaign tells the story. Tap Arcade for the wave defense; after a run you come back here."
+            : "WASD moves, click swings, hold to wind up a home run, Shift locks on. Enter or Arcade starts the wave defense; after a run, M brings you back here.", (int)textBody, FontStyle.Normal, Moon);
     }
 
     void BuildLastRun() {
@@ -793,7 +805,7 @@ public class MainMenu : MonoBehaviour {
         } else if (startWave <= 1) {
             startText.text = "Starts at wave 1. Later starts cost 10 coins per 10 waves.";
         } else {
-            startText.text = "Starts at wave " + startWave + ". Play spends " + startWave + " coins.";
+            startText.text = "Starts at wave " + startWave + ". Arcade spends " + startWave + " coins.";
         }
         lowerStart.interactable = startWave > 1;
         raiseStart.interactable = startWave + 10 <= maxStart && MetaProgress.Coins >= startWave + 10;

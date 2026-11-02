@@ -71,9 +71,28 @@ the wave beats' Wallit lines above are spoken too. One voice at a time: he waits
 line back to back. Nobody talks all the time: `VoiceDirector.cs` gates every line (Slice's and his). Story beats, boss waves and Slice running low are key and always play; wave starts, level-ups, chests and home runs follow after a short gap; kill, streak, hurt, idle and banter barks need 16 s of quiet and a cooldown per line and per reason. His mouth is a part on the painted face (`WallitMouth.cs`) that opens and closes with the loudness of
 what he says.
 
+## Campaign and Arcade
+
+The main menu offers two ways in. **Arcade** is the Moonlit Hollow as it has always been: waves, bolts, boons, the shop, the
+run that ends when Slice falls (everything above). **Campaign** tells the story in order, one **chapter** at a time, in
+three **case files** (save slots). A case file is where the Department keeps your place: empty, it reads "No file yet";
+opened, it reads the chapter you are on and how long you have been on the books. The shop's coins and upgrades are
+Arcade's and stay Arcade's.
+
+Chapters are numbered and named after a stamp. **Chapter 1: Return to Sender** is the first, and for now only a
+placeholder: a card in the Hollow with Wallit and Slice trading the premise (the Department stamped him, found no sender,
+and Slice has no refund for him). The chapters after it are not written yet.
+
+- Wallit: "Return to sender. Which sender? I want a refund."
+- Slice: "No sender. No refund. Stay in the circle."
+
+`Assets/Scripts/Story.cs` holds the chapter data (`Story.Chapters`); `CampaignSave.cs` holds the case files;
+`CampaignPanel.cs` is the slot screen; `ChapterScene.cs` builds the placeholder in `Assets/Campaign.unity`.
+
 ## Canon established here
 
 - The circle is the one filed address in the Moonlit Hollow; whatever is inside it exists.
 - Wallit was stamped "Return to sender" and thrown in. He has no address of his own.
 - Yo Bots and Spider Bots are sent to strike the circle's address. Wave 30's Spider Bot carries the order.
 - The Place Department is the thing that files and clears. The creature behind the order is never named.
+- Campaign is the story in chapters, kept in three case files; Arcade is the endless Hollow. Chapter 1 is "Return to Sender".
