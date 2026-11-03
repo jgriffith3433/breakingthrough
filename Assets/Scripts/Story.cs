@@ -15,6 +15,24 @@ public static class Story {
         "W|Guard Slice. Swing at anything chirpy. Pay up.",
     };
 
+    // Campaign chapters (Docs/Story.md, "Campaign and Arcade"). Only the first exists, as a placeholder card.
+    public struct Chapter {
+        public string Title;
+        public string Place;
+        public string[] Lines;
+    }
+
+    public static readonly Chapter[] Chapters = {
+        new Chapter {
+            Title = "Chapter 1: Return to Sender",
+            Place = "The Moonlit Hollow",
+            Lines = new[] {
+                "W|Return to sender. Which sender? I want a refund.",
+                "S|No sender. No refund. Stay in the circle.",
+            },
+        },
+    };
+
     public static readonly string[] Finale = {
         "N|The Spider Bot comes apart. The order drops.",
         "W|\"Strike this address.\" Stamped DENIED. Ha.",
