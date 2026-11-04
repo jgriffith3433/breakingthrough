@@ -528,7 +528,7 @@ public class ChapterHub : MonoBehaviour {
         RectTransform root = canvasGo.GetComponent<RectTransform>();
 
         status = scene.Label(root, "", 26, FontStyle.Bold, new Color(0.87f, 0.91f, 1f), 0f, 0f, 200f);
-        Corner(status.rectTransform, new Vector2(0f, 1f), new Vector2(24f, -20f), new Vector2(900f, 190f));
+        Corner(status.rectTransform, new Vector2(0f, 1f), new Vector2(24f, -20f), new Vector2(1400f, 300f));
         status.alignment = TextAnchor.UpperLeft;
         status.resizeTextForBestFit = false;
 

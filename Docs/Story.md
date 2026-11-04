@@ -211,20 +211,27 @@ with chapters behind it also has a **Hub** button on its card, so reopening a fi
 
 Inside the circle Wallit is on the books, and the books keep an **account** for him: every bot he clears adds **XP** (5 for a Yo Bot, twice
 its bolts for the heavier kinds, a boss pays 50 more), shown as `LV 2   XP 34/90` top left. A level is a clause the books accept: Wallit
-earns four abilities, all money (`CampaignProgress.cs`):
+earns seven abilities, all money (`CampaignProgress.cs`):
 
 - **Spare Change** (level 2): +15% bat damage.
 - **Refund** (level 3): press **C**; a ring shoves the bots off him and stings them (8 m, 10 s to recharge; bosses are stung, not shoved).
 - **Receipt** (level 4): every sixth kill, Slice is paid back 6 health.
 - **Chargeback** (level 5): +12% chance to crit with the bat.
+- **Coin Toss** (level 4): press **V**; a coin flies at the nearest bot (the ones in front first) and stings it from range. 4 s.
+- **Stamp Out** (level 5): press **B**; "DENIED!", a stamp on the ground stuns every bot within 7 m for 3 s (bosses for less) and stings them. 14 s.
+- **Escrow** (level 6): press **G**; Wallit's account is held, nothing touches him for 5 s ("HELD"). 20 s.
+
+Each active ability shows on the second line of the HUD (`X: Dodge   C: Refund 6 s   V: Coin Toss ready   B: LV 5`) with its key
+and its cooldown counting down; a locked one reads `LV n`. A level-up writes the unlock into the case file (`Slot.unlocked`, a bit per
+`Abilities` row), so it stays unlocked once earned.
 
 Inside the circle Wallit also has two moves of his own, **Campaign only** (`CampaignMoves.cs`; `CampaignMoves.Enabled` is the flag):
 
 - **The combo's three hits are distinct.** Deposit (a quick, light jab, 0.85x, short knock), Withdrawal (the backhand, 1.15x, shoves harder) and Overdraft! (the finisher, unchanged numbers); each has its own crack pitch and hit-stop and its name flashes on screen. Arcade's three swings stay as they were.
 - **The dodge (X):** a 6 m dash along the stick (back, with none), untouchable for 0.4 s, 0.9 s to recharge. A blow that lands inside the window, a claw, a leg stab or the Courier's stamp taken for Slice, finds nothing ("MISSED ME"), and a bot at his shoulder cannot start climbing him.
-- **Ability slots** (`CampaignProgress.SlotKeys`/`SlotFill`): X holds the dodge from the start, C takes Refund at level 3, and V is kept empty for the next ability. A new active ability is a row in `Abilities` plus a case in `CampaignProgress.Use`. Touch buttons for X and V are not made yet.
+- **Ability slots** (`CampaignProgress.SlotKeys`/`SlotFill`): X holds the dodge from the start, C takes Refund at level 3, V Coin Toss at 4, B Stamp Out at 5 and G Escrow at 6. A new active ability is a row in `Abilities` plus a case in `CampaignProgress.Use`. Touch buttons for X, V, B and G are not made yet.
 
-Levels are 30, 90, 180 and 300 XP. The account belongs to the case file (`CampaignSave.Slot.xp`), so three files hold three Wallits;
+Levels are 30, 90, 180, 300 and 450 XP (level 6 is the top). The account belongs to the case file (`CampaignSave.Slot.xp`), so three files hold three Wallits;
 it is Campaign's alone. Arcade has its own boons and shop (`MetaProgress`) and none of this reaches it: outside a chapter every number
 above reads as no effect. Slice does not level; she is already what the circle is.
 
@@ -247,4 +254,4 @@ above reads as no effect. Slice does not level; she is already what the circle i
 - The Registrar: Chapter 5's boss, a gold Titan Spider Bot with a ledger that reads the pages with every leg.
 - The Server: Chapter 4's boss, the first full Spider Bot. It offers the paper and will not strike until it has been refused three times.
 - The hub: between chapters the circle is a walkable office with Slice in the ring, a door per chapter (open as the file reaches it, shut after), a chapter board of six slips (filed, next, locked) and a vacant desk for an NPC. Cleared chapters can be replayed from it.
-- Wallit's account: inside the circle he is on the books, and fights add to it (XP). Levels unlock Spare Change, Refund, Receipt and Chargeback. Slice does not level. Campaign only, per case file.
+- Wallit's account: inside the circle he is on the books, and fights add to it (XP). Levels unlock Spare Change, Refund, Receipt, Chargeback, Coin Toss, Stamp Out and Escrow. Slice does not level. Campaign only, per case file.

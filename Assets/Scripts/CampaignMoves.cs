@@ -43,7 +43,7 @@ public static class CampaignMoves {
     }
 
     public static bool Invulnerable {
-        get { return Active && Time.time < invulnerableUntil; }
+        get { return Active && (Time.time < invulnerableUntil || CampaignProgress.ShieldUp); }
     }
 
     public static bool Dodging {
@@ -103,7 +103,7 @@ public static class CampaignMoves {
     public static void NoteAvoided(Enemy by) {
         Avoided++;
         Log.Add("avoided|" + (by != null ? BotRoster.Slug(by.Kind) : "stamp") + "|hit " + Avoided);
-        UpgradeLook.Say("MISSED ME", 0.8f, 120f);
+        UpgradeLook.Say(CampaignProgress.ShieldUp ? "HELD" : "MISSED ME", 0.8f, 120f);
     }
 }
 
