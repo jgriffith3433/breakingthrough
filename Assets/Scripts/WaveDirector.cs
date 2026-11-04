@@ -496,7 +496,7 @@ public class WaveDirector : MonoBehaviour {
     }
 
     // A Campaign chapter's bot, placed on a ring round the circle (the same ground check and drop as a wave's bots).
-    public Enemy SpawnForChapter(BotKind kind, bool boss, float radius) {
+    public Enemy SpawnForChapter(BotKind kind, bool boss, float radius, string bossName = null, int bossHits = 0) {
         Vector3 origin = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
         BotDef def = BotRoster.ForSpawn(kind, Wave);
         float angle = Random.Range(0f, Mathf.PI * 2f);
@@ -504,7 +504,11 @@ public class WaveDirector : MonoBehaviour {
         spot.y = GroundNear(spot, origin.y) + 0.55f + def.Scale * 0.08f;
         Enemy enemy = Spawn(def, spot, !boss);
         if (boss) {
-            enemy.MakeBoss();
+            if (bossName != null) {
+                enemy.MakeCourier(bossName, bossHits);
+            } else {
+                enemy.MakeBoss();
+            }
             UpgradeLook.Say(enemy.Title + " approaches!", 2.8f, 160f);
             GameAudio.Play("stomp", 1f, 0.6f);
         }

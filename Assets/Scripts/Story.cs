@@ -22,6 +22,7 @@ public static class Story {
         SurviveTime,  // Target seconds with Slice standing
         ReachPlace,   // Wallit walks Target metres from the circle along Bearing to the place
         DefeatBoss,   // the Alpha of Boss falls
+        HoldThenBoss, // Target bots down, then the Alpha of Boss (named BossName) falls
     }
 
     public struct Chapter {
@@ -33,6 +34,10 @@ public static class Story {
         public float Bearing;         // degrees from the circle, for ReachPlace
         public string Goal;           // what the objective line calls the place or the boss
         public BotKind Boss;          // the Alpha for DefeatBoss
+        public int BossHits;          // the named boss's health in bat hits (0: the Alpha's own)
+        public string BossName;       // a named boss with its own fight ("The Courier"); null: the plain Alpha
+        public string[] BossLines;    // said as the boss arrives
+        public string[] DefeatLines;  // the defeat beat, said over the field before the Chapter Complete card
         public BotKind[] Crew;        // the bots that come at the circle during the chapter
         public float Every;           // seconds between bots
         public int Cap;               // most bots alive at once
@@ -45,11 +50,21 @@ public static class Story {
     public static readonly Chapter[] Chapters = {
         new Chapter {
             Id = "return-to-sender", Title = "Chapter 1: Return to Sender", Place = "The Moonlit Hollow",
-            Objective = ChapterObjective.ClearCount, Target = 8, Goal = "Yo Bots",
+            Objective = ChapterObjective.HoldThenBoss, Target = 6, Goal = "Yo Bots", Boss = BotKind.YoBot, BossName = "The Courier", BossHits = 40,
             Crew = new[] { BotKind.YoBot }, Every = 3.4f, Cap = 4, Power = 1,
             Lines = new[] {
                 "W|Return to sender. Which sender? I want a refund.",
                 "S|No sender. No refund. Stay in the circle.",
+            },
+            BossLines = new[] {
+                "Y|Special delivery! Notice of striking!",
+                "S|The Courier. It reads the order out, then it lands.",
+                "W|Then it can read me the bill.",
+            },
+            DefeatLines = new[] {
+                "Y|Notice... undelivered... uploading... defeat?",
+                "W|Return to sender.",
+                "S|Clean.",
             },
             // The Stamp (Docs/CampaignBible.md). Lines are "<speaker>|<text>": N narration, W Wallit, S Slice, Y Yo Bot.
             // "C|<focus>" moves the camera (wallit, slice, wide) for the lines after it; "B|on" and "B|off" slide the

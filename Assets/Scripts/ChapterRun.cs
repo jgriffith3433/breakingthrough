@@ -47,6 +47,10 @@ public class ChapterRun : MonoBehaviour {
     public float PlaySeconds { get; private set; }
     public Vector3 Marker { get; private set; }
     public bool HasMarker { get; private set; }
+    public bool HasBoss { get { return data.Objective == Story.ChapterObjective.HoldThenBoss; } }
+    public bool BossUp { get { return boss != null && boss.Alive; } }
+    public Enemy BossEnemy { get { return boss; } }
+    public bool BossDown { get { return bossSpawned && !BossUp; } }
     public Button NextButton { get; private set; }
     public Button MenuButton { get; private set; }
     public bool CardUp { get { return card != null && card.activeSelf; } }
@@ -65,6 +69,10 @@ public class ChapterRun : MonoBehaviour {
     float spawnIn = 2.5f;
     Enemy boss;
     bool bossSpawned;
+    bool bossCalled;      // HoldThenBoss: the bots are down and the boss is on its way
+    float defeatIn = -1f; // HoldThenBoss: the defeat beat before the card
+    readonly List<string> queue = new List<string>();
+    float queueIn;
     float clock;
     float nextRing;
     GameObject beacon;
@@ -146,6 +154,7 @@ public class ChapterRun : MonoBehaviour {
             return;
         }
         PlaySeconds += Time.unscaledDeltaTime;
+        TickQueue();
         if (player == null && PlayerGrowth.Instance != null) {
             player = PlayerGrowth.Instance.transform;
         }
@@ -203,6 +212,38 @@ public class ChapterRun : MonoBehaviour {
                     Fx.Ring(Marker + Vector3.up * 0.2f, ReachRadius * 2.4f, new Color(1f, 0.82f, 0.38f, 0.8f), 1.2f);
                 }
                 break;
+            case Story.ChapterObjective.HoldThenBoss:
+                if (!bossCalled) {
+                    Progress = RunLog.RunKills;
+                    if (spawnIn <= 0f && alive < data.Cap && RunLog.RunKills + alive < data.Target) {
+                        SpawnCrew(director);
+                    }
+                    if (RunLog.RunKills >= data.Target) {
+                        bossCalled = true;
+                        spawnIn = 3.5f;
+                        Events.Add("boss-called|" + data.BossName);
+                        Tell(data.BossLines);
+                    }
+                } else if (!bossSpawned) {
+                    if (spawnIn <= 0f) {
+                        bossSpawned = true;
+                        boss = director.SpawnForChapter(data.Boss, true, RingRadius, data.BossName, data.BossHits);
+                        Events.Add("boss|" + boss.Title + "|" + boss.HitsToDrop);
+                    }
+                } else if (defeatIn > 0f) {
+                    defeatIn -= Time.deltaTime;
+                    if (defeatIn <= 0f) {
+                        Complete();
+                    }
+                } else if (!BossUp) {
+                    // The Courier is down: a short beat over the field, then the card.
+                    Progress = 1;
+                    defeatIn = (data.DefeatLines != null ? data.DefeatLines.Length : 0) * 2.8f + 1f;
+                    Events.Add("defeat|" + data.BossName);
+                    GameAudio.Play("stamp", 0.8f, 0.8f);
+                    Tell(data.DefeatLines);
+                }
+                break;
             case Story.ChapterObjective.DefeatBoss:
                 if (!bossSpawned && spawnIn <= 0f) {
                     bossSpawned = true;
@@ -245,6 +286,14 @@ public class ChapterRun : MonoBehaviour {
                 return "Hold the circle against " + data.Goal + ":  " + (Progress / 60) + ":" + (Progress % 60).ToString("00");
             case Story.ChapterObjective.ReachPlace:
                 return "Reach " + data.Goal + ":  " + Progress + " m";
+            case Story.ChapterObjective.HoldThenBoss:
+                if (!bossCalled) {
+                    return "Hold the circle:  " + Mathf.Min(Progress, data.Target) + " / " + data.Target + " " + data.Goal + " down";
+                }
+                if (defeatIn > 0f) {
+                    return data.BossName + " is down";
+                }
+                return "Bring down " + data.BossName + (bossSpawned ? "  (break the wind-up, or stand in the red)" : "  (it's coming)");
             default:
                 return "Bring down " + data.Goal + (bossSpawned ? "" : "  (it's coming)");
         }
@@ -309,6 +358,31 @@ public class ChapterRun : MonoBehaviour {
         Time.timeScale = 1f;
         RunAnalytics.Screen("menu");
         SceneManager.LoadScene(MetaProgress.MenuScene);
+    }
+
+    // Lines said one after another over the field (the boss's arrival, the defeat beat).
+    void Tell(string[] lines) {
+        if (lines == null) {
+            return;
+        }
+        queue.AddRange(lines);
+        if (queueIn <= 0f) {
+            queueIn = 0.01f;
+        }
+    }
+
+    void TickQueue() {
+        if (queue.Count == 0) {
+            return;
+        }
+        queueIn -= Time.unscaledDeltaTime;
+        if (queueIn <= 0f) {
+            string raw = queue[0];
+            queue.RemoveAt(0);
+            Say(raw, 3f);
+            Events.Add("line|" + raw);
+            queueIn = 2.8f;
+        }
     }
 
     static string Spoken(string raw) {
