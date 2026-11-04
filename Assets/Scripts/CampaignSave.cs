@@ -17,6 +17,7 @@ public static class CampaignSave {
         public int cleared;      // chapters finished: the Chapter Complete card was reached
         public float seconds;    // time on the books
         public long saved;       // UTC ticks of the last save
+        public int xp;           // Campaign XP earned in this file's fights (CampaignProgress): level and abilities follow from it
     }
 
     [Serializable]
@@ -163,6 +164,11 @@ public static class CampaignSave {
         s.saved = DateTime.UtcNow.Ticks;
     }
 
+    // Writes the files now (a level-up, a chapter done).
+    public static void Flush() {
+        Save();
+    }
+
     static void Save() {
         if (MetaProgress.Sandbox) {
             return;
@@ -177,7 +183,8 @@ public static class CampaignSave {
             return "No file yet";
         }
         string title = Story.Chapters[Mathf.Clamp(s.chapter, 0, ChapterCount - 1)].Title;
-        return s.cleared >= ChapterCount ? title + " (filed)" : title;
+        title = s.cleared >= ChapterCount ? title + " (filed)" : title;
+        return s.xp > 0 ? title + "  LV " + CampaignProgress.LevelFor(s.xp) : title;
     }
 
     public static string Played(Slot s) {

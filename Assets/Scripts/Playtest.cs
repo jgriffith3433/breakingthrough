@@ -38,6 +38,7 @@ public static class Playtest {
         new PlaytestScenario("modes", "The mode select: the main menu shows Campaign and Arcade; Campaign opens the three case files (save slots, setup: the sandbox keeps them off the real save), opening an empty file loads the placeholder Chapter 1 scene with Wallit and Slice's lines, Menu returns and the file now reads Chapter 1 with its time on the books, Erase (asked twice) empties it; then Arcade starts today's wave defense and the bot plays 40 s of it with the bat. Events mode-select, campaign-files, chapter-open, chapter-lines, campaign-saved, campaign-erased, arcade-start", 200, "content"),
         new PlaytestScenario("cutscene", "The chapter cutscene: Campaign, case file 1, Begin on the Chapter 1 card, and the opening scene (The Stamp) plays over the map with letterbox bars, a speaker name and portrait slot, typed lines and the camera on whoever talks. The bot reads the first pages with real key presses (a first press finishes the typing, the next turns the page), skipping a page's voice by pressing on, then presses Enter to skip the rest: play starts with the objective line up and Wallit moving on the stick, and the chapter is cleared. Checked: every Wallit, Slice and Yo Bot page has a name, two voice lines never overlap (Wallit's floor and the scene both count them), the director allows no other line during the scene. Events cutscene-open, cutscene-page (speaker, text, camera focus, letterbox, voice), cutscene-skip, cutscene-play, cutscene-voice; metrics cutscenePages, cutsceneVoiceLines, cutsceneOverlaps, cutsceneSkipped", 420, "content"),
         new PlaytestScenario("campaign", "Campaign loads and plays a chapter: from the main menu press Campaign, open case file 1 (setup: the sandbox keeps the files off the real save) and wait for the Campaign scene to load. Reports run_start with mode=campaign and the loaded scene name (event run_start, metrics campaignLoaded, campaignLoadSeconds); if the scene fails to load (not in the build's scene list, or the chapter never builds) the run stops stuck with a bug saying so. Then Begin on the chapter card: Wallit and Slice in the chapter map, Wallit walks on the stick, the objective line shows, the bot fights with real input until it is met, Chapter 1 holds the circle against Yo Bots, then the Courier arrives (health bar on screen), winds up telegraphed notices on the circle and the bot breaks them or stands in them until it falls and the defeat beat plays; the Chapter Complete card shows, the case file advances to chapter 2, Menu, and reopening the file resumes at chapter 2 (events chapter-card, chapter-start, chapter-move, objective, boss-arrives, boss-bar, boss-attack, boss-defeated, defeat-beat, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics chapterAdvanced, chapterResumed, bossBar, courierWinds, courierInterrupted). Smoke is unchanged: it still presses Arcade", 750, "content"),
+        new PlaytestScenario("hub", "The hub and Campaign progression, played with real input (setup: the sandbox case file 1 starts on chapter 1 with 85 XP, 5 short of level 3; the real save and Arcade are never touched): Campaign, case file 1, Begin on Chapter 1; the first kills give XP (HUD line LV/XP) and level 3 unlocks Refund (events xp-gain, level-up); the bot presses C near the bots and the ring shoves and stings them (event refund-used); the Courier falls, the Chapter Complete card offers To the hub; the bot presses it and lands in the hub (Wallit, Slice in the ring, the chapter board; events hub-open, hub-arrival), walks to the board on the stick and presses E (hub-walk, board-open: Chapter 1 filed and replayable, Chapter 2 next, Chapter 3 locked); picking Chapter 1 shows its card and Begin replays it (hub-replay-card, replay-started) without taking the file back a chapter. Checks per case file and Arcade: the XP stays on case file 1 (case file 2 has none) and Arcade's numbers read as no effect outside a chapter (events progress-saved, arcade-clean; metrics hubXp, hubLevel, refundHits, hubWalked)", 900, "content"),
         new PlaytestScenario("chapter6", "Chapter 6, Address Filed, played start to finish with real input (setup: the sandbox case file starts on chapter 6): Campaign, case file 1, Begin on the Chapter 6 card; the opening scene in the changed Hollow plays and is skipped with Enter; Wallit holds the circle with the bat through three waves (events wave-start), then the Spider Bot that carries the order (boss bar up, scroll on its back) arrives and falls; the Filed scene plays over the field, then the finale pages (Story.Finale verbatim, as in Arcade's story run) and the ADDRESS FILED ending card (events filed-scene, finale-page, ending-card); Keep going shows the credits card; the case file is marked complete (6 cleared), Menu, and the Campaign panel's case file 1 reads filed (events chapter6-setup, cutscene-open, objective, wave-start, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, filed-scene, finale-page, ending-card, credits-card, campaign-complete, campaign-panel-filed; metrics bossBar, endingShown, caseFileCleared, caseFileFiled)", 1000, "content"),
         new PlaytestScenario("chapter5", "Chapter 5, Strike This Address, played start to finish with real input (setup: the sandbox case file starts on chapter 5): Campaign, case file 1, Begin on the Chapter 5 card; the opening scene in the Reading Room plays over the map (the order is not signed, so it can be denied; the stamp pressed to the first page shows DENIED; the bot reads pages then skips with Enter); the objective line reads Read the order, page 1 of 5 with the bots down counting up; Wallit holds the circle at the desk with the bat through five pages (each page's wave announced PAGE n OF 5 and its forms on the wall turning blank when it is down: events page-start, page-read); then The Registrar (a gold Titan Spider Bot with a ledger, boss bar up) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 6, Menu, and reopening the file shows Chapter 6's card (events chapter5-setup, cutscene-open, cutscene-page, objective, page-start, page-read, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics pagesRead, bossBar, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("chapter4", "Chapter 4, The Process Servers, played start to finish with real input (setup: the sandbox case file starts on chapter 4): Campaign, case file 1, Begin on the Chapter 4 card; the opening dialogue says where Spider Bots come from (process servers, deliveries from the Department with one paper to hand over; the bot reads pages then skips with Enter); the objective reads Reach the first lamp (1 of 3) with metres counting down; Wallit walks the three lamps along the causeway under fire, batting what is in reach; at the last lamp the way turns round to the circle; Wallit walks home and holds off the servers; then The Server (a Spider Bot with a paper, boss bar up) arrives and offers the paper, and does NOT strike: Wallit refuses it by hitting it (objective reads Refuse the paper n / 3, events server-offer and server-refused 1, 2, 3); only after the third refusal it winds up and strikes Slice (server-strike), then falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 5, Menu, and reopening the file shows Chapter 5's card (events chapter4-setup, cutscene-open, cutscene-page, origin-dialogue, objective, floor-stop, last-lamp, home-leg, boss-arrives, boss-bar, server-offer, server-refused, server-strike, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics floorStops, serverOffers, serverRefusals, serverStruckEarly, chapterAdvanced, chapterResumed)", 900, "content"),
@@ -210,8 +211,9 @@ public static class Playtest {
                     yield break;
                 }
             }
-            if (id == "campaign" || id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
+            if (id == "campaign" || id == "hub" || id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
                 watchCutscene = id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5";
+                hubTest = id == "hub";
                 startChapter = id == "chapter6" ? 5 : id == "chapter5" ? 4 : id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" ? 1 : 0;
                 yield return CampaignRun();
                 if (!run.Done) {
@@ -519,6 +521,7 @@ public static class Playtest {
     // Campaign from the main menu: press Campaign, open case file 1, wait for the Campaign scene. A scene that is not in
     // the build ("Scene 'Campaign' couldn't be loaded", PR #70) never becomes the active scene: that is a bug, said plainly.
     static int startChapter;
+    static bool hubTest;
 
     static IEnumerator CampaignRun() {
         CampaignSave.EnterSandbox();
@@ -530,6 +533,14 @@ public static class Playtest {
             setup.reached = startChapter;
             setup.cleared = startChapter;
             run.Event("chapter2-setup", "sandbox case file 1 starts on chapter " + (startChapter + 1));
+        }
+        if (hubTest) {
+            // Setup shortcut: the sandbox file already has XP, 5 short of level 3 (Refund). Never the real save.
+            CampaignSave.Slot setup = CampaignSave.Get(0);
+            setup.used = true;
+            setup.chapter = 0;
+            setup.xp = 85;
+            run.Event("hub-setup", "sandbox case file 1 on chapter 1 with " + setup.xp + " XP (level " + CampaignProgress.LevelFor(setup.xp) + ")");
         }
         MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
         if (menu == null || menu.CampaignButton == null || !menu.CampaignButton.isActiveAndEnabled) {
@@ -628,6 +639,12 @@ public static class Playtest {
         bool courier = chapter.HasBoss;
         if (courier) {
             // Chapter 1: hold the circle against the first Yo Bots, then the Courier arrives.
+            if (hubTest) {
+                yield return HubAbility(player, chapter);
+                if (run.Done) {
+                    yield break;
+                }
+            }
             yield return Fight(player, () => chapter.BossUp || chapter.Completed, 180f, "the boss to arrive", null, true);
             if (run.Done) {
                 yield break;
@@ -701,6 +718,11 @@ public static class Playtest {
         }
         yield return new WaitForSecondsRealtime(2f);
 
+        if (hubTest) {
+            yield return HubPlay(chapter);
+            yield break;
+        }
+
         // Menu from the card, then reopen the file: it resumes at the next chapter.
         Tap(chapter.MenuButton.gameObject);
         yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu after the chapter");
@@ -728,6 +750,127 @@ public static class Playtest {
         run.Event("chapter-open", ChapterScene.Instance.Title + " (resumed, case file " + (CampaignSave.Active + 1) + ")");
         run.Metric("chapterResumed", 1);
         yield return run.Until(() => ChapterScene.Instance.LinesShown >= 1, 10f, "the next chapter's first line");
+        yield return new WaitForSecondsRealtime(3f);
+    }
+
+    // The hub scenario's first half: XP from the first kills, level 3 unlocks Refund, the bot presses C and the ring works.
+    static IEnumerator HubAbility(CharacterMovement player, ChapterRun chapter) {
+        int xp0 = CampaignProgress.Xp;
+        run.Event("hud-line", CampaignProgress.HudLine());
+        yield return Fight(player, () => CampaignProgress.Level >= 3, 120f, "level 3 from the first kills", null, true);
+        if (run.Done) {
+            yield break;
+        }
+        foreach (string line in CampaignProgress.Log) {
+            run.Event(line.StartsWith("levelup") ? "level-up" : "xp-gain", line);
+        }
+        run.Metric("hubXp", CampaignProgress.Xp);
+        run.Metric("hubLevel", CampaignProgress.Level);
+        if (CampaignProgress.Xp <= xp0 || !CampaignProgress.Has(1)) {
+            run.Problem(PlaytestSeverity.Bug, "hub: kills gave no XP or level 3 did not unlock Refund (xp " + xp0 + " -> " + CampaignProgress.Xp + ")");
+        }
+        run.Event("hud-line", CampaignProgress.HudLine());
+        // Refund needs bots in range: keep batting until some are close, then press C.
+        int hitsBefore = CampaignProgress.RefundHits;
+        yield return Fight(player, () => {
+            if (CampaignProgress.RefundReady) {
+                foreach (Enemy e in Enemy.Roster) {
+                    if (e != null && e.Alive && (e.transform.position - player.transform.position).magnitude < CampaignProgress.RefundRange - 1f) {
+                        PlayInput.Tap(CampaignProgress.RefundKey);
+                        break;
+                    }
+                }
+            }
+            return CampaignProgress.Refunds > 0 || chapter.BossUp;
+        }, 90f, "Refund to go off", null, true);
+        if (run.Done) {
+            yield break;
+        }
+        run.Metric("refundHits", CampaignProgress.RefundHits - hitsBefore);
+        run.Event("refund-used", CampaignProgress.Refunds + " Refund(s), " + (CampaignProgress.RefundHits - hitsBefore) + " bots shoved and stung");
+        if (CampaignProgress.Refunds == 0) {
+            run.Problem(PlaytestSeverity.Bug, "hub: pressing C with Refund unlocked did nothing");
+        }
+    }
+
+    // The hub scenario's second half: Chapter Complete -> To the hub -> walk to the board -> replay Chapter 1.
+    static IEnumerator HubPlay(ChapterRun chapter) {
+        CampaignSave.Slot slot = CampaignSave.Get(0);
+        run.Event("progress-saved", "case file 1: " + slot.xp + " XP, level " + CampaignProgress.LevelFor(slot.xp) + ", " + slot.cleared + " cleared; case file 2: " + CampaignSave.Get(1).xp + " XP");
+        if (slot.xp < 90 || CampaignSave.Get(1).xp != 0) {
+            run.Problem(PlaytestSeverity.Bug, "hub: XP was not kept on case file 1 alone (file 1 " + slot.xp + ", file 2 " + CampaignSave.Get(1).xp + ")");
+        }
+        if (chapter.NextButton == null || !chapter.NextButton.gameObject.activeSelf) {
+            run.Problem(PlaytestSeverity.Bug, "hub: the Chapter Complete card has no way into the hub");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1.5f);
+        Tap(chapter.NextButton.gameObject);
+        run.Event("tap", "To the hub");
+        yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.Hub != null && ChapterScene.Instance.Hub.Shown && SceneManager.GetActiveScene().name == CampaignSave.Scene, 30f, "the hub after the chapter");
+        if (run.Done) {
+            yield break;
+        }
+        ChapterHub hub = ChapterScene.Instance.Hub;
+        run.Scene("Hub");
+        run.Event("hub-open", "Wallit at " + hub.Player.position.ToString("0.0") + ", board at " + ChapterHub.BoardPosition + "; " + hub.StatusText.Replace("\n", " / "));
+        yield return run.Until(() => hub.ArrivalShown >= 2, 12f, "the hub's arrival lines");
+        run.Event("hub-arrival", Story.HubArrival[0][0].Substring(2) + " / " + Story.HubArrival[0][1].Substring(2));
+        CheckScreen("hub");
+        // Walk to the board on the stick.
+        float walkStart = Time.realtimeSinceStartup;
+        while (!run.Done && !hub.NearBoard && Time.realtimeSinceStartup - walkStart < 30f) {
+            Vector3 to = ChapterHub.BoardPosition - hub.Player.position;
+            PlayInput.Axis("Horizontal", Mathf.Clamp(to.x, -1f, 1f));
+            PlayInput.Axis("Vertical", Mathf.Clamp(to.z, -1f, 1f));
+            yield return null;
+        }
+        PlayInput.Release();
+        run.Metric("hubWalked", Mathf.Round(hub.Walked * 10f) / 10f);
+        run.Event("hub-walk", "Wallit walked " + hub.Walked.ToString("0.0") + " m to the board (near: " + hub.NearBoard + ")");
+        if (!hub.NearBoard) {
+            run.Problem(PlaytestSeverity.Bug, "hub: Wallit never reached the chapter board on the stick");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(0.6f);
+        PlayInput.Tap(KeyCode.E);
+        yield return run.Until(() => hub.BoardOpen, 5f, "the chapter board after pressing E");
+        if (run.Done) {
+            yield break;
+        }
+        run.Event("board-open", hub.BoardText);
+        CheckScreen("board");
+        bool filed = hub.BoardButtons[0].interactable;
+        bool next = hub.BoardButtons[1].interactable;
+        bool locked = !hub.BoardButtons[2].interactable;
+        if (!filed || !next || !locked) {
+            run.Problem(PlaytestSeverity.Bug, "hub: the board shows chapter 1 replayable=" + filed + ", chapter 2 open=" + next + ", chapter 3 locked=" + locked);
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(hub.BoardButtons[0].gameObject);
+        yield return run.Until(() => ChapterScene.Instance.CardUp && ChapterScene.Instance.Chapter == 0 && ChapterScene.Instance.BeginButton != null, 10f, "the replayed chapter's card");
+        if (run.Done) {
+            yield break;
+        }
+        run.Event("hub-replay-card", ChapterScene.Instance.Title + " (case file " + (CampaignSave.Active + 1) + ", " + CampaignSave.Get(0).cleared + " cleared)");
+        run.Event("arcade-clean", "outside a chapter: damage x" + CampaignProgress.DamageMult.ToString("0.00") + ", crit +" + CampaignProgress.CritBonus.ToString("0.00") + ", Refund " + (CampaignProgress.RefundReady ? "on" : "off") + ", coins " + MetaProgress.Coins + " untouched by XP");
+        if (CampaignProgress.DamageMult != 1f || CampaignProgress.RefundReady || CampaignProgress.CritBonus != 0f) {
+            run.Problem(PlaytestSeverity.Bug, "hub: campaign abilities are active outside a chapter");
+        }
+        yield return new WaitForSecondsRealtime(1.5f);
+        Tap(ChapterScene.Instance.BeginButton.gameObject);
+        yield return run.Until(() => ChapterRun.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the replayed chapter's map");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        run.Scene("Chapter replay");
+        run.Event("replay-started", ChapterRun.Instance.Title + " again, " + CampaignSave.Get(0).cleared + " chapter cleared, level " + CampaignProgress.Level + " with Refund " + (CampaignProgress.Has(1) ? "unlocked" : "missing"));
+        if (ChapterRun.Instance.Chapter != 0 || CampaignSave.Get(0).cleared != 1 || !CampaignProgress.Has(1)) {
+            run.Problem(PlaytestSeverity.Bug, "hub: the replay did not start Chapter 1 with the file's progress kept");
+        }
         yield return new WaitForSecondsRealtime(3f);
     }
 

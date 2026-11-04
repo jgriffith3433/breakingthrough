@@ -196,6 +196,30 @@ the ring becomes a line of writing, then a door number, which Slice writes with 
 Flow: `HoldThenBoss` with `Final` in `ChapterRun.cs` (`CompleteFinal`, `ShowCredits`, `BuildChangedHollow`), lines in `Story.Chapters[5]`,
 the boss `Enemy.MakeOrderBearer`; the `chapter6` playtest plays it.
 
+## The hub and Wallit's account
+
+Between chapters the file does not drop straight onto the next card. Chapter Complete leads **to the hub**: the circle at rest, a yard
+small enough to walk across. Slice stands in the ring with her knife out; Wallit walks in from the edge and they say one line each
+about what he just did (`Story.HubArrival`, by chapters cleared: "One notice, returned. Where's my tip?" / "Board. Next case."). At the
+far side the Department has nailed up the **chapter board**, six slips, one per chapter. Walk up and press E: a chapter the file has
+cleared reads *filed (replay)* and can be played again, the one after it reads *next*, the rest read *locked*. Picking one shows its
+chapter card; Begin plays it. A replay never takes the file back: `cleared` and the chapter the file is on only move forward. A file
+with chapters behind it also has a **Hub** button on its card, so reopening a file reaches the board too. `ChapterHub.cs` builds it
+(flat, collider-free, in code); `ChapterScene.cs` owns the card it leads to.
+
+Inside the circle Wallit is on the books, and the books keep an **account** for him: every bot he clears adds **XP** (5 for a Yo Bot, twice
+its bolts for the heavier kinds, a boss pays 50 more), shown as `LV 2   XP 34/90` top left. A level is a clause the books accept: Wallit
+earns four abilities, all money (`CampaignProgress.cs`):
+
+- **Spare Change** (level 2): +15% bat damage.
+- **Refund** (level 3): press **C**; a ring shoves the bots off him and stings them (8 m, 10 s to recharge; bosses are stung, not shoved).
+- **Receipt** (level 4): every sixth kill, Slice is paid back 6 health.
+- **Chargeback** (level 5): +12% chance to crit with the bat.
+
+Levels are 30, 90, 180 and 300 XP. The account belongs to the case file (`CampaignSave.Slot.xp`), so three files hold three Wallits;
+it is Campaign's alone. Arcade has its own boons and shop (`MetaProgress`) and none of this reaches it: outside a chapter every number
+above reads as no effect. Slice does not level; she is already what the circle is.
+
 ## Canon established here
 
 - The circle is the one filed address in the Moonlit Hollow; whatever is inside it exists.
@@ -214,3 +238,5 @@ the boss `Enemy.MakeOrderBearer`; the `chapter6` playtest plays it.
 - The Reading Room: a bare round hall where the Department keeps every copy of the order. The order is not signed; the stamp pressed to a page turns it DENIED and the forms go blank.
 - The Registrar: Chapter 5's boss, a gold Titan Spider Bot with a ledger that reads the pages with every leg.
 - The Server: Chapter 4's boss, the first full Spider Bot. It offers the paper and will not strike until it has been refused three times.
+- The hub: between chapters the circle is a walkable yard with Slice in the ring and a chapter board of six slips (filed, next, locked). Cleared chapters can be replayed from it.
+- Wallit's account: inside the circle he is on the books, and fights add to it (XP). Levels unlock Spare Change, Refund, Receipt and Chargeback. Slice does not level. Campaign only, per case file.

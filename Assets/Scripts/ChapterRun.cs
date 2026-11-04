@@ -77,6 +77,7 @@ public class ChapterRun : MonoBehaviour {
     GameObject card;
     Text cardTitle;
     Text cardBody;
+    Text xpText;
     float spawnIn = 2.5f;
     Enemy boss;
     bool bossSpawned;
@@ -121,6 +122,8 @@ public class ChapterRun : MonoBehaviour {
         font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         Events.Clear();
         Events.Add("start|" + data.Id + "|" + data.Objective + "|" + data.Target);
+        CampaignProgress.BeginChapter();
+        gameObject.AddComponent<CampaignAbilities>();
         if (data.Objective == Story.ChapterObjective.SurviveTime) {
             clock = data.Target;
         }
@@ -199,6 +202,9 @@ public class ChapterRun : MonoBehaviour {
         ObjectiveLine = Line();
         if (objective != null) {
             objective.text = ObjectiveLine;
+        }
+        if (xpText != null) {
+            xpText.text = CampaignProgress.HudLine();
         }
         if (stamp != UiFit.Stamp) {
             Layout();
@@ -620,9 +626,10 @@ public class ChapterRun : MonoBehaviour {
         foreach (string raw in data.Done) {
             body.Append("\n").Append(Spoken(raw));
         }
-        body.Append("\n\n").Append(more ? "Next: " + Story.Chapters[Chapter + 1].Title : "The case file is filed.");
+        body.Append("\n\nLV " + CampaignProgress.Level + "   XP " + CampaignProgress.Xp);
+        body.Append("\n").Append(more ? "Back to the hub. Next on the board: " + Story.Chapters[Chapter + 1].Title : "The case file is filed. The board keeps every chapter.");
         cardBody.text = body.ToString();
-        NextButton.gameObject.SetActive(more);
+        NextButton.gameObject.SetActive(true);
         card.SetActive(true);
         objective.text = "";
         Time.timeScale = 0f;
@@ -681,7 +688,8 @@ public class ChapterRun : MonoBehaviour {
     void Next() {
         Time.timeScale = 1f;
         toNext = true;
-        RunAnalytics.Screen("chapter_" + (CampaignSave.Get(CampaignSave.Active).chapter + 1));
+        ChapterScene.HubNext = true;
+        RunAnalytics.Screen("hub");
         SceneManager.LoadScene(CampaignSave.Scene);
     }
 
@@ -995,6 +1003,15 @@ public class ChapterRun : MonoBehaviour {
         objective.rectTransform.offsetMin = Vector2.zero;
         objective.rectTransform.offsetMax = Vector2.zero;
 
+        xpText = Label(canvasGo.GetComponent<RectTransform>(), "", 26, FontStyle.Bold, new Color(0.62f, 0.95f, 0.86f));
+        var xrect = xpText.rectTransform;
+        xrect.anchorMin = new Vector2(0f, 1f);
+        xrect.anchorMax = new Vector2(0f, 1f);
+        xrect.pivot = new Vector2(0f, 1f);
+        xrect.anchoredPosition = new Vector2(24f, -150f);
+        xrect.sizeDelta = new Vector2(620f, 40f);
+        xpText.alignment = TextAnchor.MiddleLeft;
+
         card = new GameObject("Chapter Complete", typeof(RectTransform));
         card.transform.SetParent(canvasGo.transform, false);
         var shade = card.AddComponent<Image>();
@@ -1015,7 +1032,7 @@ public class ChapterRun : MonoBehaviour {
         Anchor(cardTitle.rectTransform, 0f, 0f, 1300f, 100f);
         cardBody = Label(column, "", 32, FontStyle.BoldAndItalic, new Color(0.87f, 0.91f, 1f));
         Anchor(cardBody.rectTransform, 0f, 120f, 1300f, 580f);
-        NextButton = MakeButton(column, "Next chapter", 380f, 88f, 760f, Next);
+        NextButton = MakeButton(column, "To the hub", 380f, 88f, 760f, Next);
         MenuButton = MakeButton(column, "Menu", 260f, 88f, 760f, ToMenu);
         card.SetActive(false);
         Layout();

@@ -10,9 +10,16 @@ using UnityEngine.UI;
 public class ChapterScene : MonoBehaviour {
     public static ChapterScene Instance { get; private set; }
 
+    // Set when a chapter's Chapter Complete card leads on: the next load of this scene opens in the hub (ChapterHub), not on
+    // the chapter card. Taken once.
+    public static bool HubNext;
+
     // For the playtest bot.
     public Button MenuButton { get; private set; }
     public Button BeginButton { get; private set; }
+    public Button HubButton { get; private set; }
+    public ChapterHub Hub { get; private set; }
+    public bool CardUp { get { return cardCanvas != null; } }
     public int Chapter { get; private set; }
     public int LinesShown { get; private set; }
     public int LineCount { get; private set; }
@@ -22,8 +29,10 @@ public class ChapterScene : MonoBehaviour {
     const float LineEvery = 1.4f;
 
     Font font;
+    GameObject cardCanvas;
     Text[] lines;
     float startedAt;
+    float cardAt;
     int shown;
     bool leaving;
     bool handoff;
@@ -55,6 +64,9 @@ public class ChapterScene : MonoBehaviour {
         Title = chapter.Title;
         LineCount = chapter.Lines.Length;
         startedAt = Time.unscaledTime;
+        cardAt = startedAt;
+        bool hub = HubNext && CampaignSave.Get(CampaignSave.Active).cleared > 0;
+        HubNext = false;
 
         if (Camera.main == null) {
             var cam = new GameObject("Camera").AddComponent<Camera>();
@@ -68,9 +80,51 @@ public class ChapterScene : MonoBehaviour {
             events.AddComponent<EventSystem>();
             events.AddComponent<StandaloneInputModule>();
         }
-        Build(chapter);
+        if (hub) {
+            Hub = ChapterHub.Open(this);
+            RunAnalytics.Screen("hub");
+        } else {
+            Build(chapter);
+        }
         RunAnalytics.Screen("chapter_" + (Chapter + 1));
         RunAnalytics.CampaignStart(Chapter, CampaignSave.Scene);
+    }
+
+    // The chapter card for chapter index, from the board (replays included) or the card's own Hub button.
+    public void ShowCard(int index) {
+        Chapter = Mathf.Clamp(index, 0, CampaignSave.ChapterCount - 1);
+        Story.Chapter chapter = Story.Chapters[Chapter];
+        Title = chapter.Title;
+        LineCount = chapter.Lines.Length;
+        shown = 0;
+        LinesShown = 0;
+        cardAt = Time.unscaledTime;
+        if (Hub != null) {
+            Hub.SetShown(false);
+        }
+        Build(chapter);
+        RunAnalytics.Screen("chapter_" + (Chapter + 1));
+    }
+
+    // Back to the hub from a card (builds it the first time).
+    public void ShowHub() {
+        if (cardCanvas != null) {
+            Destroy(cardCanvas);
+            cardCanvas = null;
+            lines = null;
+            BeginButton = null;
+            MenuButton = null;
+            HubButton = null;
+        }
+        if (Hub == null) {
+            Hub = ChapterHub.Open(this);
+        }
+        Hub.SetShown(true);
+        RunAnalytics.Screen("hub");
+    }
+
+    public void LeaveToMenu() {
+        ToMenu();
     }
 
     void OnDestroy() {
@@ -81,7 +135,10 @@ public class ChapterScene : MonoBehaviour {
     }
 
     void Update() {
-        Open = Time.unscaledTime - startedAt;
+        Open = Time.unscaledTime - cardAt;
+        if (cardCanvas == null || lines == null) {
+            return;
+        }
         int want = Mathf.Min(LineCount, 1 + Mathf.FloorToInt((Open - 1.2f) / LineEvery));
         while (shown < want) {
             lines[shown].gameObject.SetActive(true);
@@ -93,7 +150,11 @@ public class ChapterScene : MonoBehaviour {
             BeginChapter();
         }
         if (PlayInput.GetKeyDown(KeyCode.Escape) || PlayInput.GetKeyDown(KeyCode.M)) {
-            ToMenu();
+            if (Hub != null && Hub.Shown == false && PlayInput.GetKeyDown(KeyCode.Escape) && CampaignSave.Get(CampaignSave.Active).cleared > 0) {
+                ShowHub();
+            } else {
+                ToMenu();
+            }
         }
     }
 
@@ -129,6 +190,7 @@ public class ChapterScene : MonoBehaviour {
 
     void Build(Story.Chapter chapter) {
         var canvasGo = new GameObject("Chapter Canvas");
+        cardCanvas = canvasGo;
         canvasGo.transform.SetParent(transform, false);
         var canvas = canvasGo.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -164,11 +226,18 @@ public class ChapterScene : MonoBehaviour {
             lines[i].gameObject.SetActive(false);
         }
 
-        BeginButton = MakeButton(column, "Begin", 300f, 88f, -170f, 540f, BeginChapter);
-        MenuButton = MakeButton(column, "Menu", 260f, 88f, 170f, 540f, ToMenu);
+        if (CampaignSave.Get(CampaignSave.Active).cleared > 0) {
+            // A file with chapters behind it: the hub (the board of cleared chapters) is one press away.
+            BeginButton = MakeButton(column, "Begin", 280f, 88f, -300f, 540f, BeginChapter);
+            HubButton = MakeButton(column, "Hub", 280f, 88f, 0f, 540f, ShowHub);
+            MenuButton = MakeButton(column, "Menu", 280f, 88f, 300f, 540f, ToMenu);
+        } else {
+            BeginButton = MakeButton(column, "Begin", 300f, 88f, -170f, 540f, BeginChapter);
+            MenuButton = MakeButton(column, "Menu", 260f, 88f, 170f, 540f, ToMenu);
+        }
     }
 
-    Text Label(RectTransform parent, string value, int size, FontStyle style, Color color, float x, float y, float h) {
+    internal Text Label(RectTransform parent, string value, int size, FontStyle style, Color color, float x, float y, float h) {
         var go = new GameObject("Text", typeof(RectTransform));
         go.transform.SetParent(parent, false);
         var text = go.AddComponent<Text>();
@@ -195,7 +264,7 @@ public class ChapterScene : MonoBehaviour {
         return text;
     }
 
-    Button MakeButton(RectTransform parent, string label, float w, float h, float x, float y, UnityEngine.Events.UnityAction onClick) {
+    internal Button MakeButton(RectTransform parent, string label, float w, float h, float x, float y, UnityEngine.Events.UnityAction onClick) {
         var go = new GameObject(label, typeof(RectTransform));
         go.transform.SetParent(parent, false);
         var image = go.AddComponent<Image>();
