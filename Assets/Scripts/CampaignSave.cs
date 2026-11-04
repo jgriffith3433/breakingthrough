@@ -24,13 +24,17 @@ public static class CampaignSave {
         public int finds;        // bit per chapter: its hidden find is in the journal (Journal.Finds)
         public int goals;        // bit per chapter: its optional objective is met (Journal.Goals)
         public int rooms;        // bit per chapter: its back room was entered (BackRooms.All); bit ChapterCount: the Dead Letter fell, Refund in Full is earned
+        public int ranks;        // best Standard rank per chapter, 3 bits each (CampaignGrade: 0 none, 1 C, 2 B, 3 A, 4 S)
+        public int hardRanks;    // the same for Hard
+        public bool hard;        // Hard is chosen: only ever true on a filed file (every chapter cleared)
     }
 
     // Save format. 1: the first files (no stamp on the oldest; no xp, unlocks, errands or lore bits). 2: stamped, every
     // field checked on load, the lore log derived from the chapters filed. 3: the journal's finds and goals
     // bits (nothing to derive: older files start with none). 4: the back rooms' bits and the Dead Letter's reward (older files
-    // start with none). Bump it with a step in Migrate.
-    public const int Version = 4;
+    // start with none). 5: the chapter ranks, Standard and Hard, and the Hard choice (older files start with none, Standard).
+    // Bump it with a step in Migrate.
+    public const int Version = 5;
     const string BadKey = "hawkes.campaign.bad";
 
     [Serializable]
@@ -94,7 +98,11 @@ public static class CampaignSave {
             s.finds &= mask;
             s.goals &= mask;
             s.rooms &= (1 << (ChapterCount + 1)) - 1;   // v4: a bit per back room and one for the Dead Letter's reward (older text has none: 0)
+            int rankMask = (1 << (3 * ChapterCount)) - 1;   // v5: 3 bits a chapter
+            s.ranks &= rankMask;
+            s.hardRanks &= rankMask;
             s.cleared = Mathf.Clamp(s.cleared, 0, ChapterCount);
+            s.hard = s.hard && s.cleared >= ChapterCount;   // Hard only on a filed file
             s.chapter = Mathf.Clamp(s.chapter, 0, ChapterCount - 1);
             s.reached = Mathf.Clamp(Mathf.Max(s.reached, s.chapter), 0, ChapterCount - 1);
             s.xp = Mathf.Max(0, s.xp);
@@ -239,6 +247,61 @@ public static class CampaignSave {
         Touch(s);
         Save();
         return s.chapter;
+    }
+
+    // The best rank kept for a chapter (CampaignGrade.None when never graded), Standard or Hard.
+    public static int BestRank(Slot s, int chapter, bool hard) {
+        int shift = 3 * Mathf.Clamp(chapter, 0, ChapterCount - 1);
+        return ((hard ? s.hardRanks : s.ranks) >> shift) & 7;
+    }
+
+    // Keeps a rank on the open file if it beats the best (Standard and Hard keep their own). Returns whether it was a new best.
+    public static bool Grade(int chapter, int rank, bool hard) {
+        if (Active < 0) {
+            return false;
+        }
+        Slot s = Get(Active);
+        chapter = Mathf.Clamp(chapter, 0, ChapterCount - 1);
+        if (rank <= BestRank(s, chapter, hard)) {
+            return false;
+        }
+        int shift = 3 * chapter;
+        int cleared = ~(7 << shift);
+        if (hard) {
+            s.hardRanks = (s.hardRanks & cleared) | (rank << shift);
+        } else {
+            s.ranks = (s.ranks & cleared) | (rank << shift);
+        }
+        Touch(s);
+        Save();
+        return true;
+    }
+
+    // Hard on or off for the open file. Refused (false) unless the file is filed.
+    public static bool SetHard(bool hard) {
+        if (Active < 0) {
+            return false;
+        }
+        Slot s = Get(Active);
+        if (hard && !CampaignGrade.Filed(s)) {
+            return false;
+        }
+        s.hard = hard;
+        Touch(s);
+        Save();
+        return true;
+    }
+
+    // Best ranks of a file as "1 A  2 B  3 -", Standard then Hard when any Hard is kept.
+    public static string RankLine(Slot s) {
+        var line = new System.Text.StringBuilder();
+        for (int i = 0; i < ChapterCount; i++) {
+            line.Append(i > 0 ? "  " : "").Append(i + 1).Append(' ').Append(CampaignGrade.Letter(BestRank(s, i, false)));
+            if (BestRank(s, i, true) > 0) {
+                line.Append('/').Append(CampaignGrade.Letter(BestRank(s, i, true))).Append('h');
+            }
+        }
+        return line.ToString();
     }
 
     // Adds time on the books to the open file and saves it.

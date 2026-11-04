@@ -42,6 +42,10 @@ public class ChapterRun : MonoBehaviour {
     public int Power { get; private set; } = 1;
     public string ObjectiveLine { get; private set; } = "";
     public bool Completed { get; private set; }
+    public bool Hard { get; private set; }          // the file is filed and set to Hard: bots carry more health, blows on Slice land harder (CampaignGrade)
+    public int Rank { get; private set; }           // CampaignGrade rank of this run, set when Chapter Complete shows
+    public int DamageTaken { get { return Musician.Instance != null ? Musician.Instance.DamageTaken : 0; } }
+    public bool NewBest { get; private set; }
     public bool Failed { get; private set; }
     public int Progress { get; private set; }     // bots down, seconds held, metres left, or 0/1 for the boss
     public float PlaySeconds { get; private set; }
@@ -130,12 +134,14 @@ public class ChapterRun : MonoBehaviour {
         Title = data.Title;
         Place = data.Place;
         Power = data.Power;
+        CampaignSave.Slot file = CampaignSave.Get(CampaignSave.Active);
+        Hard = file.hard && CampaignGrade.Filed(file);
     }
 
     void Start() {
         font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         Events.Clear();
-        Events.Add("start|" + data.Id + "|" + data.Objective + "|" + data.Target);
+        Events.Add("start|" + data.Id + "|" + data.Objective + "|" + data.Target + (Hard ? "|hard" : ""));
         CampaignProgress.BeginChapter();
         gameObject.AddComponent<CampaignAbilities>();
         if (!string.IsNullOrEmpty(data.Companion)) {
@@ -229,7 +235,7 @@ public class ChapterRun : MonoBehaviour {
             objective.text = ObjectiveLine;
         }
         if (xpText != null) {
-            xpText.text = CampaignProgress.HudLine();
+            xpText.text = (Hard ? "HARD  " : "") + CampaignProgress.HudLine();
         }
         if (stamp != UiFit.Stamp) {
             Layout();
@@ -663,6 +669,10 @@ public class ChapterRun : MonoBehaviour {
         string extra = JudgeGoal();
         GameAudio.Play("stamp", 0.7f);
         CampaignSave.Complete(Chapter);
+        Rank = CampaignGrade.Rank(Chapter, PlaySeconds, DamageTaken);
+        NewBest = CampaignSave.Grade(Chapter, Rank, Hard);
+        int best = CampaignSave.BestRank(CampaignSave.Get(CampaignSave.Active), Chapter, Hard);
+        Events.Add("rank|" + CampaignGrade.Letter(Rank) + "|" + Mathf.RoundToInt(PlaySeconds) + "|" + DamageTaken + "|" + (Hard ? "hard" : "standard") + "|best " + CampaignGrade.Letter(best) + (NewBest ? "|new" : ""));
         SavePlayTime();
         foreach (Enemy e in new List<Enemy>(Enemy.Roster)) {
             if (e != null) {
@@ -682,7 +692,9 @@ public class ChapterRun : MonoBehaviour {
         foreach (string raw in data.Done) {
             body.Append("\n").Append(Spoken(raw));
         }
-        body.Append("\n\nLV " + CampaignProgress.Level + "   XP " + CampaignProgress.Xp);
+        body.Append("\n\n").Append(CampaignGrade.Line(Chapter, Rank, PlaySeconds, DamageTaken, Hard));
+        body.Append("\nBest " + CampaignGrade.Letter(best) + (Hard ? " on Hard" : "") + (NewBest ? "  (new best)" : ""));
+        body.Append("\nLV " + CampaignProgress.Level + "   XP " + CampaignProgress.Xp);
         body.Append("\n").Append(extra);
         if (Lore.LastUnlocked.Length > 0) {
             body.Append("\nNew lore: ").Append(string.Join(", ", Lore.LastUnlocked));
@@ -711,7 +723,7 @@ public class ChapterRun : MonoBehaviour {
         }
         Events.Add("finale|start");
         RunAnalytics.Screen("chapter_complete_" + (Chapter + 1));
-        string stats = "Case file " + (CampaignSave.Active + 1) + ": filed\n" + CampaignSave.Played(CampaignSave.Get(CampaignSave.Active));
+        string stats = "Case file " + (CampaignSave.Active + 1) + ": filed\n" + CampaignSave.Played(CampaignSave.Get(CampaignSave.Active)) + "\n" + CampaignGrade.Line(Chapter, Rank, PlaySeconds, DamageTaken, Hard);
         Cutscene.Play(data.Ending, () => {
             Events.Add("finale|pages");
             StoryScreen.Ensure().ShowFinale(stats, keepGoing => {

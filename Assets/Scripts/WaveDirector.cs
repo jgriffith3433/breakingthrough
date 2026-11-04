@@ -303,7 +303,7 @@ public class WaveDirector : MonoBehaviour {
         }
         Enemy enemy = go.AddComponent<Enemy>();
         enemy.ApplyBot(def);
-        enemy.HitsToDrop = Mathf.Max(1, Mathf.RoundToInt(enemy.HitsToDrop * HealthMult));
+        enemy.HitsToDrop = CampaignGrade.Health(Mathf.Max(1, Mathf.RoundToInt(enemy.HitsToDrop * HealthMult)));
         if (rollElite && def.Kind == BotKind.YoBot) {
             float chance = Tuning.EliteChance(Wave) * (Event == WaveEvent.EliteSurge ? 3f : 1f);
             if (Random.value < chance) {
@@ -523,6 +523,9 @@ public class WaveDirector : MonoBehaviour {
             } else {
                 enemy.MakeBoss();
             }
+            if (bossName != null) {
+                enemy.HitsToDrop = CampaignGrade.Health(enemy.HitsToDrop);   // the named bosses set their own health after the spawn
+            }
             UpgradeLook.Say(enemy.Title + " approaches!", 2.8f, 160f);
             GameAudio.Play("stomp", 1f, 0.6f);
         }
@@ -538,6 +541,7 @@ public class WaveDirector : MonoBehaviour {
         spot.y = GroundNear(spot, origin.y) + 0.55f + def.Scale * 0.08f;
         Enemy enemy = Spawn(def, spot, false);
         enemy.MakeMini(name, hits, tint);
+        enemy.HitsToDrop = CampaignGrade.Health(enemy.HitsToDrop);
         UpgradeLook.Say(name + " approaches!", 2.4f, 160f);
         GameAudio.Play("stomp", 0.9f, 0.7f);
         return enemy;
@@ -549,6 +553,7 @@ public class WaveDirector : MonoBehaviour {
         spot.y = GroundNear(spot, spot.y) + 0.55f + def.Scale * 0.08f;
         Enemy enemy = Spawn(def, spot, false);
         enemy.MakeMini(name, hits, tint);
+        enemy.HitsToDrop = CampaignGrade.Health(enemy.HitsToDrop);
         UpgradeLook.Say(name + " approaches!", 2.4f, 160f);
         GameAudio.Play("stomp", 0.9f, 0.7f);
         return enemy;

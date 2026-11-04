@@ -18,6 +18,9 @@ public class ChapterScene : MonoBehaviour {
     public Button MenuButton { get; private set; }
     public Button BeginButton { get; private set; }
     public Button HubButton { get; private set; }
+    public Button DifficultyButton { get; private set; }   // only on a filed file: Standard or Hard for the chapters played from here
+    public Text DifficultyText { get; private set; }
+    public string RankText { get; private set; } = "";
     public ChapterHub Hub { get; private set; }
     public bool CardUp { get { return cardCanvas != null; } }
     public int Chapter { get; private set; }
@@ -180,6 +183,14 @@ public class ChapterScene : MonoBehaviour {
         ChapterRun.Begin(Chapter);
     }
 
+    // Standard <-> Hard on a filed file (CampaignSave.SetHard).
+    public void ToggleDifficulty() {
+        CampaignSave.Slot file = CampaignSave.Get(CampaignSave.Active);
+        if (CampaignSave.SetHard(!file.hard) || !file.hard) {
+            DifficultyText.text = CampaignGrade.DifficultyLabel(CampaignSave.Get(CampaignSave.Active).hard);
+        }
+    }
+
     void ToMenu() {
         Leave();
         RunAnalytics.Screen("menu");
@@ -202,15 +213,21 @@ public class ChapterScene : MonoBehaviour {
         column.anchorMin = new Vector2(0.5f, 0.5f);
         column.anchorMax = new Vector2(0.5f, 0.5f);
         column.pivot = new Vector2(0.5f, 0.5f);
-        column.sizeDelta = new Vector2(1000f, 640f);
+        CampaignSave.Slot file = CampaignSave.Get(CampaignSave.Active);
+        bool filed = CampaignGrade.Filed(file);
+        float height = filed ? 760f : 640f;
+        column.sizeDelta = new Vector2(1000f, height);
         float scale = 1f;
         if (UiFit.Compact) {
             Vector2 size = UiFit.Size;
-            scale = Mathf.Min(1f, (size.x - 40f) / 1000f, (size.y - 40f) / 640f);
+            scale = Mathf.Min(1f, (size.x - 40f) / 1000f, (size.y - 40f) / height);
         }
         column.localScale = new Vector3(scale, scale, 1f);
 
-        Label(column, "CASE FILE " + (CampaignSave.Active + 1), 26, FontStyle.Bold, new Color(0.66f, 0.72f, 0.84f), 0f, 0f, 36f);
+        int best = CampaignSave.BestRank(file, Chapter, false);
+        int bestHard = CampaignSave.BestRank(file, Chapter, true);
+        RankText = best == 0 && bestHard == 0 ? "" : "Best rank " + CampaignGrade.Letter(best) + (bestHard > 0 ? "   Hard " + CampaignGrade.Letter(bestHard) : "");
+        Label(column, "CASE FILE " + (CampaignSave.Active + 1) + (RankText.Length > 0 ? "    " + RankText : "") + (filed && file.hard ? "    HARD" : ""), 26, FontStyle.Bold, new Color(0.66f, 0.72f, 0.84f), 0f, 0f, 36f);
         Label(column, chapter.Title, 64, FontStyle.Bold, new Color(1f, 0.82f, 0.38f), 0f, 44f, 90f);
         Label(column, chapter.Place, 30, FontStyle.Italic, new Color(0.87f, 0.91f, 1f), 0f, 140f, 44f);
 
@@ -233,6 +250,11 @@ public class ChapterScene : MonoBehaviour {
         } else {
             BeginButton = MakeButton(column, "Begin", 300f, 88f, -170f, 540f, BeginChapter);
             MenuButton = MakeButton(column, "Menu", 260f, 88f, 170f, 540f, ToMenu);
+        }
+        if (filed) {
+            // A filed file may be re-run harder: one press flips it, and the choice is saved with the file.
+            DifficultyButton = MakeButton(column, CampaignGrade.DifficultyLabel(file.hard), 620f, 88f, 0f, 650f, ToggleDifficulty);
+            DifficultyText = DifficultyButton.GetComponentInChildren<Text>();
         }
     }
 

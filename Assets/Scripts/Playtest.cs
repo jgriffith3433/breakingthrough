@@ -58,6 +58,7 @@ public static class Playtest {
         new PlaytestScenario("chapter4", "Chapter 4, The Process Servers, played start to finish with real input (setup: the sandbox case file starts on chapter 4): Campaign, case file 1, Begin on the Chapter 4 card; the opening dialogue says where Spider Bots come from (process servers, deliveries from the Department with one paper to hand over; the bot reads pages then skips with Enter); the objective reads Reach the first lamp (1 of 3) with metres counting down; Wallit walks the three lamps along the causeway under fire, batting what is in reach; at the last lamp the way turns round to the circle; Wallit walks home and holds off the servers; then The Server (a Spider Bot with a paper, boss bar up) arrives and offers the paper, and does NOT strike: Wallit refuses it by hitting it (objective reads Refuse the paper n / 3, events server-offer and server-refused 1, 2, 3); only after the third refusal it winds up and strikes Slice (server-strike), then falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 5, Menu, and reopening the file shows Chapter 5's card (events chapter4-setup, cutscene-open, cutscene-page, origin-dialogue, objective, floor-stop, last-lamp, home-leg, boss-arrives, boss-bar, server-offer, server-refused, server-strike, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics floorStops, serverOffers, serverRefusals, serverStruckEarly, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("chapter3", "Chapter 3, The Clearing Floor, played start to finish with real input (setup: the sandbox case file starts on chapter 3): Campaign, case file 1, Begin on the Chapter 3 card; the opening dialogue plays over the map and says where Yo Bots come from (the Clearing Crew, stamped out on the Floor; the bot reads pages then skips with Enter); the objective line reads Reach the broken gate (1 of 3) with metres counting down; Wallit walks the three stops (the broken gate, the belt with The Belt scene read and skipped, the lever) under fire from Yo Bots, batting those in reach; at the lever the belt feed breaks and the objective turns to Back to the circle; Wallit walks home, holds off the last batch, then The Foreman (order sheet on its chest, with a boss bar) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 4, Menu, and reopening the file shows Chapter 4's card (events chapter3-setup, cutscene-open, cutscene-page, origin-dialogue, objective, floor-stop, floor-scene-skip, feed-broken, home-leg, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics floorStops, feedBroken, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("companion", "The AI companion (Slice), played in Chapter 2 with real input (setup: the sandbox case file starts on chapter 2; the real save and Arcade are never touched): Slice walks with Wallit as he walks out (event companion-follows: her distance stays within a few metres over 25 m of walking), stabs the Yo Bots that come near (event companion-fights: stabs and kills while Wallit only walks), is knocked down (named setup shortcut, event companion-down: she lies down, the label reads hold E to revive), Wallit walks to her and holds E (real input) and she is back on her feet with half her health (event companion-revived; metrics companionStabs, companionDowns, companionRevives). The chapter then plays on as in chapter2. Arcade has no companion (event companion-off in the modes scenario)", 900, "content"),
+        new PlaytestScenario("grade", "Chapter grades and Hard, with real input (setup: the sandbox case file starts on chapter 1, and later is marked filed; the real save is never touched). Campaign, case file 1, Begin; chapter 1 is played to the Courier's fall. The Chapter Complete card shows a RANK (S, A, B or C from time against par and the damage Slice took) and the best (event rank-shown, metric rankShown). The files are written out and read back as after a quit and the best rank is still there (rank-saved, metric rankSaved). Setup: the file is marked filed. Its chapter card shows the best rank and a Difficulty button; the bot presses it to Hard (hard-on, metric hardOn, saved with the file). Begin; a plain Yo Bot's health is read against Standard (hard-health, metric hardHealthRatio about 1.75) and the bot holds still until a bot lands a blow on Slice, read as meant against as landed (hard-damage, metric hardDamageRatio 2)", 900, "content"),
         new PlaytestScenario("chapter2", "Chapter 2, No Fixed Address, played start to finish with real input (setup: the sandbox case file starts on chapter 2): Campaign, case file 1, Begin on the Chapter 2 card; the opening dialogue plays over the map (the bot reads pages, then skips it with Enter); the objective line reads Reach the gate with its metres counting down; Wallit walks out to the gate under fire from Yo Bots, batting those in reach; at the gate The Gate scene plays (read a few pages, then skipped), the objective turns to Back to the circle, Wallit walks home, three waves are held at the circle (objective Hold the circle, wave n of 3), then The Plated Alpha (stamped INVALID, with a boss bar) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 3, Menu, and reopening the file shows Chapter 3's card (events chapter2-setup, cutscene-open, cutscene-page, cutscene-skip, cutscene-play, objective, gate-leg, gate-reached, gate-scene-skip, home-leg, chapter-wave, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics gateReached, gateSceneSkipped, chapterWaves, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("story", "The story: the intro over the frozen Hollow (read page by page: who Wallit is, what the circle is, why Slice must not fall; a Skip button is on it), wave 1's story beats in canon voices, then setup: the testing wave key to wave 10 and wave 30 for the boss-wave title cards and beats (Yo Bots chirpy, Wallit on money, Slice clipped), and setup: wave 30's waiting bots trimmed to the boss and Slice topped up so the bat can finish it with real swings. Clearing wave 30 plays the finale pages and the ADDRESS FILED ending screen; the bot presses Keep going into overtime. Events intro-*, beat, finale-*, ending", 600, "content"),
         new PlaytestScenario("polish", "The final polish pass, on any screen size (run it on desktop and on the phone): the main menu, the HUD in wave 1, the level-up cards (setup: a level of bolts granted), the pause menu by its button, Resume, 40 s of real play, then the bot holds fire until Slice falls (setup: Plated Yo Bots ring her after 20 s) and the game-over panel reads Address struck off. Each screen gets a layout check (menu, hud, cards, pause, gameover), a stale-words check (no piano, keys or music-stopped words left), and a button-feel check (every button lifts on hover and sinks on press like the menu's); the audio-mix event says how many sounds played, how many stacked softer, how many were capped and how many dipped under a voice line", 420, "full"),
@@ -248,7 +249,7 @@ public static class Playtest {
                 }
                 yield break;
             }
-            if (id == "campaign" || id == "lore" || id == "journal" || id == "campaign-full" || id == "hub" || id == "moves" || id == "abilities" || id == "hub-doors" || id == "hub-npcs" || id == "cutscene" || id == "chapter2" || id == "companion" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
+            if (id == "campaign" || id == "lore" || id == "journal" || id == "grade" || id == "campaign-full" || id == "hub" || id == "moves" || id == "abilities" || id == "hub-doors" || id == "hub-npcs" || id == "cutscene" || id == "chapter2" || id == "companion" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
                 companionTest = id == "companion";
                 watchCutscene = id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5";
                 hubTest = id == "hub";
@@ -259,6 +260,7 @@ public static class Playtest {
                 fullRun = id == "campaign-full";
                 loreTest = id == "lore";
                 journalTest = id == "journal";
+                gradeTest = id == "grade";
                 quitDone = false;
                 startChapter = id == "hub-doors" ? 2 : id == "hub-npcs" ? 1 : id == "chapter6" ? 5 : id == "chapter5" ? 4 : id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" || id == "companion" ? 1 : 0;
                 yield return CampaignRun();
@@ -584,6 +586,7 @@ public static class Playtest {
     static bool hubTest;
     static bool loreTest;
     static bool journalTest;
+    static bool gradeTest;
     static bool movesTest;
     static bool abilitiesTest;
     static bool hubDoors;
@@ -1551,6 +1554,10 @@ run.Event("boss-defeated", "The Courier fell after " + Mathf.RoundToInt(chapter.
             run.Problem(PlaytestSeverity.Bug, "campaign: finishing chapter " + (before + 1) + " left the file on chapter " + (slot.chapter + 1) + " (" + slot.cleared + " cleared)");
         }
         yield return new WaitForSecondsRealtime(2f);
+        if (gradeTest) {
+            yield return GradeFlow(chapter, before);
+            yield break;
+        }
 
         if (hubTest) {
             yield return HubPlay(chapter);
@@ -1610,6 +1617,115 @@ run.Event("boss-defeated", "The Courier fell after " + Mathf.RoundToInt(chapter.
         run.Metric("chapterResumed", 1);
         yield return run.Until(() => ChapterScene.Instance.LinesShown >= 1, 10f, "the next chapter's first line");
         yield return new WaitForSecondsRealtime(3f);
+    }
+
+    // The grade scenario, after chapter 1's card: the rank on the card, the best kept through a save and reload, then Hard
+    // chosen on a filed file and its health and damage read off the bots.
+    static IEnumerator GradeFlow(ChapterRun chapter, int index) {
+        string card = chapter.CardText;
+        bool shown = card.Contains("RANK ") && chapter.Rank > 0;
+        run.Event("rank-shown", "Chapter Complete: rank " + CampaignGrade.Letter(chapter.Rank) + ", " + Mathf.RoundToInt(chapter.PlaySeconds) + " s (par " + Mathf.RoundToInt(CampaignGrade.ParOf(index)) + "), Slice took " + chapter.DamageTaken + (chapter.NewBest ? ", new best" : "") + " | " + card.Replace("\n", " / "));
+        run.Metric("rankShown", shown ? 1 : 0);
+        run.Metric("rankValue", chapter.Rank);
+        if (!shown) {
+            run.Problem(PlaytestSeverity.Bug, "grade: the Chapter Complete card shows no rank");
+        }
+        int earned = chapter.Rank;
+        Tap(chapter.MenuButton.gameObject);
+        yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu after the chapter");
+        if (run.Done) {
+            yield break;
+        }
+        // As after a quit: the files written out and read back.
+        CampaignSave.EnterSandbox(CampaignSave.ToText());
+        CampaignSave.Slot slot = CampaignSave.Get(0);
+        int kept = CampaignSave.BestRank(slot, index, false);
+        run.Event("rank-saved", "after writing the files out and reading them back chapter " + (index + 1) + " best rank is " + CampaignGrade.Letter(kept) + " (earned " + CampaignGrade.Letter(earned) + "), best line: " + CampaignSave.RankLine(slot));
+        run.Metric("rankSaved", kept == earned && kept > 0 ? 1 : 0);
+        if (kept != earned || kept == 0) {
+            run.Problem(PlaytestSeverity.Bug, "grade: the best rank was not saved with the case file (earned " + CampaignGrade.Letter(earned) + ", kept " + CampaignGrade.Letter(kept) + ")");
+        }
+        // Setup shortcut: the sandbox file is filed (every chapter cleared) and stands on chapter 1, so Hard may be chosen.
+        slot.cleared = CampaignSave.ChapterCount;
+        slot.chapter = 0;
+        slot.reached = CampaignSave.ChapterCount - 1;
+        run.Event("grade-setup", "sandbox case file 1 marked filed, standing on chapter 1");
+        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(menu.CampaignButton.gameObject);
+        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(CampaignPanel.Instance.SlotButtons[0].gameObject);
+        yield return run.Until(() => ChapterScene.Instance != null && SceneManager.GetActiveScene().name == CampaignSave.Scene && ChapterScene.Instance.BeginButton != null, 45f, "the filed file's chapter card");
+        if (run.Done) {
+            yield break;
+        }
+        ChapterScene scene = ChapterScene.Instance;
+        yield return new WaitForSecondsRealtime(1.5f);
+        run.Event("grade-card", "chapter card: " + (scene.RankText.Length > 0 ? scene.RankText : "no best rank") + "; difficulty button " + (scene.DifficultyButton != null ? "\"" + scene.DifficultyText.text + "\"" : "missing"));
+        if (scene.DifficultyButton == null) {
+            run.Problem(PlaytestSeverity.Bug, "grade: a filed case file's chapter card has no difficulty button");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        Tap(scene.DifficultyButton.gameObject);
+        bool hardOn = CampaignSave.Get(0).hard;
+        run.Event("hard-on", "pressed the difficulty button: now \"" + scene.DifficultyText.text + "\", file " + (hardOn ? "set to Hard" : "still Standard"));
+        run.Metric("hardOn", hardOn ? 1 : 0);
+        if (!hardOn) {
+            run.Problem(PlaytestSeverity.Bug, "grade: the difficulty button did not set Hard on a filed file");
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(scene.BeginButton.gameObject);
+        run.Event("tap", "Begin (Hard)");
+        yield return run.Until(() => ChapterRun.Instance != null && WaveDirector.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the Hard chapter's map");
+        if (run.Done) {
+            yield break;
+        }
+        ChapterRun hard = ChapterRun.Instance;
+        run.Scene("Chapter play (Hard)");
+        run.Event("hard-run", "the chapter reads Hard: " + hard.Hard);
+        yield return CutsceneStep();
+        if (run.Done) {
+            yield break;
+        }
+        Enemy plain = null;
+        yield return run.Until(() => {
+            foreach (Enemy e in Enemy.Roster) {
+                if (e != null && e.Kind == BotKind.YoBot && !e.Elite && !e.Boss && !e.Golden) {
+                    plain = e;
+                    return true;
+                }
+            }
+            return false;
+        }, 30f, "a plain Yo Bot to read");
+        if (run.Done) {
+            yield break;
+        }
+        BotDef def = BotRoster.ForSpawn(BotKind.YoBot, WaveDirector.Wave);
+        int standard = Mathf.Max(1, Mathf.RoundToInt(def.Hits * Tuning.HealthScale(WaveDirector.Wave)));
+        float ratio = plain.HitsToDrop / (float)standard;
+        run.Event("hard-health", "a Yo Bot has " + plain.HitsToDrop + " health on Hard against " + standard + " on Standard (x" + ratio.ToString("0.00") + ")");
+        run.Metric("hardHealthRatio", Mathf.Round(ratio * 100f) / 100f);
+        if (!hard.Hard || ratio < 1.5f) {
+            run.Problem(PlaytestSeverity.Bug, "grade: Hard did not raise a Yo Bot's health (x" + ratio.ToString("0.00") + ")");
+        }
+        // Hold still: the first blow a bot lands on Slice is read as meant and as landed.
+        int blows = CampaignGrade.Blows;
+        yield return run.Until(() => CampaignGrade.Blows > blows, 150f, "a bot to land a blow on Slice");
+        if (run.Done) {
+            yield break;
+        }
+        float dmg = CampaignGrade.LastLanded / (float)Mathf.Max(1, CampaignGrade.LastRaw);
+        run.Event("hard-damage", "a blow meant for " + CampaignGrade.LastRaw + " landed for " + CampaignGrade.LastLanded + " on Slice (x" + dmg.ToString("0.0") + "), Slice took " + hard.DamageTaken + " in all");
+        run.Metric("hardDamageRatio", dmg);
+        if (dmg < 1.99f) {
+            run.Problem(PlaytestSeverity.Bug, "grade: Hard did not raise the damage on Slice (x" + dmg.ToString("0.0") + ")");
+        }
+        yield return new WaitForSecondsRealtime(2f);
     }
 
     // The lore scenario: what the case-file slot shows, then the lore log read page by page.

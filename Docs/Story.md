@@ -92,6 +92,14 @@ hold the circle against six Yo Bots, then bring down the Courier (below).
 `Assets/Scripts/Story.cs` holds the chapter data (`Story.Chapters`); `CampaignSave.cs` holds the case files;
 The full plan for the six chapters (spine, bot origins, bosses, open questions) is in `Docs/CampaignBible.md`. `CampaignPanel.cs` is the slot screen; `ChapterScene.cs` builds the placeholder in `Assets/Campaign.unity`.
 
+### Grades and Hard
+
+The Department grades every chapter it files. **Chapter Complete** reads a rank: S, A, B or C, from the chapter's time against its
+par and what Slice took (a clean, quick file is S). The case file keeps the best rank for each chapter, and the chapter card shows
+it. Once every chapter is filed, the case file may be run again on **Hard**: the chapter card gains a Difficulty button. On
+Hard the bots carry 75% more health and every blow on Slice lands twice as hard, the HUD says HARD, and Hard keeps its own best
+ranks. Code: `CampaignGrade.cs`, `grade` playtest.
+
 ## Chapter scenes
 
 A chapter can open with a **cutscene**: Begin on the chapter card, and before the fighting the Hollow freezes under letterbox bars. A
