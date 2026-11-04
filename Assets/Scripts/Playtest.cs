@@ -39,6 +39,7 @@ public static class Playtest {
         new PlaytestScenario("cutscene", "The chapter cutscene: Campaign, case file 1, Begin on the Chapter 1 card, and the opening scene (The Stamp) plays over the map with letterbox bars, a speaker name and portrait slot, typed lines and the camera on whoever talks. The bot reads the first pages with real key presses (a first press finishes the typing, the next turns the page), skipping a page's voice by pressing on, then presses Enter to skip the rest: play starts with the objective line up and Wallit moving on the stick, and the chapter is cleared. Checked: every Wallit, Slice and Yo Bot page has a name, two voice lines never overlap (Wallit's floor and the scene both count them), the director allows no other line during the scene. Events cutscene-open, cutscene-page (speaker, text, camera focus, letterbox, voice), cutscene-skip, cutscene-play, cutscene-voice; metrics cutscenePages, cutsceneVoiceLines, cutsceneOverlaps, cutsceneSkipped", 420, "content"),
         new PlaytestScenario("campaign", "Campaign loads and plays a chapter: from the main menu press Campaign, open case file 1 (setup: the sandbox keeps the files off the real save) and wait for the Campaign scene to load. Reports run_start with mode=campaign and the loaded scene name (event run_start, metrics campaignLoaded, campaignLoadSeconds); if the scene fails to load (not in the build's scene list, or the chapter never builds) the run stops stuck with a bug saying so. Then Begin on the chapter card: Wallit and Slice in the chapter map, Wallit walks on the stick, the objective line shows, the bot fights with real input until it is met, Chapter 1 holds the circle against Yo Bots, then the Courier arrives (health bar on screen), winds up telegraphed notices on the circle and the bot breaks them or stands in them until it falls and the defeat beat plays; the Chapter Complete card shows, the case file advances to chapter 2, Menu, and reopening the file resumes at chapter 2 (events chapter-card, chapter-start, chapter-move, objective, boss-arrives, boss-bar, boss-attack, boss-defeated, defeat-beat, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics chapterAdvanced, chapterResumed, bossBar, courierWinds, courierInterrupted). Smoke is unchanged: it still presses Arcade", 750, "content"),
         new PlaytestScenario("hub", "The hub and Campaign progression, played with real input (setup: the sandbox case file 1 starts on chapter 1 with 85 XP, 5 short of level 3; the real save and Arcade are never touched): Campaign, case file 1, Begin on Chapter 1; the first kills give XP (HUD line LV/XP) and level 3 unlocks Refund (events xp-gain, level-up); the bot presses C near the bots and the ring shoves and stings them (event refund-used); the Courier falls, the Chapter Complete card offers To the hub; the bot presses it and lands in the hub (Wallit, Slice in the ring, the chapter board; events hub-open, hub-arrival), walks to the board on the stick and presses E (hub-walk, board-open: Chapter 1 filed and replayable, Chapter 2 next, Chapter 3 locked); picking Chapter 1 shows its card and Begin replays it (hub-replay-card, replay-started) without taking the file back a chapter. Checks per case file and Arcade: the XP stays on case file 1 (case file 2 has none) and Arcade's numbers read as no effect outside a chapter (events progress-saved, arcade-clean; metrics hubXp, hubLevel, refundHits, hubWalked)", 900, "content"),
+        new PlaytestScenario("moves", "Campaign's combat moves, played with real input in Chapter 1 (the sandbox case file; the real save and Arcade are never touched): the bot swings the bat three times in a row and each hit of the combo is its own (Deposit, Withdrawal, Overdraft: damage, knockback and crack differ; events combo-hit, combo-distinct); it then fights on pressing X (the dodge) whenever a bot is close, and a blow that lands inside the dodge's 0.4 s window is avoided (events dodge, dodge-avoided, ability-slots with X Dodge, C Refund and the empty V slot). The Courier fight then runs as in the campaign scenario. Arcade is checked unchanged: outside a chapter the dodge, the per-hit combo and the slots read as no effect (event arcade-moves-clean; metrics comboHits, dodges, dodgesAvoided)", 600, "content"),
         new PlaytestScenario("hub-doors", "The hub as a walkable office, with real input (setup: the sandbox case file 1 has chapters 1 and 2 filed and opens in the hub; the real save is never touched): Wallit walks about the room to the chapter board and the vacant desk (hub-walk), doors 1 to 3 stand open and 4 to 6 stay shut (hub-office), pushing on shut door 4 does not get him through (door-locked), walking into open door 3 shows that chapter's card (door-entered) and Begin starts it (chapter-started); metrics doorsRight, hubWalked, lockedHeld", 300, "content"),
         new PlaytestScenario("maps-123", "Chapters 1, 2 and 3 each load a visibly different map with a route, a landmark and a hazard or set piece (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; event map-loaded, map-lighting (fog and sky differ), map-features (one route:, landmark: and hazard: line each from the map's own list, a problem if any is missing), map-objective (the objective marker's distance from the end of the route: it must stand on the route; chapter 1's objective is the circle), then Wallit walks on the stick and the chapter is left. Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard. Play the whole objective of chapters 2 and 3 with the chapter2 and chapter3 scenarios.", 420, "content"),
         new PlaytestScenario("maps-456", "Chapters 4, 5 and 6 each load a visibly different map (the Long Walk, the Reading Room, the changed Hollow) with a route, a landmark, a hazard or set piece and a boss arena away from the route (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; events map-loaded, map-lighting (fog and sky differ), map-features (route:, landmark:, hazard:, arena: lines from the map's own list; a problem if any is missing), map-arena (the arena's distance and its angle away from the route: over 90 degrees), map-objective, then Wallit walks and the chapter is left. A boss is then called with the director (named setup shortcut) and must walk out of the arena: event arena-boss (spawn distance from the arena centre; a problem over 8 m). Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard, mapsWithArena. Play each whole objective with the chapter4, chapter5 and chapter6 scenarios.", 600, "content"),
@@ -224,9 +225,10 @@ public static class Playtest {
                 }
                 yield break;
             }
-            if (id == "campaign" || id == "campaign-full" || id == "hub" || id == "hub-doors" || id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
+            if (id == "campaign" || id == "campaign-full" || id == "hub" || id == "moves" || id == "hub-doors" || id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
                 watchCutscene = id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5";
                 hubTest = id == "hub";
+                movesTest = id == "moves";
                 hubDoors = id == "hub-doors";
                 fullRun = id == "campaign-full";
                 quitDone = false;
@@ -538,6 +540,7 @@ public static class Playtest {
     // the build ("Scene 'Campaign' couldn't be loaded", PR #70) never becomes the active scene: that is a bug, said plainly.
     static int startChapter;
     static bool hubTest;
+    static bool movesTest;
     static bool hubDoors;
     static bool fullRun;
     static bool quitDone;
@@ -908,6 +911,12 @@ public static class Playtest {
                     yield break;
                 }
             }
+            if (movesTest) {
+                yield return MovesPlay(player, chapter);
+                if (run.Done) {
+                    yield break;
+                }
+            }
             yield return Fight(player, () => chapter.BossUp || chapter.Completed, 180f, "the boss to arrive", null, true);
             if (run.Done) {
                 yield break;
@@ -993,6 +1002,12 @@ public static class Playtest {
             yield break;
         }
         run.Scene("Main Menu");
+        if (movesTest) {
+            run.Event("arcade-moves-clean", "outside a chapter: moves " + (CampaignMoves.Active ? "on" : "off") + ", invulnerable " + CampaignMoves.Invulnerable + ", dodge ready " + CampaignMoves.DodgeReady + ": Arcade keeps today's controls and balance");
+            if (CampaignMoves.Active || CampaignMoves.Invulnerable) {
+                run.Problem(PlaytestSeverity.Bug, "moves: Campaign's moves still read as on outside a chapter");
+            }
+        }
         yield return new WaitForSecondsRealtime(1f);
         MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
         Tap(menu.CampaignButton.gameObject);
@@ -1014,6 +1029,65 @@ public static class Playtest {
         run.Metric("chapterResumed", 1);
         yield return run.Until(() => ChapterScene.Instance.LinesShown >= 1, 10f, "the next chapter's first line");
         yield return new WaitForSecondsRealtime(3f);
+    }
+
+    // The moves scenario: the combo's three distinct hits, then the dodge pressed (X) as bots close in.
+    static IEnumerator MovesPlay(CharacterMovement player, ChapterRun chapter) {
+        run.Event("ability-slots", CampaignProgress.HudLine());
+        int seen = 0;
+        var steps = new HashSet<int>();
+        var damage = new Dictionary<int, string>();
+        System.Action drain = () => {
+            for (; seen < CampaignMoves.Log.Count; seen++) {
+                string line = CampaignMoves.Log[seen];
+                string[] f = line.Split('|');
+                if (f[0] == "combo") {
+                    steps.Add(int.Parse(f[1]));
+                    damage[int.Parse(f[1])] = f[2] + " " + f[4];
+                    run.Event("combo-hit", "hit " + f[1] + " of 3, " + f[2] + ": " + f[3] + ", " + f[4]);
+                } else if (f[0] == "dodge") {
+                    run.Event("dodge", "X pressed: " + f[2] + ", heading " + f[3]);
+                } else if (f[0] == "avoided") {
+                    run.Event("dodge-avoided", "a blow from " + f[1] + " landed inside the window and was avoided");
+                }
+            }
+        };
+        yield return Fight(player, () => { drain(); return steps.Count >= 3; }, 120f, "the combo's three hits", null, true);
+        if (run.Done) {
+            yield break;
+        }
+        var parts = new List<string>();
+        foreach (var kv in damage) {
+            parts.Add(kv.Value);
+        }
+        run.Event("combo-distinct", string.Join(" / ", parts));
+        run.Metric("comboHits", CampaignMoves.ComboHits);
+        float lastPress = 0f;
+        yield return Fight(player, () => {
+            drain();
+            if (CampaignMoves.DodgeReady && Time.realtimeSinceStartup - lastPress > 0.2f) {
+                foreach (Enemy e in Enemy.Roster) {
+                    if (e != null && e.Alive && (e.transform.position - player.transform.position).magnitude < 2.4f) {
+                        PlayInput.Tap(CampaignMoves.DodgeKey);
+                        lastPress = Time.realtimeSinceStartup;
+                        break;
+                    }
+                }
+            }
+            return CampaignMoves.Avoided > 0 || chapter.BossUp;
+        }, 150f, "a blow avoided inside the dodge window", null, true);
+        if (run.Done) {
+            yield break;
+        }
+        drain();
+        run.Metric("dodges", CampaignMoves.Dodges);
+        run.Metric("dodgesAvoided", CampaignMoves.Avoided);
+        run.Event("ability-slots", CampaignProgress.HudLine());
+        if (CampaignMoves.Dodges == 0) {
+            run.Problem(PlaytestSeverity.Bug, "moves: pressing X with bots close never started a dodge");
+        } else if (CampaignMoves.Avoided == 0) {
+            run.Problem(PlaytestSeverity.Bug, "moves: " + CampaignMoves.Dodges + " dodges and no blow was avoided in their window");
+        }
     }
 
     // The hub scenario's first half: XP from the first kills, level 3 unlocks Refund, the bot presses C and the ring works.

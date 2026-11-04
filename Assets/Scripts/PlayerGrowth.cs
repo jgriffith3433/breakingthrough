@@ -344,6 +344,11 @@ public class PlayerGrowth : MonoBehaviour {
     }
 
     public void OnHit(Enemy by = null) {
+        // Campaign's dodge: a blow inside the window finds nothing.
+        if (CampaignMoves.Invulnerable) {
+            CampaignMoves.NoteAvoided(by);
+            return;
+        }
         WallitVoice.OnHurt();
         if (WaveDirector.IsLost || BatEquipment.IsAnimatingAction || Time.time < nextHitReactAt) {
             return;

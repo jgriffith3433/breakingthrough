@@ -575,8 +575,20 @@ public class BatEquipment : MonoBehaviour {
             WideSwings++;
         }
         Blizzard(reach, halfArc, forward, finisher);
-        int count = Strike(hits, finisher ? Tuning.BatDamageFinisher : Tuning.BatDamage, finisher ? 4f : 2f,
-            finisher ? Tuning.BatKnockFinisher : Tuning.BatKnock, finisher ? 5f : 2f);
+        // Campaign: each combo hit is its own (Deposit, Withdrawal, Overdraft). Arcade's three swings stay as they were.
+        bool distinct = CampaignMoves.Active;
+        int step = move == Move.Swing1 ? 1 : move == Move.Swing2 ? 2 : 3;
+        CampaignMoves.ComboHit feel = CampaignMoves.Hit(step);
+        float damageScale = finisher ? Tuning.BatDamageFinisher : Tuning.BatDamage;
+        float knockSpeed = finisher ? Tuning.BatKnockFinisher : Tuning.BatKnock;
+        if (distinct) {
+            damageScale *= finisher ? 1f : feel.Damage;
+            knockSpeed *= finisher ? 1f : feel.Knock;
+        }
+        int count = Strike(hits, damageScale, finisher ? 4f : 2f, knockSpeed, finisher ? 5f : 2f);
+        if (distinct) {
+            CampaignMoves.NoteCombo(step, count);
+        }
         if (finisher && count > 0) {
             Finishers++;
             WallitVoice.OnBigHit("finisher");
@@ -586,14 +598,14 @@ public class BatEquipment : MonoBehaviour {
             name += " (" + ArcFor(move).ToString("0") + " degree arc)";
         }
         if (count > 0) {
-            Crack(finisher ? 1f : 0.75f, finisher ? 0.9f : Random.Range(0.98f, 1.1f));
-            Juice.HitStop(finisher ? 0.07f : 0.035f);
+            Crack(finisher ? 1f : 0.75f, distinct ? feel.Pitch : finisher ? 0.9f : Random.Range(0.98f, 1.1f));
+            Juice.HitStop(distinct ? feel.HitStop : finisher ? 0.07f : 0.035f);
             ZeldaStyleCamera.Shake(finisher ? 0.11f : 0.05f, finisher ? 0.2f : 0.12f);
             if (finisher && MetaProgress.MetalBat()) {
                 MetalBlast(hits[0].transform.position, hits[0]);
             }
             Say(name + ": " + count + " bot" + (count == 1 ? "" : "s") + " hit" + (inArc > count ? " (" + inArc + " in the arc, " + most + " a swing)" : "")
-                + ", knocked back " + (finisher ? Tuning.BatKnockFinisher : Tuning.BatKnock).ToString("0") + " m/s");
+                + ", knocked back " + knockSpeed.ToString(distinct ? "0.0" : "0") + " m/s" + (distinct ? ", damage x" + damageScale.ToString("0.00") : ""));
         } else {
             Say(name + ": a miss");
         }
