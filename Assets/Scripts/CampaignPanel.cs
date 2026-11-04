@@ -86,7 +86,7 @@ public class CampaignPanel : MonoBehaviour {
         if (laidStamp != UiFit.Stamp) {
             Layout();
         }
-        if (PlayInput.GetKeyDown(KeyCode.Escape)) {
+        if (MenuNav.Back) {
             Close();
         }
     }
@@ -187,6 +187,7 @@ public class CampaignPanel : MonoBehaviour {
         rect.pivot = new Vector2(0.5f, 0f);
         rect.anchoredPosition = new Vector2(0f, 28f);
         rect.sizeDelta = new Vector2(260f, 88f);
+        MenuNav.Attach(root, 590);
         Layout();
     }
 

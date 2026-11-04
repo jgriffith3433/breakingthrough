@@ -7,7 +7,7 @@ using UnityEngine.UI;
 // layout, scaled down to fit a phone, with 88-unit buttons and a slider knob as big.
 public class SettingsPanel : MonoBehaviour {
     const float PanelWidth = 680f;
-    const float PanelHeight = 680f;
+    const float PanelHeight = 700f;
 
     static SettingsPanel instance;
 
@@ -26,6 +26,7 @@ public class SettingsPanel : MonoBehaviour {
     public Slider MusicSlider { get; private set; }
     public Slider EffectsSlider { get; private set; }
     public Button DoneButton { get; private set; }
+    public Button VoiceButton { get; private set; }
 
     Font font;
     GameObject root;
@@ -35,6 +36,7 @@ public class SettingsPanel : MonoBehaviour {
     Image soundImage;
     Text musicValue;
     Text effectsValue;
+    Text voiceLabel;
     System.Action whenClosed;
     bool filling;
     float lastBlip;
@@ -93,7 +95,7 @@ public class SettingsPanel : MonoBehaviour {
         if (laidStamp != UiFit.Stamp) {
             Layout();
         }
-        if (PlayInput.GetKeyDown(KeyCode.Escape)) {
+        if (MenuNav.Back) {
             Close();
         }
     }
@@ -107,6 +109,7 @@ public class SettingsPanel : MonoBehaviour {
         EffectsSlider.value = SoundSettings.Sfx;
         musicValue.text = Percent(SoundSettings.Music);
         effectsValue.text = Percent(SoundSettings.Sfx);
+        voiceLabel.text = SoundSettings.ChatterName(SoundSettings.Chatter);
         // Volumes still move with sound off, and take effect when it comes back on.
         float alpha = on ? 1f : 0.5f;
         musicValue.color = new Color(1f, 0.96f, 0.86f, alpha);
@@ -120,6 +123,14 @@ public class SettingsPanel : MonoBehaviour {
 
     void ToggleSound() {
         SoundSettings.Set(!SoundSettings.On, SoundSettings.Music, SoundSettings.Sfx);
+        Fill();
+        Blip(true);
+    }
+
+    // Voice lines: Key lines only, Rarely, Normal, Often, round again.
+    void CycleVoices() {
+        int next = SoundSettings.Chatter + 1;
+        SoundSettings.SetChatter(next > SoundSettings.ChatterMax ? SoundSettings.ChatterOff : next);
         Fill();
         Blip(true);
     }
@@ -180,24 +191,29 @@ public class SettingsPanel : MonoBehaviour {
         Text title = MakeText(panel, "Settings", 48, FontStyle.Bold, TextAnchor.MiddleCenter);
         Place(title.rectTransform, new Vector2(0f, -28f), new Vector2(PanelWidth - 60f, 64f), new Vector2(0.5f, 1f));
 
-        RowLabel("Sound", -170f);
+        RowLabel("Sound", -150f);
         SoundButton = MakeButton(panel, "Sound", "On", new Vector2(220f, 88f), ToggleSound);
         soundImage = SoundButton.GetComponent<Image>();
         soundLabel = SoundButton.GetComponentInChildren<Text>();
-        Place((RectTransform)SoundButton.transform, new Vector2(240f, -170f), new Vector2(220f, 88f), new Vector2(0f, 1f), true);
+        Place((RectTransform)SoundButton.transform, new Vector2(240f, -150f), new Vector2(220f, 88f), new Vector2(0f, 1f), true);
 
-        RowLabel("Music", -300f);
-        MusicSlider = MakeSlider("Music", -300f, MusicChanged);
-        musicValue = ValueLabel(-300f);
+        RowLabel("Music", -250f);
+        MusicSlider = MakeSlider("Music", -250f, MusicChanged);
+        musicValue = ValueLabel(-250f);
 
-        RowLabel("Effects", -430f);
-        EffectsSlider = MakeSlider("Effects", -430f, EffectsChanged);
-        effectsValue = ValueLabel(-430f);
+        RowLabel("Effects", -350f);
+        EffectsSlider = MakeSlider("Effects", -350f, EffectsChanged);
+        effectsValue = ValueLabel(-350f);
+
+        RowLabel("Voices", -450f);
+        VoiceButton = MakeButton(panel, "Voices", "Normal", new Vector2(300f, 88f), CycleVoices);
+        voiceLabel = VoiceButton.GetComponentInChildren<Text>();
+        Place((RectTransform)VoiceButton.transform, new Vector2(240f, -450f), new Vector2(300f, 88f), new Vector2(0f, 1f), true);
 
         // What Hawkes Analytics (RunAnalytics) collects, said where a player of the game page can read it.
         Text privacy = MakeText(panel, "Anonymous gameplay statistics help improve the game.\nNo cookies, no personal data, no IP stored.", 22, FontStyle.Normal, TextAnchor.MiddleCenter);
         privacy.color = new Color(1f, 0.97f, 0.9f, 0.62f);
-        Place(privacy.rectTransform, new Vector2(0f, -492f), new Vector2(PanelWidth - 60f, 60f), new Vector2(0.5f, 1f));
+        Place(privacy.rectTransform, new Vector2(0f, -508f), new Vector2(PanelWidth - 60f, 60f), new Vector2(0.5f, 1f));
 
         DoneButton = MakeButton(panel, "Done", "Done", new Vector2(260f, 88f), Close);
         DoneButton.GetComponent<Image>().color = new Color(0.22f, 0.38f, 0.22f, 1f);
@@ -207,6 +223,7 @@ public class SettingsPanel : MonoBehaviour {
         doneRect.pivot = new Vector2(0.5f, 0f);
         doneRect.anchoredPosition = new Vector2(0f, 32f);
         doneRect.sizeDelta = new Vector2(260f, 88f);
+        MenuNav.Attach(root, 600);
         Layout();
     }
 

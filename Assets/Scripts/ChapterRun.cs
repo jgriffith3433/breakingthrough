@@ -187,7 +187,7 @@ public class ChapterRun : MonoBehaviour {
         if (Completed && data.Final) {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
-            if (CreditsUp && Time.unscaledTime > creditsAt && (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter))) {
+            if (CreditsUp && Time.unscaledTime > creditsAt && (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter) || PlayInput.GetKeyDown(KeyCode.JoystickButton0) || PlayInput.GetKeyDown(KeyCode.Space))) {
                 ToMenu();
             }
             return;
@@ -195,13 +195,7 @@ public class ChapterRun : MonoBehaviour {
         if (Completed) {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
-            if (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter)) {
-                if (NextButton != null && NextButton.gameObject.activeSelf) {
-                    Next();
-                } else {
-                    ToMenu();
-                }
-            }
+            // Enter, Space and the pad's A press whichever button the gold ring is on (MenuNav on the card).
             return;
         }
         if (Failed || WaveDirector.IsLost || PauseMenu.IsOpen || StoryScreen.IsOpen || LevelUpScreen.IsOpen || Cutscene.IsOpen) {
@@ -1085,6 +1079,7 @@ public class ChapterRun : MonoBehaviour {
         Anchor(cardBody.rectTransform, 0f, 120f, 1300f, 580f);
         NextButton = MakeButton(column, "To the hub", 380f, 88f, 760f, Next);
         MenuButton = MakeButton(column, "Menu", 260f, 88f, 760f, ToMenu);
+        MenuNav.Attach(card, 300);
         card.SetActive(false);
         Layout();
     }

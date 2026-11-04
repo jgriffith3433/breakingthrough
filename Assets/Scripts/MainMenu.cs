@@ -175,6 +175,15 @@ public class MainMenu : MonoBehaviour {
         if (SettingsPanel.IsOpen || SettingsPanel.ClosedFrame == Time.frameCount || CampaignPanel.IsOpen || CampaignPanel.ClosedFrame == Time.frameCount) {
             return;
         }
+        // Gamepad and keyboard for the mode select: X or C opens the case files, Y or S Settings, A or Enter plays.
+        if (PlayInput.GetKeyDown(KeyCode.C) || PlayInput.GetKeyDown(KeyCode.JoystickButton2)) {
+            OpenCampaign();
+            return;
+        }
+        if (PlayInput.GetKeyDown(KeyCode.S) || PlayInput.GetKeyDown(KeyCode.JoystickButton3)) {
+            OpenSettings();
+            return;
+        }
         if (PlayInput.GetKeyDown(KeyCode.RightArrow) || PlayInput.GetKeyDown(KeyCode.PageDown)) {
             Flip(1);
         } else if (PlayInput.GetKeyDown(KeyCode.LeftArrow) || PlayInput.GetKeyDown(KeyCode.PageUp)) {
@@ -186,7 +195,7 @@ public class MainMenu : MonoBehaviour {
             flipReadyAt = Time.unscaledTime + 0.3f;
             Flip(wheel < 0f ? 1 : -1);
         }
-        if (Time.unscaledTime >= playReadyAt && (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.Space))) {
+        if (Time.unscaledTime >= playReadyAt && (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.Space) || PlayInput.GetKeyDown(KeyCode.JoystickButton0))) {
             Play();
         }
     }
@@ -274,7 +283,7 @@ public class MainMenu : MonoBehaviour {
         float w = size.x - inset.x - inset.y - margin * 2f;
         float h = size.y - inset.z - inset.w - margin * 2f;
 
-        hint = UiFit.Touch ? "Campaign tells the story; Arcade is the endless wave defense. Swipe the case file to turn its pages." : "Campaign is the story; Arcade (Enter) is the wave defense. Arrow keys or the wheel turn the case file's pages.";
+        hint = UiFit.Touch ? "Campaign tells the story; Arcade is the endless wave defense. Swipe the case file to turn its pages." : "Campaign (C, pad X) is the story; Arcade (Enter, pad A) is the wave defense. Arrow keys, d-pad or the wheel turn the pages; Settings is S or pad Y.";
         if (builtMode == UiMode.Tall) {
             BuildTall(desk, w, h);
         } else {
