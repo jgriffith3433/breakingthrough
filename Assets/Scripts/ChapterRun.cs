@@ -665,6 +665,10 @@ public class ChapterRun : MonoBehaviour {
             body.Append("\n").Append(Spoken(raw));
         }
         body.Append("\n\nLV " + CampaignProgress.Level + "   XP " + CampaignProgress.Xp);
+        if (Lore.LastUnlocked.Length > 0) {
+            body.Append("\nNew lore: ").Append(string.Join(", ", Lore.LastUnlocked));
+            Events.Add("lore|" + string.Join(";", Lore.LastUnlocked));
+        }
         body.Append("\n").Append(more ? "Back to the hub. Next on the board: " + Story.Chapters[Chapter + 1].Title : "The case file is filed. The board keeps every chapter.");
         cardBody.text = body.ToString();
         NextButton.gameObject.SetActive(true);

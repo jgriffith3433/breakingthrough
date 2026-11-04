@@ -48,6 +48,7 @@ public static class Playtest {
         new PlaytestScenario("maps-123", "Chapters 1, 2 and 3 each load a visibly different map with a route, a landmark and a hazard or set piece (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; event map-loaded, map-lighting (fog and sky differ), map-features (one route:, landmark: and hazard: line each from the map's own list, a problem if any is missing), map-objective (the objective marker's distance from the end of the route: it must stand on the route; chapter 1's objective is the circle), then Wallit walks on the stick and the chapter is left. Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard. Play the whole objective of chapters 2 and 3 with the chapter2 and chapter3 scenarios.", 420, "content"),
         new PlaytestScenario("maps-456", "Chapters 4, 5 and 6 each load a visibly different map (the Long Walk, the Reading Room, the changed Hollow) with a route, a landmark, a hazard or set piece and a boss arena away from the route (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; events map-loaded, map-lighting (fog and sky differ), map-features (route:, landmark:, hazard:, arena: lines from the map's own list; a problem if any is missing), map-arena (the arena's distance and its angle away from the route: over 90 degrees), map-objective, then Wallit walks and the chapter is left. A boss is then called with the director (named setup shortcut) and must walk out of the arena: event arena-boss (spawn distance from the arena centre; a problem over 8 m). Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard, mapsWithArena. Play each whole objective with the chapter4, chapter5 and chapter6 scenarios.", 600, "content"),
         new PlaytestScenario("chapter-maps", "Each Campaign chapter loads its own map, with its own lighting, and unloads it on leaving (setup: the sandbox case file stands on the chapter; the real save is never touched; leaving a chapter early is a named setup shortcut). Three chapters in turn (1 The Moonlit Hollow, 4 The Long Walk, 5 The Reading Room): Campaign, case file 1, Begin; the map named in the chapter data loads as an extra scene on top of the game scene (event map-loaded: map, scene, scenes open), the chapter's lighting is on (event map-lighting: fog colour and density, sun colour, sky colour; they differ between chapters), the opening scene is skipped with Enter and Wallit walks on the stick; then the chapter is left for the menu and the map is gone (event map-unloaded: scene closed, lighting back) with memory read before and after (metrics mapMemoryBaselineMB, mapMemoryAfterMB, mapMemoryGrowthMB; a growth over 48 MB is a bug). Metrics mapsLoaded, mapsUnloaded, distinctLooks)", 800, "content"),
+        new PlaytestScenario("lore", "The lore log and the case-file slots, with real input (setup: the sandbox case file starts on chapter 1; the real save is never touched). Campaign, case file 1, Begin, Chapter 1 is played with the bat to the Courier's fall as in the campaign scenario; the Chapter Complete card names the new lore it unlocked (event lore). Menu, Campaign: the case file slot reads its chapter, its play time and its completion (event slot-info: chapter, h:mm:ss on the books, 1/6 filed, lore n/15; problems if any is missing or the time is 0). The Lore log button opens the file's log (event lore-open), the bot turns every page with Next and reads which entries are open and which are sealed (event lore-page per entry, event lore-summary): the entries revealed by opening the file and by Chapter 1 are open, the later ones read Sealed until their chapter is filed (metrics loreUnlocked, loreSealed, slotChapterShown, slotTimeShown, slotCompletionShown). Back closes it", 800, "content"),
         new PlaytestScenario("campaign-full", "The whole case file in one run with real input (setup: the sandbox keeps the files off the real save): Campaign, case file 1, then Chapter 1 to ADDRESS FILED. Each chapter is played as its own scenario plays it (opening scene skipped with Enter, the objective met with the bat, the boss down, the Chapter Complete card), and between chapters Menu, Campaign and the file reopen on the next chapter's card (campaign-advanced, campaign-resume). Quit and resume: in Chapter 3 the scene is dropped mid-chapter (setup, as a closed tab does) and the file must reopen on Chapter 3, unfinished (events quit-midchapter, quit-resume-panel, quit-resume; metric quitResumeRight). Ends with the Filed scene, the finale pages, ADDRESS FILED, the credits card and the case file reading filed (events campaign-full, ending-card, campaign-panel-filed; metrics fullCaseFileCleared, endingShown, caseFileFiled)", 3000, "content"),
         new PlaytestScenario("chapter6", "Chapter 6, Address Filed, played start to finish with real input (setup: the sandbox case file starts on chapter 6): Campaign, case file 1, Begin on the Chapter 6 card; the opening scene in the changed Hollow plays and is skipped with Enter; Wallit holds the circle with the bat through three waves (events wave-start), then the Spider Bot that carries the order (boss bar up, scroll on its back) arrives and falls; the Filed scene plays over the field, then the finale pages (Story.Finale verbatim, as in Arcade's story run) and the ADDRESS FILED ending card (events filed-scene, finale-page, ending-card); Keep going shows the credits card; the case file is marked complete (6 cleared), Menu, and the Campaign panel's case file 1 reads filed (events chapter6-setup, cutscene-open, objective, wave-start, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, filed-scene, finale-page, ending-card, credits-card, campaign-complete, campaign-panel-filed; metrics bossBar, endingShown, caseFileCleared, caseFileFiled)", 1000, "content"),
         new PlaytestScenario("chapter5", "Chapter 5, Strike This Address, played start to finish with real input (setup: the sandbox case file starts on chapter 5): Campaign, case file 1, Begin on the Chapter 5 card; the opening scene in the Reading Room plays over the map (the order is not signed, so it can be denied; the stamp pressed to the first page shows DENIED; the bot reads pages then skips with Enter); the objective line reads Read the order, page 1 of 5 with the bots down counting up; Wallit holds the circle at the desk with the bat through five pages (each page's wave announced PAGE n OF 5 and its forms on the wall turning blank when it is down: events page-start, page-read); then The Registrar (a gold Titan Spider Bot with a ledger, boss bar up) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 6, Menu, and reopening the file shows Chapter 6's card (events chapter5-setup, cutscene-open, cutscene-page, objective, page-start, page-read, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics pagesRead, bossBar, chapterAdvanced, chapterResumed)", 900, "content"),
@@ -230,7 +231,7 @@ public static class Playtest {
                 }
                 yield break;
             }
-            if (id == "campaign" || id == "campaign-full" || id == "hub" || id == "moves" || id == "abilities" || id == "hub-doors" || id == "hub-npcs" || id == "cutscene" || id == "chapter2" || id == "companion" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
+            if (id == "campaign" || id == "lore" || id == "campaign-full" || id == "hub" || id == "moves" || id == "abilities" || id == "hub-doors" || id == "hub-npcs" || id == "cutscene" || id == "chapter2" || id == "companion" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
                 companionTest = id == "companion";
                 watchCutscene = id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5";
                 hubTest = id == "hub";
@@ -239,6 +240,7 @@ public static class Playtest {
                 hubDoors = id == "hub-doors";
                 hubNpcs = id == "hub-npcs";
                 fullRun = id == "campaign-full";
+                loreTest = id == "lore";
                 quitDone = false;
                 startChapter = id == "hub-doors" ? 2 : id == "hub-npcs" ? 1 : id == "chapter6" ? 5 : id == "chapter5" ? 4 : id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" || id == "companion" ? 1 : 0;
                 yield return CampaignRun();
@@ -562,6 +564,7 @@ public static class Playtest {
     // the build ("Scene 'Campaign' couldn't be loaded", PR #70) never becomes the active scene: that is a bug, said plainly.
     static int startChapter;
     static bool hubTest;
+    static bool loreTest;
     static bool movesTest;
     static bool abilitiesTest;
     static bool hubDoors;
@@ -1265,6 +1268,12 @@ run.Event("boss-defeated", "The Courier fell after " + Mathf.RoundToInt(chapter.
         CampaignPanel panel = CampaignPanel.Instance;
         Text[] texts = panel.SlotButtons[0].GetComponentsInChildren<Text>();
         run.Event("campaign-resume", texts[0].text + " / " + texts[1].text);
+        if (loreTest) {
+            yield return LoreCheck(panel, texts[0].text, texts[1].text);
+            if (run.Done) {
+                yield break;
+            }
+        }
         yield return new WaitForSecondsRealtime(1f);
         Tap(panel.SlotButtons[0].gameObject);
         yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.Chapter == before + 1 && SceneManager.GetActiveScene().name == CampaignSave.Scene, 30f, "the next chapter's card");
@@ -1276,6 +1285,53 @@ run.Event("boss-defeated", "The Courier fell after " + Mathf.RoundToInt(chapter.
         run.Metric("chapterResumed", 1);
         yield return run.Until(() => ChapterScene.Instance.LinesShown >= 1, 10f, "the next chapter's first line");
         yield return new WaitForSecondsRealtime(3f);
+    }
+
+    // The lore scenario: what the case-file slot shows, then the lore log read page by page.
+    static IEnumerator LoreCheck(CampaignPanel panel, string title, string info) {
+        bool chapterShown = title.Contains("Chapter ");
+        bool timeShown = info.Contains(" on the books") || System.Text.RegularExpressions.Regex.IsMatch(info, @"\d+:\d\d:\d\d");
+        bool completionShown = info.Contains("filed (");
+        run.Event("slot-info", title + " / " + info);
+        run.Metric("slotChapterShown", chapterShown ? 1 : 0);
+        run.Metric("slotTimeShown", timeShown ? 1 : 0);
+        run.Metric("slotCompletionShown", completionShown ? 1 : 0);
+        if (!chapterShown || !timeShown || !completionShown) {
+            run.Problem(PlaytestSeverity.Bug, "lore: the case file slot must show chapter, play time and completion, it reads: " + title + " / " + info);
+        }
+        if (info.Contains("0:00:00")) {
+            run.Problem(PlaytestSeverity.Bug, "lore: a file that played a whole chapter shows no play time: " + info);
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(panel.LoreButton.gameObject);
+        yield return run.Until(() => LorePanel.IsOpen, 10f, "the lore log after pressing Lore log");
+        if (run.Done) {
+            yield break;
+        }
+        LorePanel lore = LorePanel.Instance;
+        run.Event("lore-open", lore.TitleText);
+        int open = 0;
+        int sealedCount = 0;
+        for (int i = 0; i < Lore.All.Length; i++) {
+            bool isOpen = lore.EntryTitle != "Sealed";
+            open += isOpen ? 1 : 0;
+            sealedCount += isOpen ? 0 : 1;
+            run.Event("lore-page", (lore.Page + 1) + "/" + Lore.All.Length + " " + lore.EntryTitle + ": " + lore.BodyText);
+            if (isOpen != (Lore.All[lore.Page].Reveal <= 1)) {
+                run.Problem(PlaytestSeverity.Bug, "lore: entry '" + Lore.All[lore.Page].Title + "' (revealed by Chapter " + Lore.All[lore.Page].Reveal + ") reads " + (isOpen ? "open" : "sealed") + " with one chapter filed");
+            }
+            yield return new WaitForSecondsRealtime(0.8f);
+            Tap(lore.NextButton.gameObject);
+            yield return new WaitForSecondsRealtime(0.2f);
+        }
+        run.Event("lore-summary", open + " unlocked, " + sealedCount + " sealed");
+        run.Metric("loreUnlocked", open);
+        run.Metric("loreSealed", sealedCount);
+        if (open == 0 || sealedCount == 0) {
+            run.Problem(PlaytestSeverity.Bug, "lore: after Chapter 1 the log should have some entries open and some sealed (" + open + " open, " + sealedCount + " sealed)");
+        }
+        Tap(lore.BackButton.gameObject);
+        yield return run.Until(() => !LorePanel.IsOpen && CampaignPanel.IsOpen, 5f, "the lore log closing");
     }
 
     // The moves scenario: the combo's three distinct hits, then the dodge pressed (X) as bots close in.

@@ -319,6 +319,16 @@ workers: they are lost things, and they talk about what they lost.
 - Wallit's account: inside the circle he is on the books, and fights add to it (XP). Levels unlock Spare Change, Refund, Receipt, Chargeback, Coin Toss, Stamp Out and Escrow. Slice does not level. Campaign only, per case file.
 - New in the chapters: one variant Yo Bot per chapter (Dispatch, Returned, Reissue, Queue-Skip, Clerk, Sealed) and mini-bosses The Second Notice (Ch2), The Half-Built (Ch3) and The Clerk (Ch5).
 
+## The lore log
+
+Campaign keeps a lore log per case file: what the Department's files say about the things the story has shown. Each entry is data in
+`Assets/Scripts/Lore.cs` (`Lore.All`: title, the chapter that reveals it, text) and unlocks when that chapter is filed; three entries (the
+circle, Wallit, the Department) are open from the start of a file. The Chapter Complete card says "New lore: ..." for what it unlocked. It is
+read from the case files panel's **Lore log** button (`LorePanel.cs`, one entry per page, Prev/Next; sealed entries say which chapter opens
+them). Bot origins live here: Yo Bots are the Clearing Crew (Chapter 3), Spider Bots are process servers (Chapter 4). The unseen creature
+behind the order is never named in it. Unlocks are a bit per row in `CampaignSave.Slot.lore`, so never reorder or reuse a row. The case file
+slot reads its chapter, time on the books, completion ("2/6 filed (33%)") and lore count. `lore` playtest.
+
 ## The cast file
 
 Every voice in a dialogue box is a row in `Assets/Resources/Cast/cast.json`: Wallit, Slice, the Yo Bots (Yo Bot, Mega Yo Bot,
