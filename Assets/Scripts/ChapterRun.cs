@@ -100,8 +100,14 @@ public class ChapterRun : MonoBehaviour {
             MakeMarker();
         }
         BuildUi();
-        Say(data.Lines.Length > 0 ? data.Lines[0] : "", 3.2f);
         RunAnalytics.Screen("chapter_play_" + (Chapter + 1));
+        if (data.Cutscene != null && data.Cutscene.Length > 0) {
+            // The chapter's opening scene plays over the frozen map; reading it or skipping it hands over to play.
+            Events.Add("cutscene|" + data.Id);
+            Cutscene.Play(data.Cutscene, () => Events.Add("play|" + data.Id));
+        } else {
+            Say(data.Lines.Length > 0 ? data.Lines[0] : "", 3.2f);
+        }
     }
 
     void OnDestroy() {
@@ -136,7 +142,7 @@ public class ChapterRun : MonoBehaviour {
             }
             return;
         }
-        if (Failed || WaveDirector.IsLost || PauseMenu.IsOpen || StoryScreen.IsOpen || LevelUpScreen.IsOpen) {
+        if (Failed || WaveDirector.IsLost || PauseMenu.IsOpen || StoryScreen.IsOpen || LevelUpScreen.IsOpen || Cutscene.IsOpen) {
             return;
         }
         PlaySeconds += Time.unscaledDeltaTime;

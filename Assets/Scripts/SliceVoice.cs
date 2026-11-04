@@ -306,6 +306,24 @@ public class SliceVoice : MonoBehaviour {
         Show(false, line, why);
     }
 
+    // A cutscene line (Cutscene.cs): her voice file if there is one, the floor for its length, no subtitle of her own.
+    public static float Cutscene(string line) {
+        if (Instance != null) {
+            return Instance.Show(false, line, "cutscene");
+        }
+        float length = WallitVoice.EstimateSeconds(line);
+        WallitVoice.Claim("slice", length);
+        VoiceDirector.Spoke(line, "cutscene", VoiceDirector.Priority.Key);
+        return length;
+    }
+
+    // Cuts her line and frees the floor.
+    public static void Silence() {
+        if (Instance != null && Instance.audioOut != null) {
+            Instance.audioOut.Stop();
+        }
+    }
+
     // Returns how long the line takes to say.
     float Show(bool wallit, string line, string why) {
         if (line == LastLine) {
@@ -326,8 +344,8 @@ public class SliceVoice : MonoBehaviour {
                 wallitText.text = "WALLIT  " + line;
             }
         } else {
-            sliceShown = 2.4f;
-            if (sliceText != null) {
+            sliceShown = why == "cutscene" ? 0f : 2.4f;
+            if (sliceText != null && why != "cutscene") {
                 sliceText.text = "SLICE  " + line;
             }
             AudioClip clip = Resources.Load<AudioClip>("Voice/" + id);

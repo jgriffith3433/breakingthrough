@@ -36,6 +36,7 @@ public static class Playtest {
         new PlaytestScenario("locomotion", "Wallit's feet on the ground: walks, runs, starts, stops and turns free, then locked on to a Yo Bot strafes left and right, back pedals, runs at it and stops, all through the keys. Each segment logs the planted foot's slide and the hips' largest jump (`loco` events; a slide or a pop is a bug)", 75, "content"),
         new PlaytestScenario("cast", "The new cast, in 90 s: the main menu with the key art up (MenuArt, its size and that the menu shows it), What's new opened from the site over the game with the release note naming Wallit, Slice and the bots (read from releases.json), then a run where the player is Wallit with his bat, the bar says Slice, and wave 1's Yo Bots close in and are batted. The AGENTS.md and README cast text lives in the repo, not the build: the review reads it from the diff", 120, "content"),
         new PlaytestScenario("modes", "The mode select: the main menu shows Campaign and Arcade; Campaign opens the three case files (save slots, setup: the sandbox keeps them off the real save), opening an empty file loads the placeholder Chapter 1 scene with Wallit and Slice's lines, Menu returns and the file now reads Chapter 1 with its time on the books, Erase (asked twice) empties it; then Arcade starts today's wave defense and the bot plays 40 s of it with the bat. Events mode-select, campaign-files, chapter-open, chapter-lines, campaign-saved, campaign-erased, arcade-start", 200, "content"),
+        new PlaytestScenario("cutscene", "The chapter cutscene: Campaign, case file 1, Begin on the Chapter 1 card, and the opening scene (The Stamp) plays over the map with letterbox bars, a speaker name and portrait slot, typed lines and the camera on whoever talks. The bot reads the first pages with real key presses (a first press finishes the typing, the next turns the page), skipping a page's voice by pressing on, then presses Enter to skip the rest: play starts with the objective line up and Wallit moving on the stick, and the chapter is cleared. Checked: every Wallit, Slice and Yo Bot page has a name, two voice lines never overlap (Wallit's floor and the scene both count them), the director allows no other line during the scene. Events cutscene-open, cutscene-page (speaker, text, camera focus, letterbox, voice), cutscene-skip, cutscene-play, cutscene-voice; metrics cutscenePages, cutsceneVoiceLines, cutsceneOverlaps, cutsceneSkipped", 420, "content"),
         new PlaytestScenario("campaign", "Campaign loads and plays a chapter: from the main menu press Campaign, open case file 1 (setup: the sandbox keeps the files off the real save) and wait for the Campaign scene to load. Reports run_start with mode=campaign and the loaded scene name (event run_start, metrics campaignLoaded, campaignLoadSeconds); if the scene fails to load (not in the build's scene list, or the chapter never builds) the run stops stuck with a bug saying so. Then Begin on the chapter card: Wallit and Slice in the chapter map, Wallit walks on the stick, the objective line shows, the bot fights with real input until it is met, the Chapter Complete card shows, the case file advances to chapter 2, Menu, and reopening the file resumes at chapter 2 (events chapter-card, chapter-start, chapter-move, objective, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics chapterAdvanced, chapterResumed). Smoke is unchanged: it still presses Arcade", 400, "content"),
         new PlaytestScenario("story", "The story: the intro over the frozen Hollow (read page by page: who Wallit is, what the circle is, why Slice must not fall; a Skip button is on it), wave 1's story beats in canon voices, then setup: the testing wave key to wave 10 and wave 30 for the boss-wave title cards and beats (Yo Bots chirpy, Wallit on money, Slice clipped), and setup: wave 30's waiting bots trimmed to the boss and Slice topped up so the bat can finish it with real swings. Clearing wave 30 plays the finale pages and the ADDRESS FILED ending screen; the bot presses Keep going into overtime. Events intro-*, beat, finale-*, ending", 600, "content"),
         new PlaytestScenario("polish", "The final polish pass, on any screen size (run it on desktop and on the phone): the main menu, the HUD in wave 1, the level-up cards (setup: a level of bolts granted), the pause menu by its button, Resume, 40 s of real play, then the bot holds fire until Slice falls (setup: Plated Yo Bots ring her after 20 s) and the game-over panel reads Address struck off. Each screen gets a layout check (menu, hud, cards, pause, gameover), a stale-words check (no piano, keys or music-stopped words left), and a button-feel check (every button lifts on hover and sinks on press like the menu's); the audio-mix event says how many sounds played, how many stacked softer, how many were capped and how many dipped under a voice line", 420, "full"),
@@ -204,7 +205,8 @@ public static class Playtest {
                     yield break;
                 }
             }
-            if (id == "campaign") {
+            if (id == "campaign" || id == "cutscene") {
+                watchCutscene = id == "cutscene";
                 yield return CampaignRun();
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
@@ -580,6 +582,10 @@ public static class Playtest {
         ChapterRun chapter = ChapterRun.Instance;
         run.Scene("Chapter play");
         run.Event("chapter-start", chapter.Title + " in " + chapter.Place + ", case file " + (CampaignSave.Active + 1));
+        yield return CutsceneStep();
+        if (run.Done) {
+            yield break;
+        }
         yield return new WaitForSecondsRealtime(2f);
         CheckPlayerIsWallit();
         CheckMusicianIsSlice();
@@ -650,6 +656,86 @@ public static class Playtest {
         run.Metric("chapterResumed", 1);
         yield return run.Until(() => ChapterScene.Instance.LinesShown >= 1, 10f, "the next chapter's first line");
         yield return new WaitForSecondsRealtime(3f);
+    }
+
+    static bool watchCutscene;
+
+    // The chapter's opening scene. "campaign" only skips it (Enter) so the chapter can be played; "cutscene" reads the
+    // first pages with real key presses, logs each one, then skips the rest and checks that play starts.
+    static IEnumerator CutsceneStep() {
+        yield return run.Until(() => Cutscene.IsOpen || (ChapterRun.Instance != null && ChapterRun.Instance.PlaySeconds > 3f), 12f, "the chapter's opening cutscene");
+        if (run.Done) {
+            yield break;
+        }
+        if (!Cutscene.IsOpen) {
+            if (watchCutscene) {
+                run.Problem(PlaytestSeverity.Bug, "cutscene: Chapter 1 began without its opening dialogue scene");
+            }
+            yield break;
+        }
+        Cutscene scene = Cutscene.Instance;
+        run.Event("cutscene-open", scene.PageCount + " pages; letterbox, speaker name, portrait slot, typed lines");
+        if (!watchCutscene) {
+            yield return new WaitForSecondsRealtime(0.6f);
+            PlayInput.Tap(KeyCode.Return);
+            yield return run.Until(() => !Cutscene.IsOpen, 5f, "the cutscene to close after Enter");
+            yield break;
+        }
+        int told = 0;
+        int named = 0;
+        int read = 0;
+        string[] seen = new string[8];
+        while (read < 7 && Cutscene.IsOpen && !run.Done) {
+            yield return new WaitForSecondsRealtime(0.7f);
+            string who = scene.NameShown;
+            string text = scene.TextShown;
+            seen[read] = who;
+            if (who.Length > 0) {
+                named++;
+            }
+            run.Event("cutscene-page", (scene.Page) + "/" + scene.PageCount + " " + (who.Length > 0 ? who : "(narration)") + ": \"" + text.Replace('\n', ' ') + "\"  camera " + scene.Focus
+                + " (weight " + scene.CameraWeight.ToString("0.00") + "), letterbox " + scene.Bars.ToString("0.00") + ", voice " + (WallitVoice.FloorFree ? "idle" : "speaking " + WallitVoice.FloorOwner));
+            read++;
+            // A first press finishes the typing; the next turns the page (and cuts the page's voice).
+            if (scene.Typing) {
+                PlayInput.Tap(KeyCode.Space);
+                yield return new WaitForSecondsRealtime(0.35f);
+            }
+            PlayInput.Tap(KeyCode.Space);
+            yield return new WaitForSecondsRealtime(0.3f);
+        }
+        for (; told < Cutscene.Events.Count; told++) {
+            if (Cutscene.Events[told].StartsWith("voice|") || Cutscene.Events[told].StartsWith("overlap|") || Cutscene.Events[told].StartsWith("camera|") || Cutscene.Events[told].StartsWith("bars|")) {
+                run.Event("cutscene-voice", Cutscene.Events[told]);
+            }
+        }
+        int overlaps = Cutscene.Overlaps + WallitVoice.Overlaps;
+        run.Metric("cutscenePages", Cutscene.PagesShown);
+        run.Metric("cutsceneVoiceLines", Cutscene.VoiceLines);
+        run.Metric("cutsceneOverlaps", overlaps);
+        if (overlaps > 0) {
+            run.Problem(PlaytestSeverity.Bug, "cutscene: " + overlaps + " voice line(s) overlapped during the dialogue");
+        }
+        if (Cutscene.VoiceLines < 2) {
+            run.Problem(PlaytestSeverity.Bug, "cutscene: only " + Cutscene.VoiceLines + " voice lines went through the director in the pages read");
+        }
+        if (named < 2) {
+            run.Problem(PlaytestSeverity.Bug, "cutscene: only " + named + " of the pages read showed a speaker name");
+        }
+        if (Cutscene.IsOpen) {
+            run.Event("cutscene-skip", "Enter pressed on page " + scene.Page + "/" + scene.PageCount);
+            PlayInput.Tap(KeyCode.Return);
+        }
+        yield return run.Until(() => !Cutscene.IsOpen, 5f, "the cutscene to close after skipping");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        run.Metric("cutsceneSkipped", Cutscene.Skipped);
+        run.Event("cutscene-play", "scene closed (" + Cutscene.Skipped + " skipped), game running at time scale " + Time.timeScale.ToString("0.0") + ", objective \"" + (ChapterRun.Instance != null ? ChapterRun.Instance.ObjectiveLine : "") + "\", camera weight " + Cutscene.Instance.CameraWeight.ToString("0.00"));
+        if (Time.timeScale < 0.99f) {
+            run.Problem(PlaytestSeverity.Bug, "cutscene: skipping left the game frozen (time scale " + Time.timeScale.ToString("0.00") + ")");
+        }
     }
 
     // The mode select, played through the buttons like a mouse. The sandbox keeps the case files off the real save.

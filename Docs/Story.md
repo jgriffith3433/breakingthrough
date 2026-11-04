@@ -92,10 +92,28 @@ down eight Yo Bots.
 `Assets/Scripts/Story.cs` holds the chapter data (`Story.Chapters`); `CampaignSave.cs` holds the case files;
 The full plan for the six chapters (spine, bot origins, bosses, open questions) is in `Docs/CampaignBible.md`. `CampaignPanel.cs` is the slot screen; `ChapterScene.cs` builds the placeholder in `Assets/Campaign.unity`.
 
+## Chapter scenes
+
+A chapter can open with a **cutscene**: Begin on the chapter card, and before the fighting the Hollow freezes under letterbox bars. A
+panel at the bottom names who is talking (WALLIT, SLICE, YO BOT; narration has no name), with a portrait slot beside it, and types
+the line out. The camera moves to whoever speaks, or pulls back to take in both. Any key, click or tap finishes the typing and then
+turns the page; Enter or the Skip button leaves the scene and the chapter starts at once. Wallit and Slice are voiced, one at a time:
+a page's voice is cut when you turn it, and nothing else speaks until the scene is over (`VoiceDirector`: "cutscene" is a key
+reason and the only one allowed while a scene is up). The scene is data in `Story.Chapters` (`Cutscene`), played by `Cutscene.cs`.
+
+Chapter 1's scene is **The Stamp** (`Docs/CampaignBible.md`): a stamp comes down out of the dark, RETURN TO SENDER, the only bright
+ink in the Hollow. It lands on a wallet's leather; he hits the grass and rolls, and the circle's ring lights around him.
+
+- Slice: "You're inside. Inside, you exist."
+- Wallit: "Does existing come with a receipt?" Slice: "No."
+- Wallit: "Where do I sign for this bat?" Slice: "Swing it."
+- A Yo Bot: "Hello! Uploading victory! Striking this address now!" Wallit: "Pay up, bots."
+
 ## Canon established here
 
 - The circle is the one filed address in the Moonlit Hollow; whatever is inside it exists.
 - Wallit was stamped "Return to sender" and thrown in. He has no address of his own.
 - Yo Bots and Spider Bots are sent to strike the circle's address. Wave 30's Spider Bot carries the order.
 - The Place Department is the thing that files and clears. The creature behind the order is never named.
+- The Stamp: Wallit arrives by stamp, RETURN TO SENDER landing on him out of the dark; the circle's ring lights as he rolls into it. Chapter 1 opens with it.
 - Campaign is the story in chapters, kept in three case files; Arcade is the endless Hollow. Chapter 1 is "Return to Sender".
