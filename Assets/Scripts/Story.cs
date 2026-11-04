@@ -39,6 +39,7 @@ public static class Story {
         public int Power;             // the wave number the bots' strength follows
         public string[] Lines;        // before: shown on the chapter card ("<speaker>|<text>")
         public string[] Done;         // after: shown on the Chapter Complete card
+        public string[] Cutscene;     // played by Cutscene.cs over the chapter's map when Begin is pressed (null: none)
     }
 
     public static readonly Chapter[] Chapters = {
@@ -49,8 +50,31 @@ public static class Story {
             Lines = new[] {
                 "W|Return to sender. Which sender? I want a refund.",
                 "S|No sender. No refund. Stay in the circle.",
+            },
+            // The Stamp (Docs/CampaignBible.md). Lines are "<speaker>|<text>": N narration, W Wallit, S Slice, Y Yo Bot.
+            // "C|<focus>" moves the camera (wallit, slice, wide) for the lines after it; "B|on" and "B|off" slide the
+            // letterbox bars in and out.
+            Cutscene = new[] {
+                "B|on",
+                "C|wide",
+                "N|THE STAMP\nOut of the dark comes a stamp: RETURN TO SENDER. Its ink is the only bright thing in the Hollow.",
+                "C|wallit",
+                "N|It lands on leather. A wallet hits the grass and rolls, and the circle's ring lights around him.",
+                "W|Ow! That's extra!",
+                "C|slice",
+                "S|You're inside. Inside, you exist.",
+                "C|wallit",
+                "W|Does existing come with a receipt?",
+                "C|slice",
+                "S|No.",
+                "C|wallit",
                 "W|Where do I sign for this bat?",
+                "C|slice",
                 "S|Swing it.",
+                "C|wide",
+                "Y|Hello! Uploading victory! Striking this address now!",
+                "C|wallit",
+                "W|Pay up, bots.",
             },
             Done = new[] {
                 "W|Bolts. Somebody's paying me.",

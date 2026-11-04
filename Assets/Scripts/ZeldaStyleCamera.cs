@@ -130,7 +130,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
 
         AcquireTarget();
         CamState = CamStates.Behind;
-        if (WaveDirector.IsBuilding || LevelUpScreen.IsOpen || PauseMenu.IsOpen) {
+        if (WaveDirector.IsBuilding || LevelUpScreen.IsOpen || PauseMenu.IsOpen || Cutscene.IsOpen) {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         } else {
@@ -140,7 +140,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
 
         switch (CamState) {
             case CamStates.Behind:
-                if (!WaveDirector.IsBuilding && !LevelUpScreen.IsOpen && !PauseMenu.IsOpen) {
+                if (!WaveDirector.IsBuilding && !LevelUpScreen.IsOpen && !PauseMenu.IsOpen && !Cutscene.IsOpen) {
                     orbitYaw += PlayInput.GetAxis("Mouse X") * 3.4f;
                     orbitPitch = Mathf.Clamp(orbitPitch - PlayInput.GetAxis("Mouse Y") * 2.1f, 5f, Mathf.Lerp(58f, 84f, Mathf.Clamp01((BodyScale - 1f) / 5f)));
                 }
@@ -272,7 +272,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
                 }
             }
         }
-        bool cycle = !LevelUpScreen.IsOpen && !PauseMenu.IsOpen && (PlayInput.GetMouseButtonDown(1) || PlayInput.GetKeyDown(KeyCode.Tab));
+        bool cycle = !LevelUpScreen.IsOpen && !PauseMenu.IsOpen && !Cutscene.IsOpen && (PlayInput.GetMouseButtonDown(1) || PlayInput.GetKeyDown(KeyCode.Tab));
         if (cycle && current >= 0) {
             LockedOnGameObject = lockList[(current + 1) % lockList.Count].gameObject;
             LockSwitches++;

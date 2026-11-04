@@ -168,7 +168,7 @@ public class WaveDirector : MonoBehaviour {
             return;
         }
         // Paused: the world, the clock and the wave keys wait.
-        if (PauseMenu.IsOpen || StoryScreen.IsOpen) {
+        if (PauseMenu.IsOpen || StoryScreen.IsOpen || Cutscene.IsOpen) {
             return;
         }
         if (phase == Phase.Chapter) {

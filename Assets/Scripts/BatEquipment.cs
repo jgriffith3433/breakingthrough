@@ -289,7 +289,7 @@ public class BatEquipment : MonoBehaviour {
         TickFlights(dt);
 
         bool canAct = !WaveDirector.IsBuilding && !WaveDirector.IsLost && !LevelUpScreen.IsOpen && !LevelUpScreen.HoldFire
-            && !PauseMenu.IsOpen && !PauseMenu.HoldFire;
+            && !PauseMenu.IsOpen && !PauseMenu.HoldFire && !Cutscene.IsOpen;
         if (!canAct) {
             pressing = false;
             charging = false;
@@ -1001,7 +1001,7 @@ public class BatEquipment : MonoBehaviour {
 
     // A small bar under the middle of the screen while you wind up a home run.
     void OnGUI() {
-        if (!charging || LevelUpScreen.IsOpen || PauseMenu.IsOpen || WaveDirector.IsLost) {
+        if (!charging || LevelUpScreen.IsOpen || PauseMenu.IsOpen || Cutscene.IsOpen || WaveDirector.IsLost) {
             return;
         }
         float unit = Mathf.Max(1f, Screen.height / 1080f);
