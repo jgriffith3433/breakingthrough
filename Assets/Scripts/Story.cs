@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 // The story as data. Docs/Story.md explains it; change a line in both. A line is "<speaker>|<text>" with speaker
 // N narrator, W Wallit (talks money), S Slice (clipped), Y Yo Bot (chirpy), T title card.
@@ -76,6 +77,15 @@ public static class Story {
         public bool Walk;             // FloorRun: a causeway walk (Chapter 4): no belt feed to break at the last stop, lamps instead of the Floor's props
         public bool Final;            // HoldThenBoss: the last chapter. Waves x WaveSize bots, then the named boss; clearing it plays Ending, the Finale pages, ADDRESS FILED and the credits (no Next button)
         public string[] Ending;       // Final: the cutscene played when the boss falls, before the Finale pages
+        public BotTrait Variant;      // the chapter's new behaviour: every VariantEvery-th crew bot (a Yo Bot kind) is a VariantName with this trait
+        public string VariantName;
+        public int VariantEvery;
+        public string VariantLine;    // said the first time one appears ("<speaker>|<text>")
+        public string MiniName;       // a mini-boss midway through the chapter (null: none), with a health bar
+        public BotKind MiniKind;
+        public int MiniHits;
+        public Color MiniTint;
+        public string[] MiniLines;    // said as it arrives
         public string[] Cutscene;     // played by Cutscene.cs over the chapter's map when Begin is pressed (null: none)
     }
 
@@ -84,6 +94,7 @@ public static class Story {
             Id = "return-to-sender", Map = "hollow", Title = "Chapter 1: Return to Sender", Place = "The Moonlit Hollow",
             Objective = ChapterObjective.HoldThenBoss, Target = 6, Goal = "Yo Bots", Boss = BotKind.YoBot, BossName = "The Courier", BossHits = 40,
             Crew = new[] { BotKind.YoBot }, Every = 3.4f, Cap = 4, Power = 1,
+            Variant = BotTrait.Sprinter, VariantName = "Dispatch Yo Bot", VariantEvery = 3, VariantLine = "Y|Rush delivery! Rush delivery!",
             Lines = new[] {
                 "W|Return to sender. Which sender? I want a refund.",
                 "S|No sender. No refund. Stay in the circle.",
@@ -133,6 +144,9 @@ public static class Story {
             Objective = ChapterObjective.GateAndBack, Target = 70, Bearing = 150f, Goal = "the gate",
             Waves = 3, WaveSize = 4, Boss = BotKind.PlatedYoBot, BossName = "The Plated Alpha", BossHits = 55, PlainBoss = true,
             Crew = new[] { BotKind.YoBot }, Every = 3.8f, Cap = 5, Power = 4,
+            Variant = BotTrait.Splitter, VariantName = "Returned Yo Bot", VariantEvery = 3, VariantLine = "Y|Return to sender! Return to sender!",
+            MiniName = "The Second Notice", MiniKind = BotKind.PlatedYoBot, MiniHits = 32, MiniTint = new Color(1.2f, 0.7f, 0.6f),
+            MiniLines = new[] { "Y|Second notice! This address is still unknown!", "S|It repeats. It does not give up.", "W|Neither do I. Pay up." },
             Lines = new[] {
                 "W|There's a door. Doors have senders.",
                 "S|Doors have locks. Come back.",
@@ -200,6 +214,9 @@ public static class Story {
             Objective = ChapterObjective.FloorRun, Target = 105, Goal = "the lever", WaveSize = 6,
             Boss = BotKind.MegaYoBot, BossName = "The Foreman", BossHits = 70, PlainBoss = true,
             Crew = new[] { BotKind.YoBot, BotKind.PlatedYoBot }, Every = 3.6f, Cap = 5, Power = 8,
+            Variant = BotTrait.Bruiser, VariantName = "Reissue Yo Bot", VariantEvery = 4, VariantLine = "Y|Reissued! Heavier! Uploading victory!",
+            MiniName = "The Half-Built", MiniKind = BotKind.MegaYoBot, MiniHits = 34, MiniTint = new Color(1f, 0.8f, 0.4f),
+            MiniLines = new[] { "Y|I am... not finished! Finish me?", "S|Don't.", "W|Wasn't going to. Not for free." },
             Lines = new[] {
                 "Y|Hello! I am... not finished! Uploading victory?",
                 "W|They're all the same unit.",
@@ -298,6 +315,7 @@ public static class Story {
             Objective = ChapterObjective.FloorRun, Target = 95, Goal = "the last lamp", WaveSize = 5, Walk = true,
             Boss = BotKind.SpiderBot, BossName = "The Server", BossHits = 60,
             Crew = new[] { BotKind.SpiderBot, BotKind.PlatedYoBot }, Every = 6.5f, Cap = 3, Power = 26,
+            Variant = BotTrait.Blinker, VariantName = "Queue-Skip Yo Bot", VariantEvery = 3, VariantLine = "Y|Skipping the queue! Chirp!",
             Lines = new[] {
                 "Y|Spiders en route! Chirp!",
                 "S|Mind the legs.",
@@ -384,6 +402,9 @@ public static class Story {
             Objective = ChapterObjective.HoldThenBoss, Target = 20, Goal = "the pages", Waves = 5, WaveSize = 4,
             Boss = BotKind.TitanSpiderBot, BossName = "The Registrar", BossHits = 80, PlainBoss = true,
             Crew = new[] { BotKind.YoBot, BotKind.PlatedYoBot, BotKind.MegaYoBot }, Every = 3.2f, Cap = 6, Power = 24,
+            Variant = BotTrait.Juker, VariantName = "Clerk Yo Bot", VariantEvery = 3, VariantLine = "Y|Page turned! Turning again!",
+            MiniName = "The Clerk", MiniKind = BotKind.SpiderBot, MiniHits = 46, MiniTint = new Color(0.85f, 1.05f, 1.3f),
+            MiniLines = new[] { "Y|Page ten! Filing in progress!", "S|It files what it cannot read.", "W|Then I'll make it a refund." },
             Lines = new[] {
                 "Y|Order, read aloud: STRIKE. THIS. ADDRESS.",
                 "S|It's reading it out.",
@@ -454,6 +475,7 @@ public static class Story {
             Objective = ChapterObjective.HoldThenBoss, Target = 12, Waves = 3, WaveSize = 4, Final = true, Goal = "the Crew",
             Boss = BotKind.SpiderBot, BossName = "The Order", BossHits = 90, PlainBoss = true,
             Crew = new[] { BotKind.YoBot, BotKind.PlatedYoBot, BotKind.MegaYoBot }, Every = 3f, Cap = 6, Power = 30,
+            Variant = BotTrait.Juggernaut, VariantName = "Sealed Yo Bot", VariantEvery = 4, VariantLine = "Y|Sealed and stamped! Delivering!",
             Lines = new[] {
                 "S|The wall is gone. The circle is brighter.",
                 "W|Then let's file it. Pay up.",

@@ -2722,6 +2722,7 @@ public static class Playtest {
             Batter(player, building, only != null && only.Count > 0 ? only : null, lockOn);
             CheckLock(player);
             TellBat();
+            WatchNewBots();
             if ((building || Enemy.Roster.Count == 0) && now >= nextSkip) {
                 nextSkip = now + 1.5f;
                 PlayInput.Tap(KeyCode.Return);
@@ -4992,6 +4993,36 @@ public static class Playtest {
     }
 
     // The boss bar's name label, as drawn at the top of the screen.
+    static int newBotsSeen;
+    static bool miniBarChecked;
+    static float miniAt;
+
+    // Chapter content logs: each chapter's new bot behaviour and the mid-chapter mini-boss with its health bar.
+    static void WatchNewBots() {
+        if (newBotsSeen > ChapterRun.Events.Count) {
+            newBotsSeen = 0;
+        }
+        for (; newBotsSeen < ChapterRun.Events.Count; newBotsSeen++) {
+            string ev = ChapterRun.Events[newBotsSeen];
+            if (ev.StartsWith("variant|")) {
+                run.Event("new-enemy", ev);
+            } else if (ev.StartsWith("mini-boss|")) {
+                run.Event("mini-boss", ev);
+                miniBarChecked = false;
+                miniAt = Time.realtimeSinceStartup;
+            }
+        }
+        ChapterRun chapter = ChapterRun.Instance;
+        if (chapter != null && !miniBarChecked && Time.realtimeSinceStartup - miniAt > 1f && chapter.MiniEnemy != null && chapter.MiniEnemy.Alive) {
+            miniBarChecked = true;
+            bool bar = BossBarShows(chapter.MiniEnemy.Title);
+            run.Event("mini-boss-bar", chapter.MiniEnemy.Title + ": health bar " + (bar ? "up" : "missing") + ", " + chapter.MiniEnemy.HitsToDrop + " hits");
+            if (!bar) {
+                run.Problem(PlaytestSeverity.Bug, "chapter: no health bar for the mini-boss " + chapter.MiniEnemy.Title);
+            }
+        }
+    }
+
     static bool BossBarShows(string title) {
         RunHud hud = Object.FindAnyObjectByType<RunHud>();
         if (hud == null) {

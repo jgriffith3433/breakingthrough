@@ -58,6 +58,9 @@ public class ChapterRun : MonoBehaviour {
     public bool CreditsUp { get; private set; }
     public bool IsReading { get { return data.Objective == Story.ChapterObjective.HoldThenBoss && data.Waves > 0 && !data.Final; } }   // Chapter 5: pages read in waves at the desk, then the Registrar
     public int PagesRead { get { return pagesRead; } }
+    int crewSpawned;
+    bool variantSeen, miniSpawned;
+    Enemy mini;
     public bool BossUp { get { return boss != null && boss.Alive; } }
     public Enemy BossEnemy { get { return boss; } }
     public bool BossDown { get { return bossSpawned && !BossUp; } }
@@ -302,6 +305,7 @@ public class ChapterRun : MonoBehaviour {
 
     // Bots down, then the named boss, then the defeat beat and the card (Chapter 1; Chapter 2 once the waves are held).
     void TickHoldBoss(WaveDirector director, int alive) {
+        TickMini(director);
         if (!bossCalled) {
             Progress = Kills();
             if (data.Waves > 0 && data.Objective != Story.ChapterObjective.FloorRun) {
@@ -320,7 +324,7 @@ public class ChapterRun : MonoBehaviour {
             if (spawnIn <= 0f && alive < data.Cap && Kills() + alive < Target()) {
                 SpawnCrew(director);
             }
-            if (Kills() >= Target()) {
+            if (Kills() >= Target() && (data.MiniName == null || (miniSpawned && !MiniUp))) {
                 bossCalled = true;
                 spawnIn = 3.5f;
                 Events.Add("boss-called|" + data.BossName);
@@ -387,6 +391,7 @@ public class ChapterRun : MonoBehaviour {
     // Chapter 3, out along the Floor's stops (the broken gate, the belt, the lever) and back, with bots still coming. The
     // last stop is the lever: pulling it breaks the belt feed. Then the bots and the Foreman are TickHoldBoss.
     void TickFloorLegs(WaveDirector director, int alive) {
+        TickMini(director);
         if (spawnIn <= 0f && alive < data.Cap) {
             SpawnCrew(director);
         }
@@ -526,7 +531,35 @@ public class ChapterRun : MonoBehaviour {
     void SpawnCrew(WaveDirector director) {
         spawnIn = data.Every;
         BotKind kind = data.Crew[Random.Range(0, data.Crew.Length)];
-        director.SpawnForChapter(kind, false, RingRadius + Random.Range(0f, 10f));
+        Enemy bot = director.SpawnForChapter(kind, false, RingRadius + Random.Range(0f, 10f));
+        crewSpawned++;
+        if (data.VariantEvery > 0 && crewSpawned % data.VariantEvery == 0 && bot != null && !BotRoster.IsSpider(kind)) {
+            bot.MakeVariant(data.Variant, data.VariantName);
+            if (!variantSeen) {
+                variantSeen = true;
+                Events.Add("variant|" + data.Id + "|" + data.VariantName + "|" + data.Variant);
+                UpgradeLook.Say("New: " + data.VariantName, 2.4f, 160f);
+                Tell(new[] { data.VariantLine });
+            }
+        }
+    }
+
+    // The mini-boss midway: Chapter 2 and 5 at half the bots down, Chapter 3 once Wallit has reached the belt. The boss waits for it.
+    bool MiniUp { get { return mini != null && mini.Alive; } }
+    public Enemy MiniEnemy { get { return mini; } }
+
+    void TickMini(WaveDirector director) {
+        if (data.MiniName == null || miniSpawned) {
+            return;
+        }
+        bool midway = data.Objective == Story.ChapterObjective.FloorRun ? leg >= 2 : Kills() >= Target() / 2 && (data.Objective != Story.ChapterObjective.GateAndBack || leg >= 2);
+        if (!midway) {
+            return;
+        }
+        miniSpawned = true;
+        mini = director.SpawnMini(data.MiniKind, data.MiniName, data.MiniHits, data.MiniTint, RingRadius);
+        Events.Add("mini-boss|" + data.MiniName + "|" + mini.HitsToDrop);
+        Tell(data.MiniLines);
     }
 
     static int Alive() {
