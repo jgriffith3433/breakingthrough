@@ -593,7 +593,14 @@ public class ChapterHub : MonoBehaviour {
         if (laidStamp != UiFit.Stamp) {
             Layout();
         }
-        if (MenuNav.Back) {
+        if (JournalPanel.IsOpen) {
+            return;
+        }
+        if (PlayInput.GetKeyDown(KeyCode.J) && CampaignSave.Active >= 0) {
+            JournalPanel.Open(CampaignSave.Active);
+            return;
+        }
+        if (MenuNav.Back && Time.frameCount != JournalPanel.ClosedFrame) {
             if (BoardOpen) {
                 CloseBoard();
             } else {
@@ -610,7 +617,7 @@ public class ChapterHub : MonoBehaviour {
         NearBoard = (Player.position - BoardPosition).magnitude <= BoardReach;
         TickLodgers();
         if (!BoardOpen) {
-            prompt.text = NearDoor >= 0 && !DoorOpen[NearDoor] ? "Chapter " + (NearDoor + 1) + ": the door is shut" : NearDoor >= 0 ? "Chapter " + (NearDoor + 1) + ": " + Story.Chapters[NearDoor].Title : NearBoard ? "E: read the chapter board" : NearLodger >= 0 ? "E: talk to " + Story.Lodgers[NearLodger].Name : ErrandCarried ? "Carrying the " + Story.Errands[ErrandActive].Thing + ". Take it to Chime." : "WASD: walk. Doors along the back wall. Board on the left, lodgers about the room.";
+            prompt.text = NearDoor >= 0 && !DoorOpen[NearDoor] ? "Chapter " + (NearDoor + 1) + ": the door is shut" : NearDoor >= 0 ? "Chapter " + (NearDoor + 1) + ": " + Story.Chapters[NearDoor].Title : NearBoard ? "E: read the chapter board" : NearLodger >= 0 ? "E: talk to " + Story.Lodgers[NearLodger].Name : ErrandCarried ? "Carrying the " + Story.Errands[ErrandActive].Thing + ". Take it to Chime." : "WASD: walk. Doors along the back wall. Board on the left, lodgers about the room. J: journal.";
             if (NearBoard && (PlayInput.GetKeyDown(KeyCode.E) || PlayInput.GetKeyDown(KeyCode.JoystickButton0) || PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter))) {
                 OpenBoard();
             }

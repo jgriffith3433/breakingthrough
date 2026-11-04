@@ -49,6 +49,7 @@ public static class Playtest {
         new PlaytestScenario("maps-456", "Chapters 4, 5 and 6 each load a visibly different map (the Long Walk, the Reading Room, the changed Hollow) with a route, a landmark, a hazard or set piece and a boss arena away from the route (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; events map-loaded, map-lighting (fog and sky differ), map-features (route:, landmark:, hazard:, arena: lines from the map's own list; a problem if any is missing), map-arena (the arena's distance and its angle away from the route: over 90 degrees), map-objective, then Wallit walks and the chapter is left. A boss is then called with the director (named setup shortcut) and must walk out of the arena: event arena-boss (spawn distance from the arena centre; a problem over 8 m). Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard, mapsWithArena. Play each whole objective with the chapter4, chapter5 and chapter6 scenarios.", 600, "content"),
         new PlaytestScenario("chapter-maps", "Each Campaign chapter loads its own map, with its own lighting, and unloads it on leaving (setup: the sandbox case file stands on the chapter; the real save is never touched; leaving a chapter early is a named setup shortcut). Three chapters in turn (1 The Moonlit Hollow, 4 The Long Walk, 5 The Reading Room): Campaign, case file 1, Begin; the map named in the chapter data loads as an extra scene on top of the game scene (event map-loaded: map, scene, scenes open), the chapter's lighting is on (event map-lighting: fog colour and density, sun colour, sky colour; they differ between chapters), the opening scene is skipped with Enter and Wallit walks on the stick; then the chapter is left for the menu and the map is gone (event map-unloaded: scene closed, lighting back) with memory read before and after (metrics mapMemoryBaselineMB, mapMemoryAfterMB, mapMemoryGrowthMB; a growth over 48 MB is a bug). Metrics mapsLoaded, mapsUnloaded, distinctLooks)", 800, "content"),
         new PlaytestScenario("save", "The campaign save: an old-format file loads and is brought up to date, a corrupt one shows a message and starts clean, and every chapter's load time and memory is logged (setup: the sandbox stands where the stored save would, holding version 1 text, text with no version, then corrupt text; the real save is never touched). Events save-old-loaded, save-migrated, save-oldest-loaded, save-corrupt-clean (seven kinds of bad text, none throws), save-old-panel (the case files say the old files were updated), save-old-chapter (file 1 opens chapter 3), save-corrupt-panel (\"Case files unreadable. The Department filed new ones.\", no files), save-corrupt-play (a clean file opens chapter 1); then all six chapters are begun in turn with chapter-load events (card seconds, map seconds, memory MB) and metrics chapter<N>CardSeconds, chapter<N>MapSeconds, chapter<N>MemoryMB, oldSaveLoaded, corruptClean, corruptMessageShown", 1200, "content"),
+        new PlaytestScenario("journal", "The journal, with real input (setup: the sandbox case file starts on chapter 1; the real save is never touched). Campaign, case file 1, Begin. Chapter 1 shows its optional extra on the HUD (event journal-extra) and hides one lost thing out in the field (journal-find-hidden). J opens the journal over the pause menu (journal-open-chapter), Back and Resume; Wallit walks out to the find with the stick and it goes into the case file at once (journal-find, metric findKept). The chapter is played to the Courier's fall; the Chapter Complete card judges the extra and names the lost thing kept. Menu, Campaign: the slot shows the journal count (slot-journal); the Journal button opens the journal and the bot reads Active, Finished and Collected (journal-tab, journal-lists; setup marks chapter 2's extra met). Then the files are written out and read back as after a quit (journal-persist, metric journalPersisted) and read again (setup then gives every find and extra: journal-paid says PAID IN FULL)", 900, "content"),
         new PlaytestScenario("lore","The lore log and the case-file slots, with real input (setup: the sandbox case file starts on chapter 1; the real save is never touched). Campaign, case file 1, Begin, Chapter 1 is played with the bat to the Courier's fall as in the campaign scenario; the Chapter Complete card names the new lore it unlocked (event lore). Menu, Campaign: the case file slot reads its chapter, its play time and its completion (event slot-info: chapter, h:mm:ss on the books, 1/6 filed, lore n/15; problems if any is missing or the time is 0). The Lore log button opens the file's log (event lore-open), the bot turns every page with Next and reads which entries are open and which are sealed (event lore-page per entry, event lore-summary): the entries revealed by opening the file and by Chapter 1 are open, the later ones read Sealed until their chapter is filed (metrics loreUnlocked, loreSealed, slotChapterShown, slotTimeShown, slotCompletionShown). Back closes it", 800, "content"),
         new PlaytestScenario("campaign-full", "The whole case file in one run with real input (setup: the sandbox keeps the files off the real save): Campaign, case file 1, then Chapter 1 to ADDRESS FILED. Each chapter is played as its own scenario plays it (opening scene skipped with Enter, the objective met with the bat, the boss down, the Chapter Complete card), and between chapters Menu, Campaign and the file reopen on the next chapter's card (campaign-advanced, campaign-resume). Quit and resume: in Chapter 3 the scene is dropped mid-chapter (setup, as a closed tab does) and the file must reopen on Chapter 3, unfinished (events quit-midchapter, quit-resume-panel, quit-resume; metric quitResumeRight). Ends with the Filed scene, the finale pages, ADDRESS FILED, the credits card and the case file reading filed (events campaign-full, ending-card, campaign-panel-filed; metrics fullCaseFileCleared, endingShown, caseFileFiled)", 3000, "content"),
         new PlaytestScenario("chapter6", "Chapter 6, Address Filed, played start to finish with real input (setup: the sandbox case file starts on chapter 6): Campaign, case file 1, Begin on the Chapter 6 card; the opening scene in the changed Hollow plays and is skipped with Enter; Wallit holds the circle with the bat through three waves (events wave-start), then the Spider Bot that carries the order (boss bar up, scroll on its back) arrives and falls; the Filed scene plays over the field, then the finale pages (Story.Finale verbatim, as in Arcade's story run) and the ADDRESS FILED ending card (events filed-scene, finale-page, ending-card); Keep going shows the credits card; the case file is marked complete (6 cleared), Menu, and the Campaign panel's case file 1 reads filed (events chapter6-setup, cutscene-open, objective, wave-start, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, filed-scene, finale-page, ending-card, credits-card, campaign-complete, campaign-panel-filed; metrics bossBar, endingShown, caseFileCleared, caseFileFiled)", 1000, "content"),
@@ -239,7 +240,7 @@ public static class Playtest {
                 }
                 yield break;
             }
-            if (id == "campaign" || id == "lore" || id == "campaign-full" || id == "hub" || id == "moves" || id == "abilities" || id == "hub-doors" || id == "hub-npcs" || id == "cutscene" || id == "chapter2" || id == "companion" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
+            if (id == "campaign" || id == "lore" || id == "journal" || id == "campaign-full" || id == "hub" || id == "moves" || id == "abilities" || id == "hub-doors" || id == "hub-npcs" || id == "cutscene" || id == "chapter2" || id == "companion" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
                 companionTest = id == "companion";
                 watchCutscene = id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5";
                 hubTest = id == "hub";
@@ -249,6 +250,7 @@ public static class Playtest {
                 hubNpcs = id == "hub-npcs";
                 fullRun = id == "campaign-full";
                 loreTest = id == "lore";
+                journalTest = id == "journal";
                 quitDone = false;
                 startChapter = id == "hub-doors" ? 2 : id == "hub-npcs" ? 1 : id == "chapter6" ? 5 : id == "chapter5" ? 4 : id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" || id == "companion" ? 1 : 0;
                 yield return CampaignRun();
@@ -573,6 +575,7 @@ public static class Playtest {
     static int startChapter;
     static bool hubTest;
     static bool loreTest;
+    static bool journalTest;
     static bool movesTest;
     static bool abilitiesTest;
     static bool hubDoors;
@@ -1293,6 +1296,12 @@ public static class Playtest {
             run.Problem(PlaytestSeverity.Bug, "campaign: the chapter shows no objective line");
         }
         CheckScreen("chapter-play");
+        if (journalTest) {
+            yield return JournalInChapter(player, chapter);
+            if (run.Done) {
+                yield break;
+            }
+        }
         bool courier = chapter.HasBoss;
         if (courier) {
             // Chapter 1: hold the circle against the first Yo Bots, then the Courier arrives.
@@ -1423,6 +1432,12 @@ run.Event("boss-defeated", "The Courier fell after " + Mathf.RoundToInt(chapter.
         CampaignPanel panel = CampaignPanel.Instance;
         Text[] texts = panel.SlotButtons[0].GetComponentsInChildren<Text>();
         run.Event("campaign-resume", texts[0].text + " / " + texts[1].text);
+        if (journalTest) {
+            yield return JournalCheck(panel, texts[0].text, texts[1].text);
+            if (run.Done) {
+                yield break;
+            }
+        }
         if (loreTest) {
             yield return LoreCheck(panel, texts[0].text, texts[1].text);
             if (run.Done) {
@@ -1443,6 +1458,132 @@ run.Event("boss-defeated", "The Courier fell after " + Mathf.RoundToInt(chapter.
     }
 
     // The lore scenario: what the case-file slot shows, then the lore log read page by page.
+    // The journal, inside Chapter 1: the extra shows on the HUD, J opens the journal over the pause menu, then Wallit walks
+    // (real stick) out to the hidden find, which goes into the file at once.
+    static IEnumerator JournalInChapter(CharacterMovement player, ChapterRun chapter) {
+        Journal.Goal goal = Journal.Goals[chapter.Chapter];
+        Journal.Find find = Journal.Finds[chapter.Chapter];
+        run.Event("journal-extra", "chapter " + (chapter.Chapter + 1) + " offers the extra \"" + goal.Name + "\": " + goal.Ask + " (" + (chapter.GoalMet ? "met" : "open") + ")");
+        run.Event("journal-find-hidden", "the lost thing \"" + find.Name + "\" lies " + find.Dist + " m from the circle at " + chapter.FindAt.ToString("0") + ", out: " + chapter.FindOut + ", no marker on the chapter line: " + chapter.ObjectiveLine);
+        if (!chapter.FindOut) {
+            run.Problem(PlaytestSeverity.Bug, "journal: the chapter has no hidden find lying in the field");
+        }
+        PlayInput.Tap(KeyCode.J);
+        yield return run.Until(() => JournalPanel.IsOpen, 5f, "the journal after J in the chapter");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1.2f);
+        run.Event("journal-open-chapter", JournalPanel.Instance.TitleText + " | " + JournalPanel.Instance.TabLabel + " | " + JournalPanel.Instance.BodyText.Replace("\n", " / "));
+        CheckScreen("journal");
+        Tap(JournalPanel.Instance.BackButton.gameObject);
+        yield return run.Until(() => !JournalPanel.IsOpen && PauseMenu.IsOpen, 5f, "the journal closing over the pause menu");
+        Tap(PauseMenu.Instance.ResumeButton.gameObject);
+        yield return run.Until(() => !PauseMenu.IsOpen && Time.timeScale > 0.5f, 5f, "the chapter to resume");
+        if (run.Done) {
+            yield break;
+        }
+        float limit = Time.realtimeSinceStartup + 150f;
+        while (!run.Done && !chapter.FindKept && Time.realtimeSinceStartup < limit) {
+            Walk(player, chapter.FindAt, 1f);
+            yield return null;
+        }
+        PlayInput.Release();
+        CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
+        bool saved = Journal.HasFind(slot, chapter.Chapter);
+        run.Event("journal-find", "Wallit " + (chapter.FindKept ? "walked onto" : "never reached") + " \"" + find.Name + "\"; the case file holds it at once: " + saved);
+        run.Metric("findKept", saved ? 1 : 0);
+        if (!chapter.FindKept || !saved) {
+            run.Problem(PlaytestSeverity.Bug, "journal: walking onto the hidden find did not keep it in the case file");
+        }
+        yield return new WaitForSecondsRealtime(1f);
+    }
+
+    // The journal from the case files after the chapter: the three tabs, then "quit and resume" (the files are written out
+    // and read back as a fresh page load would), then the Paid in Full state.
+    static IEnumerator JournalCheck(CampaignPanel panel, string title, string info) {
+        run.Event("slot-journal", title + " / " + info);
+        // Setup shortcut: the sandbox file also counts chapter 2's extra as met, so Finished has a row whatever the fight did.
+        CampaignSave.Get(0).goals |= 2;
+        run.Event("setup", "sandbox case file 1 marks chapter 2's extra met (never the real save)");
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(panel.JournalButton.gameObject);
+        yield return run.Until(() => JournalPanel.IsOpen, 10f, "the journal after pressing Journal");
+        if (run.Done) {
+            yield break;
+        }
+        yield return ReadJournal("fresh", "Wallit's find");
+        // Quit and resume: write the files out and read them back.
+        string text = CampaignSave.ToText();
+        CampaignSave.Slot before = CampaignSave.Get(0);
+        int finds = before.finds;
+        int goals = before.goals;
+        Tap(JournalPanel.Instance.BackButton.gameObject);
+        yield return run.Until(() => !JournalPanel.IsOpen, 5f, "the journal closing");
+        CampaignSave.EnterSandbox(text);
+        CampaignSave.Slot after = CampaignSave.Get(0);
+        bool kept = after.finds == finds && after.goals == goals && finds != 0;
+        run.Event("journal-persist", "files written out and read back: finds " + finds + " -> " + after.finds + ", extras " + goals + " -> " + after.goals + ": " + (kept ? "kept" : "LOST"));
+        run.Metric("journalPersisted", kept ? 1 : 0);
+        if (!kept) {
+            run.Problem(PlaytestSeverity.Bug, "journal: the finds and extras did not survive a save and reload");
+        }
+        Tap(panel.JournalButton.gameObject);
+        yield return run.Until(() => JournalPanel.IsOpen, 10f, "the journal after resuming");
+        if (run.Done) {
+            yield break;
+        }
+        yield return ReadJournal("after resume", "Wallit's find");
+        // Setup shortcut: every find and extra in the file, to show the reward.
+        after.finds = (1 << Journal.Count) - 1;
+        after.goals = (1 << Journal.Count) - 1;
+        run.Event("setup", "sandbox case file 1 holds every find and extra (never the real save)");
+        Tap(JournalPanel.Instance.BackButton.gameObject);
+        yield return run.Until(() => !JournalPanel.IsOpen, 5f, "the journal closing");
+        Tap(panel.JournalButton.gameObject);
+        yield return run.Until(() => JournalPanel.IsOpen, 10f, "the journal with everything kept");
+        yield return new WaitForSecondsRealtime(1f);
+        bool paid = JournalPanel.Instance.TitleText.Contains(Journal.PaidTitle);
+        run.Event("journal-paid", JournalPanel.Instance.TitleText + " | " + JournalPanel.Instance.SummaryText + " | slot: " + panel.SlotButtons[0].GetComponentsInChildren<Text>()[1].text);
+        run.Metric("paidInFull", paid ? 1 : 0);
+        if (!paid) {
+            run.Problem(PlaytestSeverity.Bug, "journal: with every find and extra the journal does not say " + Journal.PaidTitle);
+        }
+        Tap(JournalPanel.Instance.BackButton.gameObject);
+        yield return run.Until(() => !JournalPanel.IsOpen && CampaignPanel.IsOpen, 5f, "the journal closing");
+        // Back to the real state of the file for the rest of the scenario.
+        CampaignSave.Slot back = CampaignSave.Get(0);
+        back.finds = finds;
+        back.goals = goals;
+    }
+
+    // Turns the journal's three tabs with Next and logs each; Collected must hold the named find.
+    static IEnumerator ReadJournal(string when, string unusedLabel) {
+        JournalPanel journal = JournalPanel.Instance;
+        string collected = "";
+        string active = "";
+        string finished = "";
+        for (int i = 0; i < Journal.TabNames.Length; i++) {
+            yield return new WaitForSecondsRealtime(0.8f);
+            run.Event("journal-tab", when + ": " + journal.TabLabel + " | " + journal.BodyText.Replace("\n", " / ") + " | " + journal.SummaryText);
+            if (journal.TabLabel == "Active") {
+                active = journal.BodyText;
+            } else if (journal.TabLabel == "Finished") {
+                finished = journal.BodyText;
+            } else {
+                collected = journal.BodyText;
+            }
+            Tap(journal.NextButton.gameObject);
+            yield return new WaitForSecondsRealtime(0.2f);
+        }
+        bool ok = active.Contains("Ch ") && finished.Contains(Journal.Goals[1].Name) && collected.Contains(Journal.Finds[0].Name);
+        run.Event("journal-lists", when + ": active " + active.Split('\n').Length + " rows, finished names " + Journal.Goals[1].Name + ": " + finished.Contains(Journal.Goals[1].Name) + ", collected names " + Journal.Finds[0].Name + ": " + collected.Contains(Journal.Finds[0].Name));
+        run.Metric("journalLists", ok ? 1 : 0);
+        if (!ok) {
+            run.Problem(PlaytestSeverity.Bug, "journal (" + when + "): the tabs do not list an active item, a finished extra and the collected find");
+        }
+    }
+
     static IEnumerator LoreCheck(CampaignPanel panel, string title, string info) {
         bool chapterShown = title.Contains("Chapter ");
         bool timeShown = info.Contains(" on the books") || System.Text.RegularExpressions.Regex.IsMatch(info, @"\d+:\d\d:\d\d");

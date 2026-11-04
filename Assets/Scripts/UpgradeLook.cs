@@ -539,6 +539,7 @@ public class BatMarks : MonoBehaviour {
         }
         h = h * 5 + MetaProgress.Rank(UpgradeId.Keen);
         h = h * 5 + MetaProgress.Rank(UpgradeId.Blast);
+        h = h * 3 + (Journal.GiltBat ? 1 : 0);
         return h;
     }
 
@@ -616,6 +617,14 @@ public class BatMarks : MonoBehaviour {
             }
             Band(0.97f, r, 0.02f, new Color(0.95f, 0.97f, 1f));
             said.Add("Aluminum! Not wood!: " + (1 + metal) + " dents");
+        }
+
+        // Paid in Full (campaign journal complete): gold bands round the barrel and the grip.
+        if (Journal.GiltBat) {
+            Band(0.3f, r, 0.03f, new Color(1f, 0.82f, 0.32f));
+            Band(0.62f, r, 0.03f, new Color(1f, 0.82f, 0.32f));
+            Band(0.9f, r, 0.03f, new Color(1f, 0.82f, 0.32f));
+            said.Add("Paid in Full: gilt bands");
         }
 
         // Corked Core (shop): a cork plug in the end of the barrel, wider each rank.

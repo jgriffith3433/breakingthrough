@@ -107,6 +107,17 @@ public class ChapterRun : MonoBehaviour {
     RectTransform column;
     CanvasScaler scaler;
     Transform player;
+    // The journal (Journal.cs): this chapter's hidden find and optional objective.
+    GameObject findItem;
+    Transform findSpin;
+    Vector3 findAt;
+    float findRing;
+    Text extraText;
+    int baseHomeRuns, baseSmash, baseFinishers;
+    public bool FindKept { get; private set; }
+    public bool GoalMet { get; private set; }
+    public Vector3 FindAt { get { return findAt; } }
+    public bool FindOut { get { return findItem != null; } }
 
     void Awake() {
         Instance = this;
@@ -149,6 +160,7 @@ public class ChapterRun : MonoBehaviour {
             MakeMarker();
         }
         BuildUi();
+        StartJournal();
         RunAnalytics.Screen("chapter_play_" + (Chapter + 1));
         if (data.Cutscene != null && data.Cutscene.Length > 0) {
             // The chapter's opening scene plays over the frozen map; reading it or skipping it hands over to play.
@@ -168,6 +180,9 @@ public class ChapterRun : MonoBehaviour {
         }
         if (gateProps != null) {
             Destroy(gateProps);
+        }
+        if (findItem != null) {
+            Destroy(findItem);
         }
         SavePlayTime();
         Companion.Despawn();
@@ -207,6 +222,7 @@ public class ChapterRun : MonoBehaviour {
             player = PlayerGrowth.Instance.transform;
         }
         Tick();
+        TickJournal();
         ObjectiveLine = Line();
         if (objective != null) {
             objective.text = ObjectiveLine;
@@ -643,6 +659,7 @@ public class ChapterRun : MonoBehaviour {
         }
         Completed = true;
         Events.Add("complete|" + data.Id + "|" + Mathf.RoundToInt(PlaySeconds));
+        string extra = JudgeGoal();
         GameAudio.Play("stamp", 0.7f);
         CampaignSave.Complete(Chapter);
         SavePlayTime();
@@ -665,6 +682,7 @@ public class ChapterRun : MonoBehaviour {
             body.Append("\n").Append(Spoken(raw));
         }
         body.Append("\n\nLV " + CampaignProgress.Level + "   XP " + CampaignProgress.Xp);
+        body.Append("\n").Append(extra);
         if (Lore.LastUnlocked.Length > 0) {
             body.Append("\nNew lore: ").Append(string.Join(", ", Lore.LastUnlocked));
             Events.Add("lore|" + string.Join(";", Lore.LastUnlocked));
@@ -674,6 +692,9 @@ public class ChapterRun : MonoBehaviour {
         NextButton.gameObject.SetActive(true);
         card.SetActive(true);
         objective.text = "";
+        if (extraText != null) {
+            extraText.text = "";
+        }
         Time.timeScale = 0f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
@@ -684,6 +705,9 @@ public class ChapterRun : MonoBehaviour {
     // credits card. The case file is already marked filed (Complete saved it).
     void CompleteFinal() {
         objective.text = "";
+        if (extraText != null) {
+            extraText.text = "";
+        }
         Events.Add("finale|start");
         RunAnalytics.Screen("chapter_complete_" + (Chapter + 1));
         string stats = "Case file " + (CampaignSave.Active + 1) + ": filed\n" + CampaignSave.Played(CampaignSave.Get(CampaignSave.Active));
@@ -1022,6 +1046,103 @@ public class ChapterRun : MonoBehaviour {
         cube.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
     }
 
+    // ---------------------------------------------------------------- Journal
+
+    // The chapter's lost thing (a small brass tag lying out in the field, no collider) unless the file already holds it,
+    // and the baselines the optional objective is judged from.
+    void StartJournal() {
+        CampaignSave.Slot slot = CampaignSave.Active >= 0 ? CampaignSave.Get(CampaignSave.Active) : null;
+        baseHomeRuns = BatEquipment.HomeRuns;
+        baseSmash = BatEquipment.SmashHits;
+        baseFinishers = BatEquipment.Finishers;
+        FindKept = Journal.HasFind(slot, Chapter);
+        GoalMet = Journal.HasGoal(slot, Chapter);
+        Vector3 origin = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
+        findAt = Journal.FindPoint(Chapter, origin);
+        if (!FindKept) {
+            findItem = new GameObject("Hidden Find");
+            findItem.transform.position = findAt;
+            findSpin = UpgradeLook.BuildBolt(findItem.transform, 1.3f);
+            findSpin.localPosition = new Vector3(0f, 0.7f, 0f);
+        }
+        Events.Add("journal|find " + Journal.Finds[Chapter].Name + (FindKept ? " already kept" : " hidden at " + findAt.ToString("0") + ", " + Journal.Finds[Chapter].Dist + " m out"));
+        Events.Add("journal|extra " + Journal.Goals[Chapter].Name + ": " + Journal.Goals[Chapter].Ask + (GoalMet ? " (already met)" : ""));
+        if (!GoalMet) {
+            Tell(new[] { "N|Extra, never asked: " + Journal.Goals[Chapter].Name + ". " + Journal.Goals[Chapter].Ask });
+        }
+    }
+
+    // Walking onto the find keeps it (saved at once); a soft ring shows when Wallit is within reach of finding it.
+    void TickJournal() {
+        if (findItem != null && player != null) {
+            findSpin.Rotate(0f, 90f * Time.deltaTime, 0f);
+            Vector3 d = findAt - player.position;
+            d.y = 0f;
+            if (d.magnitude <= 3.2f) {
+                KeepFind();
+            } else if (d.magnitude <= 22f && Time.time >= findRing) {
+                findRing = Time.time + 1.6f;
+                Fx.Ring(findAt + Vector3.up * 0.2f, 3f, new Color(1f, 0.84f, 0.4f, 0.55f), 1.2f);
+            }
+        }
+        if (extraText != null) {
+            extraText.text = GoalMet ? "Extra met: " + Journal.Goals[Chapter].Name : "Extra: " + Journal.Goals[Chapter].Name + " (" + Journal.Goals[Chapter].Ask + ")  J: journal";
+        }
+        if (PlayInput.GetKeyDown(KeyCode.J)) {
+            PauseMenu.Open();
+            if (PauseMenu.IsOpen) {
+                JournalPanel.Open(CampaignSave.Active);
+            }
+        }
+    }
+
+    void KeepFind() {
+        if (findItem == null) {
+            return;
+        }
+        Destroy(findItem);
+        findItem = null;
+        FindKept = true;
+        Journal.Keep(Chapter);
+        GameAudio.Play("stamp", 0.5f, 1.3f);
+        Fx.Ring(findAt + Vector3.up * 0.2f, 6f, new Color(1f, 0.88f, 0.5f, 0.8f), 0.8f);
+        Events.Add("journal|found " + Journal.Finds[Chapter].Name);
+        Say("N|Found: " + Journal.Finds[Chapter].Name + ". Kept in the journal.", 3.4f);
+        PaidCheck();
+    }
+
+    // At the filing: the extra is judged from what this play did. Returns the line for the card.
+    string JudgeGoal() {
+        Musician slice = Musician.Instance;
+        bool met = Journal.Holds(Chapter, slice != null ? slice.DamageTaken : 0, BatEquipment.HomeRuns - baseHomeRuns, BatEquipment.SmashHits - baseSmash, BatEquipment.Finishers - baseFinishers, PlaySeconds);
+        string line;
+        if (GoalMet) {
+            line = "Extra already filed: " + Journal.Goals[Chapter].Name;
+        } else if (met) {
+            GoalMet = true;
+            Journal.Meet(Chapter);
+            line = "Extra filed: " + Journal.Goals[Chapter].Name + "  " + Spoken(Journal.Goals[Chapter].Done);
+            Events.Add("journal|extra met " + Journal.Goals[Chapter].Name);
+        } else {
+            line = "Extra missed: " + Journal.Goals[Chapter].Name + ". " + Journal.Goals[Chapter].Ask + " It can be tried again from the board.";
+            Events.Add("journal|extra missed " + Journal.Goals[Chapter].Name);
+        }
+        line += FindKept ? "\nLost thing kept: " + Journal.Finds[Chapter].Name : "\nA lost thing is still out there in this chapter.";
+        if (Journal.PaidInFull(CampaignSave.Get(CampaignSave.Active))) {
+            line += "\n" + Journal.PaidTitle + ". The bat is gilt.";
+            Events.Add("journal|paid in full");
+        }
+        return line;
+    }
+
+    // The last find or extra to come in pays the file out.
+    void PaidCheck() {
+        if (CampaignSave.Active >= 0 && Journal.PaidInFull(CampaignSave.Get(CampaignSave.Active))) {
+            Tell(new[] { Journal.PaidLine });
+            Events.Add("journal|paid in full");
+        }
+    }
+
     // ---------------------------------------------------------------- UI
 
     void BuildUi() {
@@ -1051,6 +1172,14 @@ public class ChapterRun : MonoBehaviour {
         objective.rectTransform.anchorMax = Vector2.one;
         objective.rectTransform.offsetMin = Vector2.zero;
         objective.rectTransform.offsetMax = Vector2.zero;
+
+        extraText = Label(canvasGo.GetComponent<RectTransform>(), "", 22, FontStyle.Italic, new Color(0.85f, 0.9f, 1f));
+        var erect = extraText.rectTransform;
+        erect.anchorMin = new Vector2(0.5f, 0f);
+        erect.anchorMax = new Vector2(0.5f, 0f);
+        erect.pivot = new Vector2(0.5f, 0f);
+        erect.anchoredPosition = new Vector2(0f, 150f);
+        erect.sizeDelta = new Vector2(1100f, 36f);
 
         xpText = Label(canvasGo.GetComponent<RectTransform>(), "", 26, FontStyle.Bold, new Color(0.62f, 0.95f, 0.86f));
         var xrect = xpText.rectTransform;

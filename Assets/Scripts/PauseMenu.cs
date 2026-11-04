@@ -23,6 +23,7 @@ public class PauseMenu : MonoBehaviour {
     public Button PauseButton { get; private set; }
     public Button ResumeButton { get; private set; }
     public Button SettingsButton { get; private set; }
+    public Button JournalButton { get; private set; }
     public Button QuitButton { get; private set; }
 
     Font font;
@@ -103,6 +104,7 @@ public class PauseMenu : MonoBehaviour {
         instance.root.SetActive(true);
         instance.hint.text = UiFit.Touch ? "" : "P, Esc or pad Start resumes.";
         instance.DisarmQuit();
+        instance.ArrangeButtons();
         RunAnalytics.Screen("pause");
         GameAudio.Play("shot", 0.35f, 0.7f);
     }
@@ -119,6 +121,24 @@ public class PauseMenu : MonoBehaviour {
         }
         Time.timeScale = WaveDirector.IsLost ? 0f : 1f;
         RunAnalytics.Screen(WaveDirector.IsLost ? "game_over" : "wave");
+    }
+
+    // The campaign's journal, only in a chapter. It sits between Resume and Settings, so the deck is taller there.
+    void OpenJournal() {
+        if (ChapterRun.Instance != null) {
+            JournalPanel.Open(CampaignSave.Active);
+        }
+    }
+
+    void ArrangeButtons() {
+        bool chapter = ChapterRun.Instance != null && CampaignSave.Active >= 0;
+        JournalButton.gameObject.SetActive(chapter);
+        float shift = chapter ? 108f : 0f;
+        Place((RectTransform)SettingsButton.transform, new Vector2(0f, -264f - shift), new Vector2(320f, 88f));
+        Place((RectTransform)QuitButton.transform, new Vector2(0f, -372f - shift), new Vector2(320f, 88f));
+        Place(hint.rectTransform, new Vector2(0f, -490f - shift), new Vector2(460f, 32f));
+        deck.sizeDelta = new Vector2(520f, 580f + shift);
+        Layout();
     }
 
     void OpenSettings() {
@@ -176,7 +196,7 @@ public class PauseMenu : MonoBehaviour {
         bool lostMouse = wasLocked && locked == 0 && Cursor.lockState == CursorLockMode.Locked;
         wasLocked = locked == 1;
 
-        bool settings = SettingsPanel.IsOpen || SettingsPanel.ClosedFrame == Time.frameCount;
+        bool settings = SettingsPanel.IsOpen || SettingsPanel.ClosedFrame == Time.frameCount || JournalPanel.IsOpen || JournalPanel.ClosedFrame == Time.frameCount;
         bool key = PlayInput.GetKeyDown(KeyCode.P) || MenuNav.Back || MenuNav.PadStart;
 
         if (IsOpen) {
@@ -253,6 +273,9 @@ public class PauseMenu : MonoBehaviour {
         ResumeButton = MakeButton(deck, "Resume", "Resume", new Vector2(320f, 88f), 32, Resume);
         ResumeButton.GetComponent<Image>().color = new Color(0.22f, 0.38f, 0.22f, 1f);
         Place((RectTransform)ResumeButton.transform, new Vector2(0f, -156f), new Vector2(320f, 88f));
+        JournalButton = MakeButton(deck, "Journal", "Journal", new Vector2(320f, 88f), 32, OpenJournal);
+        Place((RectTransform)JournalButton.transform, new Vector2(0f, -264f), new Vector2(320f, 88f));
+        JournalButton.gameObject.SetActive(false);
         SettingsButton = MakeButton(deck, "Settings", "Settings", new Vector2(320f, 88f), 32, OpenSettings);
         Place((RectTransform)SettingsButton.transform, new Vector2(0f, -264f), new Vector2(320f, 88f));
 
@@ -287,7 +310,7 @@ public class PauseMenu : MonoBehaviour {
             pauseRect.anchoredPosition = mode == UiMode.Wide ? new Vector2(-336f, -12f) : new Vector2(-24f, -256f);
         }
         Vector2 size = UiFit.Size;
-        float scale = UiFit.Compact ? Mathf.Min(1f, (size.x - 40f) / 520f, (size.y - 40f) / 580f) : 1f;
+        float scale = UiFit.Compact ? Mathf.Min(1f, (size.x - 40f) / 520f, (size.y - 40f) / deck.sizeDelta.y) : 1f;
         deck.localScale = new Vector3(scale, scale, 1f);
     }
 

@@ -21,11 +21,14 @@ public static class CampaignSave {
         public int unlocked;     // bit per CampaignProgress.Abilities row, set at the level-up that unlocked it
         public int errands;      // bit per chapter: Chime's errand done and the lost thing (Story.Errands) kept
         public int lore;         // bit per Lore.All row, set when the story reveals it (the file keeps its own log)
+        public int finds;        // bit per chapter: its hidden find is in the journal (Journal.Finds)
+        public int goals;        // bit per chapter: its optional objective is met (Journal.Goals)
     }
 
     // Save format. 1: the first files (no stamp on the oldest; no xp, unlocks, errands or lore bits). 2: stamped, every
-    // field checked on load, the lore log derived from the chapters filed. Bump it with a step in Migrate.
-    public const int Version = 2;
+    // field checked on load, the lore log derived from the chapters filed. 3: the journal's finds and goals
+    // bits (nothing to derive: older files start with none). Bump it with a step in Migrate.
+    public const int Version = 3;
     const string BadKey = "hawkes.campaign.bad";
 
     [Serializable]
@@ -85,6 +88,9 @@ public static class CampaignSave {
             if (s == null) {
                 continue;
             }
+            int mask = (1 << ChapterCount) - 1;   // v3: a journal bit only for a chapter that exists (older text has none: 0)
+            s.finds &= mask;
+            s.goals &= mask;
             s.cleared = Mathf.Clamp(s.cleared, 0, ChapterCount);
             s.chapter = Mathf.Clamp(s.chapter, 0, ChapterCount - 1);
             s.reached = Mathf.Clamp(Mathf.Max(s.reached, s.chapter), 0, ChapterCount - 1);
