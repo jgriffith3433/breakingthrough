@@ -124,6 +124,10 @@ public class ChapterRun : MonoBehaviour {
         Events.Add("start|" + data.Id + "|" + data.Objective + "|" + data.Target);
         CampaignProgress.BeginChapter();
         gameObject.AddComponent<CampaignAbilities>();
+        if (!string.IsNullOrEmpty(data.Map)) {
+            // The chapter's own map, from its data, loaded on top of the game scene with its own lighting.
+            ChapterMap.Load(data.Map);
+        }
         if (data.Objective == Story.ChapterObjective.SurviveTime) {
             clock = data.Target;
         }
@@ -158,6 +162,7 @@ public class ChapterRun : MonoBehaviour {
             Destroy(gateProps);
         }
         SavePlayTime();
+        ChapterMap.Unload();
         if (!toNext) {
             CampaignSave.Close();
         }
@@ -686,6 +691,7 @@ public class ChapterRun : MonoBehaviour {
     }
 
     void Next() {
+        ChapterMap.Unload();
         Time.timeScale = 1f;
         toNext = true;
         ChapterScene.HubNext = true;
@@ -693,7 +699,13 @@ public class ChapterRun : MonoBehaviour {
         SceneManager.LoadScene(CampaignSave.Scene);
     }
 
+    // Playtest setup shortcut: leave the chapter for the menu without finishing it.
+    public void Abandon() {
+        ToMenu();
+    }
+
     void ToMenu() {
+        ChapterMap.Unload();
         Time.timeScale = 1f;
         RunAnalytics.Screen("menu");
         SceneManager.LoadScene(MetaProgress.MenuScene);

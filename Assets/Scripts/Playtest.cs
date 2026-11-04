@@ -39,6 +39,7 @@ public static class Playtest {
         new PlaytestScenario("cutscene", "The chapter cutscene: Campaign, case file 1, Begin on the Chapter 1 card, and the opening scene (The Stamp) plays over the map with letterbox bars, a speaker name and portrait slot, typed lines and the camera on whoever talks. The bot reads the first pages with real key presses (a first press finishes the typing, the next turns the page), skipping a page's voice by pressing on, then presses Enter to skip the rest: play starts with the objective line up and Wallit moving on the stick, and the chapter is cleared. Checked: every Wallit, Slice and Yo Bot page has a name, two voice lines never overlap (Wallit's floor and the scene both count them), the director allows no other line during the scene. Events cutscene-open, cutscene-page (speaker, text, camera focus, letterbox, voice), cutscene-skip, cutscene-play, cutscene-voice; metrics cutscenePages, cutsceneVoiceLines, cutsceneOverlaps, cutsceneSkipped", 420, "content"),
         new PlaytestScenario("campaign", "Campaign loads and plays a chapter: from the main menu press Campaign, open case file 1 (setup: the sandbox keeps the files off the real save) and wait for the Campaign scene to load. Reports run_start with mode=campaign and the loaded scene name (event run_start, metrics campaignLoaded, campaignLoadSeconds); if the scene fails to load (not in the build's scene list, or the chapter never builds) the run stops stuck with a bug saying so. Then Begin on the chapter card: Wallit and Slice in the chapter map, Wallit walks on the stick, the objective line shows, the bot fights with real input until it is met, Chapter 1 holds the circle against Yo Bots, then the Courier arrives (health bar on screen), winds up telegraphed notices on the circle and the bot breaks them or stands in them until it falls and the defeat beat plays; the Chapter Complete card shows, the case file advances to chapter 2, Menu, and reopening the file resumes at chapter 2 (events chapter-card, chapter-start, chapter-move, objective, boss-arrives, boss-bar, boss-attack, boss-defeated, defeat-beat, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics chapterAdvanced, chapterResumed, bossBar, courierWinds, courierInterrupted). Smoke is unchanged: it still presses Arcade", 750, "content"),
         new PlaytestScenario("hub", "The hub and Campaign progression, played with real input (setup: the sandbox case file 1 starts on chapter 1 with 85 XP, 5 short of level 3; the real save and Arcade are never touched): Campaign, case file 1, Begin on Chapter 1; the first kills give XP (HUD line LV/XP) and level 3 unlocks Refund (events xp-gain, level-up); the bot presses C near the bots and the ring shoves and stings them (event refund-used); the Courier falls, the Chapter Complete card offers To the hub; the bot presses it and lands in the hub (Wallit, Slice in the ring, the chapter board; events hub-open, hub-arrival), walks to the board on the stick and presses E (hub-walk, board-open: Chapter 1 filed and replayable, Chapter 2 next, Chapter 3 locked); picking Chapter 1 shows its card and Begin replays it (hub-replay-card, replay-started) without taking the file back a chapter. Checks per case file and Arcade: the XP stays on case file 1 (case file 2 has none) and Arcade's numbers read as no effect outside a chapter (events progress-saved, arcade-clean; metrics hubXp, hubLevel, refundHits, hubWalked)", 900, "content"),
+        new PlaytestScenario("chapter-maps", "Each Campaign chapter loads its own map, with its own lighting, and unloads it on leaving (setup: the sandbox case file stands on the chapter; the real save is never touched; leaving a chapter early is a named setup shortcut). Three chapters in turn (1 The Moonlit Hollow, 4 The Long Walk, 5 The Reading Room): Campaign, case file 1, Begin; the map named in the chapter data loads as an extra scene on top of the game scene (event map-loaded: map, scene, scenes open), the chapter's lighting is on (event map-lighting: fog colour and density, sun colour, sky colour; they differ between chapters), the opening scene is skipped with Enter and Wallit walks on the stick; then the chapter is left for the menu and the map is gone (event map-unloaded: scene closed, lighting back) with memory read before and after (metrics mapMemoryBaselineMB, mapMemoryAfterMB, mapMemoryGrowthMB; a growth over 48 MB is a bug). Metrics mapsLoaded, mapsUnloaded, distinctLooks)", 800, "content"),
         new PlaytestScenario("campaign-full", "The whole case file in one run with real input (setup: the sandbox keeps the files off the real save): Campaign, case file 1, then Chapter 1 to ADDRESS FILED. Each chapter is played as its own scenario plays it (opening scene skipped with Enter, the objective met with the bat, the boss down, the Chapter Complete card), and between chapters Menu, Campaign and the file reopen on the next chapter's card (campaign-advanced, campaign-resume). Quit and resume: in Chapter 3 the scene is dropped mid-chapter (setup, as a closed tab does) and the file must reopen on Chapter 3, unfinished (events quit-midchapter, quit-resume-panel, quit-resume; metric quitResumeRight). Ends with the Filed scene, the finale pages, ADDRESS FILED, the credits card and the case file reading filed (events campaign-full, ending-card, campaign-panel-filed; metrics fullCaseFileCleared, endingShown, caseFileFiled)", 3000, "content"),
         new PlaytestScenario("chapter6", "Chapter 6, Address Filed, played start to finish with real input (setup: the sandbox case file starts on chapter 6): Campaign, case file 1, Begin on the Chapter 6 card; the opening scene in the changed Hollow plays and is skipped with Enter; Wallit holds the circle with the bat through three waves (events wave-start), then the Spider Bot that carries the order (boss bar up, scroll on its back) arrives and falls; the Filed scene plays over the field, then the finale pages (Story.Finale verbatim, as in Arcade's story run) and the ADDRESS FILED ending card (events filed-scene, finale-page, ending-card); Keep going shows the credits card; the case file is marked complete (6 cleared), Menu, and the Campaign panel's case file 1 reads filed (events chapter6-setup, cutscene-open, objective, wave-start, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, filed-scene, finale-page, ending-card, credits-card, campaign-complete, campaign-panel-filed; metrics bossBar, endingShown, caseFileCleared, caseFileFiled)", 1000, "content"),
         new PlaytestScenario("chapter5", "Chapter 5, Strike This Address, played start to finish with real input (setup: the sandbox case file starts on chapter 5): Campaign, case file 1, Begin on the Chapter 5 card; the opening scene in the Reading Room plays over the map (the order is not signed, so it can be denied; the stamp pressed to the first page shows DENIED; the bot reads pages then skips with Enter); the objective line reads Read the order, page 1 of 5 with the bots down counting up; Wallit holds the circle at the desk with the bat through five pages (each page's wave announced PAGE n OF 5 and its forms on the wall turning blank when it is down: events page-start, page-read); then The Registrar (a gold Titan Spider Bot with a ledger, boss bar up) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 6, Menu, and reopening the file shows Chapter 6's card (events chapter5-setup, cutscene-open, cutscene-page, objective, page-start, page-read, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics pagesRead, bossBar, chapterAdvanced, chapterResumed)", 900, "content"),
@@ -211,6 +212,13 @@ public static class Playtest {
                 if (run.Done) {
                     yield break;
                 }
+            }
+            if (id == "chapter-maps") {
+                yield return MapsRun();
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
             }
             if (id == "campaign" || id == "campaign-full" || id == "hub" || id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
                 watchCutscene = id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5";
@@ -605,6 +613,123 @@ public static class Playtest {
             } else {
                 run.Event("campaign-full", "Chapter 1 to ADDRESS FILED played in one run: " + done.cleared + " chapters cleared");
             }
+        }
+    }
+
+    // Chapter maps: each chapter loads its own map and lighting on Begin and unloads it on leaving.
+    static IEnumerator MapsRun() {
+        CampaignSave.EnterSandbox();
+        int[] chapters = { 0, 3, 4 };
+        var looks = new HashSet<string>();
+        int loaded = 0;
+        int unloaded = 0;
+        System.GC.Collect();
+        yield return Resources.UnloadUnusedAssets();
+        yield return new WaitForSecondsRealtime(1f);
+        long baseline = ChapterMap.Memory();
+        run.Metric("mapMemoryBaselineMB", Mathf.Round(baseline / 1048576f));
+        foreach (int index in chapters) {
+            if (run.Done) {
+                yield break;
+            }
+            Story.Chapter data = Story.Chapters[index];
+            CampaignSave.Slot slot = CampaignSave.Get(0);
+            slot.used = true;
+            slot.chapter = index;
+            slot.reached = index;
+            slot.cleared = index;
+            run.Event("map-setup", "sandbox case file 1 stands on chapter " + (index + 1) + " (map '" + data.Map + "')");
+            MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+            if (menu == null || menu.CampaignButton == null) {
+                run.Problem(PlaytestSeverity.Bug, "chapter-maps: no Campaign button on the main menu");
+                run.Finish(PlaytestOutcome.Stuck);
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(1f);
+            Tap(menu.CampaignButton.gameObject);
+            yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files");
+            if (run.Done) {
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(1f);
+            Tap(CampaignPanel.Instance.SlotButtons[0].gameObject);
+            yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.BeginButton != null && SceneManager.GetActiveScene().name == CampaignSave.Scene, 45f, "the chapter card");
+            if (run.Done) {
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(2f);
+            Tap(ChapterScene.Instance.BeginButton.gameObject);
+            run.Event("tap", "Begin chapter " + (index + 1));
+            yield return run.Until(() => ChapterRun.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the chapter's map after Begin");
+            if (run.Done) {
+                yield break;
+            }
+            run.Scene("Chapter " + (index + 1) + " map");
+            yield return new WaitForSecondsRealtime(1.5f);
+            ChapterMap map = ChapterMap.Current;
+            if (map == null || map.MapName != data.Map || !map.MapScene.isLoaded) {
+                run.Problem(PlaytestSeverity.Bug, "chapter-maps: chapter " + (index + 1) + " names map '" + data.Map + "' but loaded '" + (map != null ? map.MapName : "none") + "'");
+                run.Finish(PlaytestOutcome.Stuck);
+                yield break;
+            }
+            loaded++;
+            run.Event("map-loaded", "chapter " + (index + 1) + " map '" + map.MapName + "' as scene " + map.MapScene.name + " (" + map.MapScene.rootCount + " roots); " + SceneManager.sceneCount + " scenes open, active '" + SceneManager.GetActiveScene().name + "'");
+            if (SceneManager.GetActiveScene().name != MetaProgress.GameScene) {
+                run.Problem(PlaytestSeverity.Bug, "chapter-maps: loading the map changed the active scene to '" + SceneManager.GetActiveScene().name + "'");
+            }
+            Color fog = RenderSettings.fogColor;
+            Color want = map.Applied.Fog;
+            bool match = Mathf.Abs(fog.r - want.r) + Mathf.Abs(fog.g - want.g) + Mathf.Abs(fog.b - want.b) < 0.02f && Mathf.Abs(RenderSettings.fogDensity - map.Applied.FogDensity) < 0.0005f;
+            string look = ColorUtility.ToHtmlStringRGB(fog) + "/" + RenderSettings.fogDensity.ToString("0.0000");
+            looks.Add(look);
+            run.Event("map-lighting", "chapter " + (index + 1) + " fog #" + ColorUtility.ToHtmlStringRGB(fog) + " density " + RenderSettings.fogDensity.ToString("0.0000") + ", ambient #" + ColorUtility.ToHtmlStringRGB(RenderSettings.ambientEquatorColor) + ", sky #" + ColorUtility.ToHtmlStringRGB(Camera.main != null ? Camera.main.backgroundColor : Color.black) + (match ? ", the chapter's own" : ", NOT the chapter's"));
+            if (!match) {
+                run.Problem(PlaytestSeverity.Bug, "chapter-maps: chapter " + (index + 1) + "'s lighting is not on after the map loaded");
+            }
+            yield return CutsceneStep();
+            if (run.Done) {
+                yield break;
+            }
+            var player = Object.FindAnyObjectByType<CharacterMovement>();
+            Vector3 start = player != null ? player.transform.position : Vector3.zero;
+            PlayInput.Hold(KeyCode.W, true);
+            yield return new WaitForSecondsRealtime(1.5f);
+            PlayInput.Hold(KeyCode.W, false);
+            run.Event("chapter-move", "Wallit walked " + (player != null ? Vector3.Distance(start, player.transform.position).ToString("0.0") : "?") + " m on the map");
+            run.Event("map-leave", "leaving chapter " + (index + 1) + " for the menu (setup shortcut)");
+            string mapScene = map.MapScene.name;
+            PlayInput.Release();
+            ChapterRun.Instance.Abandon();
+            yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu after leaving");
+            if (run.Done) {
+                yield break;
+            }
+            run.Scene("Main Menu");
+            yield return Resources.UnloadUnusedAssets();
+            System.GC.Collect();
+            yield return new WaitForSecondsRealtime(1.5f);
+            bool still = SceneManager.GetSceneByName(mapScene).isLoaded || ChapterMap.Current != null;
+            if (!still) {
+                unloaded++;
+            } else {
+                run.Problem(PlaytestSeverity.Bug, "chapter-maps: " + mapScene + " is still loaded after leaving chapter " + (index + 1));
+            }
+            long now = ChapterMap.Memory();
+            run.Event("map-unloaded", mapScene + (still ? " STILL LOADED" : " closed") + "; " + SceneManager.sceneCount + " scene(s) open; memory " + Mathf.Round(now / 1048576f) + " MB (baseline " + Mathf.Round(baseline / 1048576f) + " MB)");
+        }
+        System.GC.Collect();
+        long end = ChapterMap.Memory();
+        float growth = (end - baseline) / 1048576f;
+        run.Metric("mapsLoaded", loaded);
+        run.Metric("mapsUnloaded", unloaded);
+        run.Metric("distinctLooks", looks.Count);
+        run.Metric("mapMemoryAfterMB", Mathf.Round(end / 1048576f));
+        run.Metric("mapMemoryGrowthMB", Mathf.Round(growth));
+        if (looks.Count < chapters.Length) {
+            run.Problem(PlaytestSeverity.Bug, "chapter-maps: chapters did not each get their own lighting (" + looks.Count + " distinct)");
+        }
+        if (growth > 48f) {
+            run.Problem(PlaytestSeverity.Bug, "chapter-maps: memory is " + Mathf.Round(growth) + " MB above the baseline after leaving three chapters");
         }
     }
 

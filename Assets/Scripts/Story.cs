@@ -51,6 +51,7 @@ public static class Story {
         public string Id;
         public string Title;
         public string Place;
+        public string Map;            // the map scene the chapter loads (ChapterMap.Defs name); its lighting goes with it
         public ChapterObjective Objective;
         public int Target;            // bots, seconds or metres, by Objective
         public float Bearing;         // degrees from the circle, for ReachPlace
@@ -80,7 +81,7 @@ public static class Story {
 
     public static readonly Chapter[] Chapters = {
         new Chapter {
-            Id = "return-to-sender", Title = "Chapter 1: Return to Sender", Place = "The Moonlit Hollow",
+            Id = "return-to-sender", Map = "hollow", Title = "Chapter 1: Return to Sender", Place = "The Moonlit Hollow",
             Objective = ChapterObjective.HoldThenBoss, Target = 6, Goal = "Yo Bots", Boss = BotKind.YoBot, BossName = "The Courier", BossHits = 40,
             Crew = new[] { BotKind.YoBot }, Every = 3.4f, Cap = 4, Power = 1,
             Lines = new[] {
@@ -128,7 +129,7 @@ public static class Story {
             },
         },
         new Chapter {
-            Id = "no-fixed-address", Title = "Chapter 2: No Fixed Address", Place = "The edge of the Hollow",
+            Id = "no-fixed-address", Map = "hollow-edge", Title = "Chapter 2: No Fixed Address", Place = "The edge of the Hollow",
             Objective = ChapterObjective.GateAndBack, Target = 70, Bearing = 150f, Goal = "the gate",
             Waves = 3, WaveSize = 4, Boss = BotKind.PlatedYoBot, BossName = "The Plated Alpha", BossHits = 55, PlainBoss = true,
             Crew = new[] { BotKind.YoBot }, Every = 3.8f, Cap = 5, Power = 4,
@@ -195,7 +196,7 @@ public static class Story {
             },
         },
         new Chapter {
-            Id = "clearing-floor", Title = "Chapter 3: The Clearing Floor", Place = "A sunken yard lit by conveyor lamps",
+            Id = "clearing-floor", Map = "clearing-floor", Title = "Chapter 3: The Clearing Floor", Place = "A sunken yard lit by conveyor lamps",
             Objective = ChapterObjective.FloorRun, Target = 105, Goal = "the lever", WaveSize = 6,
             Boss = BotKind.MegaYoBot, BossName = "The Foreman", BossHits = 70, PlainBoss = true,
             Crew = new[] { BotKind.YoBot, BotKind.PlatedYoBot }, Every = 3.6f, Cap = 5, Power = 8,
@@ -293,7 +294,7 @@ public static class Story {
             },
         },
         new Chapter {
-            Id = "process-servers", Title = "Chapter 4: The Process Servers", Place = "The Long Walk",
+            Id = "process-servers", Map = "long-walk", Title = "Chapter 4: The Process Servers", Place = "The Long Walk",
             Objective = ChapterObjective.FloorRun, Target = 95, Goal = "the last lamp", WaveSize = 5, Walk = true,
             Boss = BotKind.SpiderBot, BossName = "The Server", BossHits = 60,
             Crew = new[] { BotKind.SpiderBot, BotKind.PlatedYoBot }, Every = 6.5f, Cap = 3, Power = 26,
@@ -379,7 +380,7 @@ public static class Story {
             },
         },
         new Chapter {
-            Id = "strike-this-address", Title = "Chapter 5: Strike This Address", Place = "The Reading Room",
+            Id = "strike-this-address", Map = "reading-room", Title = "Chapter 5: Strike This Address", Place = "The Reading Room",
             Objective = ChapterObjective.HoldThenBoss, Target = 20, Goal = "the pages", Waves = 5, WaveSize = 4,
             Boss = BotKind.TitanSpiderBot, BossName = "The Registrar", BossHits = 80, PlainBoss = true,
             Crew = new[] { BotKind.YoBot, BotKind.PlatedYoBot, BotKind.MegaYoBot }, Every = 3.2f, Cap = 6, Power = 24,
@@ -449,7 +450,7 @@ public static class Story {
             },
         },
         new Chapter {
-            Id = "address-filed", Title = "Chapter 6: Address Filed", Place = "The Moonlit Hollow, changed",
+            Id = "address-filed", Map = "hollow-filed", Title = "Chapter 6: Address Filed", Place = "The Moonlit Hollow, changed",
             Objective = ChapterObjective.HoldThenBoss, Target = 12, Waves = 3, WaveSize = 4, Final = true, Goal = "the Crew",
             Boss = BotKind.SpiderBot, BossName = "The Order", BossHits = 90, PlainBoss = true,
             Crew = new[] { BotKind.YoBot, BotKind.PlatedYoBot, BotKind.MegaYoBot }, Every = 3f, Cap = 6, Power = 30,
