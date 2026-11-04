@@ -47,6 +47,9 @@ public class ChapterRun : MonoBehaviour {
     public float PlaySeconds { get; private set; }
     public Vector3 Marker { get; private set; }
     public bool HasMarker { get; private set; }
+    public bool IsGate { get { return data.Objective == Story.ChapterObjective.GateAndBack; } }
+    public int Leg { get { return leg; } }   // GateAndBack: 0 out to the gate, 1 back to the circle, 2 the waves and the boss
+    public int WaveNow { get { return waveNow; } }
     public bool HasBoss { get { return data.Objective == Story.ChapterObjective.HoldThenBoss; } }
     public bool BossUp { get { return boss != null && boss.Alive; } }
     public Enemy BossEnemy { get { return boss; } }
@@ -59,6 +62,7 @@ public class ChapterRun : MonoBehaviour {
 
     const float ReachRadius = 4.5f;
     const float RingRadius = 34f;
+    const float HomeRadius = 9f;
 
     Story.Chapter data;
     Font font;
@@ -75,6 +79,10 @@ public class ChapterRun : MonoBehaviour {
     float queueIn;
     float clock;
     float nextRing;
+    int leg;
+    int waveNow;
+    int killBase;     // kills before the waves began (GateAndBack): the hold counts from here
+    GameObject gateProps;
     GameObject beacon;
     bool toNext;
     float saved;
@@ -104,7 +112,7 @@ public class ChapterRun : MonoBehaviour {
         if (data.Objective == Story.ChapterObjective.SurviveTime) {
             clock = data.Target;
         }
-        if (data.Objective == Story.ChapterObjective.ReachPlace) {
+        if (data.Objective == Story.ChapterObjective.ReachPlace || data.Objective == Story.ChapterObjective.GateAndBack) {
             MakeMarker();
         }
         BuildUi();
@@ -124,6 +132,9 @@ public class ChapterRun : MonoBehaviour {
         }
         if (beacon != null) {
             Destroy(beacon);
+        }
+        if (gateProps != null) {
+            Destroy(gateProps);
         }
         SavePlayTime();
         if (!toNext) {
@@ -213,35 +224,13 @@ public class ChapterRun : MonoBehaviour {
                 }
                 break;
             case Story.ChapterObjective.HoldThenBoss:
-                if (!bossCalled) {
-                    Progress = RunLog.RunKills;
-                    if (spawnIn <= 0f && alive < data.Cap && RunLog.RunKills + alive < data.Target) {
-                        SpawnCrew(director);
-                    }
-                    if (RunLog.RunKills >= data.Target) {
-                        bossCalled = true;
-                        spawnIn = 3.5f;
-                        Events.Add("boss-called|" + data.BossName);
-                        Tell(data.BossLines);
-                    }
-                } else if (!bossSpawned) {
-                    if (spawnIn <= 0f) {
-                        bossSpawned = true;
-                        boss = director.SpawnForChapter(data.Boss, true, RingRadius, data.BossName, data.BossHits);
-                        Events.Add("boss|" + boss.Title + "|" + boss.HitsToDrop);
-                    }
-                } else if (defeatIn > 0f) {
-                    defeatIn -= Time.deltaTime;
-                    if (defeatIn <= 0f) {
-                        Complete();
-                    }
-                } else if (!BossUp) {
-                    // The Courier is down: a short beat over the field, then the card.
-                    Progress = 1;
-                    defeatIn = (data.DefeatLines != null ? data.DefeatLines.Length : 0) * 2.8f + 1f;
-                    Events.Add("defeat|" + data.BossName);
-                    GameAudio.Play("stamp", 0.8f, 0.8f);
-                    Tell(data.DefeatLines);
+                TickHoldBoss(director, alive);
+                break;
+            case Story.ChapterObjective.GateAndBack:
+                if (leg < 2) {
+                    TickGateLegs(director, alive);
+                } else {
+                    TickHoldBoss(director, alive);
                 }
                 break;
             case Story.ChapterObjective.DefeatBoss:
@@ -259,6 +248,108 @@ public class ChapterRun : MonoBehaviour {
                     }
                 }
                 break;
+        }
+    }
+
+    // Bots down, then the named boss, then the defeat beat and the card (Chapter 1; Chapter 2 once the waves are held).
+    void TickHoldBoss(WaveDirector director, int alive) {
+        if (!bossCalled) {
+            Progress = Kills();
+            if (data.Objective == Story.ChapterObjective.GateAndBack && waveNow < data.Waves && Kills() >= waveNow * data.WaveSize) {
+                StartWave(waveNow + 1);
+            }
+            if (spawnIn <= 0f && alive < data.Cap && Kills() + alive < Target()) {
+                SpawnCrew(director);
+            }
+            if (Kills() >= Target()) {
+                bossCalled = true;
+                spawnIn = 3.5f;
+                Events.Add("boss-called|" + data.BossName);
+                Tell(data.BossLines);
+            }
+        } else if (!bossSpawned) {
+            if (spawnIn <= 0f) {
+                bossSpawned = true;
+                boss = director.SpawnForChapter(data.Boss, true, RingRadius, data.BossName, data.BossHits, data.PlainBoss);
+                Events.Add("boss|" + boss.Title + "|" + boss.HitsToDrop);
+            }
+        } else if (defeatIn > 0f) {
+            defeatIn -= Time.deltaTime;
+            if (defeatIn <= 0f) {
+                Complete();
+            }
+        } else if (!BossUp) {
+            // The Courier is down: a short beat over the field, then the card.
+            Progress = 1;
+            defeatIn = (data.DefeatLines != null ? data.DefeatLines.Length : 0) * 2.8f + 1f;
+            Events.Add("defeat|" + data.BossName);
+            GameAudio.Play("stamp", 0.8f, 0.8f);
+            Tell(data.DefeatLines);
+        }
+    }
+
+    int Kills() {
+        return RunLog.RunKills - killBase;
+    }
+
+    // Bots to bring down before the boss: Chapter 1 sets it, Chapter 2 holds Waves waves of WaveSize.
+    int Target() {
+        return data.Objective == Story.ChapterObjective.GateAndBack ? data.Waves * data.WaveSize : data.Target;
+    }
+
+    // Chapter 2, out and back: Wallit walks Target metres to the gate (the scene plays there), then back to the circle,
+    // with bots still coming. Then the waves and the boss are TickHoldBoss.
+    void TickGateLegs(WaveDirector director, int alive) {
+        if (spawnIn <= 0f && alive < data.Cap) {
+            SpawnCrew(director);
+        }
+        if (player != null) {
+            Vector3 d = Marker - player.position;
+            d.y = 0f;
+            Progress = Mathf.CeilToInt(d.magnitude);
+            if (leg == 0 && d.magnitude <= ReachRadius) {
+                ReachGate();
+            } else if (leg == 1 && d.magnitude <= HomeRadius) {
+                BackHome();
+            }
+        }
+        if (Time.time >= nextRing && HasMarker) {
+            nextRing = Time.time + 1.4f;
+            Fx.Ring(Marker + Vector3.up * 0.2f, (leg == 0 ? ReachRadius : HomeRadius) * 2.4f, new Color(1f, 0.82f, 0.38f, 0.8f), 1.2f);
+        }
+    }
+
+    void ReachGate() {
+        leg = 1;
+        Events.Add("gate|reached|" + Mathf.RoundToInt(PlaySeconds));
+        GameAudio.Play("stamp", 0.7f, 0.9f);
+        // The marker turns around to the circle: the way back is the next leg.
+        if (Musician.Instance != null && beacon != null) {
+            Marker = Musician.Instance.transform.position;
+            beacon.transform.position = Marker;
+        }
+        Events.Add("gate-scene|" + data.Id);
+        Cutscene.Play(data.GateScene, () => Events.Add("gate-scene-done|" + data.Id));
+    }
+
+    void BackHome() {
+        leg = 2;
+        killBase = RunLog.RunKills;
+        spawnIn = 2.5f;
+        Events.Add("home|" + Mathf.RoundToInt(PlaySeconds));
+        if (beacon != null) {
+            beacon.SetActive(false);
+        }
+        HasMarker = false;
+        StartWave(1);
+    }
+
+    void StartWave(int w) {
+        waveNow = w;
+        Events.Add("wave|" + w + "|" + data.Waves);
+        UpgradeLook.Say("WAVE " + w + " OF " + data.Waves, 2.2f, 160f);
+        if (data.WaveLines != null && w - 1 < data.WaveLines.Length) {
+            Tell(new[] { data.WaveLines[w - 1] });
         }
     }
 
@@ -286,6 +377,20 @@ public class ChapterRun : MonoBehaviour {
                 return "Hold the circle against " + data.Goal + ":  " + (Progress / 60) + ":" + (Progress % 60).ToString("00");
             case Story.ChapterObjective.ReachPlace:
                 return "Reach " + data.Goal + ":  " + Progress + " m";
+            case Story.ChapterObjective.GateAndBack:
+                if (leg == 0) {
+                    return "Reach " + data.Goal + ":  " + Progress + " m";
+                }
+                if (leg == 1) {
+                    return "Back to the circle:  " + Progress + " m";
+                }
+                if (!bossCalled) {
+                    return "Hold the circle, wave " + waveNow + " of " + data.Waves + ":  " + Mathf.Min(Progress, Target()) + " / " + Target() + " down";
+                }
+                if (defeatIn > 0f) {
+                    return data.BossName + " is down";
+                }
+                return "Bring down " + data.BossName + (bossSpawned ? "" : "  (it's coming)");
             case Story.ChapterObjective.HoldThenBoss:
                 if (!bossCalled) {
                     return "Hold the circle:  " + Mathf.Min(Progress, data.Target) + " / " + data.Target + " " + data.Goal + " down";
@@ -409,6 +514,9 @@ public class ChapterRun : MonoBehaviour {
         }
         Marker = at;
         HasMarker = true;
+        if (data.Objective == Story.ChapterObjective.GateAndBack) {
+            BuildGate(at, origin);
+        }
         beacon = new GameObject("Chapter Place");
         beacon.transform.position = at;
         var shader = SafeShader.Find("Sprites/Default");
@@ -428,6 +536,43 @@ public class ChapterRun : MonoBehaviour {
             disc.GetComponent<Renderer>().material = new Material(shader) { color = new Color(1f, 0.82f, 0.38f, 0.45f) };
             pillar.GetComponent<Renderer>().material = new Material(shader) { color = new Color(1f, 0.9f, 0.6f, 0.18f) };
         }
+    }
+
+    // The gate with no handle, a stretch of the Department's wall either side and a signpost with nothing on it. Flat
+    // blocks with no colliders (the playfield stays free of anything solid), turned to face the circle.
+    void BuildGate(Vector3 at, Vector3 origin) {
+        gateProps = new GameObject("Chapter Gate");
+        gateProps.transform.position = at;
+        Vector3 toCircle = origin - at;
+        toCircle.y = 0f;
+        gateProps.transform.rotation = Quaternion.LookRotation(toCircle.sqrMagnitude > 0.01f ? toCircle.normalized : Vector3.forward, Vector3.up);
+        Color stone = new Color(0.2f, 0.21f, 0.27f, 1f);
+        Color dark = new Color(0.1f, 0.11f, 0.15f, 1f);
+        Color pale = new Color(0.82f, 0.8f, 0.72f, 1f);
+        Block("Post L", new Vector3(-4.6f, 4.5f, 0f), new Vector3(1.4f, 9f, 1.4f), stone);
+        Block("Post R", new Vector3(4.6f, 4.5f, 0f), new Vector3(1.4f, 9f, 1.4f), stone);
+        Block("Lintel", new Vector3(0f, 9.4f, 0f), new Vector3(11.4f, 1.6f, 1.6f), stone);
+        Block("Door", new Vector3(0f, 4.4f, 0.1f), new Vector3(7.8f, 8.8f, 0.5f), dark);
+        Block("Wall L", new Vector3(-13.5f, 3.5f, 0f), new Vector3(16f, 7f, 1.2f), dark);
+        Block("Wall R", new Vector3(13.5f, 3.5f, 0f), new Vector3(16f, 7f, 1.2f), dark);
+        Block("Signpost", new Vector3(8.5f, 2f, 5f), new Vector3(0.35f, 4f, 0.35f), stone);
+        Block("Blank Sign", new Vector3(8.5f, 3.9f, 5.25f), new Vector3(2.4f, 1.2f, 0.12f), pale);
+    }
+
+    void Block(string name, Vector3 local, Vector3 size, Color color) {
+        var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        cube.name = name;
+        Destroy(cube.GetComponent<Collider>());
+        cube.transform.SetParent(gateProps.transform, false);
+        cube.transform.localPosition = local;
+        cube.transform.localScale = size;
+        var shader = SafeShader.Find("Sprites/Default");
+        if (shader != null) {
+            cube.GetComponent<Renderer>().material = new Material(shader) { color = color };
+        } else {
+            UpgradeLook.Paint(cube, color);
+        }
+        cube.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
     }
 
     // ---------------------------------------------------------------- UI

@@ -86,7 +86,7 @@ roster so no new enemy art is needed for chapters 1 to 3 and 6.
   ink the only bright thing in the dark. He lands in the grass and the circle's ring lights as he rolls into it.
 - **Boss:** **The Courier**, an Alpha Yo Bot with a clipboard, a "notice of striking" (first Alpha of the Yo Bot line). [proposed]
 
-### Chapter 2: No Fixed Address
+### Chapter 2: No Fixed Address [built; see Story.md, "Chapter 2"]
 
 - **Space:** The Hollow's edge: the Boundary wall (205 m), a gate with no handle, a signpost with nothing on it. [proposed]
 - **Objective:** Walk out from the circle to the gate and back under fire; Slice insists on a radius. Survive three waves.
