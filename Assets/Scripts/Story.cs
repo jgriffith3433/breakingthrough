@@ -15,6 +15,17 @@ public static class Story {
         "W|Guard Slice. Swing at anything chirpy. Pay up.",
     };
 
+    // The hub: the circle between chapters (Docs/Story.md, "The hub"). Said on arrival, by chapters cleared (index 0 is one
+    // cleared). Two lines each, "<speaker>|<text>": Wallit money, Slice clipped.
+    public static readonly string[][] HubArrival = {
+        new[] { "W|One notice, returned. Where's my tip?", "S|Board. Next case." },
+        new[] { "W|Door's down. Still no sender.", "S|The circle's yours. The lease is paid. Board." },
+        new[] { "W|Feed's broken. Their pay is mine now.", "S|Second ring holds. Next." },
+        new[] { "W|Refused the paper three times. Put that in writing.", "S|Noted. Board." },
+        new[] { "W|The order's a form. A form can be answered.", "S|Then answer it. Board." },
+        new[] { "W|It's filed. All of it.", "S|Clean. Replays are on the board." },
+    };
+
     // Campaign chapters (Docs/CampaignBible.md). A chapter is data: where it is, what the objective is, who the boss is,
     // what is said before (Lines) and after (Done). ChapterRun plays it in the game scene with Wallit's own controls.
     public enum ChapterObjective {
