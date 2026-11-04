@@ -596,6 +596,27 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    // A chapter's new bot: an elite trait under the chapter's own name (Dispatch Yo Bot, Returned Yo Bot...).
+    public void MakeVariant(BotTrait trait, string name)
+    {
+        MakeElite(trait);
+        Title = name;
+        gameObject.name = name;
+    }
+
+    // A mid-chapter mini-boss: an Alpha with its own name, tint and a short health bar, never bigger than the chapter's boss.
+    public void MakeMini(string name, int hits, Color tint)
+    {
+        MakeBoss();
+        Title = name;
+        gameObject.name = name;
+        HitsToDrop = Mathf.Max(1, hits);
+        bodyScale *= 0.85f;
+        transform.localScale = shape * bodyScale;
+        modelTint = tint;
+        modelTintAmount = 0.4f;
+    }
+
     public void MakeBoss()
     {
         Boss = true;

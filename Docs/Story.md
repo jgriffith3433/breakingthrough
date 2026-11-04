@@ -196,6 +196,20 @@ the ring becomes a line of writing, then a door number, which Slice writes with 
 Flow: `HoldThenBoss` with `Final` in `ChapterRun.cs` (`CompleteFinal`, `ShowCredits`, `BuildChangedHollow`), lines in `Story.Chapters[5]`,
 the boss `Enemy.MakeOrderBearer`; the `chapter6` playtest plays it.
 
+## New bots and mini-bosses in the chapters
+
+Each chapter brings one new bot into its crew: every few bots in, one of the Yo Bots arrives as the chapter's own variant (named on
+screen the first time, a Yo Bot chirps about it; `Chapter.Variant`, `VariantName`, `VariantEvery`; the elite machinery gives it its
+behaviour). 1: **Dispatch Yo Bot** (fast, "Rush delivery!"). 2: **Returned Yo Bot** (comes apart into two drones, "Return to sender!").
+3: **Reissue Yo Bot** (the Floor sending the unit again, tougher). 4: **Queue-Skip Yo Bot** (blinks ahead). 5: **Clerk Yo Bot**
+(dodges the bat, "Page turned!"). 6: **Sealed Yo Bot** (a juggernaut, stamped shut).
+
+Chapters 2, 3 and 5 also have a **mini-boss** midway, with its own health bar, who must fall before the chapter's boss is called:
+**The Second Notice** (Ch2, a Plated Yo Bot that repeats the notice; half the bots down), **The Half-Built** (Ch3, a Mega Yo Bot off
+a hook, "I am... not finished!"; once Wallit reaches the belt) and **The Clerk** (Ch5, a Spider Bot that files what it cannot read;
+half the pages down). Data: `Chapter.Mini*`, `Enemy.MakeMini`, `WaveDirector.SpawnMini`. Arcade is untouched. Playtests log
+`new-enemy`, `mini-boss` and `mini-boss-bar` in any chapter scenario.
+
 ## The hub and Wallit's account
 
 Between chapters the file does not drop straight onto the next card. Chapter Complete leads **to the hub**: the Department's office, one
@@ -255,3 +269,4 @@ above reads as no effect. Slice does not level; she is already what the circle i
 - The Server: Chapter 4's boss, the first full Spider Bot. It offers the paper and will not strike until it has been refused three times.
 - The hub: between chapters the circle is a walkable office with Slice in the ring, a door per chapter (open as the file reaches it, shut after), a chapter board of six slips (filed, next, locked) and a vacant desk for an NPC. Cleared chapters can be replayed from it.
 - Wallit's account: inside the circle he is on the books, and fights add to it (XP). Levels unlock Spare Change, Refund, Receipt, Chargeback, Coin Toss, Stamp Out and Escrow. Slice does not level. Campaign only, per case file.
+- New in the chapters: one variant Yo Bot per chapter (Dispatch, Returned, Reissue, Queue-Skip, Clerk, Sealed) and mini-bosses The Second Notice (Ch2), The Half-Built (Ch3) and The Clerk (Ch5).
