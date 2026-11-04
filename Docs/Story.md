@@ -137,6 +137,15 @@ Then the file moves to Chapter 3. Both scenes (the opening and The Gate) are ski
 and wall are flat blocks with no colliders. Flow: `GateAndBack` in `ChapterRun.cs`, lines in `Story.Chapters[1]`, the boss
 `Enemy.MakePlatedAlpha`.
 
+**Slice walks with him (the companion).** In Chapter 2 Slice does not stay at the circle: she stakes the ring ("Ring's staked.
+I'm coming.") and walks a step behind Wallit, on his right, with her scalpel out. She stabs and slashes what comes close, small
+Yo Bots for real, the big ones for a flinch-cut and a shove. She is hurt the way he is, by the bots at her side, and when her
+health (60) runs out she goes **down**: she lies where she fell ("Slice! Hold on!"), no bot finishes her, and she stays down until
+Wallit stands over her and holds **E** for two seconds. She gets up with half her health and says "Noted." The ring she staked keeps
+its bar and still ends the case if it is struck off, but the figure on it is the Slice beside him until the chapter ends. A chapter
+turns a companion on with `Story.Chapter.Companion` (a `Companion.Defs` id); Chapters 1 and 3 to 6 keep her at the circle, as
+written. Arcade has no companions. Code: `Companion.cs`; `companion` playtest.
+
 ### Chapter 3: The Clearing Floor
 
 Where the bots come from. Wallit and Slice talk it over at the circle (the opening scene): the **Clearing Floor** is a sunken yard

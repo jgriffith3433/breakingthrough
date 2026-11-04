@@ -86,6 +86,7 @@ public static class Story {
         public int MiniHits;
         public Color MiniTint;
         public string[] MiniLines;    // said as it arrives
+        public string Companion;      // a Companion.Defs id that walks with Wallit this chapter (null: none)
         public string[] Cutscene;     // played by Cutscene.cs over the chapter's map when Begin is pressed (null: none)
     }
 
@@ -143,6 +144,7 @@ public static class Story {
             Id = "no-fixed-address", Map = "hollow-edge", Title = "Chapter 2: No Fixed Address", Place = "The edge of the Hollow",
             Objective = ChapterObjective.GateAndBack, Target = 70, Bearing = 150f, Goal = "the gate",
             Waves = 3, WaveSize = 4, Boss = BotKind.PlatedYoBot, BossName = "The Plated Alpha", BossHits = 55, PlainBoss = true,
+            Companion = "slice",
             Crew = new[] { BotKind.YoBot }, Every = 3.8f, Cap = 5, Power = 4,
             Variant = BotTrait.Splitter, VariantName = "Returned Yo Bot", VariantEvery = 3, VariantLine = "Y|Return to sender! Return to sender!",
             MiniName = "The Second Notice", MiniKind = BotKind.PlatedYoBot, MiniHits = 32, MiniTint = new Color(1.2f, 0.7f, 0.6f),
@@ -185,6 +187,8 @@ public static class Story {
                 "Y|Address unknown! Deleting!",
                 "C|wallit",
                 "W|Cover me, Slice. I'm collecting a refund.",
+                "C|slice",
+                "S|Ring's staked. I'm coming.",
             },
             // The Gate: plays when Wallit reaches it. His bat knocks; the wall answers with the same stamp from the other side.
             GateScene = new[] {

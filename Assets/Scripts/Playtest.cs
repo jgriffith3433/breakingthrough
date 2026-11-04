@@ -51,6 +51,7 @@ public static class Playtest {
         new PlaytestScenario("chapter5", "Chapter 5, Strike This Address, played start to finish with real input (setup: the sandbox case file starts on chapter 5): Campaign, case file 1, Begin on the Chapter 5 card; the opening scene in the Reading Room plays over the map (the order is not signed, so it can be denied; the stamp pressed to the first page shows DENIED; the bot reads pages then skips with Enter); the objective line reads Read the order, page 1 of 5 with the bots down counting up; Wallit holds the circle at the desk with the bat through five pages (each page's wave announced PAGE n OF 5 and its forms on the wall turning blank when it is down: events page-start, page-read); then The Registrar (a gold Titan Spider Bot with a ledger, boss bar up) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 6, Menu, and reopening the file shows Chapter 6's card (events chapter5-setup, cutscene-open, cutscene-page, objective, page-start, page-read, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics pagesRead, bossBar, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("chapter4", "Chapter 4, The Process Servers, played start to finish with real input (setup: the sandbox case file starts on chapter 4): Campaign, case file 1, Begin on the Chapter 4 card; the opening dialogue says where Spider Bots come from (process servers, deliveries from the Department with one paper to hand over; the bot reads pages then skips with Enter); the objective reads Reach the first lamp (1 of 3) with metres counting down; Wallit walks the three lamps along the causeway under fire, batting what is in reach; at the last lamp the way turns round to the circle; Wallit walks home and holds off the servers; then The Server (a Spider Bot with a paper, boss bar up) arrives and offers the paper, and does NOT strike: Wallit refuses it by hitting it (objective reads Refuse the paper n / 3, events server-offer and server-refused 1, 2, 3); only after the third refusal it winds up and strikes Slice (server-strike), then falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 5, Menu, and reopening the file shows Chapter 5's card (events chapter4-setup, cutscene-open, cutscene-page, origin-dialogue, objective, floor-stop, last-lamp, home-leg, boss-arrives, boss-bar, server-offer, server-refused, server-strike, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics floorStops, serverOffers, serverRefusals, serverStruckEarly, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("chapter3", "Chapter 3, The Clearing Floor, played start to finish with real input (setup: the sandbox case file starts on chapter 3): Campaign, case file 1, Begin on the Chapter 3 card; the opening dialogue plays over the map and says where Yo Bots come from (the Clearing Crew, stamped out on the Floor; the bot reads pages then skips with Enter); the objective line reads Reach the broken gate (1 of 3) with metres counting down; Wallit walks the three stops (the broken gate, the belt with The Belt scene read and skipped, the lever) under fire from Yo Bots, batting those in reach; at the lever the belt feed breaks and the objective turns to Back to the circle; Wallit walks home, holds off the last batch, then The Foreman (order sheet on its chest, with a boss bar) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 4, Menu, and reopening the file shows Chapter 4's card (events chapter3-setup, cutscene-open, cutscene-page, origin-dialogue, objective, floor-stop, floor-scene-skip, feed-broken, home-leg, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics floorStops, feedBroken, chapterAdvanced, chapterResumed)", 900, "content"),
+        new PlaytestScenario("companion", "The AI companion (Slice), played in Chapter 2 with real input (setup: the sandbox case file starts on chapter 2; the real save and Arcade are never touched): Slice walks with Wallit as he walks out (event companion-follows: her distance stays within a few metres over 25 m of walking), stabs the Yo Bots that come near (event companion-fights: stabs and kills while Wallit only walks), is knocked down (named setup shortcut, event companion-down: she lies down, the label reads hold E to revive), Wallit walks to her and holds E (real input) and she is back on her feet with half her health (event companion-revived; metrics companionStabs, companionDowns, companionRevives). The chapter then plays on as in chapter2. Arcade has no companion (event companion-off in the modes scenario)", 900, "content"),
         new PlaytestScenario("chapter2", "Chapter 2, No Fixed Address, played start to finish with real input (setup: the sandbox case file starts on chapter 2): Campaign, case file 1, Begin on the Chapter 2 card; the opening dialogue plays over the map (the bot reads pages, then skips it with Enter); the objective line reads Reach the gate with its metres counting down; Wallit walks out to the gate under fire from Yo Bots, batting those in reach; at the gate The Gate scene plays (read a few pages, then skipped), the objective turns to Back to the circle, Wallit walks home, three waves are held at the circle (objective Hold the circle, wave n of 3), then The Plated Alpha (stamped INVALID, with a boss bar) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 3, Menu, and reopening the file shows Chapter 3's card (events chapter2-setup, cutscene-open, cutscene-page, cutscene-skip, cutscene-play, objective, gate-leg, gate-reached, gate-scene-skip, home-leg, chapter-wave, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics gateReached, gateSceneSkipped, chapterWaves, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("story", "The story: the intro over the frozen Hollow (read page by page: who Wallit is, what the circle is, why Slice must not fall; a Skip button is on it), wave 1's story beats in canon voices, then setup: the testing wave key to wave 10 and wave 30 for the boss-wave title cards and beats (Yo Bots chirpy, Wallit on money, Slice clipped), and setup: wave 30's waiting bots trimmed to the boss and Slice topped up so the bat can finish it with real swings. Clearing wave 30 plays the finale pages and the ADDRESS FILED ending screen; the bot presses Keep going into overtime. Events intro-*, beat, finale-*, ending", 600, "content"),
         new PlaytestScenario("polish", "The final polish pass, on any screen size (run it on desktop and on the phone): the main menu, the HUD in wave 1, the level-up cards (setup: a level of bolts granted), the pause menu by its button, Resume, 40 s of real play, then the bot holds fire until Slice falls (setup: Plated Yo Bots ring her after 20 s) and the game-over panel reads Address struck off. Each screen gets a layout check (menu, hud, cards, pause, gameover), a stale-words check (no piano, keys or music-stopped words left), and a button-feel check (every button lifts on hover and sinks on press like the menu's); the audio-mix event says how many sounds played, how many stacked softer, how many were capped and how many dipped under a voice line", 420, "full"),
@@ -227,7 +228,8 @@ public static class Playtest {
                 }
                 yield break;
             }
-            if (id == "campaign" || id == "campaign-full" || id == "hub" || id == "moves" || id == "abilities" || id == "hub-doors" || id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
+            if (id == "campaign" || id == "campaign-full" || id == "hub" || id == "moves" || id == "abilities" || id == "hub-doors" || id == "cutscene" || id == "chapter2" || id == "companion" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
+                companionTest = id == "companion";
                 watchCutscene = id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5";
                 hubTest = id == "hub";
                 movesTest = id == "moves";
@@ -235,7 +237,7 @@ public static class Playtest {
                 hubDoors = id == "hub-doors";
                 fullRun = id == "campaign-full";
                 quitDone = false;
-                startChapter = id == "hub-doors" ? 2 : id == "chapter6" ? 5 : id == "chapter5" ? 4 : id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" ? 1 : 0;
+                startChapter = id == "hub-doors" ? 2 : id == "chapter6" ? 5 : id == "chapter5" ? 4 : id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" || id == "companion" ? 1 : 0;
                 yield return CampaignRun();
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
@@ -299,6 +301,11 @@ public static class Playtest {
                 yield return StoryRun(options);
             } else if (id == "modes") {
                 run.Event("arcade-start", "Arcade runs the wave defense: wave " + WaveDirector.Wave + ", the player is Wallit, the musician is Slice");
+                bool off = Companion.Instance == null && ChapterRun.Instance == null && Object.FindAnyObjectByType<Companion>() == null;
+                run.Event("companion-off", "Arcade has no companion: " + (off ? "none in the scene" : "ONE EXISTS"));
+                if (!off) {
+                    run.Problem(PlaytestSeverity.Bug, "modes: a companion exists in Arcade");
+                }
                 yield return Play(options, 40f, false);
             } else if (id == "cast") {
                 yield return CastRun(options);
@@ -898,6 +905,12 @@ public static class Playtest {
         CheckPlayerIsWallit();
         CheckMusicianIsSlice();
         var player = Object.FindAnyObjectByType<CharacterMovement>();
+        if (companionTest) {
+            yield return CompanionCheck(player, chapter);
+            if (run.Done) {
+                yield break;
+            }
+        }
         if (player == null) {
             run.Problem(PlaytestSeverity.Bug, "campaign: no Wallit (CharacterMovement) in the chapter map");
             run.Finish(PlaytestOutcome.Stuck);
@@ -1852,6 +1865,87 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             run.Problem(PlaytestSeverity.Bug, "chapter6: the Campaign panel does not show case file 1 as complete (\"" + texts[0].text + "\")");
         }
         yield return new WaitForSecondsRealtime(2f);
+    }
+
+    static bool companionTest;
+
+    // Chapter 2's companion: she follows, fights, goes down and is revived by a held E.
+    static IEnumerator CompanionCheck(CharacterMovement player, ChapterRun chapter) {
+        yield return run.Until(() => Companion.Instance != null, 5f, "the companion Slice to be in the chapter");
+        if (run.Done) {
+            yield break;
+        }
+        Companion slice = Companion.Instance;
+        run.Event("companion-spawned", slice.Data.Name + " is with Wallit in " + chapter.Title + " (" + slice.Health + "/" + slice.MaxHealth + " health, model " + slice.HasModel + ")");
+        // 1. Follow: Wallit walks toward the gate; she must keep up. Wallit only walks: any stab is hers.
+        float startWalk = Time.realtimeSinceStartup;
+        float worst = 0f;
+        Vector3 from = player.transform.position;
+        float kills0 = RunLog.RunKills;
+        while (!run.Done && Time.realtimeSinceStartup - startWalk < 40f
+               && Vector3.Distance(from, player.transform.position) < 28f && slice.Alive) {
+            if (WaveDirector.IsLost) {
+                yield return GameOver();
+                yield break;
+            }
+            Walk(player, chapter.Marker, 1f);
+            worst = Mathf.Max(worst, slice.DistanceToPlayer);
+            yield return null;
+        }
+        Stand();
+        yield return new WaitForSecondsRealtime(1f);
+        float gap = slice.DistanceToPlayer;
+        run.Event("companion-follows", "Wallit walked " + Vector3.Distance(from, player.transform.position).ToString("0") + " m; Slice walked " + slice.Walked.ToString("0") + " m and is " + gap.ToString("0.0") + " m from him (furthest " + worst.ToString("0.0") + " m)");
+        run.Metric("companionWalked", Mathf.Round(slice.Walked));
+        if (slice.Walked < 10f || gap > 9f) {
+            run.Problem(PlaytestSeverity.Bug, "companion: Slice did not follow Wallit (walked " + slice.Walked.ToString("0") + " m, " + gap.ToString("0.0") + " m behind)");
+        }
+        // 2. Fight: Wallit stands still holding fire; bots that come at them are Slice's to stab.
+        float wait = Time.realtimeSinceStartup;
+        while (!run.Done && slice.Stabs < 2 && Time.realtimeSinceStartup - wait < 45f && slice.Alive) {
+            if (WaveDirector.IsLost) {
+                yield return GameOver();
+                yield break;
+            }
+            yield return null;
+        }
+        run.Event("companion-fights", "Slice stabbed " + slice.Stabs + " times while Wallit held fire (kills so far " + (RunLog.RunKills - kills0) + ")");
+        run.Metric("companionStabs", slice.Stabs);
+        if (slice.Stabs < 1) {
+            run.Problem(PlaytestSeverity.Bug, "companion: Slice never attacked a bot in 45 s");
+        }
+        // 3. Down: a named setup shortcut puts her down, as the bots would.
+        run.Event("setup", "companion knocked down (setup shortcut)");
+        slice.KnockDown();
+        yield return new WaitForSecondsRealtime(0.5f);
+        run.Event("companion-down", slice.Data.Name + " is down: " + (slice.Downed ? "yes" : "NO") + ", health " + slice.Health);
+        if (!slice.Downed) {
+            run.Problem(PlaytestSeverity.Bug, "companion: Slice did not go down at 0 health");
+        }
+        // 4. Revive: Wallit walks to her and holds E (real input).
+        float t0 = Time.realtimeSinceStartup;
+        while (!run.Done && slice.Downed && Time.realtimeSinceStartup - t0 < 40f) {
+            if (WaveDirector.IsLost) {
+                yield return GameOver();
+                yield break;
+            }
+            Walk(player, slice.transform.position, Companion.ReviveReach * 0.6f);
+            bool close = slice.DistanceToPlayer <= Companion.ReviveReach * 0.8f;
+            PlayInput.Hold(KeyCode.E, close);
+            if (close) {
+                Stand();
+            }
+            yield return null;
+        }
+        PlayInput.Hold(KeyCode.E, false);
+        Stand();
+        yield return new WaitForSecondsRealtime(0.5f);
+        run.Event("companion-revived", slice.Data.Name + " is back up: " + (!slice.Downed ? "yes" : "NO") + ", health " + slice.Health + "/" + slice.MaxHealth + ", revives " + slice.Revives);
+        run.Metric("companionDowns", slice.Downs);
+        run.Metric("companionRevives", slice.Revives);
+        if (slice.Downed || slice.Revives < 1) {
+            run.Problem(PlaytestSeverity.Bug, "companion: holding E over the downed Slice did not revive her");
+        }
     }
 
     static bool NearestInReach(CharacterMovement player) {
