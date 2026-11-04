@@ -67,6 +67,7 @@ public class ChapterScene : MonoBehaviour {
         }
         Build(chapter);
         RunAnalytics.Screen("chapter_" + (Chapter + 1));
+        RunAnalytics.CampaignStart(Chapter, CampaignSave.Scene);
     }
 
     void OnDestroy() {

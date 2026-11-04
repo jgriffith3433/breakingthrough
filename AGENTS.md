@@ -172,6 +172,7 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
   `Plugins/WebGL/HawkesSite.jslib` and plays 20 s). Every touch run reports
   a layout check per screen (`menu`, `hud`, `cards`): text or buttons off screen, text over text or over a button,
   text under 11 px, buttons under 44 px, with `<screen>MinTextPx`, `<screen>MinTapPx` and `<screen>Overlaps`.
+  `campaign` (from the main menu press Campaign, open case file 1 and wait for the `Campaign` scene; events `mode-select`, `tap`, `run_start` (`mode=campaign scene=Campaign chapter=1 …`), metrics `campaignLoaded`, `campaignLoadSeconds`; if the scene never loads (e.g. missing from the build's scene list, PR #70) it reports a bug naming the scene and the active scene, and ends stuck. `ChapterScene.Awake` sends the analytics `run_start` with `mode` `campaign` through `RunAnalytics.CampaignStart`; `smoke` still presses Arcade),
   `locomotion` (Wallit walks, runs, starts, stops and turns free, then locked on strafes, back pedals and runs at a bot; each `loco` event gives the planted foot's slide, the hips' jump and the speed change, and a slide over 0.4 m/s or a hips pop is a bug).
   `bots` (wave 1's Yo Bots walking at the musician, event `yo-bots` with their distance closing; 30 s of play, then
   `bolts` with bolts picked up and the XP gained; `enemy-list` with the names read off the list on the right; the
