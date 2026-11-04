@@ -39,6 +39,7 @@ public static class Playtest {
         new PlaytestScenario("cutscene", "The chapter cutscene: Campaign, case file 1, Begin on the Chapter 1 card, and the opening scene (The Stamp) plays over the map with letterbox bars, a speaker name and portrait slot, typed lines and the camera on whoever talks. The bot reads the first pages with real key presses (a first press finishes the typing, the next turns the page), skipping a page's voice by pressing on, then presses Enter to skip the rest: play starts with the objective line up and Wallit moving on the stick, and the chapter is cleared. Checked: every Wallit, Slice and Yo Bot page has a name, two voice lines never overlap (Wallit's floor and the scene both count them), the director allows no other line during the scene. Events cutscene-open, cutscene-page (speaker, text, camera focus, letterbox, voice), cutscene-skip, cutscene-play, cutscene-voice; metrics cutscenePages, cutsceneVoiceLines, cutsceneOverlaps, cutsceneSkipped", 420, "content"),
         new PlaytestScenario("campaign", "Campaign loads and plays a chapter: from the main menu press Campaign, open case file 1 (setup: the sandbox keeps the files off the real save) and wait for the Campaign scene to load. Reports run_start with mode=campaign and the loaded scene name (event run_start, metrics campaignLoaded, campaignLoadSeconds); if the scene fails to load (not in the build's scene list, or the chapter never builds) the run stops stuck with a bug saying so. Then Begin on the chapter card: Wallit and Slice in the chapter map, Wallit walks on the stick, the objective line shows, the bot fights with real input until it is met, Chapter 1 holds the circle against Yo Bots, then the Courier arrives (health bar on screen), winds up telegraphed notices on the circle and the bot breaks them or stands in them until it falls and the defeat beat plays; the Chapter Complete card shows, the case file advances to chapter 2, Menu, and reopening the file resumes at chapter 2 (events chapter-card, chapter-start, chapter-move, objective, boss-arrives, boss-bar, boss-attack, boss-defeated, defeat-beat, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics chapterAdvanced, chapterResumed, bossBar, courierWinds, courierInterrupted). Smoke is unchanged: it still presses Arcade", 750, "content"),
         new PlaytestScenario("hub", "The hub and Campaign progression, played with real input (setup: the sandbox case file 1 starts on chapter 1 with 85 XP, 5 short of level 3; the real save and Arcade are never touched): Campaign, case file 1, Begin on Chapter 1; the first kills give XP (HUD line LV/XP) and level 3 unlocks Refund (events xp-gain, level-up); the bot presses C near the bots and the ring shoves and stings them (event refund-used); the Courier falls, the Chapter Complete card offers To the hub; the bot presses it and lands in the hub (Wallit, Slice in the ring, the chapter board; events hub-open, hub-arrival), walks to the board on the stick and presses E (hub-walk, board-open: Chapter 1 filed and replayable, Chapter 2 next, Chapter 3 locked); picking Chapter 1 shows its card and Begin replays it (hub-replay-card, replay-started) without taking the file back a chapter. Checks per case file and Arcade: the XP stays on case file 1 (case file 2 has none) and Arcade's numbers read as no effect outside a chapter (events progress-saved, arcade-clean; metrics hubXp, hubLevel, refundHits, hubWalked)", 900, "content"),
+        new PlaytestScenario("campaign-full", "The whole case file in one run with real input (setup: the sandbox keeps the files off the real save): Campaign, case file 1, then Chapter 1 to ADDRESS FILED. Each chapter is played as its own scenario plays it (opening scene skipped with Enter, the objective met with the bat, the boss down, the Chapter Complete card), and between chapters Menu, Campaign and the file reopen on the next chapter's card (campaign-advanced, campaign-resume). Quit and resume: in Chapter 3 the scene is dropped mid-chapter (setup, as a closed tab does) and the file must reopen on Chapter 3, unfinished (events quit-midchapter, quit-resume-panel, quit-resume; metric quitResumeRight). Ends with the Filed scene, the finale pages, ADDRESS FILED, the credits card and the case file reading filed (events campaign-full, ending-card, campaign-panel-filed; metrics fullCaseFileCleared, endingShown, caseFileFiled)", 3000, "content"),
         new PlaytestScenario("chapter6", "Chapter 6, Address Filed, played start to finish with real input (setup: the sandbox case file starts on chapter 6): Campaign, case file 1, Begin on the Chapter 6 card; the opening scene in the changed Hollow plays and is skipped with Enter; Wallit holds the circle with the bat through three waves (events wave-start), then the Spider Bot that carries the order (boss bar up, scroll on its back) arrives and falls; the Filed scene plays over the field, then the finale pages (Story.Finale verbatim, as in Arcade's story run) and the ADDRESS FILED ending card (events filed-scene, finale-page, ending-card); Keep going shows the credits card; the case file is marked complete (6 cleared), Menu, and the Campaign panel's case file 1 reads filed (events chapter6-setup, cutscene-open, objective, wave-start, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, filed-scene, finale-page, ending-card, credits-card, campaign-complete, campaign-panel-filed; metrics bossBar, endingShown, caseFileCleared, caseFileFiled)", 1000, "content"),
         new PlaytestScenario("chapter5", "Chapter 5, Strike This Address, played start to finish with real input (setup: the sandbox case file starts on chapter 5): Campaign, case file 1, Begin on the Chapter 5 card; the opening scene in the Reading Room plays over the map (the order is not signed, so it can be denied; the stamp pressed to the first page shows DENIED; the bot reads pages then skips with Enter); the objective line reads Read the order, page 1 of 5 with the bots down counting up; Wallit holds the circle at the desk with the bat through five pages (each page's wave announced PAGE n OF 5 and its forms on the wall turning blank when it is down: events page-start, page-read); then The Registrar (a gold Titan Spider Bot with a ledger, boss bar up) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 6, Menu, and reopening the file shows Chapter 6's card (events chapter5-setup, cutscene-open, cutscene-page, objective, page-start, page-read, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics pagesRead, bossBar, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("chapter4", "Chapter 4, The Process Servers, played start to finish with real input (setup: the sandbox case file starts on chapter 4): Campaign, case file 1, Begin on the Chapter 4 card; the opening dialogue says where Spider Bots come from (process servers, deliveries from the Department with one paper to hand over; the bot reads pages then skips with Enter); the objective reads Reach the first lamp (1 of 3) with metres counting down; Wallit walks the three lamps along the causeway under fire, batting what is in reach; at the last lamp the way turns round to the circle; Wallit walks home and holds off the servers; then The Server (a Spider Bot with a paper, boss bar up) arrives and offers the paper, and does NOT strike: Wallit refuses it by hitting it (objective reads Refuse the paper n / 3, events server-offer and server-refused 1, 2, 3); only after the third refusal it winds up and strikes Slice (server-strike), then falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 5, Menu, and reopening the file shows Chapter 5's card (events chapter4-setup, cutscene-open, cutscene-page, origin-dialogue, objective, floor-stop, last-lamp, home-leg, boss-arrives, boss-bar, server-offer, server-refused, server-strike, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics floorStops, serverOffers, serverRefusals, serverStruckEarly, chapterAdvanced, chapterResumed)", 900, "content"),
@@ -211,9 +212,11 @@ public static class Playtest {
                     yield break;
                 }
             }
-            if (id == "campaign" || id == "hub" || id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
+            if (id == "campaign" || id == "campaign-full" || id == "hub" || id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
                 watchCutscene = id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5";
                 hubTest = id == "hub";
+                fullRun = id == "campaign-full";
+                quitDone = false;
                 startChapter = id == "chapter6" ? 5 : id == "chapter5" ? 4 : id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" ? 1 : 0;
                 yield return CampaignRun();
                 if (!run.Done) {
@@ -522,6 +525,8 @@ public static class Playtest {
     // the build ("Scene 'Campaign' couldn't be loaded", PR #70) never becomes the active scene: that is a bug, said plainly.
     static int startChapter;
     static bool hubTest;
+    static bool fullRun;
+    static bool quitDone;
 
     static IEnumerator CampaignRun() {
         CampaignSave.EnterSandbox();
@@ -588,6 +593,60 @@ public static class Playtest {
         }
         yield return new WaitForSecondsRealtime(3f);
         yield return ChapterPlay();
+        // The full case file: each chapter ends on the next one's card (Menu, reopen the file); play on to ADDRESS FILED.
+        while (fullRun && !run.Done && ChapterScene.Instance != null && SceneManager.GetActiveScene().name == CampaignSave.Scene) {
+            yield return ChapterPlay();
+        }
+        if (fullRun && !run.Done) {
+            CampaignSave.Slot done = CampaignSave.Get(0);
+            run.Metric("fullCaseFileCleared", done.cleared);
+            if (done.cleared != CampaignSave.ChapterCount) {
+                run.Problem(PlaytestSeverity.Bug, "campaign-full: the run ended with " + done.cleared + " of " + CampaignSave.ChapterCount + " chapters cleared");
+            } else {
+                run.Event("campaign-full", "Chapter 1 to ADDRESS FILED played in one run: " + done.cleared + " chapters cleared");
+            }
+        }
+    }
+
+    // Quit mid-chapter the way a closed tab does (the scene is dropped, the file is not touched), then reopen the file:
+    // it must stand on the same chapter, unfinished, and Begin plays it again.
+    static IEnumerator QuitAndResume(int chapterIndex) {
+        run.Event("quit-midchapter", "leaving chapter " + (chapterIndex + 1) + " for the menu before it is done (setup: the scene is dropped, as a closed tab does)");
+        PlayInput.Release();
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(MetaProgress.MenuScene);
+        yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu after quitting");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Main Menu");
+        yield return new WaitForSecondsRealtime(1f);
+        CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
+        if (slot.chapter != chapterIndex) {
+            run.Problem(PlaytestSeverity.Bug, "campaign-full: quitting mid-chapter " + (chapterIndex + 1) + " left the file on chapter " + (slot.chapter + 1));
+        }
+        Tap(Object.FindAnyObjectByType<MainMenu>().CampaignButton.gameObject);
+        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files after quitting");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        Text[] texts = CampaignPanel.Instance.SlotButtons[0].GetComponentsInChildren<Text>();
+        run.Event("quit-resume-panel", texts[0].text + " / " + texts[1].text);
+        Tap(CampaignPanel.Instance.SlotButtons[0].gameObject);
+        yield return run.Until(() => ChapterScene.Instance != null && SceneManager.GetActiveScene().name == CampaignSave.Scene, 30f, "the chapter card after quitting");
+        if (run.Done) {
+            yield break;
+        }
+        bool right = ChapterScene.Instance.Chapter == chapterIndex;
+        run.Event("quit-resume", "reopened on chapter " + (ChapterScene.Instance.Chapter + 1) + " \"" + ChapterScene.Instance.Title + "\" (expected " + (chapterIndex + 1) + ")");
+        run.Metric("quitResumeRight", right ? 1 : 0);
+        if (!right) {
+            run.Problem(PlaytestSeverity.Bug, "campaign-full: after quitting mid-chapter " + (chapterIndex + 1) + " the file reopened on chapter " + (ChapterScene.Instance.Chapter + 1));
+        }
+        yield return new WaitForSecondsRealtime(2f);
+        Tap(ChapterScene.Instance.BeginButton.gameObject);
+        run.Event("tap", "Begin (after resuming)");
     }
 
     // The chapter framework, played with real input: Begin on the chapter card, Wallit and Slice in the game scene, the
@@ -608,6 +667,20 @@ public static class Playtest {
             yield break;
         }
         ChapterRun chapter = ChapterRun.Instance;
+        if (fullRun && before == 2 && !quitDone) {
+            // Chapter 3: play a few seconds, quit, resume: the file must still stand on chapter 3.
+            quitDone = true;
+            yield return new WaitForSecondsRealtime(4f);
+            yield return QuitAndResume(before);
+            if (run.Done) {
+                yield break;
+            }
+            yield return run.Until(() => ChapterRun.Instance != null && WaveDirector.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the chapter's map after resuming");
+            if (run.Done) {
+                yield break;
+            }
+            chapter = ChapterRun.Instance;
+        }
         run.Scene("Chapter play");
         run.Event("chapter-start", chapter.Title + " in " + chapter.Place + ", case file " + (CampaignSave.Active + 1));
         yield return CutsceneStep();
