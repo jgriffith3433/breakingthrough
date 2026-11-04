@@ -40,6 +40,7 @@ public static class Playtest {
         new PlaytestScenario("campaign", "Campaign loads and plays a chapter: from the main menu press Campaign, open case file 1 (setup: the sandbox keeps the files off the real save) and wait for the Campaign scene to load. Reports run_start with mode=campaign and the loaded scene name (event run_start, metrics campaignLoaded, campaignLoadSeconds); if the scene fails to load (not in the build's scene list, or the chapter never builds) the run stops stuck with a bug saying so. Then Begin on the chapter card: Wallit and Slice in the chapter map, Wallit walks on the stick, the objective line shows, the bot fights with real input until it is met, Chapter 1 holds the circle against Yo Bots, then the Courier arrives (health bar on screen), winds up telegraphed notices on the circle and the bot breaks them or stands in them until it falls and the defeat beat plays; the Chapter Complete card shows, the case file advances to chapter 2, Menu, and reopening the file resumes at chapter 2 (events chapter-card, chapter-start, chapter-move, objective, boss-arrives, boss-bar, boss-attack, boss-defeated, defeat-beat, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics chapterAdvanced, chapterResumed, bossBar, courierWinds, courierInterrupted). Smoke is unchanged: it still presses Arcade", 750, "content"),
         new PlaytestScenario("hub", "The hub and Campaign progression, played with real input (setup: the sandbox case file 1 starts on chapter 1 with 85 XP, 5 short of level 3; the real save and Arcade are never touched): Campaign, case file 1, Begin on Chapter 1; the first kills give XP (HUD line LV/XP) and level 3 unlocks Refund (events xp-gain, level-up); the bot presses C near the bots and the ring shoves and stings them (event refund-used); the Courier falls, the Chapter Complete card offers To the hub; the bot presses it and lands in the hub (Wallit, Slice in the ring, the chapter board; events hub-open, hub-arrival), walks to the board on the stick and presses E (hub-walk, board-open: Chapter 1 filed and replayable, Chapter 2 next, Chapter 3 locked); picking Chapter 1 shows its card and Begin replays it (hub-replay-card, replay-started) without taking the file back a chapter. Checks per case file and Arcade: the XP stays on case file 1 (case file 2 has none) and Arcade's numbers read as no effect outside a chapter (events progress-saved, arcade-clean; metrics hubXp, hubLevel, refundHits, hubWalked)", 900, "content"),
         new PlaytestScenario("maps-123", "Chapters 1, 2 and 3 each load a visibly different map with a route, a landmark and a hazard or set piece (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; event map-loaded, map-lighting (fog and sky differ), map-features (one route:, landmark: and hazard: line each from the map's own list, a problem if any is missing), map-objective (the objective marker's distance from the end of the route: it must stand on the route; chapter 1's objective is the circle), then Wallit walks on the stick and the chapter is left. Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard. Play the whole objective of chapters 2 and 3 with the chapter2 and chapter3 scenarios.", 420, "content"),
+        new PlaytestScenario("maps-456", "Chapters 4, 5 and 6 each load a visibly different map (the Long Walk, the Reading Room, the changed Hollow) with a route, a landmark, a hazard or set piece and a boss arena away from the route (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; events map-loaded, map-lighting (fog and sky differ), map-features (route:, landmark:, hazard:, arena: lines from the map's own list; a problem if any is missing), map-arena (the arena's distance and its angle away from the route: over 90 degrees), map-objective, then Wallit walks and the chapter is left. A boss is then called with the director (named setup shortcut) and must walk out of the arena: event arena-boss (spawn distance from the arena centre; a problem over 8 m). Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard, mapsWithArena. Play each whole objective with the chapter4, chapter5 and chapter6 scenarios.", 600, "content"),
         new PlaytestScenario("chapter-maps", "Each Campaign chapter loads its own map, with its own lighting, and unloads it on leaving (setup: the sandbox case file stands on the chapter; the real save is never touched; leaving a chapter early is a named setup shortcut). Three chapters in turn (1 The Moonlit Hollow, 4 The Long Walk, 5 The Reading Room): Campaign, case file 1, Begin; the map named in the chapter data loads as an extra scene on top of the game scene (event map-loaded: map, scene, scenes open), the chapter's lighting is on (event map-lighting: fog colour and density, sun colour, sky colour; they differ between chapters), the opening scene is skipped with Enter and Wallit walks on the stick; then the chapter is left for the menu and the map is gone (event map-unloaded: scene closed, lighting back) with memory read before and after (metrics mapMemoryBaselineMB, mapMemoryAfterMB, mapMemoryGrowthMB; a growth over 48 MB is a bug). Metrics mapsLoaded, mapsUnloaded, distinctLooks)", 800, "content"),
         new PlaytestScenario("campaign-full", "The whole case file in one run with real input (setup: the sandbox keeps the files off the real save): Campaign, case file 1, then Chapter 1 to ADDRESS FILED. Each chapter is played as its own scenario plays it (opening scene skipped with Enter, the objective met with the bat, the boss down, the Chapter Complete card), and between chapters Menu, Campaign and the file reopen on the next chapter's card (campaign-advanced, campaign-resume). Quit and resume: in Chapter 3 the scene is dropped mid-chapter (setup, as a closed tab does) and the file must reopen on Chapter 3, unfinished (events quit-midchapter, quit-resume-panel, quit-resume; metric quitResumeRight). Ends with the Filed scene, the finale pages, ADDRESS FILED, the credits card and the case file reading filed (events campaign-full, ending-card, campaign-panel-filed; metrics fullCaseFileCleared, endingShown, caseFileFiled)", 3000, "content"),
         new PlaytestScenario("chapter6", "Chapter 6, Address Filed, played start to finish with real input (setup: the sandbox case file starts on chapter 6): Campaign, case file 1, Begin on the Chapter 6 card; the opening scene in the changed Hollow plays and is skipped with Enter; Wallit holds the circle with the bat through three waves (events wave-start), then the Spider Bot that carries the order (boss bar up, scroll on its back) arrives and falls; the Filed scene plays over the field, then the finale pages (Story.Finale verbatim, as in Arcade's story run) and the ADDRESS FILED ending card (events filed-scene, finale-page, ending-card); Keep going shows the credits card; the case file is marked complete (6 cleared), Menu, and the Campaign panel's case file 1 reads filed (events chapter6-setup, cutscene-open, objective, wave-start, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, filed-scene, finale-page, ending-card, credits-card, campaign-complete, campaign-panel-filed; metrics bossBar, endingShown, caseFileCleared, caseFileFiled)", 1000, "content"),
@@ -214,8 +215,8 @@ public static class Playtest {
                     yield break;
                 }
             }
-            if (id == "chapter-maps" || id == "maps-123") {
-                mapChapters = id == "maps-123" ? new[] { 0, 1, 2 } : new[] { 0, 3, 4 };
+            if (id == "chapter-maps" || id == "maps-123" || id == "maps-456") {
+                mapChapters = id == "maps-123" ? new[] { 0, 1, 2 } : id == "maps-456" ? new[] { 3, 4, 5 } : new[] { 0, 3, 4 };
                 yield return MapsRun();
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
@@ -623,7 +624,7 @@ public static class Playtest {
     static IEnumerator MapsRun() {
         CampaignSave.EnterSandbox();
         int[] chapters = mapChapters;
-        int withRoute = 0, withLandmark = 0, withHazard = 0;
+        int withRoute = 0, withLandmark = 0, withHazard = 0, withArena = 0;
         var looks = new HashSet<string>();
         int loaded = 0;
         int unloaded = 0;
@@ -703,6 +704,33 @@ public static class Playtest {
             if (mapChapters.Length == 3 && mapChapters[1] == 1 && !(hasRoute && hasLandmark && hasHazard)) {
                 run.Problem(PlaytestSeverity.Bug, "maps-123: chapter " + (index + 1) + "'s map lacks a route, a landmark or a hazard (" + map.Features.Count + " features)");
             }
+            if (mapChapters.Length == 3 && mapChapters[0] == 3) {
+                bool hasArena = false;
+                foreach (string f in map.Features) {
+                    hasArena |= f.StartsWith("arena:");
+                }
+                if (!(hasRoute && hasLandmark && hasHazard && hasArena && map.HasArena)) {
+                    run.Problem(PlaytestSeverity.Bug, "maps-456: chapter " + (index + 1) + "'s map lacks a route, a landmark, a hazard or a boss arena (" + map.Features.Count + " features)");
+                } else {
+                    withArena++;
+                    Vector3 c0 = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
+                    float routeBearing = index == 3 ? 330f : index == 4 ? 180f : 180f;
+                    float away = Mathf.Abs(Mathf.DeltaAngle(routeBearing, map.ArenaBearing));
+                    run.Event("map-arena", "chapter " + (index + 1) + " boss arena " + Vector3.Distance(c0, map.BossSpot).ToString("0") + " m out on bearing " + map.ArenaBearing.ToString("0") + ", " + away.ToString("0") + " degrees from the route");
+                    if (away < 90f) {
+                        run.Problem(PlaytestSeverity.Bug, "maps-456: chapter " + (index + 1) + "'s boss arena is not apart from the route (" + away.ToString("0") + " degrees)");
+                    }
+                    Enemy bossBot = WaveDirector.Instance != null ? WaveDirector.Instance.SpawnForChapter(BotKind.SpiderBot, true, 34f) : null;
+                    if (bossBot != null) {
+                        float off = Vector2.Distance(new Vector2(bossBot.transform.position.x, bossBot.transform.position.z), new Vector2(map.BossSpot.x, map.BossSpot.z));
+                        run.Event("arena-boss", "chapter " + (index + 1) + " boss spawned " + off.ToString("0.0") + " m from the arena centre (setup shortcut: called by the bot)");
+                        if (off > 8f) {
+                            run.Problem(PlaytestSeverity.Bug, "maps-456: chapter " + (index + 1) + "'s boss did not walk out of the arena (" + off.ToString("0") + " m)");
+                        }
+                        Object.Destroy(bossBot.gameObject);
+                    }
+                }
+            }
             if (ChapterRun.Instance != null && ChapterRun.Instance.HasMarker) {
                 Vector3 centre = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
                 run.Event("map-objective", "chapter " + (index + 1) + " objective marker " + Vector3.Distance(centre, ChapterRun.Instance.Marker).ToString("0") + " m from the circle");
@@ -749,6 +777,7 @@ public static class Playtest {
         run.Metric("mapsWithRoute", withRoute);
         run.Metric("mapsWithLandmark", withLandmark);
         run.Metric("mapsWithHazard", withHazard);
+        run.Metric("mapsWithArena", withArena);
         run.Metric("mapMemoryAfterMB", Mathf.Round(end / 1048576f));
         run.Metric("mapMemoryGrowthMB", Mathf.Round(growth));
         if (looks.Count < chapters.Length) {

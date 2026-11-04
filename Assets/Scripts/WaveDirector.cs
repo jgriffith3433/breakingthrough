@@ -501,6 +501,10 @@ public class WaveDirector : MonoBehaviour {
         BotDef def = BotRoster.ForSpawn(kind, Wave);
         float angle = Random.Range(0f, Mathf.PI * 2f);
         Vector3 spot = origin + new Vector3(Mathf.Sin(angle), 0f, Mathf.Cos(angle)) * radius;
+        if (boss && ChapterMap.Current != null && ChapterMap.Current.HasArena) {
+            // The chapter's map has a boss arena: the boss walks out of it, not out of the ring.
+            spot = ChapterMap.Current.BossSpot + new Vector3(Random.Range(-3f, 3f), 0f, Random.Range(-3f, 3f));
+        }
         spot.y = GroundNear(spot, origin.y) + 0.55f + def.Scale * 0.08f;
         Enemy enemy = Spawn(def, spot, !boss);
         if (boss) {

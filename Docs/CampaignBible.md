@@ -235,3 +235,19 @@ and one hazard or set piece. The route follows the chapter's own data, so the wa
   cleared things (hat, clock, bell) sliding along the route; hazard: three **crushers** slamming in turn.
 
 The bible's own models (GPU work) are not made; the stand-ins are plain blocks.
+
+## Maps for chapters 4 to 6 (built)
+
+Same rules as chapters 1 to 3 (`ChapterMap` layouts, stand-in blocks, no colliders, playfield clear). Each also has a **boss
+arena**: a round dais with a pillar ring, on the far side of the circle from the route. The chapter's boss walks out of it
+(`ChapterMap.BossSpot`, read by `WaveDirector.SpawnForChapter`), so the fight is not on the route.
+
+- **Ch. 4, the Long Walk:** causeway (bearing 330) with parapets over a pit of mist; six lamp stilts at the stops; hazard: the
+  pit with the last slabs fallen in. Arena: the **Servers' Dais** (78 m, bearing 150) with a paper stand, where The Server waits.
+- **Ch. 5, the Reading Room:** carpet aisle from the door (bearing 180) to the desk, ten racks of identical forms, five page
+  lecterns whose pages lift and settle (set piece). Arena: the **Registrar's Gallery** (80 m, bearing 0) round the Great Ledger.
+- **Ch. 6, the Hollow, filed:** the pale path run on to 180 m where it stops at nothing, the circle drawn in white, broken
+  stumps of the Department wall (190 m). Arena: **the Threshold** (80 m, bearing 20), a bare white doorframe on a dais.
+
+Playtest `maps-456` checks load, lighting, route/landmark/hazard/arena, the arena's angle from the route and that a boss spawns
+in it. The bible's own models (GPU work) are still not made.

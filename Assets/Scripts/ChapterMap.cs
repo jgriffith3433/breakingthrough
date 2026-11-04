@@ -348,7 +348,145 @@ public class ChapterMap : MonoBehaviour {
             LayoutEdge(chapter);
         } else if (def.Name == "clearing-floor") {
             LayoutFloor(chapter);
+        } else if (def.Name == "long-walk") {
+            LayoutWalk(chapter);
+        } else if (def.Name == "reading-room") {
+            LayoutReading(chapter);
+        } else if (def.Name == "hollow-filed") {
+            LayoutFiled();
         }
+    }
+
+    // A chapter's boss arena: a raised round floor with its own rim, on the far side of the circle from the route. The chapter's
+    // boss walks out of it (WaveDirector.SpawnForChapter reads BossSpot). Flat slabs only, no colliders.
+    public bool HasArena { get; private set; }
+    public Vector3 BossSpot { get; private set; }
+    public float ArenaBearing { get; private set; }
+
+    void Arena(string name, float bearing, float dist, float radius, Color floor, Color rim, Color mark) {
+        Transform g = Group(name).transform;
+        Vector3 at = Polar(bearing, dist);
+        Piece(g, "Arena Floor", at + Vector3.up * 0.16f, new Vector3(radius * 2f, 0.04f, radius * 2f), floor, 0f, 0f, PrimitiveType.Cylinder);
+        Piece(g, "Arena Inner", at + Vector3.up * 0.2f, new Vector3(radius * 1.2f, 0.03f, radius * 1.2f), mark, 0f, 0f, PrimitiveType.Cylinder);
+        for (int i = 0; i < 12; i++) {
+            float a = i * 30f;
+            Vector3 p = at + Quaternion.Euler(0f, a, 0f) * Vector3.forward * (radius + 1.5f);
+            Piece(g, "Arena Pillar " + i, p + Vector3.up * (3f + (i % 2) * 1.5f), new Vector3(2f, 6f + (i % 2) * 3f, 2f), rim, a);
+        }
+        HasArena = true;
+        BossSpot = at;
+        ArenaBearing = bearing;
+    }
+
+    // Chapter 4, the Long Walk: a causeway (the chapter lays its slabs and lamps) with a low parapet either side and a pit of mist
+    // under it; six lamp stilts (the stops), a gap where slabs have fallen away (hazard) and, on the other side of the circle, the
+    // Servers' Dais where The Server waits to be refused.
+    void LayoutWalk(Story.Chapter chapter) {
+        Color parapet = C(0.55f, 0.57f, 0.65f), pit = C(0.34f, 0.36f, 0.42f), iron = C(0.16f, 0.17f, 0.22f), lamp = C(1f, 0.82f, 0.45f), paper = C(0.92f, 0.9f, 0.8f);
+        Story.Stop[] stops = chapter.Stops;
+        float bearing = stops != null && stops.Length > 0 ? stops[stops.Length - 1].Bearing : 330f;
+        float length = stops != null && stops.Length > 0 ? stops[stops.Length - 1].Dist + 24f : 120f;
+        Quaternion face = Quaternion.Euler(0f, bearing, 0f);
+        Transform route = Group("Causeway Parapets").transform;
+        for (float d = 16f; d <= length; d += 8f) {
+            foreach (float side in new[] { -3.6f, 3.6f }) {
+                Piece(route, "Parapet", Polar(bearing, d, 0.45f) + face * new Vector3(side, 0f, 0f), new Vector3(0.7f, 0.9f, 6.6f), parapet, bearing);
+            }
+        }
+        Features.Add("route:the causeway from the circle out along bearing " + bearing + ", walled by low parapets, to " + (stops != null && stops.Length > 0 ? stops[stops.Length - 1].Name : "the last lamp"));
+        Transform mist = Group("Pit of Mist").transform;
+        Piece(mist, "Mist Pit", Polar(bearing, length * 0.5f, -0.6f), new Vector3(60f, 0.1f, length + 40f), pit * 0.7f, bearing);
+        for (int i = 0; i < 6; i++) {
+            Piece(mist, "Mist Bank " + i, Polar(bearing, 20f + i * 18f, 1f) + face * new Vector3((i % 2 == 0 ? 1 : -1) * 14f, 0f, 0f), new Vector3(16f, 1.8f, 12f), C(0.62f, 0.64f, 0.7f), bearing + i * 20f);
+        }
+        Transform stilts = Group("Lamp Stilts").transform;
+        if (stops != null) {
+            for (int i = 0; i < stops.Length; i++) {
+                foreach (float side in new[] { -5f, 5f }) {
+                    Vector3 p = Polar(stops[i].Bearing, stops[i].Dist) + face * new Vector3(side, 0f, 0f);
+                    Piece(stilts, "Stilt", p + Vector3.up * 4f, new Vector3(0.5f, 8f, 0.5f), iron, bearing);
+                    Piece(stilts, "Stilt Lamp", p + Vector3.up * 8.6f, new Vector3(1.4f, 1.4f, 1.4f), lamp, bearing);
+                }
+            }
+        }
+        Features.Add("landmark:six lamp stilts in pairs at the three stops, one lamp for every leg");
+        Transform gap = Group("Fallen Slabs").transform;
+        Vector3 gapAt = Polar(bearing, length - 10f);
+        for (int i = 0; i < 4; i++) {
+            Piece(gap, "Fallen Slab " + i, gapAt + face * new Vector3((i - 1.5f) * 2f, -1.4f - i * 0.5f, i * 1.3f), new Vector3(1.8f, 0.4f, 3f), pit, bearing + i * 14f, i * 11f);
+        }
+        Features.Add("hazard:the pit of mist under the causeway, with the last slabs fallen into it (the set piece: no cover, no edge to hide behind)");
+        float arena = (bearing + 180f) % 360f;
+        Arena("Servers' Dais", arena, 78f, 22f, pit * 1.1f, iron, lamp * 0.55f);
+        Transform stand = Group("Paper Stand").transform;
+        Vector3 at = Polar(arena, 78f);
+        Piece(stand, "Stand Post", at + Vector3.up * 1.2f, new Vector3(0.4f, 2.4f, 0.4f), iron);
+        Piece(stand, "Stand Paper", at + Vector3.up * 2.6f, new Vector3(2f, 1.5f, 0.1f), paper, arena);
+        Features.Add("arena:the Servers' Dais, a round dais with twelve pillars at 78 m on bearing " + arena + ", the far side of the circle from the causeway, where The Server walks out with its paper");
+    }
+
+    // Chapter 5, the Reading Room: a carpeted aisle from the door to the desk, rows of form racks, five page lecterns (one per
+    // reading) and the Registrar's Gallery, a ring of ledgers where it reads with every leg.
+    void LayoutReading(Story.Chapter chapter) {
+        Color carpet = C(0.5f, 0.12f, 0.14f), rack = C(0.25f, 0.18f, 0.14f), form = C(0.92f, 0.89f, 0.78f), brass = C(0.85f, 0.7f, 0.3f), stone = C(0.24f, 0.25f, 0.32f);
+        const float door = 180f;
+        Transform aisle = Group("Carpet Aisle").transform;
+        Path(aisle, door, 10f, 58f, 3.4f, 4f, carpet, carpet * 0.8f, 0.12f);
+        Features.Add("route:a carpet aisle from the door on bearing 180 straight in to the desk by the circle");
+        Transform racks = Group("Form Racks").transform;
+        Quaternion face = Quaternion.Euler(0f, door, 0f);
+        for (int i = 0; i < 5; i++) {
+            foreach (float side in new[] { -12f, 12f }) {
+                Vector3 p = Polar(door, 22f + i * 7f) + face * new Vector3(side, 0f, 0f);
+                Piece(racks, "Form Rack", p + Vector3.up * 3f, new Vector3(1.4f, 6f, 5f), rack, door);
+                Piece(racks, "Rack Forms", p + face * new Vector3(0f, 3.4f, 0.8f), new Vector3(1.5f, 4.2f, 3.6f), form, door);
+            }
+        }
+        Features.Add("landmark:ten racks of identical forms down both sides of the aisle, all this order");
+        Transform lect = Group("Page Lecterns").transform;
+        for (int i = 0; i < 5; i++) {
+            float b = i * 72f + 36f;
+            Vector3 p = Polar(b, 30f);
+            Piece(lect, "Lectern", p + Vector3.up * 0.8f, new Vector3(1.2f, 1.6f, 1.2f), rack, b);
+            GameObject page = Piece(lect, "Page " + (i + 1), p + Vector3.up * 1.9f, new Vector3(1.4f, 0.1f, 1f), form, b, 20f);
+            page.AddComponent<MapMover>().Set(MapMover.Mode.Press, 2.1f, 1.8f, 4f, i * 0.8f);
+        }
+        Features.Add("hazard:five page lecterns round the circle, each page lifting and settling in turn (the set piece: the reading, one page per wave)");
+        Arena("Registrar's Gallery", 0f, 80f, 22f, stone, rack, brass * 0.6f);
+        Vector3 at = Polar(0f, 80f);
+        Piece(null, "Great Ledger", at + Vector3.up * 1.5f, new Vector3(5f, 3f, 3f), brass, 0f);
+        Piece(null, "Ledger Pages", at + Vector3.up * 3.1f, new Vector3(4.6f, 0.2f, 2.6f), form, 0f);
+        Features.Add("arena:the Registrar's Gallery, a ringed dais at 80 m on bearing 0 round the Great Ledger, opposite the door, where the Registrar walks out");
+    }
+
+    // Chapter 6, the Hollow filed: the Hollow of chapter 1, changed. The wall is gone (broken stumps on the rim), the path of slabs
+    // runs on out to nothing, the circle burns brighter in a ring of white, and the Threshold, a bare doorframe on a dais, is where
+    // the Spider Bot carrying the order walks out.
+    void LayoutFiled() {
+        Color pale = C(0.7f, 0.76f, 0.9f), stone = C(0.3f, 0.36f, 0.5f), white = C(0.95f, 0.95f, 0.9f), wall = C(0.1f, 0.12f, 0.18f), ink = C(0.85f, 0.18f, 0.2f);
+        const float path = 180f;
+        Transform route = Group("Path to Nothing").transform;
+        Path(route, path, 124f, 175f, 3.2f, 5f, pale, pale * 0.8f, 0.1f);
+        Piece(route, "Path End", Polar(path, 182f, 0.1f), new Vector3(3.2f, 0.08f, 1.4f), ink * 0.9f, path);
+        Features.Add("route:the pale slab path out of the circle on bearing 180, run on to 180 m where it stops at nothing");
+        Transform ringGroup = Group("Brighter Circle").transform;
+        for (int i = 0; i < 36; i++) {
+            float b = i * 10f;
+            Piece(ringGroup, "Circle Mark " + i, Polar(b, 20f, 0.1f), new Vector3(0.5f, 0.05f, 3.4f), white, b + 90f);
+        }
+        Features.Add("landmark:the circle drawn in white round the guard, brighter than it has ever been");
+        Transform stumps = Group("Wall Stumps").transform;
+        for (int i = 0; i < 8; i++) {
+            float b = 90f + i * 22f;
+            Piece(stumps, "Wall Stump " + i, Polar(b, 190f, 1.5f + (i % 3)), new Vector3(10f, 3f + (i % 3) * 2f, 1.4f), wall, b, (i % 2 == 0 ? 6f : -4f));
+        }
+        Features.Add("hazard:the broken stumps of the Department wall at 190 m, a gap where it stood (set piece: nothing left to stop the order walking in)");
+        Arena("The Threshold", 20f, 80f, 22f, stone * 1.2f, stone, white * 0.55f);
+        Vector3 at = Polar(20f, 80f);
+        Piece(null, "Door Post L", at + Quaternion.Euler(0f, 20f, 0f) * new Vector3(-3f, 5f, 0f), new Vector3(1f, 10f, 1f), white, 20f);
+        Piece(null, "Door Post R", at + Quaternion.Euler(0f, 20f, 0f) * new Vector3(3f, 5f, 0f), new Vector3(1f, 10f, 1f), white, 20f);
+        Piece(null, "Door Lintel", at + Vector3.up * 10.4f, new Vector3(7f, 1f, 1f), white, 20f);
+        Features.Add("arena:the Threshold, a ringed dais at 80 m on bearing 20 with a bare white doorframe, away from the path, where the Spider Bot that carries the order walks out");
     }
 
     // Chapter 1, the Moonlit Hollow: a pale stepping-stone trail (the way the bots and the Courier come in), a ring of
