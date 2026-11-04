@@ -236,6 +236,7 @@ public class ChapterMap : MonoBehaviour {
     // Stand-in dressing from the arena's art, beyond the playfield: a ring of lantern posts and a low wall of plain blocks.
     // Nothing has a collider.
     void Dress(Look def) {
+        Layout(def);
         Vector3 origin = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
         var shared = new Material(SafeShader.Find("Standard") ?? SafeShader.Find("Sprites/Default") ?? BirdArt.Shared.shader) { color = def.Dressing };
         made.Add(shared);
@@ -275,6 +276,253 @@ public class ChapterMap : MonoBehaviour {
             block.transform.rotation = Quaternion.Euler(0f, a * Mathf.Rad2Deg, 0f);
             block.transform.localScale = new Vector3(28f, 6f + (i % 3) * 3f, 3f);
             block.GetComponent<Renderer>().sharedMaterial = shared;
+        }
+    }
+
+    // ---------------------------------------------------------------- Chapter layouts
+    // What makes chapters 1 to 3 different places and not one ring in three colours: each has a ROUTE (a laid path the
+    // chapter's objective follows), LANDMARKS and one HAZARD or SET PIECE. Everything is a plain block in the map's scene,
+    // no colliders, and the route runs from the circle outward along the chapter's own data (Story.Chapters: the gate's
+    // bearing and distance, the Floor's stops), so the way you walk is the way the map is drawn. `Features` names each
+    // piece for the playtest ("route:", "landmark:", "hazard:").
+    public readonly List<string> Features = new List<string>();
+    Vector3 center;
+
+    Vector3 Polar(float bearing, float dist, float y = 0f) {
+        float a = bearing * Mathf.Deg2Rad;
+        return center + new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * dist + Vector3.up * y;
+    }
+
+    readonly Dictionary<Color, Material> mats = new Dictionary<Color, Material>();
+
+    GameObject Piece(Transform parent, string name, Vector3 pos, Vector3 size, Color color, float yaw = 0f, float roll = 0f, PrimitiveType kind = PrimitiveType.Cube) {
+        GameObject g = GameObject.CreatePrimitive(kind);
+        g.name = name;
+        Destroy(g.GetComponent<Collider>());
+        g.transform.SetParent(parent != null ? parent : root.transform, false);
+        g.transform.position = pos;
+        g.transform.rotation = Quaternion.Euler(0f, yaw, roll);
+        g.transform.localScale = size;
+        if (!mats.TryGetValue(color, out Material m)) {
+            m = new Material(SafeShader.Find("Sprites/Default") ?? BirdArt.Shared.shader) { color = color };
+            mats[color] = m;
+            made.Add(m);
+        }
+        Renderer r = g.GetComponent<Renderer>();
+        r.sharedMaterial = m;
+        r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        return g;
+    }
+
+    GameObject Group(string name) {
+        var g = new GameObject(name);
+        g.transform.SetParent(root.transform, false);
+        return g;
+    }
+
+    // A path of flat slabs from `from` to `to` metres along a bearing, with an optional side offset.
+    void Path(Transform parent, float bearing, float from, float to, float width, float step, Color a, Color b, float y = 0.1f) {
+        int i = 0;
+        for (float d = from; d <= to; d += step, i++) {
+            Piece(parent, "Slab " + i, Polar(bearing, d, y), new Vector3(width, 0.08f, step * 0.86f), i % 2 == 0 ? a : b, bearing);
+        }
+    }
+
+    static bool ChapterOf(string map, out Story.Chapter chapter) {
+        foreach (Story.Chapter c in Story.Chapters) {
+            if (c.Map == map) {
+                chapter = c;
+                return true;
+            }
+        }
+        chapter = default(Story.Chapter);
+        return false;
+    }
+
+    void Layout(Look def) {
+        center = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
+        ChapterOf(def.Name, out Story.Chapter chapter);
+        if (def.Name == "hollow") {
+            LayoutHollow();
+        } else if (def.Name == "hollow-edge") {
+            LayoutEdge(chapter);
+        } else if (def.Name == "clearing-floor") {
+            LayoutFloor(chapter);
+        }
+    }
+
+    // Chapter 1, the Moonlit Hollow: a pale stepping-stone trail (the way the bots and the Courier come in), a ring of
+    // standing stones, the Fallen Mailbox with its stamp (landmark) and a mist bog with dead trunks (the set piece).
+    void LayoutHollow() {
+        Color stone = C(0.3f, 0.34f, 0.46f), pale = C(0.62f, 0.68f, 0.82f), dark = C(0.07f, 0.09f, 0.14f), bog = C(0.1f, 0.2f, 0.22f), ink = C(0.85f, 0.18f, 0.2f), wood = C(0.12f, 0.1f, 0.12f), steel = C(0.45f, 0.5f, 0.62f);
+        const float trail = 20f;
+        Transform route = Group("Stepping-stone Trail").transform;
+        Path(route, trail, 45f, 150f, 3.2f, 5f, pale, pale * 0.8f);
+        Features.Add("route:stepping-stone trail from the circle out to the mailbox, bearing 20");
+        Transform ring = Group("Standing Stones").transform;
+        for (int i = 0; i < 9; i++) {
+            float b = i * 40f + 10f;
+            Piece(ring, "Standing Stone " + i, Polar(b, 62f, 3.5f), new Vector3(2.2f, 7f + (i % 3) * 1.5f, 1.6f), stone, b, (i % 2 == 0 ? 4f : -3f));
+        }
+        Features.Add("landmark:ring of nine standing stones round the circle");
+        Transform box = Group("Fallen Mailbox").transform;
+        Vector3 at = Polar(trail, 125f);
+        Piece(box, "Mailbox Post", at + Vector3.up * 5f, new Vector3(1.2f, 10f, 1.2f), wood, trail, 12f);
+        Piece(box, "Mailbox Body", at + new Vector3(0f, 10.4f, 0f) + Quaternion.Euler(0f, trail, 0f) * new Vector3(1.8f, 0f, 0f), new Vector3(6f, 3.6f, 3.6f), steel, trail, 12f);
+        Piece(box, "Mailbox Flag", at + new Vector3(0f, 12.6f, 0f), new Vector3(0.4f, 3f, 1.8f), ink, trail, 12f);
+        Piece(box, "Stamp Slab", at + Quaternion.Euler(0f, trail, 0f) * new Vector3(0f, 0.3f, -9f), new Vector3(9f, 0.12f, 4f), ink, trail);
+        Features.Add("landmark:the Fallen Mailbox with its red RETURN TO SENDER stamp, 125 m out on the trail");
+        Transform mire = Group("Mist Bog").transform;
+        Vector3 bogAt = Polar(285f, 95f);
+        Piece(mire, "Bog", bogAt + Vector3.up * 0.07f, new Vector3(46f, 0.03f, 46f), bog, 0f, 0f, PrimitiveType.Cylinder);
+        Piece(mire, "Bog Rim", bogAt + Vector3.up * 0.05f, new Vector3(52f, 0.03f, 52f), dark, 0f, 0f, PrimitiveType.Cylinder);
+        for (int i = 0; i < 5; i++) {
+            float a = i * 72f * Mathf.Deg2Rad;
+            Piece(mire, "Dead Trunk " + i, bogAt + new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * 12f + Vector3.up * (4f + i % 2), new Vector3(1f, 8f + i % 2 * 2f, 1f), wood, 0f, (i - 2) * 5f);
+        }
+        Features.Add("hazard:the Mist Bog, a dark sink of dead trunks 95 m out to the west (set piece: the bots do not cross it)");
+    }
+
+    // Chapter 2, the edge of the Hollow: a chalk-lined road with lanterns out to the gate (the route is the chapter's own
+    // gate bearing and distance), the Department wall running off either side, Slice's radius painted on the ground
+    // (landmark) and a stamp press that falls beside the road (the hazard).
+    void LayoutEdge(Story.Chapter chapter) {
+        float bearing = chapter.Bearing;
+        float gate = chapter.Target;
+        Color chalk = C(0.8f, 0.78f, 0.7f), iron = C(0.16f, 0.17f, 0.22f), wall = C(0.1f, 0.11f, 0.15f), red = C(0.85f, 0.14f, 0.12f), lamp = C(1f, 0.82f, 0.45f), stone = C(0.2f, 0.21f, 0.27f);
+        Transform road = Group("Chalk Road").transform;
+        Path(road, bearing, 14f, gate - 6f, 1.6f, 4f, chalk, chalk * 0.85f);
+        for (int i = 0; i < 6; i++) {
+            float d = 18f + i * ((gate - 24f) / 5f);
+            foreach (float side in new[] { -4f, 4f }) {
+                Vector3 p = Polar(bearing, d) + Quaternion.Euler(0f, bearing, 0f) * new Vector3(side, 0f, 0f);
+                Piece(road, "Lamp Post", p + Vector3.up * 1.8f, new Vector3(0.3f, 3.6f, 0.3f), iron);
+                Piece(road, "Lamp", p + Vector3.up * 3.9f, new Vector3(0.9f, 0.9f, 0.9f), lamp);
+            }
+        }
+        Features.Add("route:chalk road with paired lamps from the circle to the gate, " + gate + " m on bearing " + bearing);
+        Transform walls = Group("Department Wall").transform;
+        for (int i = -5; i <= 5; i++) {
+            if (Mathf.Abs(i) <= 1) {
+                continue;
+            }
+            float b = bearing + i * 7f;
+            Piece(walls, "Wall Section " + i, Polar(b, gate + 6f, 3.5f), new Vector3(2f * Mathf.PI * (gate + 6f) * 7f / 360f, 7f, 1.2f), wall, b);
+        }
+        Features.Add("landmark:the Department wall running off either side of the gate");
+        Transform ringGroup = Group("Slice's Radius").transform;
+        for (int i = 0; i < 48; i++) {
+            float b = i * 7.5f;
+            Piece(ringGroup, "Radius Mark " + i, Polar(b, 24f, 0.09f), new Vector3(0.6f, 0.05f, 3.6f), red, b + 90f);
+        }
+        Features.Add("landmark:Slice's radius, a red painted ring 24 m out that she tells Wallit not to leave");
+        Transform press = Group("Stamp Press").transform;
+        Vector3 baseAt = Polar(bearing + 9f, 46f);
+        Piece(press, "Press Post L", baseAt + Quaternion.Euler(0f, bearing, 0f) * new Vector3(-4f, 5f, 0f), new Vector3(1f, 10f, 1f), iron, bearing);
+        Piece(press, "Press Post R", baseAt + Quaternion.Euler(0f, bearing, 0f) * new Vector3(4f, 5f, 0f), new Vector3(1f, 10f, 1f), iron, bearing);
+        Piece(press, "Press Beam", baseAt + Vector3.up * 10.4f, new Vector3(10f, 1f, 1f), iron, bearing);
+        Piece(press, "Press Mark", baseAt + Vector3.up * 0.1f, new Vector3(7f, 0.06f, 5f), red * 0.7f, bearing);
+        GameObject plate = Piece(press, "Press Plate", baseAt + Vector3.up * 8f, new Vector3(7f, 1.2f, 5f), red, bearing);
+        plate.AddComponent<MapMover>().Set(MapMover.Mode.Press, 8f, 1.2f, 3.4f, 0f);
+        Features.Add("hazard:the stamp press beside the road at 46 m, its plate falling every few seconds on a red INVALID mark");
+    }
+
+    // Chapter 3, the Clearing Floor: a belt-lined yard. The route is the Floor's own stops; a hook gantry arches over it
+    // every few metres (landmark), a moving belt of cleared things runs on each side, and crushers cycle by the way
+    // (the hazard). A red lamp lights the lever's chute.
+    void LayoutFloor(Story.Chapter chapter) {
+        Color iron = C(0.16f, 0.17f, 0.22f), steel = C(0.55f, 0.58f, 0.66f), belt = C(0.12f, 0.12f, 0.16f), lamp = C(1f, 0.74f, 0.35f), red = C(0.9f, 0.14f, 0.1f);
+        Color[] thing = { C(0.35f, 0.3f, 0.4f), C(1f, 0.74f, 0.35f), C(0.8f, 0.65f, 0.3f) };
+        Story.Stop[] stops = chapter.Stops;
+        if (stops == null || stops.Length == 0) {
+            return;
+        }
+        float bearing = stops[stops.Length - 1].Bearing;
+        float length = stops[stops.Length - 1].Dist + 20f;
+        Transform route = Group("Yard Floor Route").transform;
+        Path(route, bearing, 16f, length, 6f, 6f, belt * 1.7f, belt * 1.35f);
+        for (int i = 0; i < stops.Length; i++) {
+            Vector3 p = Polar(stops[i].Bearing, stops[i].Dist, 0.14f);
+            Piece(route, "Stop Plate " + (i + 1), p, new Vector3(9f, 0.06f, 9f), lamp * 0.8f, stops[i].Bearing);
+        }
+        Features.Add("route:the yard floor path through " + stops.Length + " lit stops, " + stops[0].Name + " to " + stops[stops.Length - 1].Name);
+        Transform gantry = Group("Hook Gantries").transform;
+        Quaternion face = Quaternion.Euler(0f, bearing, 0f);
+        for (int i = 0; i < 6; i++) {
+            Vector3 at = Polar(bearing, 24f + i * 15f);
+            Piece(gantry, "Gantry Leg L", at + face * new Vector3(-9f, 6f, 0f), new Vector3(0.9f, 12f, 0.9f), iron, bearing);
+            Piece(gantry, "Gantry Leg R", at + face * new Vector3(9f, 6f, 0f), new Vector3(0.9f, 12f, 0.9f), iron, bearing);
+            Piece(gantry, "Gantry Rail", at + Vector3.up * 12.2f, new Vector3(19f, 0.8f, 0.8f), iron, bearing);
+            for (int k = -1; k <= 1; k += 2) {
+                Piece(gantry, "Hook", at + face * new Vector3(k * 4f, 10.4f, 0f), new Vector3(0.2f, 3.4f, 0.2f), iron, bearing);
+                Piece(gantry, "Chassis", at + face * new Vector3(k * 4f, 8f, 0f), new Vector3(1.6f, 1.9f, 1.2f), steel, bearing);
+            }
+        }
+        Features.Add("landmark:six hook gantries arching the route, hung with un-built Yo Bot chassis");
+        for (int side = -1; side <= 1; side += 2) {
+            Transform b = Group("Belt " + (side < 0 ? "West" : "East")).transform;
+            Vector3 mid = Polar(bearing, length * 0.5f) + face * new Vector3(side * 17f, 0f, 0f);
+            Piece(b, "Belt Bed", mid + Vector3.up * 0.5f, new Vector3(3.4f, 1f, length - 10f), belt, bearing);
+            for (int k = 0; k < 6; k++) {
+                GameObject item = Piece(b, "Cleared Thing " + k, mid + face * new Vector3(0f, 1.4f, 0f), new Vector3(1.4f, 1.1f, 1.4f), thing[k % 3], bearing);
+                MapMover mover = item.AddComponent<MapMover>();
+                mover.Set(MapMover.Mode.Belt, 0f, 0f, side < 0 ? 3f : -3f, (k / 6f) * (length - 10f));
+                mover.SetLine(mid + face * new Vector3(0f, 1.4f, 0f), face * Vector3.forward, length - 10f);
+            }
+        }
+        Features.Add("landmark:two belts of cleared things (a hat, a clock, a bell) sliding along the route");
+        Transform crush = Group("Crushers").transform;
+        for (int i = 0; i < 3; i++) {
+            float d = 38f + i * 24f;
+            int side = i % 2 == 0 ? 1 : -1;
+            Vector3 at = Polar(bearing, d) + face * new Vector3(side * 9f, 0f, 0f);
+            Piece(crush, "Crusher Frame", at + Vector3.up * 5.5f, new Vector3(0.8f, 11f, 0.8f), iron, bearing);
+            Piece(crush, "Crusher Mark", at + Vector3.up * 0.1f, new Vector3(5f, 0.06f, 5f), red * 0.7f, bearing);
+            GameObject head = Piece(crush, "Crusher Head", at + Vector3.up * 7f, new Vector3(5f, 1.6f, 5f), red, bearing);
+            head.AddComponent<MapMover>().Set(MapMover.Mode.Press, 7f, 1.0f, 2.6f, i * 0.9f);
+        }
+        Features.Add("hazard:three crushers beside the route (at 38, 62 and 86 m) that slam down on red marks in turn");
+        Vector3 chute = Polar(stops[stops.Length - 1].Bearing, stops[stops.Length - 1].Dist);
+        Piece(null, "Chute Lamp", chute + new Vector3(0f, 12f, 0f), new Vector3(3f, 3f, 0.6f), red, bearing);
+    }
+
+    // Moves a dressing piece with no collider: a press (drops from high to low on a cycle) or a belt item (slides along a line).
+    public class MapMover : MonoBehaviour {
+        public enum Mode { Press, Belt }
+        Mode mode;
+        float high, low, period, offset, speed;
+        Vector3 origin, along;
+        float lineLength;
+        public int Cycles { get; private set; }
+
+        public void Set(Mode m, float highY, float lowY, float p, float off) {
+            mode = m;
+            high = highY;
+            low = lowY;
+            period = Mathf.Max(0.5f, p);
+            offset = off;
+            speed = p;
+        }
+
+        public void SetLine(Vector3 start, Vector3 dir, float length) {
+            origin = start - dir * (length * 0.5f);
+            along = dir;
+            lineLength = length;
+        }
+
+        void Update() {
+            Vector3 p = transform.position;
+            if (mode == Mode.Press) {
+                float t = Mathf.Repeat(Time.time + offset, period) / period;
+                // Rise slowly, hang, slam down, rest.
+                float k = t < 0.55f ? Mathf.SmoothStep(0f, 1f, t / 0.55f) : t < 0.7f ? 1f : t < 0.78f ? 1f - (t - 0.7f) / 0.08f : 0f;
+                p.y = Mathf.Lerp(low, high, k);
+            } else {
+                float s = Mathf.Repeat(offset + Time.time * Mathf.Abs(speed), lineLength);
+                p = origin + along * (speed >= 0f ? s : lineLength - s);
+                p.y = transform.position.y;
+            }
+            transform.position = p;
         }
     }
 }
