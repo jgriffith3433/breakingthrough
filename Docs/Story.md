@@ -294,3 +294,9 @@ above reads as no effect. Slice does not level; she is already what the circle i
 - The hub: between chapters the circle is a walkable office with Slice in the ring, a door per chapter (open as the file reaches it, shut after), a chapter board of six slips (filed, next, locked) and a vacant desk for an NPC. Cleared chapters can be replayed from it.
 - Wallit's account: inside the circle he is on the books, and fights add to it (XP). Levels unlock Spare Change, Refund, Receipt, Chargeback, Coin Toss, Stamp Out and Escrow. Slice does not level. Campaign only, per case file.
 - New in the chapters: one variant Yo Bot per chapter (Dispatch, Returned, Reissue, Queue-Skip, Clerk, Sealed) and mini-bosses The Second Notice (Ch2), The Half-Built (Ch3) and The Clerk (Ch5).
+
+## The cast file
+
+Every voice in a dialogue box is a row in `Assets/Resources/Cast/cast.json`: Wallit, Slice, the Yo Bots (Yo Bot, Mega Yo Bot,
+the Half-Built) and the named bosses (the Courier, the Plated Alpha, the Foreman, the Server, the Registrar, the Order-Bearer),
+plus the narrator. Warrok is retired and has no row. Each row has a speaker code, name, colour, portrait path and voice hook.

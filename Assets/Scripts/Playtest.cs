@@ -34,6 +34,7 @@ public static class Playtest {
         new PlaytestScenario("upgrades", "The bat upgrades: the shop lists Corked Core and Aluminum! Not wood! (setup: both owned in the sandbox) and the metal bat is in the player's hands; wave 1's first level-up cards are read off the screen (bat upgrades, no retired cast words); setup: the testing wave key (=) to wave 14 for tougher Plated Yo Bots and a handful of bat boons granted (Wide Arc, Pine Tar, Ice Bat, Live Wire, Grand Slam, Long Ball and more), each one's mark on the bat logged; then the bot plays until each effect is seen: a wider swing, bots burning, bots slowed, chain sparks shorting bots out, a 360 spin swing, batted bolts landing. Then Thunder Bat is granted for a lightning spin, and 30 s of play", 330, "content"),
         new PlaytestScenario("wallit", "Wallit as the player: checks Wallit's wallet body, bills, gloves, sneakers and bat on the live player, exercises running, locked-on strafing (strafeLeft, strafeRight, backPedal), jumping (jump, landing), getting hit (hitReact), and every bat swing (swing1, swing2, swing3, groundSmash, homeRunCharge, homeRunRelease) with OnBatContact damage, then checks all 17 Animator clips", 200, "content"),
         new PlaytestScenario("locomotion", "Wallit's feet on the ground: walks, runs, starts, stops and turns free, then locked on to a Yo Bot strafes left and right, back pedals, runs at it and stops, all through the keys. Each segment logs the planted foot's slide and the hips' largest jump (`loco` events; a slide or a pop is a bug)", 75, "content"),
+        new PlaytestScenario("dialogue", "Dialogue boxes and the cast: the cast file (Resources/Cast/cast.json) is read and must list every character of the bible and not Warrok (event cast-data, a problem if Warrok is there or a bible name is missing). Arcade starts, then setup: a dialogue scene with one line per cast member plays over the run. The bot reads each page with real key presses and every page must show the speaker's name, a portrait (art or the stand-in disc with its glyph) and the cast file's colour for that speaker (events dialogue-page, a problem if a named line has no name or portrait, or the colour is wrong); Wallit and Slice lines go through their voices and the rest through the Cast.LineSpoken hook (dialogue-voice). Metrics castMembers, dialoguePages, dialogueNamed, dialoguePortraits", 240, "content"),
         new PlaytestScenario("cast", "The new cast, in 90 s: the main menu with the key art up (MenuArt, its size and that the menu shows it), What's new opened from the site over the game with the release note naming Wallit, Slice and the bots (read from releases.json), then a run where the player is Wallit with his bat, the bar says Slice, and wave 1's Yo Bots close in and are batted. The AGENTS.md and README cast text lives in the repo, not the build: the review reads it from the diff", 120, "content"),
         new PlaytestScenario("modes", "The mode select: the main menu shows Campaign and Arcade; Campaign opens the three case files (save slots, setup: the sandbox keeps them off the real save), opening an empty file loads the placeholder Chapter 1 scene with Wallit and Slice's lines, Menu returns and the file now reads Chapter 1 with its time on the books, Erase (asked twice) empties it; then Arcade starts today's wave defense and the bot plays 40 s of it with the bat. Events mode-select, campaign-files, chapter-open, chapter-lines, campaign-saved, campaign-erased, arcade-start", 200, "content"),
         new PlaytestScenario("cutscene", "The chapter cutscene: Campaign, case file 1, Begin on the Chapter 1 card, and the opening scene (The Stamp) plays over the map with letterbox bars, a speaker name and portrait slot, typed lines and the camera on whoever talks. The bot reads the first pages with real key presses (a first press finishes the typing, the next turns the page), skipping a page's voice by pressing on, then presses Enter to skip the rest: play starts with the objective line up and Wallit moving on the stick, and the chapter is cleared. Checked: every Wallit, Slice and Yo Bot page has a name, two voice lines never overlap (Wallit's floor and the scene both count them), the director allows no other line during the scene. Events cutscene-open, cutscene-page (speaker, text, camera focus, letterbox, voice), cutscene-skip, cutscene-play, cutscene-voice; metrics cutscenePages, cutsceneVoiceLines, cutsceneOverlaps, cutsceneSkipped", 420, "content"),
@@ -301,6 +302,8 @@ public static class Playtest {
                 yield return Play(options, 40f, false);
             } else if (id == "cast") {
                 yield return CastRun(options);
+            } else if (id == "dialogue") {
+                yield return DialogueRun(options);
             } else if (id == "wallit") {
                 yield return WallitRun(options);
             } else if (id == "locomotion") {
@@ -5245,6 +5248,76 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         run.Event("cast-in-play", "Wallit with the bat is the player, Slice is the musician, " + bots.Length + " bot(s) up");
         run.Progress(0.6f);
         yield return Play(options, 45f, false);
+    }
+
+    static IEnumerator DialogueRun(PlaytestOptions options) {
+        string[] bible = { "wallit", "slice", "yobot", "megayobot", "courier", "platedalpha", "foreman", "halfbuilt", "server", "registrar", "orderbearer" };
+        var ids = new System.Collections.Generic.List<string>();
+        foreach (Cast.Member m in Cast.All) {
+            ids.Add(m.id);
+        }
+        run.Event("cast-data", ids.Count + " members: " + string.Join(", ", ids.ToArray()));
+        run.Metric("castMembers", ids.Count);
+        if (ids.Contains("warrok")) {
+            run.Problem(PlaytestSeverity.Bug, "dialogue: the cast file lists Warrok, who is retired");
+        }
+        foreach (string id in bible) {
+            if (!ids.Contains(id)) {
+                run.Problem(PlaytestSeverity.Bug, "dialogue: the cast file has no " + id);
+            }
+        }
+        int spokeHook = 0;
+        Cast.LineSpoken += (m, line) => spokeHook++;
+        yield return new WaitForSecondsRealtime(2f);
+        string[] script = Cast.Roll();
+        run.Event("setup", "dialogue scene with " + script.Length + " lines, one per cast member");
+        Cutscene.Play(script, null);
+        yield return run.Until(() => Cutscene.IsOpen, 5f, "the dialogue scene");
+        if (run.Done) {
+            yield break;
+        }
+        Cutscene scene = Cutscene.Instance;
+        int pages = 0, named = 0, portraits = 0;
+        while (Cutscene.IsOpen && !run.Done && pages < 40) {
+            yield return new WaitForSecondsRealtime(0.5f);
+            string code = null;
+            string said = scene.TextShown;
+            // The page's speaker is the script line whose index matches the page.
+            string line = pages < script.Length ? script[pages] : null;
+            code = line != null ? Story.Speaker(line) : null;
+            string shown = scene.NameShown;
+            string expected = code != null ? Cast.NameOf(code) : "";
+            bool wantsPortrait = code != null && Cast.HasPortrait(code);
+            bool colourOk = code == null || Mathf.Abs(scene.NameColour.r - Cast.ColourOf(code).r) < 0.01f && Mathf.Abs(scene.NameColour.g - Cast.ColourOf(code).g) < 0.01f && Mathf.Abs(scene.NameColour.b - Cast.ColourOf(code).b) < 0.01f;
+            run.Event("dialogue-page", (pages + 1) + "/" + scene.PageCount + " name \"" + shown + "\" portrait " + (scene.PortraitVisible ? scene.PortraitKind + " '" + scene.PortraitLetter + "'" : "none") + " colour " + ColorUtility.ToHtmlStringRGB(scene.NameColour) + ": \"" + said.Replace('\n', ' ') + "\"");
+            if (shown == expected && shown.Length > 0) {
+                named++;
+            }
+            if (scene.PortraitVisible == wantsPortrait && wantsPortrait) {
+                portraits++;
+            }
+            if (shown != expected) {
+                run.Problem(PlaytestSeverity.Bug, "dialogue: page " + (pages + 1) + " shows name \"" + shown + "\", expected \"" + expected + "\"");
+            }
+            if (scene.PortraitVisible != wantsPortrait) {
+                run.Problem(PlaytestSeverity.Bug, "dialogue: page " + (pages + 1) + " portrait slot " + (scene.PortraitVisible ? "shown" : "hidden") + " for " + (code ?? "?"));
+            }
+            if (!colourOk) {
+                run.Problem(PlaytestSeverity.Bug, "dialogue: page " + (pages + 1) + " name colour is not the cast file's");
+            }
+            pages++;
+            if (scene.Typing) {
+                PlayInput.Tap(KeyCode.Space);
+                yield return new WaitForSecondsRealtime(0.35f);
+            }
+            PlayInput.Tap(KeyCode.Space);
+            yield return new WaitForSecondsRealtime(0.3f);
+        }
+        run.Event("dialogue-voice", "voice lines " + Cutscene.VoiceLines + ", cast hook " + spokeHook + ", overlaps " + (Cutscene.Overlaps + WallitVoice.Overlaps));
+        run.Metric("dialoguePages", pages);
+        run.Metric("dialogueNamed", named);
+        run.Metric("dialoguePortraits", portraits);
+        yield return Play(options, 5f, false);
     }
 
     static IEnumerator SiteRun(PlaytestOptions options) {

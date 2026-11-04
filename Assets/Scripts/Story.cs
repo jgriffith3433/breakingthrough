@@ -611,13 +611,9 @@ public static class Story {
         return line.Substring(line.IndexOf('|') + 1);
     }
 
+    // The speaker's name for the dialogue box: the cast file's (Resources/Cast/cast.json).
     public static string Name(string speaker) {
-        switch (speaker) {
-            case "W": return "WALLIT";
-            case "S": return "SLICE";
-            case "Y": return "YO BOT";
-            default: return "";
-        }
+        return Cast.NameOf(speaker);
     }
 
     public static IEnumerable<string> All() {

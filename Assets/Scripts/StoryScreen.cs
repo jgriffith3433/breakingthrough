@@ -212,12 +212,7 @@ public class StoryScreen : MonoBehaviour {
     }
 
     static Color SpeakerColor(string speaker) {
-        switch (speaker) {
-            case "W": return new Color(0.95f, 0.8f, 0.4f);
-            case "S": return new Color(0.86f, 0.9f, 1f);
-            case "Y": return new Color(0.55f, 1f, 0.7f);
-            default: return new Color(1f, 0.92f, 0.72f);
-        }
+        return Cast.ColourOf(speaker);
     }
 
     // ---------------------------------------------------------------- tick
