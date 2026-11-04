@@ -20,6 +20,7 @@ public static class CampaignSave {
         public int xp;           // Campaign XP earned in this file's fights (CampaignProgress): level and abilities follow from it
         public int unlocked;     // bit per CampaignProgress.Abilities row, set at the level-up that unlocked it
         public int errands;      // bit per chapter: Chime's errand done and the lost thing (Story.Errands) kept
+        public int lore;         // bit per Lore.All row, set when the story reveals it (the file keeps its own log)
     }
 
     [Serializable]
@@ -111,6 +112,7 @@ public static class CampaignSave {
             s.seconds = 0f;
         }
         s.chapter = Mathf.Clamp(s.chapter, 0, ChapterCount - 1);
+        Lore.Unlock(s, s.cleared);
         Active = index;
         data.last = index;
         Touch(s);
@@ -129,6 +131,7 @@ public static class CampaignSave {
         s.cleared = Mathf.Max(s.cleared, chapter + 1);
         s.chapter = Mathf.Clamp(Mathf.Max(s.chapter, chapter + 1), 0, ChapterCount - 1);
         s.reached = Mathf.Max(s.reached, s.chapter);
+        Lore.Unlock(s, s.cleared);
         Touch(s);
         Save();
         return s.chapter;
@@ -193,7 +196,17 @@ public static class CampaignSave {
         if (!s.used) {
             return "";
         }
+        return Clock(s) + " on the books";
+    }
+
+    public static string Clock(Slot s) {
         int total = Mathf.FloorToInt(s.seconds);
-        return (total / 3600) + ":" + ((total / 60) % 60).ToString("00") + ":" + (total % 60).ToString("00") + " on the books";
+        return (total / 3600) + ":" + ((total / 60) % 60).ToString("00") + ":" + (total % 60).ToString("00");
+    }
+
+    // "2/6 filed (33%)": completion of a file.
+    public static string Completion(Slot s) {
+        int done = Mathf.Clamp(s.cleared, 0, ChapterCount);
+        return done + "/" + ChapterCount + " filed (" + Mathf.RoundToInt(100f * done / ChapterCount) + "%)";
     }
 }

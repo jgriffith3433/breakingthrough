@@ -27,6 +27,7 @@ public class CampaignPanel : MonoBehaviour {
     public Button[] SlotButtons { get; private set; } = new Button[CampaignSave.SlotCount];
     public Button[] EraseButtons { get; private set; } = new Button[CampaignSave.SlotCount];
     public Button BackButton { get; private set; }
+    public Button LoreButton { get; private set; }
 
     Font font;
     GameObject root;
@@ -86,7 +87,10 @@ public class CampaignPanel : MonoBehaviour {
         if (laidStamp != UiFit.Stamp) {
             Layout();
         }
-        if (MenuNav.Back) {
+        if (LorePanel.IsOpen) {
+            return;
+        }
+        if (MenuNav.Back && Time.frameCount != LorePanel.ClosedFrame) {
             Close();
         }
     }
@@ -95,7 +99,7 @@ public class CampaignPanel : MonoBehaviour {
         for (int i = 0; i < CampaignSave.SlotCount; i++) {
             CampaignSave.Slot slot = CampaignSave.Get(i);
             slotTitles[i].text = "Case file " + (i + 1) + (slot.used ? ": " + CampaignSave.Describe(slot) : "");
-            slotInfo[i].text = slot.used ? CampaignSave.Played(slot) : "No file yet. Press to open a new one.";
+            slotInfo[i].text = slot.used ? CampaignSave.Clock(slot) + "  |  " + CampaignSave.Completion(slot) + "  |  Lore " + Lore.UnlockedCount(slot) + "/" + Lore.All.Length : "No file yet. Press to open a new one.";
             slotImages[i].color = slot.used ? new Color(0.3f, 0.24f, 0.12f, 1f) : new Color(0.14f, 0.15f, 0.21f, 1f);
             EraseButtons[i].gameObject.SetActive(slot.used);
             eraseLabels[i].text = armedErase == i ? "Sure?" : "Erase";
@@ -109,6 +113,15 @@ public class CampaignPanel : MonoBehaviour {
         RunAnalytics.Screen("chapter_" + (chapter + 1));
         GameAudio.Play("stamp", 0.6f);
         SceneManager.LoadScene(CampaignSave.Scene);
+    }
+
+    // The lore log of the file last opened (or the first file in use).
+    void OpenLore() {
+        int index = CampaignSave.Last;
+        for (int i = 0; index < 0 && i < CampaignSave.SlotCount; i++) {
+            index = CampaignSave.Get(i).used ? i : -1;
+        }
+        LorePanel.Open(Mathf.Max(0, index));
     }
 
     void EraseSlot(int index) {
@@ -178,14 +191,22 @@ public class CampaignPanel : MonoBehaviour {
             eraseLabels[i].fontSize = 26;
         }
 
+        LoreButton = MakeButton(panel, "Lore log", new Vector2(260f, 88f), OpenLore, out Text loreLabel);
+        loreLabel.text = "Lore log";
+        var loreRect = (RectTransform)LoreButton.transform;
+        loreRect.anchorMin = new Vector2(0.5f, 0f);
+        loreRect.anchorMax = new Vector2(0.5f, 0f);
+        loreRect.pivot = new Vector2(1f, 0f);
+        loreRect.anchoredPosition = new Vector2(-12f, 28f);
+        loreRect.sizeDelta = new Vector2(260f, 88f);
         BackButton = MakeButton(panel, "Back", new Vector2(260f, 88f), Close, out Text backLabel);
         backLabel.text = "Back";
         BackButton.GetComponent<Image>().color = new Color(0.22f, 0.38f, 0.22f, 1f);
         var rect = (RectTransform)BackButton.transform;
         rect.anchorMin = new Vector2(0.5f, 0f);
         rect.anchorMax = new Vector2(0.5f, 0f);
-        rect.pivot = new Vector2(0.5f, 0f);
-        rect.anchoredPosition = new Vector2(0f, 28f);
+        rect.pivot = new Vector2(0f, 0f);
+        rect.anchoredPosition = new Vector2(12f, 28f);
         rect.sizeDelta = new Vector2(260f, 88f);
         MenuNav.Attach(root, 590);
         Layout();
