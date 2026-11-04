@@ -504,7 +504,9 @@ public class WaveDirector : MonoBehaviour {
         spot.y = GroundNear(spot, origin.y) + 0.55f + def.Scale * 0.08f;
         Enemy enemy = Spawn(def, spot, !boss);
         if (boss) {
-            if (bossName != null && plainBoss) {
+            if (bossName != null && plainBoss && kind == BotKind.MegaYoBot) {
+                enemy.MakeForeman(bossName, bossHits);
+            } else if (bossName != null && plainBoss) {
                 enemy.MakePlatedAlpha(bossName, bossHits);
             } else if (bossName != null) {
                 enemy.MakeCourier(bossName, bossHits);

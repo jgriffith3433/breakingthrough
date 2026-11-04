@@ -102,7 +102,7 @@ roster so no new enemy art is needed for chapters 1 to 3 and 6.
   RETURN TO SENDER, pressed through from the dark. The wall is a Department wall.
 - **Boss:** **The Plated Alpha**, a Plated Yo Bot with a stamped plate that says INVALID. [canon: Plated debuts wave 10]
 
-### Chapter 3: The Clearing Floor
+### Chapter 3: The Clearing Floor [built; see Story.md, "Chapter 3"]
 
 - **Space:** A sunken yard beyond a broken gate, lit by conveyor lamps: rows of un-built Yo Bot chassis on hooks, and a
   slow belt carrying flat, cleared things (a hat, a clock, a small bell). [proposed]

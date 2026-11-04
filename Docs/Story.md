@@ -137,6 +137,23 @@ Then the file moves to Chapter 3. Both scenes (the opening and The Gate) are ski
 and wall are flat blocks with no colliders. Flow: `GateAndBack` in `ChapterRun.cs`, lines in `Story.Chapters[1]`, the boss
 `Enemy.MakePlatedAlpha`.
 
+### Chapter 3: The Clearing Floor
+
+Where the bots come from. Wallit and Slice talk it over at the circle (the opening scene): the **Clearing Floor** is a sunken yard
+beyond the broken gate where Yo Bots are stamped out, one batch for every unfiled thing in the Hollow. They are **the Clearing
+Crew**: they chirp because every job closes with a report ("Uploading victory" means "filed as cleared"); plated and Mega Yo Bots
+are the Floor sending the same unit again, heavier, when the cheap ones fail; the bolts they drop are their own pay, so Wallit has
+been collecting what is owed. Slice stakes a second ring at the circle while he is out. The chapter is three stops, shown by the
+objective line: **the broken gate** (36 m, bearing 200, a half-built Yo Bot on a hook: "I am... not finished!"), **the belt**
+(70 m; the scene *The Belt*: cleared things ride past, a hat, a clock, a small bell, "That could be me." "It isn't."; the belt
+runs into a chute with a red lamp that is a lens, and it turns to the circle) and **the lever** (105 m): pulling it breaks the
+feed, the hooks swing empty. Then **back to the circle**, the last batch of six, and **The Foreman**, a Mega Yo Bot grown big and
+amber with the order held on its chest, a wall of plate to break ("Order, read aloud: STRIKE. THIS. ADDRESS."). Defeat beat: "Order...
+unread..." / "Paid in full." / "Clean." The file then moves to Chapter 4. Flow: `ChapterObjective.FloorRun` in `ChapterRun.cs`
+(`Story.Stop` data, flat collider-free props built in code), lines in `Story.Chapters[2]`, the boss `Enemy.MakeForeman`; the
+`chapter3` playtest plays it. Slice stays at the circle and does not follow (her second ring holds it); the Foreman reads the order
+only in its lines, with no special attack yet.
+
 ## Canon established here
 
 - The circle is the one filed address in the Moonlit Hollow; whatever is inside it exists.
@@ -148,3 +165,6 @@ and wall are flat blocks with no colliders. Flow: `GateAndBack` in `ChapterRun.c
 - The Courier: Chapter 1's boss, an Alpha Yo Bot with a clipboard that lands a notice of striking on the circle after a visible wind-up. Wallit's answer to a notice is "Return to sender."
 - The gate: at the Hollow's edge the Department's wall answers a knock with the same RETURN TO SENDER stamp from the other side, and a postmark torn into the stone is half of Wallit's own.
 - The Plated Alpha: Chapter 2's boss, a big Plated Yo Bot stamped INVALID. Its plate says INVALID, and Wallit says so does his refund.
+- The Clearing Floor: a sunken yard beyond the broken gate where the Department stamps out Yo Bots, one batch per unfiled thing. Yo Bots are the Clearing Crew; they chirp because each job closes with a report ("Uploading victory" = "filed as cleared"); plated and Mega are the same unit sent again heavier; their bolts are their pay.
+- The belt: carries flat cleared things (a hat, a clock, a small bell) into a chute with a red lamp that is a lens turned toward the circle. Pulling the lever breaks the feed.
+- The Foreman: Chapter 3's boss, a Mega Yo Bot Alpha that reads the order aloud, an order sheet on its chest.

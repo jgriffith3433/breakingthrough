@@ -48,7 +48,10 @@ public class ChapterRun : MonoBehaviour {
     public Vector3 Marker { get; private set; }
     public bool HasMarker { get; private set; }
     public bool IsGate { get { return data.Objective == Story.ChapterObjective.GateAndBack; } }
-    public int Leg { get { return leg; } }   // GateAndBack: 0 out to the gate, 1 back to the circle, 2 the waves and the boss
+    public bool IsFloor { get { return data.Objective == Story.ChapterObjective.FloorRun; } }
+    public int StopCount { get { return data.Stops != null ? data.Stops.Length : 0; } }
+    public bool FeedBroken { get; private set; }
+    public int Leg { get { return leg; } }   // GateAndBack: 0 out to the gate, 1 back to the circle, 2 the waves and the boss. FloorRun: 0..StopCount-1 the stops out, StopCount back to the circle, StopCount+1 the bots and the boss
     public int WaveNow { get { return waveNow; } }
     public bool HasBoss { get { return data.Objective == Story.ChapterObjective.HoldThenBoss; } }
     public bool BossUp { get { return boss != null && boss.Alive; } }
@@ -83,6 +86,7 @@ public class ChapterRun : MonoBehaviour {
     int waveNow;
     int killBase;     // kills before the waves began (GateAndBack): the hold counts from here
     GameObject gateProps;
+    FloorState floorProps;
     GameObject beacon;
     bool toNext;
     float saved;
@@ -112,7 +116,7 @@ public class ChapterRun : MonoBehaviour {
         if (data.Objective == Story.ChapterObjective.SurviveTime) {
             clock = data.Target;
         }
-        if (data.Objective == Story.ChapterObjective.ReachPlace || data.Objective == Story.ChapterObjective.GateAndBack) {
+        if (data.Objective == Story.ChapterObjective.ReachPlace || data.Objective == Story.ChapterObjective.GateAndBack || data.Objective == Story.ChapterObjective.FloorRun) {
             MakeMarker();
         }
         BuildUi();
@@ -233,6 +237,13 @@ public class ChapterRun : MonoBehaviour {
                     TickHoldBoss(director, alive);
                 }
                 break;
+            case Story.ChapterObjective.FloorRun:
+                if (leg <= StopCount) {
+                    TickFloorLegs(director, alive);
+                } else {
+                    TickHoldBoss(director, alive);
+                }
+                break;
             case Story.ChapterObjective.DefeatBoss:
                 if (!bossSpawned && spawnIn <= 0f) {
                     bossSpawned = true;
@@ -294,6 +305,9 @@ public class ChapterRun : MonoBehaviour {
 
     // Bots to bring down before the boss: Chapter 1 sets it, Chapter 2 holds Waves waves of WaveSize.
     int Target() {
+        if (data.Objective == Story.ChapterObjective.FloorRun) {
+            return data.WaveSize;
+        }
         return data.Objective == Story.ChapterObjective.GateAndBack ? data.Waves * data.WaveSize : data.Target;
     }
 
@@ -317,6 +331,91 @@ public class ChapterRun : MonoBehaviour {
             nextRing = Time.time + 1.4f;
             Fx.Ring(Marker + Vector3.up * 0.2f, (leg == 0 ? ReachRadius : HomeRadius) * 2.4f, new Color(1f, 0.82f, 0.38f, 0.8f), 1.2f);
         }
+    }
+
+    // Chapter 3, out along the Floor's stops (the broken gate, the belt, the lever) and back, with bots still coming. The
+    // last stop is the lever: pulling it breaks the belt feed. Then the bots and the Foreman are TickHoldBoss.
+    void TickFloorLegs(WaveDirector director, int alive) {
+        if (spawnIn <= 0f && alive < data.Cap) {
+            SpawnCrew(director);
+        }
+        if (player != null) {
+            Vector3 d = Marker - player.position;
+            d.y = 0f;
+            Progress = Mathf.CeilToInt(d.magnitude);
+            if (leg < StopCount && d.magnitude <= ReachRadius) {
+                ReachStop();
+            } else if (leg == StopCount && d.magnitude <= HomeRadius) {
+                BackFromFloor();
+            }
+        }
+        if (Time.time >= nextRing && HasMarker) {
+            nextRing = Time.time + 1.4f;
+            Fx.Ring(Marker + Vector3.up * 0.2f, (leg < StopCount ? ReachRadius : HomeRadius) * 2.4f, new Color(1f, 0.82f, 0.38f, 0.8f), 1.2f);
+        }
+    }
+
+    void ReachStop() {
+        Story.Stop stop = data.Stops[leg];
+        Events.Add("stop|" + (leg + 1) + "|" + stop.Name + "|" + Mathf.RoundToInt(PlaySeconds));
+        GameAudio.Play("stamp", 0.7f, 0.9f);
+        bool last = leg == StopCount - 1;
+        leg++;
+        if (last) {
+            FeedBroken = true;
+            Events.Add("feed-broken|" + data.Id);
+            GameAudio.Play("stomp", 1f, 0.5f);
+            Fx.Ring(Marker + Vector3.up * 0.3f, 18f, new Color(1f, 0.3f, 0.2f, 0.8f), 1.4f);
+            if (floorProps != null) {
+                floorProps.SetBool("feed", false);
+            }
+            // The marker turns around to the circle, as it does at Chapter 2's gate.
+            if (Musician.Instance != null && beacon != null) {
+                Marker = Musician.Instance.transform.position;
+                beacon.transform.position = Marker;
+            }
+        } else {
+            Vector3 next = StopPoint(data.Stops[leg]);
+            Marker = next;
+            if (beacon != null) {
+                beacon.transform.position = next;
+            }
+        }
+        if (stop.Scene != null && stop.Scene.Length > 0) {
+            Events.Add("stop-scene|" + stop.Name);
+            string[] after = stop.Lines;
+            Cutscene.Play(stop.Scene, () => {
+                Events.Add("stop-scene-done|" + stop.Name);
+                Tell(after);
+            });
+        } else {
+            Tell(stop.Lines);
+        }
+        if (last) {
+            Tell(data.WaveLines);
+        }
+    }
+
+    void BackFromFloor() {
+        leg = StopCount + 1;
+        killBase = RunLog.RunKills;
+        spawnIn = 2.5f;
+        Events.Add("home|" + Mathf.RoundToInt(PlaySeconds));
+        if (beacon != null) {
+            beacon.SetActive(false);
+        }
+        HasMarker = false;
+    }
+
+    Vector3 StopPoint(Story.Stop stop) {
+        Vector3 origin = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
+        float a = stop.Bearing * Mathf.Deg2Rad;
+        Vector3 at = origin + new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * stop.Dist;
+        at.y = origin.y;
+        if (Physics.Raycast(new Vector3(at.x, 60f, at.z), Vector3.down, out RaycastHit hit, 120f, ~0, QueryTriggerInteraction.Ignore)) {
+            at.y = hit.point.y;
+        }
+        return at;
     }
 
     void ReachGate() {
@@ -377,6 +476,20 @@ public class ChapterRun : MonoBehaviour {
                 return "Hold the circle against " + data.Goal + ":  " + (Progress / 60) + ":" + (Progress % 60).ToString("00");
             case Story.ChapterObjective.ReachPlace:
                 return "Reach " + data.Goal + ":  " + Progress + " m";
+            case Story.ChapterObjective.FloorRun:
+                if (leg < StopCount) {
+                    return "Reach " + data.Stops[leg].Name + " (" + (leg + 1) + " of " + StopCount + "):  " + Progress + " m";
+                }
+                if (leg == StopCount) {
+                    return "The feed is broken. Back to the circle:  " + Progress + " m";
+                }
+                if (!bossCalled) {
+                    return "Hold the circle against the last batch:  " + Mathf.Min(Progress, Target()) + " / " + Target() + " down";
+                }
+                if (defeatIn > 0f) {
+                    return data.BossName + " is down";
+                }
+                return "Bring down " + data.BossName + (bossSpawned ? "" : "  (it's coming)");
             case Story.ChapterObjective.GateAndBack:
                 if (leg == 0) {
                     return "Reach " + data.Goal + ":  " + Progress + " m";
@@ -509,7 +622,10 @@ public class ChapterRun : MonoBehaviour {
         float a = data.Bearing * Mathf.Deg2Rad;
         Vector3 at = origin + new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * data.Target;
         at.y = origin.y;
-        if (Physics.Raycast(new Vector3(at.x, 60f, at.z), Vector3.down, out RaycastHit hit, 120f, ~0, QueryTriggerInteraction.Ignore)) {
+        if (data.Objective == Story.ChapterObjective.FloorRun) {
+            BuildFloor(origin);
+            at = StopPoint(data.Stops[0]);
+        } else if (Physics.Raycast(new Vector3(at.x, 60f, at.z), Vector3.down, out RaycastHit hit, 120f, ~0, QueryTriggerInteraction.Ignore)) {
             at.y = hit.point.y;
         }
         Marker = at;
@@ -557,6 +673,79 @@ public class ChapterRun : MonoBehaviour {
         Block("Wall R", new Vector3(13.5f, 3.5f, 0f), new Vector3(16f, 7f, 1.2f), dark);
         Block("Signpost", new Vector3(8.5f, 2f, 5f), new Vector3(0.35f, 4f, 0.35f), stone);
         Block("Blank Sign", new Vector3(8.5f, 3.9f, 5.25f), new Vector3(2.4f, 1.2f, 0.12f), pale);
+    }
+
+    // The Clearing Floor: at each stop a few flat, collider-free blocks (hooks with chassis, the belt with cleared things,
+    // the lever and its red lamp), so the way out reads as a place. Nothing solid within the playfield.
+    void BuildFloor(Vector3 origin) {
+        gateProps = new GameObject("Chapter Floor");
+        floorProps = gateProps.AddComponent<FloorState>();
+        Color iron = new Color(0.16f, 0.17f, 0.22f, 1f);
+        Color lamp = new Color(1f, 0.74f, 0.35f, 1f);
+        Color chassis = new Color(0.55f, 0.58f, 0.66f, 1f);
+        Color red = new Color(0.9f, 0.14f, 0.1f, 1f);
+        for (int i = 0; i < data.Stops.Length; i++) {
+            Vector3 at = StopPoint(data.Stops[i]);
+            var holder = new GameObject("Stop " + (i + 1) + " " + data.Stops[i].Name);
+            holder.transform.SetParent(gateProps.transform, false);
+            holder.transform.position = at;
+            Vector3 toCircle = origin - at;
+            toCircle.y = 0f;
+            holder.transform.rotation = Quaternion.LookRotation(toCircle.sqrMagnitude > 0.01f ? toCircle.normalized : Vector3.forward, Vector3.up);
+            if (i == 0) {
+                // Broken gate: two leaning posts and a hook row with chassis.
+                Block(holder.transform, "Post L", new Vector3(-6f, 3.5f, 0f), new Vector3(1.2f, 7f, 1.2f), iron, 8f);
+                Block(holder.transform, "Post R", new Vector3(6f, 2.2f, 0f), new Vector3(1.2f, 4.4f, 1.2f), iron, -14f);
+                for (int k = -2; k <= 2; k++) {
+                    Block(holder.transform, "Hook " + k, new Vector3(k * 4f, 6f, -9f), new Vector3(0.2f, 3f, 0.2f), iron, 0f);
+                    Block(holder.transform, "Chassis " + k, new Vector3(k * 4f, 4.3f, -9f), new Vector3(1.6f, 1.8f, 1.2f), chassis, 0f);
+                }
+            } else if (i == data.Stops.Length - 1) {
+                // Lever and a red lamp lens.
+                Block(holder.transform, "Lever Post", new Vector3(0f, 1.6f, 0f), new Vector3(1f, 3.2f, 1f), iron, 0f);
+                Block(holder.transform, "Lever", new Vector3(0f, 3.8f, 0f), new Vector3(0.3f, 3.4f, 0.3f), lamp, 35f);
+                Block(holder.transform, "Red Lamp", new Vector3(0f, 9f, -6f), new Vector3(2.4f, 2.4f, 0.5f), red, 0f);
+                Block(holder.transform, "Chute", new Vector3(0f, 1.5f, -8f), new Vector3(8f, 3f, 6f), iron, 0f);
+            } else {
+                // The belt, with cleared things riding it: a hat, a clock, a bell.
+                Block(holder.transform, "Belt", new Vector3(0f, 0.5f, 0f), new Vector3(30f, 1f, 3.4f), iron, 0f);
+                Block(holder.transform, "Hat", new Vector3(-8f, 1.5f, 0f), new Vector3(1.6f, 1.0f, 1.6f), new Color(0.35f, 0.3f, 0.4f, 1f), 0f);
+                Block(holder.transform, "Clock", new Vector3(0f, 1.8f, 0f), new Vector3(1.6f, 1.6f, 0.4f), lamp, 0f);
+                Block(holder.transform, "Bell", new Vector3(8f, 1.7f, 0f), new Vector3(1.0f, 1.4f, 1.0f), new Color(0.8f, 0.65f, 0.3f, 1f), 0f);
+            }
+        }
+    }
+
+    // Marks whether the belt feed still runs (the lamps shown on the props); a plain flag the chapter flips at the lever.
+    public class FloorState : MonoBehaviour {
+        bool feed = true;
+        public void SetBool(string key, bool value) {
+            if (key == "feed") {
+                feed = value;
+                foreach (Renderer r in GetComponentsInChildren<Renderer>()) {
+                    if (r.name == "Red Lamp") {
+                        r.material.color = value ? new Color(0.9f, 0.14f, 0.1f, 1f) : new Color(0.25f, 0.05f, 0.05f, 1f);
+                    }
+                }
+            }
+        }
+    }
+
+    void Block(Transform parent, string name, Vector3 local, Vector3 size, Color color, float roll) {
+        var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        cube.name = name;
+        Destroy(cube.GetComponent<Collider>());
+        cube.transform.SetParent(parent, false);
+        cube.transform.localPosition = local;
+        cube.transform.localScale = size;
+        cube.transform.localRotation = Quaternion.Euler(0f, 0f, roll);
+        var shader = SafeShader.Find("Sprites/Default");
+        if (shader != null) {
+            cube.GetComponent<Renderer>().material = new Material(shader) { color = color };
+        } else {
+            UpgradeLook.Paint(cube, color);
+        }
+        cube.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
     }
 
     void Block(string name, Vector3 local, Vector3 size, Color color) {
