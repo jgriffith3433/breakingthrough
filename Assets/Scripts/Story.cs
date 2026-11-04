@@ -23,7 +23,17 @@ public static class Story {
         ReachPlace,   // Wallit walks Target metres from the circle along Bearing to the place
         DefeatBoss,   // the Alpha of Boss falls
         HoldThenBoss, // Target bots down, then the Alpha of Boss (named BossName) falls
+        FloorRun,     // walk out through Stops (a scene or lines at each, the last is the lever that breaks the feed), back to the circle, WaveSize bots down, then the named Boss falls
         GateAndBack,  // walk Target metres out to the gate on Bearing (GateScene plays), walk back to the circle, hold Waves waves of WaveSize bots, then the named Boss falls
+    }
+
+    // A place on the way out in a FloorRun chapter: metres and bearing from the circle, what it is called, what is said or shown there.
+    public struct Stop {
+        public float Dist;
+        public float Bearing;
+        public string Name;
+        public string[] Scene;   // a cutscene (B|, C|, N|, W|...) played on arrival; null: Lines are told over the field
+        public string[] Lines;   // told over the field when there is no Scene (and after it, if both)
     }
 
     public struct Chapter {
@@ -50,6 +60,7 @@ public static class Story {
         public int WaveSize;          // GateAndBack: bots down to clear each of those waves
         public string[] WaveLines;    // GateAndBack: said as each wave starts
         public string[] GateScene;    // GateAndBack: the cutscene that plays when Wallit reaches the gate
+        public Stop[] Stops;          // FloorRun: the places out to the lever, in order
         public string[] Cutscene;     // played by Cutscene.cs over the chapter's map when Begin is pressed (null: none)
     }
 
@@ -171,18 +182,100 @@ public static class Story {
         },
         new Chapter {
             Id = "clearing-floor", Title = "Chapter 3: The Clearing Floor", Place = "A sunken yard lit by conveyor lamps",
-            Objective = ChapterObjective.DefeatBoss, Boss = BotKind.MegaYoBot, Goal = "the Foreman",
-            Crew = new[] { BotKind.YoBot, BotKind.PlatedYoBot }, Every = 5f, Cap = 5, Power = 10,
+            Objective = ChapterObjective.FloorRun, Target = 105, Goal = "the lever", WaveSize = 6,
+            Boss = BotKind.MegaYoBot, BossName = "The Foreman", BossHits = 70, PlainBoss = true,
+            Crew = new[] { BotKind.YoBot, BotKind.PlatedYoBot }, Every = 3.6f, Cap = 5, Power = 8,
             Lines = new[] {
                 "Y|Hello! I am... not finished! Uploading victory?",
                 "W|They're all the same unit.",
                 "S|Spare parts. Spare orders.",
-                "W|Those bolts are the same ones they've been paying me.",
-                "S|Then we collect.",
+            },
+            Stops = new[] {
+                new Stop {
+                    Dist = 36f, Bearing = 200f, Name = "the broken gate",
+                    Lines = new[] {
+                        "N|Past the broken gate the ground drops away into a yard lit by lamps. Rows of Yo Bot chassis hang on hooks.",
+                        "Y|Hello! I am... not finished! Uploading victory?",
+                        "W|They're all the same unit.",
+                        "S|The Clearing Crew. Stamped out here, one batch for every unfiled thing in the Hollow.",
+                    },
+                },
+                new Stop {
+                    Dist = 70f, Bearing = 205f, Name = "the belt",
+                    Scene = new[] {
+                        "B|on",
+                        "C|wide",
+                        "N|THE BELT\nA slow belt carries flat, cleared things past the hooks: a hat, a clock, a small bell.",
+                        "C|wallit",
+                        "W|Cleared things. Somebody's hat. Somebody's clock. That could be me.",
+                        "C|slice",
+                        "S|It isn't.",
+                        "C|wide",
+                        "N|The belt runs on into a chute lit by a single red lamp. The lamp is a lens. It turns toward the Hollow, and the circle blinks once.",
+                        "C|wallit",
+                        "W|It's watching the circle.",
+                        "C|slice",
+                        "S|Pull the lever. The belt stops. The Crew stops.",
+                    },
+                    Lines = new[] {
+                        "W|Those bolts are the same ones they've been paying me.",
+                        "S|Then we collect.",
+                    },
+                },
+                new Stop {
+                    Dist = 105f, Bearing = 210f, Name = "the lever",
+                    Lines = new[] {
+                        "W|One lever. No sign. Somebody trusts the floor.",
+                        "S|Pull it, Wallit.",
+                    },
+                },
+            },
+            // Said as the lever is pulled and the feed breaks.
+            WaveLines = new[] {
+                "N|The lever drops. Down the line the hooks swing empty, and the belt coughs and stops.",
+                "Y|Batch... interrupted? Uploading... victory?",
+                "S|No new units. Back to the circle. The ring won't hold itself.",
+            },
+            BossLines = new[] {
+                "Y|Order, read aloud: STRIKE. THIS. ADDRESS.",
+                "S|The Foreman. It reads the order to the Crew. Don't let it finish.",
+                "W|Then I'll read it the invoice.",
+            },
+            DefeatLines = new[] {
+                "Y|Order... unread... uploading... nothing?",
+                "W|Paid in full.",
+                "S|Clean.",
+            },
+            // The opening scene, at the circle: Slice's second ring is staked, and where Yo Bots come from is said out loud.
+            Cutscene = new[] {
+                "B|on",
+                "C|wide",
+                "N|THE CLEARING FLOOR\nBeyond the broken gate a yard lies sunken in the dark, lit by lamps along a slow conveyor.",
+                "C|wallit",
+                "W|Every bot that's come at us. They're coming from down there.",
+                "C|slice",
+                "S|The Clearing Floor. The chirpy ones are stamped out there, one batch for every unfiled thing in the Hollow.",
+                "C|wallit",
+                "W|Stamped out. So they're the Department's. Employees.",
+                "C|slice",
+                "S|Crew. They chirp because every job closes with a report. \"Uploading victory\" means \"filed as cleared.\"",
+                "C|wallit",
+                "W|And the plates? The big ones?",
+                "C|slice",
+                "S|The Floor sends the same unit again, heavier, when the cheap ones fail.",
+                "C|wallit",
+                "W|And the bolts they drop?",
+                "C|slice",
+                "S|Their own pay. A Yo Bot is held together by its wages.",
+                "C|wallit",
+                "W|Then I've been collecting what's owed. Good. Now I want the lever.",
+                "C|slice",
+                "S|I'll hold a second ring here, staked in the floor. Go out, break the belt, and come back.",
             },
             Done = new[] {
-                "W|Cleared things. Somebody's hat. Somebody's clock. That could be me.",
-                "S|It isn't.",
+                "W|They were only ever stamped out. Nobody asked them.",
+                "S|Nobody asks. Come inside the ring.",
+                "W|Next time I'm billing the Floor.",
             },
         },
         new Chapter {

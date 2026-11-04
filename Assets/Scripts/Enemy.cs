@@ -439,6 +439,40 @@ public class Enemy : MonoBehaviour
         gameObject.AddComponent<Courier>();
     }
 
+    // Chapter 3's Alpha: a Mega Yo Bot grown big and amber, with the order held flat on its chest (a pale sheet with ruled
+    // lines, no collider). No special fight: it reads the order aloud and is a wall to break.
+    public void MakeForeman(string name, int hits)
+    {
+        MakeBoss();
+        Title = name;
+        gameObject.name = name;
+        HitsToDrop = Mathf.Max(1, hits);
+        modelTint = new Color(1.2f, 1f, 0.62f);
+        modelTintAmount = 0.3f;
+        var shader = SafeShader.Find("Sprites/Default");
+        var holder = new GameObject("Order Sheet");
+        holder.transform.SetParent(transform, false);
+        holder.transform.localPosition = new Vector3(0f, 0.5f, 0.62f);
+        holder.transform.localRotation = Quaternion.Euler(-6f, 0f, -3f);
+        Color paper = new Color(0.93f, 0.9f, 0.78f, 1f);
+        Color ink = new Color(0.12f, 0.1f, 0.12f, 1f);
+        for (int i = 0; i < 3; i++) {
+            var part = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            part.name = i == 0 ? "Sheet" : "Ruled Line " + i;
+            Destroy(part.GetComponent<Collider>());
+            part.transform.SetParent(holder.transform, false);
+            part.transform.localPosition = new Vector3(0f, i == 0 ? 0f : 0.09f - i * 0.09f, i == 0 ? 0f : 0.03f);
+            part.transform.localScale = i == 0 ? new Vector3(0.5f, 0.4f, 0.03f) : new Vector3(0.4f, 0.03f, 0.02f);
+            Color c = i == 0 ? paper : ink;
+            if (shader != null) {
+                part.GetComponent<Renderer>().material = new Material(shader) { color = c };
+            } else {
+                UpgradeLook.Paint(part, c);
+            }
+            part.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
+    }
+
     // Chapter 2's Alpha: a Plated Yo Bot grown big, with a stamped INVALID plate on its chest. No special fight: a wall
     // of plate to break. The plate is a flat red board with a white bar, built in code, no collider.
     public void MakePlatedAlpha(string name, int hits)
