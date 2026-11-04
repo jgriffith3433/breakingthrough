@@ -170,6 +170,20 @@ strike Slice (`Server.StrikeDamage`), and then it is a plain Alpha to bring down
 The file then moves to Chapter 5. Flow: `ChapterObjective.FloorRun` with `Chapter.Walk` in `ChapterRun.cs` (`BuildWalk`), lines in
 `Story.Chapters[3]`, the boss `Enemy.MakeServer` + `Server.cs`; the `chapter4` playtest plays it. Slice stays at the circle.
 
+### Chapter 5: Strike This Address
+
+The Reading Room: a bare round hall with the circle on its floor at the Hollow's size, the walls lined with forms (all identical, all
+this order), and an empty desk beside the circle. The opening scene has the Yo Bot read "STRIKE. THIS. ADDRESS." and the point is made
+that **the order is not signed** ("Nobody signs it. That's how it works." / "Then it can be denied." / "By the guy with the stamp."),
+and Wallit presses the RETURN TO SENDER stamp from the gate to the first page: the ink shows nothing, then DENIED, and every form turns
+over blank (*The Stamp, Reversed*). Slice: "Wallit. That's a lot of nerve." / "Nerve's free. The swing's extra." The chapter is **five
+pages**: each page is a wave of four bots (Yo Bots, Plated, Mega) held at the circle, announced PAGE n OF 5, and as it falls that
+page's section of forms on the wall turns blank. The objective line reads "Read the order, page n of 5". Then **The Registrar**, a gold
+Titan Spider Bot with a ledger held open, reads the pages with every leg and is a wall to break. Defeat beat: "Register... closed...
+uploading... nothing?" / "Struck from the record." / "Clean." The Done card: the order is only a form, and a form can be answered
+("Then we answer it. Pay up."). The file then moves to Chapter 6. Flow: `HoldThenBoss` with `Waves` in `ChapterRun.cs`
+(`BuildReadingRoom`, `PageRead`), lines in `Story.Chapters[4]`, the boss `Enemy.MakeRegistrar`; the `chapter5` playtest plays it.
+
 ## Canon established here
 
 - The circle is the one filed address in the Moonlit Hollow; whatever is inside it exists.
@@ -185,4 +199,6 @@ The file then moves to Chapter 5. Flow: `ChapterObjective.FloorRun` with `Chapte
 - The belt: carries flat cleared things (a hat, a clock, a small bell) into a chute with a red lamp that is a lens turned toward the circle. Pulling the lever breaks the feed.
 - The Foreman: Chapter 3's boss, a Mega Yo Bot Alpha that reads the order aloud, an order sheet on its chest.
 - The Long Walk: a causeway of stone slabs over a pit of mist, six lamps in pairs. Spider Bots are the process servers: deliveries from the Department, each with one paper (the address, struck) to hand over, who stand and wait while it is read. Slice: "My address. Struck." "Before you."
+- The Reading Room: a bare round hall where the Department keeps every copy of the order. The order is not signed; the stamp pressed to a page turns it DENIED and the forms go blank.
+- The Registrar: Chapter 5's boss, a gold Titan Spider Bot with a ledger that reads the pages with every leg.
 - The Server: Chapter 4's boss, the first full Spider Bot. It offers the paper and will not strike until it has been refused three times.

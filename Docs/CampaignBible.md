@@ -141,7 +141,7 @@ roster so no new enemy art is needed for chapters 1 to 3 and 6.
 - **Boss:** **The Server**, the first full Spider Bot (Alpha), which will not strike until the paper is refused three
   times. [canon: Spider Bot debuts wave 30]
 
-### Chapter 5: Strike This Address
+### Chapter 5: Strike This Address [built; see Story.md, "Chapter 5"]
 
 - **Space:** The Reading Room, a bare round hall: the circle drawn on its floor at the scale of the Hollow's, the walls lined
   with forms, all identical, all this order. A desk in the center, empty. [proposed]
