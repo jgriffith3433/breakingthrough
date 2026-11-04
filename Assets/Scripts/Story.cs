@@ -27,6 +27,72 @@ public static class Story {
         new[] { "W|It's filed. All of it.", "S|Clean. Replays are on the board." },
     };
 
+    // The hub's four lodgers (Docs/Story.md, "The lodgers"): things that should not exist and found the circle. What each says
+    // changes with the chapters the file has cleared (Lines[cleared - 1], so six per lodger). Chime also gives the errands:
+    // one per chapter, "<ask>", fetched from the hub's floor, paid in XP and a lost thing kept in the case file.
+    public class Lodger {
+        public string Id;
+        public string Name;
+        public string Colour;
+        public string[] Lines;
+    }
+
+    public static readonly Lodger[] Lodgers = {
+        new Lodger { Id = "tick", Name = "TICK", Colour = "#B9C7E6", Lines = new[] {
+            "Tick. Notice delivered on the hour, as written. Slice stood. Good hour.",
+            "Tock. The gate stamped you back. Doors keep time too. Yours is still open.",
+            "Slow belt, red lamp. Someone's hour was stopped there. Mine nearly was.",
+            "Three refusals. I counted each one. A paper refused thrice is still a paper. Mind it.",
+            "The order has no signature. Nobody was ever keeping its time. Strange, to know that.",
+            "It's late and it's filed. The hour's yours now, Wallit. Spend it.",
+        } },
+        new Lodger { Id = "brim", Name = "BRIM", Colour = "#E6B7A1", Lines = new[] {
+            "Did you ever have a head? I had one once. I miss the weight.",
+            "A postmark, half yours, torn. Half a name is a better start than I had.",
+            "Hats on that belt. Dozens. I looked for mine. I didn't look away.",
+            "The spiders bow, did you see? Politely. I'd tip my brim, if I could tip.",
+            "DENIED. Good stamp. The forms went blank, and blank is a fresh start.",
+            "Filed. I have an address now: Brim, the circle, left of the desk. Grand.",
+        } },
+        new Lodger { Id = "spare", Name = "SPARE", Colour = "#8CFFB3", Lines = new[] {
+            "Hello! Uploading victory! I am... mostly uploading! Chirp!",
+            "Hello! Plated Alpha, stamped INVALID! Sorry! I was told to cheer!",
+            "Hello! Hooks! I know hooks! I was on one! Not finished, now free!",
+            "Chirp! Spiders en route! En route to... I have no route. I live here!",
+            "Hello! Every page the same! I read them all! Wallit read faster! Chirp!",
+            "Hello! Filed! Uploading... nothing! I'm just here! Chirp chirp!",
+        } },
+        new Lodger { Id = "chime", Name = "CHIME", Colour = "#FFD54F", Lines = new[] {
+            "Ding. Notice returned, tip owed. I've a thing that wants fetching.",
+            "Ding. The gate. I heard it ring from here. Another errand, if you'll carry it.",
+            "Ding. The belt carried a bell like me once. Fetch this and I'll pay.",
+            "Ding. Three refusals, and I rang for each. One more errand. It pays.",
+            "Ding. Blank forms. Everyone lost something in those. Fetch one back.",
+            "Ding. Filed. Last errand. It pays in full, as the books go.",
+        } },
+    };
+
+    // Chime's errands, one per chapter cleared: the lost thing, what Chime says when sending Wallit, what Chime says at the
+    // hand-over, and the XP it pays. The thing stays in the case file (Slot.errands) as a collectible.
+    public class Errand {
+        public string Thing;
+        public string Ask;
+        public string Thanks;
+        public int Xp;
+    }
+
+    public static readonly Errand[] Errands = {
+        new Errand { Thing = "Brass Clapper", Ask = "My clapper rolled under the carpet. Bring it. 20 XP.", Thanks = "Ding! My own tongue. Paid in full: 20 XP.", Xp = 20 },
+        new Errand { Thing = "Torn Postmark", Ask = "A scrap of postmark came in on your boots. Find it. 30 XP.", Thanks = "Ding! The other half of a name. Paid: 30 XP.", Xp = 30 },
+        new Errand { Thing = "Belt Token", Ask = "A brass token from the belt, dropped near the ring. Bring it. 40 XP.", Thanks = "Ding! Off the belt, back in hand. Paid: 40 XP.", Xp = 40 },
+        new Errand { Thing = "Lamp Wick", Ask = "A wick from the Long Walk's lamps is lying about. Fetch it. 50 XP.", Thanks = "Ding! One lamp, lit again. Paid: 50 XP.", Xp = 50 },
+        new Errand { Thing = "Blank Form", Ask = "One of the blank forms blew in. Bring it here. 60 XP.", Thanks = "Ding! Blank, and mine. Paid: 60 XP.", Xp = 60 },
+        new Errand { Thing = "Filed Stub", Ask = "The stub of the last filing is somewhere in the room. Fetch it. 80 XP.", Thanks = "Ding! Filed and kept. Paid: 80 XP.", Xp = 80 },
+    };
+
+    public const string ChimeIdle = "Ding. Nothing owed. Clear another chapter and I'll find something lost.";
+    public const string ChimeWaiting = "Ding. It's still out there: ";
+
     // Campaign chapters (Docs/CampaignBible.md). A chapter is data: where it is, what the objective is, who the boss is,
     // what is said before (Lines) and after (Done). ChapterRun plays it in the game scene with Wallit's own controls.
     public enum ChapterObjective {

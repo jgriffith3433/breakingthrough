@@ -251,8 +251,7 @@ one line each about what he just did (`Story.HubArrival`, by chapters cleared: "
 Along the back wall there is **a door per chapter**, numbered 1 to 6. A door opens when the file reaches its chapter: filed chapters
 (amber lamp) and the next one (green lamp) stand open, the rest (dark lamp) stay shut and Wallit cannot pass them. Walk through an open
 door and that chapter's card comes up; Begin plays it. On the left wall hangs the **chapter board** of six slips: press E beside it for the
-same list (*filed (replay)*, *next*, *locked*). On the right wall is a desk with an empty chair and a plate, the spot kept for an NPC; nobody
-sits there yet. A replay never takes the file back: `cleared` and the chapter the file is on only move forward. A file
+same list (*filed (replay)*, *next*, *locked*). On the right wall is Tick's desk (see "The lodgers"). A replay never takes the file back: `cleared` and the chapter the file is on only move forward. A file
 with chapters behind it also has a **Hub** button on its card, so reopening a file reaches the office too. `ChapterHub.cs` builds it
 (flat, collider-free, in code); `ChapterScene.cs` owns the card it leads to. The `hub-doors` playtest plays it.
 
@@ -282,7 +281,23 @@ Levels are 30, 90, 180, 300 and 450 XP (level 6 is the top). The account belongs
 it is Campaign's alone. Arcade has its own boons and shop (`MetaProgress`) and none of this reaches it: outside a chapter every number
 above reads as no effect. Slice does not level; she is already what the circle is.
 
+## The lodgers
+
+Four things that should not exist found the circle and stayed. They live in the hub (`Story.Lodgers`, `ChapterHub.cs`); walk up and press **E**. What
+each says changes with the chapters the file has cleared (one line per chapter, six each). None is Warrok, and none fights. They are not office
+workers: they are lost things, and they talk about what they lost.
+
+- **Tick**, a clock, sits at the desk. Counts hours; each chapter he says what it did to the Department's time.
+- **Brim**, a hat, hovers left of the desk. Wonders whose head it was; wants an address, and has one at the end.
+- **Spare**, a half-built Yo Bot (the Half-Built's kind), chirpy and unfinished. Still cheerful about everything, including being free.
+- **Chime**, a small bell like the ones on the belt, gives **errands**. After each chapter cleared she has one lost thing lying on the office floor (the Brass
+  Clapper, Torn Postmark, Belt Token, Lamp Wick, Blank Form, Filed Stub). Wallit walks over it, carries it back, and Chime pays a tip in XP (20, 30, 40, 50, 60,
+  80) and the thing is kept in the case file (`Slot.errands`, "LOST THINGS n/6" on the hub's top-left line). `CampaignProgress.Grant` pays the XP the way a kill does.
+  Campaign only; the `hub-npcs` playtest plays it.
+
 ## Canon established here
+
+- The lodgers: Tick (clock), Brim (hat), Spare (half-built Yo Bot) and Chime (bell) live in the hub; their lines change after each chapter. Chime's errands pay XP and a kept lost thing.
 
 - The circle is the one filed address in the Moonlit Hollow; whatever is inside it exists.
 - Wallit was stamped "Return to sender" and thrown in. He has no address of his own.
@@ -300,7 +315,7 @@ above reads as no effect. Slice does not level; she is already what the circle i
 - The Reading Room: a bare round hall where the Department keeps every copy of the order. The order is not signed; the stamp pressed to a page turns it DENIED and the forms go blank.
 - The Registrar: Chapter 5's boss, a gold Titan Spider Bot with a ledger that reads the pages with every leg.
 - The Server: Chapter 4's boss, the first full Spider Bot. It offers the paper and will not strike until it has been refused three times.
-- The hub: between chapters the circle is a walkable office with Slice in the ring, a door per chapter (open as the file reaches it, shut after), a chapter board of six slips (filed, next, locked) and a vacant desk for an NPC. Cleared chapters can be replayed from it.
+- The hub: between chapters the circle is a walkable office with Slice in the ring, a door per chapter (open as the file reaches it, shut after), a chapter board of six slips (filed, next, locked) and Tick's desk and four lodgers. Cleared chapters can be replayed from it.
 - Wallit's account: inside the circle he is on the books, and fights add to it (XP). Levels unlock Spare Change, Refund, Receipt, Chargeback, Coin Toss, Stamp Out and Escrow. Slice does not level. Campaign only, per case file.
 - New in the chapters: one variant Yo Bot per chapter (Dispatch, Returned, Reissue, Queue-Skip, Clerk, Sealed) and mini-bosses The Second Notice (Ch2), The Half-Built (Ch3) and The Clerk (Ch5).
 
