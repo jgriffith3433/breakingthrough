@@ -37,6 +37,7 @@ public static class Playtest {
         new PlaytestScenario("dialogue", "Dialogue boxes and the cast: the cast file (Resources/Cast/cast.json) is read and must list every character of the bible and not Warrok (event cast-data, a problem if Warrok is there or a bible name is missing). Arcade starts, then setup: a dialogue scene with one line per cast member plays over the run. The bot reads each page with real key presses and every page must show the speaker's name, a portrait (art or the stand-in disc with its glyph) and the cast file's colour for that speaker (events dialogue-page, a problem if a named line has no name or portrait, or the colour is wrong); Wallit and Slice lines go through their voices and the rest through the Cast.LineSpoken hook (dialogue-voice). Metrics castMembers, dialoguePages, dialogueNamed, dialoguePortraits", 240, "content"),
         new PlaytestScenario("cast", "The new cast, in 90 s: the main menu with the key art up (MenuArt, its size and that the menu shows it), What's new opened from the site over the game with the release note naming Wallit, Slice and the bots (read from releases.json), then a run where the player is Wallit with his bat, the bar says Slice, and wave 1's Yo Bots close in and are batted. The AGENTS.md and README cast text lives in the repo, not the build: the review reads it from the diff", 120, "content"),
         new PlaytestScenario("modes", "The mode select: the main menu shows Campaign and Arcade; Campaign opens the three case files (save slots, setup: the sandbox keeps them off the real save), opening an empty file loads the placeholder Chapter 1 scene with Wallit and Slice's lines, Menu returns and the file now reads Chapter 1 with its time on the books, Erase (asked twice) empties it; then Arcade starts today's wave defense and the bot plays 40 s of it with the bat. Events mode-select, campaign-files, chapter-open, chapter-lines, campaign-saved, campaign-erased, arcade-start", 200, "content"),
+        new PlaytestScenario("pause-nav", "Pause and menus by keyboard and gamepad, in every chapter (setup: the sandbox case file stands on each chapter in turn). From the main menu with keys only: C opens the case files, Enter opens file 1, Enter begins the chapter, Enter skips the opening scene. Then P pauses (time stops) and P resumes, the pad's Start pauses, Down and Enter open Settings (first chapter): Left turns the music and effects sliders (the gold ring follows), Enter on Voices cycles how often the voices speak, the pad's B closes Settings and the pause stays, the settings are read back from their saved JSON; Resume with Enter; pause again, and Down, Down, Enter, Enter on Quit to menu returns to the main menu. Events nav-menu, nav-case-files, nav-chapter-card, chapter-paused, chapter-resumed, pad-paused, nav-settings, volume-changed, voices-changed, settings-persisted, nav-quit; metrics chaptersPaused, menuMoves, menuSubmits, sliderTurns", 900, "content"),
         new PlaytestScenario("cutscene", "The chapter cutscene: Campaign, case file 1, Begin on the Chapter 1 card, and the opening scene (The Stamp) plays over the map with letterbox bars, a speaker name and portrait slot, typed lines and the camera on whoever talks. The bot reads the first pages with real key presses (a first press finishes the typing, the next turns the page), skipping a page's voice by pressing on, then presses Enter to skip the rest: play starts with the objective line up and Wallit moving on the stick, and the chapter is cleared. Checked: every Wallit, Slice and Yo Bot page has a name, two voice lines never overlap (Wallit's floor and the scene both count them), the director allows no other line during the scene. Events cutscene-open, cutscene-page (speaker, text, camera focus, letterbox, voice), cutscene-skip, cutscene-play, cutscene-voice; metrics cutscenePages, cutsceneVoiceLines, cutsceneOverlaps, cutsceneSkipped", 420, "content"),
         new PlaytestScenario("campaign", "Campaign loads and plays a chapter: from the main menu press Campaign, open case file 1 (setup: the sandbox keeps the files off the real save) and wait for the Campaign scene to load. Reports run_start with mode=campaign and the loaded scene name (event run_start, metrics campaignLoaded, campaignLoadSeconds); if the scene fails to load (not in the build's scene list, or the chapter never builds) the run stops stuck with a bug saying so. Then Begin on the chapter card: Wallit and Slice in the chapter map, Wallit walks on the stick, the objective line shows, the bot fights with real input until it is met, Chapter 1 holds the circle against Yo Bots, then the Courier arrives (health bar on screen), winds up telegraphed notices on the circle and the bot breaks them or stands in them until it falls and the defeat beat plays; the Chapter Complete card shows, the case file advances to chapter 2, Menu, and reopening the file resumes at chapter 2 (events chapter-card, chapter-start, chapter-move, objective, boss-arrives, boss-bar, boss-attack, boss-defeated, defeat-beat, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics chapterAdvanced, chapterResumed, bossBar, courierWinds, courierInterrupted). Smoke is unchanged: it still presses Arcade", 750, "content"),
         new PlaytestScenario("hub", "The hub and Campaign progression, played with real input (setup: the sandbox case file 1 starts on chapter 1 with 85 XP, 5 short of level 3; the real save and Arcade are never touched): Campaign, case file 1, Begin on Chapter 1; the first kills give XP (HUD line LV/XP) and level 3 unlocks Refund (events xp-gain, level-up); the bot presses C near the bots and the ring shoves and stings them (event refund-used); the Courier falls, the Chapter Complete card offers To the hub; the bot presses it and lands in the hub (Wallit, Slice in the ring, the chapter board; events hub-open, hub-arrival), walks to the board on the stick and presses E (hub-walk, board-open: Chapter 1 filed and replayable, Chapter 2 next, Chapter 3 locked); picking Chapter 1 shows its card and Begin replays it (hub-replay-card, replay-started) without taking the file back a chapter. Checks per case file and Arcade: the XP stays on case file 1 (case file 2 has none) and Arcade's numbers read as no effect outside a chapter (events progress-saved, arcade-clean; metrics hubXp, hubLevel, refundHits, hubWalked)", 900, "content"),
@@ -241,6 +242,13 @@ public static class Playtest {
                 quitDone = false;
                 startChapter = id == "hub-doors" ? 2 : id == "hub-npcs" ? 1 : id == "chapter6" ? 5 : id == "chapter5" ? 4 : id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" || id == "companion" ? 1 : 0;
                 yield return CampaignRun();
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "pause-nav") {
+                yield return PauseNavRun();
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
                 }
@@ -658,6 +666,197 @@ public static class Playtest {
                 run.Event("campaign-full", "Chapter 1 to ADDRESS FILED played in one run: " + done.cleared + " chapters cleared");
             }
         }
+    }
+
+    // Pause and the campaign menus by keyboard and pad (PauseMenu, SettingsPanel, CampaignPanel, the chapter card, MenuNav).
+    static IEnumerator Key(KeyCode key) {
+        PlayInput.Tap(key);
+        yield return new WaitForSecondsRealtime(0.3f);
+    }
+
+    // Down arrow until the gold ring is on the target.
+    static IEnumerator DownTo(Component target, string what) {
+        for (int i = 0; i < 8 && MenuNav.Selected != target.gameObject; i++) {
+            yield return Key(KeyCode.DownArrow);
+        }
+        if (MenuNav.Selected != target.gameObject) {
+            run.Problem(PlaytestSeverity.Bug, "pause-nav: the arrow keys never reached " + what);
+        }
+    }
+
+    static IEnumerator PauseNavRun() {
+        CampaignSave.EnterSandbox();
+        watchCutscene = false;
+        int paused = 0;
+        for (int index = 0; index < CampaignSave.ChapterCount; index++) {
+            if (run.Done) {
+                yield break;
+            }
+            CampaignSave.Slot slot = CampaignSave.Get(0);
+            slot.used = true;
+            slot.chapter = index;
+            slot.reached = index;
+            slot.cleared = index;
+            Time.timeScale = 1f;
+            yield return ToMenu();
+            run.Event("nav-menu", "chapter " + (index + 1) + ": main menu, keys only from here");
+            yield return Key(KeyCode.C);
+            yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files after pressing C");
+            if (run.Done) {
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(0.5f);
+            bool onSlot = MenuNav.Selected == CampaignPanel.Instance.SlotButtons[0].gameObject;
+            run.Event("nav-case-files", "ring on case file 1: " + onSlot);
+            if (!onSlot) {
+                run.Problem(PlaytestSeverity.Bug, "pause-nav: the case files open with no ring on file 1");
+            }
+            yield return Key(KeyCode.Return);
+            yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.BeginButton != null && SceneManager.GetActiveScene().name == CampaignSave.Scene, 45f, "the chapter card after Enter on file 1");
+            if (run.Done) {
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(1.5f);
+            bool onBegin = MenuNav.Selected == ChapterScene.Instance.BeginButton.gameObject;
+            run.Event("nav-chapter-card", "chapter " + (index + 1) + ": ring on Begin: " + onBegin);
+            if (!onBegin) {
+                run.Problem(PlaytestSeverity.Bug, "pause-nav: the chapter card has no ring on Begin");
+            }
+            yield return Key(KeyCode.Return);
+            yield return run.Until(() => ChapterRun.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the chapter after Enter on Begin");
+            if (run.Done) {
+                yield break;
+            }
+            yield return CutsceneStep();
+            yield return run.Until(() => PauseMenu.Instance != null && PauseMenu.Instance.ResumeButton != null && ChapterRun.Instance != null && ChapterRun.Instance.PlaySeconds > 1f, 30f, "the chapter to be playable");
+            if (run.Done) {
+                yield break;
+            }
+            run.Scene("Chapter " + (index + 1) + " pause");
+            // P pauses, P resumes.
+            yield return Key(KeyCode.P);
+            yield return run.Until(() => PauseMenu.IsOpen, 4f, "the pause menu after P in chapter " + (index + 1));
+            if (run.Done) {
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(0.6f);
+            bool frozen = Time.timeScale < 0.01f;
+            run.Event("chapter-paused", "chapter " + (index + 1) + " paused with P: time scale " + Time.timeScale.ToString("0.00") + ", ring on " + (MenuNav.Selected != null ? MenuNav.Selected.name : "nothing"));
+            if (!frozen) {
+                run.Problem(PlaytestSeverity.Bug, "pause-nav: chapter " + (index + 1) + " kept running behind the pause menu");
+            }
+            yield return Key(KeyCode.P);
+            yield return run.Until(() => !PauseMenu.IsOpen && Time.timeScale > 0.5f, 4f, "chapter " + (index + 1) + " to resume after P");
+            if (run.Done) {
+                yield break;
+            }
+            run.Event("chapter-resumed", "chapter " + (index + 1) + " resumed with P");
+            paused++;
+            // The pad's Start pauses; the pad's B resumes.
+            yield return Key(KeyCode.JoystickButton7);
+            yield return run.Until(() => PauseMenu.IsOpen, 4f, "the pause menu after pad Start in chapter " + (index + 1));
+            if (run.Done) {
+                yield break;
+            }
+            run.Event("pad-paused", "chapter " + (index + 1) + " paused with the pad's Start");
+            yield return new WaitForSecondsRealtime(0.5f);
+
+            if (index == 0) {
+                yield return PauseNavSettings();
+                if (run.Done) {
+                    yield break;
+                }
+                yield return Key(KeyCode.JoystickButton0);
+                yield return run.Until(() => !PauseMenu.IsOpen, 4f, "Resume with the pad's A (ring starts on Resume)");
+                if (run.Done) {
+                    yield break;
+                }
+                run.Event("chapter-resumed", "chapter 1 resumed with the pad's A on Resume");
+                yield return new WaitForSecondsRealtime(1f);
+                yield return Key(KeyCode.Escape);
+                yield return run.Until(() => PauseMenu.IsOpen, 4f, "the pause menu after Escape");
+                if (run.Done) {
+                    yield break;
+                }
+                yield return new WaitForSecondsRealtime(0.4f);
+            }
+            // Quit to menu: Down, Down, Enter (asks), Enter.
+            yield return DownTo(PauseMenu.Instance.QuitButton, "Quit to menu");
+            yield return Key(KeyCode.Return);
+            yield return new WaitForSecondsRealtime(0.3f);
+            if (!PauseMenu.IsOpen) {
+                run.Problem(PlaytestSeverity.Bug, "pause-nav: Quit to menu left at the first press without asking");
+            }
+            yield return Key(KeyCode.Return);
+            yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the main menu after Quit to menu");
+            if (run.Done) {
+                yield break;
+            }
+            run.Event("nav-quit", "chapter " + (index + 1) + ": Quit to menu with the keys, back on the main menu");
+        }
+        run.Metric("chaptersPaused", paused);
+        run.Metric("menuMoves", MenuNav.Moves);
+        run.Metric("menuSubmits", MenuNav.Submits);
+        run.Metric("sliderTurns", MenuNav.SliderTurns);
+        if (paused < CampaignSave.ChapterCount) {
+            run.Problem(PlaytestSeverity.Bug, "pause-nav: only " + paused + " of " + CampaignSave.ChapterCount + " chapters paused and resumed");
+        }
+    }
+
+    // Down, Enter opens Settings from the pause menu; sliders by Left/Right; Voices by Enter; the pad's B closes it.
+    static IEnumerator PauseNavSettings() {
+        yield return DownTo(PauseMenu.Instance.SettingsButton, "Settings");
+        yield return Key(KeyCode.Return);
+        yield return run.Until(() => SettingsPanel.IsOpen, 4f, "Settings after Enter on it");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(0.5f);
+        SettingsPanel panel = SettingsPanel.Instance;
+        run.Event("nav-settings", "Settings opened with Enter; ring on " + (MenuNav.Selected != null ? MenuNav.Selected.name : "nothing"));
+        float music = SoundSettings.Music;
+        float sfx = SoundSettings.Sfx;
+        int chatter = SoundSettings.Chatter;
+        yield return DownTo(panel.MusicSlider, "the music slider");
+        yield return Key(KeyCode.LeftArrow);
+        yield return Key(KeyCode.LeftArrow);
+        float musicNow = SoundSettings.Music;
+        yield return DownTo(panel.EffectsSlider, "the effects slider");
+        yield return Key(KeyCode.LeftArrow);
+        float sfxNow = SoundSettings.Sfx;
+        run.Event("volume-changed", "music " + music.ToString("0.00") + " -> " + musicNow.ToString("0.00") + ", effects " + sfx.ToString("0.00") + " -> " + sfxNow.ToString("0.00") + " (effects level the mix multiplies by " + SoundSettings.EffectsLevel.ToString("0.00") + ")");
+        if (musicNow >= music - 0.01f || sfxNow >= sfx - 0.01f) {
+            run.Problem(PlaytestSeverity.Bug, "pause-nav: Left on the sliders did not lower the volume");
+        }
+        yield return DownTo(panel.VoiceButton, "the voice-lines button");
+        yield return Key(KeyCode.Return);
+        int chatterNow = SoundSettings.Chatter;
+        run.Event("voices-changed", "voice lines " + SoundSettings.ChatterName(chatter) + " -> " + SoundSettings.ChatterName(chatterNow) + " (gap x" + VoiceDirector.GapScale(chatterNow).ToString("0.0") + ")");
+        if (chatterNow == chatter) {
+            run.Problem(PlaytestSeverity.Bug, "pause-nav: Enter on Voices did not change how often the voices speak");
+        }
+        // The saved JSON reads back the same (the sandbox writes nothing to the player's save).
+        string json = SoundSettings.Json();
+        SoundSettings.Set(true, 1f, 1f);
+        SoundSettings.SetChatter(2);
+        bool back = SoundSettings.LoadFrom(json);
+        bool same = back && Mathf.Abs(SoundSettings.Music - musicNow) < 0.01f && Mathf.Abs(SoundSettings.Sfx - sfxNow) < 0.01f && SoundSettings.Chatter == chatterNow;
+        run.Event("settings-persisted", "saved " + json + ", read back the same: " + same);
+        if (!same) {
+            run.Problem(PlaytestSeverity.Bug, "pause-nav: the settings did not survive a save and load");
+        }
+        // Put them back.
+        SoundSettings.Set(true, music, sfx);
+        SoundSettings.SetChatter(chatter);
+        yield return Key(KeyCode.JoystickButton1);
+        yield return new WaitForSecondsRealtime(0.4f);
+        if (SettingsPanel.IsOpen) {
+            run.Problem(PlaytestSeverity.Bug, "pause-nav: the pad's B did not close Settings");
+        } else if (!PauseMenu.IsOpen) {
+            run.Problem(PlaytestSeverity.Bug, "pause-nav: closing Settings with B also closed the pause menu");
+        }
+        yield return new WaitForSecondsRealtime(0.4f);
+        yield return DownTo(PauseMenu.Instance.ResumeButton, "Resume");
     }
 
     // Chapter maps: each chapter loads its own map and lighting on Begin and unloads it on leaving.

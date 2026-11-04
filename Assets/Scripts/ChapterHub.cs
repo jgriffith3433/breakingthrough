@@ -329,7 +329,7 @@ public class ChapterHub : MonoBehaviour {
             talkUntil = 0f;
         }
         talk.text = TalkText;
-        if (NearLodger >= 0 && !BoardOpen && !NearBoard && (PlayInput.GetKeyDown(KeyCode.E) || PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter))) {
+        if (NearLodger >= 0 && !BoardOpen && !NearBoard && (PlayInput.GetKeyDown(KeyCode.E) || PlayInput.GetKeyDown(KeyCode.JoystickButton0) || PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter))) {
             TalkTo(NearLodger);
         }
     }
@@ -593,7 +593,7 @@ public class ChapterHub : MonoBehaviour {
         if (laidStamp != UiFit.Stamp) {
             Layout();
         }
-        if (PlayInput.GetKeyDown(KeyCode.Escape)) {
+        if (MenuNav.Back) {
             if (BoardOpen) {
                 CloseBoard();
             } else {
@@ -611,7 +611,7 @@ public class ChapterHub : MonoBehaviour {
         TickLodgers();
         if (!BoardOpen) {
             prompt.text = NearDoor >= 0 && !DoorOpen[NearDoor] ? "Chapter " + (NearDoor + 1) + ": the door is shut" : NearDoor >= 0 ? "Chapter " + (NearDoor + 1) + ": " + Story.Chapters[NearDoor].Title : NearBoard ? "E: read the chapter board" : NearLodger >= 0 ? "E: talk to " + Story.Lodgers[NearLodger].Name : ErrandCarried ? "Carrying the " + Story.Errands[ErrandActive].Thing + ". Take it to Chime." : "WASD: walk. Doors along the back wall. Board on the left, lodgers about the room.";
-            if (NearBoard && (PlayInput.GetKeyDown(KeyCode.E) || PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter))) {
+            if (NearBoard && (PlayInput.GetKeyDown(KeyCode.E) || PlayInput.GetKeyDown(KeyCode.JoystickButton0) || PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter))) {
                 OpenBoard();
             }
         } else {
@@ -764,6 +764,7 @@ public class ChapterHub : MonoBehaviour {
             BoardButtons[i] = scene.MakeButton(column, "Chapter " + (i + 1), 900f, 88f, 0f, 104f + i * 98f, () => PickChapter(index));
         }
         CloseButton = scene.MakeButton(column, "Close", 300f, 88f, 0f, 104f + count * 98f + 6f, CloseBoard);
+        MenuNav.Attach(column.gameObject, 10);
         column.gameObject.SetActive(false);
         Layout();
     }

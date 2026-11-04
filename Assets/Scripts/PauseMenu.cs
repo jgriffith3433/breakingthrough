@@ -5,7 +5,8 @@ using UnityEngine.UI;
 
 // Pause during a run: P or Escape, the pause button by the musician's bar, or the mouse leaving the game (Escape
 // in a browser frees the mouse before the game hears it). The world stops like it does for a level-up card.
-// Resume, or open Settings from here.
+// Resume, open Settings (volume and how often the voices speak) or quit to the menu from here. Works in Arcade and in
+// every chapter (chapters play in the game scene). Keyboard and gamepad: MenuNav, with Start / P / Esc / B to resume.
 public class PauseMenu : MonoBehaviour {
     const float ButtonSize = 84f;
 
@@ -22,6 +23,7 @@ public class PauseMenu : MonoBehaviour {
     public Button PauseButton { get; private set; }
     public Button ResumeButton { get; private set; }
     public Button SettingsButton { get; private set; }
+    public Button QuitButton { get; private set; }
 
     Font font;
     CanvasScaler hudScaler;
@@ -30,6 +32,8 @@ public class PauseMenu : MonoBehaviour {
     RectTransform deck;
     RectTransform pauseRect;
     Text hint;
+    Text quitLabel;
+    bool quitArmed;
     bool wasLocked;
     int laidStamp = -1;
 
@@ -97,7 +101,8 @@ public class PauseMenu : MonoBehaviour {
         IsOpen = true;
         Time.timeScale = 0f;
         instance.root.SetActive(true);
-        instance.hint.text = UiFit.Touch ? "" : "P or Esc resumes.";
+        instance.hint.text = UiFit.Touch ? "" : "P, Esc or pad Start resumes.";
+        instance.DisarmQuit();
         RunAnalytics.Screen("pause");
         GameAudio.Play("shot", 0.35f, 0.7f);
     }
@@ -120,6 +125,41 @@ public class PauseMenu : MonoBehaviour {
         SettingsPanel.Open(null);
     }
 
+    void DisarmQuit() {
+        quitArmed = false;
+        if (quitLabel != null) {
+            quitLabel.text = "Quit to menu";
+        }
+    }
+
+    // Asks twice, like Erase on the case files: the run on the table is lost.
+    void Quit() {
+        if (!quitArmed) {
+            quitArmed = true;
+            quitLabel.text = "Sure? Press again";
+            return;
+        }
+        QuitToMenu();
+    }
+
+    public static int Quits { get; private set; }
+
+    public static void QuitToMenu() {
+        Quits++;
+        SettingsPanel.Close();
+        IsOpen = false;
+        Time.timeScale = 1f;
+        if (instance != null && instance.root != null) {
+            instance.root.SetActive(false);
+        }
+        RunAnalytics.Screen("menu");
+        if (ChapterRun.Instance != null) {
+            ChapterRun.Instance.Abandon();
+        } else {
+            SceneManager.LoadScene(MetaProgress.MenuScene);
+        }
+    }
+
     void Update() {
         if (HoldFire && !PlayInput.GetMouseButton(0)) {
             HoldFire = false;
@@ -137,7 +177,7 @@ public class PauseMenu : MonoBehaviour {
         wasLocked = locked == 1;
 
         bool settings = SettingsPanel.IsOpen || SettingsPanel.ClosedFrame == Time.frameCount;
-        bool key = PlayInput.GetKeyDown(KeyCode.P) || PlayInput.GetKeyDown(KeyCode.Escape);
+        bool key = PlayInput.GetKeyDown(KeyCode.P) || MenuNav.Back || MenuNav.PadStart;
 
         if (IsOpen) {
             Time.timeScale = 0f;
@@ -202,7 +242,7 @@ public class PauseMenu : MonoBehaviour {
         deck.anchorMin = new Vector2(0.5f, 0.5f);
         deck.anchorMax = new Vector2(0.5f, 0.5f);
         deck.pivot = new Vector2(0.5f, 0.5f);
-        deck.sizeDelta = new Vector2(520f, 470f);
+        deck.sizeDelta = new Vector2(520f, 580f);
 
         Text title = MakeText(deck, "Paused", 52, FontStyle.Bold);
         Place(title.rectTransform, new Vector2(0f, -30f), new Vector2(460f, 70f));
@@ -216,9 +256,15 @@ public class PauseMenu : MonoBehaviour {
         SettingsButton = MakeButton(deck, "Settings", "Settings", new Vector2(320f, 88f), 32, OpenSettings);
         Place((RectTransform)SettingsButton.transform, new Vector2(0f, -264f), new Vector2(320f, 88f));
 
+        QuitButton = MakeButton(deck, "Quit", "Quit to menu", new Vector2(320f, 88f), 32, Quit);
+        QuitButton.GetComponent<Image>().color = new Color(0.36f, 0.16f, 0.14f, 1f);
+        Place((RectTransform)QuitButton.transform, new Vector2(0f, -372f), new Vector2(320f, 88f));
+        quitLabel = QuitButton.GetComponentInChildren<Text>();
+
         hint = MakeText(deck, "", 22, FontStyle.Normal);
         hint.color = new Color(1f, 0.96f, 0.88f, 0.7f);
-        Place(hint.rectTransform, new Vector2(0f, -384f), new Vector2(460f, 32f));
+        Place(hint.rectTransform, new Vector2(0f, -490f), new Vector2(460f, 32f));
+        MenuNav.Attach(root, 450);
         Layout();
     }
 
@@ -241,7 +287,7 @@ public class PauseMenu : MonoBehaviour {
             pauseRect.anchoredPosition = mode == UiMode.Wide ? new Vector2(-336f, -12f) : new Vector2(-24f, -256f);
         }
         Vector2 size = UiFit.Size;
-        float scale = UiFit.Compact ? Mathf.Min(1f, (size.x - 40f) / 520f, (size.y - 40f) / 470f) : 1f;
+        float scale = UiFit.Compact ? Mathf.Min(1f, (size.x - 40f) / 520f, (size.y - 40f) / 580f) : 1f;
         deck.localScale = new Vector3(scale, scale, 1f);
     }
 

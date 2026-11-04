@@ -146,11 +146,9 @@ public class ChapterScene : MonoBehaviour {
             LinesShown = shown;
             GameAudio.Play("paper", 0.5f);
         }
-        if (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter)) {
-            BeginChapter();
-        }
-        if (PlayInput.GetKeyDown(KeyCode.Escape) || PlayInput.GetKeyDown(KeyCode.M)) {
-            if (Hub != null && Hub.Shown == false && PlayInput.GetKeyDown(KeyCode.Escape) && CampaignSave.Get(CampaignSave.Active).cleared > 0) {
+        // Enter, Space and the pad's A press whichever button the gold ring is on (MenuNav); Begin is first.
+        if (MenuNav.Back || PlayInput.GetKeyDown(KeyCode.M)) {
+            if (Hub != null && Hub.Shown == false && MenuNav.Back && CampaignSave.Get(CampaignSave.Active).cleared > 0) {
                 ShowHub();
             } else {
                 ToMenu();
@@ -197,6 +195,7 @@ public class ChapterScene : MonoBehaviour {
         var scaler = canvasGo.AddComponent<CanvasScaler>();
         UiFit.Apply(scaler, 0.5f);
         canvasGo.AddComponent<GraphicRaycaster>();
+        MenuNav.Attach(canvasGo, 0);
 
         var column = new GameObject("Card", typeof(RectTransform)).GetComponent<RectTransform>();
         column.SetParent(canvasGo.transform, false);

@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Sound on/off, music and effects volume: the studio's standard settings. Saved as JSON { on, music, sfx } (0-1)
+// Sound on/off, music and effects volume: the studio's standard settings. Saved as JSON { on, music, sfx, chatter } (0-1)
 // under "hawkes.sound": in the browser's localStorage on the web (where every Hawkes game keeps it), PlayerPrefs
 // too. Music is every looping AudioSource in the scene (none now: Slice's piano loop is gone); effects are GameAudio's voices.
 public static class SoundSettings {
@@ -14,6 +14,8 @@ public static class SoundSettings {
         public bool on = true;
         public float music = 1f;
         public float sfx = 1f;
+        // How often the voices speak up: 0 Key lines only, 1 Rarely, 2 Normal, 3 Often (VoiceDirector).
+        public int chatter = 2;
     }
 
     static Saved now = new Saved();
@@ -55,6 +57,17 @@ public static class SoundSettings {
         get { Load(); return now.sfx; }
     }
 
+    public const int ChatterOff = 0;
+    public const int ChatterMax = 3;
+
+    public static int Chatter {
+        get { Load(); return now.chatter; }
+    }
+
+    public static string ChatterName(int level) {
+        return level <= 0 ? "Key lines" : level == 1 ? "Rarely" : level == 2 ? "Normal" : "Often";
+    }
+
     // What an effect's volume is multiplied by.
     public static float EffectsLevel {
         get { Load(); return now.on ? now.sfx : 0f; }
@@ -82,6 +95,40 @@ public static class SoundSettings {
         now.sfx = Mathf.Clamp01(sfx);
         Apply();
         // Tooling and tests never write the player's save (MetaProgress's sandbox rule).
+        if (!MetaProgress.Sandbox) {
+            string json = JsonUtility.ToJson(now);
+            HawkesSoundSave(json);
+            PlayerPrefs.SetString(Key, json);
+            dirty = true;
+        }
+    }
+
+    // What is written, and a read of it back: the playtest checks the settings survive a save (sandboxed runs write nothing).
+    public static string Json() {
+        Load();
+        return JsonUtility.ToJson(now);
+    }
+
+    public static bool LoadFrom(string json) {
+        try {
+            Saved read = JsonUtility.FromJson<Saved>(json);
+            if (read == null) {
+                return false;
+            }
+            now.on = read.on;
+            now.music = Mathf.Clamp01(read.music);
+            now.sfx = Mathf.Clamp01(read.sfx);
+            now.chatter = Mathf.Clamp(read.chatter, ChatterOff, ChatterMax);
+            Apply();
+            return true;
+        } catch (System.Exception) {
+            return false;
+        }
+    }
+
+    public static void SetChatter(int level) {
+        Load();
+        now.chatter = Mathf.Clamp(level, ChatterOff, ChatterMax);
         if (!MetaProgress.Sandbox) {
             string json = JsonUtility.ToJson(now);
             HawkesSoundSave(json);
@@ -133,6 +180,7 @@ public static class SoundSettings {
                 now.on = read.on;
                 now.music = Mathf.Clamp01(read.music);
                 now.sfx = Mathf.Clamp01(read.sfx);
+                now.chatter = Mathf.Clamp(read.chatter, ChatterOff, ChatterMax);
             }
         } catch (System.Exception) {
             now = new Saved();
