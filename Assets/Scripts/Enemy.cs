@@ -29,6 +29,8 @@ public class Enemy : MonoBehaviour
     public bool Elite { get; private set; }
     public bool Golden { get; private set; }
     public bool Boss { get; private set; }
+    // The Courier (Chapter 1's Alpha): it holds still and attacks in telegraphed slams (Courier.cs), never swipes.
+    public bool IsCourier { get; private set; }
     public string Title { get; private set; }
     public float Health01 { get { return Mathf.Clamp01(1f - taken / Mathf.Max(1f, HitsToDrop)); } }
     public float BodyScale { get { return bodyScale; } }
@@ -90,6 +92,7 @@ public class Enemy : MonoBehaviour
     float stridePhase;
     bool lastStepSign;
     float peckAnim;
+    float holdLeft;
     float topY = 0.9f;
     Vector3 lastPos;
     Color modelTint = Color.white;
@@ -255,7 +258,13 @@ public class Enemy : MonoBehaviour
             return false;
         }
 
-        if (Boss && !down)
+        if (holdLeft > 0f)
+        {
+            holdLeft -= dt;
+            return false;
+        }
+
+        if (Boss && !IsCourier && !down)
         {
             summonIn -= dt;
             if (summonIn <= 0f)
@@ -409,6 +418,25 @@ public class Enemy : MonoBehaviour
         crestColor = new Color(1f, 0.85f, 0.25f);
         modelTint = new Color(1f, 0.8f, 0.22f);
         modelTintAmount = 0.92f;
+    }
+
+    // Stand still for a while (the Courier's wind-up and recovery). Bat hits still land.
+    public void Hold(float seconds)
+    {
+        holdLeft = Mathf.Max(0f, seconds);
+    }
+
+    // Chapter 1's Alpha Yo Bot, with a clipboard and a notice of striking. Its fight is Courier.cs.
+    public void MakeCourier(string name, int hits)
+    {
+        MakeBoss();
+        IsCourier = true;
+        Title = name;
+        gameObject.name = name;
+        HitsToDrop = Mathf.Max(1, hits);
+        modelTint = new Color(1.3f, 0.95f, 0.45f);
+        modelTintAmount = 0.35f;
+        gameObject.AddComponent<Courier>();
     }
 
     public void MakeBoss()
@@ -709,7 +737,7 @@ public class Enemy : MonoBehaviour
             toPlayer.y = 0f;
             atPlayer = toPlayer.magnitude <= PlayerGrowth.Instance.BodyRadius + 1.15f + bodyScale * 0.22f;
         }
-        if (!down && musician != null && musician.Alive && (wall != null || atMusician || atPlayer))
+        if (!down && !IsCourier && musician != null && musician.Alive && (wall != null || atMusician || atPlayer))
         {
             peckIn -= dt;
             if (peckIn <= 0f)
@@ -1355,7 +1383,7 @@ public class Enemy : MonoBehaviour
         float scale = Mathf.Max(0.2f, transform.lossyScale.y);
         float speed = dt > 0f ? moved.magnitude / dt / scale : 0f;
         float walk = Mathf.Clamp01(speed / 2.5f);
-        if (down || frozenLeft > 0f || shortLeft > 0f)
+        if (down || frozenLeft > 0f || shortLeft > 0f || holdLeft > 0f)
             walk = 0f;
         stridePhase += dt * (spider ? 6f + speed * 4f : 5f + speed * 3.2f);
         float step = Mathf.Sin(stridePhase);

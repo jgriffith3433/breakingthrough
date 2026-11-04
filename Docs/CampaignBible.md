@@ -75,7 +75,7 @@ roster so no new enemy art is needed for chapters 1 to 3 and 6.
 ### Chapter 1: Return to Sender
 
 - **Space:** The Moonlit Hollow, with the circle at the center. [canon, placeholder exists]
-- **Objective:** Hold the circle through one wave of Yo Bots; the first bolt is collected. (Tutorial: move, bat, lock-on.)
+- **Objective:** Hold the circle against six Yo Bots (tutorial: move, bat, lock-on), then bring down the Courier. [built; see Story.md, "Chapter 1's boss"]
 - **Dialogue beats:**
   - W: "Return to sender. Which sender? I want a refund." [canon]
   - S: "No sender. No refund. Stay in the circle." [canon]

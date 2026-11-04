@@ -84,7 +84,7 @@ Chapters are numbered and named after a stamp, six in all (`Docs/CampaignBible.m
 down a boss), the bots that come, the lines said before and after. Begin on the chapter card plays it in the Hollow with
 Wallit's own controls and bat and Slice at the circle; the objective sits in a line at the bottom, meeting it shows
 **Chapter Complete**, and the case file moves on to the next chapter (the last one reads "filed"). Chapter 1 teaches the bat:
-down eight Yo Bots.
+hold the circle against six Yo Bots, then bring down the Courier (below).
 
 - Wallit: "Return to sender. Which sender? I want a refund."
 - Slice: "No sender. No refund. Stay in the circle."
@@ -109,6 +109,19 @@ ink in the Hollow. It lands on a wallet's leather; he hits the grass and rolls, 
 - Wallit: "Where do I sign for this bat?" Slice: "Swing it."
 - A Yo Bot: "Hello! Uploading victory! Striking this address now!" Wallit: "Pay up, bots."
 
+### Chapter 1's boss: the Courier
+
+After the first Yo Bots the Courier comes: an Alpha Yo Bot (bigger, amber-tinted, red crest) with a clipboard and a "notice of
+striking". Yo Bot: "Special delivery! Notice of striking!" Slice names it ("It reads the order out, then it lands.") and Wallit
+answers with the bill. Its health bar sits at the top of the screen under its name. It never swipes. It walks to 7.5 m of Slice,
+stops and lifts the notice overhead; a **red mark fills on the circle's ground** (the telegraph, about two seconds), and when it
+fills the notice lands on Slice for 12. Two answers, which Slice says aloud the first time ("Break the wind-up. Or stand in it."):
+hit the Courier for a tenth of its health before the mark fills (it drops the notice, "Notice dropped!", and stands dazed), or
+stand in the mark and take the stamp yourself ("Wallit takes the stamp"; Slice is spared). Under half health it winds up faster
+and calls two Yo Bots with every notice. The defeat beat: the Courier, coming apart, "Notice... undelivered... uploading...
+defeat?"; Wallit "Return to sender."; Slice "Clean." Then Chapter Complete, and the file moves to Chapter 2. The fight is
+`Courier.cs`; the chapter flow (`HoldThenBoss`) is in `ChapterRun.cs`, the lines in `Story.Chapters[0]`.
+
 ## Canon established here
 
 - The circle is the one filed address in the Moonlit Hollow; whatever is inside it exists.
@@ -117,3 +130,4 @@ ink in the Hollow. It lands on a wallet's leather; he hits the grass and rolls, 
 - The Place Department is the thing that files and clears. The creature behind the order is never named.
 - The Stamp: Wallit arrives by stamp, RETURN TO SENDER landing on him out of the dark; the circle's ring lights as he rolls into it. Chapter 1 opens with it.
 - Campaign is the story in chapters, kept in three case files; Arcade is the endless Hollow. Chapter 1 is "Return to Sender".
+- The Courier: Chapter 1's boss, an Alpha Yo Bot with a clipboard that lands a notice of striking on the circle after a visible wind-up. Wallit's answer to a notice is "Return to sender."
