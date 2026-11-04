@@ -9,10 +9,18 @@ using UnityEngine.UI;
 public class ChapterHub : MonoBehaviour {
     public static ChapterHub Instance { get; private set; }
 
-    public static readonly Vector3 BoardPosition = new Vector3(0f, 0f, 10f);
+    // The hub is an office: one room, Slice's ring in the middle, the chapter board on the left wall, a vacant desk on the
+    // right (the spot for NPCs later) and a door per chapter along the back wall. A door opens as the file reaches its
+    // chapter (cleared + 1); walk through an open one to start that chapter. Locked doors stay shut.
+    public static readonly Vector3 BoardPosition = new Vector3(-12.2f, 0f, 3f);
+    public static readonly Vector3 DeskPosition = new Vector3(11.5f, 0f, 3f);
     public const float BoardReach = 3.6f;
+    public const float RoomHalfWidth = 14.2f;
+    public const float RoomBack = 14.4f;
+    public const float RoomFront = -9f;
+    const float WallZ = 15f;
+    const float DoorSpacing = 4.6f;
     const float Speed = 6f;
-    const float YardRadius = 17f;
 
     // For the playtest bot.
     public Transform Player { get; private set; }
@@ -22,8 +30,19 @@ public class ChapterHub : MonoBehaviour {
     public Button[] BoardButtons { get; private set; }
     public Button CloseButton { get; private set; }
     public string StatusText { get { return status != null ? status.text : ""; } }
+    public string PromptText { get { return prompt != null ? prompt.text : ""; } }
     public string BoardText { get; private set; } = "";
     public int ArrivalShown { get; private set; }
+    // Doors, for the playtest bot: index = chapter. DoorOpen is true once the file has reached the chapter.
+    public int DoorCount { get { return CampaignSave.ChapterCount; } }
+    public int EnteredDoor { get; private set; } = -1;
+    public int NearDoor { get; private set; } = -1;
+    public bool[] DoorOpen { get; private set; }
+    public static Vector3 DoorPosition(int index) {
+        return new Vector3((index - (CampaignSave.ChapterCount - 1) * 0.5f) * DoorSpacing, 0f, WallZ);
+    }
+    public string DoorText { get; private set; } = "";
+    public Vector3 NpcSpot { get { return DeskPosition; } }
 
     ChapterScene scene;
     Camera cam;
@@ -41,6 +60,8 @@ public class ChapterHub : MonoBehaviour {
     int laidStamp = -1;
     RectTransform column;
     CanvasScaler scaler;
+    Transform[] leaves;
+    float[] swing;
 
     public static ChapterHub Open(ChapterScene owner) {
         var go = new GameObject("Hub");
@@ -71,7 +92,9 @@ public class ChapterHub : MonoBehaviour {
         if (shown) {
             arrivedAt = Time.unscaledTime;
             ArrivalShown = 0;
+            EnteredDoor = -1;
             CloseBoard();
+            SetDoors();
         }
         if (cam != null) {
             cam.cullingMask = shown ? -1 : 0;
@@ -103,14 +126,10 @@ public class ChapterHub : MonoBehaviour {
         light.intensity = 1f;
         light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
 
-        Flat("Yard", PrimitiveType.Cylinder, new Vector3(0f, -0.06f, 0f), new Vector3(YardRadius * 2f + 4f, 0.05f, YardRadius * 2f + 4f), new Color(0.08f, 0.12f, 0.13f));
-        Flat("Ring Edge", PrimitiveType.Cylinder, new Vector3(0f, -0.03f, 0f), new Vector3(8.6f, 0.03f, 8.6f), new Color(0.85f, 0.66f, 0.34f));
-        Flat("Ring", PrimitiveType.Cylinder, new Vector3(0f, -0.02f, 0f), new Vector3(8f, 0.03f, 8f), new Color(0.11f, 0.15f, 0.16f));
-        for (int i = 0; i < 6; i++) {
-            // Worn slabs from the ring to the board.
-            Flat("Slab", PrimitiveType.Cube, new Vector3(0f, -0.01f, 4.8f + i * 0.95f), new Vector3(1.6f, 0.03f, 0.75f), new Color(0.2f, 0.22f, 0.25f));
-        }
+        BuildRoom();
         BuildBoard();
+        BuildDesk();
+        BuildDoors();
         BuildPeople();
         BuildUi();
         PlaceCamera(true);
@@ -137,11 +156,135 @@ public class ChapterHub : MonoBehaviour {
         }
     }
 
+    // Floor, three walls (the front is open to the camera), the baseboard and Slice's ring on the carpet.
+    void BuildRoom() {
+        float w = RoomHalfWidth + 0.8f;
+        Flat("Floor", PrimitiveType.Cube, new Vector3(0f, -0.06f, 2.5f), new Vector3(w * 2f, 0.05f, 27f), new Color(0.12f, 0.13f, 0.16f));
+        Flat("Carpet", PrimitiveType.Cube, new Vector3(0f, -0.04f, 3f), new Vector3(w * 2f - 3f, 0.03f, 17f), new Color(0.1f, 0.15f, 0.17f));
+        Flat("Back Wall", PrimitiveType.Cube, new Vector3(0f, 2.6f, WallZ + 0.3f), new Vector3(w * 2f, 5.4f, 0.6f), new Color(0.2f, 0.2f, 0.27f));
+        Flat("Left Wall", PrimitiveType.Cube, new Vector3(-w - 0.3f, 2.6f, 2.5f), new Vector3(0.6f, 5.4f, 27.6f), new Color(0.17f, 0.17f, 0.23f));
+        Flat("Right Wall", PrimitiveType.Cube, new Vector3(w + 0.3f, 2.6f, 2.5f), new Vector3(0.6f, 5.4f, 27.6f), new Color(0.17f, 0.17f, 0.23f));
+        Flat("Baseboard", PrimitiveType.Cube, new Vector3(0f, 0.2f, WallZ - 0.05f), new Vector3(w * 2f, 0.4f, 0.12f), new Color(0.3f, 0.22f, 0.14f));
+        Flat("Ring Edge", PrimitiveType.Cylinder, new Vector3(0f, -0.02f, 0f), new Vector3(8.6f, 0.03f, 8.6f), new Color(0.85f, 0.66f, 0.34f));
+        Flat("Ring", PrimitiveType.Cylinder, new Vector3(0f, -0.01f, 0f), new Vector3(8f, 0.03f, 8f), new Color(0.11f, 0.15f, 0.16f));
+    }
+
+    // The spot for NPCs later: a desk with an empty chair and a plate. Nobody sits here yet.
+    void BuildDesk() {
+        var desk = new GameObject("Vacant Desk");
+        desk.transform.SetParent(world.transform, false);
+        desk.transform.position = DeskPosition;
+        desk.transform.rotation = Quaternion.Euler(0f, -90f, 0f);
+        Block(desk.transform, "Top", new Vector3(0f, 1f, 0f), new Vector3(3.4f, 0.12f, 1.4f), new Color(0.33f, 0.22f, 0.13f));
+        Block(desk.transform, "Front", new Vector3(0f, 0.5f, -0.55f), new Vector3(3.2f, 1f, 0.1f), new Color(0.26f, 0.17f, 0.1f));
+        Block(desk.transform, "Chair", new Vector3(0f, 0.55f, 1.5f), new Vector3(0.9f, 1.1f, 0.9f), new Color(0.15f, 0.15f, 0.2f));
+        Block(desk.transform, "Plate", new Vector3(0f, 1.15f, -0.4f), new Vector3(1.4f, 0.22f, 0.06f), new Color(0.85f, 0.66f, 0.34f));
+        Label3D(desk.transform, "WINDOW OPEN LATER", new Vector3(0f, 2.2f, 0f), 0.12f, new Color(0.7f, 0.72f, 0.85f));
+    }
+
+    // A door per chapter along the back wall: frame, a leaf that swings open when the file has reached it, a lamp (amber filed,
+    // green next, dark locked) and the chapter number. Collider-free: the walk clamps Wallit to the room.
+    void BuildDoors() {
+        int count = CampaignSave.ChapterCount;
+        leaves = new Transform[count];
+        swing = new float[count];
+        DoorOpen = new bool[count];
+        for (int i = 0; i < count; i++) {
+            var door = new GameObject("Door " + (i + 1));
+            door.transform.SetParent(world.transform, false);
+            door.transform.position = DoorPosition(i);
+            Block(door.transform, "FrameL", new Vector3(-1.05f, 1.6f, 0f), new Vector3(0.2f, 3.2f, 0.4f), new Color(0.35f, 0.25f, 0.15f));
+            Block(door.transform, "FrameR", new Vector3(1.05f, 1.6f, 0f), new Vector3(0.2f, 3.2f, 0.4f), new Color(0.35f, 0.25f, 0.15f));
+            Block(door.transform, "FrameTop", new Vector3(0f, 3.25f, 0f), new Vector3(2.3f, 0.2f, 0.4f), new Color(0.35f, 0.25f, 0.15f));
+            Block(door.transform, "Beyond", new Vector3(0f, 1.6f, 0.2f), new Vector3(1.9f, 3.1f, 0.05f), new Color(0.9f, 0.82f, 0.55f));
+            var hinge = new GameObject("Hinge").transform;
+            hinge.SetParent(door.transform, false);
+            hinge.localPosition = new Vector3(-0.95f, 0f, -0.05f);
+            leaves[i] = hinge;
+            Block(hinge, "Leaf", new Vector3(0.95f, 1.55f, 0f), new Vector3(1.9f, 3.1f, 0.12f), new Color(0.22f, 0.16f, 0.2f));
+            Block(hinge, "Knob", new Vector3(1.65f, 1.5f, -0.1f), new Vector3(0.14f, 0.14f, 0.1f), new Color(0.85f, 0.66f, 0.34f));
+            Block(door.transform, "Lamp", new Vector3(0f, 3.7f, -0.1f), new Vector3(0.4f, 0.22f, 0.1f), new Color(0.2f, 0.2f, 0.25f));
+            Label3D(door.transform, (i + 1).ToString(), new Vector3(0f, 4.4f, -0.2f), 0.2f, new Color(1f, 0.82f, 0.38f));
+        }
+        SetDoors();
+    }
+
+    // Opens the doors the file has reached and keeps the rest shut; lamps follow.
+    void SetDoors() {
+        if (leaves == null) {
+            return;
+        }
+        CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
+        int open = Mathf.Min(slot.cleared + 1, CampaignSave.ChapterCount);
+        var sb = new System.Text.StringBuilder();
+        for (int i = 0; i < leaves.Length; i++) {
+            DoorOpen[i] = i < open;
+            Color lamp = i < slot.cleared ? new Color(0.9f, 0.65f, 0.25f) : i < open ? new Color(0.35f, 0.95f, 0.45f) : new Color(0.25f, 0.1f, 0.12f);
+            Transform lampPart = leaves[i].parent.Find("Lamp");
+            if (lampPart != null) {
+                Paint(lampPart.gameObject, lamp);
+            }
+            sb.Append(i + 1).Append(DoorOpen[i] ? ":open " : ":shut ");
+        }
+        DoorText = sb.ToString().Trim();
+    }
+
+    void TickDoors() {
+        NearDoor = -1;
+        for (int i = 0; i < leaves.Length; i++) {
+            Vector3 d = DoorPosition(i);
+            Vector3 p = Player.position;
+            bool close = Mathf.Abs(p.x - d.x) < DoorSpacing * 0.5f && p.z > d.z - 5f;
+            if (close && NearDoor < 0) {
+                NearDoor = i;
+            }
+            // Swing wide as Wallit nears an open door, or stay ajar once the file has reached it.
+            float want = DoorOpen[i] ? (close ? 105f : 70f) : 0f;
+            swing[i] = Mathf.MoveTowards(swing[i], want, 160f * Time.unscaledDeltaTime);
+            leaves[i].localRotation = Quaternion.Euler(0f, -swing[i], 0f);
+        }
+        // Through an open door: that chapter's card. A shut one is a wall.
+        if (NearDoor >= 0 && DoorOpen[NearDoor] && Player.position.z >= RoomBack - 0.05f && EnteredDoor < 0) {
+            EnteredDoor = NearDoor;
+            GameAudio.Play("stamp", 0.5f);
+            RunAnalytics.Screen("hub_door_" + (NearDoor + 1));
+            scene.ShowCard(NearDoor);
+        }
+    }
+
+    void Block(Transform parent, string name, Vector3 local, Vector3 size, Color color) {
+        var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        go.name = name;
+        Destroy(go.GetComponent<Collider>());
+        go.transform.SetParent(parent, false);
+        go.transform.localPosition = local;
+        go.transform.localScale = size;
+        Paint(go, color);
+    }
+
+    void Label3D(Transform parent, string text, Vector3 local, float size, Color color) {
+        var go = new GameObject("Label");
+        go.transform.SetParent(parent, false);
+        go.transform.localPosition = local;
+        var mesh = go.AddComponent<TextMesh>();
+        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        mesh.font = font;
+        mesh.text = text;
+        mesh.characterSize = size;
+        mesh.fontSize = 48;
+        mesh.fontStyle = FontStyle.Bold;
+        mesh.anchor = TextAnchor.MiddleCenter;
+        mesh.alignment = TextAlignment.Center;
+        mesh.color = color;
+        go.GetComponent<MeshRenderer>().sharedMaterial = font.material;
+    }
+
     // Two posts and a pinned board of slips, facing the ring. The paper is lit so it reads from across the yard.
     void BuildBoard() {
         board = new GameObject("Chapter Board");
         board.transform.SetParent(world.transform, false);
         board.transform.position = BoardPosition;
+        board.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
         Part("PostL", new Vector3(-2.3f, 1.4f, 0f), new Vector3(0.25f, 2.8f, 0.25f), new Color(0.3f, 0.2f, 0.12f));
         Part("PostR", new Vector3(2.3f, 1.4f, 0f), new Vector3(0.25f, 2.8f, 0.25f), new Color(0.3f, 0.2f, 0.12f));
         Part("Backing", new Vector3(0f, 2.0f, 0.05f), new Vector3(4.8f, 2.6f, 0.15f), new Color(0.24f, 0.16f, 0.1f));
@@ -260,10 +403,14 @@ public class ChapterHub : MonoBehaviour {
             }
         }
         Walk();
+        TickDoors();
+        if (!Shown) {
+            return;
+        }
         TickSpeech();
         NearBoard = (Player.position - BoardPosition).magnitude <= BoardReach;
         if (!BoardOpen) {
-            prompt.text = NearBoard ? "E: read the chapter board" : "Walk to the chapter board (WASD)";
+            prompt.text = NearDoor >= 0 && !DoorOpen[NearDoor] ? "Chapter " + (NearDoor + 1) + ": the door is shut" : NearDoor >= 0 ? "Chapter " + (NearDoor + 1) + ": " + Story.Chapters[NearDoor].Title : NearBoard ? "E: read the chapter board" : "WASD: walk. Doors along the back wall. Board on the left.";
             if (NearBoard && (PlayInput.GetKeyDown(KeyCode.E) || PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter))) {
                 OpenBoard();
             }
@@ -290,10 +437,19 @@ public class ChapterHub : MonoBehaviour {
         bool moving = move.sqrMagnitude > 0.01f;
         if (moving) {
             Vector3 next = Player.position + move * Speed * Time.unscaledDeltaTime;
-            Vector3 flat = new Vector3(next.x, 0f, next.z);
-            if (flat.magnitude > YardRadius) {
-                flat = flat.normalized * YardRadius;
+            Vector3 flat = new Vector3(Mathf.Clamp(next.x, -RoomHalfWidth, RoomHalfWidth), 0f, next.z);
+            // The back wall is solid except through an open door.
+            float limit = RoomBack;
+            int at = -1;
+            for (int i = 0; i < DoorCount; i++) {
+                if (Mathf.Abs(flat.x - DoorPosition(i).x) < 0.9f) {
+                    at = i;
+                }
             }
+            if (at >= 0 && DoorOpen[at]) {
+                limit = RoomBack + 0.2f;
+            }
+            flat.z = Mathf.Clamp(flat.z, RoomFront, limit);
             // Slice's circle is hers: Wallit may cross the ring but not stand on her.
             if (flat.magnitude < 1.2f) {
                 flat = flat.normalized * 1.2f;
@@ -320,7 +476,7 @@ public class ChapterHub : MonoBehaviour {
             return;
         }
         Vector3 focus = Player.position + Vector3.up * 1f;
-        Vector3 want = new Vector3(focus.x * 0.8f, 8.5f, focus.z - 10f);
+        Vector3 want = new Vector3(focus.x * 0.8f, 9f, Mathf.Max(focus.z - 10f, -13f));
         cam.transform.position = snap ? want : Vector3.Lerp(cam.transform.position, want, 6f * Time.unscaledDeltaTime);
         cam.transform.rotation = Quaternion.LookRotation(focus - cam.transform.position);
     }

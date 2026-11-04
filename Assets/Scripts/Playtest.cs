@@ -39,6 +39,7 @@ public static class Playtest {
         new PlaytestScenario("cutscene", "The chapter cutscene: Campaign, case file 1, Begin on the Chapter 1 card, and the opening scene (The Stamp) plays over the map with letterbox bars, a speaker name and portrait slot, typed lines and the camera on whoever talks. The bot reads the first pages with real key presses (a first press finishes the typing, the next turns the page), skipping a page's voice by pressing on, then presses Enter to skip the rest: play starts with the objective line up and Wallit moving on the stick, and the chapter is cleared. Checked: every Wallit, Slice and Yo Bot page has a name, two voice lines never overlap (Wallit's floor and the scene both count them), the director allows no other line during the scene. Events cutscene-open, cutscene-page (speaker, text, camera focus, letterbox, voice), cutscene-skip, cutscene-play, cutscene-voice; metrics cutscenePages, cutsceneVoiceLines, cutsceneOverlaps, cutsceneSkipped", 420, "content"),
         new PlaytestScenario("campaign", "Campaign loads and plays a chapter: from the main menu press Campaign, open case file 1 (setup: the sandbox keeps the files off the real save) and wait for the Campaign scene to load. Reports run_start with mode=campaign and the loaded scene name (event run_start, metrics campaignLoaded, campaignLoadSeconds); if the scene fails to load (not in the build's scene list, or the chapter never builds) the run stops stuck with a bug saying so. Then Begin on the chapter card: Wallit and Slice in the chapter map, Wallit walks on the stick, the objective line shows, the bot fights with real input until it is met, Chapter 1 holds the circle against Yo Bots, then the Courier arrives (health bar on screen), winds up telegraphed notices on the circle and the bot breaks them or stands in them until it falls and the defeat beat plays; the Chapter Complete card shows, the case file advances to chapter 2, Menu, and reopening the file resumes at chapter 2 (events chapter-card, chapter-start, chapter-move, objective, boss-arrives, boss-bar, boss-attack, boss-defeated, defeat-beat, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics chapterAdvanced, chapterResumed, bossBar, courierWinds, courierInterrupted). Smoke is unchanged: it still presses Arcade", 750, "content"),
         new PlaytestScenario("hub", "The hub and Campaign progression, played with real input (setup: the sandbox case file 1 starts on chapter 1 with 85 XP, 5 short of level 3; the real save and Arcade are never touched): Campaign, case file 1, Begin on Chapter 1; the first kills give XP (HUD line LV/XP) and level 3 unlocks Refund (events xp-gain, level-up); the bot presses C near the bots and the ring shoves and stings them (event refund-used); the Courier falls, the Chapter Complete card offers To the hub; the bot presses it and lands in the hub (Wallit, Slice in the ring, the chapter board; events hub-open, hub-arrival), walks to the board on the stick and presses E (hub-walk, board-open: Chapter 1 filed and replayable, Chapter 2 next, Chapter 3 locked); picking Chapter 1 shows its card and Begin replays it (hub-replay-card, replay-started) without taking the file back a chapter. Checks per case file and Arcade: the XP stays on case file 1 (case file 2 has none) and Arcade's numbers read as no effect outside a chapter (events progress-saved, arcade-clean; metrics hubXp, hubLevel, refundHits, hubWalked)", 900, "content"),
+        new PlaytestScenario("hub-doors", "The hub as a walkable office, with real input (setup: the sandbox case file 1 has chapters 1 and 2 filed and opens in the hub; the real save is never touched): Wallit walks about the room to the chapter board and the vacant desk (hub-walk), doors 1 to 3 stand open and 4 to 6 stay shut (hub-office), pushing on shut door 4 does not get him through (door-locked), walking into open door 3 shows that chapter's card (door-entered) and Begin starts it (chapter-started); metrics doorsRight, hubWalked, lockedHeld", 300, "content"),
         new PlaytestScenario("maps-123", "Chapters 1, 2 and 3 each load a visibly different map with a route, a landmark and a hazard or set piece (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; event map-loaded, map-lighting (fog and sky differ), map-features (one route:, landmark: and hazard: line each from the map's own list, a problem if any is missing), map-objective (the objective marker's distance from the end of the route: it must stand on the route; chapter 1's objective is the circle), then Wallit walks on the stick and the chapter is left. Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard. Play the whole objective of chapters 2 and 3 with the chapter2 and chapter3 scenarios.", 420, "content"),
         new PlaytestScenario("maps-456", "Chapters 4, 5 and 6 each load a visibly different map (the Long Walk, the Reading Room, the changed Hollow) with a route, a landmark, a hazard or set piece and a boss arena away from the route (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; events map-loaded, map-lighting (fog and sky differ), map-features (route:, landmark:, hazard:, arena: lines from the map's own list; a problem if any is missing), map-arena (the arena's distance and its angle away from the route: over 90 degrees), map-objective, then Wallit walks and the chapter is left. A boss is then called with the director (named setup shortcut) and must walk out of the arena: event arena-boss (spawn distance from the arena centre; a problem over 8 m). Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard, mapsWithArena. Play each whole objective with the chapter4, chapter5 and chapter6 scenarios.", 600, "content"),
         new PlaytestScenario("chapter-maps", "Each Campaign chapter loads its own map, with its own lighting, and unloads it on leaving (setup: the sandbox case file stands on the chapter; the real save is never touched; leaving a chapter early is a named setup shortcut). Three chapters in turn (1 The Moonlit Hollow, 4 The Long Walk, 5 The Reading Room): Campaign, case file 1, Begin; the map named in the chapter data loads as an extra scene on top of the game scene (event map-loaded: map, scene, scenes open), the chapter's lighting is on (event map-lighting: fog colour and density, sun colour, sky colour; they differ between chapters), the opening scene is skipped with Enter and Wallit walks on the stick; then the chapter is left for the menu and the map is gone (event map-unloaded: scene closed, lighting back) with memory read before and after (metrics mapMemoryBaselineMB, mapMemoryAfterMB, mapMemoryGrowthMB; a growth over 48 MB is a bug). Metrics mapsLoaded, mapsUnloaded, distinctLooks)", 800, "content"),
@@ -223,12 +224,13 @@ public static class Playtest {
                 }
                 yield break;
             }
-            if (id == "campaign" || id == "campaign-full" || id == "hub" || id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
+            if (id == "campaign" || id == "campaign-full" || id == "hub" || id == "hub-doors" || id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
                 watchCutscene = id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5";
                 hubTest = id == "hub";
+                hubDoors = id == "hub-doors";
                 fullRun = id == "campaign-full";
                 quitDone = false;
-                startChapter = id == "chapter6" ? 5 : id == "chapter5" ? 4 : id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" ? 1 : 0;
+                startChapter = id == "hub-doors" ? 2 : id == "chapter6" ? 5 : id == "chapter5" ? 4 : id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" ? 1 : 0;
                 yield return CampaignRun();
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
@@ -536,6 +538,7 @@ public static class Playtest {
     // the build ("Scene 'Campaign' couldn't be loaded", PR #70) never becomes the active scene: that is a bug, said plainly.
     static int startChapter;
     static bool hubTest;
+    static bool hubDoors;
     static bool fullRun;
     static bool quitDone;
 
@@ -557,6 +560,9 @@ public static class Playtest {
             setup.chapter = 0;
             setup.xp = 85;
             run.Event("hub-setup", "sandbox case file 1 on chapter 1 with " + setup.xp + " XP (level " + CampaignProgress.LevelFor(setup.xp) + ")");
+        }
+        if (hubDoors) {
+            ChapterScene.HubNext = true;
         }
         MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
         if (menu == null || menu.CampaignButton == null || !menu.CampaignButton.isActiveAndEnabled) {
@@ -589,6 +595,10 @@ public static class Playtest {
             yield break;
         }
         float seconds = Time.realtimeSinceStartup - tapped;
+        if (hubDoors) {
+            yield return HubDoorsPlay();
+            yield break;
+        }
         run.Scene("Chapter " + (ChapterScene.Instance.Chapter + 1));
         yield return null;
         run.Metric("campaignLoaded", 1);
@@ -1123,6 +1133,88 @@ public static class Playtest {
         run.Event("replay-started", ChapterRun.Instance.Title + " again, " + CampaignSave.Get(0).cleared + " chapter cleared, level " + CampaignProgress.Level + " with Refund " + (CampaignProgress.Has(1) ? "unlocked" : "missing"));
         if (ChapterRun.Instance.Chapter != 0 || CampaignSave.Get(0).cleared != 1 || !CampaignProgress.Has(1)) {
             run.Problem(PlaytestSeverity.Bug, "hub: the replay did not start Chapter 1 with the file's progress kept");
+        }
+        yield return new WaitForSecondsRealtime(3f);
+    }
+
+    // The hub as an office, with real input: Wallit walks the room on the stick, the doors of the chapters the file has
+    // reached stand open and the others stay shut, a shut door will not let him through, an open one starts its chapter.
+    // Setup: the sandbox case file 1 has chapters 1 and 2 filed, so doors 1 to 3 are open (3 is the next) and 4 to 6 shut.
+    static IEnumerator WalkTo(ChapterHub hub, Vector3 target, float seconds, System.Func<bool> stop) {
+        float start = Time.realtimeSinceStartup;
+        while (!run.Done && !stop() && Time.realtimeSinceStartup - start < seconds) {
+            Vector3 to = target - hub.Player.position;
+            PlayInput.Axis("Horizontal", Mathf.Clamp(to.x, -1f, 1f));
+            PlayInput.Axis("Vertical", Mathf.Clamp(to.z, -1f, 1f));
+            yield return null;
+        }
+        PlayInput.Release();
+    }
+
+    static IEnumerator HubDoorsPlay() {
+        yield return run.Until(() => ChapterScene.Instance.Hub != null && ChapterScene.Instance.Hub.Shown, 20f, "the hub");
+        if (run.Done) {
+            yield break;
+        }
+        ChapterHub hub = ChapterScene.Instance.Hub;
+        run.Scene("Hub");
+        run.Metric("campaignLoaded", 1);
+        yield return new WaitForSecondsRealtime(2f);
+        run.Event("hub-office", "Wallit at " + hub.Player.position.ToString("0.0") + "; doors " + hub.DoorText + "; board at " + ChapterHub.BoardPosition + "; vacant desk at " + hub.NpcSpot);
+        CheckScreen("hub");
+        bool good = true;
+        for (int i = 0; i < hub.DoorCount; i++) {
+            bool want = i < 3;
+            if (hub.DoorOpen[i] != want) {
+                good = false;
+            }
+        }
+        run.Metric("doorsRight", good ? 1 : 0);
+        if (!good) {
+            run.Problem(PlaytestSeverity.Bug, "hub-doors: with 2 chapters filed the doors read " + hub.DoorText + " (want 1 to 3 open, 4 to 6 shut)");
+        }
+        // 1. Walk around the room: across to the board wall, then the desk.
+        Vector3 start = hub.Player.position;
+        yield return WalkTo(hub, ChapterHub.BoardPosition + new Vector3(2.5f, 0f, 0f), 15f, () => hub.NearBoard);
+        yield return WalkTo(hub, ChapterHub.DeskPosition + new Vector3(-2.5f, 0f, 0f), 15f, () => (hub.Player.position - ChapterHub.DeskPosition).magnitude < 3.2f);
+        run.Metric("hubWalked", Mathf.Round(hub.Walked * 10f) / 10f);
+        run.Event("hub-walk", "Wallit walked " + hub.Walked.ToString("0.0") + " m about the office, from " + start.ToString("0.0") + " to " + hub.Player.position.ToString("0.0"));
+        if (hub.Walked < 15f) {
+            run.Problem(PlaytestSeverity.Bug, "hub-doors: Wallit could not walk around the hub (" + hub.Walked.ToString("0.0") + " m)");
+        }
+        // 2. A shut door (chapter 4) stays shut.
+        Vector3 shut = ChapterHub.DoorPosition(3);
+        yield return WalkTo(hub, new Vector3(shut.x, 0f, shut.z + 1.5f), 25f, () => hub.NearDoor == 3 && hub.Player.position.z > shut.z - 0.8f);
+        yield return new WaitForSecondsRealtime(1.5f);
+        yield return WalkTo(hub, new Vector3(shut.x, 0f, shut.z + 1.5f), 2f, () => false);
+        bool held = hub.Shown && hub.EnteredDoor < 0 && hub.Player.position.z < ChapterHub.RoomBack + 0.1f && !ChapterScene.Instance.CardUp;
+        run.Event("door-locked", "Wallit pushed on door 4 (" + (hub.DoorOpen[3] ? "open" : "shut") + ") at " + hub.Player.position.ToString("0.0") + "; he stayed in the hub: " + held + "; prompt: " + hub.PromptText);
+        run.Metric("lockedHeld", held ? 1 : 0);
+        if (!held || hub.DoorOpen[3]) {
+            run.Problem(PlaytestSeverity.Bug, "hub-doors: the locked door of chapter 4 let Wallit through or showed open");
+        }
+        // 3. The next chapter's door (3) is open: walking in starts it.
+        Vector3 open = ChapterHub.DoorPosition(2);
+        yield return WalkTo(hub, new Vector3(open.x, 0f, open.z + 1.5f), 25f, () => hub.EnteredDoor >= 0);
+        yield return run.Until(() => ChapterScene.Instance.CardUp && ChapterScene.Instance.BeginButton != null, 10f, "the chapter card after walking through the door");
+        if (run.Done) {
+            yield break;
+        }
+        run.Event("door-entered", "Wallit went through door " + (hub.EnteredDoor + 1) + ": the card reads " + ChapterScene.Instance.Title);
+        if (ChapterScene.Instance.Chapter != 2) {
+            run.Problem(PlaytestSeverity.Bug, "hub-doors: door 3 opened chapter " + (ChapterScene.Instance.Chapter + 1));
+        }
+        yield return new WaitForSecondsRealtime(2f);
+        Tap(ChapterScene.Instance.BeginButton.gameObject);
+        yield return run.Until(() => ChapterRun.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the chapter after the door");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        run.Scene("Chapter from a door");
+        run.Event("chapter-started", ChapterRun.Instance.Title + " began from its door (chapter " + (ChapterRun.Instance.Chapter + 1) + ")");
+        if (ChapterRun.Instance.Chapter != 2) {
+            run.Problem(PlaytestSeverity.Bug, "hub-doors: the door of chapter 3 started chapter " + (ChapterRun.Instance.Chapter + 1));
         }
         yield return new WaitForSecondsRealtime(3f);
     }
