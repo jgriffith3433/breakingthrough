@@ -127,6 +127,11 @@ public class ChapterRun : MonoBehaviour {
         Events.Add("start|" + data.Id + "|" + data.Objective + "|" + data.Target);
         CampaignProgress.BeginChapter();
         gameObject.AddComponent<CampaignAbilities>();
+        if (!string.IsNullOrEmpty(data.Companion)) {
+            // A companion walks with Wallit in the chapters that name one (Arcade has no ChapterRun, so never there).
+            Companion.Spawn(data.Companion);
+            Events.Add("companion|" + data.Companion);
+        }
         if (!string.IsNullOrEmpty(data.Map)) {
             // The chapter's own map, from its data, loaded on top of the game scene with its own lighting.
             ChapterMap.Load(data.Map);
@@ -165,6 +170,7 @@ public class ChapterRun : MonoBehaviour {
             Destroy(gateProps);
         }
         SavePlayTime();
+        Companion.Despawn();
         ChapterMap.Unload();
         if (!toNext) {
             CampaignSave.Close();
@@ -776,7 +782,7 @@ public class ChapterRun : MonoBehaviour {
         return name.Length > 0 ? name + ": \"" + body + "\"" : body;
     }
 
-    static void Say(string raw, float seconds) {
+    public static void Say(string raw, float seconds) {
         if (!string.IsNullOrEmpty(raw)) {
             UpgradeLook.Say(Spoken(raw), seconds, 230f);
         }
