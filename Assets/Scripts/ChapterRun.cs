@@ -53,8 +53,10 @@ public class ChapterRun : MonoBehaviour {
     public bool FeedBroken { get; private set; }
     public int Leg { get { return leg; } }   // GateAndBack: 0 out to the gate, 1 back to the circle, 2 the waves and the boss. FloorRun: 0..StopCount-1 the stops out, StopCount back to the circle, StopCount+1 the bots and the boss
     public int WaveNow { get { return waveNow; } }
-    public bool HasBoss { get { return data.Objective == Story.ChapterObjective.HoldThenBoss && data.Waves == 0; } }
-    public bool IsReading { get { return data.Objective == Story.ChapterObjective.HoldThenBoss && data.Waves > 0; } }   // Chapter 5: pages read in waves at the desk, then the Registrar
+    public bool HasBoss { get { return data.Objective == Story.ChapterObjective.HoldThenBoss && data.Waves == 0 && !data.Final; } }
+    public bool IsFinal { get { return data.Final; } }   // Chapter 6: three waves, then the Spider Bot with the order; clearing it plays the ending and the credits
+    public bool CreditsUp { get; private set; }
+    public bool IsReading { get { return data.Objective == Story.ChapterObjective.HoldThenBoss && data.Waves > 0 && !data.Final; } }   // Chapter 5: pages read in waves at the desk, then the Registrar
     public int PagesRead { get { return pagesRead; } }
     public bool BossUp { get { return boss != null && boss.Alive; } }
     public Enemy BossEnemy { get { return boss; } }
@@ -88,6 +90,8 @@ public class ChapterRun : MonoBehaviour {
     int waveNow;
     int pagesRead;    // the Reading Room: pages whose wave is down (their forms on the wall have gone blank)
     readonly List<Renderer>[] pageForms = new List<Renderer>[8];
+    float creditsAt;
+    float nextPulse;
     int killBase;     // kills before the waves began (GateAndBack): the hold counts from here
     GameObject gateProps;
     FloorState floorProps;
@@ -122,6 +126,9 @@ public class ChapterRun : MonoBehaviour {
         }
         if (IsReading) {
             BuildReadingRoom();
+        }
+        if (data.Final) {
+            BuildChangedHollow();
         }
         if (data.Objective == Story.ChapterObjective.ReachPlace || data.Objective == Story.ChapterObjective.GateAndBack || data.Objective == Story.ChapterObjective.FloorRun) {
             MakeMarker();
@@ -158,6 +165,14 @@ public class ChapterRun : MonoBehaviour {
 
     void Update() {
         if (data.Id == null) {
+            return;
+        }
+        if (Completed && data.Final) {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            if (CreditsUp && Time.unscaledTime > creditsAt && (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter))) {
+                ToMenu();
+            }
             return;
         }
         if (Completed) {
@@ -197,6 +212,11 @@ public class ChapterRun : MonoBehaviour {
         }
         int alive = Alive();
         spawnIn -= Time.deltaTime;
+        if (data.Final && Time.time >= nextPulse && Musician.Instance != null) {
+            // The circle is brighter than it was: a soft gold ring breathes out from it.
+            nextPulse = Time.time + 2.6f;
+            Fx.Ring(Musician.Instance.transform.position + Vector3.up * 0.2f, 14f, new Color(1f, 0.88f, 0.5f, 0.7f), 1.6f);
+        }
         switch (data.Objective) {
             case Story.ChapterObjective.ClearCount:
                 Progress = RunLog.RunKills;
@@ -564,6 +584,9 @@ public class ChapterRun : MonoBehaviour {
                 if (defeatIn > 0f) {
                     return data.BossName + " is down";
                 }
+                if (data.Final) {
+                    return "Bring down the Spider Bot with the order" + (bossSpawned ? "" : "  (it's coming)");
+                }
                 return "Bring down " + data.BossName + (bossSpawned ? "  (break the wind-up, or stand in the red)" : "  (it's coming)");
             default:
                 return "Bring down " + data.Goal + (bossSpawned ? "" : "  (it's coming)");
@@ -587,6 +610,10 @@ public class ChapterRun : MonoBehaviour {
         if (beacon != null) {
             beacon.SetActive(false);
         }
+        if (data.Final) {
+            CompleteFinal();
+            return;
+        }
         bool more = Chapter + 1 < CampaignSave.ChapterCount;
         cardTitle.text = "CHAPTER COMPLETE";
         var body = new System.Text.StringBuilder(data.Title);
@@ -602,6 +629,39 @@ public class ChapterRun : MonoBehaviour {
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         RunAnalytics.Screen("chapter_complete_" + (Chapter + 1));
+    }
+
+    // The last chapter: the Filed scene, the Finale pages (Story.Finale, as in Arcade), the ADDRESS FILED ending card, then the
+    // credits card. The case file is already marked filed (Complete saved it).
+    void CompleteFinal() {
+        objective.text = "";
+        Events.Add("finale|start");
+        RunAnalytics.Screen("chapter_complete_" + (Chapter + 1));
+        string stats = "Case file " + (CampaignSave.Active + 1) + ": filed\n" + CampaignSave.Played(CampaignSave.Get(CampaignSave.Active));
+        Cutscene.Play(data.Ending, () => {
+            Events.Add("finale|pages");
+            StoryScreen.Ensure().ShowFinale(stats, keepGoing => {
+                Events.Add("finale|" + (keepGoing ? "credits" : "menu"));
+                if (keepGoing) {
+                    ShowCredits();
+                } else {
+                    ToMenu();
+                }
+            });
+        });
+    }
+
+    void ShowCredits() {
+        CreditsUp = true;
+        creditsAt = Time.unscaledTime + 0.7f;
+        cardTitle.text = Story.CreditsTitle;
+        cardBody.text = Story.Credits;
+        NextButton.gameObject.SetActive(false);
+        card.SetActive(true);
+        Time.timeScale = 0f;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        RunAnalytics.Screen("credits");
     }
 
     public void OnLost() {
@@ -730,6 +790,19 @@ public class ChapterRun : MonoBehaviour {
         Block("Wall R", new Vector3(13.5f, 3.5f, 0f), new Vector3(16f, 7f, 1.2f), dark);
         Block("Signpost", new Vector3(8.5f, 2f, 5f), new Vector3(0.35f, 4f, 0.35f), stone);
         Block("Blank Sign", new Vector3(8.5f, 3.9f, 5.25f), new Vector3(2.4f, 1.2f, 0.12f), pale);
+    }
+
+    // The Moonlit Hollow, changed: the wall is gone and a path of pale slabs leads out of the Hollow to nothing. Flat,
+    // collider-free blocks, well outside the ring the bots come from.
+    void BuildChangedHollow() {
+        Vector3 origin = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
+        gateProps = new GameObject("Chapter Changed Hollow");
+        Color slab = new Color(0.62f, 0.64f, 0.72f, 1f);
+        for (int i = 0; i < 18; i++) {
+            float shade = (i % 2 == 0) ? 1f : 0.88f;
+            float z = 50f + i * 4f;
+            Block(gateProps.transform, "Path Slab " + i, origin + new Vector3(0f, 0.12f, -z), new Vector3(4f, 0.08f, 3.2f), slab * shade, 0f);
+        }
     }
 
     // The Reading Room: a bare round hall around the circle. The walls are lined with forms, all this order, in one section

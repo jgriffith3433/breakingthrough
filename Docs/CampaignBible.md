@@ -162,7 +162,7 @@ roster so no new enemy art is needed for chapters 1 to 3 and 6.
 - **Boss:** **The Registrar**, a Titan Spider Bot with gold trim (`BirdArt.Glowing`) that reads the pages with
   every leg. [proposed; existing Titan model]
 
-### Chapter 6: Address Filed
+### Chapter 6: Address Filed [built; see Story.md, "Chapter 6"]
 
 - **Space:** The Moonlit Hollow, as in Chapter 1, now changed: the wall gone, a path leading nowhere, the circle brighter. [canon + proposed]
 - **Objective:** The wave 30 finale: kill the last bot of the Alpha wave, take the order, read it, file the circle. Wave

@@ -506,6 +506,8 @@ public class WaveDirector : MonoBehaviour {
         if (boss) {
             if (bossName != null && kind == BotKind.TitanSpiderBot) {
                 enemy.MakeRegistrar(bossName, bossHits);
+            } else if (bossName != null && plainBoss && kind == BotKind.SpiderBot) {
+                enemy.MakeOrderBearer(bossName, bossHits);
             } else if (bossName != null && kind == BotKind.SpiderBot) {
                 enemy.MakeServer(bossName, bossHits);
             } else if (bossName != null && plainBoss && kind == BotKind.MegaYoBot) {

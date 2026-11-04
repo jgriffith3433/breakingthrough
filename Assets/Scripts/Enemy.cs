@@ -530,6 +530,38 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    // Chapter 6's Alpha, the Spider Bot that carries the order: a sealed scroll across its back with a red stamp, a wall to
+    // break. No special fight. The scroll is flat, collider-free blocks.
+    public void MakeOrderBearer(string name, int hits)
+    {
+        MakeBoss();
+        Title = name;
+        gameObject.name = name;
+        HitsToDrop = Mathf.Max(1, hits);
+        var shader = SafeShader.Find("Sprites/Default");
+        var holder = new GameObject("Order");
+        holder.transform.SetParent(transform, false);
+        holder.transform.localPosition = new Vector3(0f, 0.7f, -0.1f);
+        holder.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+        Color paper = new Color(0.93f, 0.9f, 0.78f, 1f);
+        Color seal = new Color(0.78f, 0.12f, 0.12f, 1f);
+        for (int i = 0; i < 3; i++) {
+            var part = GameObject.CreatePrimitive(i == 2 ? PrimitiveType.Cube : PrimitiveType.Cylinder);
+            part.name = i == 0 ? "Scroll" : i == 1 ? "Ribbon" : "Seal";
+            Destroy(part.GetComponent<Collider>());
+            part.transform.SetParent(holder.transform, false);
+            part.transform.localPosition = i == 2 ? new Vector3(0f, 0.25f, 0.2f) : Vector3.zero;
+            part.transform.localScale = i == 0 ? new Vector3(0.22f, 0.36f, 0.22f) : i == 1 ? new Vector3(0.24f, 0.05f, 0.24f) : new Vector3(0.12f, 0.03f, 0.12f);
+            Color c = i == 0 ? paper : seal;
+            if (shader != null) {
+                part.GetComponent<Renderer>().material = new Material(shader) { color = c };
+            } else {
+                UpgradeLook.Paint(part, c);
+            }
+            part.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
+    }
+
     // Chapter 2's Alpha: a Plated Yo Bot grown big, with a stamped INVALID plate on its chest. No special fight: a wall
     // of plate to break. The plate is a flat red board with a white bar, built in code, no collider.
     public void MakePlatedAlpha(string name, int hits)
