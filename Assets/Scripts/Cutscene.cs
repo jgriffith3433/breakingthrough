@@ -558,7 +558,7 @@ public class Cutscene : MonoBehaviour {
         portraitRect.sizeDelta = new Vector2(portraitSize, portraitSize);
         float textLeft = portraitSize + 56f;
         float textWidth = width - textLeft - 28f;
-        Place(nameText, nameSize, textLeft, -22f, textWidth, nameSize + 14f);
+        Place(nameText, (int)nameSize, textLeft, -22f, textWidth, nameSize + 14f);
         Place(lineText, (int)lineSize, textLeft, -22f - nameSize - 18f, textWidth, height - nameSize - 90f);
         Place(hintText, ui == UiMode.Desktop ? 24 : 22, textLeft, 12f, textWidth, ui == UiMode.Tall ? 64f : 34f);
         hintText.rectTransform.anchorMin = hintText.rectTransform.anchorMax = new Vector2(0f, 0f);
