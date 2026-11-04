@@ -62,6 +62,8 @@ public static class Story {
         public string[] GateScene;    // GateAndBack: the cutscene that plays when Wallit reaches the gate
         public Stop[] Stops;          // FloorRun: the places out to the lever, in order
         public bool Walk;             // FloorRun: a causeway walk (Chapter 4): no belt feed to break at the last stop, lamps instead of the Floor's props
+        public bool Final;            // HoldThenBoss: the last chapter. Waves x WaveSize bots, then the named boss; clearing it plays Ending, the Finale pages, ADDRESS FILED and the credits (no Next button)
+        public string[] Ending;       // Final: the cutscene played when the boss falls, before the Finale pages
         public string[] Cutscene;     // played by Cutscene.cs over the chapter's map when Begin is pressed (null: none)
     }
 
@@ -437,11 +439,52 @@ public static class Story {
         },
         new Chapter {
             Id = "address-filed", Title = "Chapter 6: Address Filed", Place = "The Moonlit Hollow, changed",
-            Objective = ChapterObjective.DefeatBoss, Boss = BotKind.SpiderBot, Goal = "the Spider Bot with the order",
-            Crew = new[] { BotKind.YoBot, BotKind.PlatedYoBot }, Every = 6f, Cap = 4, Power = 30,
+            Objective = ChapterObjective.HoldThenBoss, Target = 12, Waves = 3, WaveSize = 4, Final = true, Goal = "the Crew",
+            Boss = BotKind.SpiderBot, BossName = "The Order", BossHits = 90, PlainBoss = true,
+            Crew = new[] { BotKind.YoBot, BotKind.PlatedYoBot, BotKind.MegaYoBot }, Every = 3f, Cap = 6, Power = 30,
             Lines = new[] {
                 "S|The wall is gone. The circle is brighter.",
                 "W|Then let's file it. Pay up.",
+            },
+            WaveLines = new[] {
+                "Y|Order delivery! Signature required!",
+                "S|Hold the circle. Nobody signs it.",
+                "W|Last of the Crew. Then the big one. Exact change.",
+            },
+            BossLines = new[] {
+                "Y|Order delivery! Signature required!",
+                "S|Spider. It carries the order.",
+                "W|Then it carries my bill.",
+            },
+            DefeatLines = new[] {
+                "Y|Signature... required... uploading... nothing?",
+                "S|Clean.",
+            },
+            // The opening scene: the Hollow as in Chapter 1, changed.
+            Cutscene = new[] {
+                "B|on",
+                "C|wide",
+                "N|THE MOONLIT HOLLOW\nThe wall is gone. A path of pale slabs leads out of the Hollow and stops at nothing. The circle is brighter than it has ever been.",
+                "C|slice",
+                "S|The wall is gone. The circle is brighter.",
+                "C|wallit",
+                "W|Then they're out of walls. Let's file it. Pay up.",
+                "C|wide",
+                "Y|Order delivery! Signature required!",
+                "C|slice",
+                "S|The order. It comes down the path, last. Hold the circle until it does.",
+            },
+            // Played when the Spider Bot that carries the order falls, then the Finale pages and the ending card.
+            Ending = new[] {
+                "B|on",
+                "C|wide",
+                "N|FILED\nThe ring around the circle becomes a line of writing, then a door number. Slice writes it with her scalpel, one stroke at a time.",
+                "C|slice",
+                "S|Numbered.",
+                "C|wallit",
+                "W|A door number. Does it come with a door?",
+                "C|wide",
+                "N|The camera pulls back. The Hollow is quiet.",
             },
             Done = new[] {
                 "N|The Spider Bot comes apart. The order drops.",
@@ -453,6 +496,10 @@ public static class Story {
             },
         },
     };
+
+    // The credits card after ADDRESS FILED, at the end of the Campaign.
+    public const string CreditsTitle = "THE PLACE DEPARTMENT";
+    public const string Credits = "WALLIT: one wallet, one bat. Pay up.\nSLICE: guards the circle. Clean.\nYO BOTS: uploading victory.\nSPIDER BOTS: by order of nobody.\n\nThe circle stands. Slice and Wallit are on the books.\nThe case file is filed. Thanks for playing.\n\nPowered by HAWKES GEN";
 
     public static readonly string[] Finale = {
         "N|The Spider Bot comes apart. The order drops.",

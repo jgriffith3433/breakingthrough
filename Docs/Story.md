@@ -184,6 +184,18 @@ uploading... nothing?" / "Struck from the record." / "Clean." The Done card: the
 ("Then we answer it. Pay up."). The file then moves to Chapter 6. Flow: `HoldThenBoss` with `Waves` in `ChapterRun.cs`
 (`BuildReadingRoom`, `PageRead`), lines in `Story.Chapters[4]`, the boss `Enemy.MakeRegistrar`; the `chapter5` playtest plays it.
 
+### Chapter 6: Address Filed
+
+The Moonlit Hollow, changed: the wall is gone, a path of pale slabs leads out and stops at nothing, and the circle breathes a soft gold
+ring. The opening scene has Slice say "The wall is gone. The circle is brighter." and Wallit "Then let's file it. Pay up." The chapter is
+**three waves** of four bots (Yo Bots, Plated, Mega) at the circle, then **The Order**, the Spider Bot that carries the order (wave 30's
+Alpha, a scroll with a red seal across its back). Defeat beat: "Signature... required... uploading... nothing?" / "Clean." Then *Filed*:
+the ring becomes a line of writing, then a door number, which Slice writes with her scalpel; then the **Finale pages, verbatim from
+`Story.Finale`** ("The Spider Bot comes apart. The order drops." ... "Pay up."), the **ADDRESS FILED** ending card, and a credits card
+(`Story.Credits`). The case file is marked complete (6 cleared) and reads "(filed)" in the Campaign panel. There is no Next chapter.
+Flow: `HoldThenBoss` with `Final` in `ChapterRun.cs` (`CompleteFinal`, `ShowCredits`, `BuildChangedHollow`), lines in `Story.Chapters[5]`,
+the boss `Enemy.MakeOrderBearer`; the `chapter6` playtest plays it.
+
 ## Canon established here
 
 - The circle is the one filed address in the Moonlit Hollow; whatever is inside it exists.
