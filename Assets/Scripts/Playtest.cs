@@ -47,6 +47,7 @@ public static class Playtest {
         new PlaytestScenario("hub-doors", "The hub as a walkable office, with real input (setup: the sandbox case file 1 has chapters 1 and 2 filed and opens in the hub; the real save is never touched): Wallit walks about the room to the chapter board and the vacant desk (hub-walk), doors 1 to 3 stand open and 4 to 6 stay shut (hub-office), pushing on shut door 4 does not get him through (door-locked), walking into open door 3 shows that chapter's card (door-entered) and Begin starts it (chapter-started); metrics doorsRight, hubWalked, lockedHeld", 300, "content"),
         new PlaytestScenario("maps-123", "Chapters 1, 2 and 3 each load a visibly different map with a route, a landmark and a hazard or set piece (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; event map-loaded, map-lighting (fog and sky differ), map-features (one route:, landmark: and hazard: line each from the map's own list, a problem if any is missing), map-objective (the objective marker's distance from the end of the route: it must stand on the route; chapter 1's objective is the circle), then Wallit walks on the stick and the chapter is left. Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard. Play the whole objective of chapters 2 and 3 with the chapter2 and chapter3 scenarios.", 420, "content"),
         new PlaytestScenario("maps-456", "Chapters 4, 5 and 6 each load a visibly different map (the Long Walk, the Reading Room, the changed Hollow) with a route, a landmark, a hazard or set piece and a boss arena away from the route (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; events map-loaded, map-lighting (fog and sky differ), map-features (route:, landmark:, hazard:, arena: lines from the map's own list; a problem if any is missing), map-arena (the arena's distance and its angle away from the route: over 90 degrees), map-objective, then Wallit walks and the chapter is left. A boss is then called with the director (named setup shortcut) and must walk out of the arena: event arena-boss (spawn distance from the arena centre; a problem over 8 m). Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard, mapsWithArena. Play each whole objective with the chapter4, chapter5 and chapter6 scenarios.", 600, "content"),
+        new PlaytestScenario("secrets", "The back rooms and the Dead Letter, with real input (setup: the sandbox case file stands on each chapter in turn; the real save is never touched). In every chapter 1 to 6 the room is not on the map until the chapter's lost thing is in the file: Wallit walks out to the find with the stick, the clue shows (events secret-hidden, secret-clue, journal lists it), the room appears 172 m out, and Wallit walks to it and is paid (secret-entered, metric secretRooms 6). In Chapter 4's room the Dead Letter, an optional hard Spider Bot, comes at him: the bot fights it (encounter-fight) and Refund in Full is earned (encounter-reward, metric rewardGiven). Chapter 4 is then played again: the room is there from the start, nothing spawns and the reward is not paid twice (encounter-once, metric rewardOnce)", 1700, "content"),
         new PlaytestScenario("chapter-maps", "Each Campaign chapter loads its own map, with its own lighting, and unloads it on leaving (setup: the sandbox case file stands on the chapter; the real save is never touched; leaving a chapter early is a named setup shortcut). Three chapters in turn (1 The Moonlit Hollow, 4 The Long Walk, 5 The Reading Room): Campaign, case file 1, Begin; the map named in the chapter data loads as an extra scene on top of the game scene (event map-loaded: map, scene, scenes open), the chapter's lighting is on (event map-lighting: fog colour and density, sun colour, sky colour; they differ between chapters), the opening scene is skipped with Enter and Wallit walks on the stick; then the chapter is left for the menu and the map is gone (event map-unloaded: scene closed, lighting back) with memory read before and after (metrics mapMemoryBaselineMB, mapMemoryAfterMB, mapMemoryGrowthMB; a growth over 48 MB is a bug). Metrics mapsLoaded, mapsUnloaded, distinctLooks)", 800, "content"),
         new PlaytestScenario("save", "The campaign save: an old-format file loads and is brought up to date, a corrupt one shows a message and starts clean, and every chapter's load time and memory is logged (setup: the sandbox stands where the stored save would, holding version 1 text, text with no version, then corrupt text; the real save is never touched). Events save-old-loaded, save-migrated, save-oldest-loaded, save-corrupt-clean (seven kinds of bad text, none throws), save-old-panel (the case files say the old files were updated), save-old-chapter (file 1 opens chapter 3), save-corrupt-panel (\"Case files unreadable. The Department filed new ones.\", no files), save-corrupt-play (a clean file opens chapter 1); then all six chapters are begun in turn with chapter-load events (card seconds, map seconds, memory MB) and metrics chapter<N>CardSeconds, chapter<N>MapSeconds, chapter<N>MemoryMB, oldSaveLoaded, corruptClean, corruptMessageShown", 1200, "content"),
         new PlaytestScenario("journal", "The journal, with real input (setup: the sandbox case file starts on chapter 1; the real save is never touched). Campaign, case file 1, Begin. Chapter 1 shows its optional extra on the HUD (event journal-extra) and hides one lost thing out in the field (journal-find-hidden). J opens the journal over the pause menu (journal-open-chapter), Back and Resume; Wallit walks out to the find with the stick and it goes into the case file at once (journal-find, metric findKept). The chapter is played to the Courier's fall; the Chapter Complete card judges the extra and names the lost thing kept. Menu, Campaign: the slot shows the journal count (slot-journal); the Journal button opens the journal and the bot reads Active, Finished and Collected (journal-tab, journal-lists; setup marks chapter 2's extra met). Then the files are written out and read back as after a quit (journal-persist, metric journalPersisted) and read again (setup then gives every find and extra: journal-paid says PAID IN FULL)", 900, "content"),
@@ -227,6 +228,13 @@ public static class Playtest {
             }
             if (id == "save") {
                 yield return SaveRun();
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "secrets") {
+                yield return SecretsRun();
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
                 }
@@ -1017,6 +1025,153 @@ public static class Playtest {
 
     // Chapter maps: each chapter loads its own map and lighting on Begin and unloads it on leaving.
     static int[] mapChapters = { 0, 3, 4 };
+    // The back rooms (BackRooms.cs): each chapter's room is hidden until its lost thing is in the file; the clue names it; Wallit
+    // walks there. Chapter 4's room holds the Dead Letter and the reward, paid once. The last pass plays Chapter 4 again.
+    static IEnumerator SecretsRun() {
+        CampaignSave.EnterSandbox();
+        int[] order = { 0, 1, 2, 3, 4, 5, 3 };
+        int entered = 0;
+        for (int n = 0; n < order.Length && !run.Done; n++) {
+            int index = order[n];
+            bool replay = n == order.Length - 1;
+            Story.Chapter data = Story.Chapters[index];
+            CampaignSave.Slot slot = CampaignSave.Get(0);
+            slot.used = true;
+            slot.chapter = index;
+            slot.reached = index;
+            slot.cleared = index;
+            slot.xp = Mathf.Max(slot.xp, 100);
+            run.Event("setup", "sandbox case file 1 stands on chapter " + (index + 1) + (replay ? " again (a replay)" : ""));
+            MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+            if (menu == null || menu.CampaignButton == null) {
+                run.Problem(PlaytestSeverity.Bug, "secrets: no Campaign button on the main menu");
+                run.Finish(PlaytestOutcome.Stuck);
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(1f);
+            Tap(menu.CampaignButton.gameObject);
+            yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files");
+            if (run.Done) {
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(1f);
+            Tap(CampaignPanel.Instance.SlotButtons[0].gameObject);
+            yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.BeginButton != null && SceneManager.GetActiveScene().name == CampaignSave.Scene, 45f, "the chapter card");
+            if (run.Done) {
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(1.5f);
+            Tap(ChapterScene.Instance.BeginButton.gameObject);
+            yield return run.Until(() => ChapterRun.Instance != null && BackRoom.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the chapter's map after Begin");
+            if (run.Done) {
+                yield break;
+            }
+            run.Scene("Chapter " + (index + 1) + (replay ? " again" : ""));
+            yield return CutsceneStep();
+            if (run.Done) {
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(1f);
+            ChapterRun chapter = ChapterRun.Instance;
+            BackRoom room = BackRoom.Instance;
+            var player = Object.FindAnyObjectByType<CharacterMovement>();
+            BackRooms.Room row = BackRooms.All[index];
+            bool held = Journal.HasFind(slot, index);
+            run.Event("secret-hidden", "chapter " + (index + 1) + " (" + data.Map + "): the room \"" + row.Name + "\" is " + (room.Built ? "on the map from the start (the clue is in the file)" : "not on the map: no clue yet") + "; the lost thing lies at " + chapter.FindAt.ToString("0") + "; objective line: " + chapter.ObjectiveLine);
+            if (!replay && !held) {
+                if (room.Built) {
+                    run.Problem(PlaytestSeverity.Bug, "secrets: chapter " + (index + 1) + "'s room is on the map before its clue is found");
+                }
+                float limit = Time.realtimeSinceStartup + 150f;
+                while (!run.Done && !chapter.FindKept && Time.realtimeSinceStartup < limit) {
+                    Walk(player, chapter.FindAt, 1f);
+                    yield return null;
+                }
+                PlayInput.Release();
+                yield return run.Until(() => room.Built, 6f, "the room after the clue");
+                if (run.Done) {
+                    yield break;
+                }
+                run.Event("secret-clue", "the lost thing is kept; the clue reads: " + room.Clue);
+                string active = Journal.TabText(CampaignSave.Get(0), 0);
+                bool listed = active.Contains(row.Clue);
+                run.Event("secret-journal", "the journal's Active tab " + (listed ? "lists" : "does NOT list") + " the clue");
+                if (!listed) {
+                    run.Problem(PlaytestSeverity.Bug, "secrets: chapter " + (index + 1) + "'s clue is not in the journal once the find is kept");
+                }
+            } else if (!room.Built) {
+                run.Problem(PlaytestSeverity.Bug, "secrets: chapter " + (index + 1) + "'s clue is in the file but the room is not on the map");
+            }
+            float far = Time.realtimeSinceStartup + 240f;
+            while (!run.Done && !room.Entered && Time.realtimeSinceStartup < far) {
+                if (WaveDirector.IsLost) {
+                    break;
+                }
+                Walk(player, room.At, 1f);
+                yield return null;
+            }
+            PlayInput.Release();
+            if (WaveDirector.IsLost) {
+                yield return GameOver();
+                yield break;
+            }
+            CampaignSave.Slot after = CampaignSave.Get(0);
+            bool kept = BackRooms.Entered(after, index);
+            run.Event("secret-entered", "chapter " + (index + 1) + ": Wallit " + (room.Entered ? "walked into" : "never reached") + " \"" + row.Name + "\" " + Vector3.Distance(Musician.Instance.transform.position, room.At).ToString("0") + " m from the circle; the file holds it: " + kept + "; rooms " + BackRooms.Count(after) + "/6; XP " + after.xp);
+            if (!room.Entered || !kept) {
+                run.Problem(PlaytestSeverity.Bug, "secrets: Wallit could not reach chapter " + (index + 1) + "'s back room with its clue");
+            } else if (!replay) {
+                entered++;
+            }
+            run.Metric("secretRooms", entered);
+            yield return new WaitForSecondsRealtime(1.5f);
+            if (index == BackRooms.EncounterChapter && room.Entered) {
+                if (!replay) {
+                    yield return run.Until(() => room.EncounterSpawned, 5f, "the Dead Letter");
+                    if (run.Done) {
+                        yield break;
+                    }
+                    run.Event("encounter-fight", room.Letter != null ? room.Letter.Title + " (" + room.Letter.HitsToDrop + " hits) steps out of the room; reward held before: " + BackRooms.HasReward(after) : "no Dead Letter");
+                    var only = new List<Enemy>();
+                    if (room.Letter != null) {
+                        only.Add(room.Letter);
+                    }
+                    yield return Fight(player, () => room.RewardGiven, 360f, "the Dead Letter to fall", only, true);
+                    if (run.Done) {
+                        yield break;
+                    }
+                    CampaignSave.Slot paid = CampaignSave.Get(0);
+                    run.Event("encounter-reward", "the Dead Letter fell: " + BackRooms.RewardName + " held " + BackRooms.HasReward(paid) + ", Refund reads \"" + CampaignProgress.RefundName + "\", ring " + CampaignProgress.RefundReach + " m, rooms bits " + paid.rooms);
+                    run.Metric("rewardGiven", BackRooms.HasReward(paid) && CampaignProgress.RefundFull ? 1 : 0);
+                    if (!BackRooms.HasReward(paid) || !CampaignProgress.RefundFull) {
+                        run.Problem(PlaytestSeverity.Bug, "secrets: the Dead Letter fell but Refund in Full was not earned");
+                    }
+                } else {
+                    yield return new WaitForSecondsRealtime(3f);
+                    run.Event("encounter-once", "replayed: Dead Letter spawned " + room.EncounterSpawned + ", reward held " + BackRooms.HasReward(after) + ", Refund reads \"" + CampaignProgress.RefundName + "\"");
+                    bool once = !room.EncounterSpawned && !room.RewardGiven && BackRooms.HasReward(after) && CampaignProgress.RefundFull;
+                    run.Metric("rewardOnce", once ? 1 : 0);
+                    if (!once) {
+                        run.Problem(PlaytestSeverity.Bug, "secrets: the Dead Letter came back or the reward was paid again on a replay");
+                    }
+                }
+            }
+            run.Event("map-leave", "leaving chapter " + (index + 1) + " for the menu (setup shortcut)");
+            PlayInput.Release();
+            ChapterRun.Instance.Abandon();
+            yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu after leaving");
+            if (run.Done) {
+                yield break;
+            }
+            run.Scene("Main Menu");
+            yield return new WaitForSecondsRealtime(1f);
+        }
+        run.Metric("secretRoomsTotal", entered);
+        if (entered < 6) {
+            run.Problem(PlaytestSeverity.Bug, "secrets: only " + entered + " of 6 chapters' back rooms were found with their clues");
+        }
+    }
+
     static IEnumerator MapsRun() {
         CampaignSave.EnterSandbox();
         int[] chapters = mapChapters;
@@ -1803,7 +1958,7 @@ run.Event("boss-defeated", "The Courier fell after " + Mathf.RoundToInt(chapter.
         yield return Fight(player, () => {
             if (CampaignProgress.RefundReady) {
                 foreach (Enemy e in Enemy.Roster) {
-                    if (e != null && e.Alive && (e.transform.position - player.transform.position).magnitude < CampaignProgress.RefundRange - 1f) {
+                    if (e != null && e.Alive && (e.transform.position - player.transform.position).magnitude < CampaignProgress.RefundReach - 1f) {
                         PlayInput.Tap(CampaignProgress.RefundKey);
                         break;
                     }

@@ -29,6 +29,16 @@ public static class CampaignProgress {
     public const float ShieldCooldown = 20f;
     public const float ShieldSeconds = 5f;
     public const float RefundRange = 8f;
+    // Refund in Full: the Dead Letter's reward (BackRooms.DeadLetterBit in the case file's rooms). Not an Abilities row (those are packed
+    // by index and unlock by level): it changes Refund when the file holds it.
+    public const float FullRange = 12f;
+    public const float FullCooldown = 6f;
+    public const int FullHeal = 8;
+    public static bool RefundFull {
+        get { return Active && BackRooms.HasReward(CampaignSave.Get(CampaignSave.Active)); }
+    }
+    public static float RefundReach { get { return RefundFull ? FullRange : RefundRange; } }
+    public static string RefundName { get { return RefundFull ? "Refund in Full" : "Refund"; } }
 
     public struct Ability {
         public int Level;
@@ -164,7 +174,7 @@ public static class CampaignProgress {
         }
         if (fill >= 0 && Has(fill)) {
             float wait = Wait(fill);
-            string name = Abilities[fill].Name;
+            string name = fill == 1 ? RefundName : Abilities[fill].Name;
             if (fill == AbShield && ShieldUp) {
                 return key + name + " on " + Mathf.CeilToInt(shieldUntil - Time.time) + " s";
             }
@@ -284,7 +294,7 @@ public static class CampaignProgress {
         if (!RefundReady) {
             return false;
         }
-        RefundReadyAt = Time.time + RefundCooldown;
+        RefundReadyAt = Time.time + (RefundFull ? FullCooldown : RefundCooldown);
         Refunds++;
         var roster = new List<Enemy>(Enemy.Roster);
         int hit = 0;
@@ -294,7 +304,7 @@ public static class CampaignProgress {
             }
             Vector3 flat = foe.transform.position - at;
             flat.y = 0f;
-            if (flat.magnitude > RefundRange) {
+            if (flat.magnitude > RefundReach) {
                 continue;
             }
             hit++;
@@ -305,10 +315,13 @@ public static class CampaignProgress {
             }
         }
         RefundHits += hit;
-        Fx.Ring(at + Vector3.up * 0.2f, RefundRange * 2f, new Color(1f, 0.82f, 0.38f, 0.8f), 0.5f);
+        Fx.Ring(at + Vector3.up * 0.2f, RefundReach * 2f, new Color(1f, 0.82f, 0.38f, 0.8f), 0.5f);
         GameAudio.Play("batsmash", 0.6f, 1.2f);
-        Log.Add("refund|" + hit + " bots");
-        UpgradeLook.Say("REFUND!", 1.2f, 200f);
+        if (RefundFull && Musician.Instance != null && Musician.Instance.Alive) {
+            Musician.Instance.Heal(FullHeal);   // in full: Slice is paid back too
+        }
+        Log.Add("refund|" + hit + " bots" + (RefundFull ? "|in full" : ""));
+        UpgradeLook.Say(RefundFull ? "REFUND IN FULL!" : "REFUND!", 1.2f, 200f);
         return true;
     }
 

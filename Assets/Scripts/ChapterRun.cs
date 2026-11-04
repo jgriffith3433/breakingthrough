@@ -161,6 +161,7 @@ public class ChapterRun : MonoBehaviour {
         }
         BuildUi();
         StartJournal();
+        gameObject.AddComponent<BackRoom>();   // the chapter's secret room, once its clue is held (BackRooms.cs)
         RunAnalytics.Screen("chapter_play_" + (Chapter + 1));
         if (data.Cutscene != null && data.Cutscene.Length > 0) {
             // The chapter's opening scene plays over the frozen map; reading it or skipping it hands over to play.
