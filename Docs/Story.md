@@ -237,6 +237,24 @@ the ring becomes a line of writing, then a door number, which Slice writes with 
 Flow: `HoldThenBoss` with `Final` in `ChapterRun.cs` (`CompleteFinal`, `ShowCredits`, `BuildChangedHollow`), lines in `Story.Chapters[5]`,
 the boss `Enemy.MakeOrderBearer`; the `chapter6` playtest plays it.
 
+## New Game+ and the secret ending
+
+**New Game+.** A filed case file (every chapter cleared) can be opened again from Chapter 1. Its chapter card gains a **New Game+** button
+beside Difficulty. Pressing it is the Department re-opening the file: the chapters start over (Chapter 1, nothing cleared), but Wallit's
+account stays: his XP, so his level and every ability, and **Refund in Full** if he earned it. The loop's own business is cleared so it can
+be done again: the lost things, extras, Chime's errands, the back rooms and Hard. Best ranks, the lore log, time on the books and the
+secret ending stay. The file reads `NG+1` (then 2, 3...). Code: `CampaignSave.NewGamePlus` (`Slot.plus`, save version 6),
+`ChapterScene.StartNewGamePlus`.
+
+**The secret ending: RECEIVED.** After ADDRESS FILED, if all **six lost things** are in the case file when Chapter 6 is filed (the
+Unsent Postcard, Key With No Lock, A Cleared Hat, Thrice-Refused Paper, Ledger Leaf and The Circle's Stamp), one more scene plays before
+the credits (`Story.SecretEnding`, `CampaignSave.SecretEarned`, `ChapterRun.CompleteFinal`). Wallit sets the six things down in the ring.
+Slice: "No address." Wallit: "Then give it one. You've got the stamp." The stamp prints ADDRESS and nothing strikes it: every lost thing
+in the Hollow gets a door. A Yo Bot, chirpy: "Delivery! ... Oh. It's for us?" Wallit: "Return to sender?" Slice: "Not this time.
+Received." Wallit: "Received. In full. Pay up." The credits gain a RECEIVED block (Brim, Tick and Chime), and the file is marked
+(`Slot.secret`, `RECEIVED` on the journal's counter). Without every find it never plays. A New Game+ loop clears the finds, so it is earned
+again each loop. `newgameplus` and `secret-ending` playtests.
+
 ## New bots and mini-bosses in the chapters
 
 Each chapter brings one new bot into its crew: every few bots in, one of the Yo Bots arrives as the chapter's own variant (named on
@@ -328,6 +346,9 @@ workers: they are lost things, and they talk about what they lost.
 - The hub: between chapters the circle is a walkable office with Slice in the ring, a door per chapter (open as the file reaches it, shut after), a chapter board of six slips (filed, next, locked) and Tick's desk and four lodgers. Cleared chapters can be replayed from it.
 - Wallit's account: inside the circle he is on the books, and fights add to it (XP). Levels unlock Spare Change, Refund, Receipt, Chargeback, Coin Toss, Stamp Out and Escrow. Slice does not level. Campaign only, per case file.
 - New in the chapters: one variant Yo Bot per chapter (Dispatch, Returned, Reissue, Queue-Skip, Clerk, Sealed) and mini-bosses The Second Notice (Ch2), The Half-Built (Ch3) and The Clerk (Ch5).
+
+- New Game+: a filed file can start over from Chapter 1 keeping Wallit's level, abilities and Refund in Full.
+- RECEIVED: the secret ending, shown after ADDRESS FILED only when all six lost things are kept; the stamp prints ADDRESS and the lost things get doors.
 
 ## The lore log
 

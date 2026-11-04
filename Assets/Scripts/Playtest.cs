@@ -58,6 +58,8 @@ public static class Playtest {
         new PlaytestScenario("chapter4", "Chapter 4, The Process Servers, played start to finish with real input (setup: the sandbox case file starts on chapter 4): Campaign, case file 1, Begin on the Chapter 4 card; the opening dialogue says where Spider Bots come from (process servers, deliveries from the Department with one paper to hand over; the bot reads pages then skips with Enter); the objective reads Reach the first lamp (1 of 3) with metres counting down; Wallit walks the three lamps along the causeway under fire, batting what is in reach; at the last lamp the way turns round to the circle; Wallit walks home and holds off the servers; then The Server (a Spider Bot with a paper, boss bar up) arrives and offers the paper, and does NOT strike: Wallit refuses it by hitting it (objective reads Refuse the paper n / 3, events server-offer and server-refused 1, 2, 3); only after the third refusal it winds up and strikes Slice (server-strike), then falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 5, Menu, and reopening the file shows Chapter 5's card (events chapter4-setup, cutscene-open, cutscene-page, origin-dialogue, objective, floor-stop, last-lamp, home-leg, boss-arrives, boss-bar, server-offer, server-refused, server-strike, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics floorStops, serverOffers, serverRefusals, serverStruckEarly, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("chapter3", "Chapter 3, The Clearing Floor, played start to finish with real input (setup: the sandbox case file starts on chapter 3): Campaign, case file 1, Begin on the Chapter 3 card; the opening dialogue plays over the map and says where Yo Bots come from (the Clearing Crew, stamped out on the Floor; the bot reads pages then skips with Enter); the objective line reads Reach the broken gate (1 of 3) with metres counting down; Wallit walks the three stops (the broken gate, the belt with The Belt scene read and skipped, the lever) under fire from Yo Bots, batting those in reach; at the lever the belt feed breaks and the objective turns to Back to the circle; Wallit walks home, holds off the last batch, then The Foreman (order sheet on its chest, with a boss bar) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 4, Menu, and reopening the file shows Chapter 4's card (events chapter3-setup, cutscene-open, cutscene-page, origin-dialogue, objective, floor-stop, floor-scene-skip, feed-broken, home-leg, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics floorStops, feedBroken, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("companion", "The AI companion (Slice), played in Chapter 2 with real input (setup: the sandbox case file starts on chapter 2; the real save and Arcade are never touched): Slice walks with Wallit as he walks out (event companion-follows: her distance stays within a few metres over 25 m of walking), stabs the Yo Bots that come near (event companion-fights: stabs and kills while Wallit only walks), is knocked down (named setup shortcut, event companion-down: she lies down, the label reads hold E to revive), Wallit walks to her and holds E (real input) and she is back on her feet with half her health (event companion-revived; metrics companionStabs, companionDowns, companionRevives). The chapter then plays on as in chapter2. Arcade has no companion (event companion-off in the modes scenario)", 900, "content"),
+        new PlaytestScenario("newgameplus", "New Game+ and the secret ending, with real input (setup shortcuts: the sandbox case file 1 is marked filed with Wallit at level 4 and his unlocks and Refund in Full earned; the real save is never touched). Campaign, case file 1: the filed file's chapter card shows a New Game+ button (event ngplus-button); the bot presses it and the card turns to Chapter 1 with the file reset to chapter 1, 0 cleared, xp, unlocks and Refund in Full kept (ngplus-started, metrics ngPlusChapter1, ngPlusXpKept, ngPlusAbilitiesKept), Begin plays Chapter 1 with Wallit's level and abilities (ngplus-run, ngplus-abilities). Then a setup shortcut stands the file on Chapter 6 with every lost thing in the journal, and Chapter 6 is played with the bat to the ADDRESS FILED card; Keep going plays the secret ending (secret-scene, secret-page lines, credits-card with RECEIVED; metrics secretEnding 1). The secret-ending scenario plays only that second part.\", 1300, "content"),
+        new PlaytestScenario("secret-ending", "The secret ending's condition (setup shortcut: the sandbox case file stands on Chapter 6 with all six lost things in the journal). Chapter 6 is played with the bat to ADDRESS FILED; Keep going plays the secret ending before the credits (events secret-scene, secret-page, credits-card; metric secretEnding 1). Chapter 6 with the finds missing (chapter6) must show no secret ending (event secret-absent, metric secretEnding 0)", 1000, "content"),
         new PlaytestScenario("grade", "Chapter grades and Hard, with real input (setup: the sandbox case file starts on chapter 1, and later is marked filed; the real save is never touched). Campaign, case file 1, Begin; chapter 1 is played to the Courier's fall. The Chapter Complete card shows a RANK (S, A, B or C from time against par and the damage Slice took) and the best (event rank-shown, metric rankShown). The files are written out and read back as after a quit and the best rank is still there (rank-saved, metric rankSaved). Setup: the file is marked filed. Its chapter card shows the best rank and a Difficulty button; the bot presses it to Hard (hard-on, metric hardOn, saved with the file). Begin; a plain Yo Bot's health is read against Standard (hard-health, metric hardHealthRatio about 1.75) and the bot holds still until a bot lands a blow on Slice, read as meant against as landed (hard-damage, metric hardDamageRatio 2)", 900, "content"),
         new PlaytestScenario("chapter2", "Chapter 2, No Fixed Address, played start to finish with real input (setup: the sandbox case file starts on chapter 2): Campaign, case file 1, Begin on the Chapter 2 card; the opening dialogue plays over the map (the bot reads pages, then skips it with Enter); the objective line reads Reach the gate with its metres counting down; Wallit walks out to the gate under fire from Yo Bots, batting those in reach; at the gate The Gate scene plays (read a few pages, then skipped), the objective turns to Back to the circle, Wallit walks home, three waves are held at the circle (objective Hold the circle, wave n of 3), then The Plated Alpha (stamped INVALID, with a boss bar) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 3, Menu, and reopening the file shows Chapter 3's card (events chapter2-setup, cutscene-open, cutscene-page, cutscene-skip, cutscene-play, objective, gate-leg, gate-reached, gate-scene-skip, home-leg, chapter-wave, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics gateReached, gateSceneSkipped, chapterWaves, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("story", "The story: the intro over the frozen Hollow (read page by page: who Wallit is, what the circle is, why Slice must not fall; a Skip button is on it), wave 1's story beats in canon voices, then setup: the testing wave key to wave 10 and wave 30 for the boss-wave title cards and beats (Yo Bots chirpy, Wallit on money, Slice clipped), and setup: wave 30's waiting bots trimmed to the boss and Slice topped up so the bat can finish it with real swings. Clearing wave 30 plays the finale pages and the ADDRESS FILED ending screen; the bot presses Keep going into overtime. Events intro-*, beat, finale-*, ending", 600, "content"),
@@ -249,7 +251,15 @@ public static class Playtest {
                 }
                 yield break;
             }
-            if (id == "campaign" || id == "lore" || id == "journal" || id == "grade" || id == "campaign-full" || id == "hub" || id == "moves" || id == "abilities" || id == "hub-doors" || id == "hub-npcs" || id == "cutscene" || id == "chapter2" || id == "companion" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
+            if (id == "newgameplus") {
+                yield return NewGamePlusRun();
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "campaign" || id == "lore" || id == "secret-ending" || id == "journal" || id == "grade" || id == "campaign-full" || id == "hub" || id == "moves" || id == "abilities" || id == "hub-doors" || id == "hub-npcs" || id == "cutscene" || id == "chapter2" || id == "companion" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
+                secretTest = id == "secret-ending";
                 companionTest = id == "companion";
                 watchCutscene = id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5";
                 hubTest = id == "hub";
@@ -262,7 +272,7 @@ public static class Playtest {
                 journalTest = id == "journal";
                 gradeTest = id == "grade";
                 quitDone = false;
-                startChapter = id == "hub-doors" ? 2 : id == "hub-npcs" ? 1 : id == "chapter6" ? 5 : id == "chapter5" ? 4 : id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" || id == "companion" ? 1 : 0;
+                startChapter = id == "hub-doors" ? 2 : id == "hub-npcs" ? 1 : id == "chapter6" || id == "secret-ending" ? 5 : id == "chapter5" ? 4 : id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" || id == "companion" ? 1 : 0;
                 yield return CampaignRun();
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
@@ -593,6 +603,7 @@ public static class Playtest {
     static bool hubNpcs;
     static bool fullRun;
     static bool quitDone;
+    static bool secretTest;
 
     static IEnumerator CampaignRun() {
         CampaignSave.EnterSandbox();
@@ -604,6 +615,10 @@ public static class Playtest {
             setup.reached = startChapter;
             setup.cleared = startChapter;
             run.Event("chapter2-setup", "sandbox case file 1 starts on chapter " + (startChapter + 1));
+            if (secretTest) {
+                setup.finds = (1 << Journal.Count) - 1;
+                run.Event("secret-setup", "sandbox case file 1 holds all " + Journal.Count + " lost things");
+            }
         }
         if (hubTest) {
             // Setup shortcut: the sandbox file already has XP, 5 short of level 3 (Refund). Never the real save.
@@ -2763,9 +2778,41 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             run.Problem(PlaytestSeverity.Bug, "chapter6: clearing the chapter did not show ADDRESS FILED");
         }
         Tap(screen.KeepButton.gameObject);
+        if (secretTest) {
+            yield return run.Until(() => Cutscene.IsOpen, 10f, "the secret ending");
+            if (run.Done) {
+                yield break;
+            }
+            run.Scene("Secret ending");
+            run.Event("secret-scene", Cutscene.Instance.PageCount + " pages; every lost thing was kept, so the secret ending plays before the credits");
+            float secretLimit = Time.realtimeSinceStartup + 60f;
+            int pagesTold = 0;
+            while (Cutscene.IsOpen && Time.realtimeSinceStartup < secretLimit) {
+                yield return new WaitForSecondsRealtime(0.8f);
+                pagesTold++;
+                run.Event("secret-page", "page " + pagesTold);
+                PlayInput.Tap(KeyCode.Space);
+                yield return new WaitForSecondsRealtime(0.3f);
+            }
+        } else {
+            yield return new WaitForSecondsRealtime(1.5f);
+            bool leaked = Cutscene.IsOpen || chapter.SecretShown;
+            run.Event("secret-absent", "a lost thing is missing from the journal: no secret ending " + (leaked ? "BUT IT PLAYED" : "plays, the credits come straight after ADDRESS FILED"));
+            run.Metric("secretEnding", leaked ? 1 : 0);
+            if (leaked) {
+                run.Problem(PlaytestSeverity.Bug, "secret ending: it played without every lost thing in the case file");
+            }
+        }
         yield return run.Until(() => chapter.CreditsUp, 8f, "the credits card");
         if (run.Done) {
             yield break;
+        }
+        if (secretTest) {
+            bool credited = chapter.SecretShown && chapter.CardText.Contains(Story.SecretTitle) && CampaignSave.Get(CampaignSave.Active).secret;
+            run.Metric("secretEnding", credited ? 1 : 0);
+            if (!credited) {
+                run.Problem(PlaytestSeverity.Bug, "secret ending: it did not play, or the credits and the case file do not carry it");
+            }
         }
         run.Scene("Credits");
         yield return new WaitForSecondsRealtime(1.5f);
@@ -2797,6 +2844,90 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             run.Problem(PlaytestSeverity.Bug, "chapter6: the Campaign panel does not show case file 1 as complete (\"" + texts[0].text + "\")");
         }
         yield return new WaitForSecondsRealtime(2f);
+    }
+
+    // New Game+: a filed file begins again at Chapter 1 with Wallit's level and abilities kept. Then the secret ending's chapter.
+    static IEnumerator NewGamePlusRun() {
+        CampaignSave.EnterSandbox();
+        // Setup shortcut: the sandbox case file is filed, level 4 and Refund in Full earned. Never the real save.
+        CampaignSave.Slot file = CampaignSave.Get(0);
+        file.used = true;
+        file.cleared = CampaignSave.ChapterCount;
+        file.chapter = CampaignSave.ChapterCount - 1;
+        file.reached = CampaignSave.ChapterCount - 1;
+        file.xp = CampaignProgress.XpAt(4);
+        file.unlocked = 0x1F;
+        file.finds = 0x0F;
+        file.rooms = 1 << CampaignSave.ChapterCount;
+        int xp = file.xp;
+        int unlocked = file.unlocked;
+        run.Event("ngplus-setup", "sandbox case file 1 filed, level " + CampaignProgress.LevelFor(xp) + " (" + xp + " XP), unlock mask " + unlocked + ", 4 finds, Refund in Full earned");
+        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(menu.CampaignButton.gameObject);
+        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(CampaignPanel.Instance.SlotButtons[0].gameObject);
+        yield return run.Until(() => ChapterScene.Instance != null && SceneManager.GetActiveScene().name == CampaignSave.Scene && ChapterScene.Instance.BeginButton != null, 45f, "the filed file's chapter card");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Filed file card");
+        ChapterScene scene = ChapterScene.Instance;
+        yield return new WaitForSecondsRealtime(1.5f);
+        run.Event("ngplus-button", "card for " + scene.Title + ": New Game+ button " + (scene.NewGamePlusButton != null ? "shown" : "missing"));
+        if (scene.NewGamePlusButton == null) {
+            run.Problem(PlaytestSeverity.Bug, "new game plus: a filed case file's card has no New Game+ button");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        Tap(scene.NewGamePlusButton.gameObject);
+        run.Event("tap", "New Game+");
+        yield return new WaitForSecondsRealtime(1.5f);
+        file = CampaignSave.Get(0);
+        bool atOne = scene.Chapter == 0 && file.chapter == 0 && file.cleared == 0 && file.plus == 1;
+        bool kept = file.xp == xp && file.unlocked == unlocked && BackRooms.HasReward(file);
+        run.Event("ngplus-started", "card now " + scene.Title + " (chapter " + (scene.Chapter + 1) + "), file on chapter " + (file.chapter + 1) + ", " + file.cleared + " cleared, loop " + file.plus + "; xp " + file.xp + ", unlock mask " + file.unlocked + ", Refund in Full " + BackRooms.HasReward(file) + ", finds " + Journal.FindCount(file));
+        run.Metric("ngPlusChapter1", atOne ? 1 : 0);
+        run.Metric("ngPlusXpKept", file.xp == xp ? 1 : 0);
+        run.Metric("ngPlusAbilitiesKept", file.unlocked == unlocked && BackRooms.HasReward(file) ? 1 : 0);
+        if (!atOne) {
+            run.Problem(PlaytestSeverity.Bug, "new game plus: the file did not start again at chapter 1 (chapter " + (file.chapter + 1) + ", " + file.cleared + " cleared)");
+        }
+        if (!kept) {
+            run.Problem(PlaytestSeverity.Bug, "new game plus: level or abilities were not kept (xp " + file.xp + " of " + xp + ", unlocks " + file.unlocked + " of " + unlocked + ")");
+        }
+        yield return run.Until(() => scene.BeginButton != null && scene.BeginButton.isActiveAndEnabled, 5f, "Chapter 1's card");
+        if (run.Done) {
+            yield break;
+        }
+        Tap(scene.BeginButton.gameObject);
+        yield return run.Until(() => ChapterRun.Instance != null && WaveDirector.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "Chapter 1 of New Game+");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("New Game+ Chapter 1");
+        ChapterRun first = ChapterRun.Instance;
+        yield return new WaitForSecondsRealtime(2f);
+        int level = CampaignProgress.Level;
+        run.Event("ngplus-run", "playing " + Story.Chapters[first.Chapter].Title + " with Wallit at level " + level + " (" + CampaignProgress.Xp + " XP)");
+        run.Event("ngplus-abilities", "unlock mask " + CampaignProgress.UnlockedMask(0) + " (kept " + unlocked + "), Spare Change bonus " + CampaignProgress.DamageMult.ToString("0.00") + "x");
+        run.Metric("ngPlusLevel", level);
+        if (first.Chapter != 0 || level < CampaignProgress.LevelFor(xp)) {
+            run.Problem(PlaytestSeverity.Bug, "new game plus: Chapter 1 started with chapter " + (first.Chapter + 1) + " at level " + level);
+        }
+        first.Abandon();
+        yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu");
+        if (run.Done) {
+            yield break;
+        }
+        // Part two: the secret ending's chapter (setup shortcut: the file stands on Chapter 6 with every lost thing).
+        secretTest = true;
+        startChapter = 5;
+        yield return CampaignRun();
     }
 
     static bool companionTest;

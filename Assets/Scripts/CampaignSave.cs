@@ -27,14 +27,17 @@ public static class CampaignSave {
         public int ranks;        // best Standard rank per chapter, 3 bits each (CampaignGrade: 0 none, 1 C, 2 B, 3 A, 4 S)
         public int hardRanks;    // the same for Hard
         public bool hard;        // Hard is chosen: only ever true on a filed file (every chapter cleared)
+        public int plus;         // New Game+ loops begun on this file (NewGamePlus): xp, unlocks and Refund in Full carry over, the chapters start again
+        public bool secret;      // the secret ending (Story.SecretEnding) has been seen on this file
     }
 
     // Save format. 1: the first files (no stamp on the oldest; no xp, unlocks, errands or lore bits). 2: stamped, every
     // field checked on load, the lore log derived from the chapters filed. 3: the journal's finds and goals
     // bits (nothing to derive: older files start with none). 4: the back rooms' bits and the Dead Letter's reward (older files
     // start with none). 5: the chapter ranks, Standard and Hard, and the Hard choice (older files start with none, Standard).
+    // 6: New Game+ loops and the secret ending seen (older files start at none: nothing to derive).
     // Bump it with a step in Migrate.
-    public const int Version = 5;
+    public const int Version = 6;
     const string BadKey = "hawkes.campaign.bad";
 
     [Serializable]
@@ -106,6 +109,7 @@ public static class CampaignSave {
             s.chapter = Mathf.Clamp(s.chapter, 0, ChapterCount - 1);
             s.reached = Mathf.Clamp(Mathf.Max(s.reached, s.chapter), 0, ChapterCount - 1);
             s.xp = Mathf.Max(0, s.xp);
+            s.plus = Mathf.Clamp(s.plus, 0, 99);   // v6
             s.seconds = float.IsNaN(s.seconds) || float.IsInfinity(s.seconds) ? 0f : Mathf.Max(0f, s.seconds);
         }
         d.version = Version;
@@ -304,6 +308,48 @@ public static class CampaignSave {
         return line.ToString();
     }
 
+    // The secret ending's condition: every lost thing of the open loop is in the journal (all six finds) when Chapter 6 is filed.
+    public static bool SecretEarned(Slot s) {
+        return s != null && s.used && Journal.FindCount(s) == Journal.Count;
+    }
+
+    // Keeps the secret ending on the open file. Returns whether it was the first time.
+    public static bool MarkSecret() {
+        if (Active < 0) {
+            return false;
+        }
+        Slot s = Get(Active);
+        bool first = !s.secret;
+        s.secret = true;
+        Touch(s);
+        Save();
+        return first;
+    }
+
+    // New Game+: a filed file starts its chapters again from Chapter 1. Wallit's account carries over (xp, so level and
+    // abilities, and Refund in Full); the loop's own business starts clean (finds, extras, errands, back rooms, Hard) so the
+    // journal can be filled again. Ranks, lore, time on the books and the secret ending seen stay. Refused (false) unless filed.
+    public static bool NewGamePlus(int index) {
+        Ensure();
+        index = Mathf.Clamp(index, 0, SlotCount - 1);
+        Slot s = data.slots[index];
+        if (!s.used || s.cleared < ChapterCount) {
+            return false;
+        }
+        s.plus = Mathf.Min(99, s.plus + 1);
+        s.cleared = 0;
+        s.chapter = 0;
+        s.reached = 0;
+        s.finds = 0;
+        s.goals = 0;
+        s.errands = 0;
+        s.rooms &= 1 << ChapterCount;   // only the Dead Letter's reward is kept
+        s.hard = false;
+        Touch(s);
+        Save();
+        return true;
+    }
+
     // Adds time on the books to the open file and saves it.
     public static void Record(float seconds) {
         if (Active < 0) {
@@ -356,6 +402,7 @@ public static class CampaignSave {
         }
         string title = Story.Chapters[Mathf.Clamp(s.chapter, 0, ChapterCount - 1)].Title;
         title = s.cleared >= ChapterCount ? title + " (filed)" : title;
+        title = s.plus > 0 ? title + "  NG+" + s.plus : title;
         return s.xp > 0 ? title + "  LV " + CampaignProgress.LevelFor(s.xp) : title;
     }
 

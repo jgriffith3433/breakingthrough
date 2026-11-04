@@ -60,6 +60,7 @@ public class ChapterRun : MonoBehaviour {
     public bool HasBoss { get { return data.Objective == Story.ChapterObjective.HoldThenBoss && data.Waves == 0 && !data.Final; } }
     public bool IsFinal { get { return data.Final; } }   // Chapter 6: three waves, then the Spider Bot with the order; clearing it plays the ending and the credits
     public bool CreditsUp { get; private set; }
+    public bool SecretShown { get; private set; }   // the secret ending played (every lost thing kept when Chapter 6 was filed)
     public bool IsReading { get { return data.Objective == Story.ChapterObjective.HoldThenBoss && data.Waves > 0 && !data.Final; } }   // Chapter 5: pages read in waves at the desk, then the Registrar
     public int PagesRead { get { return pagesRead; } }
     int crewSpawned;
@@ -728,7 +729,20 @@ public class ChapterRun : MonoBehaviour {
             Events.Add("finale|pages");
             StoryScreen.Ensure().ShowFinale(stats, keepGoing => {
                 Events.Add("finale|" + (keepGoing ? "credits" : "menu"));
-                if (keepGoing) {
+                // The secret ending follows ADDRESS FILED, and only when every lost thing is in the case file.
+                if (CampaignSave.SecretEarned(CampaignSave.Get(CampaignSave.Active))) {
+                    SecretShown = true;
+                    CampaignSave.MarkSecret();
+                    Events.Add("secret|ending");
+                    RunAnalytics.Screen("secret_ending");
+                    Cutscene.Play(Story.SecretEnding, () => {
+                        if (keepGoing) {
+                            ShowCredits();
+                        } else {
+                            ToMenu();
+                        }
+                    });
+                } else if (keepGoing) {
                     ShowCredits();
                 } else {
                     ToMenu();
@@ -741,7 +755,7 @@ public class ChapterRun : MonoBehaviour {
         CreditsUp = true;
         creditsAt = Time.unscaledTime + 0.7f;
         cardTitle.text = Story.CreditsTitle;
-        cardBody.text = Story.Credits;
+        cardBody.text = Story.Credits + (SecretShown ? Story.SecretCredits : "");
         NextButton.gameObject.SetActive(false);
         card.SetActive(true);
         Time.timeScale = 0f;

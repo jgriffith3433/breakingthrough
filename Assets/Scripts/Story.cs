@@ -605,6 +605,32 @@ public static class Story {
     public const string CreditsTitle = "THE PLACE DEPARTMENT";
     public const string Credits = "WALLIT: one wallet, one bat. Pay up.\nSLICE: guards the circle. Clean.\nYO BOTS: uploading victory.\nSPIDER BOTS: by order of nobody.\n\nThe circle stands. Slice and Wallit are on the books.\nThe case file is filed. Thanks for playing.\n\nPowered by HAWKES GEN";
 
+    // The secret ending: after ADDRESS FILED, only when all six lost things are in the case file (CampaignSave.SecretEarned).
+    public const string SecretTitle = "RECEIVED";
+    public static readonly string[] SecretEnding = {
+        "B|on",
+        "C|wide",
+        "N|SIX LOST THINGS\nA postcard. A key. A hat. A paper. A page. A stamp. Wallit sets them down in the ring, one at a time.",
+        "C|wallit",
+        "W|None of this is mine. I'm keeping it anyway.",
+        "C|slice",
+        "S|No address.",
+        "C|wallit",
+        "W|Then give it one. You've got the stamp.",
+        "C|slice",
+        "S|It prints true. Backwards, filed.",
+        "C|wide",
+        "N|The stamp comes down. For the first time it says ADDRESS, and nothing strikes it. Every lost thing in the Hollow gets a door.",
+        "Y|Delivery! Delivery! ... Oh. It's for us?",
+        "C|wallit",
+        "W|Return to sender?",
+        "C|slice",
+        "S|Not this time. Received.",
+        "C|wallit",
+        "W|Received. In full. Pay up.",
+    };
+    public const string SecretCredits = "\n\nRECEIVED\nBRIM: has a door. Somebody will come.\nTICK: has the time.\nCHIME: rings for the right address.";
+
     public static readonly string[] Finale = {
         "N|The Spider Bot comes apart. The order drops.",
         "W|\"Strike this address.\" Stamped DENIED. Ha.",
