@@ -250,6 +250,27 @@ public static class CampaignProgress {
         }
     }
 
+    // XP paid outside a fight (Chime's errand in the hub): the same levels and unlock bits as a kill, no on-screen banner.
+    public static void Grant(int amount) {
+        if (CampaignSave.Active < 0) {
+            return;
+        }
+        CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
+        int before = LevelFor(slot.xp);
+        slot.xp += amount;
+        int after = LevelFor(slot.xp);
+        Log.Add("xp|+" + amount + "|" + slot.xp + "|level " + after);
+        for (int level = before + 1; level <= after; level++) {
+            for (int i = 0; i < Abilities.Length; i++) {
+                if (Abilities[i].Level == level) {
+                    slot.unlocked |= 1 << i;
+                    Log.Add("levelup|" + level + "|" + Abilities[i].Name);
+                }
+            }
+        }
+        CampaignSave.Flush();
+    }
+
     static void Announce(int level, Ability ability) {
         UpgradeLook.Say("LEVEL " + level + ": " + ability.Name.ToUpperInvariant() + "!", 3.2f, 240f);
         GameAudio.Play("coin", 0.9f, 1.3f);

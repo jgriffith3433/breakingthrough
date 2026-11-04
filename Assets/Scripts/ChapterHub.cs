@@ -44,6 +44,42 @@ public class ChapterHub : MonoBehaviour {
     public string DoorText { get; private set; } = "";
     public Vector3 NpcSpot { get { return DeskPosition; } }
 
+    // The lodgers (Story.Lodgers): Tick sits at the desk's chair, the others stand about the room. Chime (the bell) gives the
+    // errands. Index = Story.Lodgers row.
+    public const int ChimeIndex = 3;
+    public const float LodgerReach = 3.2f;
+    public const float PickupReach = 1.6f;
+    public static readonly Vector3[] LodgerSpots = {
+        new Vector3(10f, 0f, 3f), new Vector3(-9f, 0f, 10f), new Vector3(8.5f, 0f, -4.5f), new Vector3(-8.5f, 0f, -5f),
+    };
+    // Where Chime's lost thing lies, one spot per chapter's errand.
+    public static readonly Vector3[] ErrandSpots = {
+        new Vector3(4.5f, 0f, -6.5f), new Vector3(-5f, 0f, -7f), new Vector3(-10.5f, 0f, 8f),
+        new Vector3(9f, 0f, 10f), new Vector3(6f, 0f, 7f), new Vector3(-6f, 0f, 11.5f),
+    };
+    public int LodgerCount { get { return Story.Lodgers.Length; } }
+    public int NearLodger { get; private set; } = -1;
+    public int Talks { get; private set; }
+    public int TalkedTo { get; private set; } = -1;
+    public string TalkText { get; private set; } = "";
+    public int ErrandActive { get; private set; } = -1;
+    public bool ErrandCarried { get; private set; }
+    public int ErrandPaid { get; private set; } = -1;
+    public int ErrandsDone { get { return CountBits(CampaignSave.Get(CampaignSave.Active).errands); } }
+    public Vector3 ErrandItemAt { get { return ErrandActive >= 0 ? ErrandSpots[ErrandActive] : Vector3.zero; } }
+    public Vector3 LodgerAt(int i) { return LodgerSpots[i]; }
+    public string LodgerName(int i) { return Story.Lodgers[i].Name; }
+    // What a lodger says now: the line for the chapters the file has cleared.
+    public string LodgerLine(int i) {
+        int cleared = Mathf.Clamp(CampaignSave.Get(CampaignSave.Active).cleared, 1, Story.Lodgers[i].Lines.Length);
+        return Story.Lodgers[i].Lines[cleared - 1];
+    }
+    // Rebuilds what depends on the file's progress (doors, lodgers, errand) after it changed.
+    public void Refresh() {
+        SetDoors();
+        ResetErrand();
+    }
+
     ChapterScene scene;
     Camera cam;
     GameObject world;
@@ -51,6 +87,11 @@ public class ChapterHub : MonoBehaviour {
     Text status;
     Text prompt;
     Text speech;
+    Text talk;
+    Transform[] lodgerRoots;
+    Transform errandItem;
+    TextMesh errandLabel;
+    float talkUntil;
     GameObject board;
     Animator wallitAnim;
     Transform slice;
@@ -95,6 +136,9 @@ public class ChapterHub : MonoBehaviour {
             EnteredDoor = -1;
             CloseBoard();
             SetDoors();
+            ResetErrand();
+            TalkText = "";
+            talkUntil = 0f;
         }
         if (cam != null) {
             cam.cullingMask = shown ? -1 : 0;
@@ -129,6 +173,7 @@ public class ChapterHub : MonoBehaviour {
         BuildRoom();
         BuildBoard();
         BuildDesk();
+        BuildLodgers();
         BuildDoors();
         BuildPeople();
         BuildUi();
@@ -169,7 +214,7 @@ public class ChapterHub : MonoBehaviour {
         Flat("Ring", PrimitiveType.Cylinder, new Vector3(0f, -0.01f, 0f), new Vector3(8f, 0.03f, 8f), new Color(0.11f, 0.15f, 0.16f));
     }
 
-    // The spot for NPCs later: a desk with an empty chair and a plate. Nobody sits here yet.
+    // Tick's desk on the right wall: a chair and a plate.
     void BuildDesk() {
         var desk = new GameObject("Vacant Desk");
         desk.transform.SetParent(world.transform, false);
@@ -179,7 +224,161 @@ public class ChapterHub : MonoBehaviour {
         Block(desk.transform, "Front", new Vector3(0f, 0.5f, -0.55f), new Vector3(3.2f, 1f, 0.1f), new Color(0.26f, 0.17f, 0.1f));
         Block(desk.transform, "Chair", new Vector3(0f, 0.55f, 1.5f), new Vector3(0.9f, 1.1f, 0.9f), new Color(0.15f, 0.15f, 0.2f));
         Block(desk.transform, "Plate", new Vector3(0f, 1.15f, -0.4f), new Vector3(1.4f, 0.22f, 0.06f), new Color(0.85f, 0.66f, 0.34f));
-        Label3D(desk.transform, "WINDOW OPEN LATER", new Vector3(0f, 2.2f, 0f), 0.12f, new Color(0.7f, 0.72f, 0.85f));
+        Label3D(desk.transform, "TICK", new Vector3(0f, 2.2f, 0f), 0.12f, new Color(0.7f, 0.72f, 0.85f));
+    }
+
+    static int CountBits(int v) {
+        int n = 0;
+        while (v != 0) {
+            n += v & 1;
+            v >>= 1;
+        }
+        return n;
+    }
+
+    static Color Hex(string hex) {
+        Color c;
+        return ColorUtility.TryParseHtmlString(hex, out c) ? c : Color.white;
+    }
+
+    // Four lodgers, each a few blocks and a name: Tick the clock, Brim the hat, Spare the half-built Yo Bot, Chime the bell.
+    // Built facing the camera, collider-free, like the rest of the office; Brim and Chime hover a little.
+    void BuildLodgers() {
+        lodgerRoots = new Transform[Story.Lodgers.Length];
+        for (int i = 0; i < lodgerRoots.Length; i++) {
+            Story.Lodger lodger = Story.Lodgers[i];
+            var root = new GameObject("Lodger " + lodger.Name).transform;
+            root.SetParent(world.transform, false);
+            root.position = LodgerSpots[i];
+            lodgerRoots[i] = root;
+            Color tint = Hex(lodger.Colour);
+            Color dark = tint * 0.55f;
+            dark.a = 1f;
+            float top = 2f;
+            if (lodger.Id == "tick") {
+                Block(root, "Case", new Vector3(0f, 0.9f, 0f), new Vector3(0.9f, 1.5f, 0.45f), new Color(0.3f, 0.22f, 0.16f));
+                Block(root, "Face", new Vector3(0f, 1.25f, -0.25f), new Vector3(0.7f, 0.7f, 0.05f), tint);
+                Block(root, "Hand", new Vector3(0f, 1.38f, -0.3f), new Vector3(0.06f, 0.36f, 0.04f), dark);
+                Block(root, "Hand2", new Vector3(0.1f, 1.25f, -0.3f), new Vector3(0.24f, 0.06f, 0.04f), dark);
+                Block(root, "Pendulum", new Vector3(0f, 0.45f, -0.25f), new Vector3(0.08f, 0.5f, 0.04f), new Color(0.85f, 0.66f, 0.34f));
+                top = 2.1f;
+            } else if (lodger.Id == "brim") {
+                Block(root, "Crown", new Vector3(0f, 1.1f, 0f), new Vector3(0.7f, 0.7f, 0.7f), tint);
+                Block(root, "Brim", new Vector3(0f, 0.72f, 0f), new Vector3(1.5f, 0.08f, 1.5f), tint);
+                Block(root, "Band", new Vector3(0f, 0.85f, -0.01f), new Vector3(0.74f, 0.14f, 0.74f), dark);
+                top = 1.9f;
+            } else if (lodger.Id == "spare") {
+                Block(root, "Body", new Vector3(0f, 0.75f, 0f), new Vector3(0.8f, 0.8f, 0.6f), tint);
+                Block(root, "Head", new Vector3(0f, 1.4f, 0f), new Vector3(0.7f, 0.5f, 0.55f), tint);
+                Block(root, "Eye", new Vector3(0f, 1.44f, -0.29f), new Vector3(0.5f, 0.14f, 0.04f), new Color(0.05f, 0.1f, 0.08f));
+                Block(root, "ClawR", new Vector3(0.55f, 0.8f, 0f), new Vector3(0.22f, 0.5f, 0.22f), dark);
+                Block(root, "LegL", new Vector3(-0.22f, 0.18f, 0f), new Vector3(0.2f, 0.36f, 0.2f), dark);
+                top = 2f;
+            } else {
+                Block(root, "Bell", new Vector3(0f, 0.95f, 0f), new Vector3(0.95f, 0.95f, 0.95f), tint);
+                Block(root, "Lip", new Vector3(0f, 0.5f, 0f), new Vector3(1.2f, 0.12f, 1.2f), tint);
+                Block(root, "Handle", new Vector3(0f, 1.55f, 0f), new Vector3(0.22f, 0.25f, 0.22f), dark);
+                Block(root, "Clapper", new Vector3(0f, 0.4f, 0f), new Vector3(0.24f, 0.24f, 0.24f), dark);
+                top = 2.2f;
+            }
+            Label3D(root, lodger.Name, new Vector3(0f, top, -0.1f), 0.1f, tint);
+        }
+        // Chime's lost thing, lit so it reads from across the room; shown only while an errand is out.
+        var item = new GameObject("Errand Item").transform;
+        item.SetParent(world.transform, false);
+        Block(item, "Thing", new Vector3(0f, 0.45f, 0f), new Vector3(0.5f, 0.5f, 0.5f), new Color(1f, 0.82f, 0.38f));
+        Label3D(item, "", new Vector3(0f, 1.3f, -0.1f), 0.09f, new Color(1f, 0.9f, 0.55f));
+        errandLabel = item.Find("Label").GetComponent<TextMesh>();
+        errandItem = item;
+        errandItem.gameObject.SetActive(false);
+    }
+
+    void ResetErrand() {
+        ErrandActive = -1;
+        ErrandCarried = false;
+        if (errandItem != null) {
+            errandItem.gameObject.SetActive(false);
+        }
+    }
+
+    void TickLodgers() {
+        NearLodger = -1;
+        float best = LodgerReach;
+        for (int i = 0; i < lodgerRoots.Length; i++) {
+            float d = (Player.position - LodgerSpots[i]).magnitude;
+            if (d <= best) {
+                best = d;
+                NearLodger = i;
+            }
+            string id = Story.Lodgers[i].Id;
+            if (id == "brim" || id == "chime") {
+                lodgerRoots[i].position = LodgerSpots[i] + Vector3.up * (0.12f + Mathf.Sin(Time.unscaledTime * 1.6f + i) * 0.1f);
+            }
+        }
+        if (ErrandActive >= 0 && !ErrandCarried) {
+            errandItem.Rotate(0f, 90f * Time.unscaledDeltaTime, 0f);
+            if ((Player.position - ErrandSpots[ErrandActive]).magnitude <= PickupReach) {
+                ErrandCarried = true;
+                errandItem.gameObject.SetActive(false);
+                GameAudio.Play("coin", 0.6f, 1.2f);
+                RunAnalytics.Screen("hub_errand_pickup");
+            }
+        }
+        if (talkUntil > 0f && Time.unscaledTime >= talkUntil) {
+            TalkText = "";
+            talkUntil = 0f;
+        }
+        talk.text = TalkText;
+        if (NearLodger >= 0 && !BoardOpen && !NearBoard && (PlayInput.GetKeyDown(KeyCode.E) || PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter))) {
+            TalkTo(NearLodger);
+        }
+    }
+
+    // E beside a lodger: their line for the chapters cleared. Chime also sends Wallit out for the next lost thing, or pays him
+    // for the one he carries.
+    void TalkTo(int i) {
+        CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
+        int cleared = Mathf.Clamp(slot.cleared, 1, Story.Errands.Length);
+        string text = LodgerLine(i);
+        if (i == ChimeIndex) {
+            if (ErrandCarried) {
+                int e = ErrandActive;
+                slot.errands |= 1 << e;
+                CampaignProgress.Grant(Story.Errands[e].Xp);
+                ErrandPaid = e;
+                ErrandActive = -1;
+                ErrandCarried = false;
+                text = Story.Errands[e].Thanks;
+                GameAudio.Play("coin", 0.9f, 1.1f);
+                RunAnalytics.Screen("hub_errand_paid");
+            } else if (ErrandActive >= 0) {
+                text = Story.ChimeWaiting + Story.Errands[ErrandActive].Thing + ".";
+            } else {
+                int next = -1;
+                for (int e = 0; e < cleared && next < 0; e++) {
+                    if ((slot.errands & (1 << e)) == 0) {
+                        next = e;
+                    }
+                }
+                if (next < 0) {
+                    text = Story.ChimeIdle;
+                } else {
+                    ErrandActive = next;
+                    errandItem.position = ErrandSpots[next];
+                    errandLabel.text = Story.Errands[next].Thing;
+                    errandItem.gameObject.SetActive(true);
+                    text = text + " " + Story.Errands[next].Ask;
+                    RunAnalytics.Screen("hub_errand_start");
+                }
+            }
+        }
+        TalkedTo = i;
+        Talks++;
+        TalkText = Story.Lodgers[i].Name + ": \"" + text + "\"";
+        talk.color = Hex(Story.Lodgers[i].Colour);
+        talkUntil = Time.unscaledTime + 9f;
+        GameAudio.Play("paper", 0.5f);
+        RunAnalytics.Screen("hub_npc_" + Story.Lodgers[i].Id);
     }
 
     // A door per chapter along the back wall: frame, a leaf that swings open when the file has reached it, a lamp (amber filed,
@@ -409,8 +608,9 @@ public class ChapterHub : MonoBehaviour {
         }
         TickSpeech();
         NearBoard = (Player.position - BoardPosition).magnitude <= BoardReach;
+        TickLodgers();
         if (!BoardOpen) {
-            prompt.text = NearDoor >= 0 && !DoorOpen[NearDoor] ? "Chapter " + (NearDoor + 1) + ": the door is shut" : NearDoor >= 0 ? "Chapter " + (NearDoor + 1) + ": " + Story.Chapters[NearDoor].Title : NearBoard ? "E: read the chapter board" : "WASD: walk. Doors along the back wall. Board on the left.";
+            prompt.text = NearDoor >= 0 && !DoorOpen[NearDoor] ? "Chapter " + (NearDoor + 1) + ": the door is shut" : NearDoor >= 0 ? "Chapter " + (NearDoor + 1) + ": " + Story.Chapters[NearDoor].Title : NearBoard ? "E: read the chapter board" : NearLodger >= 0 ? "E: talk to " + Story.Lodgers[NearLodger].Name : ErrandCarried ? "Carrying the " + Story.Errands[ErrandActive].Thing + ". Take it to Chime." : "WASD: walk. Doors along the back wall. Board on the left, lodgers about the room.";
             if (NearBoard && (PlayInput.GetKeyDown(KeyCode.E) || PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter))) {
                 OpenBoard();
             }
@@ -493,6 +693,12 @@ public class ChapterHub : MonoBehaviour {
             CampaignProgress.Ability a = CampaignProgress.Abilities[i];
             sb.Append("\n").Append(level >= a.Level ? a.Name + ": " + a.Blurb : "LV " + a.Level + ": ???");
         }
+        sb.Append("\nLOST THINGS ").Append(CountBits(slot.errands)).Append("/").Append(Story.Errands.Length).Append(":");
+        for (int e = 0; e < Story.Errands.Length; e++) {
+            if ((slot.errands & (1 << e)) != 0) {
+                sb.Append(" ").Append(Story.Errands[e].Thing).Append(",");
+            }
+        }
         return sb.ToString();
     }
 
@@ -534,6 +740,8 @@ public class ChapterHub : MonoBehaviour {
 
         speech = scene.Label(root, "", 34, FontStyle.BoldAndItalic, Color.white, 0f, 0f, 60f);
         Corner(speech.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 190f), new Vector2(1500f, 64f));
+        talk = scene.Label(root, "", 30, FontStyle.Bold, Color.white, 0f, 0f, 120f);
+        Corner(talk.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 250f), new Vector2(1500f, 120f));
         prompt = scene.Label(root, "", 32, FontStyle.Bold, new Color(1f, 0.82f, 0.38f), 0f, 0f, 50f);
         Corner(prompt.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 110f), new Vector2(1100f, 56f));
 

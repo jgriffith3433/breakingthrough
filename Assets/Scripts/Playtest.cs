@@ -42,6 +42,7 @@ public static class Playtest {
         new PlaytestScenario("hub", "The hub and Campaign progression, played with real input (setup: the sandbox case file 1 starts on chapter 1 with 85 XP, 5 short of level 3; the real save and Arcade are never touched): Campaign, case file 1, Begin on Chapter 1; the first kills give XP (HUD line LV/XP) and level 3 unlocks Refund (events xp-gain, level-up); the bot presses C near the bots and the ring shoves and stings them (event refund-used); the Courier falls, the Chapter Complete card offers To the hub; the bot presses it and lands in the hub (Wallit, Slice in the ring, the chapter board; events hub-open, hub-arrival), walks to the board on the stick and presses E (hub-walk, board-open: Chapter 1 filed and replayable, Chapter 2 next, Chapter 3 locked); picking Chapter 1 shows its card and Begin replays it (hub-replay-card, replay-started) without taking the file back a chapter. Checks per case file and Arcade: the XP stays on case file 1 (case file 2 has none) and Arcade's numbers read as no effect outside a chapter (events progress-saved, arcade-clean; metrics hubXp, hubLevel, refundHits, hubWalked)", 900, "content"),
         new PlaytestScenario("moves", "Campaign's combat moves, played with real input in Chapter 1 (the sandbox case file; the real save and Arcade are never touched): the bot swings the bat three times in a row and each hit of the combo is its own (Deposit, Withdrawal, Overdraft: damage, knockback and crack differ; events combo-hit, combo-distinct); it then fights on pressing X (the dodge) whenever a bot is close, and a blow that lands inside the dodge's 0.4 s window is avoided (events dodge, dodge-avoided, ability-slots with X Dodge, C Refund and the empty V slot). The Courier fight then runs as in the campaign scenario. Arcade is checked unchanged: outside a chapter the dodge, the per-hit combo and the slots read as no effect (event arcade-moves-clean; metrics comboHits, dodges, dodgesAvoided)", 600, "content"),
         new PlaytestScenario("abilities", "Campaign's three new abilities, played with real input in Chapter 1 (setup: the sandbox case file starts 1 XP short of level 4, and again short of 5 and 6 as each unlocks; the real save and Arcade are never touched): the HUD's second line shows each slot with its key and cooldown (V: LV 4 locked, then Coin Toss ready / 4 s, B Stamp Out ready / 14 s, G Escrow ready / 20 s; events slot-line); each unlock is announced as it is earned (level-up, unlock-level); the bot presses V and a thrown coin stings a bot from range (event toss-hit), presses B with bots close and they are stunned and stung (event stamp-hit), presses G and a blow that lands is held (event escrow-held); a cooldown is seen counting down on the HUD (event cooldown-shown); the case file keeps the unlocks after a save round trip and after leaving to the menu (events unlock-saved, unlock-kept; metrics tosses, tossHits, stamps, stampedBots, shields, shieldBlocks, unlockMask). Arcade is unchanged (event arcade-moves-clean)", 900, "content"),
+        new PlaytestScenario("hub-npcs", "The hub's lodgers, with real input (setup: the sandbox case file 1 has chapter 1 filed and opens in the hub; later chapters are filed by setup shortcuts, never the real save): four lodgers stand in the office, none of them Warrok (hub-lodgers); Wallit walks to each and presses E, and each speaks its line for one chapter cleared (npc-line); Chime sends him for a lost thing (errand-offered), he walks to it (errand-pickup) and back, and Chime pays XP and the lost thing joins the file (errand-paid, with the XP before and after and the thing kept). Then setup files chapters 2 to 6 one by one and Tick is talked to again after each, every lodger's line must differ from the one before (npc-after-chapter; metrics lodgers, linesDiffer, errandXp, lostThings)", 300, "content"),
         new PlaytestScenario("hub-doors", "The hub as a walkable office, with real input (setup: the sandbox case file 1 has chapters 1 and 2 filed and opens in the hub; the real save is never touched): Wallit walks about the room to the chapter board and the vacant desk (hub-walk), doors 1 to 3 stand open and 4 to 6 stay shut (hub-office), pushing on shut door 4 does not get him through (door-locked), walking into open door 3 shows that chapter's card (door-entered) and Begin starts it (chapter-started); metrics doorsRight, hubWalked, lockedHeld", 300, "content"),
         new PlaytestScenario("maps-123", "Chapters 1, 2 and 3 each load a visibly different map with a route, a landmark and a hazard or set piece (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; event map-loaded, map-lighting (fog and sky differ), map-features (one route:, landmark: and hazard: line each from the map's own list, a problem if any is missing), map-objective (the objective marker's distance from the end of the route: it must stand on the route; chapter 1's objective is the circle), then Wallit walks on the stick and the chapter is left. Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard. Play the whole objective of chapters 2 and 3 with the chapter2 and chapter3 scenarios.", 420, "content"),
         new PlaytestScenario("maps-456", "Chapters 4, 5 and 6 each load a visibly different map (the Long Walk, the Reading Room, the changed Hollow) with a route, a landmark, a hazard or set piece and a boss arena away from the route (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; events map-loaded, map-lighting (fog and sky differ), map-features (route:, landmark:, hazard:, arena: lines from the map's own list; a problem if any is missing), map-arena (the arena's distance and its angle away from the route: over 90 degrees), map-objective, then Wallit walks and the chapter is left. A boss is then called with the director (named setup shortcut) and must walk out of the arena: event arena-boss (spawn distance from the arena centre; a problem over 8 m). Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard, mapsWithArena. Play each whole objective with the chapter4, chapter5 and chapter6 scenarios.", 600, "content"),
@@ -228,16 +229,17 @@ public static class Playtest {
                 }
                 yield break;
             }
-            if (id == "campaign" || id == "campaign-full" || id == "hub" || id == "moves" || id == "abilities" || id == "hub-doors" || id == "cutscene" || id == "chapter2" || id == "companion" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
+            if (id == "campaign" || id == "campaign-full" || id == "hub" || id == "moves" || id == "abilities" || id == "hub-doors" || id == "hub-npcs" || id == "cutscene" || id == "chapter2" || id == "companion" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
                 companionTest = id == "companion";
                 watchCutscene = id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5";
                 hubTest = id == "hub";
                 movesTest = id == "moves";
                 abilitiesTest = id == "abilities";
                 hubDoors = id == "hub-doors";
+                hubNpcs = id == "hub-npcs";
                 fullRun = id == "campaign-full";
                 quitDone = false;
-                startChapter = id == "hub-doors" ? 2 : id == "chapter6" ? 5 : id == "chapter5" ? 4 : id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" || id == "companion" ? 1 : 0;
+                startChapter = id == "hub-doors" ? 2 : id == "hub-npcs" ? 1 : id == "chapter6" ? 5 : id == "chapter5" ? 4 : id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" || id == "companion" ? 1 : 0;
                 yield return CampaignRun();
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
@@ -555,6 +557,7 @@ public static class Playtest {
     static bool movesTest;
     static bool abilitiesTest;
     static bool hubDoors;
+    static bool hubNpcs;
     static bool fullRun;
     static bool quitDone;
 
@@ -585,7 +588,7 @@ public static class Playtest {
             setup.xp = CampaignProgress.XpAt(4) - 1;
             run.Event("abilities-setup", "sandbox case file 1 on chapter 1 with " + setup.xp + " XP (level " + CampaignProgress.LevelFor(setup.xp) + ")");
         }
-        if (hubDoors) {
+        if (hubDoors || hubNpcs) {
             ChapterScene.HubNext = true;
         }
         MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
@@ -621,6 +624,10 @@ public static class Playtest {
         float seconds = Time.realtimeSinceStartup - tapped;
         if (hubDoors) {
             yield return HubDoorsPlay();
+            yield break;
+        }
+        if (hubNpcs) {
+            yield return HubNpcsPlay();
             yield break;
         }
         run.Scene("Chapter " + (ChapterScene.Instance.Chapter + 1));
@@ -1424,6 +1431,109 @@ run.Event("boss-defeated", "The Courier fell after " + Mathf.RoundToInt(chapter.
             run.Problem(PlaytestSeverity.Bug, "hub-doors: the door of chapter 3 started chapter " + (ChapterRun.Instance.Chapter + 1));
         }
         yield return new WaitForSecondsRealtime(3f);
+    }
+
+    // The hub's lodgers, with real input. Setup: the sandbox case file 1 has chapter 1 filed. Wallit walks to each lodger and
+    // presses E; Chime's errand is taken, fetched and paid; then chapters 2 to 6 are filed by setup shortcuts and Tick (and the
+    // others' lines) must say something new after each.
+    static IEnumerator HubNpcsPlay() {
+        yield return run.Until(() => ChapterScene.Instance.Hub != null && ChapterScene.Instance.Hub.Shown, 20f, "the hub");
+        if (run.Done) {
+            yield break;
+        }
+        ChapterHub hub = ChapterScene.Instance.Hub;
+        run.Scene("Hub lodgers");
+        run.Metric("campaignLoaded", 1);
+        yield return new WaitForSecondsRealtime(2f);
+        var names = new System.Text.StringBuilder();
+        bool warrok = false;
+        for (int i = 0; i < hub.LodgerCount; i++) {
+            names.Append(hub.LodgerName(i)).Append(i < hub.LodgerCount - 1 ? ", " : "");
+            if (hub.LodgerName(i).ToLowerInvariant().Contains("warrok")) {
+                warrok = true;
+            }
+        }
+        run.Metric("lodgers", hub.LodgerCount);
+        run.Event("hub-lodgers", hub.LodgerCount + " lodgers in the hub: " + names + "; Warrok among them: " + warrok);
+        CheckScreen("hub");
+        if (hub.LodgerCount < 3 || hub.LodgerCount > 5 || warrok) {
+            run.Problem(PlaytestSeverity.Bug, "hub-npcs: " + hub.LodgerCount + " lodgers (want 3 to 5, none Warrok): " + names);
+        }
+        // 1. Walk to each lodger and talk to it, after one chapter cleared.
+        for (int i = 0; i < hub.LodgerCount && !run.Done; i++) {
+            int index = i;
+            yield return WalkTo(hub, ChapterHub.LodgerSpots[i] + new Vector3(0f, 0f, -1.5f), 20f, () => hub.NearLodger == index);
+            int talks = hub.Talks;
+            PlayInput.Tap(KeyCode.E);
+            yield return new WaitForSecondsRealtime(0.4f);
+            run.Event("npc-line", "1 cleared, " + hub.LodgerName(i) + ": " + hub.TalkText + " (E pressed " + (hub.Talks > talks ? "and they spoke" : "and nothing happened") + ")");
+            if (hub.Talks <= talks) {
+                run.Problem(PlaytestSeverity.Bug, "hub-npcs: pressing E beside " + hub.LodgerName(i) + " did nothing");
+            }
+            if (i == ChapterHub.ChimeIndex) {
+                break;
+            }
+            yield return new WaitForSecondsRealtime(0.6f);
+        }
+        // 2. Chime's errand: offered, fetched, paid.
+        int xpBefore = CampaignSave.Get(0).xp;
+        bool offered = hub.ErrandActive == 0;
+        run.Event("errand-offered", "Chime sent Wallit for " + (offered ? Story.Errands[0].Thing : "nothing") + " (XP now " + xpBefore + "); the thing lies at " + hub.ErrandItemAt.ToString("0.0"));
+        if (!offered) {
+            run.Problem(PlaytestSeverity.Bug, "hub-npcs: Chime did not offer an errand after chapter 1");
+        }
+        yield return WalkTo(hub, hub.ErrandItemAt, 25f, () => hub.ErrandCarried);
+        run.Event("errand-pickup", "Wallit " + (hub.ErrandCarried ? "picked up the " + Story.Errands[0].Thing : "never found the lost thing") + " at " + hub.Player.position.ToString("0.0") + "; prompt: " + hub.PromptText);
+        if (!hub.ErrandCarried) {
+            run.Problem(PlaytestSeverity.Bug, "hub-npcs: Wallit could not pick up Chime's lost thing");
+        }
+        yield return WalkTo(hub, ChapterHub.LodgerSpots[ChapterHub.ChimeIndex] + new Vector3(0f, 0f, -1.5f), 25f, () => hub.NearLodger == ChapterHub.ChimeIndex);
+        PlayInput.Tap(KeyCode.E);
+        yield return new WaitForSecondsRealtime(0.4f);
+        int xpAfter = CampaignSave.Get(0).xp;
+        bool kept = (CampaignSave.Get(0).errands & 1) != 0;
+        run.Metric("errandXp", xpAfter - xpBefore);
+        run.Metric("lostThings", hub.ErrandsDone);
+        run.Event("errand-paid", hub.TalkText + " XP " + xpBefore + " -> " + xpAfter + "; lost thing kept in the file: " + kept + "; the status line reads: " + hub.StatusText.Replace('\n', '|'));
+        if (xpAfter - xpBefore != Story.Errands[0].Xp || !kept) {
+            run.Problem(PlaytestSeverity.Bug, "hub-npcs: the errand paid " + (xpAfter - xpBefore) + " XP and the thing " + (kept ? "was" : "was not") + " kept (want " + Story.Errands[0].Xp + " and kept)");
+        }
+        yield return new WaitForSecondsRealtime(1.5f);
+        // 3. Lines after each chapter. Setup shortcut: the sandbox file is filed chapter by chapter; Tick is talked to each time.
+        var last = new string[hub.LodgerCount];
+        for (int i = 0; i < last.Length; i++) {
+            last[i] = hub.LodgerLine(i);
+        }
+        bool differ = true;
+        yield return WalkTo(hub, ChapterHub.LodgerSpots[0] + new Vector3(0f, 0f, -1.5f), 25f, () => hub.NearLodger == 0);
+        for (int cleared = 2; cleared <= 6 && !run.Done; cleared++) {
+            CampaignSave.Get(0).cleared = cleared;
+            CampaignSave.Get(0).chapter = Mathf.Min(cleared, CampaignSave.ChapterCount - 1);
+            CampaignSave.Get(0).reached = CampaignSave.Get(0).chapter;
+            hub.Refresh();
+            run.Event("npc-setup", "sandbox case file 1 now has " + cleared + " chapters filed");
+            PlayInput.Tap(KeyCode.E);
+            yield return new WaitForSecondsRealtime(0.4f);
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < hub.LodgerCount; i++) {
+                string line = hub.LodgerLine(i);
+                if (line == last[i]) {
+                    differ = false;
+                    run.Problem(PlaytestSeverity.Bug, "hub-npcs: " + hub.LodgerName(i) + " said the same after chapter " + cleared + " as before");
+                }
+                last[i] = line;
+                sb.Append(hub.LodgerName(i)).Append(": \"").Append(line).Append("\"  ");
+            }
+            run.Event("npc-after-chapter", cleared + " cleared. On screen: " + hub.TalkText + "  All: " + sb);
+            yield return new WaitForSecondsRealtime(1f);
+        }
+        run.Metric("linesDiffer", differ ? 1 : 0);
+        // Chime has a new errand once a chapter more is filed.
+        yield return WalkTo(hub, ChapterHub.LodgerSpots[ChapterHub.ChimeIndex] + new Vector3(0f, 0f, -1.5f), 25f, () => hub.NearLodger == ChapterHub.ChimeIndex);
+        PlayInput.Tap(KeyCode.E);
+        yield return new WaitForSecondsRealtime(0.4f);
+        run.Event("errand-next", "Chime after six chapters: " + hub.TalkText + " (errand out: " + hub.ErrandActive + ")");
+        yield return new WaitForSecondsRealtime(2f);
     }
 
     // Chapter 2 with real input: out to the gate (batting what is in reach on the way), the gate scene read and skipped,

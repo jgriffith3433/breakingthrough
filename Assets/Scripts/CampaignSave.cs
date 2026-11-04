@@ -19,6 +19,7 @@ public static class CampaignSave {
         public long saved;       // UTC ticks of the last save
         public int xp;           // Campaign XP earned in this file's fights (CampaignProgress): level and abilities follow from it
         public int unlocked;     // bit per CampaignProgress.Abilities row, set at the level-up that unlocked it
+        public int errands;      // bit per chapter: Chime's errand done and the lost thing (Story.Errands) kept
     }
 
     [Serializable]
