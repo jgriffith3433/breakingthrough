@@ -112,7 +112,7 @@ public class CampaignPanel : MonoBehaviour {
         for (int i = 0; i < CampaignSave.SlotCount; i++) {
             CampaignSave.Slot slot = CampaignSave.Get(i);
             slotTitles[i].text = "Case file " + (i + 1) + (slot.used ? ": " + CampaignSave.Describe(slot) : "");
-            slotInfo[i].text = slot.used ? CampaignSave.Clock(slot) + "  |  " + CampaignSave.Completion(slot) + "  |  Lore " + Lore.UnlockedCount(slot) + "/" + Lore.All.Length + "  |  " + (Journal.PaidInFull(slot) ? Journal.PaidTitle : "Journal " + (Journal.FindCount(slot) + Journal.GoalCount(slot)) + "/" + (Journal.Count * 2)) : "No file yet. Press to open a new one.";
+            slotInfo[i].text = slot.used ? CampaignSave.Clock(slot) + "  |  " + CampaignSave.Completion(slot) + "  |  Lore " + Lore.UnlockedCount(slot) + "/" + Lore.All.Length + "  |  " + (Journal.PaidInFull(slot) ? Journal.PaidTitle : "Journal " + (Journal.FindCount(slot) + Journal.GoalCount(slot)) + "/" + (Journal.Count * 2)) + (slot.hard ? "  |  HARD" : "") : "No file yet. Press to open a new one.";
             slotImages[i].color = slot.used ? new Color(0.3f, 0.24f, 0.12f, 1f) : new Color(0.14f, 0.15f, 0.21f, 1f);
             EraseButtons[i].gameObject.SetActive(slot.used);
             eraseLabels[i].text = armedErase == i ? "Sure?" : "Erase";
