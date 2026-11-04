@@ -23,33 +23,113 @@ public static class CampaignSave {
         public int lore;         // bit per Lore.All row, set when the story reveals it (the file keeps its own log)
     }
 
+    // Save format. 1: the first files (no stamp on the oldest; no xp, unlocks, errands or lore bits). 2: stamped, every
+    // field checked on load, the lore log derived from the chapters filed. Bump it with a step in Migrate.
+    public const int Version = 2;
+    const string BadKey = "hawkes.campaign.bad";
+
     [Serializable]
     class Data {
-        public int version = 1;
+        public int version;   // 0 when the JSON has none: the oldest files
         public int last = -1;
-        public Slot[] slots = new Slot[SlotCount];
+        public Slot[] slots;
     }
 
     static Data data;
+    static string sandboxJson;
+
+    // What the last load did, for the case files panel and the playtest: "" (nothing to say), "migrated" or "corrupt".
+    public static string LoadResult { get; private set; } = "";
+    public static int LoadedVersion { get; private set; } = Version;
+    // A line for the player, shown once on the case files; empty when the load was clean.
+    public static string Notice { get; private set; } = "";
+    public const string CorruptNotice = "Case files unreadable. The Department filed new ones.";
+    public const string MigratedNotice = "Old case files found. The Department updated them.";
 
     // The file the chapter scene is playing; -1 when none is open.
     public static int Active { get; private set; } = -1;
+
+    public static void AckNotice() {
+        Notice = "";
+    }
+
+    // Reads save text into files. Never throws: text that is not a save (garbage, a cut-off write, the wrong shape)
+    // gives null and the caller starts clean.
+    static Data Parse(string json) {
+        Data parsed;
+        try {
+            parsed = JsonUtility.FromJson<Data>(json);
+        } catch (Exception) {
+            return null;
+        }
+        return parsed != null && parsed.slots != null && json.TrimStart().StartsWith("{") ? parsed : null;
+    }
+
+    // Brings an older file up to Version and makes every field safe. Returns whether anything was older.
+    static bool Migrate(Data d) {
+        bool older = d.version < Version;
+        if (d.version < 2) {
+            // v1: no lore bits were kept, and the numbers were never checked. Rebuild what can be derived.
+            string[] keep = Lore.LastUnlocked;
+            for (int i = 0; i < d.slots.Length; i++) {
+                Slot s = d.slots[i];
+                if (s == null || !s.used) {
+                    continue;
+                }
+                Lore.Unlock(s, Mathf.Clamp(s.cleared, 0, ChapterCount));
+            }
+            Lore.LastUnlocked = keep;
+        }
+        for (int i = 0; i < d.slots.Length; i++) {
+            Slot s = d.slots[i];
+            if (s == null) {
+                continue;
+            }
+            s.cleared = Mathf.Clamp(s.cleared, 0, ChapterCount);
+            s.chapter = Mathf.Clamp(s.chapter, 0, ChapterCount - 1);
+            s.reached = Mathf.Clamp(Mathf.Max(s.reached, s.chapter), 0, ChapterCount - 1);
+            s.xp = Mathf.Max(0, s.xp);
+            s.seconds = float.IsNaN(s.seconds) || float.IsInfinity(s.seconds) ? 0f : Mathf.Max(0f, s.seconds);
+        }
+        d.version = Version;
+        return older;
+    }
 
     static void Ensure() {
         if (data != null) {
             return;
         }
-        data = null;
-        string json = MetaProgress.Sandbox ? "" : PlayerPrefs.GetString(Key, "");
+        string json = MetaProgress.Sandbox ? sandboxJson : PlayerPrefs.GetString(Key, "");
+        LoadResult = "";
+        LoadedVersion = Version;
+        Notice = "";
         if (!string.IsNullOrEmpty(json)) {
-            try {
-                data = JsonUtility.FromJson<Data>(json);
-            } catch (Exception) {
-                data = null;
+            data = Parse(json);
+            if (data == null) {
+                // Unreadable: keep the bad text aside (never over a good copy), start clean and say so.
+                LoadResult = "corrupt";
+                Notice = CorruptNotice;
+                if (!MetaProgress.Sandbox) {
+                    PlayerPrefs.SetString(BadKey, json);
+                    PlayerPrefs.DeleteKey(Key);
+                    PlayerPrefs.Save();
+                }
+            } else {
+                LoadedVersion = data.version;
+                if (data.version > Version) {
+                    // Saved by a newer build: leave it be, read what we know.
+                    LoadResult = "newer";
+                } else if (Migrate(data)) {
+                    LoadResult = "migrated";
+                    Notice = MigratedNotice;
+                    if (!MetaProgress.Sandbox) {
+                        PlayerPrefs.SetString(Key + ".v" + LoadedVersion, json);   // the old text, kept once
+                    }
+                }
             }
         }
         if (data == null) {
-            data = new Data();
+            data = new Data { version = Version };
         }
         if (data.slots == null || data.slots.Length != SlotCount) {
             var fixedSlots = new Slot[SlotCount];
@@ -63,13 +143,28 @@ public static class CampaignSave {
                 data.slots[i] = new Slot();
             }
         }
+        if (LoadResult == "migrated") {
+            Save();   // the updated files are written at once; the old text is kept under its version
+        }
     }
 
     // Playtest setup: forget what is in memory and keep it there (see EnterSandbox).
     public static void EnterSandbox() {
+        EnterSandbox(null);
+    }
+
+    // Playtest setup: the same, with save text standing where the stored files would (an old format, a corrupt one).
+    public static void EnterSandbox(string json) {
+        sandboxJson = json;
         data = null;
         Active = -1;
         Ensure();
+    }
+
+    // Playtest: the files as they would be written now.
+    public static string ToText() {
+        Ensure();
+        return JsonUtility.ToJson(data);
     }
 
     public static Slot Get(int index) {
@@ -175,8 +270,8 @@ public static class CampaignSave {
     }
 
     static void Save() {
-        if (MetaProgress.Sandbox) {
-            return;
+        if (MetaProgress.Sandbox || LoadResult == "newer") {
+            return;   // a file from a newer build is never written over by this one
         }
         PlayerPrefs.SetString(Key, JsonUtility.ToJson(data));
         PlayerPrefs.Save();
