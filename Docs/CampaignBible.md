@@ -219,3 +219,19 @@ Each has the answer this bible assumes, so the work can go on unless J overrules
 - Chapter scenes (spaces for 2 to 5) need level layout, models for the Floor and Reading Room, and cutscene art.
 - A `campaign` playtest scenario once chapters exist (extends `modes`).
 - GPU work (key art, cutscene stills, chapter backdrops, models): not started. See the estimate in the PR summary.
+
+
+## Maps for chapters 1 to 3 (built)
+
+Each map is a `ChapterMap` layout (stand-in blocks, no colliders, nothing solid in the playfield) with a route, landmarks
+and one hazard or set piece. The route follows the chapter's own data, so the way drawn is the way walked.
+
+- **Ch. 1, the Moonlit Hollow:** stepping-stone trail (bearing 20) out to the **Fallen Mailbox** with its red RETURN TO
+  SENDER stamp; ring of nine standing stones; set piece: the **Mist Bog** of dead trunks to the west.
+- **Ch. 2, the edge of the Hollow:** chalk road with paired lamps from the circle to the gate (the gate's bearing and
+  distance); the Department wall off either side; **Slice's radius** painted as a red ring; hazard: the **stamp press**
+  beside the road, its plate falling on a red INVALID mark.
+- **Ch. 3, the Clearing Floor:** lit yard path through the Floor's stops; six **hook gantries** with chassis; two belts of
+  cleared things (hat, clock, bell) sliding along the route; hazard: three **crushers** slamming in turn.
+
+The bible's own models (GPU work) are not made; the stand-ins are plain blocks.
