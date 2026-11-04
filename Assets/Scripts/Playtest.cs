@@ -38,6 +38,7 @@ public static class Playtest {
         new PlaytestScenario("modes", "The mode select: the main menu shows Campaign and Arcade; Campaign opens the three case files (save slots, setup: the sandbox keeps them off the real save), opening an empty file loads the placeholder Chapter 1 scene with Wallit and Slice's lines, Menu returns and the file now reads Chapter 1 with its time on the books, Erase (asked twice) empties it; then Arcade starts today's wave defense and the bot plays 40 s of it with the bat. Events mode-select, campaign-files, chapter-open, chapter-lines, campaign-saved, campaign-erased, arcade-start", 200, "content"),
         new PlaytestScenario("cutscene", "The chapter cutscene: Campaign, case file 1, Begin on the Chapter 1 card, and the opening scene (The Stamp) plays over the map with letterbox bars, a speaker name and portrait slot, typed lines and the camera on whoever talks. The bot reads the first pages with real key presses (a first press finishes the typing, the next turns the page), skipping a page's voice by pressing on, then presses Enter to skip the rest: play starts with the objective line up and Wallit moving on the stick, and the chapter is cleared. Checked: every Wallit, Slice and Yo Bot page has a name, two voice lines never overlap (Wallit's floor and the scene both count them), the director allows no other line during the scene. Events cutscene-open, cutscene-page (speaker, text, camera focus, letterbox, voice), cutscene-skip, cutscene-play, cutscene-voice; metrics cutscenePages, cutsceneVoiceLines, cutsceneOverlaps, cutsceneSkipped", 420, "content"),
         new PlaytestScenario("campaign", "Campaign loads and plays a chapter: from the main menu press Campaign, open case file 1 (setup: the sandbox keeps the files off the real save) and wait for the Campaign scene to load. Reports run_start with mode=campaign and the loaded scene name (event run_start, metrics campaignLoaded, campaignLoadSeconds); if the scene fails to load (not in the build's scene list, or the chapter never builds) the run stops stuck with a bug saying so. Then Begin on the chapter card: Wallit and Slice in the chapter map, Wallit walks on the stick, the objective line shows, the bot fights with real input until it is met, Chapter 1 holds the circle against Yo Bots, then the Courier arrives (health bar on screen), winds up telegraphed notices on the circle and the bot breaks them or stands in them until it falls and the defeat beat plays; the Chapter Complete card shows, the case file advances to chapter 2, Menu, and reopening the file resumes at chapter 2 (events chapter-card, chapter-start, chapter-move, objective, boss-arrives, boss-bar, boss-attack, boss-defeated, defeat-beat, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics chapterAdvanced, chapterResumed, bossBar, courierWinds, courierInterrupted). Smoke is unchanged: it still presses Arcade", 750, "content"),
+        new PlaytestScenario("chapter4", "Chapter 4, The Process Servers, played start to finish with real input (setup: the sandbox case file starts on chapter 4): Campaign, case file 1, Begin on the Chapter 4 card; the opening dialogue says where Spider Bots come from (process servers, deliveries from the Department with one paper to hand over; the bot reads pages then skips with Enter); the objective reads Reach the first lamp (1 of 3) with metres counting down; Wallit walks the three lamps along the causeway under fire, batting what is in reach; at the last lamp the way turns round to the circle; Wallit walks home and holds off the servers; then The Server (a Spider Bot with a paper, boss bar up) arrives and offers the paper, and does NOT strike: Wallit refuses it by hitting it (objective reads Refuse the paper n / 3, events server-offer and server-refused 1, 2, 3); only after the third refusal it winds up and strikes Slice (server-strike), then falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 5, Menu, and reopening the file shows Chapter 5's card (events chapter4-setup, cutscene-open, cutscene-page, origin-dialogue, objective, floor-stop, last-lamp, home-leg, boss-arrives, boss-bar, server-offer, server-refused, server-strike, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics floorStops, serverOffers, serverRefusals, serverStruckEarly, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("chapter3", "Chapter 3, The Clearing Floor, played start to finish with real input (setup: the sandbox case file starts on chapter 3): Campaign, case file 1, Begin on the Chapter 3 card; the opening dialogue plays over the map and says where Yo Bots come from (the Clearing Crew, stamped out on the Floor; the bot reads pages then skips with Enter); the objective line reads Reach the broken gate (1 of 3) with metres counting down; Wallit walks the three stops (the broken gate, the belt with The Belt scene read and skipped, the lever) under fire from Yo Bots, batting those in reach; at the lever the belt feed breaks and the objective turns to Back to the circle; Wallit walks home, holds off the last batch, then The Foreman (order sheet on its chest, with a boss bar) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 4, Menu, and reopening the file shows Chapter 4's card (events chapter3-setup, cutscene-open, cutscene-page, origin-dialogue, objective, floor-stop, floor-scene-skip, feed-broken, home-leg, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics floorStops, feedBroken, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("chapter2", "Chapter 2, No Fixed Address, played start to finish with real input (setup: the sandbox case file starts on chapter 2): Campaign, case file 1, Begin on the Chapter 2 card; the opening dialogue plays over the map (the bot reads pages, then skips it with Enter); the objective line reads Reach the gate with its metres counting down; Wallit walks out to the gate under fire from Yo Bots, batting those in reach; at the gate The Gate scene plays (read a few pages, then skipped), the objective turns to Back to the circle, Wallit walks home, three waves are held at the circle (objective Hold the circle, wave n of 3), then The Plated Alpha (stamped INVALID, with a boss bar) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 3, Menu, and reopening the file shows Chapter 3's card (events chapter2-setup, cutscene-open, cutscene-page, cutscene-skip, cutscene-play, objective, gate-leg, gate-reached, gate-scene-skip, home-leg, chapter-wave, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics gateReached, gateSceneSkipped, chapterWaves, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("story", "The story: the intro over the frozen Hollow (read page by page: who Wallit is, what the circle is, why Slice must not fall; a Skip button is on it), wave 1's story beats in canon voices, then setup: the testing wave key to wave 10 and wave 30 for the boss-wave title cards and beats (Yo Bots chirpy, Wallit on money, Slice clipped), and setup: wave 30's waiting bots trimmed to the boss and Slice topped up so the bat can finish it with real swings. Clearing wave 30 plays the finale pages and the ADDRESS FILED ending screen; the bot presses Keep going into overtime. Events intro-*, beat, finale-*, ending", 600, "content"),
@@ -207,9 +208,9 @@ public static class Playtest {
                     yield break;
                 }
             }
-            if (id == "campaign" || id == "cutscene" || id == "chapter2" || id == "chapter3") {
-                watchCutscene = id == "cutscene" || id == "chapter2" || id == "chapter3";
-                startChapter = id == "chapter3" ? 2 : id == "chapter2" ? 1 : 0;
+            if (id == "campaign" || id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4") {
+                watchCutscene = id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4";
+                startChapter = id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" ? 1 : 0;
                 yield return CampaignRun();
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
@@ -845,7 +846,7 @@ public static class Playtest {
     // The Foreman. ChapterPlay carries on to the card and the saved file.
     static IEnumerator FloorPlay(CharacterMovement player, ChapterRun chapter) {
         foreach (string raw in Story.Chapters[chapter.Chapter].Cutscene) {
-            if (raw.Contains("Crew") || raw.Contains("stamped out") || raw.Contains("Stamped out")) {
+            if (raw.Contains("Crew") || raw.Contains("stamped out") || raw.Contains("Stamped out") || raw.Contains("Spider Bot") || raw.Contains("process server") || raw.Contains("Process server")) {
                 run.Event("origin-dialogue", Story.Name(Story.Speaker(raw)) + ": \"" + Story.Text(raw).Replace('\n', ' ') + "\"");
             }
         }
@@ -900,9 +901,10 @@ public static class Playtest {
             yield break;
         }
         run.Metric("floorStops", chapter.StopCount);
+        bool walk = Story.Chapters[chapter.Chapter].Walk;
         run.Metric("feedBroken", chapter.FeedBroken ? 1 : 0);
-        run.Event("feed-broken", "the lever is pulled after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s; the objective now reads \"" + chapter.ObjectiveLine + "\"");
-        if (!chapter.FeedBroken) {
+        run.Event(walk ? "last-lamp" : "feed-broken", (walk ? "the last lamp is reached after " : "the lever is pulled after ") + Mathf.RoundToInt(chapter.PlaySeconds) + " s; the objective now reads \"" + chapter.ObjectiveLine + "\"");
+        if (!walk && !chapter.FeedBroken) {
             run.Problem(PlaytestSeverity.Bug, "chapter3: the lever did not break the belt feed");
         }
         yield return new WaitForSecondsRealtime(0.5f);
@@ -937,7 +939,7 @@ public static class Playtest {
         if (run.Done) {
             yield break;
         }
-        yield return Fight(player, () => chapter.BossUp || chapter.Completed, 300f, "the last batch down and the Foreman to arrive", null, true);
+        yield return Fight(player, () => chapter.BossUp || chapter.Completed, 300f, "the last batch down and the boss to arrive", null, true);
         if (run.Done) {
             yield break;
         }
@@ -946,21 +948,55 @@ public static class Playtest {
         run.Event("boss-arrives", bossEnemy != null ? bossEnemy.Title + " (" + bossEnemy.HitsToDrop + " hits) after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s; objective \"" + chapter.ObjectiveLine + "\"" : "no boss");
         yield return new WaitForSecondsRealtime(0.6f);
         bool bar = bossEnemy != null && BossBarShows(bossEnemy.Title);
-        run.Event("boss-bar", bossEnemy != null ? bossEnemy.Title + ": health bar " + (bar ? "up" : "missing") + ", order sheet " + (bossEnemy.transform.Find("Order Sheet") != null ? "on its chest" : "missing") : "no boss");
+        run.Event("boss-bar", bossEnemy != null ? bossEnemy.Title + ": health bar " + (bar ? "up" : "missing") + (walk ? ", paper " + (bossEnemy.transform.Find("Paper") != null ? "in its claw" : "missing") : ", order sheet " + (bossEnemy.transform.Find("Order Sheet") != null ? "on its chest" : "missing")) : "no boss");
         run.Metric("bossBar", bar ? 1 : 0);
         if (!bar) {
-            run.Problem(PlaytestSeverity.Bug, "chapter3: no boss health bar for the Foreman");
+            run.Problem(PlaytestSeverity.Bug, "chapter3/4: no boss health bar for " + (walk ? "the Server" : "the Foreman"));
         }
-        yield return Fight(player, () => chapter.Completed, 420f, "the Foreman defeated", null, true);
-        if (run.Done) {
-            yield break;
+        if (walk) {
+            // The Server: it offers, waits, and does not strike. Each blow while the paper is out is a refusal.
+            int seenServer = 0;
+            bool struckEarly = false;
+            string lastObjective = "";
+            yield return Fight(player, () => {
+                for (; seenServer < Server.Events.Count; seenServer++) {
+                    string ev = Server.Events[seenServer];
+                    string kind = ev.StartsWith("offer|") ? "server-offer" : ev.StartsWith("refuse|") ? "server-refused" : "server-strike";
+                    run.Event(kind, ev + " (refusals " + Server.Refusals + " of " + Server.RefusalsNeeded + "; objective \"" + chapter.ObjectiveLine + "\")");
+                    if (ev.StartsWith("strike|") && Server.Refusals < Server.RefusalsNeeded) {
+                        struckEarly = true;
+                    }
+                }
+                if (chapter.ObjectiveLine != lastObjective && chapter.ObjectiveLine.StartsWith("Refuse")) {
+                    lastObjective = chapter.ObjectiveLine;
+                    run.Event("objective", lastObjective);
+                }
+                return chapter.Completed;
+            }, 420f, "the Server refused three times, striking, and defeated", null, true);
+            if (run.Done) {
+                yield break;
+            }
+            run.Metric("serverOffers", Server.Offers);
+            run.Metric("serverRefusals", Server.Refusals);
+            run.Metric("serverStruckEarly", struckEarly ? 1 : 0);
+            if (Server.Refusals < Server.RefusalsNeeded) {
+                run.Problem(PlaytestSeverity.Bug, "chapter4: the Server fell after only " + Server.Refusals + " refusals");
+            }
+            if (struckEarly) {
+                run.Problem(PlaytestSeverity.Bug, "chapter4: the Server struck before the paper was refused three times");
+            }
+        } else {
+            yield return Fight(player, () => chapter.Completed, 420f, "the Foreman defeated", null, true);
+            if (run.Done) {
+                yield break;
+            }
         }
         foreach (string line in ChapterRun.Events) {
             if (line.StartsWith("defeat|") || line.StartsWith("line|")) {
                 run.Event("defeat-beat", line);
             }
         }
-        run.Event("boss-defeated", "The Foreman fell after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s");
+        run.Event("boss-defeated", (walk ? "The Server" : "The Foreman") + " fell after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s");
     }
 
     static bool NearestInReach(CharacterMovement player) {
