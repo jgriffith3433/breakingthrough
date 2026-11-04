@@ -218,6 +218,12 @@ earns four abilities, all money (`CampaignProgress.cs`):
 - **Receipt** (level 4): every sixth kill, Slice is paid back 6 health.
 - **Chargeback** (level 5): +12% chance to crit with the bat.
 
+Inside the circle Wallit also has two moves of his own, **Campaign only** (`CampaignMoves.cs`; `CampaignMoves.Enabled` is the flag):
+
+- **The combo's three hits are distinct.** Deposit (a quick, light jab, 0.85x, short knock), Withdrawal (the backhand, 1.15x, shoves harder) and Overdraft! (the finisher, unchanged numbers); each has its own crack pitch and hit-stop and its name flashes on screen. Arcade's three swings stay as they were.
+- **The dodge (X):** a 6 m dash along the stick (back, with none), untouchable for 0.4 s, 0.9 s to recharge. A blow that lands inside the window, a claw, a leg stab or the Courier's stamp taken for Slice, finds nothing ("MISSED ME"), and a bot at his shoulder cannot start climbing him.
+- **Ability slots** (`CampaignProgress.SlotKeys`/`SlotFill`): X holds the dodge from the start, C takes Refund at level 3, and V is kept empty for the next ability. A new active ability is a row in `Abilities` plus a case in `CampaignProgress.Use`. Touch buttons for X and V are not made yet.
+
 Levels are 30, 90, 180 and 300 XP. The account belongs to the case file (`CampaignSave.Slot.xp`), so three files hold three Wallits;
 it is Campaign's alone. Arcade has its own boons and shop (`MetaProgress`) and none of this reaches it: outside a chapter every number
 above reads as no effect. Slice does not level; she is already what the circle is.

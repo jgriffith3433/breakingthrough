@@ -7,6 +7,13 @@ using UnityEngine;
 public static class CampaignProgress {
     public const int MaxLevel = 5;
     public const KeyCode RefundKey = KeyCode.C;
+    // Ability slots: a key each, filled from the progression. Slot 0 is the dodge from the start, slot 1 takes Refund
+    // at level 3, slot 2 is kept for the next ability (a row in Abilities with a case in Use).
+    public const int SlotCount = 3;
+    public const int SlotDodge = -2;
+    public const int SlotEmpty = -1;
+    public static readonly KeyCode[] SlotKeys = { CampaignMoves.DodgeKey, RefundKey, KeyCode.V };
+    public static readonly int[] SlotFill = { SlotDodge, 1, SlotEmpty };
     public const float RefundCooldown = 10f;
     public const float RefundRange = 8f;
 
@@ -92,6 +99,47 @@ public static class CampaignProgress {
         Receipts = 0;
         RefundReadyAt = 0f;
         killsForReceipt = 0;
+        CampaignMoves.Begin();
+    }
+
+    // "X: Dodge", "C: Refund ready", "V: empty": what a slot shows on the HUD line.
+    public static string SlotLabel(int slot) {
+        string key = SlotKeys[slot].ToString() + ": ";
+        int fill = SlotFill[slot];
+        if (fill == SlotDodge) {
+            return key + "Dodge" + (CampaignMoves.DodgeWait > 0f ? " " + Mathf.CeilToInt(CampaignMoves.DodgeWait) + " s" : "");
+        }
+        if (fill == 1 && Has(1)) {
+            float wait = RefundReadyAt - Time.time;
+            return key + (wait > 0f ? "Refund " + Mathf.CeilToInt(wait) + " s" : "Refund ready");
+        }
+        return key + "empty";
+    }
+
+    // A slot's key was pressed. True when its ability went off.
+    public static bool Use(int slot, Transform player) {
+        int fill = SlotFill[slot];
+        if (fill == SlotDodge) {
+            if (Enemy.Climbers > 0 || (PlayerGrowth.Instance != null && PlayerGrowth.Instance.Rooted)) {
+                return false;
+            }
+            Vector3 heading = CampaignDodge.Heading(player);
+            if (!CampaignMoves.TryDodge(player.position, heading)) {
+                return false;
+            }
+            CampaignDodge dash = player.GetComponentInParent<CampaignDodge>();
+            if (dash == null && ChapterRun.Instance != null) {
+                dash = ChapterRun.Instance.GetComponent<CampaignDodge>();
+            }
+            if (dash != null) {
+                dash.Go(heading);
+            }
+            return true;
+        }
+        if (fill == 1) {
+            return Refund(player.position);
+        }
+        return false;
     }
 
     public static int XpFor(Enemy foe) {
@@ -178,23 +226,31 @@ public static class CampaignProgress {
         int xp = Xp;
         int level = LevelFor(xp);
         string line = "LV " + level + "   XP " + (level >= MaxLevel ? xp + " (max)" : xp + "/" + XpAt(level + 1));
-        if (Has(1)) {
-            float wait = RefundReadyAt - Time.time;
-            line += wait > 0f ? "   Refund " + Mathf.CeilToInt(wait) + " s" : "   C: Refund ready";
+        for (int i = 0; i < SlotCount; i++) {
+            line += "   " + SlotLabel(i);
         }
         return line;
     }
 }
 
-// Rides on the ChapterRun object: Refund on its key. Waits for pauses, cards and scenes like the bat does.
+// Rides on the ChapterRun object: the ability slots on their keys (the dodge, Refund). Waits for pauses, cards and
+// scenes like the bat does.
 public class CampaignAbilities : MonoBehaviour {
+    void Awake() {
+        gameObject.AddComponent<CampaignDodge>();
+    }
+
     void Update() {
         if (!CampaignProgress.Active || PauseMenu.IsOpen || LevelUpScreen.IsOpen || StoryScreen.IsOpen || Cutscene.IsOpen || WaveDirector.IsLost || Time.timeScale == 0f) {
             return;
         }
-        if (!PlayInput.GetKeyDown(CampaignProgress.RefundKey) || PlayerGrowth.Instance == null) {
+        if (PlayerGrowth.Instance == null) {
             return;
         }
-        CampaignProgress.Refund(PlayerGrowth.Instance.transform.position);
+        for (int i = 0; i < CampaignProgress.SlotCount; i++) {
+            if (PlayInput.GetKeyDown(CampaignProgress.SlotKeys[i])) {
+                CampaignProgress.Use(i, PlayerGrowth.Instance.transform);
+            }
+        }
     }
 }

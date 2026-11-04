@@ -1338,6 +1338,9 @@ public class Enemy : MonoBehaviour
         flat.y = 0f;
         if (flat.magnitude > ClimbReach())
             return;
+        // A dodge in progress is not climbed: the bot tries again when the window closes.
+        if (CampaignMoves.Invulnerable)
+            return;
 
         climbing = true;
         SetSolid(false);
