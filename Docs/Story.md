@@ -329,6 +329,21 @@ them). Bot origins live here: Yo Bots are the Clearing Crew (Chapter 3), Spider 
 behind the order is never named in it. Unlocks are a bit per row in `CampaignSave.Slot.lore`, so never reorder or reuse a row. The case file
 slot reads its chapter, time on the books, completion ("2/6 filed (33%)") and lore count. `lore` playtest.
 
+## The journal
+
+Every Campaign chapter hides one **lost thing** out in its field and offers one **extra** it never asks for. Both are data in
+`Assets/Scripts/Journal.cs` (`Journal.Finds`, `Journal.Goals`, one row per chapter, never reordered) and kept per case file as a bit
+per chapter (`CampaignSave.Slot.finds` and `.goals`; save version 3). A lost thing is a brass tag lying 50 to 75 m from the circle,
+off the bearings the chapters use; there is no marker, only a soft ring when Wallit is near, and walking onto it keeps it at once.
+An extra is judged when the chapter is filed and the Chapter Complete card says whether it was filed or missed (it can be tried
+again from the board). Extras: Clean Hands (Slice untouched, Ch 1), Long Ball (2 home runs, Ch 2), Ground Rules (6 smash hits, Ch 3),
+Finishing Touches (12 combo finishers, Ch 4), Quick Reader (filed in 9 minutes, Ch 5), Last Word (4 home runs, Ch 6). Lost things:
+Unsent Postcard, Key With No Lock, A Cleared Hat (Brim's), Thrice-Refused Paper, Ledger Leaf, The Circle's Stamp.
+The **journal** (`JournalPanel.cs`) has three tabs, Active, Finished and Collected. J opens it in a chapter (over the pause menu,
+which also has a Journal button) and in the hub; the case files panel has a Journal button too. Every find and every extra is
+**Paid in Full**: the journal and the case file slot say PAID IN FULL and Wallit's bat wears gold bands in every chapter
+(`BatMarks`, via `Journal.GiltBat`). Voice: the Department's filing language; Slice clipped ("Clean."), Wallit on money. `journal` playtest.
+
 ## The cast file
 
 Every voice in a dialogue box is a row in `Assets/Resources/Cast/cast.json`: Wallit, Slice, the Yo Bots (Yo Bot, Mega Yo Bot,

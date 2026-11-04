@@ -28,6 +28,7 @@ public class CampaignPanel : MonoBehaviour {
     public Button[] EraseButtons { get; private set; } = new Button[CampaignSave.SlotCount];
     public Button BackButton { get; private set; }
     public Button LoreButton { get; private set; }
+    public Button JournalButton { get; private set; }
 
     const string SubtitleText = "Pick a case file. The Department keeps your place.";
     Text subtitle;
@@ -93,10 +94,10 @@ public class CampaignPanel : MonoBehaviour {
         if (laidStamp != UiFit.Stamp) {
             Layout();
         }
-        if (LorePanel.IsOpen) {
+        if (LorePanel.IsOpen || JournalPanel.IsOpen) {
             return;
         }
-        if (MenuNav.Back && Time.frameCount != LorePanel.ClosedFrame) {
+        if (MenuNav.Back && Time.frameCount != LorePanel.ClosedFrame && Time.frameCount != JournalPanel.ClosedFrame) {
             Close();
         }
     }
@@ -111,7 +112,7 @@ public class CampaignPanel : MonoBehaviour {
         for (int i = 0; i < CampaignSave.SlotCount; i++) {
             CampaignSave.Slot slot = CampaignSave.Get(i);
             slotTitles[i].text = "Case file " + (i + 1) + (slot.used ? ": " + CampaignSave.Describe(slot) : "");
-            slotInfo[i].text = slot.used ? CampaignSave.Clock(slot) + "  |  " + CampaignSave.Completion(slot) + "  |  Lore " + Lore.UnlockedCount(slot) + "/" + Lore.All.Length : "No file yet. Press to open a new one.";
+            slotInfo[i].text = slot.used ? CampaignSave.Clock(slot) + "  |  " + CampaignSave.Completion(slot) + "  |  Lore " + Lore.UnlockedCount(slot) + "/" + Lore.All.Length + "  |  " + (Journal.PaidInFull(slot) ? Journal.PaidTitle : "Journal " + (Journal.FindCount(slot) + Journal.GoalCount(slot)) + "/" + (Journal.Count * 2)) : "No file yet. Press to open a new one.";
             slotImages[i].color = slot.used ? new Color(0.3f, 0.24f, 0.12f, 1f) : new Color(0.14f, 0.15f, 0.21f, 1f);
             EraseButtons[i].gameObject.SetActive(slot.used);
             eraseLabels[i].text = armedErase == i ? "Sure?" : "Erase";
@@ -135,6 +136,15 @@ public class CampaignPanel : MonoBehaviour {
             index = CampaignSave.Get(i).used ? i : -1;
         }
         LorePanel.Open(Mathf.Max(0, index));
+    }
+
+    // The journal of the file last opened (or the first file in use).
+    void OpenJournal() {
+        int index = CampaignSave.Last;
+        for (int i = 0; index < 0 && i < CampaignSave.SlotCount; i++) {
+            index = CampaignSave.Get(i).used ? i : -1;
+        }
+        JournalPanel.Open(Mathf.Max(0, index));
     }
 
     void EraseSlot(int index) {
@@ -205,25 +215,27 @@ public class CampaignPanel : MonoBehaviour {
             eraseLabels[i].fontSize = 26;
         }
 
-        LoreButton = MakeButton(panel, "Lore log", new Vector2(260f, 88f), OpenLore, out Text loreLabel);
+        LoreButton = MakeButton(panel, "Lore log", new Vector2(220f, 88f), OpenLore, out Text loreLabel);
         loreLabel.text = "Lore log";
-        var loreRect = (RectTransform)LoreButton.transform;
-        loreRect.anchorMin = new Vector2(0.5f, 0f);
-        loreRect.anchorMax = new Vector2(0.5f, 0f);
-        loreRect.pivot = new Vector2(1f, 0f);
-        loreRect.anchoredPosition = new Vector2(-12f, 28f);
-        loreRect.sizeDelta = new Vector2(260f, 88f);
-        BackButton = MakeButton(panel, "Back", new Vector2(260f, 88f), Close, out Text backLabel);
+        BottomButton(LoreButton, -236f);
+        JournalButton = MakeButton(panel, "Journal", new Vector2(220f, 88f), OpenJournal, out Text journalLabel);
+        journalLabel.text = "Journal";
+        BottomButton(JournalButton, 0f);
+        BackButton = MakeButton(panel, "Back", new Vector2(220f, 88f), Close, out Text backLabel);
         backLabel.text = "Back";
         BackButton.GetComponent<Image>().color = new Color(0.22f, 0.38f, 0.22f, 1f);
-        var rect = (RectTransform)BackButton.transform;
-        rect.anchorMin = new Vector2(0.5f, 0f);
-        rect.anchorMax = new Vector2(0.5f, 0f);
-        rect.pivot = new Vector2(0f, 0f);
-        rect.anchoredPosition = new Vector2(12f, 28f);
-        rect.sizeDelta = new Vector2(260f, 88f);
+        BottomButton(BackButton, 236f);
         MenuNav.Attach(root, 590);
         Layout();
+    }
+
+    static void BottomButton(Button button, float x) {
+        var rect = (RectTransform)button.transform;
+        rect.anchorMin = new Vector2(0.5f, 0f);
+        rect.anchorMax = new Vector2(0.5f, 0f);
+        rect.pivot = new Vector2(0.5f, 0f);
+        rect.anchoredPosition = new Vector2(x, 28f);
+        rect.sizeDelta = new Vector2(220f, 88f);
     }
 
     void Layout() {
