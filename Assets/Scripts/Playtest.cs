@@ -36,7 +36,7 @@ public static class Playtest {
         new PlaytestScenario("locomotion", "Wallit's feet on the ground: walks, runs, starts, stops and turns free, then locked on to a Yo Bot strafes left and right, back pedals, runs at it and stops, all through the keys. Each segment logs the planted foot's slide and the hips' largest jump (`loco` events; a slide or a pop is a bug)", 75, "content"),
         new PlaytestScenario("cast", "The new cast, in 90 s: the main menu with the key art up (MenuArt, its size and that the menu shows it), What's new opened from the site over the game with the release note naming Wallit, Slice and the bots (read from releases.json), then a run where the player is Wallit with his bat, the bar says Slice, and wave 1's Yo Bots close in and are batted. The AGENTS.md and README cast text lives in the repo, not the build: the review reads it from the diff", 120, "content"),
         new PlaytestScenario("modes", "The mode select: the main menu shows Campaign and Arcade; Campaign opens the three case files (save slots, setup: the sandbox keeps them off the real save), opening an empty file loads the placeholder Chapter 1 scene with Wallit and Slice's lines, Menu returns and the file now reads Chapter 1 with its time on the books, Erase (asked twice) empties it; then Arcade starts today's wave defense and the bot plays 40 s of it with the bat. Events mode-select, campaign-files, chapter-open, chapter-lines, campaign-saved, campaign-erased, arcade-start", 200, "content"),
-        new PlaytestScenario("campaign", "Campaign loads: from the main menu press Campaign, open case file 1 (setup: the sandbox keeps the files off the real save) and wait for the Campaign scene to load. Reports run_start with mode=campaign and the loaded scene name (event run_start, metrics campaignLoaded, campaignLoadSeconds); if the scene fails to load (not in the build's scene list, or the chapter never builds) the run stops stuck with a bug saying so. Smoke is unchanged: it still presses Arcade", 90, "content"),
+        new PlaytestScenario("campaign", "Campaign loads and plays a chapter: from the main menu press Campaign, open case file 1 (setup: the sandbox keeps the files off the real save) and wait for the Campaign scene to load. Reports run_start with mode=campaign and the loaded scene name (event run_start, metrics campaignLoaded, campaignLoadSeconds); if the scene fails to load (not in the build's scene list, or the chapter never builds) the run stops stuck with a bug saying so. Then Begin on the chapter card: Wallit and Slice in the chapter map, Wallit walks on the stick, the objective line shows, the bot fights with real input until it is met, the Chapter Complete card shows, the case file advances to chapter 2, Menu, and reopening the file resumes at chapter 2 (events chapter-card, chapter-start, chapter-move, objective, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics chapterAdvanced, chapterResumed). Smoke is unchanged: it still presses Arcade", 400, "content"),
         new PlaytestScenario("story", "The story: the intro over the frozen Hollow (read page by page: who Wallit is, what the circle is, why Slice must not fall; a Skip button is on it), wave 1's story beats in canon voices, then setup: the testing wave key to wave 10 and wave 30 for the boss-wave title cards and beats (Yo Bots chirpy, Wallit on money, Slice clipped), and setup: wave 30's waiting bots trimmed to the boss and Slice topped up so the bat can finish it with real swings. Clearing wave 30 plays the finale pages and the ADDRESS FILED ending screen; the bot presses Keep going into overtime. Events intro-*, beat, finale-*, ending", 600, "content"),
         new PlaytestScenario("polish", "The final polish pass, on any screen size (run it on desktop and on the phone): the main menu, the HUD in wave 1, the level-up cards (setup: a level of bolts granted), the pause menu by its button, Resume, 40 s of real play, then the bot holds fire until Slice falls (setup: Plated Yo Bots ring her after 20 s) and the game-over panel reads Address struck off. Each screen gets a layout check (menu, hud, cards, pause, gameover), a stale-words check (no piano, keys or music-stopped words left), and a button-feel check (every button lifts on hover and sinks on press like the menu's); the audio-mix event says how many sounds played, how many stacked softer, how many were capped and how many dipped under a voice line", 420, "full"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.ai and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
@@ -556,6 +556,99 @@ public static class Playtest {
         if (run.Done) {
             yield break;
         }
+        yield return new WaitForSecondsRealtime(3f);
+        yield return ChapterPlay();
+    }
+
+    // The chapter framework, played with real input: Begin on the chapter card, Wallit and Slice in the game scene, the
+    // objective line, fighting until it is met, the Chapter Complete card, the file advanced, then reopened at chapter 2.
+    static IEnumerator ChapterPlay() {
+        ChapterScene card = ChapterScene.Instance;
+        int before = ChapterScene.Instance.Chapter;
+        run.Event("chapter-card", card.Title + ": Begin and Menu buttons " + (card.BeginButton != null ? "up" : "missing"));
+        if (card.BeginButton == null) {
+            run.Problem(PlaytestSeverity.Bug, "campaign: the chapter card has no Begin button");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        Tap(card.BeginButton.gameObject);
+        run.Event("tap", "Begin");
+        yield return run.Until(() => ChapterRun.Instance != null && WaveDirector.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the chapter's map after Begin");
+        if (run.Done) {
+            yield break;
+        }
+        ChapterRun chapter = ChapterRun.Instance;
+        run.Scene("Chapter play");
+        run.Event("chapter-start", chapter.Title + " in " + chapter.Place + ", case file " + (CampaignSave.Active + 1));
+        yield return new WaitForSecondsRealtime(2f);
+        CheckPlayerIsWallit();
+        CheckMusicianIsSlice();
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+        if (player == null) {
+            run.Problem(PlaytestSeverity.Bug, "campaign: no Wallit (CharacterMovement) in the chapter map");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        Vector3 start = player.transform.position;
+        // Move with the real stick keys for a moment, to show Wallit moves in a chapter.
+        PlayInput.Axis("Vertical", 1f);
+        yield return new WaitForSecondsRealtime(0.8f);
+        PlayInput.Axis("Vertical", 0f);
+        float walked = Vector3.Distance(start, player.transform.position);
+        run.Metric("chapterWalked", Mathf.Round(walked * 10f) / 10f);
+        run.Event("chapter-move", "Wallit moved " + walked.ToString("0.0") + " m on the stick");
+        run.Event("objective", chapter.ObjectiveLine);
+        if (string.IsNullOrEmpty(chapter.ObjectiveLine)) {
+            run.Problem(PlaytestSeverity.Bug, "campaign: the chapter shows no objective line");
+        }
+        CheckScreen("chapter-play");
+        yield return Fight(player, () => chapter.Completed, 240f, "the chapter objective met", null, true);
+        if (run.Done) {
+            yield break;
+        }
+        PlayInput.Release();
+        run.Event("objective-met", chapter.Title + " after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s: " + chapter.Progress);
+        yield return new WaitForSecondsRealtime(1.5f);
+        run.Event("chapter-complete", chapter.CardUp ? chapter.CardText.Replace("\n", " / ") : "card missing");
+        if (!chapter.CardUp) {
+            run.Problem(PlaytestSeverity.Bug, "campaign: the objective was met but no Chapter Complete card showed");
+        }
+        CheckScreen("chapter-card");
+        CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
+        run.Event("campaign-advanced", "case file now on chapter " + (slot.chapter + 1) + ", " + slot.cleared + " cleared");
+        run.Metric("chapterAdvanced", slot.chapter == before + 1 ? 1 : 0);
+        if (slot.chapter != before + 1 || slot.cleared != before + 1) {
+            run.Problem(PlaytestSeverity.Bug, "campaign: finishing chapter " + (before + 1) + " left the file on chapter " + (slot.chapter + 1) + " (" + slot.cleared + " cleared)");
+        }
+        yield return new WaitForSecondsRealtime(2f);
+
+        // Menu from the card, then reopen the file: it resumes at the next chapter.
+        Tap(chapter.MenuButton.gameObject);
+        yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu after the chapter");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Main Menu");
+        yield return new WaitForSecondsRealtime(1f);
+        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+        Tap(menu.CampaignButton.gameObject);
+        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files after the chapter");
+        if (run.Done) {
+            yield break;
+        }
+        CampaignPanel panel = CampaignPanel.Instance;
+        Text[] texts = panel.SlotButtons[0].GetComponentsInChildren<Text>();
+        run.Event("campaign-resume", texts[0].text + " / " + texts[1].text);
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(panel.SlotButtons[0].gameObject);
+        yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.Chapter == before + 1 && SceneManager.GetActiveScene().name == CampaignSave.Scene, 30f, "the next chapter's card");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Chapter " + (before + 2));
+        run.Event("chapter-open", ChapterScene.Instance.Title + " (resumed, case file " + (CampaignSave.Active + 1) + ")");
+        run.Metric("chapterResumed", 1);
+        yield return run.Until(() => ChapterScene.Instance.LinesShown >= 1, 10f, "the next chapter's first line");
         yield return new WaitForSecondsRealtime(3f);
     }
 
