@@ -40,6 +40,7 @@ public static class Playtest {
         new PlaytestScenario("campaign", "Campaign loads and plays a chapter: from the main menu press Campaign, open case file 1 (setup: the sandbox keeps the files off the real save) and wait for the Campaign scene to load. Reports run_start with mode=campaign and the loaded scene name (event run_start, metrics campaignLoaded, campaignLoadSeconds); if the scene fails to load (not in the build's scene list, or the chapter never builds) the run stops stuck with a bug saying so. Then Begin on the chapter card: Wallit and Slice in the chapter map, Wallit walks on the stick, the objective line shows, the bot fights with real input until it is met, Chapter 1 holds the circle against Yo Bots, then the Courier arrives (health bar on screen), winds up telegraphed notices on the circle and the bot breaks them or stands in them until it falls and the defeat beat plays; the Chapter Complete card shows, the case file advances to chapter 2, Menu, and reopening the file resumes at chapter 2 (events chapter-card, chapter-start, chapter-move, objective, boss-arrives, boss-bar, boss-attack, boss-defeated, defeat-beat, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics chapterAdvanced, chapterResumed, bossBar, courierWinds, courierInterrupted). Smoke is unchanged: it still presses Arcade", 750, "content"),
         new PlaytestScenario("hub", "The hub and Campaign progression, played with real input (setup: the sandbox case file 1 starts on chapter 1 with 85 XP, 5 short of level 3; the real save and Arcade are never touched): Campaign, case file 1, Begin on Chapter 1; the first kills give XP (HUD line LV/XP) and level 3 unlocks Refund (events xp-gain, level-up); the bot presses C near the bots and the ring shoves and stings them (event refund-used); the Courier falls, the Chapter Complete card offers To the hub; the bot presses it and lands in the hub (Wallit, Slice in the ring, the chapter board; events hub-open, hub-arrival), walks to the board on the stick and presses E (hub-walk, board-open: Chapter 1 filed and replayable, Chapter 2 next, Chapter 3 locked); picking Chapter 1 shows its card and Begin replays it (hub-replay-card, replay-started) without taking the file back a chapter. Checks per case file and Arcade: the XP stays on case file 1 (case file 2 has none) and Arcade's numbers read as no effect outside a chapter (events progress-saved, arcade-clean; metrics hubXp, hubLevel, refundHits, hubWalked)", 900, "content"),
         new PlaytestScenario("moves", "Campaign's combat moves, played with real input in Chapter 1 (the sandbox case file; the real save and Arcade are never touched): the bot swings the bat three times in a row and each hit of the combo is its own (Deposit, Withdrawal, Overdraft: damage, knockback and crack differ; events combo-hit, combo-distinct); it then fights on pressing X (the dodge) whenever a bot is close, and a blow that lands inside the dodge's 0.4 s window is avoided (events dodge, dodge-avoided, ability-slots with X Dodge, C Refund and the empty V slot). The Courier fight then runs as in the campaign scenario. Arcade is checked unchanged: outside a chapter the dodge, the per-hit combo and the slots read as no effect (event arcade-moves-clean; metrics comboHits, dodges, dodgesAvoided)", 600, "content"),
+        new PlaytestScenario("abilities", "Campaign's three new abilities, played with real input in Chapter 1 (setup: the sandbox case file starts 1 XP short of level 4, and again short of 5 and 6 as each unlocks; the real save and Arcade are never touched): the HUD's second line shows each slot with its key and cooldown (V: LV 4 locked, then Coin Toss ready / 4 s, B Stamp Out ready / 14 s, G Escrow ready / 20 s; events slot-line); each unlock is announced as it is earned (level-up, unlock-level); the bot presses V and a thrown coin stings a bot from range (event toss-hit), presses B with bots close and they are stunned and stung (event stamp-hit), presses G and a blow that lands is held (event escrow-held); a cooldown is seen counting down on the HUD (event cooldown-shown); the case file keeps the unlocks after a save round trip and after leaving to the menu (events unlock-saved, unlock-kept; metrics tosses, tossHits, stamps, stampedBots, shields, shieldBlocks, unlockMask). Arcade is unchanged (event arcade-moves-clean)", 900, "content"),
         new PlaytestScenario("hub-doors", "The hub as a walkable office, with real input (setup: the sandbox case file 1 has chapters 1 and 2 filed and opens in the hub; the real save is never touched): Wallit walks about the room to the chapter board and the vacant desk (hub-walk), doors 1 to 3 stand open and 4 to 6 stay shut (hub-office), pushing on shut door 4 does not get him through (door-locked), walking into open door 3 shows that chapter's card (door-entered) and Begin starts it (chapter-started); metrics doorsRight, hubWalked, lockedHeld", 300, "content"),
         new PlaytestScenario("maps-123", "Chapters 1, 2 and 3 each load a visibly different map with a route, a landmark and a hazard or set piece (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; event map-loaded, map-lighting (fog and sky differ), map-features (one route:, landmark: and hazard: line each from the map's own list, a problem if any is missing), map-objective (the objective marker's distance from the end of the route: it must stand on the route; chapter 1's objective is the circle), then Wallit walks on the stick and the chapter is left. Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard. Play the whole objective of chapters 2 and 3 with the chapter2 and chapter3 scenarios.", 420, "content"),
         new PlaytestScenario("maps-456", "Chapters 4, 5 and 6 each load a visibly different map (the Long Walk, the Reading Room, the changed Hollow) with a route, a landmark, a hazard or set piece and a boss arena away from the route (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; events map-loaded, map-lighting (fog and sky differ), map-features (route:, landmark:, hazard:, arena: lines from the map's own list; a problem if any is missing), map-arena (the arena's distance and its angle away from the route: over 90 degrees), map-objective, then Wallit walks and the chapter is left. A boss is then called with the director (named setup shortcut) and must walk out of the arena: event arena-boss (spawn distance from the arena centre; a problem over 8 m). Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard, mapsWithArena. Play each whole objective with the chapter4, chapter5 and chapter6 scenarios.", 600, "content"),
@@ -225,10 +226,11 @@ public static class Playtest {
                 }
                 yield break;
             }
-            if (id == "campaign" || id == "campaign-full" || id == "hub" || id == "moves" || id == "hub-doors" || id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
+            if (id == "campaign" || id == "campaign-full" || id == "hub" || id == "moves" || id == "abilities" || id == "hub-doors" || id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
                 watchCutscene = id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5";
                 hubTest = id == "hub";
                 movesTest = id == "moves";
+                abilitiesTest = id == "abilities";
                 hubDoors = id == "hub-doors";
                 fullRun = id == "campaign-full";
                 quitDone = false;
@@ -541,6 +543,7 @@ public static class Playtest {
     static int startChapter;
     static bool hubTest;
     static bool movesTest;
+    static bool abilitiesTest;
     static bool hubDoors;
     static bool fullRun;
     static bool quitDone;
@@ -563,6 +566,14 @@ public static class Playtest {
             setup.chapter = 0;
             setup.xp = 85;
             run.Event("hub-setup", "sandbox case file 1 on chapter 1 with " + setup.xp + " XP (level " + CampaignProgress.LevelFor(setup.xp) + ")");
+        }
+        if (abilitiesTest) {
+            // Setup shortcut: the sandbox file is 1 XP short of level 4 (Coin Toss). Never the real save.
+            CampaignSave.Slot setup = CampaignSave.Get(0);
+            setup.used = true;
+            setup.chapter = 0;
+            setup.xp = CampaignProgress.XpAt(4) - 1;
+            run.Event("abilities-setup", "sandbox case file 1 on chapter 1 with " + setup.xp + " XP (level " + CampaignProgress.LevelFor(setup.xp) + ")");
         }
         if (hubDoors) {
             ChapterScene.HubNext = true;
@@ -911,6 +922,12 @@ public static class Playtest {
                     yield break;
                 }
             }
+            if (abilitiesTest) {
+                yield return AbilitiesPlay(player, chapter);
+                if (run.Done) {
+                    yield break;
+                }
+            }
             if (movesTest) {
                 yield return MovesPlay(player, chapter);
                 if (run.Done) {
@@ -1002,7 +1019,14 @@ public static class Playtest {
             yield break;
         }
         run.Scene("Main Menu");
-        if (movesTest) {
+        if (abilitiesTest) {
+            int mask = CampaignProgress.UnlockedMask(0);
+            run.Event("unlock-kept", "back at the menu the case file still holds unlock mask " + mask + " (Coin Toss, Stamp Out, Escrow = bits 4, 5, 6)");
+            if ((mask & 0x70) != 0x70) {
+                run.Problem(PlaytestSeverity.Bug, "abilities: the case file lost its unlocks on leaving the chapter (mask " + mask + ")");
+            }
+        }
+        if (movesTest || abilitiesTest) {
             run.Event("arcade-moves-clean", "outside a chapter: moves " + (CampaignMoves.Active ? "on" : "off") + ", invulnerable " + CampaignMoves.Invulnerable + ", dodge ready " + CampaignMoves.DodgeReady + ": Arcade keeps today's controls and balance");
             if (CampaignMoves.Active || CampaignMoves.Invulnerable) {
                 run.Problem(PlaytestSeverity.Bug, "moves: Campaign's moves still read as on outside a chapter");
@@ -1087,6 +1111,98 @@ public static class Playtest {
             run.Problem(PlaytestSeverity.Bug, "moves: pressing X with bots close never started a dodge");
         } else if (CampaignMoves.Avoided == 0) {
             run.Problem(PlaytestSeverity.Bug, "moves: " + CampaignMoves.Dodges + " dodges and no blow was avoided in their window");
+        }
+    }
+
+    // The abilities scenario: each ability unlocks at its level, goes off on its key and shows its cooldown on the HUD.
+    static IEnumerator AbilitiesPlay(CharacterMovement player, ChapterRun chapter) {
+        run.Event("slot-line", CampaignProgress.HudLine().Replace("\n", " | "));
+        int seen = 0;
+        System.Action drain = () => {
+            for (; seen < CampaignProgress.Log.Count; seen++) {
+                string line = CampaignProgress.Log[seen];
+                if (line.StartsWith("levelup")) {
+                    run.Event("level-up", line);
+                } else if (line.StartsWith("toss-hit")) {
+                    run.Event("toss-hit", "a thrown coin landed: " + line);
+                } else if (line.StartsWith("toss") || line.StartsWith("stamp") || line.StartsWith("escrow")) {
+                    run.Event("ability-used", line);
+                }
+            }
+        };
+        int blocksBefore = CampaignMoves.Avoided;
+        bool cooldownSeen = false;
+        for (int stage = 4; stage <= 6 && !run.Done; stage++) {
+            int ability = stage == 4 ? CampaignProgress.AbToss : stage == 5 ? CampaignProgress.AbStamp : CampaignProgress.AbShield;
+            int slotIndex = stage - 2;
+            KeyCode key = CampaignProgress.SlotKeys[slotIndex];
+            if (CampaignProgress.Level < stage) {
+                yield return Fight(player, () => { drain(); return CampaignProgress.Level >= stage; }, 120f, "level " + stage + " from one more kill", null, true);
+                if (run.Done) {
+                    yield break;
+                }
+            }
+            drain();
+            run.Event("unlock-level", CampaignProgress.Abilities[ability].Name + " unlocked at level " + stage + " (level " + CampaignProgress.Level + ")");
+            run.Event("slot-line", CampaignProgress.HudLine().Replace("\n", " | "));
+            if (!CampaignProgress.Has(ability)) {
+                run.Problem(PlaytestSeverity.Bug, "abilities: " + CampaignProgress.Abilities[ability].Name + " did not unlock at level " + stage);
+            }
+            if (stage < 6) {
+                // The next level is 1 XP away (setup shortcut), so the next unlock happens on the next kill.
+                CampaignSave.Get(0).xp = CampaignProgress.XpAt(stage + 1) - 1;
+            }
+            int before = ability == CampaignProgress.AbToss ? CampaignProgress.TossHits : ability == CampaignProgress.AbStamp ? CampaignProgress.StampedBots : CampaignMoves.Avoided;
+            float lastPress = 0f;
+            yield return Fight(player, () => {
+                drain();
+                if (!cooldownSeen && CampaignProgress.Wait(ability) > 0.5f && CampaignProgress.HudLine().Contains(CampaignProgress.Abilities[ability].Name + " ")) {
+                    cooldownSeen = true;
+                    run.Event("cooldown-shown", CampaignProgress.HudLine().Replace("\n", " | "));
+                }
+                if (Time.realtimeSinceStartup - lastPress > 0.3f && CampaignProgress.Wait(ability) <= 0f) {
+                    float reach = ability == CampaignProgress.AbToss ? 20f : CampaignProgress.StampRange - 2f;
+                    foreach (Enemy e in Enemy.Roster) {
+                        if (e != null && e.Alive && (e.transform.position - player.transform.position).magnitude < reach) {
+                            PlayInput.Tap(key);
+                            lastPress = Time.realtimeSinceStartup;
+                            break;
+                        }
+                    }
+                }
+                int now = ability == CampaignProgress.AbToss ? CampaignProgress.TossHits : ability == CampaignProgress.AbStamp ? CampaignProgress.StampedBots : CampaignMoves.Avoided;
+                return now > before || chapter.BossUp;
+            }, 100f, CampaignProgress.Abilities[ability].Name + " to land", null, true);
+            if (run.Done) {
+                yield break;
+            }
+            drain();
+            if (ability == CampaignProgress.AbToss) {
+                run.Event("toss-result", CampaignProgress.Tosses + " tosses, " + CampaignProgress.TossHits + " landed");
+            } else if (ability == CampaignProgress.AbStamp) {
+                run.Event("stamp-hit", CampaignProgress.Stamps + " stamps stunned and stung " + CampaignProgress.StampedBots + " bots");
+            } else {
+                run.Event("escrow-held", CampaignProgress.Shields + " Escrow, " + (CampaignMoves.Avoided - blocksBefore) + " blows held");
+            }
+        }
+        if (cooldownSeen == false) {
+            run.Problem(PlaytestSeverity.Bug, "abilities: no cooldown showed on the HUD line after an ability was used");
+        }
+        run.Metric("tosses", CampaignProgress.Tosses);
+        run.Metric("tossHits", CampaignProgress.TossHits);
+        run.Metric("stamps", CampaignProgress.Stamps);
+        run.Metric("stampedBots", CampaignProgress.StampedBots);
+        run.Metric("shields", CampaignProgress.Shields);
+        run.Metric("shieldBlocks", CampaignMoves.Avoided - blocksBefore);
+        CampaignSave.Slot slot = CampaignSave.Get(0);
+        run.Metric("unlockMask", slot.unlocked);
+        var copy = JsonUtility.FromJson<CampaignSave.Slot>(JsonUtility.ToJson(slot));
+        run.Event("unlock-saved", "saved as JSON the file holds xp " + copy.xp + ", unlock mask " + copy.unlocked);
+        if (copy.unlocked != slot.unlocked || (copy.unlocked & 0x70) != 0x70) {
+            run.Problem(PlaytestSeverity.Bug, "abilities: the case file does not keep all three unlocks (mask " + copy.unlocked + ")");
+        }
+        if (CampaignProgress.TossHits == 0 || CampaignProgress.StampedBots == 0 || CampaignProgress.Shields == 0) {
+            run.Problem(PlaytestSeverity.Bug, "abilities: an ability did nothing (tosses landed " + CampaignProgress.TossHits + ", bots stamped " + CampaignProgress.StampedBots + ", escrows " + CampaignProgress.Shields + ")");
         }
     }
 

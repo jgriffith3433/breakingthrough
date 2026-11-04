@@ -1021,7 +1021,7 @@ public class ChapterRun : MonoBehaviour {
         xrect.anchorMax = new Vector2(0f, 1f);
         xrect.pivot = new Vector2(0f, 1f);
         xrect.anchoredPosition = new Vector2(24f, -150f);
-        xrect.sizeDelta = new Vector2(620f, 40f);
+        xrect.sizeDelta = new Vector2(1250f, 80f);
         xpText.alignment = TextAnchor.MiddleLeft;
 
         card = new GameObject("Chapter Complete", typeof(RectTransform));
