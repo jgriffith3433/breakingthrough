@@ -198,14 +198,16 @@ the boss `Enemy.MakeOrderBearer`; the `chapter6` playtest plays it.
 
 ## The hub and Wallit's account
 
-Between chapters the file does not drop straight onto the next card. Chapter Complete leads **to the hub**: the circle at rest, a yard
-small enough to walk across. Slice stands in the ring with her knife out; Wallit walks in from the edge and they say one line each
-about what he just did (`Story.HubArrival`, by chapters cleared: "One notice, returned. Where's my tip?" / "Board. Next case."). At the
-far side the Department has nailed up the **chapter board**, six slips, one per chapter. Walk up and press E: a chapter the file has
-cleared reads *filed (replay)* and can be played again, the one after it reads *next*, the rest read *locked*. Picking one shows its
-chapter card; Begin plays it. A replay never takes the file back: `cleared` and the chapter the file is on only move forward. A file
-with chapters behind it also has a **Hub** button on its card, so reopening a file reaches the board too. `ChapterHub.cs` builds it
-(flat, collider-free, in code); `ChapterScene.cs` owns the card it leads to.
+Between chapters the file does not drop straight onto the next card. Chapter Complete leads **to the hub**: the Department's office, one
+room with Slice's circle worn into the carpet at its middle. Slice stands in the ring with her knife out; Wallit walks in and they say
+one line each about what he just did (`Story.HubArrival`, by chapters cleared: "One notice, returned. Where's my tip?" / "Board. Next case.").
+Along the back wall there is **a door per chapter**, numbered 1 to 6. A door opens when the file reaches its chapter: filed chapters
+(amber lamp) and the next one (green lamp) stand open, the rest (dark lamp) stay shut and Wallit cannot pass them. Walk through an open
+door and that chapter's card comes up; Begin plays it. On the left wall hangs the **chapter board** of six slips: press E beside it for the
+same list (*filed (replay)*, *next*, *locked*). On the right wall is a desk with an empty chair and a plate, the spot kept for an NPC; nobody
+sits there yet. A replay never takes the file back: `cleared` and the chapter the file is on only move forward. A file
+with chapters behind it also has a **Hub** button on its card, so reopening a file reaches the office too. `ChapterHub.cs` builds it
+(flat, collider-free, in code); `ChapterScene.cs` owns the card it leads to. The `hub-doors` playtest plays it.
 
 Inside the circle Wallit is on the books, and the books keep an **account** for him: every bot he clears adds **XP** (5 for a Yo Bot, twice
 its bolts for the heavier kinds, a boss pays 50 more), shown as `LV 2   XP 34/90` top left. A level is a clause the books accept: Wallit
@@ -238,5 +240,5 @@ above reads as no effect. Slice does not level; she is already what the circle i
 - The Reading Room: a bare round hall where the Department keeps every copy of the order. The order is not signed; the stamp pressed to a page turns it DENIED and the forms go blank.
 - The Registrar: Chapter 5's boss, a gold Titan Spider Bot with a ledger that reads the pages with every leg.
 - The Server: Chapter 4's boss, the first full Spider Bot. It offers the paper and will not strike until it has been refused three times.
-- The hub: between chapters the circle is a walkable yard with Slice in the ring and a chapter board of six slips (filed, next, locked). Cleared chapters can be replayed from it.
+- The hub: between chapters the circle is a walkable office with Slice in the ring, a door per chapter (open as the file reaches it, shut after), a chapter board of six slips (filed, next, locked) and a vacant desk for an NPC. Cleared chapters can be replayed from it.
 - Wallit's account: inside the circle he is on the books, and fights add to it (XP). Levels unlock Spare Change, Refund, Receipt and Chargeback. Slice does not level. Campaign only, per case file.
