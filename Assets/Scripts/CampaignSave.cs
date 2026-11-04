@@ -14,6 +14,7 @@ public static class CampaignSave {
         public bool used;
         public int chapter;      // 0-based index into Story.Chapters: the chapter the file is on
         public int reached;      // furthest chapter opened
+        public int cleared;      // chapters finished: the Chapter Complete card was reached
         public float seconds;    // time on the books
         public long saved;       // UTC ticks of the last save
     }
@@ -114,6 +115,22 @@ public static class CampaignSave {
         return s.chapter;
     }
 
+    // The open file's chapter was finished: the file moves on to the next one (the last stays put, marked cleared).
+    // Saved at once, so leaving from the Chapter Complete card still resumes at the next chapter. Returns the chapter
+    // the file is on now.
+    public static int Complete(int chapter) {
+        if (Active < 0) {
+            return chapter;
+        }
+        Slot s = Get(Active);
+        s.cleared = Mathf.Max(s.cleared, chapter + 1);
+        s.chapter = Mathf.Clamp(Mathf.Max(s.chapter, chapter + 1), 0, ChapterCount - 1);
+        s.reached = Mathf.Max(s.reached, s.chapter);
+        Touch(s);
+        Save();
+        return s.chapter;
+    }
+
     // Adds time on the books to the open file and saves it.
     public static void Record(float seconds) {
         if (Active < 0) {
@@ -159,7 +176,8 @@ public static class CampaignSave {
         if (!s.used) {
             return "No file yet";
         }
-        return Story.Chapters[Mathf.Clamp(s.chapter, 0, ChapterCount - 1)].Title;
+        string title = Story.Chapters[Mathf.Clamp(s.chapter, 0, ChapterCount - 1)].Title;
+        return s.cleared >= ChapterCount ? title + " (filed)" : title;
     }
 
     public static string Played(Slot s) {

@@ -5,12 +5,14 @@ using UnityEngine.UI;
 
 // The Campaign's chapter scene (Assets/Campaign.unity is an empty scene; this builds everything in it). For now a
 // placeholder: the chapter card, the place, and Wallit and Slice trading the premise from Story.Chapters. The open
-// case file's time on the books is saved when you leave. Esc, M or the Menu button goes back to the main menu.
+// case file's time on the books is saved when you leave. Begin plays the chapter (ChapterRun, in the game scene); Esc,
+// M or the Menu button goes back to the main menu.
 public class ChapterScene : MonoBehaviour {
     public static ChapterScene Instance { get; private set; }
 
     // For the playtest bot.
     public Button MenuButton { get; private set; }
+    public Button BeginButton { get; private set; }
     public int Chapter { get; private set; }
     public int LinesShown { get; private set; }
     public int LineCount { get; private set; }
@@ -24,6 +26,7 @@ public class ChapterScene : MonoBehaviour {
     float startedAt;
     int shown;
     bool leaving;
+    bool handoff;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Hook() {
@@ -86,6 +89,9 @@ public class ChapterScene : MonoBehaviour {
             LinesShown = shown;
             GameAudio.Play("paper", 0.5f);
         }
+        if (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter)) {
+            BeginChapter();
+        }
         if (PlayInput.GetKeyDown(KeyCode.Escape) || PlayInput.GetKeyDown(KeyCode.M)) {
             ToMenu();
         }
@@ -98,7 +104,21 @@ public class ChapterScene : MonoBehaviour {
         }
         leaving = true;
         CampaignSave.Record(Time.unscaledTime - startedAt);
-        CampaignSave.Close();
+        if (!handoff) {
+            CampaignSave.Close();
+        }
+    }
+
+    // Plays the chapter: the file stays open for the game scene.
+    void BeginChapter() {
+        if (handoff) {
+            return;
+        }
+        handoff = true;
+        Leave();
+        GameAudio.Play("stamp", 0.6f);
+        RunAnalytics.Screen("chapter_start_" + (Chapter + 1));
+        ChapterRun.Begin(Chapter);
     }
 
     void ToMenu() {
@@ -140,13 +160,12 @@ public class ChapterScene : MonoBehaviour {
             string body = raw.Substring(2);
             string name = who == 'W' ? "Wallit" : who == 'S' ? "Slice" : who == 'Y' ? "Yo Bot" : "";
             Color tint = who == 'W' ? new Color(1f, 0.82f, 0.38f) : who == 'S' ? new Color(0.62f, 0.95f, 0.86f) : new Color(0.87f, 0.91f, 1f);
-            lines[i] = Label(column, name.Length > 0 ? name + ": \"" + body + "\"" : body, 38, FontStyle.BoldAndItalic, tint, 0f, 230f + i * 84f, 76f);
+            lines[i] = Label(column, name.Length > 0 ? name + ": \"" + body + "\"" : body, 32, FontStyle.BoldAndItalic, tint, 0f, 200f + i * 62f, 56f);
             lines[i].gameObject.SetActive(false);
         }
 
-        Label(column, "More of the file is still being written. Chapters to come.", 24, FontStyle.Italic, new Color(0.66f, 0.72f, 0.84f), 0f, 470f, 40f);
-
-        MenuButton = MakeButton(column, "Menu", 260f, 88f, 520f);
+        BeginButton = MakeButton(column, "Begin", 300f, 88f, -170f, 540f, BeginChapter);
+        MenuButton = MakeButton(column, "Menu", 260f, 88f, 170f, 540f, ToMenu);
     }
 
     Text Label(RectTransform parent, string value, int size, FontStyle style, Color color, float x, float y, float h) {
@@ -176,7 +195,7 @@ public class ChapterScene : MonoBehaviour {
         return text;
     }
 
-    Button MakeButton(RectTransform parent, string label, float w, float h, float y) {
+    Button MakeButton(RectTransform parent, string label, float w, float h, float x, float y, UnityEngine.Events.UnityAction onClick) {
         var go = new GameObject(label, typeof(RectTransform));
         go.transform.SetParent(parent, false);
         var image = go.AddComponent<Image>();
@@ -190,13 +209,13 @@ public class ChapterScene : MonoBehaviour {
         var nav = button.navigation;
         nav.mode = Navigation.Mode.None;
         button.navigation = nav;
-        button.onClick.AddListener(ToMenu);
+        button.onClick.AddListener(onClick);
         MenuButtonFx.Add(button);
         var rect = image.rectTransform;
         rect.anchorMin = new Vector2(0.5f, 1f);
         rect.anchorMax = new Vector2(0.5f, 1f);
         rect.pivot = new Vector2(0.5f, 1f);
-        rect.anchoredPosition = new Vector2(0f, -y);
+        rect.anchoredPosition = new Vector2(x, -y);
         rect.sizeDelta = new Vector2(w, h);
         Text text = Label(rect, label, 36, FontStyle.Bold, new Color(0.97f, 0.94f, 0.86f), 0f, 0f, h);
         text.rectTransform.anchorMin = Vector2.zero;

@@ -79,9 +79,12 @@ three **case files** (save slots). A case file is where the Department keeps you
 opened, it reads the chapter you are on and how long you have been on the books. The shop's coins and upgrades are
 Arcade's and stay Arcade's.
 
-Chapters are numbered and named after a stamp. **Chapter 1: Return to Sender** is the first, and for now only a
-placeholder: a card in the Hollow with Wallit and Slice trading the premise (the Department stamped him, found no sender,
-and Slice has no refund for him). The chapters after it are not written yet.
+Chapters are numbered and named after a stamp, six in all (`Docs/CampaignBible.md` tells them). Each is data in
+`Story.Chapters`: a title, a place, an objective (down a count of bots, hold the circle for a time, reach a place, or bring
+down a boss), the bots that come, the lines said before and after. Begin on the chapter card plays it in the Hollow with
+Wallit's own controls and bat and Slice at the circle; the objective sits in a line at the bottom, meeting it shows
+**Chapter Complete**, and the case file moves on to the next chapter (the last one reads "filed"). Chapter 1 teaches the bat:
+down eight Yo Bots.
 
 - Wallit: "Return to sender. Which sender? I want a refund."
 - Slice: "No sender. No refund. Stay in the circle."
