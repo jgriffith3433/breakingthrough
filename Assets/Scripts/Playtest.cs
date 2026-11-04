@@ -48,7 +48,8 @@ public static class Playtest {
         new PlaytestScenario("maps-123", "Chapters 1, 2 and 3 each load a visibly different map with a route, a landmark and a hazard or set piece (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; event map-loaded, map-lighting (fog and sky differ), map-features (one route:, landmark: and hazard: line each from the map's own list, a problem if any is missing), map-objective (the objective marker's distance from the end of the route: it must stand on the route; chapter 1's objective is the circle), then Wallit walks on the stick and the chapter is left. Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard. Play the whole objective of chapters 2 and 3 with the chapter2 and chapter3 scenarios.", 420, "content"),
         new PlaytestScenario("maps-456", "Chapters 4, 5 and 6 each load a visibly different map (the Long Walk, the Reading Room, the changed Hollow) with a route, a landmark, a hazard or set piece and a boss arena away from the route (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; events map-loaded, map-lighting (fog and sky differ), map-features (route:, landmark:, hazard:, arena: lines from the map's own list; a problem if any is missing), map-arena (the arena's distance and its angle away from the route: over 90 degrees), map-objective, then Wallit walks and the chapter is left. A boss is then called with the director (named setup shortcut) and must walk out of the arena: event arena-boss (spawn distance from the arena centre; a problem over 8 m). Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard, mapsWithArena. Play each whole objective with the chapter4, chapter5 and chapter6 scenarios.", 600, "content"),
         new PlaytestScenario("chapter-maps", "Each Campaign chapter loads its own map, with its own lighting, and unloads it on leaving (setup: the sandbox case file stands on the chapter; the real save is never touched; leaving a chapter early is a named setup shortcut). Three chapters in turn (1 The Moonlit Hollow, 4 The Long Walk, 5 The Reading Room): Campaign, case file 1, Begin; the map named in the chapter data loads as an extra scene on top of the game scene (event map-loaded: map, scene, scenes open), the chapter's lighting is on (event map-lighting: fog colour and density, sun colour, sky colour; they differ between chapters), the opening scene is skipped with Enter and Wallit walks on the stick; then the chapter is left for the menu and the map is gone (event map-unloaded: scene closed, lighting back) with memory read before and after (metrics mapMemoryBaselineMB, mapMemoryAfterMB, mapMemoryGrowthMB; a growth over 48 MB is a bug). Metrics mapsLoaded, mapsUnloaded, distinctLooks)", 800, "content"),
-        new PlaytestScenario("lore", "The lore log and the case-file slots, with real input (setup: the sandbox case file starts on chapter 1; the real save is never touched). Campaign, case file 1, Begin, Chapter 1 is played with the bat to the Courier's fall as in the campaign scenario; the Chapter Complete card names the new lore it unlocked (event lore). Menu, Campaign: the case file slot reads its chapter, its play time and its completion (event slot-info: chapter, h:mm:ss on the books, 1/6 filed, lore n/15; problems if any is missing or the time is 0). The Lore log button opens the file's log (event lore-open), the bot turns every page with Next and reads which entries are open and which are sealed (event lore-page per entry, event lore-summary): the entries revealed by opening the file and by Chapter 1 are open, the later ones read Sealed until their chapter is filed (metrics loreUnlocked, loreSealed, slotChapterShown, slotTimeShown, slotCompletionShown). Back closes it", 800, "content"),
+        new PlaytestScenario("save", "The campaign save: an old-format file loads and is brought up to date, a corrupt one shows a message and starts clean, and every chapter's load time and memory is logged (setup: the sandbox stands where the stored save would, holding version 1 text, text with no version, then corrupt text; the real save is never touched). Events save-old-loaded, save-migrated, save-oldest-loaded, save-corrupt-clean (seven kinds of bad text, none throws), save-old-panel (the case files say the old files were updated), save-old-chapter (file 1 opens chapter 3), save-corrupt-panel (\"Case files unreadable. The Department filed new ones.\", no files), save-corrupt-play (a clean file opens chapter 1); then all six chapters are begun in turn with chapter-load events (card seconds, map seconds, memory MB) and metrics chapter<N>CardSeconds, chapter<N>MapSeconds, chapter<N>MemoryMB, oldSaveLoaded, corruptClean, corruptMessageShown", 1200, "content"),
+        new PlaytestScenario("lore","The lore log and the case-file slots, with real input (setup: the sandbox case file starts on chapter 1; the real save is never touched). Campaign, case file 1, Begin, Chapter 1 is played with the bat to the Courier's fall as in the campaign scenario; the Chapter Complete card names the new lore it unlocked (event lore). Menu, Campaign: the case file slot reads its chapter, its play time and its completion (event slot-info: chapter, h:mm:ss on the books, 1/6 filed, lore n/15; problems if any is missing or the time is 0). The Lore log button opens the file's log (event lore-open), the bot turns every page with Next and reads which entries are open and which are sealed (event lore-page per entry, event lore-summary): the entries revealed by opening the file and by Chapter 1 are open, the later ones read Sealed until their chapter is filed (metrics loreUnlocked, loreSealed, slotChapterShown, slotTimeShown, slotCompletionShown). Back closes it", 800, "content"),
         new PlaytestScenario("campaign-full", "The whole case file in one run with real input (setup: the sandbox keeps the files off the real save): Campaign, case file 1, then Chapter 1 to ADDRESS FILED. Each chapter is played as its own scenario plays it (opening scene skipped with Enter, the objective met with the bat, the boss down, the Chapter Complete card), and between chapters Menu, Campaign and the file reopen on the next chapter's card (campaign-advanced, campaign-resume). Quit and resume: in Chapter 3 the scene is dropped mid-chapter (setup, as a closed tab does) and the file must reopen on Chapter 3, unfinished (events quit-midchapter, quit-resume-panel, quit-resume; metric quitResumeRight). Ends with the Filed scene, the finale pages, ADDRESS FILED, the credits card and the case file reading filed (events campaign-full, ending-card, campaign-panel-filed; metrics fullCaseFileCleared, endingShown, caseFileFiled)", 3000, "content"),
         new PlaytestScenario("chapter6", "Chapter 6, Address Filed, played start to finish with real input (setup: the sandbox case file starts on chapter 6): Campaign, case file 1, Begin on the Chapter 6 card; the opening scene in the changed Hollow plays and is skipped with Enter; Wallit holds the circle with the bat through three waves (events wave-start), then the Spider Bot that carries the order (boss bar up, scroll on its back) arrives and falls; the Filed scene plays over the field, then the finale pages (Story.Finale verbatim, as in Arcade's story run) and the ADDRESS FILED ending card (events filed-scene, finale-page, ending-card); Keep going shows the credits card; the case file is marked complete (6 cleared), Menu, and the Campaign panel's case file 1 reads filed (events chapter6-setup, cutscene-open, objective, wave-start, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, filed-scene, finale-page, ending-card, credits-card, campaign-complete, campaign-panel-filed; metrics bossBar, endingShown, caseFileCleared, caseFileFiled)", 1000, "content"),
         new PlaytestScenario("chapter5", "Chapter 5, Strike This Address, played start to finish with real input (setup: the sandbox case file starts on chapter 5): Campaign, case file 1, Begin on the Chapter 5 card; the opening scene in the Reading Room plays over the map (the order is not signed, so it can be denied; the stamp pressed to the first page shows DENIED; the bot reads pages then skips with Enter); the objective line reads Read the order, page 1 of 5 with the bots down counting up; Wallit holds the circle at the desk with the bat through five pages (each page's wave announced PAGE n OF 5 and its forms on the wall turning blank when it is down: events page-start, page-read); then The Registrar (a gold Titan Spider Bot with a ledger, boss bar up) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 6, Menu, and reopening the file shows Chapter 6's card (events chapter5-setup, cutscene-open, cutscene-page, objective, page-start, page-read, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics pagesRead, bossBar, chapterAdvanced, chapterResumed)", 900, "content"),
@@ -222,6 +223,13 @@ public static class Playtest {
                 if (run.Done) {
                     yield break;
                 }
+            }
+            if (id == "save") {
+                yield return SaveRun();
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
             }
             if (id == "chapter-maps" || id == "maps-123" || id == "maps-456") {
                 mapChapters = id == "maps-123" ? new[] { 0, 1, 2 } : id == "maps-456" ? new[] { 3, 4, 5 } : new[] { 0, 3, 4 };
@@ -862,6 +870,148 @@ public static class Playtest {
         yield return DownTo(PauseMenu.Instance.ResumeButton, "Resume");
     }
 
+    // Load time and memory of one chapter: the card (file press to chapter scene), then the map (Begin to playable),
+    // and the memory in use once it is up. Event chapter-load; metrics chapter<N>CardSeconds, chapter<N>MapSeconds,
+    // chapter<N>MemoryMB. A chapter that takes over 20 s to come up, or sits over 1 GB, is a bug.
+    static void ReportChapterLoad(int index, float cardSeconds, float mapSeconds) {
+        float mb = Mathf.Round(ChapterMap.Memory() / 1048576f);
+        string n = "chapter" + (index + 1);
+        run.Metric(n + "CardSeconds", Mathf.Round(cardSeconds * 10f) / 10f);
+        run.Metric(n + "MapSeconds", Mathf.Round(mapSeconds * 10f) / 10f);
+        run.Metric(n + "MemoryMB", mb);
+        run.Event("chapter-load", "chapter " + (index + 1) + ": card in " + cardSeconds.ToString("0.0") + " s, map in " + mapSeconds.ToString("0.0") + " s, memory " + mb + " MB");
+        if (cardSeconds + mapSeconds > 20f) {
+            run.Problem(PlaytestSeverity.Bug, "chapter " + (index + 1) + " took " + (cardSeconds + mapSeconds).ToString("0.0") + " s to load");
+        }
+        if (mb > 1024f) {
+            run.Problem(PlaytestSeverity.Bug, "chapter " + (index + 1) + " holds " + mb + " MB after loading");
+        }
+    }
+
+    // Case-file saves: an old-format file loads and is brought up to date, and corrupt text shows a message and starts
+    // clean. The stored text is a named setup shortcut (the sandbox stands where the real save would; it is never written).
+    const string OldSaveV1 = "{\"version\":1,\"last\":0,\"slots\":[{\"used\":true,\"chapter\":2,\"reached\":2,\"cleared\":2,\"seconds\":754.5,\"saved\":638000000000000000},{\"used\":true,\"chapter\":0,\"reached\":0,\"cleared\":0,\"seconds\":61},{\"used\":false}]}";
+    const string OldSaveNoStamp = "{\"last\":1,\"slots\":[{\"used\":false},{\"used\":true,\"chapter\":1,\"reached\":1,\"cleared\":1,\"seconds\":300},{\"used\":false}]}";
+    static IEnumerator SaveRun() {
+        // 1. Old formats, straight through the loader.
+        CampaignSave.EnterSandbox(OldSaveV1);
+        CampaignSave.Slot a = CampaignSave.Get(0);
+        bool v1ok = CampaignSave.LoadResult == "migrated" && a.used && a.chapter == 2 && a.cleared == 2 && Mathf.Abs(a.seconds - 754.5f) < 0.1f && Lore.UnlockedCount(a) > 0 && CampaignSave.UsedCount == 2;
+        run.Event("save-old-loaded", "version 1 text: result " + CampaignSave.LoadResult + ", file 1 on chapter " + (a.chapter + 1) + ", " + a.cleared + " filed, " + CampaignSave.Clock(a) + " on the books, lore " + Lore.UnlockedCount(a) + "/" + Lore.All.Length + ", " + CampaignSave.UsedCount + " files in use");
+        run.Metric("oldSaveLoaded", v1ok ? 1 : 0);
+        if (!v1ok) {
+            run.Problem(PlaytestSeverity.Bug, "save: a version 1 save did not load with its files intact");
+        }
+        bool stamped = CampaignSave.ToText().Contains("\"version\":" + CampaignSave.Version);
+        run.Event("save-migrated", "rewritten as version " + CampaignSave.Version + ": " + (stamped ? "stamped" : "NOT stamped"));
+        if (!stamped) {
+            run.Problem(PlaytestSeverity.Bug, "save: the migrated files are not stamped with version " + CampaignSave.Version);
+        }
+        CampaignSave.EnterSandbox(OldSaveNoStamp);
+        CampaignSave.Slot b = CampaignSave.Get(1);
+        bool oldest = CampaignSave.LoadResult == "migrated" && CampaignSave.LoadedVersion == 0 && b.used && b.chapter == 1 && CampaignSave.Last == 1;
+        run.Event("save-oldest-loaded", "text with no version: result " + CampaignSave.LoadResult + ", read as version " + CampaignSave.LoadedVersion + ", file 2 on chapter " + (b.chapter + 1) + ", last opened " + CampaignSave.Last);
+        if (!oldest) {
+            run.Problem(PlaytestSeverity.Bug, "save: a save with no version stamp did not load");
+        }
+
+        // 2. Corrupt text of every shape: never an exception, always clean files.
+        string[] bad = { "{not json<<<", "[1,2,3]", "{}", "{\"version\":2,\"slots\":", "{\"version\":2,\"slots\":\"x\"}", "\u0000\u0001garbage", "null" };
+        int cleanStarts = 0;
+        foreach (string text in bad) {
+            try {
+                CampaignSave.EnterSandbox(text);
+                bool clean = CampaignSave.LoadResult == "corrupt" && CampaignSave.UsedCount == 0 && !string.IsNullOrEmpty(CampaignSave.Notice);
+                cleanStarts += clean ? 1 : 0;
+                if (!clean) {
+                    run.Problem(PlaytestSeverity.Bug, "save: corrupt text '" + text.Replace("\u0000", "?") + "' gave result '" + CampaignSave.LoadResult + "' with " + CampaignSave.UsedCount + " files in use");
+                }
+            } catch (System.Exception e) {
+                run.Problem(PlaytestSeverity.Bug, "save: corrupt text '" + text.Replace("\u0000", "?") + "' threw " + e.GetType().Name);
+            }
+        }
+        run.Event("save-corrupt-clean", cleanStarts + " of " + bad.Length + " corrupt texts started clean without an exception");
+        run.Metric("corruptClean", cleanStarts);
+
+        // 3. On screen: the old file in the case files with its notice, a chapter card from it; then a corrupt one.
+        CampaignSave.EnterSandbox(OldSaveV1);
+        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+        if (menu == null || menu.CampaignButton == null) {
+            run.Problem(PlaytestSeverity.Bug, "save: no Campaign button on the main menu");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(menu.CampaignButton.gameObject);
+        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        string shown = CampaignPanel.Instance.SubtitleShown;
+        run.Event("save-old-panel", "case files say \"" + shown + "\"; file 1: " + CampaignSave.Describe(CampaignSave.Get(0)));
+        if (shown != CampaignSave.MigratedNotice) {
+            run.Problem(PlaytestSeverity.Bug, "save: the case files did not say the old files were updated (\"" + shown + "\")");
+        }
+        float tapped = Time.realtimeSinceStartup;
+        Tap(CampaignPanel.Instance.SlotButtons[0].gameObject);
+        yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.BeginButton != null && SceneManager.GetActiveScene().name == CampaignSave.Scene, 45f, "the chapter card from the old file");
+        if (run.Done) {
+            yield break;
+        }
+        bool onThree = ChapterScene.Instance.Chapter == 2;
+        run.Event("save-old-chapter", "the old file opened chapter " + (ChapterScene.Instance.Chapter + 1) + " \"" + ChapterScene.Instance.Title + "\" in " + (Time.realtimeSinceStartup - tapped).ToString("0.0") + " s");
+        if (!onThree) {
+            run.Problem(PlaytestSeverity.Bug, "save: the old file opened chapter " + (ChapterScene.Instance.Chapter + 1) + ", not 3");
+        }
+        yield return new WaitForSecondsRealtime(1.5f);
+        CampaignSave.EnterSandbox(bad[0]);   // setup: the stored text goes bad while the player is away
+        PlayInput.Release();
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(MetaProgress.MenuScene);
+        yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Main Menu");
+        menu = Object.FindAnyObjectByType<MainMenu>();
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(menu.CampaignButton.gameObject);
+        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files after corrupt save");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        shown = CampaignPanel.Instance.SubtitleShown;
+        bool allEmpty = CampaignSave.UsedCount == 0;
+        run.Event("save-corrupt-panel", "case files say \"" + shown + "\"; " + CampaignSave.UsedCount + " files in use");
+        run.Metric("corruptMessageShown", shown == CampaignSave.CorruptNotice ? 1 : 0);
+        if (shown != CampaignSave.CorruptNotice || !allEmpty) {
+            run.Problem(PlaytestSeverity.Bug, "save: the corrupt save did not show its message and start clean (\"" + shown + "\", " + CampaignSave.UsedCount + " files)");
+        }
+        tapped = Time.realtimeSinceStartup;
+        Tap(CampaignPanel.Instance.SlotButtons[0].gameObject);
+        yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.BeginButton != null && SceneManager.GetActiveScene().name == CampaignSave.Scene, 45f, "chapter 1 from a clean file");
+        if (run.Done) {
+            yield break;
+        }
+        run.Event("save-corrupt-play", "a clean file opened chapter " + (ChapterScene.Instance.Chapter + 1) + " in " + (Time.realtimeSinceStartup - tapped).ToString("0.0") + " s");
+        if (ChapterScene.Instance.Chapter != 0) {
+            run.Problem(PlaytestSeverity.Bug, "save: the clean file opened chapter " + (ChapterScene.Instance.Chapter + 1) + ", not 1");
+        }
+        yield return new WaitForSecondsRealtime(1.5f);
+        // 4. Load time and memory of every chapter: each in turn from a sandbox file standing on it.
+        mapChapters = new[] { 0, 1, 2, 3, 4, 5 };
+        PlayInput.Release();
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(MetaProgress.MenuScene);
+        yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu");
+        if (run.Done) {
+            yield break;
+        }
+        yield return MapsRun();
+    }
+
     // Chapter maps: each chapter loads its own map and lighting on Begin and unloads it on leaving.
     static int[] mapChapters = { 0, 3, 4 };
     static IEnumerator MapsRun() {
@@ -900,20 +1050,25 @@ public static class Playtest {
                 yield break;
             }
             yield return new WaitForSecondsRealtime(1f);
+            float cardTapped = Time.realtimeSinceStartup;
             Tap(CampaignPanel.Instance.SlotButtons[0].gameObject);
             yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.BeginButton != null && SceneManager.GetActiveScene().name == CampaignSave.Scene, 45f, "the chapter card");
             if (run.Done) {
                 yield break;
             }
+            float cardSeconds = Time.realtimeSinceStartup - cardTapped;
             yield return new WaitForSecondsRealtime(2f);
+            float beginTapped = Time.realtimeSinceStartup;
             Tap(ChapterScene.Instance.BeginButton.gameObject);
             run.Event("tap", "Begin chapter " + (index + 1));
             yield return run.Until(() => ChapterRun.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the chapter's map after Begin");
             if (run.Done) {
                 yield break;
             }
+            float mapSeconds = Time.realtimeSinceStartup - beginTapped;
             run.Scene("Chapter " + (index + 1) + " map");
             yield return new WaitForSecondsRealtime(1.5f);
+            ReportChapterLoad(index, cardSeconds, mapSeconds);
             ChapterMap map = ChapterMap.Current;
             if (map == null || map.MapName != data.Map || !map.MapScene.isLoaded) {
                 run.Problem(PlaytestSeverity.Bug, "chapter-maps: chapter " + (index + 1) + " names map '" + data.Map + "' but loaded '" + (map != null ? map.MapName : "none") + "'");
@@ -1023,7 +1178,7 @@ public static class Playtest {
         run.Metric("mapsWithArena", withArena);
         run.Metric("mapMemoryAfterMB", Mathf.Round(end / 1048576f));
         run.Metric("mapMemoryGrowthMB", Mathf.Round(growth));
-        if (looks.Count < chapters.Length) {
+        if (looks.Count < chapters.Length && chapters.Length <= 3) {
             run.Problem(PlaytestSeverity.Bug, "chapter-maps: chapters did not each get their own lighting (" + looks.Count + " distinct)");
         }
         if (growth > 48f) {
