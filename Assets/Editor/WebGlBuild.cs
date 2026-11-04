@@ -629,7 +629,8 @@ public static class WebGlBuild
             scenes = new[]
             {
                 "Assets/MainMenu.unity",
-                "Assets/scene2.unity"
+                "Assets/scene2.unity",
+                "Assets/Campaign.unity"
             },
             locationPathName = buildPath,
             target = BuildTarget.WebGL
