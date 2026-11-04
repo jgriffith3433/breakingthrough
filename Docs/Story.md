@@ -299,6 +299,8 @@ workers: they are lost things, and they talk about what they lost.
 
 - The lodgers: Tick (clock), Brim (hat), Spare (half-built Yo Bot) and Chime (bell) live in the hub; their lines change after each chapter. Chime's errands pay XP and a kept lost thing.
 
+- The back rooms: each chapter's map hides one room the Department never filed, found by the clue on the chapter's lost thing. In Chapter 4's room, the Dead Letter (a Spider Bot carrying a paper that cannot be refused) guards Refund in Full, Wallit's one unique ability upgrade.
+
 - The circle is the one filed address in the Moonlit Hollow; whatever is inside it exists.
 - Wallit was stamped "Return to sender" and thrown in. He has no address of his own.
 - Yo Bots and Spider Bots are sent to strike the circle's address. Wave 30's Spider Bot carries the order.
@@ -343,6 +345,26 @@ The **journal** (`JournalPanel.cs`) has three tabs, Active, Finished and Collect
 which also has a Journal button) and in the hub; the case files panel has a Journal button too. Every find and every extra is
 **Paid in Full**: the journal and the case file slot say PAID IN FULL and Wallit's bat wears gold bands in every chapter
 (`BatMarks`, via `Journal.GiltBat`). Voice: the Department's filing language; Slice clipped ("Clean."), Wallit on money. `journal` playtest.
+
+## The back rooms
+
+Every chapter's map keeps one **back room** the Department never filed: a small paper-floored room, 172 m from the circle (past the 150 m
+playfield, inside the wall), with a doorway that faces the circle, a desk, pigeonholes and one amber lamp. It is **not on the map** until the
+chapter's lost thing is in the case file. That lost thing is the **clue**: kept, it names the room's bearing and distance ("Door 1. 172 m
+south-west of the circle. Knock twice."), the screen says it, the journal's Active tab lists it, and the room stands up with a soft gold ring
+that pulses from 40 m. Walking in keeps the room (a bit per chapter, `CampaignSave.Slot.rooms`, save version 4), pays XP the first time (20,
+25, 30, 35, 40, 50) and says one line. The rooms: **The Sorting Nook** (Ch1), **The Forgotten Door** (Ch2, the key fits), **The Spare Parts
+Bin** (Ch3), **The Dead Letter Box** (Ch4), **The Closed Register** (Ch5, blank pages), **The Last Address** (Ch6, the circle's own door number,
+not struck). They are flat and collider-free like the chapters' other props. The journal's Collected tab keeps each one; the case file shows
+`Rooms n/6`. Paid in Full does not need them.
+
+**The Dead Letter** is the one optional hard encounter. In the Dead Letter Box a Spider Bot steps out: a paper with no address to hand over,
+which cannot be refused (so it is not the Server's game). It is a mini-boss with its own health bar (64 hits, violet), and it walks for the
+circle. Bring it down and Wallit earns **Refund in Full**, once, kept in the case file (`rooms` bit 6): Refund's ring grows to 12 m, it
+recharges in 6 s instead of 10, and Slice is paid back 8 each time. It reads "Refund in Full" on the HUD. Replaying Chapter 4 finds the room
+open and the Dead Letter gone; the reward is never paid twice. Wallit: "Returned. In full. Pay up." Slice: "Clean." Data: `BackRooms.cs`
+(`BackRooms.All`, the `BackRoom` component on the chapter run, `ChapterRun.Events` lines `secret|...`), `CampaignProgress.RefundFull`,
+`WaveDirector.SpawnMiniAt`; the `secrets` playtest plays all six rooms and the Dead Letter.
 
 ## The cast file
 

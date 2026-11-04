@@ -543,6 +543,17 @@ public class WaveDirector : MonoBehaviour {
         return enemy;
     }
 
+    // An optional encounter's mini-boss, placed at a spot (a back room) instead of on the ring.
+    public Enemy SpawnMiniAt(BotKind kind, string name, int hits, Color tint, Vector3 spot) {
+        BotDef def = BotRoster.ForSpawn(kind, Wave);
+        spot.y = GroundNear(spot, spot.y) + 0.55f + def.Scale * 0.08f;
+        Enemy enemy = Spawn(def, spot, false);
+        enemy.MakeMini(name, hits, tint);
+        UpgradeLook.Say(name + " approaches!", 2.4f, 160f);
+        GameAudio.Play("stomp", 0.9f, 0.7f);
+        return enemy;
+    }
+
     // Slice fell in a chapter: the same pause and any-key return, with the chapter's own words.
     void LoseChapter() {
         phase = Phase.Lost;

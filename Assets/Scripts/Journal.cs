@@ -185,6 +185,14 @@ public static class Journal {
                     sb.Append("Ch ").Append(i + 1).Append(" - lost thing, ").Append(Finds[i].Hint).Append("\n");
                     rows++;
                 }
+                if (HasFind(s, i) && !BackRooms.Entered(s, i)) {
+                    sb.Append("Ch ").Append(i + 1).Append(" - back room, the clue says: ").Append(BackRooms.All[i].Clue).Append("\n");
+                    rows++;
+                }
+            }
+            if (!BackRooms.HasReward(s) && BackRooms.Entered(s, BackRooms.EncounterChapter)) {
+                sb.Append("Ch ").Append(BackRooms.EncounterChapter + 1).Append(" - ").Append(BackRooms.EncounterName).Append(" still waits in its back room.\n");
+                rows++;
             }
             if (rows == 0) {
                 sb.Append(reached < 0 ? "No case file yet." : "Nothing open. Every chapter reached is squared away.");
@@ -206,6 +214,16 @@ public static class Journal {
                     rows++;
                 }
             }
+            for (int i = 0; i < BackRooms.All.Length; i++) {
+                if (BackRooms.Entered(s, i)) {
+                    sb.Append(BackRooms.All[i].Name).Append(": ").Append(BackRooms.All[i].Text).Append("\n");
+                    rows++;
+                }
+            }
+            if (BackRooms.HasReward(s)) {
+                sb.Append(BackRooms.RewardName).Append(": ").Append(BackRooms.RewardText).Append("\n");
+                rows++;
+            }
             if (rows == 0) {
                 sb.Append("Nothing kept yet. Each chapter hides one lost thing.");
             }
@@ -215,7 +233,7 @@ public static class Journal {
 
     // "Finds 2/6   Extras 1/6" and the stamp when it is full.
     public static string Summary(CampaignSave.Slot s) {
-        string line = "Finds " + FindCount(s) + "/" + Finds.Length + "   Extras " + GoalCount(s) + "/" + Goals.Length;
+        string line = "Finds " + FindCount(s) + "/" + Finds.Length + "   Extras " + GoalCount(s) + "/" + Goals.Length + "   Rooms " + BackRooms.Count(s) + "/" + BackRooms.All.Length;
         return PaidInFull(s) ? line + "   " + PaidTitle : line;
     }
 }
