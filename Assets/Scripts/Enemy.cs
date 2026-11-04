@@ -497,6 +497,39 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    // Chapter 5's Alpha: a Titan Spider Bot in gold, the Registrar, with a ledger of gold-edged pages held open in front. No
+    // special fight: it reads the pages with every leg and is the biggest wall to break so far.
+    public void MakeRegistrar(string name, int hits)
+    {
+        MakeBoss();
+        Title = name;
+        gameObject.name = name;
+        HitsToDrop = Mathf.Max(1, hits);
+        var shader = SafeShader.Find("Sprites/Default");
+        var holder = new GameObject("Ledger");
+        holder.transform.SetParent(transform, false);
+        holder.transform.localPosition = new Vector3(0f, 0.55f, 0.66f);
+        holder.transform.localRotation = Quaternion.Euler(-10f, 0f, 0f);
+        Color gold = new Color(0.95f, 0.76f, 0.28f, 1f);
+        Color paper = new Color(0.93f, 0.9f, 0.78f, 1f);
+        Color ink = new Color(0.12f, 0.1f, 0.12f, 1f);
+        for (int i = 0; i < 4; i++) {
+            var part = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            part.name = i == 0 ? "Cover" : i == 1 ? "Left Page" : i == 2 ? "Right Page" : "Ruled Line";
+            Destroy(part.GetComponent<Collider>());
+            part.transform.SetParent(holder.transform, false);
+            part.transform.localPosition = i == 0 ? Vector3.zero : i == 1 ? new Vector3(-0.17f, 0f, 0.03f) : i == 2 ? new Vector3(0.17f, 0f, 0.03f) : new Vector3(0.17f, 0.05f, 0.06f);
+            part.transform.localScale = i == 0 ? new Vector3(0.74f, 0.46f, 0.04f) : i == 3 ? new Vector3(0.26f, 0.03f, 0.02f) : new Vector3(0.32f, 0.38f, 0.03f);
+            Color c = i == 0 ? gold : i == 3 ? ink : paper;
+            if (shader != null) {
+                part.GetComponent<Renderer>().material = new Material(shader) { color = c };
+            } else {
+                UpgradeLook.Paint(part, c);
+            }
+            part.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
+    }
+
     // Chapter 2's Alpha: a Plated Yo Bot grown big, with a stamped INVALID plate on its chest. No special fight: a wall
     // of plate to break. The plate is a flat red board with a white bar, built in code, no collider.
     public void MakePlatedAlpha(string name, int hits)

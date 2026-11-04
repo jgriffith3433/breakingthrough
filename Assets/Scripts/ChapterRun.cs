@@ -53,7 +53,9 @@ public class ChapterRun : MonoBehaviour {
     public bool FeedBroken { get; private set; }
     public int Leg { get { return leg; } }   // GateAndBack: 0 out to the gate, 1 back to the circle, 2 the waves and the boss. FloorRun: 0..StopCount-1 the stops out, StopCount back to the circle, StopCount+1 the bots and the boss
     public int WaveNow { get { return waveNow; } }
-    public bool HasBoss { get { return data.Objective == Story.ChapterObjective.HoldThenBoss; } }
+    public bool HasBoss { get { return data.Objective == Story.ChapterObjective.HoldThenBoss && data.Waves == 0; } }
+    public bool IsReading { get { return data.Objective == Story.ChapterObjective.HoldThenBoss && data.Waves > 0; } }   // Chapter 5: pages read in waves at the desk, then the Registrar
+    public int PagesRead { get { return pagesRead; } }
     public bool BossUp { get { return boss != null && boss.Alive; } }
     public Enemy BossEnemy { get { return boss; } }
     public bool BossDown { get { return bossSpawned && !BossUp; } }
@@ -84,6 +86,8 @@ public class ChapterRun : MonoBehaviour {
     float nextRing;
     int leg;
     int waveNow;
+    int pagesRead;    // the Reading Room: pages whose wave is down (their forms on the wall have gone blank)
+    readonly List<Renderer>[] pageForms = new List<Renderer>[8];
     int killBase;     // kills before the waves began (GateAndBack): the hold counts from here
     GameObject gateProps;
     FloorState floorProps;
@@ -115,6 +119,9 @@ public class ChapterRun : MonoBehaviour {
         Events.Add("start|" + data.Id + "|" + data.Objective + "|" + data.Target);
         if (data.Objective == Story.ChapterObjective.SurviveTime) {
             clock = data.Target;
+        }
+        if (IsReading) {
+            BuildReadingRoom();
         }
         if (data.Objective == Story.ChapterObjective.ReachPlace || data.Objective == Story.ChapterObjective.GateAndBack || data.Objective == Story.ChapterObjective.FloorRun) {
             MakeMarker();
@@ -266,8 +273,18 @@ public class ChapterRun : MonoBehaviour {
     void TickHoldBoss(WaveDirector director, int alive) {
         if (!bossCalled) {
             Progress = Kills();
-            if (data.Objective == Story.ChapterObjective.GateAndBack && waveNow < data.Waves && Kills() >= waveNow * data.WaveSize) {
-                StartWave(waveNow + 1);
+            if (data.Waves > 0 && data.Objective != Story.ChapterObjective.FloorRun) {
+                if (IsReading && waveNow == 0) {
+                    StartWave(1);
+                } else if (waveNow < data.Waves && Kills() >= waveNow * data.WaveSize) {
+                    if (IsReading) {
+                        PageRead(waveNow);
+                    }
+                    StartWave(waveNow + 1);
+                }
+                if (IsReading && Kills() >= Target() && pagesRead < data.Waves) {
+                    PageRead(data.Waves);
+                }
             }
             if (spawnIn <= 0f && alive < data.Cap && Kills() + alive < Target()) {
                 SpawnCrew(director);
@@ -307,6 +324,9 @@ public class ChapterRun : MonoBehaviour {
     int Target() {
         if (data.Objective == Story.ChapterObjective.FloorRun) {
             return data.WaveSize;
+        }
+        if (IsReading) {
+            return data.Waves * data.WaveSize;
         }
         return data.Objective == Story.ChapterObjective.GateAndBack ? data.Waves * data.WaveSize : data.Target;
     }
@@ -448,10 +468,25 @@ public class ChapterRun : MonoBehaviour {
         StartWave(1);
     }
 
+    // A page is read out when its wave is down: its forms on the wall turn over, blank.
+    void PageRead(int page) {
+        pagesRead = page;
+        Events.Add("page-read|" + page + "|" + data.Waves);
+        GameAudio.Play("stamp", 0.7f, 0.9f + page * 0.05f);
+        List<Renderer> forms = page - 1 < pageForms.Length ? pageForms[page - 1] : null;
+        if (forms != null) {
+            foreach (Renderer r in forms) {
+                if (r != null) {
+                    r.material.color = new Color(0.1f, 0.11f, 0.15f, 1f);
+                }
+            }
+        }
+    }
+
     void StartWave(int w) {
         waveNow = w;
         Events.Add("wave|" + w + "|" + data.Waves);
-        UpgradeLook.Say("WAVE " + w + " OF " + data.Waves, 2.2f, 160f);
+        UpgradeLook.Say((IsReading ? "PAGE " : "WAVE ") + w + " OF " + data.Waves, 2.2f, 160f);
         if (data.WaveLines != null && w - 1 < data.WaveLines.Length) {
             Tell(new[] { data.WaveLines[w - 1] });
         }
@@ -514,6 +549,15 @@ public class ChapterRun : MonoBehaviour {
                 }
                 return "Bring down " + data.BossName + (bossSpawned ? "" : "  (it's coming)");
             case Story.ChapterObjective.HoldThenBoss:
+                if (IsReading) {
+                    if (!bossCalled) {
+                        return "Read the order, page " + Mathf.Clamp(waveNow, 1, data.Waves) + " of " + data.Waves + ":  " + Mathf.Min(Progress, Target()) + " / " + Target() + " down";
+                    }
+                    if (defeatIn > 0f) {
+                        return data.BossName + " is down";
+                    }
+                    return "Bring down " + data.BossName + (bossSpawned ? "" : "  (it's coming)");
+                }
                 if (!bossCalled) {
                     return "Hold the circle:  " + Mathf.Min(Progress, data.Target) + " / " + data.Target + " " + data.Goal + " down";
                 }
@@ -686,6 +730,45 @@ public class ChapterRun : MonoBehaviour {
         Block("Wall R", new Vector3(13.5f, 3.5f, 0f), new Vector3(16f, 7f, 1.2f), dark);
         Block("Signpost", new Vector3(8.5f, 2f, 5f), new Vector3(0.35f, 4f, 0.35f), stone);
         Block("Blank Sign", new Vector3(8.5f, 3.9f, 5.25f), new Vector3(2.4f, 1.2f, 0.12f), pale);
+    }
+
+    // The Reading Room: a bare round hall around the circle. The walls are lined with forms, all this order, in one section
+    // per page (they go blank as each page is read); a desk stands beside the circle, empty. Flat, collider-free blocks, well
+    // outside the ring the bots come from, so nothing solid is in the playfield.
+    void BuildReadingRoom() {
+        Vector3 origin = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
+        gateProps = new GameObject("Chapter Reading Room");
+        Color wall = new Color(0.13f, 0.14f, 0.19f, 1f);
+        Color form = new Color(0.9f, 0.87f, 0.75f, 1f);
+        Color wood = new Color(0.3f, 0.2f, 0.14f, 1f);
+        int sections = data.Waves;
+        int perSection = 7;
+        int total = sections * perSection;
+        const float radius = 60f;
+        for (int i = 0; i < total; i++) {
+            float a = (i + 0.5f) / total * Mathf.PI * 2f;
+            var holder = new GameObject("Wall " + i);
+            holder.transform.SetParent(gateProps.transform, false);
+            holder.transform.position = origin + new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * radius;
+            holder.transform.rotation = Quaternion.LookRotation(new Vector3(-Mathf.Sin(a), 0f, -Mathf.Cos(a)), Vector3.up);
+            Block(holder.transform, "Wall Panel", new Vector3(0f, 8f, 0f), new Vector3(2f * Mathf.PI * radius / total + 0.4f, 16f, 1f), wall, 0f);
+            int page = i / perSection;
+            for (int row = 0; row < 2; row++) {
+                Block(holder.transform, "Form", new Vector3(0f, 5.5f + row * 5f, -0.6f), new Vector3(3.4f, 4f, 0.1f), form, 0f);
+                var made = holder.transform.GetChild(holder.transform.childCount - 1).GetComponent<Renderer>();
+                if (pageForms[page] == null) {
+                    pageForms[page] = new List<Renderer>();
+                }
+                pageForms[page].Add(made);
+            }
+        }
+        var desk = new GameObject("Desk");
+        desk.transform.SetParent(gateProps.transform, false);
+        desk.transform.position = origin + new Vector3(6f, 0f, 3f);
+        desk.transform.rotation = Quaternion.Euler(0f, -20f, 0f);
+        Block(desk.transform, "Desk Top", new Vector3(0f, 1f, 0f), new Vector3(3.2f, 0.18f, 1.5f), wood, 0f);
+        Block(desk.transform, "Desk Leg L", new Vector3(-1.4f, 0.5f, 0f), new Vector3(0.18f, 1f, 1.2f), wood, 0f);
+        Block(desk.transform, "Desk Leg R", new Vector3(1.4f, 0.5f, 0f), new Vector3(0.18f, 1f, 1.2f), wood, 0f);
     }
 
     // The Long Walk: a causeway of stone slabs from the circle out over a pit of mist, a pair of lamps at each stop (six lamps,
