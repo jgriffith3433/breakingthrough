@@ -11,6 +11,7 @@ public class RunHud : MonoBehaviour {
     Text comboText;
     GameObject bossRoot;
     Image bossFill;
+    Image bossNotch;
     Text bossName;
     Text goldenText;
     Text boonText;
@@ -81,6 +82,8 @@ public class RunHud : MonoBehaviour {
         bossBack = Bar(bossRoot.transform, new Vector2(0.5f, 1f), new Vector2(0f, -236f), new Vector2(820f, 22f), new Color(0.12f, 0.04f, 0.04f, 0.92f));
         bossFill = Bar(bossBack.transform, new Vector2(0f, 0.5f), new Vector2(3f, 0f), new Vector2(814f, 16f), new Color(0.9f, 0.18f, 0.12f));
         bossFill.rectTransform.pivot = new Vector2(0f, 0.5f);
+        bossNotch = Bar(bossBack.transform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(5f, 30f), new Color(1f, 0.93f, 0.7f, 0.95f));
+        bossNotch.gameObject.SetActive(false);
         bossRoot.SetActive(false);
 
         goldenText = Label(top, "", 28, FontStyle.Bold, TextAnchor.MiddleCenter, new Vector2(0.5f, 1f), new Vector2(0f, -268f), new Vector2(900f, 40f));
@@ -214,7 +217,17 @@ public class RunHud : MonoBehaviour {
             bossRoot.SetActive(showBoss);
         }
         if (showBoss) {
-            bossName.text = boss.Title;
+            bossName.text = boss.PhaseAt > 0f && boss.Phase >= 2 ? boss.Title + "  -  PHASE 2" : boss.Title;
+            bool notch = boss.PhaseAt > 0f && boss.Phase < 2;
+            if (bossNotch.gameObject.activeSelf != notch) {
+                bossNotch.gameObject.SetActive(notch);
+            }
+            if (notch) {
+                // A pale tick on the bar where the second phase begins.
+                bossNotch.rectTransform.anchorMin = new Vector2(boss.PhaseAt, 0.5f);
+                bossNotch.rectTransform.anchorMax = new Vector2(boss.PhaseAt, 0.5f);
+                bossNotch.rectTransform.anchoredPosition = Vector2.zero;
+            }
             bossFill.rectTransform.sizeDelta = new Vector2(bossWidth * boss.Health01, 16f);
             bossFill.enabled = bossWidth * boss.Health01 >= 16f;
         }

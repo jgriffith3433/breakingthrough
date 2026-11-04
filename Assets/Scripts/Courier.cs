@@ -106,8 +106,9 @@ public class Courier : MonoBehaviour {
         float dt = Time.deltaTime;
         if (!Angry && enemy.Health01 <= 0.5f) {
             Angry = true;
+            enemy.EnterPhase2(new Color(1.45f, 0.75f, 0.3f));
             Events.Add("phase2");
-            UpgradeLook.Say("The Courier speeds up", 2.2f, 160f);
+            BossPhases.Announce(enemy, "The Courier speeds up and calls Yo Bots with every notice");
             Fx.Ring(transform.position, 7f, new Color(1f, 0.3f, 0.22f, 0.9f), 0.6f);
         }
         switch (step) {
