@@ -234,6 +234,7 @@ public static class Journal {
     // "Finds 2/6   Extras 1/6" and the stamp when it is full.
     public static string Summary(CampaignSave.Slot s) {
         string line = "Finds " + FindCount(s) + "/" + Finds.Length + "   Extras " + GoalCount(s) + "/" + Goals.Length + "   Rooms " + BackRooms.Count(s) + "/" + BackRooms.All.Length;
-        return PaidInFull(s) ? line + "   " + PaidTitle : line;
+        line = PaidInFull(s) ? line + "   " + PaidTitle : line;
+        return s != null && s.secret ? line + "   " + Story.SecretTitle : line;
     }
 }

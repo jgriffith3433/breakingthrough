@@ -20,6 +20,8 @@ public class ChapterScene : MonoBehaviour {
     public Button HubButton { get; private set; }
     public Button DifficultyButton { get; private set; }   // only on a filed file: Standard or Hard for the chapters played from here
     public Text DifficultyText { get; private set; }
+    public Button NewGamePlusButton { get; private set; }   // only on a filed file: begin again at Chapter 1 with level and abilities kept
+    public int NewGamePlusStarted { get; private set; }
     public string RankText { get; private set; } = "";
     public ChapterHub Hub { get; private set; }
     public bool CardUp { get { return cardCanvas != null; } }
@@ -191,6 +193,21 @@ public class ChapterScene : MonoBehaviour {
         }
     }
 
+    // New Game+ (CampaignSave.NewGamePlus): the card turns to Chapter 1, the account stays.
+    public void StartNewGamePlus() {
+        if (!CampaignSave.NewGamePlus(CampaignSave.Active)) {
+            return;
+        }
+        NewGamePlusStarted++;
+        GameAudio.Play("stamp", 0.7f);
+        if (cardCanvas != null) {
+            Destroy(cardCanvas);
+            cardCanvas = null;
+        }
+        ShowCard(0);
+        RunAnalytics.Screen("new_game_plus");
+    }
+
     void ToMenu() {
         Leave();
         RunAnalytics.Screen("menu");
@@ -227,7 +244,7 @@ public class ChapterScene : MonoBehaviour {
         int best = CampaignSave.BestRank(file, Chapter, false);
         int bestHard = CampaignSave.BestRank(file, Chapter, true);
         RankText = best == 0 && bestHard == 0 ? "" : "Best rank " + CampaignGrade.Letter(best) + (bestHard > 0 ? "   Hard " + CampaignGrade.Letter(bestHard) : "");
-        Label(column, "CASE FILE " + (CampaignSave.Active + 1) + (RankText.Length > 0 ? "    " + RankText : "") + (filed && file.hard ? "    HARD" : ""), 26, FontStyle.Bold, new Color(0.66f, 0.72f, 0.84f), 0f, 0f, 36f);
+        Label(column, "CASE FILE " + (CampaignSave.Active + 1) + (RankText.Length > 0 ? "    " + RankText : "") + (filed && file.hard ? "    HARD" : "") + (file.plus > 0 ? "    NEW GAME+ " + file.plus : ""), 26, FontStyle.Bold, new Color(0.66f, 0.72f, 0.84f), 0f, 0f, 36f);
         Label(column, chapter.Title, 64, FontStyle.Bold, new Color(1f, 0.82f, 0.38f), 0f, 44f, 90f);
         Label(column, chapter.Place, 30, FontStyle.Italic, new Color(0.87f, 0.91f, 1f), 0f, 140f, 44f);
 
@@ -253,8 +270,10 @@ public class ChapterScene : MonoBehaviour {
         }
         if (filed) {
             // A filed file may be re-run harder: one press flips it, and the choice is saved with the file.
-            DifficultyButton = MakeButton(column, CampaignGrade.DifficultyLabel(file.hard), 620f, 88f, 0f, 650f, ToggleDifficulty);
+            DifficultyButton = MakeButton(column, CampaignGrade.DifficultyLabel(file.hard), 440f, 88f, -230f, 650f, ToggleDifficulty);
             DifficultyText = DifficultyButton.GetComponentInChildren<Text>();
+            // New Game+: the chapters start again from Chapter 1; level and abilities stay.
+            NewGamePlusButton = MakeButton(column, "New Game+", 440f, 88f, 230f, 650f, StartNewGamePlus);
         }
     }
 
