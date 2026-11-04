@@ -154,6 +154,30 @@ unread..." / "Paid in full." / "Clean." The file then moves to Chapter 4. Flow: 
 `chapter3` playtest plays it. Slice stays at the circle and does not follow (her second ring holds it); the Foreman reads the order
 only in its lines, with no special attack yet.
 
+### Boss phases
+
+Every chapter boss has two phases. The boss bar carries a pale notch where the second begins (half health; 0.4 for the Server),
+and crossing it is shown on screen: a red wash over the screen, the banner "PHASE TWO - <what changed>", a ring at the boss, a
+hotter tint and a faster stride. The bar's name reads "- PHASE 2" from then on. No camera shake.
+
+Every attack has a tell before it lands: red marks fill on the ground while the boss stands still and rings pulse; the blow lands
+only when the fill reaches the rim. Slice says it once: "Red is where it lands. Move, or break it." Move out of a mark (or dodge on
+X) and it misses; hit the boss for 8% of its health during the wind-up and it breaks ("Wind-up broken!"). Marks are flat, with no
+collider. The marks: a **stamp** on Wallit, a **march** of three marks from the boss toward Slice, a **page** under Slice (as the
+Courier's). Slice is hurt only by a march's last mark or a page.
+
+- **The Courier** (ch. 1): notice on the circle. Phase 2: faster winds and two Yo Bots with every notice.
+- **The Plated Alpha** (ch. 2): stamp. Phase 2: two stamps at once, wind-up 1.5 s instead of 2.2 s.
+- **The Foreman** (ch. 3): march. Phase 2: a march and a page together ("overtime").
+- **The Server** (ch. 4): phase 1 is the paper: it offers, is refused three times and only then strikes (unchanged). Phase 2 begins
+  at 40% health: it serves in earnest with marches.
+- **The Registrar** (ch. 5): page. Phase 2: a page and a stamp together.
+- **The Order** (ch. 6): stamp. Phase 2: marches, and two Yo Bots called with each.
+
+Code: `BossPhases.cs` (all but the Courier and the Server's paper), `Courier.cs`, `Server.cs`, `Enemy.PhaseAt`/`Phase`/`EnterPhase2`,
+the notch in `RunHud`. The campaign playtests log `boss-phase`, `boss-tell`, `boss-land`, `boss-dodged`, `boss-interrupt` and fail a
+boss that never changes phase or never shows a tell.
+
 ### Chapter 4: The Process Servers
 
 Where the Spider Bots come from. The opening scene at the circle: the **Long Walk** is a causeway of stone slabs over a pit of mist,

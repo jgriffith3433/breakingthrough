@@ -32,6 +32,8 @@ public class Enemy : MonoBehaviour
     // The Courier (Chapter 1's Alpha): it holds still and attacks in telegraphed slams (Courier.cs), never swipes.
     public bool IsCourier { get; private set; }
     public int BlowsTaken;      // blows that landed (the Server counts a refusal when this moves)
+    public float PhaseAt;       // a chapter boss's phase threshold (share of health left); 0 none. The boss bar draws a notch there
+    public int Phase = 1;       // 1, then 2 once Health01 falls to PhaseAt (BossPhases.EnterPhase2, Courier)
     public float MinHealth01;   // the Server's floor: blows cannot take its health below this share until it is lifted
     public string Title { get; private set; }
     public float Health01 { get { return Mathf.Clamp01(1f - taken / Mathf.Max(1f, HitsToDrop)); } }
@@ -438,6 +440,7 @@ public class Enemy : MonoBehaviour
         HitsToDrop = Mathf.Max(1, hits);
         modelTint = new Color(1.3f, 0.95f, 0.45f);
         modelTintAmount = 0.35f;
+        PhaseAt = 0.5f;
         gameObject.AddComponent<Courier>();
     }
 
@@ -453,7 +456,19 @@ public class Enemy : MonoBehaviour
         MinHealth01 = 0.7f;
         modelTint = new Color(0.8f, 1.1f, 1.2f);
         modelTintAmount = 0.3f;
+        PhaseAt = 0.4f;
         gameObject.AddComponent<Server>();
+    }
+
+    // A boss's second phase: it speeds up, takes on a hotter tint and a deeper crest. The tell and the banner are the caller's.
+    public void EnterPhase2(Color tint)
+    {
+        Phase = 2;
+        walkSpeed *= 1.25f;
+        chaseSpeed *= 1.25f;
+        modelTint = tint;
+        modelTintAmount = Mathf.Max(modelTintAmount, 0.45f);
+        crestColor = new Color(1f, 0.12f, 0.08f);
     }
 
     // The Server has been refused enough: it behaves as a plain boss from here (swipes and stabs, calls bots).
@@ -495,6 +510,8 @@ public class Enemy : MonoBehaviour
             }
             part.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
+        PhaseAt = 0.5f;
+        gameObject.AddComponent<BossPhases>().Setup(BossPhases.Fight.Foreman);
     }
 
     // Chapter 5's Alpha: a Titan Spider Bot in gold, the Registrar, with a ledger of gold-edged pages held open in front. No
@@ -528,6 +545,8 @@ public class Enemy : MonoBehaviour
             }
             part.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
+        PhaseAt = 0.5f;
+        gameObject.AddComponent<BossPhases>().Setup(BossPhases.Fight.Registrar);
     }
 
     // Chapter 6's Alpha, the Spider Bot that carries the order: a sealed scroll across its back with a red stamp, a wall to
@@ -560,6 +579,8 @@ public class Enemy : MonoBehaviour
             }
             part.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
+        PhaseAt = 0.5f;
+        gameObject.AddComponent<BossPhases>().Setup(BossPhases.Fight.Order);
     }
 
     // Chapter 2's Alpha: a Plated Yo Bot grown big, with a stamped INVALID plate on its chest. No special fight: a wall
@@ -594,6 +615,8 @@ public class Enemy : MonoBehaviour
             }
             part.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
+        PhaseAt = 0.5f;
+        gameObject.AddComponent<BossPhases>().Setup(BossPhases.Fight.Plated);
     }
 
     // A chapter's new bot: an elite trait under the chapter's own name (Dispatch Yo Bot, Returned Yo Bot...).

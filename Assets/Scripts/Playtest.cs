@@ -975,7 +975,8 @@ public static class Playtest {
                     run.Event("defeat-beat", line);
                 }
             }
-            run.Event("boss-defeated", "The Courier fell after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s: " + Courier.Winds + " notices wound up, " + Courier.Interrupted + " broken, " + Courier.Blocked + " taken by Wallit, " + Courier.Landed + " landed on Slice");
+            BossPhaseCheck("The Courier");
+run.Event("boss-defeated", "The Courier fell after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s: " + Courier.Winds + " notices wound up, " + Courier.Interrupted + " broken, " + Courier.Blocked + " taken by Wallit, " + Courier.Landed + " landed on Slice");
         } else if (chapter.IsFinal) {
             yield return FinalPlay(player, chapter, before);
             yield break;
@@ -1523,7 +1524,8 @@ public static class Playtest {
                 run.Event("defeat-beat", line);
             }
         }
-        run.Event("boss-defeated", "The Plated Alpha fell after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s");
+        BossPhaseCheck("The Plated Alpha");
+run.Event("boss-defeated", "The Plated Alpha fell after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s");
     }
 
     // Chapter 3 with real input: the opening dialogue's lines on where Yo Bots come from are logged, Wallit walks the three
@@ -1681,6 +1683,7 @@ public static class Playtest {
                 run.Event("defeat-beat", line);
             }
         }
+        BossPhaseCheck(walk ? "The Server" : "The Foreman");
         run.Event("boss-defeated", (walk ? "The Server" : "The Foreman") + " fell after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s");
     }
 
@@ -1731,7 +1734,8 @@ public static class Playtest {
                 run.Event("defeat-beat", line);
             }
         }
-        run.Event("boss-defeated", "The Registrar fell after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s");
+        BossPhaseCheck("The Registrar");
+run.Event("boss-defeated", "The Registrar fell after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s");
     }
 
     // Chapter 6 with real input: three waves, the Spider Bot with the order, the Filed scene, the finale pages, ADDRESS FILED, the
@@ -1771,7 +1775,8 @@ public static class Playtest {
                 run.Event("defeat-beat", line);
             }
         }
-        run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s");
+        BossPhaseCheck("The Order");
+run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s");
         // The Filed scene.
         yield return run.Until(() => Cutscene.IsOpen, 10f, "the Filed scene");
         if (run.Done) {
@@ -2696,6 +2701,53 @@ public static class Playtest {
     }
 
     // Plays (the batter, cards, skipping breaks) until goal is true. Not seeing it in time is a bug.
+    // Boss phases (BossPhases.cs, Courier.cs, Server.cs): every phase change and every telegraphed attack goes to the timeline as
+    // it happens (boss-phase, boss-tell, boss-land, boss-dodged, boss-interrupt), and BossPhaseCheck fails a boss that never
+    // changed phase or never showed a tell before landing.
+    static int bossPhaseSeen, courierSeen;
+    static bool sawPhase2, sawTell;
+
+    static void DrainBossPhases() {
+        if (BossPhases.Events.Count < bossPhaseSeen) {
+            bossPhaseSeen = 0;
+        }
+        for (; bossPhaseSeen < BossPhases.Events.Count; bossPhaseSeen++) {
+            string ev = BossPhases.Events[bossPhaseSeen];
+            string kind = ev.StartsWith("phase") ? "boss-phase" : ev.StartsWith("tell|") ? "boss-tell" : ev.StartsWith("land|") ? "boss-land" : ev.StartsWith("dodged|") ? "boss-dodged" : "boss-interrupt";
+            if (ev.StartsWith("phase2|")) {
+                sawPhase2 = true;
+            } else if (ev.StartsWith("tell|")) {
+                sawTell = true;
+            }
+            run.Event(kind, ev + (BossPhases.MarkUp ? " (red marks on the ground)" : ""));
+        }
+        if (Courier.Events.Count < courierSeen) {
+            courierSeen = 0;
+        }
+        for (; courierSeen < Courier.Events.Count; courierSeen++) {
+            if (Courier.Events[courierSeen] == "phase2") {
+                sawPhase2 = true;
+                run.Event("boss-phase", "phase2|The Courier (banner, red wash, faster winds)");
+            } else if (Courier.Events[courierSeen].StartsWith("wind|")) {
+                sawTell = true;
+            }
+        }
+    }
+
+    static void BossPhaseCheck(string who) {
+        DrainBossPhases();
+        run.Metric("bossPhase2", sawPhase2 ? 1 : 0);
+        run.Metric("bossTells", BossPhases.Tells + Courier.Winds);
+        if (!sawPhase2) {
+            run.Problem(PlaytestSeverity.Bug, who + " fell without ever changing phase at its health threshold");
+        }
+        if (!sawTell) {
+            run.Problem(PlaytestSeverity.Bug, who + " never showed a telegraphed attack (marks on the ground) before landing one");
+        }
+        sawPhase2 = false;
+        sawTell = false;
+    }
+
     static IEnumerator Fight(CharacterMovement player, System.Func<bool> goal, float seconds, string what, List<Enemy> only, bool lockOn, bool bat = true) {
         float start = Time.realtimeSinceStartup;
         float nextSkip = 0f;
@@ -2723,6 +2775,7 @@ public static class Playtest {
             CheckLock(player);
             TellBat();
             WatchNewBots();
+            DrainBossPhases();
             if ((building || Enemy.Roster.Count == 0) && now >= nextSkip) {
                 nextSkip = now + 1.5f;
                 PlayInput.Tap(KeyCode.Return);

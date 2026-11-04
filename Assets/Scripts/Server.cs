@@ -180,6 +180,7 @@ public class Server : MonoBehaviour {
         slice.Hurt(StrikeDamage, enemy);
         enemy.Unleash();
         Events.Add("unleashed");
+        enemy.gameObject.AddComponent<BossPhases>().Setup(BossPhases.Fight.Server);
         step = Step.Free;
         Offering = false;
         if (paper != null) {
