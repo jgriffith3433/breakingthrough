@@ -38,6 +38,7 @@ public static class Playtest {
         new PlaytestScenario("modes", "The mode select: the main menu shows Campaign and Arcade; Campaign opens the three case files (save slots, setup: the sandbox keeps them off the real save), opening an empty file loads the placeholder Chapter 1 scene with Wallit and Slice's lines, Menu returns and the file now reads Chapter 1 with its time on the books, Erase (asked twice) empties it; then Arcade starts today's wave defense and the bot plays 40 s of it with the bat. Events mode-select, campaign-files, chapter-open, chapter-lines, campaign-saved, campaign-erased, arcade-start", 200, "content"),
         new PlaytestScenario("cutscene", "The chapter cutscene: Campaign, case file 1, Begin on the Chapter 1 card, and the opening scene (The Stamp) plays over the map with letterbox bars, a speaker name and portrait slot, typed lines and the camera on whoever talks. The bot reads the first pages with real key presses (a first press finishes the typing, the next turns the page), skipping a page's voice by pressing on, then presses Enter to skip the rest: play starts with the objective line up and Wallit moving on the stick, and the chapter is cleared. Checked: every Wallit, Slice and Yo Bot page has a name, two voice lines never overlap (Wallit's floor and the scene both count them), the director allows no other line during the scene. Events cutscene-open, cutscene-page (speaker, text, camera focus, letterbox, voice), cutscene-skip, cutscene-play, cutscene-voice; metrics cutscenePages, cutsceneVoiceLines, cutsceneOverlaps, cutsceneSkipped", 420, "content"),
         new PlaytestScenario("campaign", "Campaign loads and plays a chapter: from the main menu press Campaign, open case file 1 (setup: the sandbox keeps the files off the real save) and wait for the Campaign scene to load. Reports run_start with mode=campaign and the loaded scene name (event run_start, metrics campaignLoaded, campaignLoadSeconds); if the scene fails to load (not in the build's scene list, or the chapter never builds) the run stops stuck with a bug saying so. Then Begin on the chapter card: Wallit and Slice in the chapter map, Wallit walks on the stick, the objective line shows, the bot fights with real input until it is met, Chapter 1 holds the circle against Yo Bots, then the Courier arrives (health bar on screen), winds up telegraphed notices on the circle and the bot breaks them or stands in them until it falls and the defeat beat plays; the Chapter Complete card shows, the case file advances to chapter 2, Menu, and reopening the file resumes at chapter 2 (events chapter-card, chapter-start, chapter-move, objective, boss-arrives, boss-bar, boss-attack, boss-defeated, defeat-beat, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics chapterAdvanced, chapterResumed, bossBar, courierWinds, courierInterrupted). Smoke is unchanged: it still presses Arcade", 750, "content"),
+        new PlaytestScenario("chapter2", "Chapter 2, No Fixed Address, played start to finish with real input (setup: the sandbox case file starts on chapter 2): Campaign, case file 1, Begin on the Chapter 2 card; the opening dialogue plays over the map (the bot reads pages, then skips it with Enter); the objective line reads Reach the gate with its metres counting down; Wallit walks out to the gate under fire from Yo Bots, batting those in reach; at the gate The Gate scene plays (read a few pages, then skipped), the objective turns to Back to the circle, Wallit walks home, three waves are held at the circle (objective Hold the circle, wave n of 3), then The Plated Alpha (stamped INVALID, with a boss bar) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 3, Menu, and reopening the file shows Chapter 3's card (events chapter2-setup, cutscene-open, cutscene-page, cutscene-skip, cutscene-play, objective, gate-leg, gate-reached, gate-scene-skip, home-leg, chapter-wave, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics gateReached, gateSceneSkipped, chapterWaves, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("story", "The story: the intro over the frozen Hollow (read page by page: who Wallit is, what the circle is, why Slice must not fall; a Skip button is on it), wave 1's story beats in canon voices, then setup: the testing wave key to wave 10 and wave 30 for the boss-wave title cards and beats (Yo Bots chirpy, Wallit on money, Slice clipped), and setup: wave 30's waiting bots trimmed to the boss and Slice topped up so the bat can finish it with real swings. Clearing wave 30 plays the finale pages and the ADDRESS FILED ending screen; the bot presses Keep going into overtime. Events intro-*, beat, finale-*, ending", 600, "content"),
         new PlaytestScenario("polish", "The final polish pass, on any screen size (run it on desktop and on the phone): the main menu, the HUD in wave 1, the level-up cards (setup: a level of bolts granted), the pause menu by its button, Resume, 40 s of real play, then the bot holds fire until Slice falls (setup: Plated Yo Bots ring her after 20 s) and the game-over panel reads Address struck off. Each screen gets a layout check (menu, hud, cards, pause, gameover), a stale-words check (no piano, keys or music-stopped words left), and a button-feel check (every button lifts on hover and sinks on press like the menu's); the audio-mix event says how many sounds played, how many stacked softer, how many were capped and how many dipped under a voice line", 420, "full"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.ai and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
@@ -205,8 +206,9 @@ public static class Playtest {
                     yield break;
                 }
             }
-            if (id == "campaign" || id == "cutscene") {
-                watchCutscene = id == "cutscene";
+            if (id == "campaign" || id == "cutscene" || id == "chapter2") {
+                watchCutscene = id == "cutscene" || id == "chapter2";
+                startChapter = id == "chapter2" ? 1 : 0;
                 yield return CampaignRun();
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
@@ -512,8 +514,19 @@ public static class Playtest {
 
     // Campaign from the main menu: press Campaign, open case file 1, wait for the Campaign scene. A scene that is not in
     // the build ("Scene 'Campaign' couldn't be loaded", PR #70) never becomes the active scene: that is a bug, said plainly.
+    static int startChapter;
+
     static IEnumerator CampaignRun() {
         CampaignSave.EnterSandbox();
+        if (startChapter > 0) {
+            // Setup shortcut: the sandbox case file (never the real save) already stands on this chapter.
+            CampaignSave.Slot setup = CampaignSave.Get(0);
+            setup.used = true;
+            setup.chapter = startChapter;
+            setup.reached = startChapter;
+            setup.cleared = startChapter;
+            run.Event("chapter2-setup", "sandbox case file 1 starts on chapter " + (startChapter + 1));
+        }
         MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
         if (menu == null || menu.CampaignButton == null || !menu.CampaignButton.isActiveAndEnabled) {
             run.Problem(PlaytestSeverity.Bug, "campaign: the main menu has no Campaign button to press");
@@ -545,7 +558,7 @@ public static class Playtest {
             yield break;
         }
         float seconds = Time.realtimeSinceStartup - tapped;
-        run.Scene("Chapter 1");
+        run.Scene("Chapter " + (ChapterScene.Instance.Chapter + 1));
         yield return null;
         run.Metric("campaignLoaded", 1);
         run.Metric("campaignLoadSeconds", Mathf.Round(seconds * 10f) / 10f);
@@ -653,6 +666,8 @@ public static class Playtest {
                 }
             }
             run.Event("boss-defeated", "The Courier fell after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s: " + Courier.Winds + " notices wound up, " + Courier.Interrupted + " broken, " + Courier.Blocked + " taken by Wallit, " + Courier.Landed + " landed on Slice");
+        } else if (chapter.IsGate) {
+            yield return GatePlay(player, chapter);
         } else {
             yield return Fight(player, () => chapter.Completed, 240f, "the chapter objective met", null, true);
         }
@@ -703,6 +718,138 @@ public static class Playtest {
         run.Metric("chapterResumed", 1);
         yield return run.Until(() => ChapterScene.Instance.LinesShown >= 1, 10f, "the next chapter's first line");
         yield return new WaitForSecondsRealtime(3f);
+    }
+
+    // Chapter 2 with real input: out to the gate (batting what is in reach on the way), the gate scene read and skipped,
+    // back to the circle, three waves, then The Plated Alpha. ChapterPlay carries on to the card and the saved file.
+    static IEnumerator GatePlay(CharacterMovement player, ChapterRun chapter) {
+        float start = Time.realtimeSinceStartup;
+        run.Event("gate-leg", chapter.ObjectiveLine);
+        while (!run.Done && chapter.Leg == 0) {
+            if (Time.realtimeSinceStartup - start > 150f) {
+                run.Problem(PlaytestSeverity.Bug, "chapter2: Wallit never reached the gate in 150 s (objective \"" + chapter.ObjectiveLine + "\")");
+                yield break;
+            }
+            if (WaveDirector.IsLost) {
+                yield return GameOver();
+                yield break;
+            }
+            if (LevelUpScreen.IsOpen) {
+                yield return PickCard();
+                continue;
+            }
+            Walk(player, chapter.Marker, 1f);
+            PlayInput.Hold(KeyCode.LeftShift, false);
+            Click(NearestInReach(player));
+            SampleFps();
+            yield return null;
+        }
+        PlayInput.Release();
+        if (run.Done) {
+            yield break;
+        }
+        run.Metric("gateReached", 1);
+        run.Event("gate-reached", "Wallit at the gate after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s; the objective now reads \"" + chapter.ObjectiveLine + "\"");
+        yield return run.Until(() => Cutscene.IsOpen, 8f, "The Gate scene at the gate");
+        if (run.Done) {
+            yield break;
+        }
+        Cutscene scene = Cutscene.Instance;
+        run.Scene("The Gate");
+        for (int read = 0; read < 3 && Cutscene.IsOpen && !run.Done; read++) {
+            yield return new WaitForSecondsRealtime(0.7f);
+            run.Event("gate-scene-page", scene.Page + "/" + scene.PageCount + " " + (scene.NameShown.Length > 0 ? scene.NameShown : "(narration)") + ": \"" + scene.TextShown.Replace('\n', ' ') + "\"");
+            if (scene.Typing) {
+                PlayInput.Tap(KeyCode.Space);
+                yield return new WaitForSecondsRealtime(0.35f);
+            }
+            PlayInput.Tap(KeyCode.Space);
+            yield return new WaitForSecondsRealtime(0.3f);
+        }
+        if (Cutscene.IsOpen) {
+            run.Event("gate-scene-skip", "Enter pressed on page " + scene.Page + "/" + scene.PageCount);
+            PlayInput.Tap(KeyCode.Return);
+        }
+        yield return run.Until(() => !Cutscene.IsOpen, 5f, "The Gate scene to close after skipping");
+        if (run.Done) {
+            yield break;
+        }
+        run.Metric("gateSceneSkipped", 1);
+        run.Scene("Chapter play");
+        yield return new WaitForSecondsRealtime(0.5f);
+        run.Event("home-leg", chapter.ObjectiveLine);
+        start = Time.realtimeSinceStartup;
+        while (!run.Done && chapter.Leg == 1) {
+            if (Time.realtimeSinceStartup - start > 150f) {
+                run.Problem(PlaytestSeverity.Bug, "chapter2: Wallit never got back to the circle in 150 s (objective \"" + chapter.ObjectiveLine + "\")");
+                yield break;
+            }
+            if (WaveDirector.IsLost) {
+                yield return GameOver();
+                yield break;
+            }
+            if (LevelUpScreen.IsOpen) {
+                yield return PickCard();
+                continue;
+            }
+            Vector3 home = Musician.Instance != null ? Musician.Instance.transform.position : player.transform.position;
+            Walk(player, home, 1f);
+            PlayInput.Hold(KeyCode.LeftShift, false);
+            Click(NearestInReach(player));
+            SampleFps();
+            yield return null;
+        }
+        PlayInput.Release();
+        if (run.Done) {
+            yield break;
+        }
+        int waveSeen = 0;
+        yield return Fight(player, () => {
+            if (chapter.WaveNow != waveSeen) {
+                waveSeen = chapter.WaveNow;
+                run.Event("chapter-wave", "wave " + waveSeen + " of 3: " + chapter.ObjectiveLine);
+            }
+            return chapter.BossUp || chapter.Completed;
+        }, 300f, "the three waves held and the boss to arrive", null, true);
+        if (run.Done) {
+            yield break;
+        }
+        run.Metric("chapterWaves", waveSeen);
+        run.Scene("Chapter boss");
+        Enemy bossEnemy = chapter.BossEnemy;
+        run.Event("boss-arrives", bossEnemy != null ? bossEnemy.Title + " (" + bossEnemy.HitsToDrop + " hits) after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s; objective \"" + chapter.ObjectiveLine + "\"" : "no boss");
+        yield return new WaitForSecondsRealtime(0.6f);
+        bool bar = bossEnemy != null && BossBarShows(bossEnemy.Title);
+        run.Event("boss-bar", bossEnemy != null ? bossEnemy.Title + ": health bar " + (bar ? "up" : "missing") + ", stamped plate " + (bossEnemy.transform.Find("Invalid Plate") != null ? "on its chest" : "missing") : "no boss");
+        run.Metric("bossBar", bar ? 1 : 0);
+        if (!bar) {
+            run.Problem(PlaytestSeverity.Bug, "chapter2: no boss health bar for the Plated Alpha");
+        }
+        yield return Fight(player, () => chapter.Completed, 420f, "the Plated Alpha defeated", null, true);
+        if (run.Done) {
+            yield break;
+        }
+        foreach (string line in ChapterRun.Events) {
+            if (line.StartsWith("defeat|") || line.StartsWith("line|")) {
+                run.Event("defeat-beat", line);
+            }
+        }
+        run.Event("boss-defeated", "The Plated Alpha fell after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s");
+    }
+
+    static bool NearestInReach(CharacterMovement player) {
+        float reach = BatEquipment.Reach * 0.95f;
+        foreach (Enemy e in Enemy.Roster) {
+            if (e == null || !e.Alive) {
+                continue;
+            }
+            Vector3 to = e.transform.position - player.transform.position;
+            to.y = 0f;
+            if (to.magnitude - e.BodyScale * 0.3f <= reach) {
+                return !LevelUpScreen.HoldFire;
+            }
+        }
+        return false;
     }
 
     static bool watchCutscene;

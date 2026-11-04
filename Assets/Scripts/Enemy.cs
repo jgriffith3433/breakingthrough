@@ -439,6 +439,40 @@ public class Enemy : MonoBehaviour
         gameObject.AddComponent<Courier>();
     }
 
+    // Chapter 2's Alpha: a Plated Yo Bot grown big, with a stamped INVALID plate on its chest. No special fight: a wall
+    // of plate to break. The plate is a flat red board with a white bar, built in code, no collider.
+    public void MakePlatedAlpha(string name, int hits)
+    {
+        MakeBoss();
+        Title = name;
+        gameObject.name = name;
+        HitsToDrop = Mathf.Max(1, hits);
+        modelTint = new Color(1.15f, 0.8f, 0.78f);
+        modelTintAmount = 0.3f;
+        var shader = SafeShader.Find("Sprites/Default");
+        var holder = new GameObject("Invalid Plate");
+        holder.transform.SetParent(transform, false);
+        holder.transform.localPosition = new Vector3(0f, 0.5f, 0.62f);
+        holder.transform.localRotation = Quaternion.Euler(-8f, 0f, 4f);
+        Color red = new Color(0.78f, 0.12f, 0.1f, 1f);
+        Color white = new Color(0.97f, 0.93f, 0.85f, 1f);
+        for (int i = 0; i < 2; i++) {
+            var part = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            part.name = i == 0 ? "Plate" : "Stamp Bar";
+            Destroy(part.GetComponent<Collider>());
+            part.transform.SetParent(holder.transform, false);
+            part.transform.localPosition = new Vector3(0f, 0f, i == 0 ? 0f : 0.03f);
+            part.transform.localScale = i == 0 ? new Vector3(0.62f, 0.36f, 0.04f) : new Vector3(0.5f, 0.07f, 0.02f);
+            Color c = i == 0 ? red : white;
+            if (shader != null) {
+                part.GetComponent<Renderer>().material = new Material(shader) { color = c };
+            } else {
+                UpgradeLook.Paint(part, c);
+            }
+            part.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
+    }
+
     public void MakeBoss()
     {
         Boss = true;

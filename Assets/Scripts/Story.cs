@@ -23,6 +23,7 @@ public static class Story {
         ReachPlace,   // Wallit walks Target metres from the circle along Bearing to the place
         DefeatBoss,   // the Alpha of Boss falls
         HoldThenBoss, // Target bots down, then the Alpha of Boss (named BossName) falls
+        GateAndBack,  // walk Target metres out to the gate on Bearing (GateScene plays), walk back to the circle, hold Waves waves of WaveSize bots, then the named Boss falls
     }
 
     public struct Chapter {
@@ -44,6 +45,11 @@ public static class Story {
         public int Power;             // the wave number the bots' strength follows
         public string[] Lines;        // before: shown on the chapter card ("<speaker>|<text>")
         public string[] Done;         // after: shown on the Chapter Complete card
+        public bool PlainBoss;        // the named boss is a bigger Alpha with no special fight (not the Courier)
+        public int Waves;             // GateAndBack: the waves held at the circle once Wallit is back
+        public int WaveSize;          // GateAndBack: bots down to clear each of those waves
+        public string[] WaveLines;    // GateAndBack: said as each wave starts
+        public string[] GateScene;    // GateAndBack: the cutscene that plays when Wallit reaches the gate
         public string[] Cutscene;     // played by Cutscene.cs over the chapter's map when Begin is pressed (null: none)
     }
 
@@ -98,16 +104,65 @@ public static class Story {
         },
         new Chapter {
             Id = "no-fixed-address", Title = "Chapter 2: No Fixed Address", Place = "The edge of the Hollow",
-            Objective = ChapterObjective.ReachPlace, Target = 70, Bearing = 150f, Goal = "the gate",
+            Objective = ChapterObjective.GateAndBack, Target = 70, Bearing = 150f, Goal = "the gate",
+            Waves = 3, WaveSize = 4, Boss = BotKind.PlatedYoBot, BossName = "The Plated Alpha", BossHits = 55, PlainBoss = true,
             Crew = new[] { BotKind.YoBot }, Every = 3.8f, Cap = 5, Power = 4,
             Lines = new[] {
                 "W|There's a door. Doors have senders.",
                 "S|Doors have locks. Come back.",
                 "Y|Address unknown! Deleting!",
             },
-            Done = new[] {
+            // Said as each of the three waves starts, once Wallit is back at the circle.
+            WaveLines = new[] {
+                "Y|Address unknown! Deleting!",
+                "Y|Address still unknown! Deleting twice!",
+                "S|Last wave. Something heavier follows.",
+            },
+            BossLines = new[] {
+                "Y|Notice! This plate is stamped: INVALID!",
+                "S|The Plated Alpha. Plate says invalid.",
+                "W|So does my refund. Pay up.",
+            },
+            DefeatLines = new[] {
+                "Y|Plate... voided... uploading... nothing?",
+                "W|Void your own stamp.",
+                "S|Clean.",
+            },
+            // The opening scene, over the frozen Hollow's edge (formats as Chapter 1's The Stamp).
+            Cutscene = new[] {
+                "B|on",
+                "C|wide",
+                "N|NO FIXED ADDRESS\nPast the last lantern the Hollow runs out. Far off, a gate stands in the dark with nothing written on it.",
+                "C|wallit",
+                "W|There's a door. Doors have senders.",
+                "C|slice",
+                "S|Doors have locks. Come back.",
+                "C|wallit",
+                "W|Locks have keys. Keys have owners. Owners get paid.",
+                "C|slice",
+                "S|Seventy metres. Then back.",
+                "C|wide",
+                "Y|Address unknown! Deleting!",
+                "C|wallit",
+                "W|Cover me, Slice. I'm collecting a refund.",
+            },
+            // The Gate: plays when Wallit reaches it. His bat knocks; the wall answers with the same stamp from the other side.
+            GateScene = new[] {
+                "B|on",
+                "C|wallit",
+                "N|THE GATE\nNo handle. No hinges. No doormat. Wallit knocks with the bat.",
+                "W|Hello? Sender? I'd like a word, and a receipt.",
+                "C|wide",
+                "N|The wall answers. From the other side, pressed through the dark, the same stamp: RETURN TO SENDER.",
+                "C|wallit",
                 "W|Nothing. Not even a doormat. I'd say that's rude, but I'm the one with no address.",
-                "S|You have one. The circle.",
+                "N|At the foot of the gate, a postmark is torn into the stone. Half of it is his.",
+                "W|That's my stamp. Torn.",
+                "C|slice",
+                "S|Wallit. Come back.",
+            },
+            Done = new[] {
+                "S|You have an address. The circle.",
                 "W|Leased. By you.",
                 "S|Free.",
                 "W|Nothing's free.",

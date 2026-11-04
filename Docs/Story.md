@@ -122,6 +122,21 @@ and calls two Yo Bots with every notice. The defeat beat: the Courier, coming ap
 defeat?"; Wallit "Return to sender."; Slice "Clean." Then Chapter Complete, and the file moves to Chapter 2. The fight is
 `Courier.cs`; the chapter flow (`HoldThenBoss`) is in `ChapterRun.cs`, the lines in `Story.Chapters[0]`.
 
+### Chapter 2: No Fixed Address
+
+The Hollow's edge. Wallit sees a gate far off (70 m from the circle, bearing 150 degrees) and goes: "There's a door. Doors have
+senders." Slice: "Doors have locks. Come back." The chapter is four legs, shown by the objective line at the bottom of the
+screen: **Reach the gate** (metres counting down, Yo Bots coming the whole way), **The Gate** scene (his bat knocks; the wall
+answers with the same RETURN TO SENDER stamp pressed through from the other side; a postmark torn into the stone, half of it
+his), **Back to the circle**, then **three waves** held at the circle ("Address unknown! Deleting!"; Slice: "Last wave.
+Something heavier follows.") and **The Plated Alpha**, a Plated Yo Bot grown big with a red plate stamped INVALID on its
+chest ("Notice! This plate is stamped: INVALID!" / Wallit: "So does my refund. Pay up."). It has no special attack: it is a wall
+of plate to break. Defeat beat: "Plate... voided... uploading... nothing?" / "Void your own stamp." / "Clean." Chapter Complete
+says Slice's piece: "You have an address. The circle." "Leased. By you." "Free." "Nothing's free." "Then pay with swings."
+Then the file moves to Chapter 3. Both scenes (the opening and The Gate) are skippable with Enter or the Skip button. The gate
+and wall are flat blocks with no colliders. Flow: `GateAndBack` in `ChapterRun.cs`, lines in `Story.Chapters[1]`, the boss
+`Enemy.MakePlatedAlpha`.
+
 ## Canon established here
 
 - The circle is the one filed address in the Moonlit Hollow; whatever is inside it exists.
@@ -131,3 +146,5 @@ defeat?"; Wallit "Return to sender."; Slice "Clean." Then Chapter Complete, and 
 - The Stamp: Wallit arrives by stamp, RETURN TO SENDER landing on him out of the dark; the circle's ring lights as he rolls into it. Chapter 1 opens with it.
 - Campaign is the story in chapters, kept in three case files; Arcade is the endless Hollow. Chapter 1 is "Return to Sender".
 - The Courier: Chapter 1's boss, an Alpha Yo Bot with a clipboard that lands a notice of striking on the circle after a visible wind-up. Wallit's answer to a notice is "Return to sender."
+- The gate: at the Hollow's edge the Department's wall answers a knock with the same RETURN TO SENDER stamp from the other side, and a postmark torn into the stone is half of Wallit's own.
+- The Plated Alpha: Chapter 2's boss, a big Plated Yo Bot stamped INVALID. Its plate says INVALID, and Wallit says so does his refund.
