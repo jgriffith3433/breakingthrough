@@ -1,0 +1,18 @@
+{
+ "schemaVersion": 1,
+ "note": "Everyone who speaks or is named in Docs/CampaignBible.md and Docs/Story.md, except Warrok (retired, never added). code is the speaker letter in Story.cs lines (C, B and T are directives and tips, not speakers). colour is the name and the portrait disc. portrait is an optional Resources path; with no file the dialogue box draws a stand-in disc with the glyph. voice is the hook: wallit and slice speak through WallitVoice and SliceVoice, bark means the Cast.LineSpoken hook only (Resources/Voice/<id>_<line>.mp3 when it exists), none is text alone.",
+ "members": [
+  { "id": "narrator", "code": "N", "name": "", "colour": "#FFEBB8", "portrait": "", "glyph": "", "voice": "none", "bible": "Narration over the frozen Hollow and the finale" },
+  { "id": "wallit", "code": "W", "name": "WALLIT", "colour": "#F2CC66", "portrait": "Portraits/wallit", "glyph": "W", "voice": "wallit", "bible": "The player: a wallet with a wooden bat. Talks money." },
+  { "id": "slice", "code": "S", "name": "SLICE", "colour": "#DBE6FF", "portrait": "Portraits/slice", "glyph": "S", "voice": "slice", "bible": "Goth guard of the circle, scalpel knife. Clipped." },
+  { "id": "yobot", "code": "Y", "name": "YO BOT", "colour": "#8CFFB3", "portrait": "Portraits/yobot", "glyph": "Y", "voice": "bark", "bible": "The Clearing Crew: chirpy small bots. Small, Plated, Mega." },
+  { "id": "megayobot", "code": "M", "name": "MEGA YO BOT", "colour": "#FFB74D", "portrait": "Portraits/megayobot", "glyph": "M", "voice": "bark", "bible": "Reads the order aloud from wave 20." },
+  { "id": "courier", "code": "K", "name": "THE COURIER", "colour": "#FF8A80", "portrait": "Portraits/courier", "glyph": "K", "voice": "bark", "bible": "Chapter 1 boss: Alpha Yo Bot with a clipboard and a notice of striking." },
+  { "id": "platedalpha", "code": "P", "name": "THE PLATED ALPHA", "colour": "#C9CED6", "portrait": "Portraits/platedalpha", "glyph": "P", "voice": "bark", "bible": "Chapter 2 boss: Plated Yo Bot stamped INVALID." },
+  { "id": "foreman", "code": "F", "name": "THE FOREMAN", "colour": "#FFD54F", "portrait": "Portraits/foreman", "glyph": "F", "voice": "bark", "bible": "Chapter 3 boss: Mega Yo Bot Alpha that reads the order on its charges." },
+  { "id": "halfbuilt", "code": "H", "name": "THE HALF-BUILT", "colour": "#BCAAA4", "portrait": "Portraits/halfbuilt", "glyph": "H", "voice": "bark", "bible": "Chapter 3: a Yo Bot not finished, on a hook." },
+  { "id": "server", "code": "V", "name": "THE SERVER", "colour": "#B39DDB", "portrait": "Portraits/server", "glyph": "V", "voice": "bark", "bible": "Chapter 4 boss: the first Spider Bot; offers a paper and waits." },
+  { "id": "registrar", "code": "R", "name": "THE REGISTRAR", "colour": "#FFC107", "portrait": "Portraits/registrar", "glyph": "R", "voice": "bark", "bible": "Chapter 5 boss: gold Titan Spider Bot that reads the pages." },
+  { "id": "orderbearer", "code": "O", "name": "THE ORDER-BEARER", "colour": "#EF5350", "portrait": "Portraits/orderbearer", "glyph": "O", "voice": "bark", "bible": "Chapter 6 and wave 30: the Spider Bot that carries the order." }
+ ]
+}

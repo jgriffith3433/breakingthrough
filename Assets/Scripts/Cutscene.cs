@@ -35,6 +35,10 @@ public class Cutscene : MonoBehaviour {
     public string NameShown { get { return nameText != null ? nameText.text : ""; } }
     public string TextShown { get { return lineText != null ? lineText.text : ""; } }
     public string Focus { get; private set; } = "wide";
+    public string PortraitKind { get; private set; } = "none";   // art, stand-in, or narration (no slot)
+    public bool PortraitVisible { get { return portrait != null && portrait.gameObject.activeSelf; } }
+    public string PortraitLetter { get { return portraitLetter != null ? portraitLetter.text : ""; } }
+    public Color NameColour { get { return nameText != null ? nameText.color : Color.white; } }
     public float Bars { get { return barsNow; } }
     public bool Typing { get { return typed < full.Length; } }
     public int Page { get { return page; } }
@@ -80,7 +84,6 @@ public class Cutscene : MonoBehaviour {
     Text nameText;
     Text lineText;
     Text hintText;
-    Sprite[] sprites = new Sprite[3];
 
     // Plays a scene over the running game. done runs when it ends, whether it was read through or skipped.
     public static void Play(string[] lines, Action done) {
@@ -198,6 +201,7 @@ public class Cutscene : MonoBehaviour {
         WallitVoice.Silence();
         SliceVoice.Silence();
         if (who != "W" && who != "S") {
+            Cast.Spoke(who, text);
             return;
         }
         if (!WallitVoice.FloorFree) {
@@ -377,45 +381,34 @@ public class Cutscene : MonoBehaviour {
     // ---------------------------------------------------------------- build
 
     static Color SpeakerColor(string who) {
-        switch (who) {
-            case "W": return new Color(0.95f, 0.8f, 0.4f);
-            case "S": return new Color(0.86f, 0.9f, 1f);
-            case "Y": return new Color(0.55f, 1f, 0.7f);
-            default: return new Color(1f, 0.92f, 0.72f);
-        }
-    }
-
-    static int PortraitIndex(string who) {
-        return who == "W" ? 0 : who == "S" ? 1 : who == "Y" ? 2 : -1;
+        return Cast.ColourOf(who);
     }
 
     // Portrait slot: Resources/Portraits/<name>.png when the art exists, else a disc in the speaker's colour with the
     // initial. Narration has no portrait.
     void SetPortrait(string who) {
-        int index = PortraitIndex(who);
-        portrait.gameObject.SetActive(index >= 0);
-        if (index < 0) {
+        bool has = Cast.HasPortrait(who);
+        portrait.gameObject.SetActive(has);
+        PortraitKind = has ? "none" : "narration";
+        if (!has) {
             return;
         }
-        string[] names = { "wallit", "slice", "yobot" };
-        if (sprites[index] == null) {
-            Texture2D tex = Resources.Load<Texture2D>("Portraits/" + names[index]);
-            if (tex != null) {
-                sprites[index] = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
-            }
-        }
-        if (sprites[index] != null) {
-            portrait.sprite = sprites[index];
+        Sprite art = Cast.PortraitOf(who);
+        if (art != null) {
+            portrait.sprite = art;
             portrait.type = Image.Type.Simple;
             portrait.preserveAspect = true;
             portrait.color = Color.white;
             portraitLetter.text = "";
+            PortraitKind = "art";
         } else {
             UiSkin.Round(portrait, 1f);
             Color c = SpeakerColor(who);
             portrait.color = new Color(c.r * 0.38f, c.g * 0.38f, c.b * 0.38f, 1f);
-            portraitLetter.text = Story.Name(who).Substring(0, 1);
+            string glyph = Cast.GlyphOf(who);
+            portraitLetter.text = glyph.Length > 0 ? glyph : Story.Name(who).Substring(0, 1);
             portraitLetter.color = c;
+            PortraitKind = "stand-in";
         }
     }
 
