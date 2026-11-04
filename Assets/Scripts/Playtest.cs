@@ -36,6 +36,7 @@ public static class Playtest {
         new PlaytestScenario("locomotion", "Wallit's feet on the ground: walks, runs, starts, stops and turns free, then locked on to a Yo Bot strafes left and right, back pedals, runs at it and stops, all through the keys. Each segment logs the planted foot's slide and the hips' largest jump (`loco` events; a slide or a pop is a bug)", 75, "content"),
         new PlaytestScenario("cast", "The new cast, in 90 s: the main menu with the key art up (MenuArt, its size and that the menu shows it), What's new opened from the site over the game with the release note naming Wallit, Slice and the bots (read from releases.json), then a run where the player is Wallit with his bat, the bar says Slice, and wave 1's Yo Bots close in and are batted. The AGENTS.md and README cast text lives in the repo, not the build: the review reads it from the diff", 120, "content"),
         new PlaytestScenario("modes", "The mode select: the main menu shows Campaign and Arcade; Campaign opens the three case files (save slots, setup: the sandbox keeps them off the real save), opening an empty file loads the placeholder Chapter 1 scene with Wallit and Slice's lines, Menu returns and the file now reads Chapter 1 with its time on the books, Erase (asked twice) empties it; then Arcade starts today's wave defense and the bot plays 40 s of it with the bat. Events mode-select, campaign-files, chapter-open, chapter-lines, campaign-saved, campaign-erased, arcade-start", 200, "content"),
+        new PlaytestScenario("campaign", "Campaign loads: from the main menu press Campaign, open case file 1 (setup: the sandbox keeps the files off the real save) and wait for the Campaign scene to load. Reports run_start with mode=campaign and the loaded scene name (event run_start, metrics campaignLoaded, campaignLoadSeconds); if the scene fails to load (not in the build's scene list, or the chapter never builds) the run stops stuck with a bug saying so. Smoke is unchanged: it still presses Arcade", 90, "content"),
         new PlaytestScenario("story", "The story: the intro over the frozen Hollow (read page by page: who Wallit is, what the circle is, why Slice must not fall; a Skip button is on it), wave 1's story beats in canon voices, then setup: the testing wave key to wave 10 and wave 30 for the boss-wave title cards and beats (Yo Bots chirpy, Wallit on money, Slice clipped), and setup: wave 30's waiting bots trimmed to the boss and Slice topped up so the bat can finish it with real swings. Clearing wave 30 plays the finale pages and the ADDRESS FILED ending screen; the bot presses Keep going into overtime. Events intro-*, beat, finale-*, ending", 600, "content"),
         new PlaytestScenario("polish", "The final polish pass, on any screen size (run it on desktop and on the phone): the main menu, the HUD in wave 1, the level-up cards (setup: a level of bolts granted), the pause menu by its button, Resume, 40 s of real play, then the bot holds fire until Slice falls (setup: Plated Yo Bots ring her after 20 s) and the game-over panel reads Address struck off. Each screen gets a layout check (menu, hud, cards, pause, gameover), a stale-words check (no piano, keys or music-stopped words left), and a button-feel check (every button lifts on hover and sinks on press like the menu's); the audio-mix event says how many sounds played, how many stacked softer, how many were capped and how many dipped under a voice line", 420, "full"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.ai and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
@@ -202,6 +203,13 @@ public static class Playtest {
                 if (run.Done) {
                     yield break;
                 }
+            }
+            if (id == "campaign") {
+                yield return CampaignRun();
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
             }
             if (id == "modes") {
                 yield return ModesMenu();
@@ -498,6 +506,57 @@ public static class Playtest {
             run.Problem(PlaytestSeverity.Polish, "menu key art Resources/UI/MenuArt is missing");
         }
         yield return new WaitForSecondsRealtime(1f);
+    }
+
+    // Campaign from the main menu: press Campaign, open case file 1, wait for the Campaign scene. A scene that is not in
+    // the build ("Scene 'Campaign' couldn't be loaded", PR #70) never becomes the active scene: that is a bug, said plainly.
+    static IEnumerator CampaignRun() {
+        CampaignSave.EnterSandbox();
+        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+        if (menu == null || menu.CampaignButton == null || !menu.CampaignButton.isActiveAndEnabled) {
+            run.Problem(PlaytestSeverity.Bug, "campaign: the main menu has no Campaign button to press");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        run.Event("mode-select", "main menu shows \"" + menu.CampaignButton.GetComponentInChildren<Text>().text + "\"");
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(menu.CampaignButton.gameObject);
+        run.Event("tap", "Campaign");
+        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files after pressing Campaign");
+        if (run.Done) {
+            yield break;
+        }
+        CampaignPanel panel = CampaignPanel.Instance;
+        yield return new WaitForSecondsRealtime(1f);
+        float tapped = Time.realtimeSinceStartup;
+        Tap(panel.SlotButtons[0].gameObject);
+        run.Event("tap", "case file 1");
+        float limit = tapped + 45f;
+        while (Time.realtimeSinceStartup < limit && !(ChapterScene.Instance != null && SceneManager.GetActiveScene().name == CampaignSave.Scene)) {
+            yield return null;
+        }
+        string active = SceneManager.GetActiveScene().name;
+        if (ChapterScene.Instance == null || active != CampaignSave.Scene) {
+            run.Metric("campaignLoaded", 0);
+            run.Problem(PlaytestSeverity.Bug, "campaign: the scene '" + CampaignSave.Scene + "' did not load after opening case file 1 (active scene '" + active + "' after 45 s). Is it in the build's scene list?");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        float seconds = Time.realtimeSinceStartup - tapped;
+        run.Scene("Chapter 1");
+        yield return null;
+        run.Metric("campaignLoaded", 1);
+        run.Metric("campaignLoadSeconds", Mathf.Round(seconds * 10f) / 10f);
+        string mode = RunAnalytics.LastRunMode;
+        if (mode != "campaign") {
+            run.Problem(PlaytestSeverity.Bug, "campaign: run_start said mode '" + mode + "', not campaign");
+        }
+        run.Event("run_start", "mode=" + mode + " scene=" + active + " chapter=" + (ChapterScene.Instance.Chapter + 1) + " \"" + ChapterScene.Instance.Title + "\" loaded in " + seconds.ToString("0.0") + " s");
+        yield return run.Until(() => ChapterScene.Instance.LinesShown >= 1, 10f, "the chapter's first line");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(3f);
     }
 
     // The mode select, played through the buttons like a mouse. The sandbox keeps the case files off the real save.
