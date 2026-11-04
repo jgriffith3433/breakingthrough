@@ -154,6 +154,22 @@ unread..." / "Paid in full." / "Clean." The file then moves to Chapter 4. Flow: 
 `chapter3` playtest plays it. Slice stays at the circle and does not follow (her second ring holds it); the Foreman reads the order
 only in its lines, with no special attack yet.
 
+### Chapter 4: The Process Servers
+
+Where the Spider Bots come from. The opening scene at the circle: the **Long Walk** is a causeway of stone slabs over a pit of mist,
+six lamps in pairs along it (one per leg), a single path with no cover. Yo Bots clear; **Spider Bots serve**. They are **process
+servers**, deliveries from the Department with one paper to hand over, and they stand and wait while it is read. Slice says plainly
+what the paper is, for the first time: "My address. Struck." "Since when?" "Before you." (Wallit has no joke.) The scene *Served* shows
+a Spider Bot stop a step short of the lamps, fold one leg and offer a paper on the tip of its claw, politely, the way a courier
+would; Slice does not take it, and it waits. Wallit walks the three lamp stops (30, 62 and 95 m, bearing 330), the way turns round at
+the last, and he holds the circle against the servers (Spider Bots and Plated Yo Bots). Then **The Server**, the first full Spider Bot,
+arrives and **offers the paper and does not strike**. Refusing it means landing a blow on the Server while the paper is out (the
+objective line counts "Refuse the paper n / 3"); it backs off and offers again. Only after the third refusal does it wind up and
+strike Slice (`Server.StrikeDamage`), and then it is a plain Alpha to bring down. Until then its health cannot drop below 70%
+(`Enemy.MinHealth01`), so it cannot fall unrefused. Defeat beat: "Delivery... undelivered... chirp?" / "Return to sender." / "Clean."
+The file then moves to Chapter 5. Flow: `ChapterObjective.FloorRun` with `Chapter.Walk` in `ChapterRun.cs` (`BuildWalk`), lines in
+`Story.Chapters[3]`, the boss `Enemy.MakeServer` + `Server.cs`; the `chapter4` playtest plays it. Slice stays at the circle.
+
 ## Canon established here
 
 - The circle is the one filed address in the Moonlit Hollow; whatever is inside it exists.
@@ -168,3 +184,5 @@ only in its lines, with no special attack yet.
 - The Clearing Floor: a sunken yard beyond the broken gate where the Department stamps out Yo Bots, one batch per unfiled thing. Yo Bots are the Clearing Crew; they chirp because each job closes with a report ("Uploading victory" = "filed as cleared"); plated and Mega are the same unit sent again heavier; their bolts are their pay.
 - The belt: carries flat cleared things (a hat, a clock, a small bell) into a chute with a red lamp that is a lens turned toward the circle. Pulling the lever breaks the feed.
 - The Foreman: Chapter 3's boss, a Mega Yo Bot Alpha that reads the order aloud, an order sheet on its chest.
+- The Long Walk: a causeway of stone slabs over a pit of mist, six lamps in pairs. Spider Bots are the process servers: deliveries from the Department, each with one paper (the address, struck) to hand over, who stand and wait while it is read. Slice: "My address. Struck." "Before you."
+- The Server: Chapter 4's boss, the first full Spider Bot. It offers the paper and will not strike until it has been refused three times.

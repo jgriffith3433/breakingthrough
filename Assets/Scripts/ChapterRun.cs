@@ -362,12 +362,17 @@ public class ChapterRun : MonoBehaviour {
         bool last = leg == StopCount - 1;
         leg++;
         if (last) {
-            FeedBroken = true;
-            Events.Add("feed-broken|" + data.Id);
-            GameAudio.Play("stomp", 1f, 0.5f);
-            Fx.Ring(Marker + Vector3.up * 0.3f, 18f, new Color(1f, 0.3f, 0.2f, 0.8f), 1.4f);
-            if (floorProps != null) {
-                floorProps.SetBool("feed", false);
+            if (data.Walk) {
+                Events.Add("last-lamp|" + data.Id);
+                Fx.Ring(Marker + Vector3.up * 0.3f, 14f, new Color(1f, 0.82f, 0.38f, 0.8f), 1.4f);
+            } else {
+                FeedBroken = true;
+                Events.Add("feed-broken|" + data.Id);
+                GameAudio.Play("stomp", 1f, 0.5f);
+                Fx.Ring(Marker + Vector3.up * 0.3f, 18f, new Color(1f, 0.3f, 0.2f, 0.8f), 1.4f);
+                if (floorProps != null) {
+                    floorProps.SetBool("feed", false);
+                }
             }
             // The marker turns around to the circle, as it does at Chapter 2's gate.
             if (Musician.Instance != null && beacon != null) {
@@ -481,13 +486,17 @@ public class ChapterRun : MonoBehaviour {
                     return "Reach " + data.Stops[leg].Name + " (" + (leg + 1) + " of " + StopCount + "):  " + Progress + " m";
                 }
                 if (leg == StopCount) {
-                    return "The feed is broken. Back to the circle:  " + Progress + " m";
+                    return (data.Walk ? "The last lamp is lit. Back to the circle:  " : "The feed is broken. Back to the circle:  ") + Progress + " m";
                 }
                 if (!bossCalled) {
-                    return "Hold the circle against the last batch:  " + Mathf.Min(Progress, Target()) + " / " + Target() + " down";
+                    return (data.Walk ? "Hold the circle against the servers:  " : "Hold the circle against the last batch:  ") + Mathf.Min(Progress, Target()) + " / " + Target() + " down";
                 }
                 if (defeatIn > 0f) {
                     return data.BossName + " is down";
+                }
+                if (data.Walk && bossSpawned && !BossDown) {
+                    return Server.Struck ? "Bring down " + data.BossName
+                        : "Refuse the paper (hit " + data.BossName + " when it offers):  " + Mathf.Min(Server.Refusals, Server.RefusalsNeeded) + " / " + Server.RefusalsNeeded;
                 }
                 return "Bring down " + data.BossName + (bossSpawned ? "" : "  (it's coming)");
             case Story.ChapterObjective.GateAndBack:
@@ -623,7 +632,11 @@ public class ChapterRun : MonoBehaviour {
         Vector3 at = origin + new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * data.Target;
         at.y = origin.y;
         if (data.Objective == Story.ChapterObjective.FloorRun) {
-            BuildFloor(origin);
+            if (data.Walk) {
+                BuildWalk(origin);
+            } else {
+                BuildFloor(origin);
+            }
             at = StopPoint(data.Stops[0]);
         } else if (Physics.Raycast(new Vector3(at.x, 60f, at.z), Vector3.down, out RaycastHit hit, 120f, ~0, QueryTriggerInteraction.Ignore)) {
             at.y = hit.point.y;
@@ -673,6 +686,38 @@ public class ChapterRun : MonoBehaviour {
         Block("Wall R", new Vector3(13.5f, 3.5f, 0f), new Vector3(16f, 7f, 1.2f), dark);
         Block("Signpost", new Vector3(8.5f, 2f, 5f), new Vector3(0.35f, 4f, 0.35f), stone);
         Block("Blank Sign", new Vector3(8.5f, 3.9f, 5.25f), new Vector3(2.4f, 1.2f, 0.12f), pale);
+    }
+
+    // The Long Walk: a causeway of stone slabs from the circle out over a pit of mist, a pair of lamps at each stop (six lamps,
+    // one per leg). Flat, collider-free blocks, nothing solid in the playfield.
+    void BuildWalk(Vector3 origin) {
+        gateProps = new GameObject("Chapter Walk");
+        Color slab = new Color(0.38f, 0.38f, 0.44f, 1f);
+        Color iron = new Color(0.16f, 0.17f, 0.22f, 1f);
+        Color lamp = new Color(1f, 0.78f, 0.4f, 1f);
+        Vector3 end = StopPoint(data.Stops[data.Stops.Length - 1]);
+        Vector3 along = end - origin;
+        along.y = 0f;
+        float length = along.magnitude + 12f;
+        var road = new GameObject("Causeway");
+        road.transform.SetParent(gateProps.transform, false);
+        road.transform.position = origin + along.normalized * (length * 0.5f - 6f);
+        road.transform.rotation = Quaternion.LookRotation(along.normalized, Vector3.up);
+        for (int i = 0; i * 4f < length; i++) {
+            float shade = (i % 2 == 0) ? 1f : 0.88f;
+            Block(road.transform, "Slab " + i, new Vector3(0f, 0.12f, -length * 0.5f + 2f + i * 4f), new Vector3(5f, 0.08f, 3.7f), slab * shade, 0f);
+        }
+        for (int i = 0; i < data.Stops.Length; i++) {
+            Vector3 at = StopPoint(data.Stops[i]);
+            var holder = new GameObject("Lamps " + (i + 1) + " " + data.Stops[i].Name);
+            holder.transform.SetParent(gateProps.transform, false);
+            holder.transform.position = at;
+            holder.transform.rotation = Quaternion.LookRotation(along.normalized, Vector3.up);
+            foreach (float side in new[] { -3.6f, 3.6f }) {
+                Block(holder.transform, "Lamp Post", new Vector3(side, 1.8f, 0f), new Vector3(0.3f, 3.6f, 0.3f), iron, 0f);
+                Block(holder.transform, "Lamp", new Vector3(side, 3.9f, 0f), new Vector3(0.9f, 0.9f, 0.9f), lamp, 0f);
+            }
+        }
     }
 
     // The Clearing Floor: at each stop a few flat, collider-free blocks (hooks with chassis, the belt with cleared things,

@@ -121,7 +121,7 @@ roster so no new enemy art is needed for chapters 1 to 3 and 6.
   The lamp is a lens: it turns toward the Hollow, and the circle blinks once.
 - **Boss:** **The Foreman**, a Mega Yo Bot Alpha that reads the order aloud on its charges. [canon: Mega debuts wave 20]
 
-### Chapter 4: The Process Servers
+### Chapter 4: The Process Servers [built; see Story.md, "Chapter 4"]
 
 - **Space:** The Long Walk, a causeway of stone slabs over a pit of mist, with six stilts of lamp-light on either side
   (six lamps, one per leg). A single path, no cover. [proposed]

@@ -61,6 +61,7 @@ public static class Story {
         public string[] WaveLines;    // GateAndBack: said as each wave starts
         public string[] GateScene;    // GateAndBack: the cutscene that plays when Wallit reaches the gate
         public Stop[] Stops;          // FloorRun: the places out to the lever, in order
+        public bool Walk;             // FloorRun: a causeway walk (Chapter 4): no belt feed to break at the last stop, lamps instead of the Floor's props
         public string[] Cutscene;     // played by Cutscene.cs over the chapter's map when Begin is pressed (null: none)
     }
 
@@ -280,19 +281,88 @@ public static class Story {
         },
         new Chapter {
             Id = "process-servers", Title = "Chapter 4: The Process Servers", Place = "The Long Walk",
-            Objective = ChapterObjective.SurviveTime, Target = 60, Goal = "the Servers",
-            Crew = new[] { BotKind.PlatedYoBot, BotKind.SpiderBot }, Every = 7f, Cap = 4, Power = 20,
+            Objective = ChapterObjective.FloorRun, Target = 95, Goal = "the last lamp", WaveSize = 5, Walk = true,
+            Boss = BotKind.SpiderBot, BossName = "The Server", BossHits = 60,
+            Crew = new[] { BotKind.SpiderBot, BotKind.PlatedYoBot }, Every = 6.5f, Cap = 3, Power = 26,
             Lines = new[] {
                 "Y|Spiders en route! Chirp!",
                 "S|Mind the legs.",
                 "W|They're not bigger Yo Bots. They're deliveries.",
+            },
+            Stops = new[] {
+                new Stop {
+                    Dist = 30f, Bearing = 330f, Name = "the first lamp",
+                    Lines = new[] {
+                        "N|The causeway is stone slabs over a pit of mist. A pair of lamps burns at each stop, one for every leg.",
+                        "S|Mind the legs.",
+                    },
+                },
+                new Stop {
+                    Dist = 62f, Bearing = 330f, Name = "the middle lamp",
+                    Lines = new[] {
+                        "W|They keep coming down the same path. Nobody's lost. They know the address.",
+                        "S|They know mine.",
+                    },
+                },
+                new Stop {
+                    Dist = 95f, Bearing = 330f, Name = "the last lamp",
+                    Lines = new[] {
+                        "N|The last pair of lamps. Ahead the slabs end in the mist, and something tall is walking up them, slowly, to wait.",
+                    },
+                },
+            },
+            // Said at the last lamp as the way turns round to the circle.
+            WaveLines = new[] {
+                "S|It stands and waits. It will keep waiting. Back to the circle, Wallit.",
+                "W|Waiting's billable.",
+            },
+            BossLines = new[] {
+                "Y|Order delivery! Signature required!",
+                "S|The Server. It will not strike until it has offered the paper three times and been refused three times.",
+                "W|Refused. I can do refused. Free of charge.",
+            },
+            DefeatLines = new[] {
+                "Y|Delivery... undelivered... chirp?",
+                "W|Return to sender.",
+                "S|Clean.",
+            },
+            // The opening scene, at the circle: where Spider Bots come from, and what a process server is.
+            Cutscene = new[] {
+                "B|on",
+                "C|wide",
+                "N|THE LONG WALK\nA causeway of stone slabs runs out over a pit of mist, six lamps on either side. A single path. No cover.",
+                "C|wallit",
+                "W|Spiders. Bigger than anything so far, and not bigger Yo Bots.",
+                "C|slice",
+                "S|They aren't. They're what the Yo Bots are for.",
+                "C|wallit",
+                "W|Meaning?",
+                "C|slice",
+                "S|Yo Bots clear. Spider Bots serve. Every Spider Bot comes down the Long Walk from the Department with one paper to hand over.",
+                "C|wallit",
+                "W|They're not bigger Yo Bots. They're... deliveries.",
+                "C|slice",
                 "S|Process servers. They stand and wait while it's read.",
+                "C|wallit",
+                "W|Read what?",
+                "C|slice",
+                "S|My address. Struck.",
+                "C|wallit",
+                "W|Since when?",
+                "C|slice",
+                "S|Before you.",
+                "C|wallit",
+                "W|...",
+                "C|wide",
+                "N|SERVED\nOut on the slabs a Spider Bot stops a step short of the lamps, folds one leg, and offers a paper on the tip of its claw, politely, the way a courier would. Slice does not take it. It waits.",
+                "C|slice",
+                "S|Walk the lamps. Hold each. I'll keep the ring.",
             },
             Done = new[] {
-                "W|Read what?",
-                "S|My address. Struck.",
-                "W|Since when?",
-                "S|Before you.",
+                "W|It waited for me to take it. Three times. Refused all three.",
+                "S|That is how it's done. Refuse the paper, and it has to strike.",
+                "W|And then?",
+                "S|And then you are standing in front of it.",
             },
         },
         new Chapter {

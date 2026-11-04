@@ -31,6 +31,8 @@ public class Enemy : MonoBehaviour
     public bool Boss { get; private set; }
     // The Courier (Chapter 1's Alpha): it holds still and attacks in telegraphed slams (Courier.cs), never swipes.
     public bool IsCourier { get; private set; }
+    public int BlowsTaken;      // blows that landed (the Server counts a refusal when this moves)
+    public float MinHealth01;   // the Server's floor: blows cannot take its health below this share until it is lifted
     public string Title { get; private set; }
     public float Health01 { get { return Mathf.Clamp01(1f - taken / Mathf.Max(1f, HitsToDrop)); } }
     public float BodyScale { get { return bodyScale; } }
@@ -437,6 +439,28 @@ public class Enemy : MonoBehaviour
         modelTint = new Color(1.3f, 0.95f, 0.45f);
         modelTintAmount = 0.35f;
         gameObject.AddComponent<Courier>();
+    }
+
+    // Chapter 4's Alpha, the first full Spider Bot. Its fight is Server.cs: it offers a paper, will not strike until the paper
+    // is refused three times, and cannot fall before then (MinHealth01).
+    public void MakeServer(string name, int hits)
+    {
+        MakeBoss();
+        IsCourier = true;
+        Title = name;
+        gameObject.name = name;
+        HitsToDrop = Mathf.Max(1, hits);
+        MinHealth01 = 0.7f;
+        modelTint = new Color(0.8f, 1.1f, 1.2f);
+        modelTintAmount = 0.3f;
+        gameObject.AddComponent<Server>();
+    }
+
+    // The Server has been refused enough: it behaves as a plain boss from here (swipes and stabs, calls bots).
+    public void Unleash()
+    {
+        IsCourier = false;
+        MinHealth01 = 0f;
     }
 
     // Chapter 3's Alpha: a Mega Yo Bot grown big and amber, with the order held flat on its chest (a pale sheet with ruled
@@ -1000,6 +1024,9 @@ public class Enemy : MonoBehaviour
             return false;
 
         taken += amount;
+        BlowsTaken++;
+        if (MinHealth01 > 0f)
+            taken = Mathf.Min(taken, HitsToDrop * (1f - MinHealth01));
         RefreshBar();
         Vector3 mark = transform.position + Vector3.up * (0.7f * Mathf.Max(1f, bodyScale));
         if (kind != DamageKind.Burn)
