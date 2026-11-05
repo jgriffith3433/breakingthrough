@@ -76,6 +76,7 @@ public class ChapterHub : MonoBehaviour {
     }
     // Rebuilds what depends on the file's progress (doors, lodgers, errand) after it changed.
     public void Refresh() {
+        DressOffice();
         SetDoors();
         ResetErrand();
     }
@@ -119,6 +120,7 @@ public class ChapterHub : MonoBehaviour {
     void OnDestroy() {
         if (Instance == this) {
             Instance = null;
+            ChapterMap.Unload();
         }
     }
 
@@ -135,6 +137,7 @@ public class ChapterHub : MonoBehaviour {
             ArrivalShown = 0;
             EnteredDoor = -1;
             CloseBoard();
+            DressOffice();
             SetDoors();
             ResetErrand();
             TalkText = "";
@@ -142,6 +145,18 @@ public class ChapterHub : MonoBehaviour {
         }
         if (cam != null) {
             cam.cullingMask = shown ? -1 : 0;
+        }
+    }
+
+    // The office scene's dressing (OfficeMap), null until its scene has filled in.
+    public OfficeMap Office {
+        get { return ChapterMap.Current != null ? ChapterMap.Current.Own as OfficeMap : null; }
+    }
+
+    void DressOffice() {
+        OfficeMap office = Office;
+        if (office != null) {
+            office.Dress(CampaignSave.Get(CampaignSave.Active).cleared);
         }
     }
 
@@ -170,6 +185,8 @@ public class ChapterHub : MonoBehaviour {
         light.intensity = 1f;
         light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
 
+        // The office is its own scene (Assets/Maps/Map_Office.unity), loaded on top and dressed for how far the file has come.
+        ChapterMap.Load("office");
         BuildRoom();
         BuildBoard();
         BuildDesk();

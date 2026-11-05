@@ -269,6 +269,24 @@ a hook, "I am... not finished!"; once Wallit reaches the belt) and **The Clerk**
 half the pages down). Data: `Chapter.Mini*`, `Enemy.MakeMini`, `WaveDirector.SpawnMini`. Arcade is untouched. Playtests log
 `new-enemy`, `mini-boss` and `mini-boss-bar` in any chapter scenario.
 
+## The places (chapter maps and the office)
+
+Every place is its own Unity scene (`Assets/Maps/Map_*.unity`, built by `OwnMap` subclasses; map design sheets in `Docs/CampaignBible.md`).
+Chapters 4 and 5 and 6 each have a boss arena on the far side of the circle from the route, a dais the boss walks out of.
+
+- **The Long Walk (Chapter 4, `Map_Walk`)**: slate-blue dusk, a causeway of pale slabs over a pit of mist, six lamp stilts whose heads
+  keep three folded legs, the last slabs fallen in. Arena: the Servers' Dais (bearing 150) with a paper stand. Set piece: the stand's
+  paper lifts and its lamp burns violet whenever The Server holds its paper out.
+- **The Reading Room (Chapter 5, `Map_Reading`)**: a bare round hall under a dark vault, lamp-gold. Five sections of forms on the wall go
+  blank page by page; five lecterns lift their pages; a carpet aisle runs from the white door to the empty desk. Arena: the Registrar's
+  Gallery (bearing 0) rises out of the floor after the fifth page.
+- **The Moonlit Hollow, filed (Chapter 6, `Map_Filed`)**: dawn-blue grass, the Department wall gone to stumps, a pale path that stops at
+  nothing, the circle in white. Arena: the Threshold (bearing 20), a white doorframe on a dais with the Order-Bearer's stamp marks.
+  Set piece: when the chapter is filed the ring unrolls into a line of writing and a number, 1 (proposed: Wallit's first coin counted).
+- **The office (the hub, `Map_Office`)**: the same walkable room (`ChapterHub`), dressed for the chapters filed. Window light goes from night
+  to dawn, each door has a plaque in its chapter's colours and a red FILED stamp once cleared, the filing cabinets and paper stacks grow,
+  the ring warms from blue to brass, and when all six are filed the brass door number hangs on the back wall.
+
 ## The hub and Wallit's account
 
 Between chapters the file does not drop straight onto the next card. Chapter Complete leads **to the hub**: the Department's office, one

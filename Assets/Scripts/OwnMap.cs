@@ -35,6 +35,10 @@ public abstract class OwnMap : MonoBehaviour {
             case "hollow": return host.AddComponent<HollowMap>();
             case "hollow-edge": return host.AddComponent<EdgeMap>();
             case "clearing-floor": return host.AddComponent<FloorMap>();
+            case "long-walk": return host.AddComponent<WalkMap>();
+            case "reading-room": return host.AddComponent<ReadingMap>();
+            case "hollow-filed": return host.AddComponent<FiledMap>();
+            case "office": return host.AddComponent<OfficeMap>();
         }
         return null;
     }
@@ -55,6 +59,32 @@ public abstract class OwnMap : MonoBehaviour {
     }
 
     protected abstract void Build();
+
+    // A page of the Reading Room has been read (ChapterRun.PageRead); the other places ignore it.
+    public virtual void PageRead(int page) { }
+
+    // The chapter's boss arena: a raised round dais with a ring of pillars, away from the route. The boss walks out of it
+    // (WaveDirector.SpawnForChapter reads BossSpot). Flat pieces only, no colliders. Returns the group for the caller's own props.
+    public bool HasArena { get; private set; }
+    public Vector3 BossSpot { get; private set; }
+    public float ArenaBearing { get; private set; }
+
+    protected Transform Arena(string name, float bearing, float dist, float radius, Color floor, Color rim, Color mark, int pillars = 12) {
+        Transform g = Group(name);
+        Vector3 at = Polar(bearing, dist);
+        Piece(g, "Arena Floor", at + Vector3.up * 0.16f, new Vector3(radius * 2f, 0.04f, radius * 2f), floor, 0f, 0f, Shape.Cylinder);
+        Piece(g, "Arena Step", at + Vector3.up * 0.1f, new Vector3(radius * 2.15f, 0.04f, radius * 2.15f), rim * 0.8f, 0f, 0f, Shape.Cylinder);
+        Piece(g, "Arena Inner", at + Vector3.up * 0.2f, new Vector3(radius * 1.2f, 0.03f, radius * 1.2f), mark, 0f, 0f, Shape.Cylinder);
+        for (int i = 0; i < pillars; i++) {
+            float a = i * 360f / pillars;
+            Vector3 p = at + Quaternion.Euler(0f, a, 0f) * Vector3.forward * (radius + 1.5f);
+            Piece(g, "Arena Pillar " + i, p + Vector3.up * (3f + (i % 2) * 1.5f), new Vector3(2f, 6f + (i % 2) * 3f, 2f), rim, a);
+        }
+        HasArena = true;
+        BossSpot = at;
+        ArenaBearing = bearing;
+        return g;
+    }
 
     // The playtest's named setup shortcut: make the set piece happen now.
     public abstract void Trigger();

@@ -46,9 +46,9 @@ public static class Playtest {
         new PlaytestScenario("moves", "Campaign's combat moves, played with real input in Chapter 1 (the sandbox case file; the real save and Arcade are never touched): the bot swings the bat three times in a row and each hit of the combo is its own (Deposit, Withdrawal, Overdraft: damage, knockback and crack differ; events combo-hit, combo-distinct); it then fights on pressing X (the dodge) whenever a bot is close, and a blow that lands inside the dodge's 0.4 s window is avoided (events dodge, dodge-avoided, ability-slots with X Dodge, C Refund and the empty V slot). The Courier fight then runs as in the campaign scenario. Arcade is checked unchanged: outside a chapter the dodge, the per-hit combo and the slots read as no effect (event arcade-moves-clean; metrics comboHits, dodges, dodgesAvoided)", 600, "content"),
         new PlaytestScenario("abilities", "Campaign's three new abilities, played with real input in Chapter 1 (setup: the sandbox case file starts 1 XP short of level 4, and again short of 5 and 6 as each unlocks; the real save and Arcade are never touched): the HUD's second line shows each slot with its key and cooldown (V: LV 4 locked, then Coin Toss ready / 4 s, B Stamp Out ready / 14 s, G Escrow ready / 20 s; events slot-line); each unlock is announced as it is earned (level-up, unlock-level); the bot presses V and a thrown coin stings a bot from range (event toss-hit), presses B with bots close and they are stunned and stung (event stamp-hit), presses G and a blow that lands is held (event escrow-held); a cooldown is seen counting down on the HUD (event cooldown-shown); the case file keeps the unlocks after a save round trip and after leaving to the menu (events unlock-saved, unlock-kept; metrics tosses, tossHits, stamps, stampedBots, shields, shieldBlocks, unlockMask). Arcade is unchanged (event arcade-moves-clean)", 900, "content"),
         new PlaytestScenario("hub-npcs", "The hub's lodgers, with real input (setup: the sandbox case file 1 has chapter 1 filed and opens in the hub; later chapters are filed by setup shortcuts, never the real save): four lodgers stand in the office, none of them Warrok (hub-lodgers); Wallit walks to each and presses E, and each speaks its line for one chapter cleared (npc-line); Chime sends him for a lost thing (errand-offered), he walks to it (errand-pickup) and back, and Chime pays XP and the lost thing joins the file (errand-paid, with the XP before and after and the thing kept). Then setup files chapters 2 to 6 one by one and Tick is talked to again after each, every lodger's line must differ from the one before (npc-after-chapter; metrics lodgers, linesDiffer, errandXp, lostThings)", 300, "content"),
-        new PlaytestScenario("hub-doors", "The hub as a walkable office, with real input (setup: the sandbox case file 1 has chapters 1 and 2 filed and opens in the hub; the real save is never touched): Wallit walks about the room to the chapter board and the vacant desk (hub-walk), doors 1 to 3 stand open and 4 to 6 stay shut (hub-office), pushing on shut door 4 does not get him through (door-locked), walking into open door 3 shows that chapter's card (door-entered) and Begin starts it (chapter-started); metrics doorsRight, hubWalked, lockedHeld", 300, "content"),
+        new PlaytestScenario("hub-doors", "The hub as a walkable office, with real input (setup: the sandbox case file 1 has chapters 1 and 2 filed and opens in the hub; the real save is never touched): Wallit walks about the room to the chapter board and the vacant desk (hub-walk), doors 1 to 3 stand open and 4 to 6 stay shut (hub-office), pushing on shut door 4 does not get him through (door-locked), walking into open door 3 shows that chapter's card (door-entered) and Begin starts it (chapter-started); event hub-scene (the office is its own scene, Map_Office, dressed for the chapters filed); metrics doorsRight, hubWalked, lockedHeld, hubScene", 300, "content"),
         new PlaytestScenario("maps-123", "Chapters 1, 2 and 3 each load a visibly different map with a route, a landmark and a hazard or set piece (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; event map-loaded, map-lighting (fog and sky differ), map-features (one route:, landmark: and hazard: line each from the map's own list, a problem if any is missing), map-objective (the objective marker's distance from the end of the route: it must stand on the route; chapter 1's objective is the circle), then Wallit walks on the stick and the chapter is left. Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard. Play the whole objective of chapters 2 and 3 with the chapter2 and chapter3 scenarios.", 420, "content"),
-        new PlaytestScenario("maps-456", "Chapters 4, 5 and 6 each load a visibly different map (the Long Walk, the Reading Room, the changed Hollow) with a route, a landmark, a hazard or set piece and a boss arena away from the route (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; events map-loaded, map-lighting (fog and sky differ), map-features (route:, landmark:, hazard:, arena: lines from the map's own list; a problem if any is missing), map-arena (the arena's distance and its angle away from the route: over 90 degrees), map-objective, then Wallit walks and the chapter is left. A boss is then called with the director (named setup shortcut) and must walk out of the arena: event arena-boss (spawn distance from the arena centre; a problem over 8 m). Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard, mapsWithArena. Play each whole objective with the chapter4, chapter5 and chapter6 scenarios.", 600, "content"),
+        new PlaytestScenario("maps-456", "Chapters 4, 5 and 6 each load a visibly different map (the Long Walk, the Reading Room, the changed Hollow), each its own Unity scene (Map_Walk, Map_Reading, Map_Filed; events map-own-scene with the scene, pieces, sky and music; set-piece after the named setup shortcut OwnMap.Trigger) with a route, a landmark, a hazard or set piece and a boss arena away from the route (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; events map-loaded, map-lighting (fog and sky differ), map-features (route:, landmark:, hazard:, arena: lines from the map's own list; a problem if any is missing), map-arena (the arena's distance and its angle away from the route: over 90 degrees), map-objective, then Wallit walks and the chapter is left. A boss is then called with the director (named setup shortcut) and must walk out of the arena: event arena-boss (spawn distance from the arena centre; a problem over 8 m). Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard, mapsWithArena. Play each whole objective with the chapter4, chapter5 and chapter6 scenarios.", 600, "content"),
         new PlaytestScenario("secrets", "The back rooms and the Dead Letter, with real input (setup: the sandbox case file stands on each chapter in turn; the real save is never touched). In every chapter 1 to 6 the room is not on the map until the chapter's lost thing is in the file: Wallit walks out to the find with the stick, the clue shows (events secret-hidden, secret-clue, journal lists it), the room appears 172 m out, and Wallit walks to it and is paid (secret-entered, metric secretRooms 6). In Chapter 4's room the Dead Letter, an optional hard Spider Bot, comes at him: the bot fights it (encounter-fight) and Refund in Full is earned (encounter-reward, metric rewardGiven). Chapter 4 is then played again: the room is there from the start, nothing spawns and the reward is not paid twice (encounter-once, metric rewardOnce)", 1700, "content"),
         new PlaytestScenario("chapter-maps", "Each Campaign chapter loads its own map, with its own lighting, and unloads it on leaving (setup: the sandbox case file stands on the chapter; the real save is never touched; leaving a chapter early is a named setup shortcut). Three chapters in turn (1 The Moonlit Hollow, 4 The Long Walk, 5 The Reading Room): Campaign, case file 1, Begin; the map named in the chapter data loads as an extra scene on top of the game scene (event map-loaded: map, scene, scenes open), the chapter's lighting is on (event map-lighting: fog colour and density, sun colour, sky colour; they differ between chapters), the opening scene is skipped with Enter and Wallit walks on the stick; then the chapter is left for the menu and the map is gone (event map-unloaded: scene closed, lighting back) with memory read before and after (metrics mapMemoryBaselineMB, mapMemoryAfterMB, mapMemoryGrowthMB; a growth over 48 MB is a bug). Metrics mapsLoaded, mapsUnloaded, distinctLooks)", 800, "content"),
         new PlaytestScenario("save", "The campaign save: an old-format file loads and is brought up to date, a corrupt one shows a message and starts clean, and every chapter's load time and memory is logged (setup: the sandbox stands where the stored save would, holding version 1 text, text with no version, then corrupt text; the real save is never touched). Events save-old-loaded, save-migrated, save-oldest-loaded, save-corrupt-clean (seven kinds of bad text, none throws), save-old-panel (the case files say the old files were updated), save-old-chapter (file 1 opens chapter 3), save-corrupt-panel (\"Case files unreadable. The Department filed new ones.\", no files), save-corrupt-play (a clean file opens chapter 1); then all six chapters are begun in turn with chapter-load events (card seconds, map seconds, memory MB) and metrics chapter<N>CardSeconds, chapter<N>MapSeconds, chapter<N>MemoryMB, oldSaveLoaded, corruptClean, corruptMessageShown", 1200, "content"),
@@ -1201,6 +1201,7 @@ public static class Playtest {
         int[] chapters = mapChapters;
         int withRoute = 0, withLandmark = 0, withHazard = 0, withArena = 0;
         var looks = new HashSet<string>();
+        bool ownScenes = mapChapters.Length == 3 && (mapChapters[1] == 1 || mapChapters[0] == 3);   // chapters 1-3 and 4-6 are scenes of their own
         var skyNames = new HashSet<string>();
         int setPieces = 0;
         int loaded = 0;
@@ -1290,21 +1291,21 @@ public static class Playtest {
             withRoute += hasRoute ? 1 : 0;
             withLandmark += hasLandmark ? 1 : 0;
             withHazard += hasHazard ? 1 : 0;
-            if (mapChapters.Length == 3 && mapChapters[1] == 1 && !(hasRoute && hasLandmark && hasHazard && hasSet)) {
-                run.Problem(PlaytestSeverity.Bug, "maps-123: chapter " + (index + 1) + "'s map lacks a route, a landmark, a hazard or a set piece (" + map.Features.Count + " features)");
+            if (ownScenes && !(hasRoute && hasLandmark && hasHazard && hasSet)) {
+                run.Problem(PlaytestSeverity.Bug, "maps-own: chapter " + (index + 1) + "'s map lacks a route, a landmark, a hazard or a set piece (" + map.Features.Count + " features)");
             }
-            if (mapChapters.Length == 3 && mapChapters[1] == 1) {
+            if (ownScenes) {
                 // Chapters 1 to 3 are scenes of their own (Assets/Maps), built by OwnMap: report the scene and what is in it.
                 if (!map.OwnScene || map.Own == null) {
-                    run.Problem(PlaytestSeverity.Bug, "maps-123: chapter " + (index + 1) + " did not load its own scene (map '" + data.Map + "')");
+                    run.Problem(PlaytestSeverity.Bug, "maps-own: chapter " + (index + 1) + " did not load its own scene (map '" + data.Map + "')");
                 } else {
                     Camera cam0 = Camera.main;
                     run.Event("map-own-scene", "chapter " + (index + 1) + " scene " + map.MapScene.name + " (" + map.MapScene.rootCount + " roots, " + map.Own.Pieces + " pieces, sky " + (RenderSettings.skybox != null ? RenderSettings.skybox.name : "none") + ", camera " + (cam0 != null ? cam0.clearFlags.ToString() : "?") + ", music " + (map.Own.Music != null && map.Own.Music.isPlaying ? "playing" : "silent") + ", " + SceneManager.sceneCount + " scenes open)");
                     if (RenderSettings.skybox == null) {
-                        run.Problem(PlaytestSeverity.Bug, "maps-123: chapter " + (index + 1) + " has no sky of its own");
+                        run.Problem(PlaytestSeverity.Bug, "maps-own: chapter " + (index + 1) + " has no sky of its own");
                     }
                     if (map.Own.Music == null) {
-                        run.Problem(PlaytestSeverity.Bug, "maps-123: chapter " + (index + 1) + " has no music bed");
+                        run.Problem(PlaytestSeverity.Bug, "maps-own: chapter " + (index + 1) + " has no music bed");
                     }
                     skyNames.Add(RenderSettings.skybox != null ? RenderSettings.skybox.name : "none");
                 }
@@ -1346,7 +1347,7 @@ public static class Playtest {
             if (run.Done) {
                 yield break;
             }
-            if (mapChapters.Length == 3 && mapChapters[1] == 1 && map.Own != null) {
+            if (ownScenes && map.Own != null) {
                 // The scripted set piece, made to happen by a named setup shortcut (the real triggers are played by the campaign,
                 // chapter2 and chapter3 scenarios: the Courier's notice, Wallit near the press, the lever).
                 run.Event("setup", "set piece of chapter " + (index + 1) + " triggered by the bot (OwnMap.Trigger): " + map.Own.Key);
@@ -1354,7 +1355,7 @@ public static class Playtest {
                 yield return new WaitForSecondsRealtime(index == 1 ? 5f : 1.5f);
                 run.Event("set-piece", "chapter " + (index + 1) + " " + map.Own.Beats + " beat(s): " + string.Join(" ; ", map.Own.Log.ToArray()));
                 if (map.Own.Beats == 0) {
-                    run.Problem(PlaytestSeverity.Bug, "maps-123: chapter " + (index + 1) + "'s set piece did not play");
+                    run.Problem(PlaytestSeverity.Bug, "maps-own: chapter " + (index + 1) + "'s set piece did not play");
                 }
                 setPieces += map.Own.Beats > 0 ? 1 : 0;
             }
@@ -1390,8 +1391,8 @@ public static class Playtest {
         float growth = (end - baseline) / 1048576f;
         run.Metric("mapSetPieces", setPieces);
         run.Metric("mapSkies", skyNames.Count);
-        if (mapChapters.Length == 3 && mapChapters[1] == 1 && skyNames.Count < 3) {
-            run.Problem(PlaytestSeverity.Bug, "maps-123: the three chapters do not each have their own sky (" + skyNames.Count + " distinct)");
+        if (ownScenes && skyNames.Count < 3) {
+            run.Problem(PlaytestSeverity.Bug, "maps-own: the three chapters do not each have their own sky (" + skyNames.Count + " distinct)");
         }
         run.Metric("mapsLoaded", loaded);
         run.Metric("mapsUnloaded", unloaded);
@@ -2261,6 +2262,21 @@ run.Event("boss-defeated", "The Courier fell after " + Mathf.RoundToInt(chapter.
         yield return new WaitForSecondsRealtime(2f);
         run.Event("hub-office", "Wallit at " + hub.Player.position.ToString("0.0") + "; doors " + hub.DoorText + "; board at " + ChapterHub.BoardPosition + "; vacant desk at " + hub.NpcSpot);
         CheckScreen("hub");
+        OfficeMap office = hub.Office;
+        if (office == null) {
+            yield return run.Until(() => hub.Office != null, 20f, "the office scene to fill in");
+            office = hub.Office;
+        }
+        if (office != null) {
+            Scene officeScene = SceneManager.GetSceneByName("Map_Office");
+            run.Event("hub-scene", "the office is its own scene " + officeScene.name + " (" + officeScene.rootCount + " roots, " + office.Pieces + " pieces, stage '" + office.StageName + "' after " + office.Stage + " chapters filed, sky " + (RenderSettings.skybox != null ? RenderSettings.skybox.name : "none") + ", music " + (office.Music != null && office.Music.isPlaying ? "playing" : "silent") + ", " + SceneManager.sceneCount + " scenes open)");
+            run.Metric("hubScene", officeScene.isLoaded ? 1 : 0);
+            if (!officeScene.isLoaded) {
+                run.Problem(PlaytestSeverity.Bug, "hub-doors: the hub office did not load its own scene");
+            }
+        } else {
+            run.Problem(PlaytestSeverity.Bug, "hub-doors: the hub office scene never filled in");
+        }
         bool good = true;
         for (int i = 0; i < hub.DoorCount; i++) {
             bool want = i < 3;

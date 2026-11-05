@@ -98,7 +98,6 @@ public class ChapterRun : MonoBehaviour {
     int leg;
     int waveNow;
     int pagesRead;    // the Reading Room: pages whose wave is down (their forms on the wall have gone blank)
-    readonly List<Renderer>[] pageForms = new List<Renderer>[8];
     float creditsAt;
     float nextPulse;
     int killBase;     // kills before the waves began (GateAndBack): the hold counts from here
@@ -156,12 +155,6 @@ public class ChapterRun : MonoBehaviour {
         }
         if (data.Objective == Story.ChapterObjective.SurviveTime) {
             clock = data.Target;
-        }
-        if (IsReading) {
-            BuildReadingRoom();
-        }
-        if (data.Final) {
-            BuildChangedHollow();
         }
         if (data.Objective == Story.ChapterObjective.ReachPlace || data.Objective == Story.ChapterObjective.GateAndBack || data.Objective == Story.ChapterObjective.FloorRun) {
             MakeMarker();
@@ -533,13 +526,9 @@ public class ChapterRun : MonoBehaviour {
         pagesRead = page;
         Events.Add("page-read|" + page + "|" + data.Waves);
         GameAudio.Play("stamp", 0.7f, 0.9f + page * 0.05f);
-        List<Renderer> forms = page - 1 < pageForms.Length ? pageForms[page - 1] : null;
-        if (forms != null) {
-            foreach (Renderer r in forms) {
-                if (r != null) {
-                    r.material.color = new Color(0.1f, 0.11f, 0.15f, 1f);
-                }
-            }
+        // The Reading Room's own scene turns that page's forms over (ReadingMap).
+        if (ChapterMap.Current != null && ChapterMap.Current.Own != null) {
+            ChapterMap.Current.Own.PageRead(page);
         }
     }
 
@@ -844,9 +833,7 @@ public class ChapterRun : MonoBehaviour {
         Vector3 at = origin + new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * data.Target;
         at.y = origin.y;
         if (data.Objective == Story.ChapterObjective.FloorRun) {
-            if (data.Walk) {
-                BuildWalk(origin);
-            } else {
+            if (!data.Walk) {
                 BuildFloor(origin);
             }
             at = StopPoint(data.Stops[0]);
@@ -898,90 +885,6 @@ public class ChapterRun : MonoBehaviour {
         Block("Wall R", new Vector3(13.5f, 3.5f, 0f), new Vector3(16f, 7f, 1.2f), dark);
         Block("Signpost", new Vector3(8.5f, 2f, 5f), new Vector3(0.35f, 4f, 0.35f), stone);
         Block("Blank Sign", new Vector3(8.5f, 3.9f, 5.25f), new Vector3(2.4f, 1.2f, 0.12f), pale);
-    }
-
-    // The Moonlit Hollow, changed: the wall is gone and a path of pale slabs leads out of the Hollow to nothing. Flat,
-    // collider-free blocks, well outside the ring the bots come from.
-    void BuildChangedHollow() {
-        Vector3 origin = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
-        gateProps = new GameObject("Chapter Changed Hollow");
-        Color slab = new Color(0.62f, 0.64f, 0.72f, 1f);
-        for (int i = 0; i < 18; i++) {
-            float shade = (i % 2 == 0) ? 1f : 0.88f;
-            float z = 50f + i * 4f;
-            Block(gateProps.transform, "Path Slab " + i, origin + new Vector3(0f, 0.12f, -z), new Vector3(4f, 0.08f, 3.2f), slab * shade, 0f);
-        }
-    }
-
-    // The Reading Room: a bare round hall around the circle. The walls are lined with forms, all this order, in one section
-    // per page (they go blank as each page is read); a desk stands beside the circle, empty. Flat, collider-free blocks, well
-    // outside the ring the bots come from, so nothing solid is in the playfield.
-    void BuildReadingRoom() {
-        Vector3 origin = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
-        gateProps = new GameObject("Chapter Reading Room");
-        Color wall = new Color(0.13f, 0.14f, 0.19f, 1f);
-        Color form = new Color(0.9f, 0.87f, 0.75f, 1f);
-        Color wood = new Color(0.3f, 0.2f, 0.14f, 1f);
-        int sections = data.Waves;
-        int perSection = 7;
-        int total = sections * perSection;
-        const float radius = 60f;
-        for (int i = 0; i < total; i++) {
-            float a = (i + 0.5f) / total * Mathf.PI * 2f;
-            var holder = new GameObject("Wall " + i);
-            holder.transform.SetParent(gateProps.transform, false);
-            holder.transform.position = origin + new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * radius;
-            holder.transform.rotation = Quaternion.LookRotation(new Vector3(-Mathf.Sin(a), 0f, -Mathf.Cos(a)), Vector3.up);
-            Block(holder.transform, "Wall Panel", new Vector3(0f, 8f, 0f), new Vector3(2f * Mathf.PI * radius / total + 0.4f, 16f, 1f), wall, 0f);
-            int page = i / perSection;
-            for (int row = 0; row < 2; row++) {
-                Block(holder.transform, "Form", new Vector3(0f, 5.5f + row * 5f, -0.6f), new Vector3(3.4f, 4f, 0.1f), form, 0f);
-                var made = holder.transform.GetChild(holder.transform.childCount - 1).GetComponent<Renderer>();
-                if (pageForms[page] == null) {
-                    pageForms[page] = new List<Renderer>();
-                }
-                pageForms[page].Add(made);
-            }
-        }
-        var desk = new GameObject("Desk");
-        desk.transform.SetParent(gateProps.transform, false);
-        desk.transform.position = origin + new Vector3(6f, 0f, 3f);
-        desk.transform.rotation = Quaternion.Euler(0f, -20f, 0f);
-        Block(desk.transform, "Desk Top", new Vector3(0f, 1f, 0f), new Vector3(3.2f, 0.18f, 1.5f), wood, 0f);
-        Block(desk.transform, "Desk Leg L", new Vector3(-1.4f, 0.5f, 0f), new Vector3(0.18f, 1f, 1.2f), wood, 0f);
-        Block(desk.transform, "Desk Leg R", new Vector3(1.4f, 0.5f, 0f), new Vector3(0.18f, 1f, 1.2f), wood, 0f);
-    }
-
-    // The Long Walk: a causeway of stone slabs from the circle out over a pit of mist, a pair of lamps at each stop (six lamps,
-    // one per leg). Flat, collider-free blocks, nothing solid in the playfield.
-    void BuildWalk(Vector3 origin) {
-        gateProps = new GameObject("Chapter Walk");
-        Color slab = new Color(0.38f, 0.38f, 0.44f, 1f);
-        Color iron = new Color(0.16f, 0.17f, 0.22f, 1f);
-        Color lamp = new Color(1f, 0.78f, 0.4f, 1f);
-        Vector3 end = StopPoint(data.Stops[data.Stops.Length - 1]);
-        Vector3 along = end - origin;
-        along.y = 0f;
-        float length = along.magnitude + 12f;
-        var road = new GameObject("Causeway");
-        road.transform.SetParent(gateProps.transform, false);
-        road.transform.position = origin + along.normalized * (length * 0.5f - 6f);
-        road.transform.rotation = Quaternion.LookRotation(along.normalized, Vector3.up);
-        for (int i = 0; i * 4f < length; i++) {
-            float shade = (i % 2 == 0) ? 1f : 0.88f;
-            Block(road.transform, "Slab " + i, new Vector3(0f, 0.12f, -length * 0.5f + 2f + i * 4f), new Vector3(5f, 0.08f, 3.7f), slab * shade, 0f);
-        }
-        for (int i = 0; i < data.Stops.Length; i++) {
-            Vector3 at = StopPoint(data.Stops[i]);
-            var holder = new GameObject("Lamps " + (i + 1) + " " + data.Stops[i].Name);
-            holder.transform.SetParent(gateProps.transform, false);
-            holder.transform.position = at;
-            holder.transform.rotation = Quaternion.LookRotation(along.normalized, Vector3.up);
-            foreach (float side in new[] { -3.6f, 3.6f }) {
-                Block(holder.transform, "Lamp Post", new Vector3(side, 1.8f, 0f), new Vector3(0.3f, 3.6f, 0.3f), iron, 0f);
-                Block(holder.transform, "Lamp", new Vector3(side, 3.9f, 0f), new Vector3(0.9f, 0.9f, 0.9f), lamp, 0f);
-            }
-        }
     }
 
     // The Clearing Floor: at each stop a few flat, collider-free blocks (hooks with chassis, the belt with cleared things,
