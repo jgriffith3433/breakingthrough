@@ -150,7 +150,13 @@ public static class Choices {
         }
         string cond = rest.Substring(0, bar);
         int colon = cond.IndexOf(':');
-        if (colon < 0 || !Is(cond.Substring(0, colon), cond.Substring(colon + 1))) {
+        if (colon < 0) {
+            return null;
+        }
+        string kind = cond.Substring(0, colon);
+        // "?|chat:<id>|" and "?|side:<id>|" read the hub's conversations and errands (HubLife), not a dialogue choice.
+        bool holds = HubLife.IsCondition(kind) ? HubLife.Holds(kind, cond.Substring(colon + 1)) : Is(kind, cond.Substring(colon + 1));
+        if (!holds) {
             return null;
         }
         return rest.Substring(bar + 1);

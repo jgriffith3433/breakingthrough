@@ -67,7 +67,29 @@ public class ChapterHub : MonoBehaviour {
     public int ErrandPaid { get; private set; } = -1;
     public int ErrandsDone { get { return CountBits(CampaignSave.Get(CampaignSave.Active).errands); } }
     public Vector3 ErrandItemAt { get { return ErrandActive >= 0 ? ErrandSpots[ErrandActive] : Vector3.zero; } }
-    public Vector3 LodgerAt(int i) { return LodgerSpots[i]; }
+    // Where a lodger is now: the office moves them about as the file advances (HubLife.Spots).
+    public Vector3 LodgerAt(int i) { return HubLife.SpotOf(i, CampaignSave.Get(CampaignSave.Active).cleared); }
+    // Optional conversations (HubLife.Chats) and the side errands (favours and loose notices), for the playtest bot and the status line.
+    public int ChatsHeard { get { return HubLife.HeardCount(CampaignSave.Get(CampaignSave.Active)); } }
+    public int ChatsWaiting { get { return HubLife.PendingCount(CampaignSave.Get(CampaignSave.Active)); } }
+    public int SideDone { get { return HubLife.SideCount(CampaignSave.Get(CampaignSave.Active)); } }
+    public int PendingChatOf(int lodger) { return HubLife.Pending(CampaignSave.Get(CampaignSave.Active), lodger); }
+    public string LastChatId { get; private set; } = "";
+    public int FavourActive { get; private set; } = -1;
+    public bool FavourCarried { get; private set; }
+    public Vector3 FavourItemAt { get { return FavourActive >= 0 ? HubLife.Sides[FavourActive].Spot : Vector3.zero; } }
+    public string DeskName { get { return deskPlate != null ? deskPlate.text : ""; } }
+    public int NoticesLying { get; private set; }
+    public int NoticePinned { get; private set; } = -1;
+    // The loose notices on the floor now (rows of HubLife.Sides) and where they lie.
+    public int FirstNotice() {
+        for (int i = 0; i < noticeItems.Length; i++) {
+            if (noticeItems[i] != null && noticeItems[i].gameObject.activeSelf) {
+                return i;
+            }
+        }
+        return -1;
+    }
     public string LodgerName(int i) { return Story.Lodgers[i].Name; }
     // What a lodger says now: the line for the chapters the file has cleared.
     public string LodgerLine(int i) {
@@ -79,6 +101,7 @@ public class ChapterHub : MonoBehaviour {
         DressOffice();
         SetDoors();
         ResetErrand();
+        PlaceLodgers();
     }
 
     ChapterScene scene;
@@ -90,6 +113,11 @@ public class ChapterHub : MonoBehaviour {
     Text speech;
     Text talk;
     Transform[] lodgerRoots;
+    TextMesh[] lodgerMarks;
+    TextMesh deskPlate;
+    Transform favourItem;
+    TextMesh favourLabel;
+    Transform[] noticeItems;
     Transform errandItem;
     TextMesh errandLabel;
     float talkUntil;
@@ -140,6 +168,7 @@ public class ChapterHub : MonoBehaviour {
             DressOffice();
             SetDoors();
             ResetErrand();
+            PlaceLodgers();
             TalkText = "";
             talkUntil = 0f;
         }
@@ -156,7 +185,8 @@ public class ChapterHub : MonoBehaviour {
     void DressOffice() {
         OfficeMap office = Office;
         if (office != null) {
-            office.Dress(CampaignSave.Get(CampaignSave.Active).cleared);
+            CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
+            office.Dress(slot.cleared, HubLife.SideCount(slot), HubLife.HeardCount(slot));
         }
     }
 
@@ -191,6 +221,7 @@ public class ChapterHub : MonoBehaviour {
         BuildBoard();
         BuildDesk();
         BuildLodgers();
+        PlaceLodgers();
         BuildDoors();
         BuildPeople();
         BuildUi();
@@ -242,6 +273,7 @@ public class ChapterHub : MonoBehaviour {
         Block(desk.transform, "Chair", new Vector3(0f, 0.55f, 1.5f), new Vector3(0.9f, 1.1f, 0.9f), new Color(0.15f, 0.15f, 0.2f));
         Block(desk.transform, "Plate", new Vector3(0f, 1.15f, -0.4f), new Vector3(1.4f, 0.22f, 0.06f), new Color(0.85f, 0.66f, 0.34f));
         Label3D(desk.transform, "TICK", new Vector3(0f, 2.2f, 0f), 0.12f, new Color(0.7f, 0.72f, 0.85f));
+        deskPlate = desk.transform.Find("Label").GetComponent<TextMesh>();
     }
 
     static int CountBits(int v) {
@@ -262,11 +294,12 @@ public class ChapterHub : MonoBehaviour {
     // Built facing the camera, collider-free, like the rest of the office; Brim and Chime hover a little.
     void BuildLodgers() {
         lodgerRoots = new Transform[Story.Lodgers.Length];
+        lodgerMarks = new TextMesh[Story.Lodgers.Length];
         for (int i = 0; i < lodgerRoots.Length; i++) {
             Story.Lodger lodger = Story.Lodgers[i];
             var root = new GameObject("Lodger " + lodger.Name).transform;
             root.SetParent(world.transform, false);
-            root.position = LodgerSpots[i];
+            root.position = LodgerAt(i);
             lodgerRoots[i] = root;
             Color tint = Hex(lodger.Colour);
             Color dark = tint * 0.55f;
@@ -299,6 +332,9 @@ public class ChapterHub : MonoBehaviour {
                 top = 2.2f;
             }
             Label3D(root, lodger.Name, new Vector3(0f, top, -0.1f), 0.1f, tint);
+            // A gold "!" over a lodger with a conversation not yet heard.
+            Label3D(root, "!", new Vector3(0f, top + 0.55f, -0.1f), 0.2f, new Color(1f, 0.82f, 0.38f));
+            lodgerMarks[i] = root.GetChild(root.childCount - 1).GetComponent<TextMesh>();
         }
         // Chime's lost thing, lit so it reads from across the room; shown only while an errand is out.
         var item = new GameObject("Errand Item").transform;
@@ -308,6 +344,57 @@ public class ChapterHub : MonoBehaviour {
         errandLabel = item.Find("Label").GetComponent<TextMesh>();
         errandItem = item;
         errandItem.gameObject.SetActive(false);
+        // A lodger's favour: its own item, and the loose notices (one slip per chapter, lit like the errand item).
+        var fav = new GameObject("Favour Item").transform;
+        fav.SetParent(world.transform, false);
+        Block(fav, "Thing", new Vector3(0f, 0.45f, 0f), new Vector3(0.45f, 0.45f, 0.45f), new Color(0.6f, 0.95f, 0.85f));
+        Label3D(fav, "", new Vector3(0f, 1.3f, -0.1f), 0.09f, new Color(0.7f, 1f, 0.9f));
+        favourLabel = fav.Find("Label").GetComponent<TextMesh>();
+        favourItem = fav;
+        favourItem.gameObject.SetActive(false);
+        noticeItems = new Transform[HubLife.Sides.Length];
+        for (int i = 0; i < noticeItems.Length; i++) {
+            if (!HubLife.Sides[i].Notice) {
+                continue;
+            }
+            var slip = new GameObject("Notice " + HubLife.Sides[i].Id).transform;
+            slip.SetParent(world.transform, false);
+            slip.position = HubLife.Sides[i].Spot;
+            Block(slip, "Slip", new Vector3(0f, 0.08f, 0f), new Vector3(0.7f, 0.04f, 0.9f), new Color(0.96f, 0.93f, 0.8f));
+            Block(slip, "Stamp", new Vector3(0.1f, 0.11f, 0.1f), new Vector3(0.3f, 0.02f, 0.2f), new Color(0.8f, 0.14f, 0.14f));
+            Label3D(slip, HubLife.Sides[i].Thing, new Vector3(0f, 1.1f, -0.1f), 0.08f, new Color(1f, 0.95f, 0.7f));
+            noticeItems[i] = slip;
+            slip.gameObject.SetActive(false);
+        }
+    }
+
+    // Puts the lodgers where the file's stage has them, the desk plate on who sits there, the favour and the loose notices out.
+    void PlaceLodgers() {
+        if (lodgerRoots == null) {
+            return;
+        }
+        CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
+        for (int i = 0; i < lodgerRoots.Length; i++) {
+            lodgerRoots[i].position = LodgerAt(i);
+            lodgerMarks[i].gameObject.SetActive(HubLife.Pending(slot, i) >= 0);
+        }
+        if (deskPlate != null) {
+            deskPlate.text = HubLife.DeskPlate[HubLife.Stage(slot.cleared)];
+        }
+        FavourActive = -1;
+        FavourCarried = false;
+        if (favourItem != null) {
+            favourItem.gameObject.SetActive(false);
+        }
+        NoticesLying = 0;
+        for (int i = 0; i < noticeItems.Length; i++) {
+            if (noticeItems[i] == null) {
+                continue;
+            }
+            bool lying = HubLife.SideOpen(slot, i) && !HubLife.SideDone(slot, i);
+            noticeItems[i].gameObject.SetActive(lying);
+            NoticesLying += lying ? 1 : 0;
+        }
     }
 
     void ResetErrand() {
@@ -322,14 +409,15 @@ public class ChapterHub : MonoBehaviour {
         NearLodger = -1;
         float best = LodgerReach;
         for (int i = 0; i < lodgerRoots.Length; i++) {
-            float d = (Player.position - LodgerSpots[i]).magnitude;
+            Vector3 at = LodgerAt(i);
+            float d = (Player.position - at).magnitude;
             if (d <= best) {
                 best = d;
                 NearLodger = i;
             }
             string id = Story.Lodgers[i].Id;
             if (id == "brim" || id == "chime") {
-                lodgerRoots[i].position = LodgerSpots[i] + Vector3.up * (0.12f + Mathf.Sin(Time.unscaledTime * 1.6f + i) * 0.1f);
+                lodgerRoots[i].position = at + Vector3.up * (0.12f + Mathf.Sin(Time.unscaledTime * 1.6f + i) * 0.1f);
             }
         }
         if (ErrandActive >= 0 && !ErrandCarried) {
@@ -341,6 +429,7 @@ public class ChapterHub : MonoBehaviour {
                 RunAnalytics.Screen("hub_errand_pickup");
             }
         }
+        TickSide();
         if (talkUntil > 0f && Time.unscaledTime >= talkUntil) {
             TalkText = "";
             talkUntil = 0f;
@@ -357,7 +446,41 @@ public class ChapterHub : MonoBehaviour {
         CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
         int cleared = Mathf.Clamp(slot.cleared, 1, Story.Errands.Length);
         string text = LodgerLine(i);
-        if (i == ChimeIndex) {
+        int chat = HubLife.Pending(slot, i);
+        int favour = HubLife.FavourFor(slot, i);
+        string who = Story.Lodgers[i].Name;
+        if (chat >= 0) {
+            // An optional conversation, the first time it is open: the whole exchange on screen, kept in the case file.
+            HubLife.Chat c = HubLife.Chats[chat];
+            slot.chats |= 1 << chat;
+            LastChatId = c.Id;
+            CampaignSave.Flush();
+            text = null;
+            TalkText = HubLife.Spoken(c);
+            RunAnalytics.Screen("hub_chat_" + c.Id);
+            PlaceLodgers();
+            DressOffice();
+        } else if (i != ChimeIndex && FavourCarried && FavourActive >= 0 && HubLife.Sides[FavourActive].Giver == i) {
+            HubLife.Side s = HubLife.Sides[FavourActive];
+            slot.side |= 1 << FavourActive;
+            CampaignProgress.Grant(s.Xp);
+            text = s.Thanks + " (" + s.Xp + " XP)";
+            FavourActive = -1;
+            FavourCarried = false;
+            favourItem.gameObject.SetActive(false);
+            GameAudio.Play("coin", 0.9f, 1.1f);
+            RunAnalytics.Screen("hub_favour_paid");
+            DressOffice();
+        } else if (i != ChimeIndex && FavourActive >= 0 && HubLife.Sides[FavourActive].Giver == i) {
+            text = "Still out there: the " + HubLife.Sides[FavourActive].Thing + ".";
+        } else if (i != ChimeIndex && FavourActive < 0 && favour >= 0) {
+            FavourActive = favour;
+            favourItem.position = HubLife.Sides[favour].Spot;
+            favourLabel.text = HubLife.Sides[favour].Thing;
+            favourItem.gameObject.SetActive(true);
+            text = HubLife.Sides[favour].Ask;
+            RunAnalytics.Screen("hub_favour_start");
+        } else if (i == ChimeIndex) {
             if (ErrandCarried) {
                 int e = ErrandActive;
                 slot.errands |= 1 << e;
@@ -391,11 +514,47 @@ public class ChapterHub : MonoBehaviour {
         }
         TalkedTo = i;
         Talks++;
-        TalkText = Story.Lodgers[i].Name + ": \"" + text + "\"";
+        if (text != null) {
+            TalkText = who + ": \"" + text + "\"";
+        }
         talk.color = Hex(Story.Lodgers[i].Colour);
-        talkUntil = Time.unscaledTime + 9f;
+        talkUntil = Time.unscaledTime + (text == null ? 16f : 9f);
         GameAudio.Play("paper", 0.5f);
         RunAnalytics.Screen("hub_npc_" + Story.Lodgers[i].Id);
+    }
+
+    // The favour's item is picked up by walking over it; a loose notice is pinned the same way (XP, a bit in the file, the wall
+    // of the office gains a slip: OfficeMap.Dress).
+    void TickSide() {
+        CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
+        if (FavourActive >= 0 && !FavourCarried) {
+            favourItem.Rotate(0f, 90f * Time.unscaledDeltaTime, 0f);
+            if ((Player.position - HubLife.Sides[FavourActive].Spot).magnitude <= PickupReach) {
+                FavourCarried = true;
+                favourItem.gameObject.SetActive(false);
+                GameAudio.Play("coin", 0.6f, 1.2f);
+                RunAnalytics.Screen("hub_favour_pickup");
+            }
+        }
+        for (int i = 0; i < noticeItems.Length; i++) {
+            if (noticeItems[i] == null || !noticeItems[i].gameObject.activeSelf) {
+                continue;
+            }
+            if ((Player.position - HubLife.Sides[i].Spot).magnitude <= PickupReach) {
+                HubLife.Side s = HubLife.Sides[i];
+                slot.side |= 1 << i;
+                CampaignProgress.Grant(s.Xp);
+                noticeItems[i].gameObject.SetActive(false);
+                NoticesLying--;
+                NoticePinned = i;
+                TalkText = "Pinned: " + s.Thing + ". " + s.Ask + " (" + s.Xp + " XP)";
+                talk.color = new Color(1f, 0.95f, 0.7f);
+                talkUntil = Time.unscaledTime + 7f;
+                GameAudio.Play("stamp", 0.5f);
+                RunAnalytics.Screen("hub_notice_pinned");
+                DressOffice();
+            }
+        }
     }
 
     // A door per chapter along the back wall: frame, a leaf that swings open when the file has reached it, a lamp (amber filed,
@@ -634,7 +793,7 @@ public class ChapterHub : MonoBehaviour {
         NearBoard = (Player.position - BoardPosition).magnitude <= BoardReach;
         TickLodgers();
         if (!BoardOpen) {
-            prompt.text = NearDoor >= 0 && !DoorOpen[NearDoor] ? "Chapter " + (NearDoor + 1) + ": the door is shut" : NearDoor >= 0 ? "Chapter " + (NearDoor + 1) + ": " + Story.Chapters[NearDoor].Title : NearBoard ? "E: read the chapter board" : NearLodger >= 0 ? "E: talk to " + Story.Lodgers[NearLodger].Name : ErrandCarried ? "Carrying the " + Story.Errands[ErrandActive].Thing + ". Take it to Chime." : "WASD: walk. Doors along the back wall. Board on the left, lodgers about the room. J: journal.";
+            prompt.text = NearDoor >= 0 && !DoorOpen[NearDoor] ? "Chapter " + (NearDoor + 1) + ": the door is shut" : NearDoor >= 0 ? "Chapter " + (NearDoor + 1) + ": " + Story.Chapters[NearDoor].Title : NearBoard ? "E: read the chapter board" : NearLodger >= 0 ? "E: talk to " + Story.Lodgers[NearLodger].Name : ErrandCarried ? "Carrying the " + Story.Errands[ErrandActive].Thing + ". Take it to Chime." : FavourCarried ? "Carrying the " + HubLife.Sides[FavourActive].Thing + ". Take it to " + Story.Lodgers[HubLife.Sides[FavourActive].Giver].Name + "." : "WASD: walk. Doors along the back wall. Board on the left, lodgers about the room. J: journal.";
             if (NearBoard && (PlayInput.GetKeyDown(KeyCode.E) || PlayInput.GetKeyDown(KeyCode.JoystickButton0) || PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter))) {
                 OpenBoard();
             }
@@ -717,6 +876,7 @@ public class ChapterHub : MonoBehaviour {
             CampaignProgress.Ability a = CampaignProgress.Abilities[i];
             sb.Append("\n").Append(level >= a.Level ? a.Name + ": " + a.Blurb : "LV " + a.Level + ": ???");
         }
+        sb.Append("\nTALKS ").Append(HubLife.HeardCount(slot)).Append("/").Append(HubLife.Chats.Length).Append(" (").Append(HubLife.PendingCount(slot)).Append(" waiting)   ERRANDS ").Append(HubLife.SideCount(slot)).Append("/").Append(HubLife.Sides.Length);
         sb.Append("\nLOST THINGS ").Append(CountBits(slot.errands)).Append("/").Append(Story.Errands.Length).Append(":");
         for (int e = 0; e < Story.Errands.Length; e++) {
             if ((slot.errands & (1 << e)) != 0) {

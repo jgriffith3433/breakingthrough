@@ -463,15 +463,27 @@ public class OfficeMap : OwnMap {
         Features.Add("route:the runner rug from Slice's ring to the row of chapter doors on the back wall");
         Features.Add("landmark:six chapter doors under plaques in their chapters' colours, the filed ones stamped");
         Features.Add("setpiece:The Office Changes: as the case file advances the window light goes from night to dawn, the filing cabinets grow and the brass door number appears when all six are filed");
-        Dress(CampaignSave.Get(CampaignSave.Active).cleared);
+        CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
+        Dress(slot.cleared, HubLife.SideCount(slot), HubLife.HeardCount(slot));
     }
 
-    // The office after `cleared` chapters.
-    public void Dress(int cleared) {
+    int dressKey = -1;
+    public int Pinned { get; private set; }
+    public int Lamps { get; private set; }
+    // A fingerprint of what the office looks like now, for the playtest: it changes whenever anything on the walls does.
+    public string Look { get; private set; } = "";
+
+    // The office after `cleared` chapters, with `pinned` side errands finished (slips on the left wall) and `heard` hub
+    // conversations had (a lit lamp each along the right wall).
+    public void Dress(int cleared, int pinned = 0, int heard = 0) {
         cleared = Mathf.Clamp(cleared, 0, CampaignSave.ChapterCount);
-        if (cleared == Stage) {
+        int key = (cleared * 64 + pinned) * 64 + heard;
+        if (key == dressKey) {
             return;
         }
+        dressKey = key;
+        Pinned = pinned;
+        Lamps = heard;
         if (stage != null) {
             Destroy(stage.gameObject);
         }
@@ -544,6 +556,21 @@ public class OfficeMap : OwnMap {
             t.color = C(0.2f, 0.12f, 0.05f);
             g.GetComponent<MeshRenderer>().sharedMaterial = font.material;
         }
+        // Notices: a slip pinned on the left wall for every side errand finished, in rows of six under the board.
+        for (int i = 0; i < pinned; i++) {
+            float x = -halfWidth + 0.55f;
+            Piece(stage, "Pinned Slip " + i, new Vector3(x, 1.5f + (i / 6) * 0.9f, -6f + (i % 6) * 1.5f), new Vector3(0.06f, 0.7f, 1f), paper, 0f, i % 2 == 0 ? 4f : -4f);
+            Piece(stage, "Pin " + i, new Vector3(x + 0.06f, 1.8f + (i / 6) * 0.9f, -6f + (i % 6) * 1.5f), new Vector3(0.08f, 0.12f, 0.12f), C(0.8f, 0.14f, 0.14f), 0f, 0f, Shape.Box, true);
+        }
+        // Lamps: one lit on the right wall for every conversation had, so the room is brighter the more it has said.
+        for (int i = 0; i < heard; i++) {
+            Vector3 at = new Vector3(halfWidth - 0.7f, 2.2f, -8f + i * 1.7f);
+            Piece(stage, "Wall Lamp " + i, at, new Vector3(0.2f, 0.35f, 0.35f), C(1f, 0.86f, 0.5f), 0f, 0f, Shape.Box, true);
+        }
+        if (heard > 0) {
+            Lamp(stage, new Vector3(halfWidth - 2f, 3f, 0f), C(1f, 0.86f, 0.55f), 14f, 0.15f * heard);
+        }
+        Look = "stage " + StageName + ", window " + ColorUtility.ToHtmlStringRGB(glow) + ", " + (cleared + 1) + " cabinet banks, " + cleared + " stamps, " + pinned + " slips pinned, " + heard + " wall lamps lit";
         Beat("office-dressed|cleared=" + cleared + "|" + StageName);
     }
 
