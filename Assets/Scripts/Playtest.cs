@@ -39,6 +39,7 @@ public static class Playtest {
         new PlaytestScenario("cast", "The new cast, in 90 s: the main menu with the key art up (MenuArt, its size and that the menu shows it), What's new opened from the site over the game with the release note naming Wallit, Slice and the bots (read from releases.json), then a run where the player is Wallit with his bat, the bar says Slice, and wave 1's Yo Bots close in and are batted. The AGENTS.md and README cast text lives in the repo, not the build: the review reads it from the diff", 120, "content"),
         new PlaytestScenario("modes", "The mode select: the main menu shows Campaign and Arcade; Campaign opens the three case files (save slots, setup: the sandbox keeps them off the real save), opening an empty file loads the placeholder Chapter 1 scene with Wallit and Slice's lines, Menu returns and the file now reads Chapter 1 with its time on the books, Erase (asked twice) empties it; then Arcade starts today's wave defense and the bot plays 40 s of it with the bat. Events mode-select, campaign-files, chapter-open, chapter-lines, campaign-saved, campaign-erased, arcade-start", 200, "content"),
         new PlaytestScenario("pause-nav", "Pause and menus by keyboard and gamepad, in every chapter (setup: the sandbox case file stands on each chapter in turn). From the main menu with keys only: C opens the case files, Enter opens file 1, Enter begins the chapter, Enter skips the opening scene. Then P pauses (time stops) and P resumes, the pad's Start pauses, Down and Enter open Settings (first chapter): Left turns the music and effects sliders (the gold ring follows), Enter on Voices cycles how often the voices speak, the pad's B closes Settings and the pause stays, the settings are read back from their saved JSON; Resume with Enter; pause again, and Down, Down, Enter, Enter on Quit to menu returns to the main menu. Events nav-menu, nav-case-files, nav-chapter-card, chapter-paused, chapter-resumed, pad-paused, nav-settings, volume-changed, voices-changed, settings-persisted, nav-quit; metrics chaptersPaused, menuMoves, menuSubmits, sliderTurns", 900, "content"),
+        new PlaytestScenario("cinematic", "The shot-based cinematic player (Cutscene.PlayShots, data in Resources/Cinematics/sample.json): a seven-shot sample plays over the game with placeholder stills, Ken Burns moves, parallax, crossfades, letterbox bars, voice lines through the voice director, a music bed that ducks under them, and typed subtitles. Pass 1 presses Space for the next shot and then Enter to skip mid-scene: play resumes (time scale 1, the director free, the bed fades out). Pass 2 runs to the end untouched. Setup: the scene is started by name (the shot list is the data). Events cinematic-open, cinematic-shot (id, zoom, pan, subtitle, bed volume, duck), cinematic-next, cinematic-skip, cinematic-resume, cinematic-done, cinematic-memory; metrics cinematicShots, cinematicSkipped, cinematicOverlaps, cinematicVoiceLines, cinematicSubtitles, cinematicDuckLow, cinematicMemoryMB", 200, "content"),
         new PlaytestScenario("cutscene", "The chapter cutscene: Campaign, case file 1, Begin on the Chapter 1 card, and the opening scene (The Stamp) plays over the map with letterbox bars, a speaker name and portrait slot, typed lines and the camera on whoever talks. The bot reads the first pages with real key presses (a first press finishes the typing, the next turns the page), skipping a page's voice by pressing on, then presses Enter to skip the rest: play starts with the objective line up and Wallit moving on the stick, and the chapter is cleared. Checked: every Wallit, Slice and Yo Bot page has a name, two voice lines never overlap (Wallit's floor and the scene both count them), the director allows no other line during the scene. Events cutscene-open, cutscene-page (speaker, text, camera focus, letterbox, voice), cutscene-skip, cutscene-play, cutscene-voice; metrics cutscenePages, cutsceneVoiceLines, cutsceneOverlaps, cutsceneSkipped", 420, "content"),
         new PlaytestScenario("campaign", "Campaign loads and plays a chapter: from the main menu press Campaign, open case file 1 (setup: the sandbox keeps the files off the real save) and wait for the Campaign scene to load. Reports run_start with mode=campaign and the loaded scene name (event run_start, metrics campaignLoaded, campaignLoadSeconds); if the scene fails to load (not in the build's scene list, or the chapter never builds) the run stops stuck with a bug saying so. Then Begin on the chapter card: Wallit and Slice in the chapter map, Wallit walks on the stick, the objective line shows, the bot fights with real input until it is met, Chapter 1 holds the circle against Yo Bots, then the Courier arrives (health bar on screen), winds up telegraphed notices on the circle and the bot breaks them or stands in them until it falls and the defeat beat plays; the Chapter Complete card shows, the case file advances to chapter 2, Menu, and reopening the file resumes at chapter 2 (events chapter-card, chapter-start, chapter-move, objective, boss-arrives, boss-bar, boss-attack, boss-defeated, defeat-beat, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics chapterAdvanced, chapterResumed, bossBar, courierWinds, courierInterrupted). Smoke is unchanged: it still presses Arcade", 750, "content"),
         new PlaytestScenario("hub", "The hub and Campaign progression, played with real input (setup: the sandbox case file 1 starts on chapter 1 with 85 XP, 5 short of level 3; the real save and Arcade are never touched): Campaign, case file 1, Begin on Chapter 1; the first kills give XP (HUD line LV/XP) and level 3 unlocks Refund (events xp-gain, level-up); the bot presses C near the bots and the ring shoves and stings them (event refund-used); the Courier falls, the Chapter Complete card offers To the hub; the bot presses it and lands in the hub (Wallit, Slice in the ring, the chapter board; events hub-open, hub-arrival), walks to the board on the stick and presses E (hub-walk, board-open: Chapter 1 filed and replayable, Chapter 2 next, Chapter 3 locked); picking Chapter 1 shows its card and Begin replays it (hub-replay-card, replay-started) without taking the file back a chapter. Checks per case file and Arcade: the XP stays on case file 1 (case file 2 has none) and Arcade's numbers read as no effect outside a chapter (events progress-saved, arcade-clean; metrics hubXp, hubLevel, refundHits, hubWalked)", 900, "content"),
@@ -356,6 +357,8 @@ public static class Playtest {
                 yield return DialogueRun(options);
             } else if (id == "bible") {
                 yield return BibleRun(options);
+            } else if (id == "cinematic") {
+                yield return CinematicRun(options);
             } else if (id == "wallit") {
                 yield return WallitRun(options);
             } else if (id == "locomotion") {
@@ -6485,6 +6488,108 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             }
         }
         yield return Play(options, 5f, false);
+    }
+
+    // Plays the sample reel twice over the running game: pass 1 is nudged to the next shot with Space and skipped with Enter,
+    // pass 2 runs to its end. Logs what each shot shows and checks that play resumes cleanly both times.
+    static IEnumerator CinematicRun(PlaytestOptions options) {
+        yield return new WaitForSecondsRealtime(2f);
+        Cutscene.Reel reel = Cutscene.LoadReel("sample");
+        if (reel == null) {
+            run.Problem(PlaytestSeverity.Bug, "cinematic: Resources/Cinematics/sample.json did not load");
+            yield return Play(options, 5f, false);
+            yield break;
+        }
+        float memStart = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / 1048576f;
+        float memPeak = memStart;
+        for (int pass = 1; pass <= 2 && !run.Done; pass++) {
+            run.Event("setup", "pass " + pass + ": the sample reel (" + reel.shots.Length + " shots) is played by name; " + (pass == 1 ? "Space for the next shot, Enter to skip" : "left to run to the end"));
+            Cutscene.PlayShots(reel, null);
+            yield return run.Until(() => Cutscene.IsOpen, 5f, "the cinematic");
+            if (run.Done) {
+                yield break;
+            }
+            Cutscene scene = Cutscene.Instance;
+            run.Event("cinematic-open", "pass " + pass + ": " + scene.ShotCount + " shots, letterbox, time scale " + Time.timeScale.ToString("0.0"));
+            int seen = -1;
+            bool nudged = false;
+            bool skipped = false;
+            float zoomAtStart = 0f;
+            float limit = Time.realtimeSinceStartup + 60f;
+            float shotSince = 0f;
+            while (Cutscene.IsOpen && !run.Done && Time.realtimeSinceStartup < limit) {
+                yield return new WaitForSecondsRealtime(0.25f);
+                memPeak = Mathf.Max(memPeak, UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / 1048576f);
+                if (!Cutscene.IsOpen) {
+                    break;
+                }
+                if (scene.ShotIndex != seen) {
+                    seen = scene.ShotIndex;
+                    shotSince = Time.realtimeSinceStartup;
+                    zoomAtStart = scene.Zoom;
+                }
+                run.Event("cinematic-shot", "pass " + pass + " shot " + (scene.ShotIndex + 1) + "/" + scene.ShotCount + " " + scene.ShotId + " zoom " + scene.Zoom.ToString("0.00") + " (shot began " + zoomAtStart.ToString("0.00") + ") pan " + scene.Pan.ToString("0.00")
+                    + " bars " + scene.Bars.ToString("0.00") + " bed " + scene.BedVolume.ToString("0.00") + " duck " + scene.Duck.ToString("0.00") + " subtitle \"" + scene.Subtitle.Replace('\n', ' ') + "\"");
+                if (pass == 1 && !nudged && scene.ShotIndex == 1 && Time.realtimeSinceStartup - shotSince > 1f) {
+                    nudged = true;
+                    run.Event("cinematic-next", "Space pressed on shot " + (scene.ShotIndex + 1));
+                    PlayInput.Tap(KeyCode.Space);
+                }
+                if (pass == 1 && !skipped && scene.ShotIndex == 3 && Time.realtimeSinceStartup - shotSince > 1.5f) {
+                    skipped = true;
+                    run.Event("cinematic-skip", "Enter pressed on shot " + (scene.ShotIndex + 1) + "/" + scene.ShotCount + ", voice " + (WallitVoice.FloorFree ? "idle" : "speaking"));
+                    PlayInput.Tap(KeyCode.Return);
+                }
+            }
+            yield return run.Until(() => !Cutscene.IsOpen, 5f, "the cinematic to close");
+            if (run.Done) {
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(1f);
+            run.Event("cinematic-resume", "pass " + pass + " closed (" + (pass == 1 ? "skipped" : "finished") + "): time scale " + Time.timeScale.ToString("0.00") + ", director scene lock " + VoiceDirector.Scene + ", voice floor " + (WallitVoice.FloorFree ? "free" : "busy") + ", bed volume " + scene.BedVolume.ToString("0.00"));
+            if (Time.timeScale < 0.99f) {
+                run.Problem(PlaytestSeverity.Bug, "cinematic: pass " + pass + " left the game frozen (time scale " + Time.timeScale.ToString("0.00") + ")");
+            }
+            if (VoiceDirector.Scene) {
+                run.Problem(PlaytestSeverity.Bug, "cinematic: pass " + pass + " left the voice director locked to the scene");
+            }
+            if (pass == 1 && Cutscene.ShotsSkipped < 1) {
+                run.Problem(PlaytestSeverity.Bug, "cinematic: Enter did not skip the scene");
+            }
+            if (pass == 2 && Cutscene.Finished < 1) {
+                run.Problem(PlaytestSeverity.Bug, "cinematic: the untouched pass did not run to its end");
+            }
+            yield return new WaitForSecondsRealtime(2.5f);
+            if (scene.BedPlaying) {
+                run.Problem(PlaytestSeverity.Bug, "cinematic: the music bed is still playing after the scene");
+            }
+        }
+        int overlaps = Cutscene.Overlaps + WallitVoice.Overlaps;
+        run.Metric("cinematicShots", Cutscene.ShotsShown);
+        run.Metric("cinematicSkipped", Cutscene.ShotsSkipped);
+        run.Metric("cinematicOverlaps", overlaps);
+        run.Metric("cinematicVoiceLines", Cutscene.VoiceLines);
+        run.Metric("cinematicSubtitles", Cutscene.SubtitleLines);
+        run.Metric("cinematicDuckLow", Cutscene.DuckedLowest);
+        run.Metric("cinematicMemoryMB", memPeak - memStart);
+        run.Event("cinematic-memory", "managed memory " + memStart.ToString("0.0") + " MB before, peak " + memPeak.ToString("0.0") + " MB during, " + (UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / 1048576f).ToString("0.0") + " MB after");
+        run.Event("cinematic-done", Cutscene.ShotsShown + " shots shown, " + Cutscene.VoiceLines + " voice lines, " + Cutscene.SubtitleLines + " subtitles, lowest duck " + Cutscene.DuckedLowest.ToString("0.00") + ", " + overlaps + " overlaps");
+        if (overlaps > 0) {
+            run.Problem(PlaytestSeverity.Bug, "cinematic: " + overlaps + " voice line(s) overlapped");
+        }
+        if (Cutscene.VoiceLines < 3) {
+            run.Problem(PlaytestSeverity.Bug, "cinematic: only " + Cutscene.VoiceLines + " voice lines went through the director");
+        }
+        if (Cutscene.SubtitleLines < 5) {
+            run.Problem(PlaytestSeverity.Bug, "cinematic: only " + Cutscene.SubtitleLines + " subtitle lines were shown");
+        }
+        if (Cutscene.DuckedLowest > 0.9f) {
+            run.Problem(PlaytestSeverity.Bug, "cinematic: the music bed never ducked under a voice line");
+        }
+        if (memPeak - memStart > 64f) {
+            run.Problem(PlaytestSeverity.Bug, "cinematic: managed memory grew " + (memPeak - memStart).ToString("0") + " MB during the scene");
+        }
+        yield return Play(options, 10f, false);
     }
 
     static IEnumerator DialogueRun(PlaytestOptions options) {
