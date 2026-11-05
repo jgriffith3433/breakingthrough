@@ -1,0 +1,69 @@
+{
+  "id": "boss_foreman",
+  "bed": "ch3_score",
+  "shots": [
+    {
+      "id": "s1",
+      "back": "boss_foreman_1_back",
+      "speaker": "F",
+      "seconds": 4.0,
+      "fade": 0.0,
+      "level": 0.9,
+      "from": [
+        0,
+        0.2,
+        1.1
+      ],
+      "to": [
+        0,
+        -0.1,
+        1.3
+      ],
+      "alt": "crest_back",
+      "front": "boss_foreman_1_front",
+      "line": "Order, read aloud: STRIKE. THIS. ADDRESS."
+    },
+    {
+      "id": "s2",
+      "back": "boss_foreman_2_back",
+      "speaker": "S",
+      "seconds": 4.6,
+      "fade": 0.7,
+      "level": 0.6,
+      "from": [
+        0.1,
+        0,
+        1.2
+      ],
+      "to": [
+        -0.2,
+        0,
+        1.1
+      ],
+      "alt": "slice_back",
+      "front": "boss_foreman_2_front",
+      "line": "The Foreman. It reads the order to the Crew. Don't let it finish."
+    },
+    {
+      "id": "s3",
+      "back": "boss_foreman_3_back",
+      "speaker": "W",
+      "seconds": 3.0,
+      "fade": 0.7,
+      "level": 0.8,
+      "from": [
+        0,
+        0,
+        1.2
+      ],
+      "to": [
+        0,
+        0,
+        1.4
+      ],
+      "alt": "wallet_front",
+      "front": "boss_foreman_3_front",
+      "line": "Then I'll read it the invoice."
+    }
+  ]
+}

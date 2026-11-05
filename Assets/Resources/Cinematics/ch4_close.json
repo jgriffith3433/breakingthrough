@@ -1,0 +1,88 @@
+{
+  "id": "ch4_close",
+  "bed": "ch4_score",
+  "shots": [
+    {
+      "id": "s1",
+      "back": "ch4_close_1_back",
+      "speaker": "V",
+      "seconds": 3.6,
+      "fade": 0.0,
+      "level": 0.7,
+      "from": [
+        0,
+        -0.3,
+        1.1
+      ],
+      "to": [
+        0,
+        0.4,
+        1.1
+      ],
+      "alt": "crest_back",
+      "front": "ch4_close_1_front",
+      "line": "Delivery... undelivered... chirp?"
+    },
+    {
+      "id": "s2",
+      "back": "ch4_close_2_back",
+      "speaker": "W",
+      "seconds": 2.6,
+      "fade": 0.7,
+      "level": 0.4,
+      "from": [
+        0.2,
+        0,
+        1.25
+      ],
+      "to": [
+        0,
+        0,
+        1.2
+      ],
+      "alt": "hollow_back",
+      "front": "ch4_close_2_front",
+      "line": "Return to sender."
+    },
+    {
+      "id": "s3",
+      "back": "ch4_close_3_back",
+      "speaker": "S",
+      "seconds": 2.2,
+      "fade": 0.7,
+      "level": 0.6,
+      "from": [
+        0,
+        0.1,
+        1.1
+      ],
+      "to": [
+        0,
+        0,
+        1.4
+      ],
+      "alt": "slice_back",
+      "front": "ch4_close_3_front",
+      "line": "Clean."
+    },
+    {
+      "id": "s4",
+      "back": "ch4_close_4_back",
+      "speaker": "N",
+      "seconds": 3.2,
+      "fade": 0.7,
+      "level": 1.0,
+      "from": [
+        0,
+        0,
+        1.3
+      ],
+      "to": [
+        0,
+        0,
+        1.05
+      ],
+      "alt": "hollow_back"
+    }
+  ]
+}

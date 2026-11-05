@@ -433,3 +433,10 @@ in `CampaignBible.md`; `ChapterRun.Start` and `Complete` play them before the pa
 art (`Art/<reel>_<n>_back|front`) and an `alt` placeholder shown until Hawkes Gen's stills are in. Courier (K), Plated Alpha (P), Half-Built (H),
 Foreman (F) and Yo Bot (Y) lines play from `Resources/Voice/cinema/<reel>_<shot>.mp3` when present. `Tools/Cinematics/gen_manifest.json` lists
 every sheet, still, clip, voice and sound still to make. Wallit and Slice keep their voice systems.
+
+Part two (chapters 4-6): `ch4_open` .. `ch6_close` complete the set, so every chapter opens and closes with a reel (`ChapterRun.Start`, `Complete`). The four named
+bosses with their own fight get an intro reel as they arrive, over the frozen field (`boss_courier`, `boss_foreman`, `boss_server`, `boss_order`;
+`ChapterRun.PlayBossIntro`, which replaces their `BossLines`). Chapter 6's `ch6_close` is ADDRESS FILED as a cutscene (the order drops, DENIED, the door number,
+the title card) and plays before the ADDRESS FILED card (`StoryScreen.ShowEndCard`); then the RECEIVED reel `ending_received` when the secret is earned, then the
+`credits` reel, then the credits card. All are skippable (Enter, Escape, Skip). New speaker voices: Server (V), Registrar (R), Order-Bearer (O), Mega Yo Bot (M),
+from `Resources/Voice/cinema/<reel>_<shot>.mp3` once made. Page scenes remain as fallback when a reel is missing.

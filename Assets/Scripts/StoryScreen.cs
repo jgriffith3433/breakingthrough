@@ -101,6 +101,19 @@ public class StoryScreen : MonoBehaviour {
         Open(Mode.Finale, Story.Finale, _ => ShowEnding(closed));
     }
 
+    // The ADDRESS FILED card alone, for a Campaign ending whose Finale lines were already played as a cinematic reel.
+    public void ShowEndCard(string stats, Action<bool> closed) {
+        FinaleShown++;
+        endBody.text = Story.EndingLine + "\n\n" + stats;
+        savedScale = Time.timeScale > 0f ? Time.timeScale : 1f;
+        Time.timeScale = 0f;
+        root.SetActive(true);
+        SkipButton.gameObject.SetActive(false);
+        beatText.enabled = false;
+        beats.Clear();
+        ShowEnding(closed);
+    }
+
     // Short beats at a wave's start. A new wave drops the ones still waiting.
     public void StartWave(int wave) {
         beats.Clear();

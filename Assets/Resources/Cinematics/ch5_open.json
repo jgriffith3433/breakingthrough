@@ -1,0 +1,109 @@
+{
+  "id": "ch5_open",
+  "bed": "ch5_score",
+  "shots": [
+    {
+      "id": "s1",
+      "back": "ch5_open_1_back",
+      "speaker": "N",
+      "seconds": 6.0,
+      "fade": 0.7,
+      "level": 0.6,
+      "from": [
+        0,
+        0,
+        1.0
+      ],
+      "to": [
+        0,
+        0,
+        1.3
+      ],
+      "alt": "ring_back",
+      "line": "A bare round hall. The circle is drawn on its floor at the Hollow's scale, and every wall is lined with identical forms."
+    },
+    {
+      "id": "s2",
+      "back": "ch5_open_2_back",
+      "speaker": "M",
+      "seconds": 4.2,
+      "fade": 0.7,
+      "level": 0.8,
+      "from": [
+        0,
+        0.3,
+        1.2
+      ],
+      "to": [
+        0,
+        -0.1,
+        1.1
+      ],
+      "alt": "crest_back",
+      "front": "ch5_open_2_front",
+      "line": "Order, read aloud: STRIKE. THIS. ADDRESS."
+    },
+    {
+      "id": "s3",
+      "back": "ch5_open_3_back",
+      "speaker": "S",
+      "seconds": 2.6,
+      "fade": 0.7,
+      "level": 0.5,
+      "from": [
+        0,
+        0,
+        1.3
+      ],
+      "to": [
+        0.2,
+        0,
+        1.15
+      ],
+      "alt": "slice_back",
+      "front": "ch5_open_3_front",
+      "line": "It's reading it out."
+    },
+    {
+      "id": "s4",
+      "back": "ch5_open_4_back",
+      "speaker": "W",
+      "seconds": 3.2,
+      "fade": 0.7,
+      "level": 0.6,
+      "from": [
+        0,
+        0,
+        1.4
+      ],
+      "to": [
+        0,
+        0,
+        1.15
+      ],
+      "alt": "stamp_back",
+      "front": "ch5_open_4_front",
+      "line": "Then I'm reading mine. Pay up."
+    },
+    {
+      "id": "s5",
+      "back": "ch5_open_5_back",
+      "speaker": "W",
+      "seconds": 2.4,
+      "fade": 0.7,
+      "level": 0.4,
+      "from": [
+        0,
+        0,
+        1.5
+      ],
+      "to": [
+        0,
+        0,
+        1.2
+      ],
+      "alt": "stamp_back",
+      "line": "It's not signed."
+    }
+  ]
+}

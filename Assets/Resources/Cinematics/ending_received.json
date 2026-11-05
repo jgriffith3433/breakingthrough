@@ -1,0 +1,151 @@
+{
+  "id": "ending_received",
+  "bed": "ch6_score",
+  "shots": [
+    {
+      "id": "s1",
+      "back": "ending_received_1_back",
+      "speaker": "N",
+      "seconds": 5.6,
+      "fade": 0.0,
+      "level": 0.6,
+      "from": [
+        0,
+        0,
+        1.5
+      ],
+      "to": [
+        0,
+        0,
+        1.05
+      ],
+      "alt": "ring_back",
+      "line": "Wallit sets six things down in the ring: a postcard, a key, a hat, a paper, a leaf, a stamp."
+    },
+    {
+      "id": "s2",
+      "back": "ending_received_2_back",
+      "speaker": "S",
+      "seconds": 2.4,
+      "fade": 0.7,
+      "level": 0.4,
+      "from": [
+        -0.3,
+        0,
+        1.2
+      ],
+      "to": [
+        0.3,
+        0,
+        1.15
+      ],
+      "alt": "slice_back",
+      "front": "ending_received_2_front",
+      "line": "No address."
+    },
+    {
+      "id": "s3",
+      "back": "ending_received_3_back",
+      "speaker": "W",
+      "seconds": 3.6,
+      "fade": 0.7,
+      "level": 0.6,
+      "from": [
+        0,
+        0,
+        1.4
+      ],
+      "to": [
+        0,
+        0,
+        1.2
+      ],
+      "alt": "stamp_back",
+      "front": "ending_received_3_front",
+      "line": "Then give it one. You've got the stamp."
+    },
+    {
+      "id": "s4",
+      "back": "ending_received_4_back",
+      "speaker": "N",
+      "seconds": 5.6,
+      "fade": 0.7,
+      "level": 0.8,
+      "from": [
+        0,
+        0,
+        1.3
+      ],
+      "to": [
+        0,
+        0,
+        1.0
+      ],
+      "alt": "ring_back",
+      "line": "The stamp prints ADDRESS. Nothing strikes it. Every lost thing in the Hollow gets a door."
+    },
+    {
+      "id": "s5",
+      "back": "ending_received_5_back",
+      "speaker": "Y",
+      "seconds": 3.4,
+      "fade": 0.7,
+      "level": 0.7,
+      "from": [
+        0,
+        0,
+        1.3
+      ],
+      "to": [
+        0,
+        0,
+        1.1
+      ],
+      "alt": "crest_back",
+      "front": "ending_received_5_front",
+      "line": "Delivery! ... Oh. It's for us?"
+    },
+    {
+      "id": "s6",
+      "back": "ending_received_6_back",
+      "speaker": "S",
+      "seconds": 3.0,
+      "fade": 0.7,
+      "level": 0.9,
+      "from": [
+        0,
+        0,
+        1.1
+      ],
+      "to": [
+        0,
+        0,
+        1.3
+      ],
+      "alt": "slice_back",
+      "front": "ending_received_6_front",
+      "line": "Not this time. Received."
+    },
+    {
+      "id": "s7",
+      "back": "ending_received_7_back",
+      "speaker": "W",
+      "seconds": 3.4,
+      "fade": 0.7,
+      "level": 1.0,
+      "from": [
+        0,
+        0,
+        1.25
+      ],
+      "to": [
+        0,
+        0,
+        1.1
+      ],
+      "alt": "wallet_front",
+      "front": "ending_received_7_front",
+      "line": "Received. In full. Pay up."
+    }
+  ]
+}
