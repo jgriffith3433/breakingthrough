@@ -94,7 +94,7 @@ public class LevelYard : MonoBehaviour {
     Animator sliceAnim;
     Transform flagItem;
     GameObject shutter;
-    GameObject exitGlow;
+    Light exitLight;
     Transform carried;
     readonly bool[] noticeRead = new bool[3];
     readonly bool[] stonePassed = new bool[9];
@@ -136,12 +136,38 @@ public class LevelYard : MonoBehaviour {
 
     // ---------------------------------------------------------------- the place
 
+    // The ground's height: flat where the story walks (the start, the Ring, the notices, the flag, the dock, the Return Slot),
+    // spoil banks and low hills round it, and the land rising past the yard's edge so the skyline sits on hills.
+    static float Hill(float x, float z, float cx, float cz, float r, float h) {
+        float d = Mathf.Sqrt((x - cx) * (x - cx) + (z - cz) * (z - cz));
+        return Mathf.SmoothStep(h, 0f, Mathf.Clamp01(d / r));
+    }
+
+    public static float H(float x, float z) {
+        float y = Hill(x, z, -30f, 30f, 17f, 3.4f) + Hill(x, z, -56f, -12f, 15f, 2.6f) + Hill(x, z, -60f, 40f, 16f, 3f)
+            + Hill(x, z, 58f, -8f, 16f, 2.8f) + Hill(x, z, 60f, 38f, 17f, 3.6f) + Hill(x, z, 4f, 40f, 12f, 1.2f);
+        float edge = Mathf.Max(Mathf.Abs(x) - 62f, Mathf.Max(-61f - z, z - 66f));
+        if (edge > 0f) {
+            y += Mathf.SmoothStep(0f, 1f, edge / 45f) * (9f + 15f * Mathf.PerlinNoise(x * 0.02f + 4f, z * 0.02f + 9f));
+        }
+        return y;
+    }
+
+    static Vector3 On(float x, float z) {
+        return new Vector3(x, H(x, z), z);
+    }
+
+    static readonly string[] Doors5 = { "st_door_wall", "st_house_wall", "st_door_wall", "st_house_wall", "st_door_wall", "st_house_wall", "st_door_wall", "st_house_wall", "st_door_wall" };
+    static readonly string[] Hall7 = { "st_house_wall", "st_house_wall", "st_shopfront", "st_door_wall", "st_shopfront", "st_house_wall", "st_house_wall" };
+    static readonly string[] Houses = { "st_house_wall", "st_shopfront", "st_house_wall", "st_house_wall" };
+    static readonly string[] Houses3 = { "st_house_wall", "st_door_wall", "st_house_wall" };
+
     public void Build(LevelScene owner) {
         scene = owner;
         root = new GameObject("Sorting Yard").transform;
         root.SetParent(transform, false);
         Ground();
-        Walls();
+        Buildings();
         Doors();
         RingAndStones();
         TrailAndTrunks();
@@ -150,92 +176,158 @@ public class LevelYard : MonoBehaviour {
         DropOff();
         ReturnSlot();
         Lamps();
+        Dressing();
         SliceFigure();
         Crew5();
         BuildSpots();
         Physics.SyncTransforms();
     }
 
+    // The ground is one heightfield mesh mapped with the kit's gravel (a collider on the Ground layer: bots and Slice stand on
+    // it, the camera ray reads it), and a coarse skirt of hills round it, wider than the walls, for the skyline to stand on.
     void Ground() {
-        GameObject g = LevelKit.Block(root, "Ground", PrimitiveType.Cube, new Vector3(0f, -0.5f, 0f), new Vector3(300f, 1f, 300f), new Color(0.065f, 0.11f, 0.15f), true);
-        g.layer = 3;   // Ground: bots and Slice stand on it, the camera ray reads it
-        LevelKit.Block(root, "Paving", PrimitiveType.Cube, new Vector3(0f, 0.02f, -10f), new Vector3(30f, 0.04f, 30f), new Color(0.11f, 0.15f, 0.26f));
+        Material gravel = LevelDress.GroundMaterial("yard", "concrete", new Color(0.5f, 0.56f, 0.7f));
+        Mesh inner = LevelDress.GridMesh("Yard Ground", -72f, -72f, 72f, 72f, 2.5f, H, 4f);
+        LevelDress.Surface(root, "Ground", inner, gravel, true, 3);
+        Mesh skirt = LevelDress.GridMesh("Yard Hills", -300f, -300f, 300f, 324f, 12f, H, 6f, (x, z) => x > -72f && x < 72f && z > -72f && z < 72f);
+        LevelDress.Surface(root, "Hills", skirt, LevelDress.GroundMaterial("yard", "stone", new Color(0.4f, 0.46f, 0.6f)), false, 0);
+        // The yard's edge: invisible walls behind the facades, fences and trees, so nobody walks off the heightfield.
+        LevelDress.Proxy(root, "Edge W", new Vector3(-67f, 4f, 4f), new Vector3(2f, 10f, 140f));
+        LevelDress.Proxy(root, "Edge E", new Vector3(67f, 4f, 4f), new Vector3(2f, 10f, 140f));
+        LevelDress.Proxy(root, "Edge S", new Vector3(0f, 4f, -62f), new Vector3(138f, 10f, 2f));
+        LevelDress.Proxy(root, "Edge N", new Vector3(0f, 4f, 70f), new Vector3(138f, 10f, 2f));
         // The scar: burnt stamp ink on the stones, the dark patches the Department leaves where it has struck.
+        Material ink = LevelDress.GroundMaterial("yard", "concrete", new Color(0.55f, 0.16f, 0.16f));
         for (int i = 0; i < 7; i++) {
-            Vector3 p = new Vector3(Rand(-20f, 20f), 0.05f, Rand(-30f, 6f));
+            Vector3 p = new Vector3(Rand(-20f, 20f), 0f, Rand(-30f, 6f));
             if (Vector3.Distance(LevelKit.Flat(p), RingCenter) < RingRadius + 2f) {
                 continue;
             }
-            GameObject scar = LevelKit.Block(root, "Scar", PrimitiveType.Cylinder, p, new Vector3(Rand(1.6f, 3.4f), 0.01f, Rand(1.6f, 3.4f)), new Color(0.22f, 0.07f, 0.07f));
+            GameObject scar = LevelKit.Decal(root, "Scar", new Vector3(p.x, 0.04f, p.z), new Vector2(Rand(1.6f, 3.4f), Rand(1.6f, 3.4f)), Color.white);
+            scar.GetComponent<MeshRenderer>().sharedMaterial = ink;
             scar.transform.rotation = Quaternion.Euler(0f, Rand(0f, 90f), 0f);
         }
     }
 
-    void Walls() {
-        Color wall = new Color(0.05f, 0.07f, 0.12f);
-        LevelKit.Block(root, "WallW", PrimitiveType.Cube, new Vector3(-66f, 2f, 2f), new Vector3(2f, 4f, 126f), wall, true);
-        LevelKit.Block(root, "WallE", PrimitiveType.Cube, new Vector3(66f, 2f, 2f), new Vector3(2f, 4f, 126f), wall, true);
-        LevelKit.Block(root, "WallS", PrimitiveType.Cube, new Vector3(0f, 2f, -61f), new Vector3(134f, 4f, 2f), wall, true);
-        LevelKit.Block(root, "WallN", PrimitiveType.Cube, new Vector3(0f, 2f, 65f), new Vector3(134f, 4f, 2f), wall, true);
-    }
-
-    // Five shut doors behind the start: every one of them stamped him RETURN TO SENDER, and none of them opens.
-    void Doors() {
-        for (int i = 0; i < 5; i++) {
-            float x = (i - 2) * 7f;
-            LevelKit.Block(root, "DoorFrame", PrimitiveType.Cube, new Vector3(x, 2.4f, -59.4f), new Vector3(3.6f, 4.8f, 0.6f), new Color(0.16f, 0.15f, 0.2f), true);
-            LevelKit.Block(root, "Door", PrimitiveType.Cube, new Vector3(x, 2.1f, -59f), new Vector3(2.8f, 4.1f, 0.3f), new Color(0.26f, 0.22f, 0.28f));
-            TextMesh t = LevelKit.Text(root, "RETURNED", new Vector3(x, 2.8f, -58.8f), 0.07f, new Color(0.76f, 0.23f, 0.23f), false);
-            t.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
-            LevelKit.Block(root, "Ink", PrimitiveType.Cube, new Vector3(x, 0.03f, -56.4f), new Vector3(3f, 0.02f, 1.6f), new Color(0.45f, 0.12f, 0.12f));
+    // Buildings that close the yard without boxing it in: the Return Hall behind the start (two wings and an alley), the Dead
+    // Letter Office with its clock tower in the north, houses along the west and east with alleys between, and a skyline of
+    // roofs beyond the edge. Each one is facade bays and roofs from the kit with one simple collider for its footprint.
+    void Buildings() {
+        Transform b = new GameObject("Buildings").transform;
+        b.SetParent(root, false);
+        LevelDress.Facade(b, "Return Hall", On(0f, -60f), 0f, Doors5, 2, root);
+        LevelDress.Facade(b, "Return Hall West Wing", On(-31f, -60f), 0f, Houses, 2, root);
+        LevelDress.Facade(b, "Return Hall East Wing", On(31f, -60f), 0f, Houses, 2, root);
+        LevelDress.Facade(b, "Dead Letter Office", On(0f, 66f), 180f, Hall7, 3, root);
+        LevelDress.Facade(b, "Office West Row", On(-32f, 66f), 180f, Houses3, 2, root);
+        LevelDress.Facade(b, "Office East Row", On(34f, 66f), 180f, Houses3, 2, root);
+        LevelDress.Facade(b, "West Houses A", On(-65f, -34f), 90f, Houses, 2, root);
+        LevelDress.Facade(b, "West Houses B", On(-65f, 4f), 90f, Houses3, 2, root, true);
+        LevelDress.Facade(b, "West Houses C", On(-65f, 46f), 90f, Houses, 2, root);
+        LevelDress.Facade(b, "East Houses A", On(65f, -36f), -90f, Houses3, 2, root);
+        LevelDress.Facade(b, "East Houses B", On(65f, 28f), -90f, Houses, 2, root, true);
+        // The clock tower stands behind the office: a lit face seen from the whole yard.
+        GameObject tower = LevelDress.Put(b, "yd_clock_tower", On(0f, 74f), 0f, 1.5f);
+        tower.name = "Clock Tower";
+        LevelDress.PointLight(b, new Vector3(0f, 17f, 62f), new Color(1f, 0.82f, 0.45f), 40f, 1.4f);
+        // The skyline: roofs beyond the edge, each a single row, lower and darker the farther they stand.
+        var rng = new System.Random(31);
+        Transform far = new GameObject("Skyline").transform;
+        far.SetParent(b, false);
+        for (int i = 0; i < 9; i++) {
+            float a = (i * 40f + 12f) * Mathf.Deg2Rad;
+            float d = 105f + (i % 3) * 16f;
+            Vector3 p = new Vector3(Mathf.Sin(a) * d, 0f, 4f + Mathf.Cos(a) * d * 0.9f);
+            p.y = H(p.x, p.z);
+            Vector3 toYard = -new Vector3(p.x, 0f, p.z - 4f);
+            float yaw = Mathf.Atan2(toYard.x, toYard.z) * Mathf.Rad2Deg;
+            LevelDress.Facade(far, "Far Roofs " + i, p, yaw, i % 2 == 0 ? Houses3 : Houses, 2 + i % 3, null, i % 4 == 3);
         }
     }
 
+    // Five shut doors in the Return Hall's facade (the first five bays of Doors5 that are door walls): every one of them
+    // stamped him RETURN TO SENDER, and none of them opens. Ink lies on every step.
+    void Doors() {
+        Material ink = LevelDress.GroundMaterial("yard", "concrete", new Color(0.62f, 0.16f, 0.16f));
+        for (int i = 0; i < 5; i++) {
+            float x = -16f + i * 8f;
+            TextMesh t = LevelKit.Text(root, "RETURNED", On(x, -59.1f) + new Vector3(0f, 1.25f, 0f), 0.045f, new Color(0.9f, 0.3f, 0.3f), false);
+            t.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+            GameObject mark = LevelKit.Decal(root, "Ink", new Vector3(x, 0.05f, -56.4f), new Vector2(3f, 1.6f), Color.white);
+            mark.GetComponent<MeshRenderer>().sharedMaterial = ink;
+        }
+        LevelDress.PointLight(root, new Vector3(-10f, 4f, -55f), new Color(1f, 0.86f, 0.55f), 15f, 1.1f);
+    }
+
     void RingAndStones() {
-        LevelKit.Block(root, "RingGold", PrimitiveType.Cylinder, RingCenter + new Vector3(0f, 0.05f, 0f), new Vector3(RingRadius * 2f + 0.5f, 0.01f, RingRadius * 2f + 0.5f), new Color(0.82f, 0.66f, 0.26f));
-        LevelKit.Block(root, "RingFloor", PrimitiveType.Cylinder, RingCenter + new Vector3(0f, 0.07f, 0f), new Vector3(RingRadius * 2f - 0.5f, 0.01f, RingRadius * 2f - 0.5f), new Color(0.15f, 0.19f, 0.3f));
-        // Nine standing stones; the gap faces the doors.
-        int placed = 0;
+        // The gold ring: two bands of kerb segments round the Ring, and nine standing stones; the gap faces the doors.
+        for (int i = 0; i < 10; i++) {
+            float a = i * 36f;
+            float rad = a * Mathf.Deg2Rad;
+            Vector3 dir = new Vector3(Mathf.Cos(rad), 0f, Mathf.Sin(rad));
+            LevelDress.Put(root, "yd_ring_segment", RingCenter + dir * 4.96f + Vector3.up * 0.02f, -a, 1.6f);
+            LevelDress.Put(root, "yd_ring_segment", RingCenter + dir * 3.1f + Vector3.up * 0.02f, -a, 1f);
+        }
+        LevelDress.PointLight(root, RingCenter + new Vector3(0f, 3f, 0f), new Color(0.95f, 0.8f, 0.4f), 18f, 1.2f);
         for (int i = 0; i < 9; i++) {
             float a = (270f + 20f + i * 40f) * Mathf.Deg2Rad;
             Vector3 p = RingCenter + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * 10.5f;
             stonePos[i] = p;
-            GameObject stone = LevelKit.Block(root, "Stone" + i, PrimitiveType.Cylinder, p + Vector3.up * 1.6f, new Vector3(1.5f, 1.6f, 1.5f), new Color(0.24f, 0.28f, 0.4f), true);
-            stone.transform.rotation = Quaternion.Euler(0f, i * 31f, 0f);
-            LevelKit.Block(root, "Rune", PrimitiveType.Cube, p + new Vector3(0f, 3.25f, 0f), new Vector3(0.9f, 0.14f, 0.9f), new Color(0.79f, 0.84f, 1f));
-            placed++;
+            LevelDress.Put(root, "yd_standing_stone", On(p.x, p.z), i * 31f, 1.7f + (i % 3) * 0.12f);
+            LevelDress.Proxy(root, "Stone " + i, On(p.x, p.z) + Vector3.up * 2f, new Vector3(1.5f, 4f, 1.5f), i * 31f);
         }
-        // Chalk stepping stones: the trail from the doors to the Ring.
-        for (float z = -54f; z < -17f; z += 3.2f) {
-            LevelKit.Block(root, "Chalk", PrimitiveType.Cylinder, new Vector3(Rand(-0.5f, 0.5f), 0.045f, z), new Vector3(1f, 0.01f, 0.8f), new Color(0.85f, 0.88f, 0.95f));
+        // Chalk stepping slabs: the trail from the doors to the Ring.
+        for (float z = -54f; z < -17f; z += 2.6f) {
+            Vector3 s = new Vector3(Rand(-0.6f, 0.6f), 0f, z);
+            LevelDress.Put(root, "yd_gravel_slab", On(s.x, s.z), Rand(0f, 90f), 1.35f);
         }
     }
 
     void TrailAndTrunks() {
         for (int i = 0; i < Trail.Length - 1; i++) {
-            for (float t = 0.25f; t < 1f; t += 0.5f) {
+            for (float t = 0.2f; t < 1f; t += 0.38f) {
                 Vector3 p = Vector3.Lerp(Trail[i], Trail[i + 1], t);
-                LevelKit.Block(root, "Chalk", PrimitiveType.Cylinder, p + new Vector3(0f, 0.045f, 0f), new Vector3(0.9f, 0.01f, 0.7f), new Color(0.85f, 0.88f, 0.95f));
+                LevelDress.Put(root, "yd_gravel_slab", On(p.x, p.z), Rand(0f, 90f), 1.2f);
             }
         }
         // The east way, to the drop.
-        for (float x = 8f; x < 30f; x += 3.4f) {
+        for (float x = 8f; x < 30f; x += 2.8f) {
             float z = Mathf.Lerp(-8f, 8f, (x - 8f) / 22f);
-            LevelKit.Block(root, "Chalk", PrimitiveType.Cylinder, new Vector3(x, 0.045f, z), new Vector3(0.9f, 0.01f, 0.7f), new Color(0.85f, 0.88f, 0.95f));
+            LevelDress.Put(root, "yd_gravel_slab", On(x, z), Rand(0f, 90f), 1.3f);
         }
-        // West of the Ring: dead trunks, thin and solid, with a clear lane along the chalk.
+        // West of the Ring: dead trees and stumps with a clear lane along the chalk (a collider each, thin).
+        Transform trees = new GameObject("Dead Trees").transform;
+        trees.SetParent(root, false);
         int made = 0;
-        for (int tries = 0; tries < 400 && made < 30; tries++) {
-            Vector3 p = new Vector3(Rand(-62f, -17f), 0f, Rand(-42f, 36f));
-            if (NearTrail(p, 4.4f) || Vector3.Distance(p, FlagPos) < 6f || Vector3.Distance(LevelKit.Flat(p), RingCenter) < 15f) {
+        for (int tries = 0; tries < 600 && made < 46; tries++) {
+            Vector3 p = new Vector3(Rand(-62f, -17f), 0f, Rand(-48f, 58f));
+            if (NearTrail(p, 4.6f) || Vector3.Distance(p, FlagPos) < 7f || Vector3.Distance(LevelKit.Flat(p), RingCenter) < 15f
+                || Vector3.Distance(p, NoticePos[0]) < 3f || Vector3.Distance(p, NoticePos[1]) < 3f || Vector3.Distance(p, NoticePos[2]) < 3f) {
                 continue;
             }
-            float h = Rand(2.6f, 4.6f);
-            GameObject trunk = LevelKit.Block(root, "Trunk", PrimitiveType.Cylinder, p + Vector3.up * h * 0.5f, new Vector3(Rand(0.35f, 0.6f), h * 0.5f, Rand(0.35f, 0.6f)), new Color(0.13f, 0.11f, 0.16f), true);
-            trunk.transform.rotation = Quaternion.Euler(Rand(-4f, 4f), Rand(0f, 180f), Rand(-4f, 4f));
-            GameObject branch = LevelKit.Block(root, "Branch", PrimitiveType.Cube, p + new Vector3(0.5f, h * 0.8f, 0f), new Vector3(1.4f, 0.12f, 0.12f), new Color(0.13f, 0.11f, 0.16f));
-            branch.transform.rotation = Quaternion.Euler(0f, Rand(0f, 180f), Rand(10f, 30f));
+            float sc = Rand(0.8f, 1.35f);
+            Vector3 at = On(p.x, p.z);
+            LevelDress.Put(trees, made % 5 == 4 ? "yd_stump" : "yd_dead_tree", at, Rand(0f, 360f), made % 5 == 4 ? Rand(1f, 1.6f) : sc);
+            LevelDress.Proxy(trees, "Trunk", at + Vector3.up * 2f, new Vector3(0.7f, 4f, 0.7f));
             made++;
+        }
+        // The spoil bank's secret: seven stumps round a carved stone, where the chalk arrow points.
+        Vector3 top = On(-30f, 30f);
+        LevelDress.Put(root, "yd_standing_stone", top, 20f, 1.3f);
+        for (int i = 0; i < 7; i++) {
+            float a = i * 51.4f * Mathf.Deg2Rad;
+            Vector3 p = new Vector3(top.x + Mathf.Cos(a) * 3.6f, 0f, top.z + Mathf.Sin(a) * 3.6f);
+            LevelDress.Put(root, "yd_stump", On(p.x, p.z), i * 47f, 0.8f + (i % 3) * 0.15f);
+        }
+        LevelDress.PointLight(root, top + new Vector3(0f, 2.4f, 0f), new Color(0.6f, 0.75f, 1f), 10f, 0.6f);
+        // East and north-east: a lower bank of dead trees, a few stumps and the dock's fence.
+        for (int i = 0; i < 12; i++) {
+            Vector3 p = new Vector3(Rand(48f, 62f), 0f, Rand(-30f, 55f));
+            if (Vector3.Distance(p, DropPos) < 16f || Vector3.Distance(p, ExitPos) < 10f) {
+                continue;
+            }
+            LevelDress.Put(trees, "yd_dead_tree", On(p.x, p.z), Rand(0f, 360f), Rand(0.9f, 1.4f));
+            LevelDress.Proxy(trees, "Trunk", On(p.x, p.z) + Vector3.up * 2f, new Vector3(0.7f, 4f, 0.7f));
         }
     }
 
@@ -255,71 +347,145 @@ public class LevelYard : MonoBehaviour {
     void Notices() {
         for (int i = 0; i < 3; i++) {
             Vector3 p = NoticePos[i];
-            LevelKit.Block(root, "NoticePost", PrimitiveType.Cube, p + new Vector3(0f, 1.1f, 0f), new Vector3(0.22f, 2.2f, 0.22f), new Color(0.2f, 0.16f, 0.15f), true);
-            GameObject board = LevelKit.Block(root, "NoticeBoard", PrimitiveType.Cube, p + new Vector3(0f, 1.9f, 0f), new Vector3(2.1f, 1.3f, 0.1f), new Color(0.85f, 0.81f, 0.68f));
-            Vector3 away = LevelKit.Flat(p - RingCenter);
-            board.transform.rotation = Quaternion.LookRotation(away.normalized);
-            TextMesh t = LevelKit.Text(board.transform, NoticeBoard[i], new Vector3(0f, 0f, -0.6f), 0.07f, new Color(0.18f, 0.1f, 0.1f), false);
-            t.transform.localScale = new Vector3(1f / 2.1f, 1f / 1.3f, 1f / 0.1f * 0.1f);
-            t.characterSize = 0.036f;
+            Vector3 toRing = LevelKit.Flat(RingCenter - p);
+            float yaw = Mathf.Atan2(toRing.x, toRing.z) * Mathf.Rad2Deg;
+            GameObject board = LevelDress.Put(root, "yd_notice_board", On(p.x, p.z), yaw, 1f);
+            LevelDress.Proxy(root, "Notice post", On(p.x, p.z) + Vector3.up * 1.1f, new Vector3(2.1f, 2.2f, 0.3f), yaw);
+            TextMesh t = LevelKit.Text(board.transform, NoticeBoard[i], new Vector3(0f, 1.68f, 0.075f), 0.024f, new Color(0.2f, 0.1f, 0.1f), false);
+            t.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
         }
     }
 
     // The fallen mailbox, the stump it came off, and the flag that lay beside it: a lost thing, waving at nobody.
     void Mailbox() {
         Vector3 m = new Vector3(-41.5f, 0f, 14.5f);
-        LevelKit.Block(root, "MailboxStump", PrimitiveType.Cylinder, m + new Vector3(1.4f, 0.8f, 0.5f), new Vector3(0.3f, 0.8f, 0.3f), new Color(0.22f, 0.17f, 0.15f), true);
-        GameObject box = LevelKit.Block(root, "Mailbox", PrimitiveType.Cube, m + new Vector3(0f, 0.45f, 0f), new Vector3(1.6f, 0.9f, 0.9f), new Color(0.32f, 0.38f, 0.52f), true);
-        box.transform.rotation = Quaternion.Euler(0f, 28f, 8f);
-        LevelKit.Block(box.transform, "Slot", PrimitiveType.Cube, new Vector3(0.52f, 0.1f, 0f), new Vector3(0.1f, 0.08f, 0.9f), new Color(0.05f, 0.05f, 0.08f));
+        GameObject box = LevelDress.Put(root, "yd_fallen_mailbox", On(m.x, m.z), 28f, 1.5f);
+        box.name = "Fallen Mailbox";
+        LevelDress.Proxy(root, "Mailbox collider", On(m.x, m.z) + Vector3.up * 0.4f, new Vector3(1.6f, 0.8f, 1.6f), 28f);
+        LevelDress.Put(root, "yd_stump", On(m.x + 2.6f, m.z + 1.4f), 40f, 1.1f);
         var item = new GameObject("MailboxFlag");
         item.transform.SetParent(root, false);
         item.transform.position = FlagPos + Vector3.up * 0.8f;
-        LevelKit.Block(item.transform, "Pole", PrimitiveType.Cube, Vector3.zero, new Vector3(0.09f, 1.3f, 0.09f), new Color(0.7f, 0.7f, 0.76f));
-        LevelKit.Block(item.transform, "Cloth", PrimitiveType.Cube, new Vector3(0.3f, 0.45f, 0f), new Vector3(0.6f, 0.4f, 0.05f), new Color(0.76f, 0.23f, 0.23f));
+        GameObject flag = LevelDress.Put(item.transform, "yd_mail_flag", FlagPos + Vector3.up * 0.1f, 0f, 1f);
+        LevelDress.Tint(flag, 1, new Color(0.85f, 0.2f, 0.2f));
+        flag.transform.localPosition = new Vector3(0f, -0.7f, 0f);
         flagItem = item.transform;
+        LevelDress.PointLight(root, FlagPos + new Vector3(0f, 2.2f, 0f), new Color(1f, 0.85f, 0.5f), 9f, 0.7f);
     }
 
+    // The sorting dock: the drop box on its mats, trestles, sacks of dead letters, post boxes and crates, with a fence along the
+    // north. The Clearing Crew sleeps east of it.
     void DropOff() {
-        LevelKit.Block(root, "DropBox", PrimitiveType.Cube, DropPos + new Vector3(0f, 1.1f, 0f), new Vector3(3.2f, 2.2f, 2.4f), new Color(0.55f, 0.36f, 0.12f));
-        LevelKit.Block(root, "DropSlot", PrimitiveType.Cube, DropPos + new Vector3(-1.62f, 1.4f, 0f), new Vector3(0.06f, 0.2f, 1.6f), new Color(0.04f, 0.04f, 0.06f));
-        TextMesh t = LevelKit.Text(root, "DROP", DropPos + new Vector3(-1.7f, 0.7f, 0f), 0.09f, new Color(0.95f, 0.8f, 0.45f), false);
+        Vector3 d = DropPos;
+        GameObject drop = LevelDress.Put(root, "yd_drop_box", On(d.x, d.z), -90f, 1.4f);
+        drop.name = "Drop Box";
+        LevelDress.Proxy(root, "Drop collider", On(d.x, d.z) + Vector3.up * 1.1f, new Vector3(3.4f, 2.2f, 3.4f), -90f);
+        TextMesh t = LevelKit.Text(root, "DROP", On(d.x, d.z) + new Vector3(-2.2f, 1.3f, 0f), 0.06f, new Color(0.95f, 0.8f, 0.45f), false);
         t.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
         for (float z = -3f; z < 3.1f; z += 3f) {
-            LevelKit.Block(root, "Mat", PrimitiveType.Cube, DropPos + new Vector3(-4.5f, 0.04f, z), new Vector3(2f, 0.02f, 2.4f), new Color(0.4f, 0.3f, 0.1f));
+            LevelDress.Put(root, "yd_gravel_slab", On(d.x - 4.5f, d.z + z), 0f, 1.7f);
         }
+        LevelDress.Put(root, "yd_sorting_trestle", On(27f, 20f), 90f, 1f);
+        LevelDress.Put(root, "yd_sorting_trestle", On(27f, 15.5f), 90f, 1f);
+        LevelDress.Put(root, "yd_sorting_trestle", On(26f, -1f), 80f, 1f);
+        LevelDress.Proxy(root, "Trestle run", On(27f, 18f) + Vector3.up * 0.7f, new Vector3(1f, 1.4f, 9f));
+        LevelDress.Proxy(root, "Trestle run 2", On(26f, -1f) + Vector3.up * 0.7f, new Vector3(1f, 1.4f, 2.8f), 80f);
+        LevelDress.Put(root, "yd_sack_pile", On(29.5f, 22.5f), 30f, 1.1f);
+        LevelDress.Put(root, "yd_sack_pile", On(24.5f, 12f), 120f, 1f);
+        LevelDress.Put(root, "yd_sack_pile", On(28f, -4.5f), 200f, 0.9f);
+        LevelDress.Put(root, "yd_post_box", On(31f, 25f), 160f, 1.2f);
+        LevelDress.Put(root, "yd_post_box", On(33.5f, 24.6f), 190f, 1.1f);
+        LevelDress.Put(root, "yd_post_box", On(23f, 1f), 70f, 1.15f);
+        LevelDress.Proxy(root, "Post boxes", On(32.2f, 24.8f) + Vector3.up * 0.9f, new Vector3(3.6f, 1.8f, 0.9f));
+        LevelDress.Proxy(root, "Post box W", On(23f, 1f) + Vector3.up * 0.9f, new Vector3(0.9f, 1.8f, 0.9f));
+        for (int i = 0; i < 4; i++) {
+            Vector3 c = On(47f + (i % 2) * 1.1f, 20.5f + (i / 2) * 1.1f);
+            LevelDress.Put(root, "st_crate", c, 10f * i, 1.1f);
+            if (i == 1) {
+                LevelDress.Put(root, "st_crate", c + Vector3.up * 0.96f, 33f, 0.9f);
+            }
+        }
+        LevelDress.Proxy(root, "Crates", On(47.5f, 21f) + Vector3.up * 0.5f, new Vector3(2.6f, 1f, 2.6f));
+        LevelDress.Put(root, "fl_barrel", On(50f, 3f), 0f, 1.1f);
+        LevelDress.Put(root, "fl_barrel", On(51.2f, 4.1f), 40f, 1f);
+        LevelDress.Proxy(root, "Barrels", On(50.6f, 3.5f) + Vector3.up * 0.5f, new Vector3(2.4f, 1f, 2.4f));
+        for (int i = 0; i < 5; i++) {
+            LevelDress.Put(root, "yd_fence", On(35f + i * 2f, 27f), 0f, 1f);
+        }
+        LevelDress.Proxy(root, "Dock fence", On(40f, 27f) + Vector3.up * 0.6f, new Vector3(10f, 1.2f, 0.3f));
     }
 
-    // The way out: a doorframe with a red-brown shutter that lifts once the crew is down.
+    // The way out: a stone frame with a rusty roller shutter that lifts once the crew is down, an amber strip over it.
     void ReturnSlot() {
         Vector3 p = ExitPos;
-        LevelKit.Block(root, "SlotPostL", PrimitiveType.Cube, p + new Vector3(-2.3f, 2.2f, 0f), new Vector3(0.7f, 4.4f, 0.8f), new Color(0.2f, 0.18f, 0.26f), true);
-        LevelKit.Block(root, "SlotPostR", PrimitiveType.Cube, p + new Vector3(2.3f, 2.2f, 0f), new Vector3(0.7f, 4.4f, 0.8f), new Color(0.2f, 0.18f, 0.26f), true);
-        LevelKit.Block(root, "SlotLintel", PrimitiveType.Cube, p + new Vector3(0f, 4.6f, 0f), new Vector3(5.3f, 0.7f, 0.8f), new Color(0.2f, 0.18f, 0.26f), true);
-        exitGlow = LevelKit.Block(root, "SlotGlow", PrimitiveType.Cube, p + new Vector3(0f, 2.1f, 0.5f), new Vector3(3.9f, 4.2f, 0.05f), new Color(0.35f, 0.3f, 0.14f));
-        shutter = LevelKit.Block(root, "Shutter", PrimitiveType.Cube, p + new Vector3(0f, 2.1f, -0.1f), new Vector3(3.9f, 4.2f, 0.5f), new Color(0.33f, 0.14f, 0.14f), true);
-        TextMesh t = LevelKit.Text(shutter.transform, "RETURN SLOT", new Vector3(0f, 0.2f, -0.6f), 0.5f, new Color(0.9f, 0.7f, 0.5f), false);
-        t.transform.localScale = new Vector3(1f / 3.9f, 1f / 4.2f, 1f);
-        t.characterSize = 0.085f;
+        Vector3 at = On(p.x, p.z);
+        GameObject frame = LevelDress.Put(root, "yd_slot_frame", at, 180f, 1f);
+        frame.name = "Return Slot";
+        shutter = new GameObject("Shutter");
+        shutter.transform.SetParent(root, false);
+        shutter.transform.position = at;
+        GameObject leaf = LevelDress.Put(shutter.transform, "yd_slot_shutter", at + new Vector3(0f, 0f, -0.1f), 180f, 1f);
+        LevelDress.Proxy(shutter.transform, "Shutter collider", at + new Vector3(0f, 2.1f, -0.1f), new Vector3(3.9f, 4.2f, 0.6f));
+        TextMesh t = LevelKit.Text(leaf.transform, "RETURN SLOT", new Vector3(0f, 2.25f, 0.2f), 0.04f, new Color(0.15f, 0.07f, 0.04f), false);
+        t.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+        LevelDress.Proxy(root, "Slot post L", at + new Vector3(-2.05f, 2.2f, 0f), new Vector3(0.9f, 4.4f, 1f));
+        LevelDress.Proxy(root, "Slot post R", at + new Vector3(2.05f, 2.2f, 0f), new Vector3(0.9f, 4.4f, 1f));
+        for (int s = -1; s <= 1; s += 2) {
+            for (int i = 0; i < 4; i++) {
+                LevelDress.Put(root, "yd_fence", On(p.x + s * (4.2f + i * 2f), p.z), 0f, 1f);
+            }
+            LevelDress.Proxy(root, "Slot fence", On(p.x + s * 8.2f, p.z) + Vector3.up * 0.6f, new Vector3(8f, 1.2f, 0.3f));
+            LevelDress.Put(root, "yd_dead_tree", On(p.x + s * 13f, p.z + 1.5f), s * 70f, 1.1f);
+        }
+        exitLight = LevelDress.PointLight(root, at + new Vector3(0f, 3.2f, 2f), new Color(1f, 0.7f, 0.3f), 14f, 0.5f);
     }
 
+    // Lamps: lantern posts along the chalk and at the Ring and dock, with a light at each lantern.
     void Lamps() {
-        Vector3[] at = { new Vector3(-7f, 0f, -16f), new Vector3(7f, 0f, -16f), new Vector3(-8f, 0f, -3f), DropPos + new Vector3(-6f, 0f, 3f) };
+        Vector3[] at = { new Vector3(-7f, 0f, -16f), new Vector3(7f, 0f, -16f), new Vector3(-8f, 0f, -3f), DropPos + new Vector3(-6f, 0f, 3f), new Vector3(-3.4f, 0f, -42f), new Vector3(3.4f, 0f, -30f), new Vector3(10f, 0f, 38f) };
+        bool[] lit = { true, true, true, true, true, false, true };
         for (int i = 0; i < at.Length; i++) {
-            LevelKit.Block(root, "LampPost", PrimitiveType.Cylinder, at[i] + Vector3.up * 1.7f, new Vector3(0.14f, 1.7f, 0.14f), new Color(0.12f, 0.12f, 0.16f));
-            LevelKit.Block(root, "LampGlass", PrimitiveType.Cube, at[i] + Vector3.up * 3.55f, new Vector3(0.5f, 0.55f, 0.5f), new Color(1f, 0.85f, 0.5f));
-            var light = new GameObject("Lamp").AddComponent<Light>();
-            light.transform.SetParent(root, false);
-            light.transform.position = at[i] + Vector3.up * 3.4f;
-            light.type = LightType.Point;
-            light.range = 15f;
-            light.intensity = 1.25f;
-            light.color = i == 3 ? new Color(1f, 0.7f, 0.35f) : new Color(1f, 0.86f, 0.55f);
-            light.shadows = LightShadows.None;
+            float yaw = i % 2 == 0 ? 0f : 180f;
+            Vector3 pos = On(at[i].x, at[i].z);
+            LevelDress.Put(root, "st_lamp_post", pos, yaw, 1f);
+            LevelDress.Proxy(root, "Lamp post", pos + Vector3.up * 1.6f, new Vector3(0.5f, 3.2f, 0.5f));
+            if (lit[i]) {
+                Vector3 lantern = pos + Quaternion.Euler(0f, yaw, 0f) * new Vector3(0.62f, 3.4f, 0f);
+                LevelDress.PointLight(root, lantern, i == 3 ? new Color(1f, 0.7f, 0.35f) : new Color(1f, 0.86f, 0.55f), 15f, 1.25f);
+            }
         }
     }
 
-    // Slice, on guard at the Ring: the painted model on its idle (stand-in capsule without it).
+    // Everything between: fence runs along the chalk, a signpost, benches and bins at the Return Hall, crates by the alley, and
+    // the Wallit-sized clutter that makes the ground read as a yard in use.
+    void Dressing() {
+        for (int s = -1; s <= 1; s += 2) {
+            for (int i = 0; i < 6; i++) {
+                LevelDress.Put(root, "yd_fence", On(s * 7.2f, -42f + i * 2f), 90f, 1f);
+            }
+            LevelDress.Proxy(root, "Chalk fence", On(s * 7.2f, -36f) + Vector3.up * 0.6f, new Vector3(0.3f, 1.2f, 12f));
+        }
+        LevelDress.Put(root, "yd_signpost", On(3.2f, -26f), 200f, 1f);
+        LevelDress.Proxy(root, "Signpost", On(3.2f, -26f) + Vector3.up * 1f, new Vector3(0.4f, 2f, 0.4f));
+        LevelDress.Put(root, "st_bench", On(-24f, -53f), 0f, 1f);
+        LevelDress.Put(root, "st_bin", On(-21.5f, -53.5f), 0f, 1f);
+        LevelDress.Put(root, "st_bin", On(-20.8f, -53.4f), 40f, 1f);
+        LevelDress.Put(root, "st_hydrant", On(-12.5f, -54f), 0f, 1f);
+        LevelDress.Put(root, "st_crate", On(21f, -53f), 15f, 1.1f);
+        LevelDress.Put(root, "st_crate", On(22.2f, -53.2f), 75f, 0.95f);
+        LevelDress.Put(root, "st_crate", On(21.6f, -53.1f) + Vector3.up * 0.9f, 40f, 0.9f);
+        LevelDress.Put(root, "yd_sack_pile", On(25f, -52f), 160f, 1f);
+        LevelDress.Proxy(root, "Hall clutter W", On(-22.5f, -53f) + Vector3.up * 0.6f, new Vector3(4f, 1.2f, 1.2f));
+        LevelDress.Proxy(root, "Hall clutter E", On(22.5f, -53f) + Vector3.up * 0.6f, new Vector3(4.5f, 1.2f, 1.5f));
+        // Dead-letter pillar boxes beside the first notices, and a trestle with the sorted and unsorted.
+        LevelDress.Put(root, "yd_post_box", On(-12f, -14f), 20f, 1.1f);
+        LevelDress.Put(root, "yd_sorting_trestle", On(-18f, -22f), 55f, 1f);
+        LevelDress.Put(root, "yd_sack_pile", On(-17f, -24f), 10f, 0.9f);
+        LevelDress.Proxy(root, "Post box NW", On(-12f, -14f) + Vector3.up * 0.8f, new Vector3(0.9f, 1.6f, 0.9f));
+        LevelDress.Proxy(root, "Trestle NW", On(-18f, -22f) + Vector3.up * 0.7f, new Vector3(1f, 1.4f, 2.8f), 55f);
+    }
+
+    // Slice, on guard at the Ring: the painted model on its idle (nothing without it).
     void SliceFigure() {
         GameObject prefab = Resources.Load<GameObject>("Slice/Slice");
         GameObject go;
@@ -346,14 +512,11 @@ public class LevelYard : MonoBehaviour {
                 }
             }
         } else {
-            go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            Destroy(go.GetComponent<Collider>());
-            go.GetComponent<Renderer>().sharedMaterial = LevelKit.Flat(new Color(0.14f, 0.12f, 0.2f));
-            go.transform.localScale = new Vector3(0.8f, 1f, 0.8f);
+            go = new GameObject();
         }
         go.name = "Slice (on guard)";
         go.transform.SetParent(root, false);
-        go.transform.position = SlicePos + (prefab != null ? Vector3.zero : Vector3.up);
+        go.transform.position = SlicePos;
         go.transform.rotation = Quaternion.LookRotation(Vector3.back);
         sliceFigure = go.transform;
     }
@@ -600,8 +763,9 @@ public class LevelYard : MonoBehaviour {
         if (shutter != null) {
             Destroy(shutter);
         }
-        if (exitGlow != null) {
-            exitGlow.GetComponent<Renderer>().material.color = new Color(1f, 0.82f, 0.4f);
+        if (exitLight != null) {
+            exitLight.intensity = 2.6f;
+            exitLight.range = 20f;
         }
         GameAudio.Play("stamp", 0.5f, 1.3f);
         Note("encounter-clear", "the Clearing Crew is down");
@@ -634,16 +798,17 @@ public class LevelYard : MonoBehaviour {
     // ---------------------------------------------------------------- stamps
 
     public void DropStampAt(Vector3 at, string cause) {
-        at.y = 0.03f;
+        at.y = H(at.x, at.z) + 0.05f;
         var go = new GameObject("StampMark");
         go.transform.SetParent(root, false);
         go.transform.position = at;
-        GameObject ink = LevelKit.Block(go.transform, "Ink", PrimitiveType.Cube, Vector3.zero, new Vector3(3.8f, 0.03f, 2.7f), new Color(0.76f, 0.23f, 0.23f, 0.25f));
+        GameObject ink = LevelKit.Decal(go.transform, "Ink", Vector3.zero, new Vector2(3.8f, 2.7f), new Color(0.76f, 0.23f, 0.23f, 0.25f));
         Renderer r = ink.GetComponent<Renderer>();
         r.material = new Material(r.sharedMaterial);
         TextMesh t = LevelKit.Text(go.transform, "RETURN\nTO SENDER", new Vector3(0f, 0.06f, 0f), 0.07f, new Color(1f, 0.85f, 0.85f, 0.9f), true);
         t.name = "Words";
-        GameObject head = LevelKit.Block(go.transform, "StampHead", PrimitiveType.Cube, new Vector3(0f, 8f, 0f), new Vector3(3.4f, 1.1f, 2.4f), new Color(0.23f, 0.1f, 0.1f));
+        GameObject head = LevelDress.Put(go.transform, "gt_press_head", at + new Vector3(0f, 9f, 0f), 0f, 0.55f);
+        head.name = "StampHead";
         stamps.Add(new Stamp { Go = go, Ink = r, Head = head.transform, At = at, Born = Time.time });
         Note("stamp-falls", cause + " at " + at.ToString("0"));
     }
@@ -686,7 +851,7 @@ public class LevelYard : MonoBehaviour {
                 float k = Mathf.Clamp01(age / Telegraph);
                 s.Ink.material.color = new Color(0.8f, 0.2f, 0.2f, 0.18f + 0.4f * k * (0.6f + 0.4f * Mathf.Sin(age * 14f)));
                 float drop = Mathf.Clamp01((age - (Telegraph - 0.45f)) / 0.45f);
-                s.Head.localPosition = new Vector3(0f, Mathf.Lerp(8f, 0.6f, drop * drop), 0f);
+                s.Head.position = s.At + new Vector3(0f, Mathf.Lerp(9f, 0.05f, drop * drop), 0f);
                 if (age >= Telegraph) {
                     Slam(s);
                 }
