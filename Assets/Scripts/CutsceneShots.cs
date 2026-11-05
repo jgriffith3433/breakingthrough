@@ -353,14 +353,14 @@ public partial class Cutscene {
             SayShotLine();
         }
         TickSubtitle(t);
-        if (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter) || PlayInput.GetKeyDown(KeyCode.Escape)) {
+        if (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter) || PlayInput.GetKeyDown(KeyCode.Escape) || PadSkip()) {
             Close(true);
             return;
         }
         if (now < readyAt) {
             return;
         }
-        if (PlayInput.GetKeyDown(KeyCode.Space) || PlayInput.GetMouseButtonDown(0) || TouchBegan()) {
+        if (PlayInput.GetKeyDown(KeyCode.Space) || PlayInput.GetKeyDown(KeyCode.JoystickButton0) || PlayInput.GetMouseButtonDown(0) || TouchBegan()) {
             if (UiFit.Touch && TapOnSkip()) {
                 return;
             }
@@ -378,10 +378,10 @@ public partial class Cutscene {
             return;
         }
         ShotSlot slot = slots[current];
-        float k = Mathf.SmoothStep(0f, 1f, u);
-        float z = Mathf.Max(1f, Mathf.Lerp(s.from[2], s.to[2], k));
-        float x = Mathf.Clamp(Mathf.Lerp(s.from[0], s.to[0], k), -1f, 1f);
-        float y = Mathf.Clamp(Mathf.Lerp(s.from[1], s.to[1], k), -1f, 1f);
+        float k = ComfortOptions.ReducedMotion ? 0f : Mathf.SmoothStep(0f, 1f, u);
+        float z = ComfortOptions.ReducedMotion ? 1f : Mathf.Max(1f, Mathf.Lerp(s.from[2], s.to[2], k));
+        float x = ComfortOptions.ReducedMotion ? 0f : Mathf.Clamp(Mathf.Lerp(s.from[0], s.to[0], k), -1f, 1f);
+        float y = ComfortOptions.ReducedMotion ? 0f : Mathf.Clamp(Mathf.Lerp(s.from[1], s.to[1], k), -1f, 1f);
         Vector2 size = ((RectTransform)root.transform).rect.size;
         slot.backRt.localScale = new Vector3(z, z, 1f);
         slot.backRt.anchoredPosition = new Vector2(-x * (z - 1f) * size.x * 0.5f, -y * (z - 1f) * size.y * 0.5f);
@@ -629,9 +629,10 @@ public partial class Cutscene {
         }
         UiMode ui = UiFit.Mode;
         Vector2 size = UiFit.Size;
-        subtitle.fontSize = ui == UiMode.Desktop ? 44 : ui == UiMode.Tall ? 30 : 34;
+        subtitle.fontSize = Mathf.RoundToInt((ui == UiMode.Desktop ? 44 : ui == UiMode.Tall ? 30 : 34) * ComfortOptions.SubtitleScale);
         float bar = size.y * BarFraction * Mathf.SmoothStep(0f, 1f, barsNow);
         subtitleRect.sizeDelta = new Vector2(Mathf.Min(1500f, size.x - 40f), ui == UiMode.Desktop ? 150f : 120f);
         subtitleRect.anchoredPosition = new Vector2(0f, bar + 24f);
+        UpdateSubtitleBack();
     }
 }

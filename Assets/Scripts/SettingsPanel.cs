@@ -7,7 +7,7 @@ using UnityEngine.UI;
 // layout, scaled down to fit a phone, with 88-unit buttons and a slider knob as big.
 public class SettingsPanel : MonoBehaviour {
     const float PanelWidth = 680f;
-    const float PanelHeight = 700f;
+    const float PanelHeight = 1000f;
 
     static SettingsPanel instance;
 
@@ -27,6 +27,12 @@ public class SettingsPanel : MonoBehaviour {
     public Slider EffectsSlider { get; private set; }
     public Button DoneButton { get; private set; }
     public Button VoiceButton { get; private set; }
+    public Button SubtitleButton { get; private set; }
+    public Button ContrastButton { get; private set; }
+    public Button MotionButton { get; private set; }
+    Text subtitleLabel;
+    Text contrastLabel;
+    Text motionLabel;
 
     Font font;
     GameObject root;
@@ -110,6 +116,9 @@ public class SettingsPanel : MonoBehaviour {
         musicValue.text = Percent(SoundSettings.Music);
         effectsValue.text = Percent(SoundSettings.Sfx);
         voiceLabel.text = SoundSettings.ChatterName(SoundSettings.Chatter);
+        subtitleLabel.text = ComfortOptions.SizeName(ComfortOptions.SubtitleSize);
+        contrastLabel.text = ComfortOptions.HighContrast ? "On" : "Off";
+        motionLabel.text = ComfortOptions.ReducedMotion ? "Calm" : "Full";
         // Volumes still move with sound off, and take effect when it comes back on.
         float alpha = on ? 1f : 0.5f;
         musicValue.color = new Color(1f, 0.96f, 0.86f, alpha);
@@ -131,6 +140,25 @@ public class SettingsPanel : MonoBehaviour {
     void CycleVoices() {
         int next = SoundSettings.Chatter + 1;
         SoundSettings.SetChatter(next > SoundSettings.ChatterMax ? SoundSettings.ChatterOff : next);
+        Fill();
+        Blip(true);
+    }
+
+    // Scene comfort (ComfortOptions): subtitle size, high contrast subtitles, calm camera.
+    void CycleSubtitles() {
+        ComfortOptions.CycleSize();
+        Fill();
+        Blip(true);
+    }
+
+    void ToggleContrast() {
+        ComfortOptions.SetContrast(!ComfortOptions.HighContrast);
+        Fill();
+        Blip(true);
+    }
+
+    void ToggleMotion() {
+        ComfortOptions.SetReducedMotion(!ComfortOptions.ReducedMotion);
         Fill();
         Blip(true);
     }
@@ -210,10 +238,25 @@ public class SettingsPanel : MonoBehaviour {
         voiceLabel = VoiceButton.GetComponentInChildren<Text>();
         Place((RectTransform)VoiceButton.transform, new Vector2(240f, -450f), new Vector2(300f, 88f), new Vector2(0f, 1f), true);
 
+        RowLabel("Subtitles", -550f);
+        SubtitleButton = MakeButton(panel, "Subtitles", "Normal", new Vector2(300f, 88f), CycleSubtitles);
+        subtitleLabel = SubtitleButton.GetComponentInChildren<Text>();
+        Place((RectTransform)SubtitleButton.transform, new Vector2(240f, -550f), new Vector2(300f, 88f), new Vector2(0f, 1f), true);
+
+        RowLabel("Contrast", -650f);
+        ContrastButton = MakeButton(panel, "Contrast", "Off", new Vector2(220f, 88f), ToggleContrast);
+        contrastLabel = ContrastButton.GetComponentInChildren<Text>();
+        Place((RectTransform)ContrastButton.transform, new Vector2(240f, -650f), new Vector2(220f, 88f), new Vector2(0f, 1f), true);
+
+        RowLabel("Camera", -750f);
+        MotionButton = MakeButton(panel, "Camera", "Full", new Vector2(220f, 88f), ToggleMotion);
+        motionLabel = MotionButton.GetComponentInChildren<Text>();
+        Place((RectTransform)MotionButton.transform, new Vector2(240f, -750f), new Vector2(220f, 88f), new Vector2(0f, 1f), true);
+
         // What Hawkes Analytics (RunAnalytics) collects, said where a player of the game page can read it.
         Text privacy = MakeText(panel, "Anonymous gameplay statistics help improve the game.\nNo cookies, no personal data, no IP stored.", 22, FontStyle.Normal, TextAnchor.MiddleCenter);
         privacy.color = new Color(1f, 0.97f, 0.9f, 0.62f);
-        Place(privacy.rectTransform, new Vector2(0f, -508f), new Vector2(PanelWidth - 60f, 60f), new Vector2(0.5f, 1f));
+        Place(privacy.rectTransform, new Vector2(0f, -808f), new Vector2(PanelWidth - 60f, 60f), new Vector2(0.5f, 1f));
 
         DoneButton = MakeButton(panel, "Done", "Done", new Vector2(260f, 88f), Close);
         DoneButton.GetComponent<Image>().color = new Color(0.22f, 0.38f, 0.22f, 1f);
