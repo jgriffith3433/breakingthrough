@@ -137,6 +137,8 @@ for rid, (bed, shots) in R.items():
             manifest["voices"].append({"file": "Voice/cinema/%s_%s.mp3" % (rid, sid), "speaker": sp, "line": line})
         out["shots"].append(sh)
         entry = {"file": "Art/" + key["file"] + ".jpg", "tool": "image.paint" if key["cast"] else "image.generate", "cast": key["cast"], "prompt": keyframe_prompt(key), "music": cue}
+        if key["cast"]:
+            entry["negative"] = K["negative"]
         for field in ("job", "asset"):
             if key.get(field):
                 entry[field] = key[field]
