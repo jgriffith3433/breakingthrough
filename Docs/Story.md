@@ -400,3 +400,15 @@ open and the Dead Letter gone; the reward is never paid twice. Wallit: "Returned
 Every voice in a dialogue box is a row in `Assets/Resources/Cast/cast.json`: Wallit, Slice, the Yo Bots (Yo Bot, Mega Yo Bot,
 the Half-Built) and the named bosses (the Courier, the Plated Alpha, the Foreman, the Server, the Registrar, the Order-Bearer),
 plus the narrator. Warrok is retired and has no row. Each row has a speaker code, name, colour, portrait path and voice hook.
+
+### Cinematics
+
+A cinematic is a reel of shots, not pages: each shot is a still (or a streamed video) with a slow Ken Burns move, a front layer that
+drifts faster than the back, a crossfade in, letterbox bars, one voice line and a music level. The line is typed as a subtitle,
+so the words are never the picture. A shot can also hand back to the game itself (`world`: wallit, slice or wide). Voices keep
+the cast: Wallit money, Slice clipped, Yo Bots chirpy; Slice and Wallit lines go through the voice director one at a time.
+Reels live in `Assets/Resources/Cinematics/<id>.json` and play with `Cutscene.PlayShots(id, done)` (`CutsceneShots.cs`);
+`sample` is the Chapter 1 opening (the stamp, "Ow! That's extra!", the ring, "You're inside. Inside, you exist.") on placeholder art
+from `Tools/Cinematics/make_placeholders.py`. Space or a click goes to the next shot; Enter, Escape or Skip leaves at any point.
+The chapters still use their page scenes; moving each chapter's `opening` and `closing` shot lists from the screenplay into reels
+is the next part, once the art is made.

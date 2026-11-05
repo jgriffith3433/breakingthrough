@@ -17,7 +17,7 @@ using UnityEngine.UI;
 //         (Resources/Voice/<speaker>_<line>.mp3) is the text alone and holds the floor for its estimated length.
 // Portraits: Resources/Portraits/<wallit|slice|yobot>.png if the file exists, else a coloured disc with the initial.
 [DefaultExecutionOrder(-5000)]
-public class Cutscene : MonoBehaviour {
+public partial class Cutscene : MonoBehaviour {
     static Cutscene instance;
 
     public static bool IsOpen { get { return instance != null && instance.open; } }
@@ -106,11 +106,16 @@ public class Cutscene : MonoBehaviour {
         Overlaps = 0;
         Skipped = 0;
         Finished = 0;
+        ShotsShown = 0;
+        ShotsSkipped = 0;
+        SubtitleLines = 0;
+        DuckedLowest = 1f;
     }
 
     void Awake() {
         instance = this;
         Build();
+        BuildShots();
     }
 
     void OnDestroy() {
@@ -128,6 +133,9 @@ public class Cutscene : MonoBehaviour {
     // ---------------------------------------------------------------- playing
 
     void Begin(string[] lines, Action onDone) {
+        shotMode = false;
+        shotRoot.SetActive(false);
+        subtitle.gameObject.SetActive(false);
         script = lines;
         cursor = 0;
         page = 0;
@@ -229,6 +237,12 @@ public class Cutscene : MonoBehaviour {
         Time.timeScale = savedScale;
         panel.gameObject.SetActive(false);
         SkipButton.gameObject.SetActive(false);
+        if (shotMode) {
+            if (skipped) {
+                ShotsSkipped++;
+            }
+            EndShots();
+        }
         if (skipped) {
             Skipped++;
         } else {
@@ -250,12 +264,18 @@ public class Cutscene : MonoBehaviour {
             Layout();
         }
         float dt = Time.unscaledDeltaTime;
+        TickBed(dt);
         barsNow = Mathf.MoveTowards(barsNow, barsOn ? 1f : 0f, dt * 2.2f);
         SetBars();
         if (!open) {
             return;
         }
         Time.timeScale = 0f;
+        if (shotMode) {
+            LayoutSubtitle();
+            TickShots(dt);
+            return;
+        }
         if (typed < full.Length) {
             typed = Mathf.Min(full.Length, typed + TypeSpeed * dt);
             lineText.text = full.Substring(0, Mathf.FloorToInt(typed));
