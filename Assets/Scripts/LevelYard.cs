@@ -63,6 +63,9 @@ public class LevelYard : MonoBehaviour {
     public bool ExitOpen { get; private set; }
     public bool SliceJoined { get { return Companion.Instance != null; } }
     public float SecondsBeforeFirstCombat { get; private set; } = -1f;
+    public float CombatSeconds { get; private set; }   // seconds the Clearing Crew was awake (the only encounter in this level)
+    public const int Encounters = 1;
+    public float CombatShare { get { return scene != null && scene.Seconds > 0f ? CombatSeconds / scene.Seconds : 0f; } }
     public float WalkedBeforeCombat { get; private set; }
     public int StampsLanded { get; private set; }
     public int StampHits { get; private set; }
@@ -622,6 +625,7 @@ public class LevelYard : MonoBehaviour {
         Stage = Beat.Done;
         completedAt = Time.time;
         scene.Finish();
+        Note("pacing", "encounters=" + Encounters + " (the Clearing Crew, placed asleep; nothing spawns on a timer) combatSeconds=" + Mathf.RoundToInt(CombatSeconds) + " playSeconds=" + Mathf.RoundToInt(scene.Seconds) + " combatShare=" + Mathf.RoundToInt(CombatShare * 100f) + "%");
         Note("level-complete", "exit reached after " + Mathf.RoundToInt(scene.Seconds) + " s, " + scene.Defeats + " defeats");
         scene.Hud.Objective.text = Objective();
         scene.Hud.Prompt.text = "CHAPTER 1: RETURN TO SENDER\nThe Sorting Yard is filed. The Courier waits past the slot.\n" + Interact.Key + ": back to the hub";
@@ -851,6 +855,9 @@ public class LevelYard : MonoBehaviour {
     }
 
     void TickCrew() {
+        if (CrewWoken && !CrewCleared) {
+            CombatSeconds += Time.deltaTime;
+        }
         if (!CrewWoken && !CrewCleared && Vector3.Distance(LevelKit.Flat(scene.Player.position), LevelKit.Flat(CrewCenter)) < 16f) {
             WakeCrew("Wallit walked up to the drop");
         }

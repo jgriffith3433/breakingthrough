@@ -70,6 +70,15 @@ public class ChapterRun : MonoBehaviour {
     int crewSpawned;
     bool variantSeen, miniSpawned;
     Enemy mini;
+    public ChapterPacing Pacing { get; private set; }   // the chapter's placed encounters, its quiet opening and its combat share
+    public bool AtHome {   // the chapter's route is walked: the circle is where the rest happens (Chapter 2 after the gate, 3 and 4 after the last stop)
+        get {
+            return data.Objective == Story.ChapterObjective.GateAndBack ? leg >= 2
+                : data.Objective == Story.ChapterObjective.FloorRun ? leg > StopCount : true;
+        }
+    }
+    public bool BossCalled { get { return bossCalled; } }
+    public bool HasMiniBoss { get { return data.MiniName != null; } }
     public bool BossUp { get { return boss != null && boss.Alive; } }
     public Enemy BossEnemy { get { return boss; } }
     public bool BossDown { get { return bossSpawned && !BossUp; } }
@@ -145,7 +154,7 @@ public class ChapterRun : MonoBehaviour {
     }
 
     // Bots a chapter asks for, more on a New Game+ loop.
-    int Scaled(int n) {
+    public int Scaled(int n) {
         return CampaignGrade.PlusCount(n, Plus);
     }
 
@@ -173,6 +182,7 @@ public class ChapterRun : MonoBehaviour {
         }
         BuildUi();
         StartJournal();
+        Pacing = new ChapterPacing(this, data);
         gameObject.AddComponent<BackRoom>();   // the chapter's secret room, once its clue is held (BackRooms.cs)
         RunAnalytics.Screen("chapter_play_" + (Chapter + 1));
         Cutscene.Reel openReel = Cutscene.LoadReel("ch" + (Chapter + 1) + "_open");
@@ -193,6 +203,9 @@ public class ChapterRun : MonoBehaviour {
     // The opening scene is over and play begins. On a New Game+ loop the chapter says one line about the playthrough before it.
     void OpenDone() {
         Events.Add("play|" + data.Id);
+        if (Pacing != null) {
+            Pacing.Talked("the opening scene");
+        }
         if (Plus > 0) {
             string echo = Endings.EchoFor(Chapter, CampaignSave.Get(CampaignSave.Active).ending);
             if (echo != null) {
@@ -214,6 +227,9 @@ public class ChapterRun : MonoBehaviour {
         }
         if (findItem != null) {
             Destroy(findItem);
+        }
+        if (Pacing != null) {
+            Pacing.Dispose();
         }
         SavePlayTime();
         Companion.Despawn();
@@ -274,6 +290,9 @@ public class ChapterRun : MonoBehaviour {
         }
         int alive = Alive();
         spawnIn -= Time.deltaTime;
+        if (Pacing != null) {
+            Pacing.Tick(Time.deltaTime, player);
+        }
         if (data.Final && Time.time >= nextPulse && Musician.Instance != null) {
             // The circle is brighter than it was: a soft gold ring breathes out from it.
             nextPulse = Time.time + 2.6f;
@@ -282,9 +301,6 @@ public class ChapterRun : MonoBehaviour {
         switch (data.Objective) {
             case Story.ChapterObjective.ClearCount:
                 Progress = RunLog.RunKills;
-                if (spawnIn <= 0f && alive < data.Cap && RunLog.RunKills + alive < Scaled(data.Target)) {
-                    SpawnCrew(director);
-                }
                 if (RunLog.RunKills >= Scaled(data.Target)) {
                     Complete();
                 }
@@ -292,17 +308,11 @@ public class ChapterRun : MonoBehaviour {
             case Story.ChapterObjective.SurviveTime:
                 clock -= Time.deltaTime;
                 Progress = Mathf.Max(0, Mathf.CeilToInt(clock));
-                if (spawnIn <= 0f && alive < data.Cap) {
-                    SpawnCrew(director);
-                }
                 if (clock <= 0f) {
                     Complete();
                 }
                 break;
             case Story.ChapterObjective.ReachPlace:
-                if (spawnIn <= 0f && alive < data.Cap) {
-                    SpawnCrew(director);
-                }
                 if (player != null) {
                     Vector3 d = Marker - player.position;
                     d.y = 0f;
@@ -337,12 +347,9 @@ public class ChapterRun : MonoBehaviour {
                 if (!bossSpawned && spawnIn <= 0f) {
                     bossSpawned = true;
                     boss = director.SpawnForChapter(data.Boss, true, RingRadius);
-                    spawnIn = data.Every;
+                    spawnIn = 0f;
                 } else if (bossSpawned) {
                     Progress = boss == null || !boss.Alive ? 1 : 0;
-                    if (spawnIn <= 0f && alive < data.Cap) {
-                        SpawnCrew(director);
-                    }
                     if (Progress == 1) {
                         Complete();
                     }
@@ -353,7 +360,6 @@ public class ChapterRun : MonoBehaviour {
 
     // Bots down, then the named boss, then the defeat beat and the card (Chapter 1; Chapter 2 once the waves are held).
     void TickHoldBoss(WaveDirector director, int alive) {
-        TickMini(director);
         if (!bossCalled) {
             Progress = Kills();
             if (data.Waves > 0 && data.Objective != Story.ChapterObjective.FloorRun) {
@@ -369,10 +375,7 @@ public class ChapterRun : MonoBehaviour {
                     PageRead(data.Waves);
                 }
             }
-            if (spawnIn <= 0f && alive < data.Cap && Kills() + alive < Target()) {
-                SpawnCrew(director);
-            }
-            if (Kills() >= Target() && (data.MiniName == null || (miniSpawned && !MiniUp))) {
+            if (Kills() >= Target() && (Pacing == null || Pacing.AllDone) && (data.MiniName == null || (miniSpawned && !MiniUp))) {
                 bossCalled = true;
                 spawnIn = 3.5f;
                 Events.Add("boss-called|" + data.BossName);
@@ -412,7 +415,7 @@ public class ChapterRun : MonoBehaviour {
     }
 
     // Bots to bring down before the boss: Chapter 1 sets it, Chapter 2 holds Waves waves of WaveSize.
-    int Target() {
+    public int Target() {
         if (data.Objective == Story.ChapterObjective.FloorRun) {
             return Scaled(data.WaveSize);
         }
@@ -425,9 +428,6 @@ public class ChapterRun : MonoBehaviour {
     // Chapter 2, out and back: Wallit walks Target metres to the gate (the scene plays there), then back to the circle,
     // with bots still coming. Then the waves and the boss are TickHoldBoss.
     void TickGateLegs(WaveDirector director, int alive) {
-        if (spawnIn <= 0f && alive < data.Cap) {
-            SpawnCrew(director);
-        }
         if (player != null) {
             Vector3 d = Marker - player.position;
             d.y = 0f;
@@ -447,10 +447,6 @@ public class ChapterRun : MonoBehaviour {
     // Chapter 3, out along the Floor's stops (the broken gate, the belt, the lever) and back, with bots still coming. The
     // last stop is the lever: pulling it breaks the belt feed. Then the bots and the Foreman are TickHoldBoss.
     void TickFloorLegs(WaveDirector director, int alive) {
-        TickMini(director);
-        if (spawnIn <= 0f && alive < data.Cap) {
-            SpawnCrew(director);
-        }
         if (player != null) {
             Vector3 d = Marker - player.position;
             d.y = 0f;
@@ -473,6 +469,7 @@ public class ChapterRun : MonoBehaviour {
         GameAudio.Play("stamp", 0.7f, 0.9f);
         bool last = leg == StopCount - 1;
         leg++;
+        LegChanged();
         if (last) {
             if (data.Walk) {
                 Events.Add("last-lamp|" + data.Id);
@@ -515,6 +512,7 @@ public class ChapterRun : MonoBehaviour {
 
     void BackFromFloor() {
         leg = StopCount + 1;
+        LegChanged();
         killBase = RunLog.RunKills;
         spawnIn = 2.5f;
         Events.Add("home|" + Mathf.RoundToInt(PlaySeconds));
@@ -522,6 +520,12 @@ public class ChapterRun : MonoBehaviour {
             beacon.SetActive(false);
         }
         HasMarker = false;
+    }
+
+    void LegChanged() {
+        if (Pacing != null) {
+            Pacing.LegChanged(player != null ? player.position : Vector3.zero);
+        }
     }
 
     Vector3 StopPoint(Story.Stop stop) {
@@ -537,6 +541,7 @@ public class ChapterRun : MonoBehaviour {
 
     void ReachGate() {
         leg = 1;
+        LegChanged();
         Events.Add("gate|reached|" + Mathf.RoundToInt(PlaySeconds));
         GameAudio.Play("stamp", 0.7f, 0.9f);
         // The marker turns around to the circle: the way back is the next leg.
@@ -550,6 +555,7 @@ public class ChapterRun : MonoBehaviour {
 
     void BackHome() {
         leg = 2;
+        LegChanged();
         killBase = RunLog.RunKills;
         spawnIn = 2.5f;
         Events.Add("home|" + Mathf.RoundToInt(PlaySeconds));
@@ -580,10 +586,12 @@ public class ChapterRun : MonoBehaviour {
         }
     }
 
-    void SpawnCrew(WaveDirector director) {
-        spawnIn = data.Every;
+    // One bot of an encounter (ChapterPacing): placed at a spot and asleep, a chapter variant now and then. Nothing in a
+    // chapter spawns on a timer any more; the bots here are the whole fight.
+    public Enemy PlaceCrew(Vector3 spot) {
+        WaveDirector director = WaveDirector.Instance;
         BotKind kind = data.Crew[Random.Range(0, data.Crew.Length)];
-        Enemy bot = director.SpawnForChapter(kind, false, RingRadius + Random.Range(0f, 10f));
+        Enemy bot = director.SpawnPlaced(kind, spot);
         crewSpawned++;
         if (data.VariantEvery > 0 && crewSpawned % data.VariantEvery == 0 && bot != null && !BotRoster.IsSpider(kind)) {
             bot.MakeVariant(data.Variant, data.VariantName);
@@ -594,24 +602,24 @@ public class ChapterRun : MonoBehaviour {
                 Tell(new[] { data.VariantLine });
             }
         }
+        return bot;
     }
 
     // The mini-boss midway: Chapter 2 and 5 at half the bots down, Chapter 3 once Wallit has reached the belt. The boss waits for it.
     bool MiniUp { get { return mini != null && mini.Alive; } }
     public Enemy MiniEnemy { get { return mini; } }
 
-    void TickMini(WaveDirector director) {
+    // The mini-boss belongs to one of the chapter's encounters: ChapterPacing wakes it with the bots, nothing spawns it midway.
+    // Called by ChapterPacing when the encounter that carries the mini-boss wakes.
+    public Enemy WakeMini(Vector3 spot) {
         if (data.MiniName == null || miniSpawned) {
-            return;
-        }
-        bool midway = data.Objective == Story.ChapterObjective.FloorRun ? leg >= 2 : Kills() >= Target() / 2 && (data.Objective != Story.ChapterObjective.GateAndBack || leg >= 2);
-        if (!midway) {
-            return;
+            return null;
         }
         miniSpawned = true;
-        mini = director.SpawnMini(data.MiniKind, data.MiniName, data.MiniHits, data.MiniTint, RingRadius);
+        mini = WaveDirector.Instance.SpawnMiniAt(data.MiniKind, data.MiniName, data.MiniHits, data.MiniTint, spot);
         Events.Add("mini-boss|" + data.MiniName + "|" + mini.HitsToDrop);
         Tell(data.MiniLines);
+        return mini;
     }
 
     static int Alive() {
@@ -625,6 +633,10 @@ public class ChapterRun : MonoBehaviour {
     }
 
     string Line() {
+        string pace = Pacing != null ? Pacing.Line() : null;
+        if (pace != null) {
+            return pace;
+        }
         switch (data.Objective) {
             case Story.ChapterObjective.ClearCount:
                 return "Down " + Scaled(data.Target) + " " + data.Goal + ":  " + Mathf.Min(Progress, Scaled(data.Target)) + " / " + Scaled(data.Target);
@@ -694,6 +706,9 @@ public class ChapterRun : MonoBehaviour {
             return;
         }
         Completed = true;
+        if (Pacing != null) {
+            Events.Add(Pacing.Summary());
+        }
         Events.Add("complete|" + data.Id + "|" + Mathf.RoundToInt(PlaySeconds));
         string extra = JudgeGoal();
         GameAudio.Play("stamp", 0.7f);
@@ -1201,6 +1216,9 @@ public class ChapterRun : MonoBehaviour {
         GameAudio.Play("stamp", 0.5f, 1.3f);
         Fx.Ring(findAt + Vector3.up * 0.2f, 6f, new Color(1f, 0.88f, 0.5f, 0.8f), 0.8f);
         Events.Add("journal|found " + Journal.Finds[Chapter].Name);
+        if (Pacing != null) {
+            Pacing.PickedUp("the hidden find, " + Journal.Finds[Chapter].Name);
+        }
         Say("N|Found: " + Journal.Finds[Chapter].Name + ". Kept in the journal.", 3.4f);
         PaidCheck();
     }
