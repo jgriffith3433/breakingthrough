@@ -183,6 +183,10 @@ public class ChapterScene : MonoBehaviour {
         Leave();
         GameAudio.Play("stamp", 0.6f);
         RunAnalytics.Screen("chapter_start_" + (Chapter + 1));
+        if (LevelScene.Replaces(Chapter)) {
+            LevelScene.Enter(Chapter);   // its own scene (Level*.cs), no chapter run
+            return;
+        }
         ChapterRun.Begin(Chapter);
     }
 

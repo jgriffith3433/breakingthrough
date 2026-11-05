@@ -343,11 +343,16 @@ public class PlayerGrowth : MonoBehaviour {
         GameAudio.Play("shake", 0.7f);
     }
 
+    public static System.Action<Enemy> Struck;
+
     public void OnHit(Enemy by = null) {
         // Campaign's dodge: a blow inside the window finds nothing.
         if (CampaignMoves.Invulnerable) {
             CampaignMoves.NoteAvoided(by);
             return;
+        }
+        if (Struck != null) {
+            Struck(by);   // a campaign level counts Wallit's own health (Level*.cs); Arcade never sets it
         }
         WallitVoice.OnHurt();
         if (WaveDirector.IsLost || BatEquipment.IsAnimatingAction || Time.time < nextHitReactAt) {

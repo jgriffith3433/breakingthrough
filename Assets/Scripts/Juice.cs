@@ -31,7 +31,7 @@ public class Juice : MonoBehaviour {
     static void Ensure() {
         cam = null;
         stopping = false;
-        if (SceneManager.GetActiveScene().name != MetaProgress.GameScene) {
+        if ((SceneManager.GetActiveScene().name != MetaProgress.GameScene && !SceneManager.GetActiveScene().name.StartsWith("Level_"))) {
             return;
         }
         if (FindAnyObjectByType<Juice>() != null) {

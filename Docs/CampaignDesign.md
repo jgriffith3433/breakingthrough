@@ -448,3 +448,8 @@ Later slices extend the same scenario with one block each (press kill, belt ride
 
 No code, no scenes, no saves, no existing doc. Canon holds: Wallit money, Slice clipped, Yo Bots chirpy; no Warrok, bow,
 birds or piano; the creature behind the order is never seen; no camera shake except the bat's jolt; no sparks.
+
+## 11. Slice 1 as built (Chapter 1, the Sorting Yard)
+
+Decisions on the open questions: **colliders yes** for levels (stones, trunks, walls and posts are solid; bots still walk straight lines, so no solids sit on the fight ground east of the Ring). Slice's Hold/Come orders are **not built yet**.
+Built: `Level_1_Yard` (`LevelScene`, `LevelYard`): doors, chalk trail, the Ring with nine stones that ring a bell as Wallit passes, Slice's talk and her joining as a companion, three notices, the Mailbox Flag (carried on Wallit's back), the stamp floor (telegraph, slam, shove; the Ring is safe; bots under it are hit), five placed Yo Bots that wake on the flag (three march, two late), Wallit's health with a checkpoint, the return slot. Not built: the Courier fight (slice 1b), choices in the world, Hold/Come, per-bark voice files (subtitles only), generated art.

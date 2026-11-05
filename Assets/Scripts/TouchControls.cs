@@ -88,7 +88,7 @@ public class TouchControls : MonoBehaviour {
 
     static void Ensure() {
         botFingers.Clear();
-        if (SceneManager.GetActiveScene().name != MetaProgress.GameScene) {
+        if ((SceneManager.GetActiveScene().name != MetaProgress.GameScene && !SceneManager.GetActiveScene().name.StartsWith("Level_"))) {
             return;
         }
         if (FindAnyObjectByType<TouchControls>() != null) {
@@ -181,7 +181,7 @@ public class TouchControls : MonoBehaviour {
         Gather();
 
         bool lost = WaveDirector.IsLost;
-        bool show = touch && WaveDirector.Instance != null && !lost && !LevelUpScreen.IsOpen && !PauseMenu.IsOpen && !Cutscene.IsOpen;
+        bool show = touch && (WaveDirector.Instance != null || LevelScene.Instance != null) && !lost && !LevelUpScreen.IsOpen && !PauseMenu.IsOpen && !Cutscene.IsOpen;
         if (show != shown) {
             shown = show;
             root.SetActive(show);
