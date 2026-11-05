@@ -532,6 +532,16 @@ public class WaveDirector : MonoBehaviour {
         return enemy;
     }
 
+    // A Campaign encounter's bot, placed at a spot and asleep (Enemy.Dormant) until the encounter wakes it (ChapterPacing).
+    public Enemy SpawnPlaced(BotKind kind, Vector3 spot) {
+        Vector3 origin = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
+        BotDef def = BotRoster.ForSpawn(kind, Wave);
+        spot.y = GroundNear(spot, origin.y) + 0.55f + def.Scale * 0.08f;
+        Enemy enemy = Spawn(def, spot, true);
+        enemy.Dormant = true;
+        return enemy;
+    }
+
     // A chapter's mid-way mini-boss, placed on the ring like the chapter's bots.
     public Enemy SpawnMini(BotKind kind, string name, int hits, Color tint, float radius) {
         Vector3 origin = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
