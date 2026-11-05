@@ -131,6 +131,8 @@ public static class RunAnalytics {
         runsThisSession++;
         runStartWave = startWave;
         runStartedAt = Time.realtimeSinceStartup;
+        LastRunMode = "waves";
+        LastRunScene = MetaProgress.GameScene;
         cleared = 0;
         cardsTaken = 0;
         rerolls = 0;
@@ -149,6 +151,23 @@ public static class RunAnalytics {
             { "shop", MetaProgress.ShopLine() }, { "coins", MetaProgress.Coins }, { "touch", UiFit.Touch }
         });
         HawkesAnalytics.Screen("wave");
+    }
+
+    // What the last run_start said, for the playtest bot to read back.
+    public static string LastRunMode { get; private set; } = "";
+    public static string LastRunScene { get; private set; } = "";
+
+    // A Campaign case file opens its chapter scene. Not a wave run: no level or death events follow it.
+    public static void CampaignStart(int chapter, string scene) {
+        HawkesAnalyticsPageCloseAsk();
+        LastRunMode = "campaign";
+        LastRunScene = scene;
+        HawkesAnalytics.SetContext(new Dictionary<string, object> {
+            { "mode", "campaign" }, { "wave", 0 }, { "best_wave", MetaProgress.BestWave }
+        });
+        HawkesAnalytics.Track("run_start", new Dictionary<string, object> {
+            { "mode", "campaign" }, { "chapter", chapter + 1 }, { "scene", scene }, { "touch", UiFit.Touch }
+        });
     }
 
     // A wave's fighting begins (after its intro or the break before it).

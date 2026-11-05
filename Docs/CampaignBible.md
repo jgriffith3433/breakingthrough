@@ -75,7 +75,7 @@ roster so no new enemy art is needed for chapters 1 to 3 and 6.
 ### Chapter 1: Return to Sender
 
 - **Space:** The Moonlit Hollow, with the circle at the center. [canon, placeholder exists]
-- **Objective:** Hold the circle through one wave of Yo Bots; the first bolt is collected. (Tutorial: move, bat, lock-on.)
+- **Objective:** Hold the circle against six Yo Bots (tutorial: move, bat, lock-on), then bring down the Courier. [built; see Story.md, "Chapter 1's boss"]
 - **Dialogue beats:**
   - W: "Return to sender. Which sender? I want a refund." [canon]
   - S: "No sender. No refund. Stay in the circle." [canon]
@@ -86,7 +86,7 @@ roster so no new enemy art is needed for chapters 1 to 3 and 6.
   ink the only bright thing in the dark. He lands in the grass and the circle's ring lights as he rolls into it.
 - **Boss:** **The Courier**, an Alpha Yo Bot with a clipboard, a "notice of striking" (first Alpha of the Yo Bot line). [proposed]
 
-### Chapter 2: No Fixed Address
+### Chapter 2: No Fixed Address [built; see Story.md, "Chapter 2"]
 
 - **Space:** The Hollow's edge: the Boundary wall (205 m), a gate with no handle, a signpost with nothing on it. [proposed]
 - **Objective:** Walk out from the circle to the gate and back under fire; Slice insists on a radius. Survive three waves.
@@ -102,7 +102,7 @@ roster so no new enemy art is needed for chapters 1 to 3 and 6.
   RETURN TO SENDER, pressed through from the dark. The wall is a Department wall.
 - **Boss:** **The Plated Alpha**, a Plated Yo Bot with a stamped plate that says INVALID. [canon: Plated debuts wave 10]
 
-### Chapter 3: The Clearing Floor
+### Chapter 3: The Clearing Floor [built; see Story.md, "Chapter 3"]
 
 - **Space:** A sunken yard beyond a broken gate, lit by conveyor lamps: rows of un-built Yo Bot chassis on hooks, and a
   slow belt carrying flat, cleared things (a hat, a clock, a small bell). [proposed]
@@ -121,7 +121,7 @@ roster so no new enemy art is needed for chapters 1 to 3 and 6.
   The lamp is a lens: it turns toward the Hollow, and the circle blinks once.
 - **Boss:** **The Foreman**, a Mega Yo Bot Alpha that reads the order aloud on its charges. [canon: Mega debuts wave 20]
 
-### Chapter 4: The Process Servers
+### Chapter 4: The Process Servers [built; see Story.md, "Chapter 4"]
 
 - **Space:** The Long Walk, a causeway of stone slabs over a pit of mist, with six stilts of lamp-light on either side
   (six lamps, one per leg). A single path, no cover. [proposed]
@@ -141,7 +141,7 @@ roster so no new enemy art is needed for chapters 1 to 3 and 6.
 - **Boss:** **The Server**, the first full Spider Bot (Alpha), which will not strike until the paper is refused three
   times. [canon: Spider Bot debuts wave 30]
 
-### Chapter 5: Strike This Address
+### Chapter 5: Strike This Address [built; see Story.md, "Chapter 5"]
 
 - **Space:** The Reading Room, a bare round hall: the circle drawn on its floor at the scale of the Hollow's, the walls lined
   with forms, all identical, all this order. A desk in the center, empty. [proposed]
@@ -162,7 +162,7 @@ roster so no new enemy art is needed for chapters 1 to 3 and 6.
 - **Boss:** **The Registrar**, a Titan Spider Bot with gold trim (`BirdArt.Glowing`) that reads the pages with
   every leg. [proposed; existing Titan model]
 
-### Chapter 6: Address Filed
+### Chapter 6: Address Filed [built; see Story.md, "Chapter 6"]
 
 - **Space:** The Moonlit Hollow, as in Chapter 1, now changed: the wall gone, a path leading nowhere, the circle brighter. [canon + proposed]
 - **Objective:** The wave 30 finale: kill the last bot of the Alpha wave, take the order, read it, file the circle. Wave
@@ -219,3 +219,35 @@ Each has the answer this bible assumes, so the work can go on unless J overrules
 - Chapter scenes (spaces for 2 to 5) need level layout, models for the Floor and Reading Room, and cutscene art.
 - A `campaign` playtest scenario once chapters exist (extends `modes`).
 - GPU work (key art, cutscene stills, chapter backdrops, models): not started. See the estimate in the PR summary.
+
+
+## Maps for chapters 1 to 3 (built)
+
+Each map is a `ChapterMap` layout (stand-in blocks, no colliders, nothing solid in the playfield) with a route, landmarks
+and one hazard or set piece. The route follows the chapter's own data, so the way drawn is the way walked.
+
+- **Ch. 1, the Moonlit Hollow:** stepping-stone trail (bearing 20) out to the **Fallen Mailbox** with its red RETURN TO
+  SENDER stamp; ring of nine standing stones; set piece: the **Mist Bog** of dead trunks to the west.
+- **Ch. 2, the edge of the Hollow:** chalk road with paired lamps from the circle to the gate (the gate's bearing and
+  distance); the Department wall off either side; **Slice's radius** painted as a red ring; hazard: the **stamp press**
+  beside the road, its plate falling on a red INVALID mark.
+- **Ch. 3, the Clearing Floor:** lit yard path through the Floor's stops; six **hook gantries** with chassis; two belts of
+  cleared things (hat, clock, bell) sliding along the route; hazard: three **crushers** slamming in turn.
+
+The bible's own models (GPU work) are not made; the stand-ins are plain blocks.
+
+## Maps for chapters 4 to 6 (built)
+
+Same rules as chapters 1 to 3 (`ChapterMap` layouts, stand-in blocks, no colliders, playfield clear). Each also has a **boss
+arena**: a round dais with a pillar ring, on the far side of the circle from the route. The chapter's boss walks out of it
+(`ChapterMap.BossSpot`, read by `WaveDirector.SpawnForChapter`), so the fight is not on the route.
+
+- **Ch. 4, the Long Walk:** causeway (bearing 330) with parapets over a pit of mist; six lamp stilts at the stops; hazard: the
+  pit with the last slabs fallen in. Arena: the **Servers' Dais** (78 m, bearing 150) with a paper stand, where The Server waits.
+- **Ch. 5, the Reading Room:** carpet aisle from the door (bearing 180) to the desk, ten racks of identical forms, five page
+  lecterns whose pages lift and settle (set piece). Arena: the **Registrar's Gallery** (80 m, bearing 0) round the Great Ledger.
+- **Ch. 6, the Hollow, filed:** the pale path run on to 180 m where it stops at nothing, the circle drawn in white, broken
+  stumps of the Department wall (190 m). Arena: **the Threshold** (80 m, bearing 20), a bare white doorframe on a dais.
+
+Playtest `maps-456` checks load, lighting, route/landmark/hazard/arena, the arena's angle from the route and that a boss spawns
+in it. The bible's own models (GPU work) are still not made.

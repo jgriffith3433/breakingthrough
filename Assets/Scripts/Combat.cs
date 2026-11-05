@@ -40,7 +40,7 @@ public static class Combat {
 
     public static float ArrowBase() {
         float raw = PlayerGrowth.Instance != null ? PlayerGrowth.Instance.ArrowDamage : 1f;
-        return raw * RunBoons.DamageMult;
+        return raw * RunBoons.DamageMult * CampaignProgress.DamageMult;
     }
 
     // One bat hit's base damage, before the swing's own multiplier.
@@ -67,7 +67,7 @@ public static class Combat {
             amount *= RunBoons.MarkMult;
         }
         float tipCrit = tip ? RunBoons.TipCrit : 0f;
-        bool crit = Random.value < RunBoons.CritChance + tipCrit;
+        bool crit = Random.value < RunBoons.CritChance + tipCrit + CampaignProgress.CritBonus;
         if (crit) {
             amount *= RunBoons.CritMult;
             if (tipCrit > 0f) {
@@ -202,6 +202,7 @@ public static class Combat {
 
     public static void OnKill(Enemy foe) {
         killCount++;
+        CampaignProgress.OnKill(foe);
         Combo.Kill();
         RunLog.NoteKill(foe.Kind);
         SliceVoice.OnKill(foe);

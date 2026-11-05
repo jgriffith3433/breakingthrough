@@ -27,6 +27,13 @@ public class CampaignPanel : MonoBehaviour {
     public Button[] SlotButtons { get; private set; } = new Button[CampaignSave.SlotCount];
     public Button[] EraseButtons { get; private set; } = new Button[CampaignSave.SlotCount];
     public Button BackButton { get; private set; }
+    public Button LoreButton { get; private set; }
+    public Button JournalButton { get; private set; }
+
+    const string SubtitleText = "Pick a case file. The Department keeps your place.";
+    Text subtitle;
+    // What the line under the title says now (the load notice, or the usual line). For the playtest.
+    public string SubtitleShown { get { return subtitle != null ? subtitle.text : ""; } }
 
     Font font;
     GameObject root;
@@ -55,6 +62,7 @@ public class CampaignPanel : MonoBehaviour {
             return;
         }
         instance.root.SetActive(false);
+        CampaignSave.AckNotice();
         ClosedFrame = Time.frameCount;
         RunAnalytics.Screen("menu");
     }
@@ -86,16 +94,25 @@ public class CampaignPanel : MonoBehaviour {
         if (laidStamp != UiFit.Stamp) {
             Layout();
         }
-        if (PlayInput.GetKeyDown(KeyCode.Escape)) {
+        if (LorePanel.IsOpen || JournalPanel.IsOpen) {
+            return;
+        }
+        if (MenuNav.Back && Time.frameCount != LorePanel.ClosedFrame && Time.frameCount != JournalPanel.ClosedFrame) {
             Close();
         }
     }
 
     void Fill() {
         for (int i = 0; i < CampaignSave.SlotCount; i++) {
+            CampaignSave.Get(i);   // loads the files, so the notice below is current
+        }
+        bool note = !string.IsNullOrEmpty(CampaignSave.Notice);
+        subtitle.text = note ? CampaignSave.Notice : SubtitleText;
+        subtitle.color = note ? new Color(1f, 0.78f, 0.35f, 1f) : new Color(0.8f, 0.85f, 0.95f, 0.8f);
+        for (int i = 0; i < CampaignSave.SlotCount; i++) {
             CampaignSave.Slot slot = CampaignSave.Get(i);
             slotTitles[i].text = "Case file " + (i + 1) + (slot.used ? ": " + CampaignSave.Describe(slot) : "");
-            slotInfo[i].text = slot.used ? CampaignSave.Played(slot) : "No file yet. Press to open a new one.";
+            slotInfo[i].text = slot.used ? CampaignSave.Clock(slot) + "  |  " + CampaignSave.Completion(slot) + "  |  Lore " + Lore.UnlockedCount(slot) + "/" + Lore.All.Length + "  |  " + (Journal.PaidInFull(slot) ? Journal.PaidTitle : "Journal " + (Journal.FindCount(slot) + Journal.GoalCount(slot)) + "/" + (Journal.Count * 2)) + (slot.hard ? "  |  HARD" : "") : "No file yet. Press to open a new one.";
             slotImages[i].color = slot.used ? new Color(0.3f, 0.24f, 0.12f, 1f) : new Color(0.14f, 0.15f, 0.21f, 1f);
             EraseButtons[i].gameObject.SetActive(slot.used);
             eraseLabels[i].text = armedErase == i ? "Sure?" : "Erase";
@@ -105,10 +122,29 @@ public class CampaignPanel : MonoBehaviour {
 
     // Opens the file and goes to the chapter scene.
     public void OpenSlot(int index) {
+        CampaignSave.AckNotice();
         int chapter = CampaignSave.Open(index);
         RunAnalytics.Screen("chapter_" + (chapter + 1));
         GameAudio.Play("stamp", 0.6f);
         SceneManager.LoadScene(CampaignSave.Scene);
+    }
+
+    // The lore log of the file last opened (or the first file in use).
+    void OpenLore() {
+        int index = CampaignSave.Last;
+        for (int i = 0; index < 0 && i < CampaignSave.SlotCount; i++) {
+            index = CampaignSave.Get(i).used ? i : -1;
+        }
+        LorePanel.Open(Mathf.Max(0, index));
+    }
+
+    // The journal of the file last opened (or the first file in use).
+    void OpenJournal() {
+        int index = CampaignSave.Last;
+        for (int i = 0; index < 0 && i < CampaignSave.SlotCount; i++) {
+            index = CampaignSave.Get(i).used ? i : -1;
+        }
+        JournalPanel.Open(Mathf.Max(0, index));
     }
 
     void EraseSlot(int index) {
@@ -151,8 +187,9 @@ public class CampaignPanel : MonoBehaviour {
 
         Text title = MakeText(panel, "Campaign", 48, FontStyle.Bold, TextAnchor.MiddleCenter);
         Place(title.rectTransform, new Vector2(0f, -24f), new Vector2(PanelWidth - 60f, 64f), new Vector2(0.5f, 1f), false);
-        Text sub = MakeText(panel, "Pick a case file. The Department keeps your place.", 24, FontStyle.Italic, TextAnchor.MiddleCenter);
+        Text sub = MakeText(panel, SubtitleText, 24, FontStyle.Italic, TextAnchor.MiddleCenter);
         sub.color = new Color(0.8f, 0.85f, 0.95f, 0.8f);
+        subtitle = sub;
         Place(sub.rectTransform, new Vector2(0f, -90f), new Vector2(PanelWidth - 60f, 40f), new Vector2(0.5f, 1f), false);
 
         float eraseWidth = 150f;
@@ -178,16 +215,27 @@ public class CampaignPanel : MonoBehaviour {
             eraseLabels[i].fontSize = 26;
         }
 
-        BackButton = MakeButton(panel, "Back", new Vector2(260f, 88f), Close, out Text backLabel);
+        LoreButton = MakeButton(panel, "Lore log", new Vector2(220f, 88f), OpenLore, out Text loreLabel);
+        loreLabel.text = "Lore log";
+        BottomButton(LoreButton, -236f);
+        JournalButton = MakeButton(panel, "Journal", new Vector2(220f, 88f), OpenJournal, out Text journalLabel);
+        journalLabel.text = "Journal";
+        BottomButton(JournalButton, 0f);
+        BackButton = MakeButton(panel, "Back", new Vector2(220f, 88f), Close, out Text backLabel);
         backLabel.text = "Back";
         BackButton.GetComponent<Image>().color = new Color(0.22f, 0.38f, 0.22f, 1f);
-        var rect = (RectTransform)BackButton.transform;
+        BottomButton(BackButton, 236f);
+        MenuNav.Attach(root, 590);
+        Layout();
+    }
+
+    static void BottomButton(Button button, float x) {
+        var rect = (RectTransform)button.transform;
         rect.anchorMin = new Vector2(0.5f, 0f);
         rect.anchorMax = new Vector2(0.5f, 0f);
         rect.pivot = new Vector2(0.5f, 0f);
-        rect.anchoredPosition = new Vector2(0f, 28f);
-        rect.sizeDelta = new Vector2(260f, 88f);
-        Layout();
+        rect.anchoredPosition = new Vector2(x, 28f);
+        rect.sizeDelta = new Vector2(220f, 88f);
     }
 
     void Layout() {

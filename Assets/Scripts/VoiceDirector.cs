@@ -7,6 +7,7 @@ using UnityEngine;
 //          for it (never over another line), and they ignore the gaps.
 //   Normal wave starts, level-ups, chests, home runs, golden kills, the opening hello: play when the floor is free and
 //          the short NormalGap has passed since the last line.
+//   Cutscene lines ("cutscene") are Key and are the only lines allowed while a scene is up (Scene).
 //   Bark   ambient and combat chatter (kills, streaks, big hits, hurt, near-misses, idle, banter): dropped when anyone is
 //          talking, when less than BarkGap seconds have passed since the last line of any priority, or when the same
 //          line or reason spoke inside its cooldown.
@@ -23,6 +24,9 @@ public static class VoiceDirector {
     // One reason ("kill", "hurt", "idle"...) may not bark again inside this many seconds.
     public static float ReasonCooldown = 30f;
 
+    // True while Cutscene.cs is on screen: only its own lines ("cutscene") may speak, so no bark talks over a scene.
+    public static bool Scene;
+
     // Playtest and diagnostics.
     public static int Played { get; private set; }
     public static int Denied { get; private set; }
@@ -37,6 +41,7 @@ public static class VoiceDirector {
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     public static void Reset() {
+        Scene = false;
         Played = 0;
         Denied = 0;
         KeyPlayed = 0;
@@ -55,6 +60,7 @@ public static class VoiceDirector {
             case "boss-wave":
             case "low":
             case "slice-low":
+            case "cutscene":
                 return Priority.Key;
             case "wave":
             case "level-up":
@@ -68,25 +74,39 @@ public static class VoiceDirector {
         }
     }
 
+    // The player's voice-line frequency (Settings): the gaps and cooldowns above are multiplied by this. Key lines (story
+    // beats, cutscenes, Slice low) always play. "Key lines" drops every Bark and Normal line.
+    public static float GapScale(int chatter) {
+        return chatter <= 1 ? 2.5f : chatter == 2 ? 1f : 0.5f;
+    }
+
     // True when a line may be said right now. Every priority needs a free floor (Key lines wait for it, they are not
     // dropped). A line that is allowed is not yet logged: call Spoke() when it really starts.
     public static bool Allow(string line, string why, Priority priority) {
         float now = Time.unscaledTime;
+        if (Scene && why != "cutscene") {
+            return Deny(why, "cutscene");
+        }
         if (!WallitVoice.FloorFree) {
             return false;
         }
         if (priority == Priority.Key) {
             return true;
         }
+        int chatter = SoundSettings.Chatter;
+        if (chatter <= SoundSettings.ChatterOff) {
+            return Deny(why, "voices-off");
+        }
+        float scale = GapScale(chatter);
         float since = now - LastLineAt;
-        if (since < (priority == Priority.Bark ? BarkGap : NormalGap)) {
+        if (since < (priority == Priority.Bark ? BarkGap : NormalGap) * scale) {
             return Deny(why, "gap");
         }
         float at;
-        if (lineAt.TryGetValue(line, out at) && now - at < LineCooldown) {
+        if (lineAt.TryGetValue(line, out at) && now - at < LineCooldown * scale) {
             return Deny(why, "line-cooldown");
         }
-        if (priority == Priority.Bark && reasonAt.TryGetValue(why, out at) && now - at < ReasonCooldown) {
+        if (priority == Priority.Bark && reasonAt.TryGetValue(why, out at) && now - at < ReasonCooldown * scale) {
             return Deny(why, "reason-cooldown");
         }
         return true;

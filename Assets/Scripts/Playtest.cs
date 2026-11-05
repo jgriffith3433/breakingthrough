@@ -34,8 +34,34 @@ public static class Playtest {
         new PlaytestScenario("upgrades", "The bat upgrades: the shop lists Corked Core and Aluminum! Not wood! (setup: both owned in the sandbox) and the metal bat is in the player's hands; wave 1's first level-up cards are read off the screen (bat upgrades, no retired cast words); setup: the testing wave key (=) to wave 14 for tougher Plated Yo Bots and a handful of bat boons granted (Wide Arc, Pine Tar, Ice Bat, Live Wire, Grand Slam, Long Ball and more), each one's mark on the bat logged; then the bot plays until each effect is seen: a wider swing, bots burning, bots slowed, chain sparks shorting bots out, a 360 spin swing, batted bolts landing. Then Thunder Bat is granted for a lightning spin, and 30 s of play", 330, "content"),
         new PlaytestScenario("wallit", "Wallit as the player: checks Wallit's wallet body, bills, gloves, sneakers and bat on the live player, exercises running, locked-on strafing (strafeLeft, strafeRight, backPedal), jumping (jump, landing), getting hit (hitReact), and every bat swing (swing1, swing2, swing3, groundSmash, homeRunCharge, homeRunRelease) with OnBatContact damage, then checks all 17 Animator clips", 200, "content"),
         new PlaytestScenario("locomotion", "Wallit's feet on the ground: walks, runs, starts, stops and turns free, then locked on to a Yo Bot strafes left and right, back pedals, runs at it and stops, all through the keys. Each segment logs the planted foot's slide and the hips' largest jump (`loco` events; a slide or a pop is a bug)", 75, "content"),
+        new PlaytestScenario("dialogue", "Dialogue boxes and the cast: the cast file (Resources/Cast/cast.json) is read and must list every character of the bible and not Warrok (event cast-data, a problem if Warrok is there or a bible name is missing). Arcade starts, then setup: a dialogue scene with one line per cast member plays over the run. The bot reads each page with real key presses and every page must show the speaker's name, a portrait (art or the stand-in disc with its glyph) and the cast file's colour for that speaker (events dialogue-page, a problem if a named line has no name or portrait, or the colour is wrong); Wallit and Slice lines go through their voices and the rest through the Cast.LineSpoken hook (dialogue-voice). Metrics castMembers, dialoguePages, dialogueNamed, dialoguePortraits", 240, "content"),
         new PlaytestScenario("cast", "The new cast, in 90 s: the main menu with the key art up (MenuArt, its size and that the menu shows it), What's new opened from the site over the game with the release note naming Wallit, Slice and the bots (read from releases.json), then a run where the player is Wallit with his bat, the bar says Slice, and wave 1's Yo Bots close in and are batted. The AGENTS.md and README cast text lives in the repo, not the build: the review reads it from the diff", 120, "content"),
         new PlaytestScenario("modes", "The mode select: the main menu shows Campaign and Arcade; Campaign opens the three case files (save slots, setup: the sandbox keeps them off the real save), opening an empty file loads the placeholder Chapter 1 scene with Wallit and Slice's lines, Menu returns and the file now reads Chapter 1 with its time on the books, Erase (asked twice) empties it; then Arcade starts today's wave defense and the bot plays 40 s of it with the bat. Events mode-select, campaign-files, chapter-open, chapter-lines, campaign-saved, campaign-erased, arcade-start", 200, "content"),
+        new PlaytestScenario("pause-nav", "Pause and menus by keyboard and gamepad, in every chapter (setup: the sandbox case file stands on each chapter in turn). From the main menu with keys only: C opens the case files, Enter opens file 1, Enter begins the chapter, Enter skips the opening scene. Then P pauses (time stops) and P resumes, the pad's Start pauses, Down and Enter open Settings (first chapter): Left turns the music and effects sliders (the gold ring follows), Enter on Voices cycles how often the voices speak, the pad's B closes Settings and the pause stays, the settings are read back from their saved JSON; Resume with Enter; pause again, and Down, Down, Enter, Enter on Quit to menu returns to the main menu. Events nav-menu, nav-case-files, nav-chapter-card, chapter-paused, chapter-resumed, pad-paused, nav-settings, volume-changed, voices-changed, settings-persisted, nav-quit; metrics chaptersPaused, menuMoves, menuSubmits, sliderTurns", 900, "content"),
+        new PlaytestScenario("cutscene", "The chapter cutscene: Campaign, case file 1, Begin on the Chapter 1 card, and the opening scene (The Stamp) plays over the map with letterbox bars, a speaker name and portrait slot, typed lines and the camera on whoever talks. The bot reads the first pages with real key presses (a first press finishes the typing, the next turns the page), skipping a page's voice by pressing on, then presses Enter to skip the rest: play starts with the objective line up and Wallit moving on the stick, and the chapter is cleared. Checked: every Wallit, Slice and Yo Bot page has a name, two voice lines never overlap (Wallit's floor and the scene both count them), the director allows no other line during the scene. Events cutscene-open, cutscene-page (speaker, text, camera focus, letterbox, voice), cutscene-skip, cutscene-play, cutscene-voice; metrics cutscenePages, cutsceneVoiceLines, cutsceneOverlaps, cutsceneSkipped", 420, "content"),
+        new PlaytestScenario("campaign", "Campaign loads and plays a chapter: from the main menu press Campaign, open case file 1 (setup: the sandbox keeps the files off the real save) and wait for the Campaign scene to load. Reports run_start with mode=campaign and the loaded scene name (event run_start, metrics campaignLoaded, campaignLoadSeconds); if the scene fails to load (not in the build's scene list, or the chapter never builds) the run stops stuck with a bug saying so. Then Begin on the chapter card: Wallit and Slice in the chapter map, Wallit walks on the stick, the objective line shows, the bot fights with real input until it is met, Chapter 1 holds the circle against Yo Bots, then the Courier arrives (health bar on screen), winds up telegraphed notices on the circle and the bot breaks them or stands in them until it falls and the defeat beat plays; the Chapter Complete card shows, the case file advances to chapter 2, Menu, and reopening the file resumes at chapter 2 (events chapter-card, chapter-start, chapter-move, objective, boss-arrives, boss-bar, boss-attack, boss-defeated, defeat-beat, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics chapterAdvanced, chapterResumed, bossBar, courierWinds, courierInterrupted). Smoke is unchanged: it still presses Arcade", 750, "content"),
+        new PlaytestScenario("hub", "The hub and Campaign progression, played with real input (setup: the sandbox case file 1 starts on chapter 1 with 85 XP, 5 short of level 3; the real save and Arcade are never touched): Campaign, case file 1, Begin on Chapter 1; the first kills give XP (HUD line LV/XP) and level 3 unlocks Refund (events xp-gain, level-up); the bot presses C near the bots and the ring shoves and stings them (event refund-used); the Courier falls, the Chapter Complete card offers To the hub; the bot presses it and lands in the hub (Wallit, Slice in the ring, the chapter board; events hub-open, hub-arrival), walks to the board on the stick and presses E (hub-walk, board-open: Chapter 1 filed and replayable, Chapter 2 next, Chapter 3 locked); picking Chapter 1 shows its card and Begin replays it (hub-replay-card, replay-started) without taking the file back a chapter. Checks per case file and Arcade: the XP stays on case file 1 (case file 2 has none) and Arcade's numbers read as no effect outside a chapter (events progress-saved, arcade-clean; metrics hubXp, hubLevel, refundHits, hubWalked)", 900, "content"),
+        new PlaytestScenario("moves", "Campaign's combat moves, played with real input in Chapter 1 (the sandbox case file; the real save and Arcade are never touched): the bot swings the bat three times in a row and each hit of the combo is its own (Deposit, Withdrawal, Overdraft: damage, knockback and crack differ; events combo-hit, combo-distinct); it then fights on pressing X (the dodge) whenever a bot is close, and a blow that lands inside the dodge's 0.4 s window is avoided (events dodge, dodge-avoided, ability-slots with X Dodge, C Refund and the empty V slot). The Courier fight then runs as in the campaign scenario. Arcade is checked unchanged: outside a chapter the dodge, the per-hit combo and the slots read as no effect (event arcade-moves-clean; metrics comboHits, dodges, dodgesAvoided)", 600, "content"),
+        new PlaytestScenario("abilities", "Campaign's three new abilities, played with real input in Chapter 1 (setup: the sandbox case file starts 1 XP short of level 4, and again short of 5 and 6 as each unlocks; the real save and Arcade are never touched): the HUD's second line shows each slot with its key and cooldown (V: LV 4 locked, then Coin Toss ready / 4 s, B Stamp Out ready / 14 s, G Escrow ready / 20 s; events slot-line); each unlock is announced as it is earned (level-up, unlock-level); the bot presses V and a thrown coin stings a bot from range (event toss-hit), presses B with bots close and they are stunned and stung (event stamp-hit), presses G and a blow that lands is held (event escrow-held); a cooldown is seen counting down on the HUD (event cooldown-shown); the case file keeps the unlocks after a save round trip and after leaving to the menu (events unlock-saved, unlock-kept; metrics tosses, tossHits, stamps, stampedBots, shields, shieldBlocks, unlockMask). Arcade is unchanged (event arcade-moves-clean)", 900, "content"),
+        new PlaytestScenario("hub-npcs", "The hub's lodgers, with real input (setup: the sandbox case file 1 has chapter 1 filed and opens in the hub; later chapters are filed by setup shortcuts, never the real save): four lodgers stand in the office, none of them Warrok (hub-lodgers); Wallit walks to each and presses E, and each speaks its line for one chapter cleared (npc-line); Chime sends him for a lost thing (errand-offered), he walks to it (errand-pickup) and back, and Chime pays XP and the lost thing joins the file (errand-paid, with the XP before and after and the thing kept). Then setup files chapters 2 to 6 one by one and Tick is talked to again after each, every lodger's line must differ from the one before (npc-after-chapter; metrics lodgers, linesDiffer, errandXp, lostThings)", 300, "content"),
+        new PlaytestScenario("hub-doors", "The hub as a walkable office, with real input (setup: the sandbox case file 1 has chapters 1 and 2 filed and opens in the hub; the real save is never touched): Wallit walks about the room to the chapter board and the vacant desk (hub-walk), doors 1 to 3 stand open and 4 to 6 stay shut (hub-office), pushing on shut door 4 does not get him through (door-locked), walking into open door 3 shows that chapter's card (door-entered) and Begin starts it (chapter-started); metrics doorsRight, hubWalked, lockedHeld", 300, "content"),
+        new PlaytestScenario("maps-123", "Chapters 1, 2 and 3 each load a visibly different map with a route, a landmark and a hazard or set piece (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; event map-loaded, map-lighting (fog and sky differ), map-features (one route:, landmark: and hazard: line each from the map's own list, a problem if any is missing), map-objective (the objective marker's distance from the end of the route: it must stand on the route; chapter 1's objective is the circle), then Wallit walks on the stick and the chapter is left. Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard. Play the whole objective of chapters 2 and 3 with the chapter2 and chapter3 scenarios.", 420, "content"),
+        new PlaytestScenario("maps-456", "Chapters 4, 5 and 6 each load a visibly different map (the Long Walk, the Reading Room, the changed Hollow) with a route, a landmark, a hazard or set piece and a boss arena away from the route (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; events map-loaded, map-lighting (fog and sky differ), map-features (route:, landmark:, hazard:, arena: lines from the map's own list; a problem if any is missing), map-arena (the arena's distance and its angle away from the route: over 90 degrees), map-objective, then Wallit walks and the chapter is left. A boss is then called with the director (named setup shortcut) and must walk out of the arena: event arena-boss (spawn distance from the arena centre; a problem over 8 m). Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard, mapsWithArena. Play each whole objective with the chapter4, chapter5 and chapter6 scenarios.", 600, "content"),
+        new PlaytestScenario("secrets", "The back rooms and the Dead Letter, with real input (setup: the sandbox case file stands on each chapter in turn; the real save is never touched). In every chapter 1 to 6 the room is not on the map until the chapter's lost thing is in the file: Wallit walks out to the find with the stick, the clue shows (events secret-hidden, secret-clue, journal lists it), the room appears 172 m out, and Wallit walks to it and is paid (secret-entered, metric secretRooms 6). In Chapter 4's room the Dead Letter, an optional hard Spider Bot, comes at him: the bot fights it (encounter-fight) and Refund in Full is earned (encounter-reward, metric rewardGiven). Chapter 4 is then played again: the room is there from the start, nothing spawns and the reward is not paid twice (encounter-once, metric rewardOnce)", 1700, "content"),
+        new PlaytestScenario("chapter-maps", "Each Campaign chapter loads its own map, with its own lighting, and unloads it on leaving (setup: the sandbox case file stands on the chapter; the real save is never touched; leaving a chapter early is a named setup shortcut). Three chapters in turn (1 The Moonlit Hollow, 4 The Long Walk, 5 The Reading Room): Campaign, case file 1, Begin; the map named in the chapter data loads as an extra scene on top of the game scene (event map-loaded: map, scene, scenes open), the chapter's lighting is on (event map-lighting: fog colour and density, sun colour, sky colour; they differ between chapters), the opening scene is skipped with Enter and Wallit walks on the stick; then the chapter is left for the menu and the map is gone (event map-unloaded: scene closed, lighting back) with memory read before and after (metrics mapMemoryBaselineMB, mapMemoryAfterMB, mapMemoryGrowthMB; a growth over 48 MB is a bug). Metrics mapsLoaded, mapsUnloaded, distinctLooks)", 800, "content"),
+        new PlaytestScenario("save", "The campaign save: an old-format file loads and is brought up to date, a corrupt one shows a message and starts clean, and every chapter's load time and memory is logged (setup: the sandbox stands where the stored save would, holding version 1 text, text with no version, then corrupt text; the real save is never touched). Events save-old-loaded, save-migrated, save-oldest-loaded, save-corrupt-clean (seven kinds of bad text, none throws), save-old-panel (the case files say the old files were updated), save-old-chapter (file 1 opens chapter 3), save-corrupt-panel (\"Case files unreadable. The Department filed new ones.\", no files), save-corrupt-play (a clean file opens chapter 1); then all six chapters are begun in turn with chapter-load events (card seconds, map seconds, memory MB) and metrics chapter<N>CardSeconds, chapter<N>MapSeconds, chapter<N>MemoryMB, oldSaveLoaded, corruptClean, corruptMessageShown", 1200, "content"),
+        new PlaytestScenario("journal", "The journal, with real input (setup: the sandbox case file starts on chapter 1; the real save is never touched). Campaign, case file 1, Begin. Chapter 1 shows its optional extra on the HUD (event journal-extra) and hides one lost thing out in the field (journal-find-hidden). J opens the journal over the pause menu (journal-open-chapter), Back and Resume; Wallit walks out to the find with the stick and it goes into the case file at once (journal-find, metric findKept). The chapter is played to the Courier's fall; the Chapter Complete card judges the extra and names the lost thing kept. Menu, Campaign: the slot shows the journal count (slot-journal); the Journal button opens the journal and the bot reads Active, Finished and Collected (journal-tab, journal-lists; setup marks chapter 2's extra met). Then the files are written out and read back as after a quit (journal-persist, metric journalPersisted) and read again (setup then gives every find and extra: journal-paid says PAID IN FULL)", 900, "content"),
+        new PlaytestScenario("lore","The lore log and the case-file slots, with real input (setup: the sandbox case file starts on chapter 1; the real save is never touched). Campaign, case file 1, Begin, Chapter 1 is played with the bat to the Courier's fall as in the campaign scenario; the Chapter Complete card names the new lore it unlocked (event lore). Menu, Campaign: the case file slot reads its chapter, its play time and its completion (event slot-info: chapter, h:mm:ss on the books, 1/6 filed, lore n/15; problems if any is missing or the time is 0). The Lore log button opens the file's log (event lore-open), the bot turns every page with Next and reads which entries are open and which are sealed (event lore-page per entry, event lore-summary): the entries revealed by opening the file and by Chapter 1 are open, the later ones read Sealed until their chapter is filed (metrics loreUnlocked, loreSealed, slotChapterShown, slotTimeShown, slotCompletionShown). Back closes it", 800, "content"),
+        new PlaytestScenario("campaign-full", "The whole case file in one run with real input (setup: the sandbox keeps the files off the real save): Campaign, case file 1, then Chapter 1 to ADDRESS FILED. Each chapter is played as its own scenario plays it (opening scene skipped with Enter, the objective met with the bat, the boss down, the Chapter Complete card), and between chapters Menu, Campaign and the file reopen on the next chapter's card (campaign-advanced, campaign-resume). Quit and resume: in Chapter 3 the scene is dropped mid-chapter (setup, as a closed tab does) and the file must reopen on Chapter 3, unfinished (events quit-midchapter, quit-resume-panel, quit-resume; metric quitResumeRight). Ends with the Filed scene, the finale pages, ADDRESS FILED, the credits card and the case file reading filed (events campaign-full, ending-card, campaign-panel-filed; metrics fullCaseFileCleared, endingShown, caseFileFiled)", 3000, "content"),
+        new PlaytestScenario("chapter6", "Chapter 6, Address Filed, played start to finish with real input (setup: the sandbox case file starts on chapter 6): Campaign, case file 1, Begin on the Chapter 6 card; the opening scene in the changed Hollow plays and is skipped with Enter; Wallit holds the circle with the bat through three waves (events wave-start), then the Spider Bot that carries the order (boss bar up, scroll on its back) arrives and falls; the Filed scene plays over the field, then the finale pages (Story.Finale verbatim, as in Arcade's story run) and the ADDRESS FILED ending card (events filed-scene, finale-page, ending-card); Keep going shows the credits card; the case file is marked complete (6 cleared), Menu, and the Campaign panel's case file 1 reads filed (events chapter6-setup, cutscene-open, objective, wave-start, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, filed-scene, finale-page, ending-card, credits-card, campaign-complete, campaign-panel-filed; metrics bossBar, endingShown, caseFileCleared, caseFileFiled)", 1000, "content"),
+        new PlaytestScenario("chapter5", "Chapter 5, Strike This Address, played start to finish with real input (setup: the sandbox case file starts on chapter 5): Campaign, case file 1, Begin on the Chapter 5 card; the opening scene in the Reading Room plays over the map (the order is not signed, so it can be denied; the stamp pressed to the first page shows DENIED; the bot reads pages then skips with Enter); the objective line reads Read the order, page 1 of 5 with the bots down counting up; Wallit holds the circle at the desk with the bat through five pages (each page's wave announced PAGE n OF 5 and its forms on the wall turning blank when it is down: events page-start, page-read); then The Registrar (a gold Titan Spider Bot with a ledger, boss bar up) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 6, Menu, and reopening the file shows Chapter 6's card (events chapter5-setup, cutscene-open, cutscene-page, objective, page-start, page-read, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics pagesRead, bossBar, chapterAdvanced, chapterResumed)", 900, "content"),
+        new PlaytestScenario("chapter4", "Chapter 4, The Process Servers, played start to finish with real input (setup: the sandbox case file starts on chapter 4): Campaign, case file 1, Begin on the Chapter 4 card; the opening dialogue says where Spider Bots come from (process servers, deliveries from the Department with one paper to hand over; the bot reads pages then skips with Enter); the objective reads Reach the first lamp (1 of 3) with metres counting down; Wallit walks the three lamps along the causeway under fire, batting what is in reach; at the last lamp the way turns round to the circle; Wallit walks home and holds off the servers; then The Server (a Spider Bot with a paper, boss bar up) arrives and offers the paper, and does NOT strike: Wallit refuses it by hitting it (objective reads Refuse the paper n / 3, events server-offer and server-refused 1, 2, 3); only after the third refusal it winds up and strikes Slice (server-strike), then falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 5, Menu, and reopening the file shows Chapter 5's card (events chapter4-setup, cutscene-open, cutscene-page, origin-dialogue, objective, floor-stop, last-lamp, home-leg, boss-arrives, boss-bar, server-offer, server-refused, server-strike, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics floorStops, serverOffers, serverRefusals, serverStruckEarly, chapterAdvanced, chapterResumed)", 900, "content"),
+        new PlaytestScenario("chapter3", "Chapter 3, The Clearing Floor, played start to finish with real input (setup: the sandbox case file starts on chapter 3): Campaign, case file 1, Begin on the Chapter 3 card; the opening dialogue plays over the map and says where Yo Bots come from (the Clearing Crew, stamped out on the Floor; the bot reads pages then skips with Enter); the objective line reads Reach the broken gate (1 of 3) with metres counting down; Wallit walks the three stops (the broken gate, the belt with The Belt scene read and skipped, the lever) under fire from Yo Bots, batting those in reach; at the lever the belt feed breaks and the objective turns to Back to the circle; Wallit walks home, holds off the last batch, then The Foreman (order sheet on its chest, with a boss bar) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 4, Menu, and reopening the file shows Chapter 4's card (events chapter3-setup, cutscene-open, cutscene-page, origin-dialogue, objective, floor-stop, floor-scene-skip, feed-broken, home-leg, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics floorStops, feedBroken, chapterAdvanced, chapterResumed)", 900, "content"),
+        new PlaytestScenario("companion", "The AI companion (Slice), played in Chapter 2 with real input (setup: the sandbox case file starts on chapter 2; the real save and Arcade are never touched): Slice walks with Wallit as he walks out (event companion-follows: her distance stays within a few metres over 25 m of walking), stabs the Yo Bots that come near (event companion-fights: stabs and kills while Wallit only walks), is knocked down (named setup shortcut, event companion-down: she lies down, the label reads hold E to revive), Wallit walks to her and holds E (real input) and she is back on her feet with half her health (event companion-revived; metrics companionStabs, companionDowns, companionRevives). The chapter then plays on as in chapter2. Arcade has no companion (event companion-off in the modes scenario)", 900, "content"),
+        new PlaytestScenario("newgameplus", "New Game+ and the secret ending, with real input (setup shortcuts: the sandbox case file 1 is marked filed with Wallit at level 4 and his unlocks and Refund in Full earned; the real save is never touched). Campaign, case file 1: the filed file's chapter card shows a New Game+ button (event ngplus-button); the bot presses it and the card turns to Chapter 1 with the file reset to chapter 1, 0 cleared, xp, unlocks and Refund in Full kept (ngplus-started, metrics ngPlusChapter1, ngPlusXpKept, ngPlusAbilitiesKept), Begin plays Chapter 1 with Wallit's level and abilities (ngplus-run, ngplus-abilities). Then a setup shortcut stands the file on Chapter 6 with every lost thing in the journal, and Chapter 6 is played with the bat to the ADDRESS FILED card; Keep going plays the secret ending (secret-scene, secret-page lines, credits-card with RECEIVED; metrics secretEnding 1). The secret-ending scenario plays only that second part.", 1300, "content"),
+        new PlaytestScenario("secret-ending", "The secret ending's condition (setup shortcut: the sandbox case file stands on Chapter 6 with all six lost things in the journal). Chapter 6 is played with the bat to ADDRESS FILED; Keep going plays the secret ending before the credits (events secret-scene, secret-page, credits-card; metric secretEnding 1). Chapter 6 with the finds missing (chapter6) must show no secret ending (event secret-absent, metric secretEnding 0)", 1000, "content"),
+        new PlaytestScenario("grade", "Chapter grades and Hard, with real input (setup: the sandbox case file starts on chapter 1, and later is marked filed; the real save is never touched). Campaign, case file 1, Begin; chapter 1 is played to the Courier's fall. The Chapter Complete card shows a RANK (S, A, B or C from time against par and the damage Slice took) and the best (event rank-shown, metric rankShown). The files are written out and read back as after a quit and the best rank is still there (rank-saved, metric rankSaved). Setup: the file is marked filed. Its chapter card shows the best rank and a Difficulty button; the bot presses it to Hard (hard-on, metric hardOn, saved with the file). Begin; a plain Yo Bot's health is read against Standard (hard-health, metric hardHealthRatio about 1.75) and the bot holds still until a bot lands a blow on Slice, read as meant against as landed (hard-damage, metric hardDamageRatio 2)", 900, "content"),
+        new PlaytestScenario("chapter2", "Chapter 2, No Fixed Address, played start to finish with real input (setup: the sandbox case file starts on chapter 2): Campaign, case file 1, Begin on the Chapter 2 card; the opening dialogue plays over the map (the bot reads pages, then skips it with Enter); the objective line reads Reach the gate with its metres counting down; Wallit walks out to the gate under fire from Yo Bots, batting those in reach; at the gate The Gate scene plays (read a few pages, then skipped), the objective turns to Back to the circle, Wallit walks home, three waves are held at the circle (objective Hold the circle, wave n of 3), then The Plated Alpha (stamped INVALID, with a boss bar) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 3, Menu, and reopening the file shows Chapter 3's card (events chapter2-setup, cutscene-open, cutscene-page, cutscene-skip, cutscene-play, objective, gate-leg, gate-reached, gate-scene-skip, home-leg, chapter-wave, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics gateReached, gateSceneSkipped, chapterWaves, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("story", "The story: the intro over the frozen Hollow (read page by page: who Wallit is, what the circle is, why Slice must not fall; a Skip button is on it), wave 1's story beats in canon voices, then setup: the testing wave key to wave 10 and wave 30 for the boss-wave title cards and beats (Yo Bots chirpy, Wallit on money, Slice clipped), and setup: wave 30's waiting bots trimmed to the boss and Slice topped up so the bat can finish it with real swings. Clearing wave 30 plays the finale pages and the ADDRESS FILED ending screen; the bot presses Keep going into overtime. Events intro-*, beat, finale-*, ending", 600, "content"),
         new PlaytestScenario("polish", "The final polish pass, on any screen size (run it on desktop and on the phone): the main menu, the HUD in wave 1, the level-up cards (setup: a level of bolts granted), the pause menu by its button, Resume, 40 s of real play, then the bot holds fire until Slice falls (setup: Plated Yo Bots ring her after 20 s) and the game-over panel reads Address struck off. Each screen gets a layout check (menu, hud, cards, pause, gameover), a stale-words check (no piano, keys or music-stopped words left), and a button-feel check (every button lifts on hover and sinks on press like the menu's); the audio-mix event says how many sounds played, how many stacked softer, how many were capped and how many dipped under a voice line", 420, "full"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.ai and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
@@ -203,6 +229,63 @@ public static class Playtest {
                     yield break;
                 }
             }
+            if (id == "save") {
+                yield return SaveRun();
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "secrets") {
+                yield return SecretsRun();
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "chapter-maps" || id == "maps-123" || id == "maps-456") {
+                mapChapters = id == "maps-123" ? new[] { 0, 1, 2 } : id == "maps-456" ? new[] { 3, 4, 5 } : new[] { 0, 3, 4 };
+                yield return MapsRun();
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "newgameplus") {
+                yield return NewGamePlusRun();
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "campaign" || id == "lore" || id == "secret-ending" || id == "journal" || id == "grade" || id == "campaign-full" || id == "hub" || id == "moves" || id == "abilities" || id == "hub-doors" || id == "hub-npcs" || id == "cutscene" || id == "chapter2" || id == "companion" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6") {
+                secretTest = id == "secret-ending";
+                companionTest = id == "companion";
+                watchCutscene = id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5";
+                hubTest = id == "hub";
+                movesTest = id == "moves";
+                abilitiesTest = id == "abilities";
+                hubDoors = id == "hub-doors";
+                hubNpcs = id == "hub-npcs";
+                fullRun = id == "campaign-full";
+                loreTest = id == "lore";
+                journalTest = id == "journal";
+                gradeTest = id == "grade";
+                quitDone = false;
+                startChapter = id == "hub-doors" ? 2 : id == "hub-npcs" ? 1 : id == "chapter6" || id == "secret-ending" ? 5 : id == "chapter5" ? 4 : id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" || id == "companion" ? 1 : 0;
+                yield return CampaignRun();
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "pause-nav") {
+                yield return PauseNavRun();
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
             if (id == "modes") {
                 yield return ModesMenu();
                 if (run.Done) {
@@ -260,9 +343,16 @@ public static class Playtest {
                 yield return StoryRun(options);
             } else if (id == "modes") {
                 run.Event("arcade-start", "Arcade runs the wave defense: wave " + WaveDirector.Wave + ", the player is Wallit, the musician is Slice");
+                bool off = Companion.Instance == null && ChapterRun.Instance == null && Object.FindAnyObjectByType<Companion>() == null;
+                run.Event("companion-off", "Arcade has no companion: " + (off ? "none in the scene" : "ONE EXISTS"));
+                if (!off) {
+                    run.Problem(PlaytestSeverity.Bug, "modes: a companion exists in Arcade");
+                }
                 yield return Play(options, 40f, false);
             } else if (id == "cast") {
                 yield return CastRun(options);
+            } else if (id == "dialogue") {
+                yield return DialogueRun(options);
             } else if (id == "wallit") {
                 yield return WallitRun(options);
             } else if (id == "locomotion") {
@@ -498,6 +588,2522 @@ public static class Playtest {
             run.Problem(PlaytestSeverity.Polish, "menu key art Resources/UI/MenuArt is missing");
         }
         yield return new WaitForSecondsRealtime(1f);
+    }
+
+    // Campaign from the main menu: press Campaign, open case file 1, wait for the Campaign scene. A scene that is not in
+    // the build ("Scene 'Campaign' couldn't be loaded", PR #70) never becomes the active scene: that is a bug, said plainly.
+    static int startChapter;
+    static bool hubTest;
+    static bool loreTest;
+    static bool journalTest;
+    static bool gradeTest;
+    static bool movesTest;
+    static bool abilitiesTest;
+    static bool hubDoors;
+    static bool hubNpcs;
+    static bool fullRun;
+    static bool quitDone;
+    static bool secretTest;
+
+    static IEnumerator CampaignRun() {
+        CampaignSave.EnterSandbox();
+        if (startChapter > 0) {
+            // Setup shortcut: the sandbox case file (never the real save) already stands on this chapter.
+            CampaignSave.Slot setup = CampaignSave.Get(0);
+            setup.used = true;
+            setup.chapter = startChapter;
+            setup.reached = startChapter;
+            setup.cleared = startChapter;
+            run.Event("chapter2-setup", "sandbox case file 1 starts on chapter " + (startChapter + 1));
+            if (secretTest) {
+                setup.finds = (1 << Journal.Count) - 1;
+                run.Event("secret-setup", "sandbox case file 1 holds all " + Journal.Count + " lost things");
+            }
+        }
+        if (hubTest) {
+            // Setup shortcut: the sandbox file already has XP, 5 short of level 3 (Refund). Never the real save.
+            CampaignSave.Slot setup = CampaignSave.Get(0);
+            setup.used = true;
+            setup.chapter = 0;
+            setup.xp = 85;
+            run.Event("hub-setup", "sandbox case file 1 on chapter 1 with " + setup.xp + " XP (level " + CampaignProgress.LevelFor(setup.xp) + ")");
+        }
+        if (abilitiesTest) {
+            // Setup shortcut: the sandbox file is 1 XP short of level 4 (Coin Toss). Never the real save.
+            CampaignSave.Slot setup = CampaignSave.Get(0);
+            setup.used = true;
+            setup.chapter = 0;
+            setup.xp = CampaignProgress.XpAt(4) - 1;
+            run.Event("abilities-setup", "sandbox case file 1 on chapter 1 with " + setup.xp + " XP (level " + CampaignProgress.LevelFor(setup.xp) + ")");
+        }
+        if (hubDoors || hubNpcs) {
+            ChapterScene.HubNext = true;
+        }
+        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+        if (menu == null || menu.CampaignButton == null || !menu.CampaignButton.isActiveAndEnabled) {
+            run.Problem(PlaytestSeverity.Bug, "campaign: the main menu has no Campaign button to press");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        run.Event("mode-select", "main menu shows \"" + menu.CampaignButton.GetComponentInChildren<Text>().text + "\"");
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(menu.CampaignButton.gameObject);
+        run.Event("tap", "Campaign");
+        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files after pressing Campaign");
+        if (run.Done) {
+            yield break;
+        }
+        CampaignPanel panel = CampaignPanel.Instance;
+        yield return new WaitForSecondsRealtime(1f);
+        float tapped = Time.realtimeSinceStartup;
+        Tap(panel.SlotButtons[0].gameObject);
+        run.Event("tap", "case file 1");
+        float limit = tapped + 45f;
+        while (Time.realtimeSinceStartup < limit && !(ChapterScene.Instance != null && SceneManager.GetActiveScene().name == CampaignSave.Scene)) {
+            yield return null;
+        }
+        string active = SceneManager.GetActiveScene().name;
+        if (ChapterScene.Instance == null || active != CampaignSave.Scene) {
+            run.Metric("campaignLoaded", 0);
+            run.Problem(PlaytestSeverity.Bug, "campaign: the scene '" + CampaignSave.Scene + "' did not load after opening case file 1 (active scene '" + active + "' after 45 s). Is it in the build's scene list?");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        float seconds = Time.realtimeSinceStartup - tapped;
+        if (hubDoors) {
+            yield return HubDoorsPlay();
+            yield break;
+        }
+        if (hubNpcs) {
+            yield return HubNpcsPlay();
+            yield break;
+        }
+        run.Scene("Chapter " + (ChapterScene.Instance.Chapter + 1));
+        yield return null;
+        run.Metric("campaignLoaded", 1);
+        run.Metric("campaignLoadSeconds", Mathf.Round(seconds * 10f) / 10f);
+        string mode = RunAnalytics.LastRunMode;
+        if (mode != "campaign") {
+            run.Problem(PlaytestSeverity.Bug, "campaign: run_start said mode '" + mode + "', not campaign");
+        }
+        run.Event("run_start", "mode=" + mode + " scene=" + active + " chapter=" + (ChapterScene.Instance.Chapter + 1) + " \"" + ChapterScene.Instance.Title + "\" loaded in " + seconds.ToString("0.0") + " s");
+        yield return run.Until(() => ChapterScene.Instance.LinesShown >= 1, 10f, "the chapter's first line");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(3f);
+        yield return ChapterPlay();
+        // The full case file: each chapter ends on the next one's card (Menu, reopen the file); play on to ADDRESS FILED.
+        while (fullRun && !run.Done && ChapterScene.Instance != null && SceneManager.GetActiveScene().name == CampaignSave.Scene) {
+            yield return ChapterPlay();
+        }
+        if (fullRun && !run.Done) {
+            CampaignSave.Slot done = CampaignSave.Get(0);
+            run.Metric("fullCaseFileCleared", done.cleared);
+            if (done.cleared != CampaignSave.ChapterCount) {
+                run.Problem(PlaytestSeverity.Bug, "campaign-full: the run ended with " + done.cleared + " of " + CampaignSave.ChapterCount + " chapters cleared");
+            } else {
+                run.Event("campaign-full", "Chapter 1 to ADDRESS FILED played in one run: " + done.cleared + " chapters cleared");
+            }
+        }
+    }
+
+    // Pause and the campaign menus by keyboard and pad (PauseMenu, SettingsPanel, CampaignPanel, the chapter card, MenuNav).
+    static IEnumerator Key(KeyCode key) {
+        PlayInput.Tap(key);
+        yield return new WaitForSecondsRealtime(0.3f);
+    }
+
+    // Down arrow until the gold ring is on the target.
+    static IEnumerator DownTo(Component target, string what) {
+        for (int i = 0; i < 8 && MenuNav.Selected != target.gameObject; i++) {
+            yield return Key(KeyCode.DownArrow);
+        }
+        if (MenuNav.Selected != target.gameObject) {
+            run.Problem(PlaytestSeverity.Bug, "pause-nav: the arrow keys never reached " + what);
+        }
+    }
+
+    static IEnumerator PauseNavRun() {
+        CampaignSave.EnterSandbox();
+        watchCutscene = false;
+        int paused = 0;
+        for (int index = 0; index < CampaignSave.ChapterCount; index++) {
+            if (run.Done) {
+                yield break;
+            }
+            CampaignSave.Slot slot = CampaignSave.Get(0);
+            slot.used = true;
+            slot.chapter = index;
+            slot.reached = index;
+            slot.cleared = index;
+            Time.timeScale = 1f;
+            yield return ToMenu();
+            run.Event("nav-menu", "chapter " + (index + 1) + ": main menu, keys only from here");
+            yield return Key(KeyCode.C);
+            yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files after pressing C");
+            if (run.Done) {
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(0.5f);
+            bool onSlot = MenuNav.Selected == CampaignPanel.Instance.SlotButtons[0].gameObject;
+            run.Event("nav-case-files", "ring on case file 1: " + onSlot);
+            if (!onSlot) {
+                run.Problem(PlaytestSeverity.Bug, "pause-nav: the case files open with no ring on file 1");
+            }
+            yield return Key(KeyCode.Return);
+            yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.BeginButton != null && SceneManager.GetActiveScene().name == CampaignSave.Scene, 45f, "the chapter card after Enter on file 1");
+            if (run.Done) {
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(1.5f);
+            bool onBegin = MenuNav.Selected == ChapterScene.Instance.BeginButton.gameObject;
+            run.Event("nav-chapter-card", "chapter " + (index + 1) + ": ring on Begin: " + onBegin);
+            if (!onBegin) {
+                run.Problem(PlaytestSeverity.Bug, "pause-nav: the chapter card has no ring on Begin");
+            }
+            yield return Key(KeyCode.Return);
+            yield return run.Until(() => ChapterRun.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the chapter after Enter on Begin");
+            if (run.Done) {
+                yield break;
+            }
+            yield return CutsceneStep();
+            yield return run.Until(() => PauseMenu.Instance != null && PauseMenu.Instance.ResumeButton != null && ChapterRun.Instance != null && ChapterRun.Instance.PlaySeconds > 1f, 30f, "the chapter to be playable");
+            if (run.Done) {
+                yield break;
+            }
+            run.Scene("Chapter " + (index + 1) + " pause");
+            // P pauses, P resumes.
+            yield return Key(KeyCode.P);
+            yield return run.Until(() => PauseMenu.IsOpen, 4f, "the pause menu after P in chapter " + (index + 1));
+            if (run.Done) {
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(0.6f);
+            bool frozen = Time.timeScale < 0.01f;
+            run.Event("chapter-paused", "chapter " + (index + 1) + " paused with P: time scale " + Time.timeScale.ToString("0.00") + ", ring on " + (MenuNav.Selected != null ? MenuNav.Selected.name : "nothing"));
+            if (!frozen) {
+                run.Problem(PlaytestSeverity.Bug, "pause-nav: chapter " + (index + 1) + " kept running behind the pause menu");
+            }
+            yield return Key(KeyCode.P);
+            yield return run.Until(() => !PauseMenu.IsOpen && Time.timeScale > 0.5f, 4f, "chapter " + (index + 1) + " to resume after P");
+            if (run.Done) {
+                yield break;
+            }
+            run.Event("chapter-resumed", "chapter " + (index + 1) + " resumed with P");
+            paused++;
+            // The pad's Start pauses; the pad's B resumes.
+            yield return Key(KeyCode.JoystickButton7);
+            yield return run.Until(() => PauseMenu.IsOpen, 4f, "the pause menu after pad Start in chapter " + (index + 1));
+            if (run.Done) {
+                yield break;
+            }
+            run.Event("pad-paused", "chapter " + (index + 1) + " paused with the pad's Start");
+            yield return new WaitForSecondsRealtime(0.5f);
+
+            if (index == 0) {
+                yield return PauseNavSettings();
+                if (run.Done) {
+                    yield break;
+                }
+                yield return Key(KeyCode.JoystickButton0);
+                yield return run.Until(() => !PauseMenu.IsOpen, 4f, "Resume with the pad's A (ring starts on Resume)");
+                if (run.Done) {
+                    yield break;
+                }
+                run.Event("chapter-resumed", "chapter 1 resumed with the pad's A on Resume");
+                yield return new WaitForSecondsRealtime(1f);
+                yield return Key(KeyCode.Escape);
+                yield return run.Until(() => PauseMenu.IsOpen, 4f, "the pause menu after Escape");
+                if (run.Done) {
+                    yield break;
+                }
+                yield return new WaitForSecondsRealtime(0.4f);
+            }
+            // Quit to menu: Down, Down, Enter (asks), Enter.
+            yield return DownTo(PauseMenu.Instance.QuitButton, "Quit to menu");
+            yield return Key(KeyCode.Return);
+            yield return new WaitForSecondsRealtime(0.3f);
+            if (!PauseMenu.IsOpen) {
+                run.Problem(PlaytestSeverity.Bug, "pause-nav: Quit to menu left at the first press without asking");
+            }
+            yield return Key(KeyCode.Return);
+            yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the main menu after Quit to menu");
+            if (run.Done) {
+                yield break;
+            }
+            run.Event("nav-quit", "chapter " + (index + 1) + ": Quit to menu with the keys, back on the main menu");
+        }
+        run.Metric("chaptersPaused", paused);
+        run.Metric("menuMoves", MenuNav.Moves);
+        run.Metric("menuSubmits", MenuNav.Submits);
+        run.Metric("sliderTurns", MenuNav.SliderTurns);
+        if (paused < CampaignSave.ChapterCount) {
+            run.Problem(PlaytestSeverity.Bug, "pause-nav: only " + paused + " of " + CampaignSave.ChapterCount + " chapters paused and resumed");
+        }
+    }
+
+    // Down, Enter opens Settings from the pause menu; sliders by Left/Right; Voices by Enter; the pad's B closes it.
+    static IEnumerator PauseNavSettings() {
+        yield return DownTo(PauseMenu.Instance.SettingsButton, "Settings");
+        yield return Key(KeyCode.Return);
+        yield return run.Until(() => SettingsPanel.IsOpen, 4f, "Settings after Enter on it");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(0.5f);
+        SettingsPanel panel = SettingsPanel.Instance;
+        run.Event("nav-settings", "Settings opened with Enter; ring on " + (MenuNav.Selected != null ? MenuNav.Selected.name : "nothing"));
+        float music = SoundSettings.Music;
+        float sfx = SoundSettings.Sfx;
+        int chatter = SoundSettings.Chatter;
+        yield return DownTo(panel.MusicSlider, "the music slider");
+        yield return Key(KeyCode.LeftArrow);
+        yield return Key(KeyCode.LeftArrow);
+        float musicNow = SoundSettings.Music;
+        yield return DownTo(panel.EffectsSlider, "the effects slider");
+        yield return Key(KeyCode.LeftArrow);
+        float sfxNow = SoundSettings.Sfx;
+        run.Event("volume-changed", "music " + music.ToString("0.00") + " -> " + musicNow.ToString("0.00") + ", effects " + sfx.ToString("0.00") + " -> " + sfxNow.ToString("0.00") + " (effects level the mix multiplies by " + SoundSettings.EffectsLevel.ToString("0.00") + ")");
+        if (musicNow >= music - 0.01f || sfxNow >= sfx - 0.01f) {
+            run.Problem(PlaytestSeverity.Bug, "pause-nav: Left on the sliders did not lower the volume");
+        }
+        yield return DownTo(panel.VoiceButton, "the voice-lines button");
+        yield return Key(KeyCode.Return);
+        int chatterNow = SoundSettings.Chatter;
+        run.Event("voices-changed", "voice lines " + SoundSettings.ChatterName(chatter) + " -> " + SoundSettings.ChatterName(chatterNow) + " (gap x" + VoiceDirector.GapScale(chatterNow).ToString("0.0") + ")");
+        if (chatterNow == chatter) {
+            run.Problem(PlaytestSeverity.Bug, "pause-nav: Enter on Voices did not change how often the voices speak");
+        }
+        // The saved JSON reads back the same (the sandbox writes nothing to the player's save).
+        string json = SoundSettings.Json();
+        SoundSettings.Set(true, 1f, 1f);
+        SoundSettings.SetChatter(2);
+        bool back = SoundSettings.LoadFrom(json);
+        bool same = back && Mathf.Abs(SoundSettings.Music - musicNow) < 0.01f && Mathf.Abs(SoundSettings.Sfx - sfxNow) < 0.01f && SoundSettings.Chatter == chatterNow;
+        run.Event("settings-persisted", "saved " + json + ", read back the same: " + same);
+        if (!same) {
+            run.Problem(PlaytestSeverity.Bug, "pause-nav: the settings did not survive a save and load");
+        }
+        // Put them back.
+        SoundSettings.Set(true, music, sfx);
+        SoundSettings.SetChatter(chatter);
+        yield return Key(KeyCode.JoystickButton1);
+        yield return new WaitForSecondsRealtime(0.4f);
+        if (SettingsPanel.IsOpen) {
+            run.Problem(PlaytestSeverity.Bug, "pause-nav: the pad's B did not close Settings");
+        } else if (!PauseMenu.IsOpen) {
+            run.Problem(PlaytestSeverity.Bug, "pause-nav: closing Settings with B also closed the pause menu");
+        }
+        yield return new WaitForSecondsRealtime(0.4f);
+        yield return DownTo(PauseMenu.Instance.ResumeButton, "Resume");
+    }
+
+    // Load time and memory of one chapter: the card (file press to chapter scene), then the map (Begin to playable),
+    // and the memory in use once it is up. Event chapter-load; metrics chapter<N>CardSeconds, chapter<N>MapSeconds,
+    // chapter<N>MemoryMB. A chapter that takes over 20 s to come up, or sits over 1 GB, is a bug.
+    static void ReportChapterLoad(int index, float cardSeconds, float mapSeconds) {
+        float mb = Mathf.Round(ChapterMap.Memory() / 1048576f);
+        string n = "chapter" + (index + 1);
+        run.Metric(n + "CardSeconds", Mathf.Round(cardSeconds * 10f) / 10f);
+        run.Metric(n + "MapSeconds", Mathf.Round(mapSeconds * 10f) / 10f);
+        run.Metric(n + "MemoryMB", mb);
+        run.Event("chapter-load", "chapter " + (index + 1) + ": card in " + cardSeconds.ToString("0.0") + " s, map in " + mapSeconds.ToString("0.0") + " s, memory " + mb + " MB");
+        if (cardSeconds + mapSeconds > 20f) {
+            run.Problem(PlaytestSeverity.Bug, "chapter " + (index + 1) + " took " + (cardSeconds + mapSeconds).ToString("0.0") + " s to load");
+        }
+        if (mb > 1024f) {
+            run.Problem(PlaytestSeverity.Bug, "chapter " + (index + 1) + " holds " + mb + " MB after loading");
+        }
+    }
+
+    // Case-file saves: an old-format file loads and is brought up to date, and corrupt text shows a message and starts
+    // clean. The stored text is a named setup shortcut (the sandbox stands where the real save would; it is never written).
+    const string OldSaveV1 = "{\"version\":1,\"last\":0,\"slots\":[{\"used\":true,\"chapter\":2,\"reached\":2,\"cleared\":2,\"seconds\":754.5,\"saved\":638000000000000000},{\"used\":true,\"chapter\":0,\"reached\":0,\"cleared\":0,\"seconds\":61},{\"used\":false}]}";
+    const string OldSaveNoStamp = "{\"last\":1,\"slots\":[{\"used\":false},{\"used\":true,\"chapter\":1,\"reached\":1,\"cleared\":1,\"seconds\":300},{\"used\":false}]}";
+    static IEnumerator SaveRun() {
+        // 1. Old formats, straight through the loader.
+        CampaignSave.EnterSandbox(OldSaveV1);
+        CampaignSave.Slot a = CampaignSave.Get(0);
+        bool v1ok = CampaignSave.LoadResult == "migrated" && a.used && a.chapter == 2 && a.cleared == 2 && Mathf.Abs(a.seconds - 754.5f) < 0.1f && Lore.UnlockedCount(a) > 0 && CampaignSave.UsedCount == 2;
+        run.Event("save-old-loaded", "version 1 text: result " + CampaignSave.LoadResult + ", file 1 on chapter " + (a.chapter + 1) + ", " + a.cleared + " filed, " + CampaignSave.Clock(a) + " on the books, lore " + Lore.UnlockedCount(a) + "/" + Lore.All.Length + ", " + CampaignSave.UsedCount + " files in use");
+        run.Metric("oldSaveLoaded", v1ok ? 1 : 0);
+        if (!v1ok) {
+            run.Problem(PlaytestSeverity.Bug, "save: a version 1 save did not load with its files intact");
+        }
+        bool stamped = CampaignSave.ToText().Contains("\"version\":" + CampaignSave.Version);
+        run.Event("save-migrated", "rewritten as version " + CampaignSave.Version + ": " + (stamped ? "stamped" : "NOT stamped"));
+        if (!stamped) {
+            run.Problem(PlaytestSeverity.Bug, "save: the migrated files are not stamped with version " + CampaignSave.Version);
+        }
+        CampaignSave.EnterSandbox(OldSaveNoStamp);
+        CampaignSave.Slot b = CampaignSave.Get(1);
+        bool oldest = CampaignSave.LoadResult == "migrated" && CampaignSave.LoadedVersion == 0 && b.used && b.chapter == 1 && CampaignSave.Last == 1;
+        run.Event("save-oldest-loaded", "text with no version: result " + CampaignSave.LoadResult + ", read as version " + CampaignSave.LoadedVersion + ", file 2 on chapter " + (b.chapter + 1) + ", last opened " + CampaignSave.Last);
+        if (!oldest) {
+            run.Problem(PlaytestSeverity.Bug, "save: a save with no version stamp did not load");
+        }
+
+        // 2. Corrupt text of every shape: never an exception, always clean files.
+        string[] bad = { "{not json<<<", "[1,2,3]", "{}", "{\"version\":2,\"slots\":", "{\"version\":2,\"slots\":\"x\"}", "\u0000\u0001garbage", "null" };
+        int cleanStarts = 0;
+        foreach (string text in bad) {
+            try {
+                CampaignSave.EnterSandbox(text);
+                bool clean = CampaignSave.LoadResult == "corrupt" && CampaignSave.UsedCount == 0 && !string.IsNullOrEmpty(CampaignSave.Notice);
+                cleanStarts += clean ? 1 : 0;
+                if (!clean) {
+                    run.Problem(PlaytestSeverity.Bug, "save: corrupt text '" + text.Replace("\u0000", "?") + "' gave result '" + CampaignSave.LoadResult + "' with " + CampaignSave.UsedCount + " files in use");
+                }
+            } catch (System.Exception e) {
+                run.Problem(PlaytestSeverity.Bug, "save: corrupt text '" + text.Replace("\u0000", "?") + "' threw " + e.GetType().Name);
+            }
+        }
+        run.Event("save-corrupt-clean", cleanStarts + " of " + bad.Length + " corrupt texts started clean without an exception");
+        run.Metric("corruptClean", cleanStarts);
+
+        // 3. On screen: the old file in the case files with its notice, a chapter card from it; then a corrupt one.
+        CampaignSave.EnterSandbox(OldSaveV1);
+        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+        if (menu == null || menu.CampaignButton == null) {
+            run.Problem(PlaytestSeverity.Bug, "save: no Campaign button on the main menu");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(menu.CampaignButton.gameObject);
+        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        string shown = CampaignPanel.Instance.SubtitleShown;
+        run.Event("save-old-panel", "case files say \"" + shown + "\"; file 1: " + CampaignSave.Describe(CampaignSave.Get(0)));
+        if (shown != CampaignSave.MigratedNotice) {
+            run.Problem(PlaytestSeverity.Bug, "save: the case files did not say the old files were updated (\"" + shown + "\")");
+        }
+        float tapped = Time.realtimeSinceStartup;
+        Tap(CampaignPanel.Instance.SlotButtons[0].gameObject);
+        yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.BeginButton != null && SceneManager.GetActiveScene().name == CampaignSave.Scene, 45f, "the chapter card from the old file");
+        if (run.Done) {
+            yield break;
+        }
+        bool onThree = ChapterScene.Instance.Chapter == 2;
+        run.Event("save-old-chapter", "the old file opened chapter " + (ChapterScene.Instance.Chapter + 1) + " \"" + ChapterScene.Instance.Title + "\" in " + (Time.realtimeSinceStartup - tapped).ToString("0.0") + " s");
+        if (!onThree) {
+            run.Problem(PlaytestSeverity.Bug, "save: the old file opened chapter " + (ChapterScene.Instance.Chapter + 1) + ", not 3");
+        }
+        yield return new WaitForSecondsRealtime(1.5f);
+        CampaignSave.EnterSandbox(bad[0]);   // setup: the stored text goes bad while the player is away
+        PlayInput.Release();
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(MetaProgress.MenuScene);
+        yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Main Menu");
+        menu = Object.FindAnyObjectByType<MainMenu>();
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(menu.CampaignButton.gameObject);
+        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files after corrupt save");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        shown = CampaignPanel.Instance.SubtitleShown;
+        bool allEmpty = CampaignSave.UsedCount == 0;
+        run.Event("save-corrupt-panel", "case files say \"" + shown + "\"; " + CampaignSave.UsedCount + " files in use");
+        run.Metric("corruptMessageShown", shown == CampaignSave.CorruptNotice ? 1 : 0);
+        if (shown != CampaignSave.CorruptNotice || !allEmpty) {
+            run.Problem(PlaytestSeverity.Bug, "save: the corrupt save did not show its message and start clean (\"" + shown + "\", " + CampaignSave.UsedCount + " files)");
+        }
+        tapped = Time.realtimeSinceStartup;
+        Tap(CampaignPanel.Instance.SlotButtons[0].gameObject);
+        yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.BeginButton != null && SceneManager.GetActiveScene().name == CampaignSave.Scene, 45f, "chapter 1 from a clean file");
+        if (run.Done) {
+            yield break;
+        }
+        run.Event("save-corrupt-play", "a clean file opened chapter " + (ChapterScene.Instance.Chapter + 1) + " in " + (Time.realtimeSinceStartup - tapped).ToString("0.0") + " s");
+        if (ChapterScene.Instance.Chapter != 0) {
+            run.Problem(PlaytestSeverity.Bug, "save: the clean file opened chapter " + (ChapterScene.Instance.Chapter + 1) + ", not 1");
+        }
+        yield return new WaitForSecondsRealtime(1.5f);
+        // 4. Load time and memory of every chapter: each in turn from a sandbox file standing on it.
+        mapChapters = new[] { 0, 1, 2, 3, 4, 5 };
+        PlayInput.Release();
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(MetaProgress.MenuScene);
+        yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu");
+        if (run.Done) {
+            yield break;
+        }
+        yield return MapsRun();
+    }
+
+    // Chapter maps: each chapter loads its own map and lighting on Begin and unloads it on leaving.
+    static int[] mapChapters = { 0, 3, 4 };
+    // The back rooms (BackRooms.cs): each chapter's room is hidden until its lost thing is in the file; the clue names it; Wallit
+    // walks there. Chapter 4's room holds the Dead Letter and the reward, paid once. The last pass plays Chapter 4 again.
+    static IEnumerator SecretsRun() {
+        CampaignSave.EnterSandbox();
+        int[] order = { 0, 1, 2, 3, 4, 5, 3 };
+        int entered = 0;
+        for (int n = 0; n < order.Length && !run.Done; n++) {
+            int index = order[n];
+            bool replay = n == order.Length - 1;
+            Story.Chapter data = Story.Chapters[index];
+            CampaignSave.Slot slot = CampaignSave.Get(0);
+            slot.used = true;
+            slot.chapter = index;
+            slot.reached = index;
+            slot.cleared = index;
+            slot.xp = Mathf.Max(slot.xp, 100);
+            run.Event("setup", "sandbox case file 1 stands on chapter " + (index + 1) + (replay ? " again (a replay)" : ""));
+            MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+            if (menu == null || menu.CampaignButton == null) {
+                run.Problem(PlaytestSeverity.Bug, "secrets: no Campaign button on the main menu");
+                run.Finish(PlaytestOutcome.Stuck);
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(1f);
+            Tap(menu.CampaignButton.gameObject);
+            yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files");
+            if (run.Done) {
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(1f);
+            Tap(CampaignPanel.Instance.SlotButtons[0].gameObject);
+            yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.BeginButton != null && SceneManager.GetActiveScene().name == CampaignSave.Scene, 45f, "the chapter card");
+            if (run.Done) {
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(1.5f);
+            Tap(ChapterScene.Instance.BeginButton.gameObject);
+            yield return run.Until(() => ChapterRun.Instance != null && BackRoom.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the chapter's map after Begin");
+            if (run.Done) {
+                yield break;
+            }
+            run.Scene("Chapter " + (index + 1) + (replay ? " again" : ""));
+            yield return CutsceneStep();
+            if (run.Done) {
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(1f);
+            ChapterRun chapter = ChapterRun.Instance;
+            BackRoom room = BackRoom.Instance;
+            var player = Object.FindAnyObjectByType<CharacterMovement>();
+            BackRooms.Room row = BackRooms.All[index];
+            bool held = Journal.HasFind(slot, index);
+            run.Event("secret-hidden", "chapter " + (index + 1) + " (" + data.Map + "): the room \"" + row.Name + "\" is " + (room.Built ? "on the map from the start (the clue is in the file)" : "not on the map: no clue yet") + "; the lost thing lies at " + chapter.FindAt.ToString("0") + "; objective line: " + chapter.ObjectiveLine);
+            if (!replay && !held) {
+                if (room.Built) {
+                    run.Problem(PlaytestSeverity.Bug, "secrets: chapter " + (index + 1) + "'s room is on the map before its clue is found");
+                }
+                float limit = Time.realtimeSinceStartup + 150f;
+                while (!run.Done && !chapter.FindKept && Time.realtimeSinceStartup < limit) {
+                    Walk(player, chapter.FindAt, 1f);
+                    yield return null;
+                }
+                PlayInput.Release();
+                yield return run.Until(() => room.Built, 6f, "the room after the clue");
+                if (run.Done) {
+                    yield break;
+                }
+                run.Event("secret-clue", "the lost thing is kept; the clue reads: " + room.Clue);
+                string active = Journal.TabText(CampaignSave.Get(0), 0);
+                bool listed = active.Contains(row.Clue);
+                run.Event("secret-journal", "the journal's Active tab " + (listed ? "lists" : "does NOT list") + " the clue");
+                if (!listed) {
+                    run.Problem(PlaytestSeverity.Bug, "secrets: chapter " + (index + 1) + "'s clue is not in the journal once the find is kept");
+                }
+            } else if (!room.Built) {
+                run.Problem(PlaytestSeverity.Bug, "secrets: chapter " + (index + 1) + "'s clue is in the file but the room is not on the map");
+            }
+            float far = Time.realtimeSinceStartup + 240f;
+            while (!run.Done && !room.Entered && Time.realtimeSinceStartup < far) {
+                if (WaveDirector.IsLost) {
+                    break;
+                }
+                Walk(player, room.At, 1f);
+                yield return null;
+            }
+            PlayInput.Release();
+            if (WaveDirector.IsLost) {
+                yield return GameOver();
+                yield break;
+            }
+            CampaignSave.Slot after = CampaignSave.Get(0);
+            bool kept = BackRooms.Entered(after, index);
+            run.Event("secret-entered", "chapter " + (index + 1) + ": Wallit " + (room.Entered ? "walked into" : "never reached") + " \"" + row.Name + "\" " + Vector3.Distance(Musician.Instance.transform.position, room.At).ToString("0") + " m from the circle; the file holds it: " + kept + "; rooms " + BackRooms.Count(after) + "/6; XP " + after.xp);
+            if (!room.Entered || !kept) {
+                run.Problem(PlaytestSeverity.Bug, "secrets: Wallit could not reach chapter " + (index + 1) + "'s back room with its clue");
+            } else if (!replay) {
+                entered++;
+            }
+            run.Metric("secretRooms", entered);
+            yield return new WaitForSecondsRealtime(1.5f);
+            if (index == BackRooms.EncounterChapter && room.Entered) {
+                if (!replay) {
+                    yield return run.Until(() => room.EncounterSpawned, 5f, "the Dead Letter");
+                    if (run.Done) {
+                        yield break;
+                    }
+                    run.Event("encounter-fight", room.Letter != null ? room.Letter.Title + " (" + room.Letter.HitsToDrop + " hits) steps out of the room; reward held before: " + BackRooms.HasReward(after) : "no Dead Letter");
+                    var only = new List<Enemy>();
+                    if (room.Letter != null) {
+                        only.Add(room.Letter);
+                    }
+                    yield return Fight(player, () => room.RewardGiven, 360f, "the Dead Letter to fall", only, true);
+                    if (run.Done) {
+                        yield break;
+                    }
+                    CampaignSave.Slot paid = CampaignSave.Get(0);
+                    run.Event("encounter-reward", "the Dead Letter fell: " + BackRooms.RewardName + " held " + BackRooms.HasReward(paid) + ", Refund reads \"" + CampaignProgress.RefundName + "\", ring " + CampaignProgress.RefundReach + " m, rooms bits " + paid.rooms);
+                    run.Metric("rewardGiven", BackRooms.HasReward(paid) && CampaignProgress.RefundFull ? 1 : 0);
+                    if (!BackRooms.HasReward(paid) || !CampaignProgress.RefundFull) {
+                        run.Problem(PlaytestSeverity.Bug, "secrets: the Dead Letter fell but Refund in Full was not earned");
+                    }
+                } else {
+                    yield return new WaitForSecondsRealtime(3f);
+                    run.Event("encounter-once", "replayed: Dead Letter spawned " + room.EncounterSpawned + ", reward held " + BackRooms.HasReward(after) + ", Refund reads \"" + CampaignProgress.RefundName + "\"");
+                    bool once = !room.EncounterSpawned && !room.RewardGiven && BackRooms.HasReward(after) && CampaignProgress.RefundFull;
+                    run.Metric("rewardOnce", once ? 1 : 0);
+                    if (!once) {
+                        run.Problem(PlaytestSeverity.Bug, "secrets: the Dead Letter came back or the reward was paid again on a replay");
+                    }
+                }
+            }
+            run.Event("map-leave", "leaving chapter " + (index + 1) + " for the menu (setup shortcut)");
+            PlayInput.Release();
+            ChapterRun.Instance.Abandon();
+            yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu after leaving");
+            if (run.Done) {
+                yield break;
+            }
+            run.Scene("Main Menu");
+            yield return new WaitForSecondsRealtime(1f);
+        }
+        run.Metric("secretRoomsTotal", entered);
+        if (entered < 6) {
+            run.Problem(PlaytestSeverity.Bug, "secrets: only " + entered + " of 6 chapters' back rooms were found with their clues");
+        }
+    }
+
+    static IEnumerator MapsRun() {
+        CampaignSave.EnterSandbox();
+        int[] chapters = mapChapters;
+        int withRoute = 0, withLandmark = 0, withHazard = 0, withArena = 0;
+        var looks = new HashSet<string>();
+        int loaded = 0;
+        int unloaded = 0;
+        System.GC.Collect();
+        yield return Resources.UnloadUnusedAssets();
+        yield return new WaitForSecondsRealtime(1f);
+        long baseline = ChapterMap.Memory();
+        run.Metric("mapMemoryBaselineMB", Mathf.Round(baseline / 1048576f));
+        foreach (int index in chapters) {
+            if (run.Done) {
+                yield break;
+            }
+            Story.Chapter data = Story.Chapters[index];
+            CampaignSave.Slot slot = CampaignSave.Get(0);
+            slot.used = true;
+            slot.chapter = index;
+            slot.reached = index;
+            slot.cleared = index;
+            run.Event("map-setup", "sandbox case file 1 stands on chapter " + (index + 1) + " (map '" + data.Map + "')");
+            MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+            if (menu == null || menu.CampaignButton == null) {
+                run.Problem(PlaytestSeverity.Bug, "chapter-maps: no Campaign button on the main menu");
+                run.Finish(PlaytestOutcome.Stuck);
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(1f);
+            Tap(menu.CampaignButton.gameObject);
+            yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files");
+            if (run.Done) {
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(1f);
+            float cardTapped = Time.realtimeSinceStartup;
+            Tap(CampaignPanel.Instance.SlotButtons[0].gameObject);
+            yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.BeginButton != null && SceneManager.GetActiveScene().name == CampaignSave.Scene, 45f, "the chapter card");
+            if (run.Done) {
+                yield break;
+            }
+            float cardSeconds = Time.realtimeSinceStartup - cardTapped;
+            yield return new WaitForSecondsRealtime(2f);
+            float beginTapped = Time.realtimeSinceStartup;
+            Tap(ChapterScene.Instance.BeginButton.gameObject);
+            run.Event("tap", "Begin chapter " + (index + 1));
+            yield return run.Until(() => ChapterRun.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the chapter's map after Begin");
+            if (run.Done) {
+                yield break;
+            }
+            float mapSeconds = Time.realtimeSinceStartup - beginTapped;
+            run.Scene("Chapter " + (index + 1) + " map");
+            yield return new WaitForSecondsRealtime(1.5f);
+            ReportChapterLoad(index, cardSeconds, mapSeconds);
+            ChapterMap map = ChapterMap.Current;
+            if (map == null || map.MapName != data.Map || !map.MapScene.isLoaded) {
+                run.Problem(PlaytestSeverity.Bug, "chapter-maps: chapter " + (index + 1) + " names map '" + data.Map + "' but loaded '" + (map != null ? map.MapName : "none") + "'");
+                run.Finish(PlaytestOutcome.Stuck);
+                yield break;
+            }
+            loaded++;
+            run.Event("map-loaded", "chapter " + (index + 1) + " map '" + map.MapName + "' as scene " + map.MapScene.name + " (" + map.MapScene.rootCount + " roots); " + SceneManager.sceneCount + " scenes open, active '" + SceneManager.GetActiveScene().name + "'");
+            if (SceneManager.GetActiveScene().name != MetaProgress.GameScene) {
+                run.Problem(PlaytestSeverity.Bug, "chapter-maps: loading the map changed the active scene to '" + SceneManager.GetActiveScene().name + "'");
+            }
+            Color fog = RenderSettings.fogColor;
+            Color want = map.Applied.Fog;
+            bool match = Mathf.Abs(fog.r - want.r) + Mathf.Abs(fog.g - want.g) + Mathf.Abs(fog.b - want.b) < 0.02f && Mathf.Abs(RenderSettings.fogDensity - map.Applied.FogDensity) < 0.0005f;
+            string look = ColorUtility.ToHtmlStringRGB(fog) + "/" + RenderSettings.fogDensity.ToString("0.0000");
+            looks.Add(look);
+            run.Event("map-lighting", "chapter " + (index + 1) + " fog #" + ColorUtility.ToHtmlStringRGB(fog) + " density " + RenderSettings.fogDensity.ToString("0.0000") + ", ambient #" + ColorUtility.ToHtmlStringRGB(RenderSettings.ambientEquatorColor) + ", sky #" + ColorUtility.ToHtmlStringRGB(Camera.main != null ? Camera.main.backgroundColor : Color.black) + (match ? ", the chapter's own" : ", NOT the chapter's"));
+            if (!match) {
+                run.Problem(PlaytestSeverity.Bug, "chapter-maps: chapter " + (index + 1) + "'s lighting is not on after the map loaded");
+            }
+            bool hasRoute = false, hasLandmark = false, hasHazard = false;
+            foreach (string f in map.Features) {
+                hasRoute |= f.StartsWith("route:");
+                hasLandmark |= f.StartsWith("landmark:");
+                hasHazard |= f.StartsWith("hazard:");
+                run.Event("map-features", "chapter " + (index + 1) + " " + f);
+            }
+            withRoute += hasRoute ? 1 : 0;
+            withLandmark += hasLandmark ? 1 : 0;
+            withHazard += hasHazard ? 1 : 0;
+            if (mapChapters.Length == 3 && mapChapters[1] == 1 && !(hasRoute && hasLandmark && hasHazard)) {
+                run.Problem(PlaytestSeverity.Bug, "maps-123: chapter " + (index + 1) + "'s map lacks a route, a landmark or a hazard (" + map.Features.Count + " features)");
+            }
+            if (mapChapters.Length == 3 && mapChapters[0] == 3) {
+                bool hasArena = false;
+                foreach (string f in map.Features) {
+                    hasArena |= f.StartsWith("arena:");
+                }
+                if (!(hasRoute && hasLandmark && hasHazard && hasArena && map.HasArena)) {
+                    run.Problem(PlaytestSeverity.Bug, "maps-456: chapter " + (index + 1) + "'s map lacks a route, a landmark, a hazard or a boss arena (" + map.Features.Count + " features)");
+                } else {
+                    withArena++;
+                    Vector3 c0 = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
+                    float routeBearing = index == 3 ? 330f : index == 4 ? 180f : 180f;
+                    float away = Mathf.Abs(Mathf.DeltaAngle(routeBearing, map.ArenaBearing));
+                    run.Event("map-arena", "chapter " + (index + 1) + " boss arena " + Vector3.Distance(c0, map.BossSpot).ToString("0") + " m out on bearing " + map.ArenaBearing.ToString("0") + ", " + away.ToString("0") + " degrees from the route");
+                    if (away < 90f) {
+                        run.Problem(PlaytestSeverity.Bug, "maps-456: chapter " + (index + 1) + "'s boss arena is not apart from the route (" + away.ToString("0") + " degrees)");
+                    }
+                    Enemy bossBot = WaveDirector.Instance != null ? WaveDirector.Instance.SpawnForChapter(BotKind.SpiderBot, true, 34f) : null;
+                    if (bossBot != null) {
+                        float off = Vector2.Distance(new Vector2(bossBot.transform.position.x, bossBot.transform.position.z), new Vector2(map.BossSpot.x, map.BossSpot.z));
+                        run.Event("arena-boss", "chapter " + (index + 1) + " boss spawned " + off.ToString("0.0") + " m from the arena centre (setup shortcut: called by the bot)");
+                        if (off > 8f) {
+                            run.Problem(PlaytestSeverity.Bug, "maps-456: chapter " + (index + 1) + "'s boss did not walk out of the arena (" + off.ToString("0") + " m)");
+                        }
+                        Object.Destroy(bossBot.gameObject);
+                    }
+                }
+            }
+            if (ChapterRun.Instance != null && ChapterRun.Instance.HasMarker) {
+                Vector3 centre = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
+                run.Event("map-objective", "chapter " + (index + 1) + " objective marker " + Vector3.Distance(centre, ChapterRun.Instance.Marker).ToString("0") + " m from the circle");
+            } else {
+                run.Event("map-objective", "chapter " + (index + 1) + " objective is the circle itself");
+            }
+            yield return CutsceneStep();
+            if (run.Done) {
+                yield break;
+            }
+            var player = Object.FindAnyObjectByType<CharacterMovement>();
+            Vector3 start = player != null ? player.transform.position : Vector3.zero;
+            PlayInput.Hold(KeyCode.W, true);
+            yield return new WaitForSecondsRealtime(1.5f);
+            PlayInput.Hold(KeyCode.W, false);
+            run.Event("chapter-move", "Wallit walked " + (player != null ? Vector3.Distance(start, player.transform.position).ToString("0.0") : "?") + " m on the map");
+            run.Event("map-leave", "leaving chapter " + (index + 1) + " for the menu (setup shortcut)");
+            string mapScene = map.MapScene.name;
+            PlayInput.Release();
+            ChapterRun.Instance.Abandon();
+            yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu after leaving");
+            if (run.Done) {
+                yield break;
+            }
+            run.Scene("Main Menu");
+            yield return Resources.UnloadUnusedAssets();
+            System.GC.Collect();
+            yield return new WaitForSecondsRealtime(1.5f);
+            bool still = SceneManager.GetSceneByName(mapScene).isLoaded || ChapterMap.Current != null;
+            if (!still) {
+                unloaded++;
+            } else {
+                run.Problem(PlaytestSeverity.Bug, "chapter-maps: " + mapScene + " is still loaded after leaving chapter " + (index + 1));
+            }
+            long now = ChapterMap.Memory();
+            run.Event("map-unloaded", mapScene + (still ? " STILL LOADED" : " closed") + "; " + SceneManager.sceneCount + " scene(s) open; memory " + Mathf.Round(now / 1048576f) + " MB (baseline " + Mathf.Round(baseline / 1048576f) + " MB)");
+        }
+        System.GC.Collect();
+        long end = ChapterMap.Memory();
+        float growth = (end - baseline) / 1048576f;
+        run.Metric("mapsLoaded", loaded);
+        run.Metric("mapsUnloaded", unloaded);
+        run.Metric("distinctLooks", looks.Count);
+        run.Metric("mapsWithRoute", withRoute);
+        run.Metric("mapsWithLandmark", withLandmark);
+        run.Metric("mapsWithHazard", withHazard);
+        run.Metric("mapsWithArena", withArena);
+        run.Metric("mapMemoryAfterMB", Mathf.Round(end / 1048576f));
+        run.Metric("mapMemoryGrowthMB", Mathf.Round(growth));
+        if (looks.Count < chapters.Length && chapters.Length <= 3) {
+            run.Problem(PlaytestSeverity.Bug, "chapter-maps: chapters did not each get their own lighting (" + looks.Count + " distinct)");
+        }
+        if (growth > 48f) {
+            run.Problem(PlaytestSeverity.Bug, "chapter-maps: memory is " + Mathf.Round(growth) + " MB above the baseline after leaving three chapters");
+        }
+    }
+
+    // Quit mid-chapter the way a closed tab does (the scene is dropped, the file is not touched), then reopen the file:
+    // it must stand on the same chapter, unfinished, and Begin plays it again.
+    static IEnumerator QuitAndResume(int chapterIndex) {
+        run.Event("quit-midchapter", "leaving chapter " + (chapterIndex + 1) + " for the menu before it is done (setup: the scene is dropped, as a closed tab does)");
+        PlayInput.Release();
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(MetaProgress.MenuScene);
+        yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu after quitting");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Main Menu");
+        yield return new WaitForSecondsRealtime(1f);
+        CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
+        if (slot.chapter != chapterIndex) {
+            run.Problem(PlaytestSeverity.Bug, "campaign-full: quitting mid-chapter " + (chapterIndex + 1) + " left the file on chapter " + (slot.chapter + 1));
+        }
+        Tap(Object.FindAnyObjectByType<MainMenu>().CampaignButton.gameObject);
+        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files after quitting");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        Text[] texts = CampaignPanel.Instance.SlotButtons[0].GetComponentsInChildren<Text>();
+        run.Event("quit-resume-panel", texts[0].text + " / " + texts[1].text);
+        Tap(CampaignPanel.Instance.SlotButtons[0].gameObject);
+        yield return run.Until(() => ChapterScene.Instance != null && SceneManager.GetActiveScene().name == CampaignSave.Scene, 30f, "the chapter card after quitting");
+        if (run.Done) {
+            yield break;
+        }
+        bool right = ChapterScene.Instance.Chapter == chapterIndex;
+        run.Event("quit-resume", "reopened on chapter " + (ChapterScene.Instance.Chapter + 1) + " \"" + ChapterScene.Instance.Title + "\" (expected " + (chapterIndex + 1) + ")");
+        run.Metric("quitResumeRight", right ? 1 : 0);
+        if (!right) {
+            run.Problem(PlaytestSeverity.Bug, "campaign-full: after quitting mid-chapter " + (chapterIndex + 1) + " the file reopened on chapter " + (ChapterScene.Instance.Chapter + 1));
+        }
+        yield return new WaitForSecondsRealtime(2f);
+        Tap(ChapterScene.Instance.BeginButton.gameObject);
+        run.Event("tap", "Begin (after resuming)");
+    }
+
+    // The chapter framework, played with real input: Begin on the chapter card, Wallit and Slice in the game scene, the
+    // objective line, fighting until it is met, the Chapter Complete card, the file advanced, then reopened at chapter 2.
+    static IEnumerator ChapterPlay() {
+        ChapterScene card = ChapterScene.Instance;
+        int before = ChapterScene.Instance.Chapter;
+        run.Event("chapter-card", card.Title + ": Begin and Menu buttons " + (card.BeginButton != null ? "up" : "missing"));
+        if (card.BeginButton == null) {
+            run.Problem(PlaytestSeverity.Bug, "campaign: the chapter card has no Begin button");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        Tap(card.BeginButton.gameObject);
+        run.Event("tap", "Begin");
+        yield return run.Until(() => ChapterRun.Instance != null && WaveDirector.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the chapter's map after Begin");
+        if (run.Done) {
+            yield break;
+        }
+        ChapterRun chapter = ChapterRun.Instance;
+        if (fullRun && before == 2 && !quitDone) {
+            // Chapter 3: play a few seconds, quit, resume: the file must still stand on chapter 3.
+            quitDone = true;
+            yield return new WaitForSecondsRealtime(4f);
+            yield return QuitAndResume(before);
+            if (run.Done) {
+                yield break;
+            }
+            yield return run.Until(() => ChapterRun.Instance != null && WaveDirector.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the chapter's map after resuming");
+            if (run.Done) {
+                yield break;
+            }
+            chapter = ChapterRun.Instance;
+        }
+        run.Scene("Chapter play");
+        run.Event("chapter-start", chapter.Title + " in " + chapter.Place + ", case file " + (CampaignSave.Active + 1));
+        yield return CutsceneStep();
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(2f);
+        CheckPlayerIsWallit();
+        CheckMusicianIsSlice();
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+        if (companionTest) {
+            yield return CompanionCheck(player, chapter);
+            if (run.Done) {
+                yield break;
+            }
+        }
+        if (player == null) {
+            run.Problem(PlaytestSeverity.Bug, "campaign: no Wallit (CharacterMovement) in the chapter map");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        Vector3 start = player.transform.position;
+        // Move with the real stick keys for a moment, to show Wallit moves in a chapter.
+        PlayInput.Axis("Vertical", 1f);
+        yield return new WaitForSecondsRealtime(0.8f);
+        PlayInput.Axis("Vertical", 0f);
+        float walked = Vector3.Distance(start, player.transform.position);
+        run.Metric("chapterWalked", Mathf.Round(walked * 10f) / 10f);
+        run.Event("chapter-move", "Wallit moved " + walked.ToString("0.0") + " m on the stick");
+        run.Event("objective", chapter.ObjectiveLine);
+        if (string.IsNullOrEmpty(chapter.ObjectiveLine)) {
+            run.Problem(PlaytestSeverity.Bug, "campaign: the chapter shows no objective line");
+        }
+        CheckScreen("chapter-play");
+        if (journalTest) {
+            yield return JournalInChapter(player, chapter);
+            if (run.Done) {
+                yield break;
+            }
+        }
+        bool courier = chapter.HasBoss;
+        if (courier) {
+            // Chapter 1: hold the circle against the first Yo Bots, then the Courier arrives.
+            if (hubTest) {
+                yield return HubAbility(player, chapter);
+                if (run.Done) {
+                    yield break;
+                }
+            }
+            if (abilitiesTest) {
+                yield return AbilitiesPlay(player, chapter);
+                if (run.Done) {
+                    yield break;
+                }
+            }
+            if (movesTest) {
+                yield return MovesPlay(player, chapter);
+                if (run.Done) {
+                    yield break;
+                }
+            }
+            yield return Fight(player, () => chapter.BossUp || chapter.Completed, 180f, "the boss to arrive", null, true);
+            if (run.Done) {
+                yield break;
+            }
+            run.Scene("Chapter boss");
+            run.Event("boss-arrives", chapter.BossEnemy != null ? chapter.BossEnemy.Title + " (" + chapter.BossEnemy.HitsToDrop + " hits) after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s" : "no boss");
+            yield return new WaitForSecondsRealtime(0.6f);
+            Enemy bossEnemy = chapter.BossEnemy;
+            bool bar = bossEnemy != null && BossBarShows(bossEnemy.Title);
+            run.Event("boss-bar", bossEnemy != null ? bossEnemy.Title + ": health bar " + (bar ? "up" : "missing") + ", health " + bossEnemy.Health01.ToString("0.00") : "no boss");
+            run.Metric("bossBar", bar ? 1 : 0);
+            if (!bar) {
+                run.Problem(PlaytestSeverity.Bug, "campaign: no boss health bar for " + (bossEnemy != null ? bossEnemy.Title : "the boss"));
+            }
+            int seenEvents = 0;
+            bool barMid = false;
+            yield return Fight(player, () => {
+                for (; seenEvents < Courier.Events.Count; seenEvents++) {
+                    run.Event("boss-attack", Courier.Events[seenEvents] + (Courier.MarkUp ? " (red mark up on the circle)" : ""));
+                }
+                if (!barMid && bossEnemy != null && bossEnemy.Health01 < 0.6f) {
+                    barMid = true;
+                    run.Event("boss-bar", bossEnemy.Title + " health " + bossEnemy.Health01.ToString("0.00") + ", bar " + (BossBarShows(bossEnemy.Title) ? "up" : "missing"));
+                }
+                return chapter.Completed;
+            }, 420f, "the Courier defeated", null, true);
+            if (run.Done) {
+                yield break;
+            }
+            run.Metric("courierWinds", Courier.Winds);
+            run.Metric("courierInterrupted", Courier.Interrupted);
+            run.Metric("courierLanded", Courier.Landed);
+            run.Metric("courierBlocked", Courier.Blocked);
+            if (Courier.Winds == 0) {
+                run.Problem(PlaytestSeverity.Bug, "campaign: the Courier never wound up an attack (no telegraphed notice)");
+            }
+            foreach (string line in ChapterRun.Events) {
+                if (line.StartsWith("defeat|") || line.StartsWith("line|")) {
+                    run.Event("defeat-beat", line);
+                }
+            }
+            BossPhaseCheck("The Courier");
+run.Event("boss-defeated", "The Courier fell after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s: " + Courier.Winds + " notices wound up, " + Courier.Interrupted + " broken, " + Courier.Blocked + " taken by Wallit, " + Courier.Landed + " landed on Slice");
+        } else if (chapter.IsFinal) {
+            yield return FinalPlay(player, chapter, before);
+            yield break;
+        } else if (chapter.IsReading) {
+            yield return ReadingPlay(player, chapter);
+        } else if (chapter.IsGate) {
+            yield return GatePlay(player, chapter);
+        } else if (chapter.IsFloor) {
+            yield return FloorPlay(player, chapter);
+        } else {
+            yield return Fight(player, () => chapter.Completed, 240f, "the chapter objective met", null, true);
+        }
+        if (run.Done) {
+            yield break;
+        }
+        PlayInput.Release();
+        run.Event("objective-met", chapter.Title + " after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s: " + chapter.Progress);
+        yield return new WaitForSecondsRealtime(1.5f);
+        run.Event("chapter-complete", chapter.CardUp ? chapter.CardText.Replace("\n", " / ") : "card missing");
+        if (!chapter.CardUp) {
+            run.Problem(PlaytestSeverity.Bug, "campaign: the objective was met but no Chapter Complete card showed");
+        }
+        CheckScreen("chapter-card");
+        CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
+        run.Event("campaign-advanced", "case file now on chapter " + (slot.chapter + 1) + ", " + slot.cleared + " cleared");
+        run.Metric("chapterAdvanced", slot.chapter == before + 1 ? 1 : 0);
+        if (slot.chapter != before + 1 || slot.cleared != before + 1) {
+            run.Problem(PlaytestSeverity.Bug, "campaign: finishing chapter " + (before + 1) + " left the file on chapter " + (slot.chapter + 1) + " (" + slot.cleared + " cleared)");
+        }
+        yield return new WaitForSecondsRealtime(2f);
+        if (gradeTest) {
+            yield return GradeFlow(chapter, before);
+            yield break;
+        }
+
+        if (hubTest) {
+            yield return HubPlay(chapter);
+            yield break;
+        }
+
+        // Menu from the card, then reopen the file: it resumes at the next chapter.
+        Tap(chapter.MenuButton.gameObject);
+        yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu after the chapter");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Main Menu");
+        if (abilitiesTest) {
+            int mask = CampaignProgress.UnlockedMask(0);
+            run.Event("unlock-kept", "back at the menu the case file still holds unlock mask " + mask + " (Coin Toss, Stamp Out, Escrow = bits 4, 5, 6)");
+            if ((mask & 0x70) != 0x70) {
+                run.Problem(PlaytestSeverity.Bug, "abilities: the case file lost its unlocks on leaving the chapter (mask " + mask + ")");
+            }
+        }
+        if (movesTest || abilitiesTest) {
+            run.Event("arcade-moves-clean", "outside a chapter: moves " + (CampaignMoves.Active ? "on" : "off") + ", invulnerable " + CampaignMoves.Invulnerable + ", dodge ready " + CampaignMoves.DodgeReady + ": Arcade keeps today's controls and balance");
+            if (CampaignMoves.Active || CampaignMoves.Invulnerable) {
+                run.Problem(PlaytestSeverity.Bug, "moves: Campaign's moves still read as on outside a chapter");
+            }
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+        Tap(menu.CampaignButton.gameObject);
+        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files after the chapter");
+        if (run.Done) {
+            yield break;
+        }
+        CampaignPanel panel = CampaignPanel.Instance;
+        Text[] texts = panel.SlotButtons[0].GetComponentsInChildren<Text>();
+        run.Event("campaign-resume", texts[0].text + " / " + texts[1].text);
+        if (journalTest) {
+            yield return JournalCheck(panel, texts[0].text, texts[1].text);
+            if (run.Done) {
+                yield break;
+            }
+        }
+        if (loreTest) {
+            yield return LoreCheck(panel, texts[0].text, texts[1].text);
+            if (run.Done) {
+                yield break;
+            }
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(panel.SlotButtons[0].gameObject);
+        yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.Chapter == before + 1 && SceneManager.GetActiveScene().name == CampaignSave.Scene, 30f, "the next chapter's card");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Chapter " + (before + 2));
+        run.Event("chapter-open", ChapterScene.Instance.Title + " (resumed, case file " + (CampaignSave.Active + 1) + ")");
+        run.Metric("chapterResumed", 1);
+        yield return run.Until(() => ChapterScene.Instance.LinesShown >= 1, 10f, "the next chapter's first line");
+        yield return new WaitForSecondsRealtime(3f);
+    }
+
+    // The grade scenario, after chapter 1's card: the rank on the card, the best kept through a save and reload, then Hard
+    // chosen on a filed file and its health and damage read off the bots.
+    static IEnumerator GradeFlow(ChapterRun chapter, int index) {
+        string card = chapter.CardText;
+        bool shown = card.Contains("RANK ") && chapter.Rank > 0;
+        run.Event("rank-shown", "Chapter Complete: rank " + CampaignGrade.Letter(chapter.Rank) + ", " + Mathf.RoundToInt(chapter.PlaySeconds) + " s (par " + Mathf.RoundToInt(CampaignGrade.ParOf(index)) + "), Slice took " + chapter.DamageTaken + (chapter.NewBest ? ", new best" : "") + " | " + card.Replace("\n", " / "));
+        run.Metric("rankShown", shown ? 1 : 0);
+        run.Metric("rankValue", chapter.Rank);
+        if (!shown) {
+            run.Problem(PlaytestSeverity.Bug, "grade: the Chapter Complete card shows no rank");
+        }
+        int earned = chapter.Rank;
+        Tap(chapter.MenuButton.gameObject);
+        yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu after the chapter");
+        if (run.Done) {
+            yield break;
+        }
+        // As after a quit: the files written out and read back.
+        CampaignSave.EnterSandbox(CampaignSave.ToText());
+        CampaignSave.Slot slot = CampaignSave.Get(0);
+        int kept = CampaignSave.BestRank(slot, index, false);
+        run.Event("rank-saved", "after writing the files out and reading them back chapter " + (index + 1) + " best rank is " + CampaignGrade.Letter(kept) + " (earned " + CampaignGrade.Letter(earned) + "), best line: " + CampaignSave.RankLine(slot));
+        run.Metric("rankSaved", kept == earned && kept > 0 ? 1 : 0);
+        if (kept != earned || kept == 0) {
+            run.Problem(PlaytestSeverity.Bug, "grade: the best rank was not saved with the case file (earned " + CampaignGrade.Letter(earned) + ", kept " + CampaignGrade.Letter(kept) + ")");
+        }
+        // Setup shortcut: the sandbox file is filed (every chapter cleared) and stands on chapter 1, so Hard may be chosen.
+        slot.cleared = CampaignSave.ChapterCount;
+        slot.chapter = 0;
+        slot.reached = CampaignSave.ChapterCount - 1;
+        run.Event("grade-setup", "sandbox case file 1 marked filed, standing on chapter 1");
+        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(menu.CampaignButton.gameObject);
+        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(CampaignPanel.Instance.SlotButtons[0].gameObject);
+        yield return run.Until(() => ChapterScene.Instance != null && SceneManager.GetActiveScene().name == CampaignSave.Scene && ChapterScene.Instance.BeginButton != null, 45f, "the filed file's chapter card");
+        if (run.Done) {
+            yield break;
+        }
+        ChapterScene scene = ChapterScene.Instance;
+        yield return new WaitForSecondsRealtime(1.5f);
+        run.Event("grade-card", "chapter card: " + (scene.RankText.Length > 0 ? scene.RankText : "no best rank") + "; difficulty button " + (scene.DifficultyButton != null ? "\"" + scene.DifficultyText.text + "\"" : "missing"));
+        if (scene.DifficultyButton == null) {
+            run.Problem(PlaytestSeverity.Bug, "grade: a filed case file's chapter card has no difficulty button");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        Tap(scene.DifficultyButton.gameObject);
+        bool hardOn = CampaignSave.Get(0).hard;
+        run.Event("hard-on", "pressed the difficulty button: now \"" + scene.DifficultyText.text + "\", file " + (hardOn ? "set to Hard" : "still Standard"));
+        run.Metric("hardOn", hardOn ? 1 : 0);
+        if (!hardOn) {
+            run.Problem(PlaytestSeverity.Bug, "grade: the difficulty button did not set Hard on a filed file");
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(scene.BeginButton.gameObject);
+        run.Event("tap", "Begin (Hard)");
+        yield return run.Until(() => ChapterRun.Instance != null && WaveDirector.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the Hard chapter's map");
+        if (run.Done) {
+            yield break;
+        }
+        ChapterRun hard = ChapterRun.Instance;
+        run.Scene("Chapter play (Hard)");
+        run.Event("hard-run", "the chapter reads Hard: " + hard.Hard);
+        yield return CutsceneStep();
+        if (run.Done) {
+            yield break;
+        }
+        Enemy plain = null;
+        yield return run.Until(() => {
+            foreach (Enemy e in Enemy.Roster) {
+                if (e != null && e.Kind == BotKind.YoBot && !e.Elite && !e.Boss && !e.Golden) {
+                    plain = e;
+                    return true;
+                }
+            }
+            return false;
+        }, 30f, "a plain Yo Bot to read");
+        if (run.Done) {
+            yield break;
+        }
+        BotDef def = BotRoster.ForSpawn(BotKind.YoBot, WaveDirector.Wave);
+        int standard = Mathf.Max(1, Mathf.RoundToInt(def.Hits * Tuning.HealthScale(WaveDirector.Wave)));
+        float ratio = plain.HitsToDrop / (float)standard;
+        run.Event("hard-health", "a Yo Bot has " + plain.HitsToDrop + " health on Hard against " + standard + " on Standard (x" + ratio.ToString("0.00") + ")");
+        run.Metric("hardHealthRatio", Mathf.Round(ratio * 100f) / 100f);
+        if (!hard.Hard || ratio < 1.5f) {
+            run.Problem(PlaytestSeverity.Bug, "grade: Hard did not raise a Yo Bot's health (x" + ratio.ToString("0.00") + ")");
+        }
+        // Hold still: the first blow a bot lands on Slice is read as meant and as landed.
+        int blows = CampaignGrade.Blows;
+        yield return run.Until(() => CampaignGrade.Blows > blows, 150f, "a bot to land a blow on Slice");
+        if (run.Done) {
+            yield break;
+        }
+        float dmg = CampaignGrade.LastLanded / (float)Mathf.Max(1, CampaignGrade.LastRaw);
+        run.Event("hard-damage", "a blow meant for " + CampaignGrade.LastRaw + " landed for " + CampaignGrade.LastLanded + " on Slice (x" + dmg.ToString("0.0") + "), Slice took " + hard.DamageTaken + " in all");
+        run.Metric("hardDamageRatio", dmg);
+        if (dmg < 1.99f) {
+            run.Problem(PlaytestSeverity.Bug, "grade: Hard did not raise the damage on Slice (x" + dmg.ToString("0.0") + ")");
+        }
+        yield return new WaitForSecondsRealtime(2f);
+    }
+
+    // The lore scenario: what the case-file slot shows, then the lore log read page by page.
+    // The journal, inside Chapter 1: the extra shows on the HUD, J opens the journal over the pause menu, then Wallit walks
+    // (real stick) out to the hidden find, which goes into the file at once.
+    static IEnumerator JournalInChapter(CharacterMovement player, ChapterRun chapter) {
+        Journal.Goal goal = Journal.Goals[chapter.Chapter];
+        Journal.Find find = Journal.Finds[chapter.Chapter];
+        run.Event("journal-extra", "chapter " + (chapter.Chapter + 1) + " offers the extra \"" + goal.Name + "\": " + goal.Ask + " (" + (chapter.GoalMet ? "met" : "open") + ")");
+        run.Event("journal-find-hidden", "the lost thing \"" + find.Name + "\" lies " + find.Dist + " m from the circle at " + chapter.FindAt.ToString("0") + ", out: " + chapter.FindOut + ", no marker on the chapter line: " + chapter.ObjectiveLine);
+        if (!chapter.FindOut) {
+            run.Problem(PlaytestSeverity.Bug, "journal: the chapter has no hidden find lying in the field");
+        }
+        PlayInput.Tap(KeyCode.J);
+        yield return run.Until(() => JournalPanel.IsOpen, 5f, "the journal after J in the chapter");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1.2f);
+        run.Event("journal-open-chapter", JournalPanel.Instance.TitleText + " | " + JournalPanel.Instance.TabLabel + " | " + JournalPanel.Instance.BodyText.Replace("\n", " / "));
+        CheckScreen("journal");
+        Tap(JournalPanel.Instance.BackButton.gameObject);
+        yield return run.Until(() => !JournalPanel.IsOpen && PauseMenu.IsOpen, 5f, "the journal closing over the pause menu");
+        Tap(PauseMenu.Instance.ResumeButton.gameObject);
+        yield return run.Until(() => !PauseMenu.IsOpen && Time.timeScale > 0.5f, 5f, "the chapter to resume");
+        if (run.Done) {
+            yield break;
+        }
+        float limit = Time.realtimeSinceStartup + 150f;
+        while (!run.Done && !chapter.FindKept && Time.realtimeSinceStartup < limit) {
+            Walk(player, chapter.FindAt, 1f);
+            yield return null;
+        }
+        PlayInput.Release();
+        CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
+        bool saved = Journal.HasFind(slot, chapter.Chapter);
+        run.Event("journal-find", "Wallit " + (chapter.FindKept ? "walked onto" : "never reached") + " \"" + find.Name + "\"; the case file holds it at once: " + saved);
+        run.Metric("findKept", saved ? 1 : 0);
+        if (!chapter.FindKept || !saved) {
+            run.Problem(PlaytestSeverity.Bug, "journal: walking onto the hidden find did not keep it in the case file");
+        }
+        yield return new WaitForSecondsRealtime(1f);
+    }
+
+    // The journal from the case files after the chapter: the three tabs, then "quit and resume" (the files are written out
+    // and read back as a fresh page load would), then the Paid in Full state.
+    static IEnumerator JournalCheck(CampaignPanel panel, string title, string info) {
+        run.Event("slot-journal", title + " / " + info);
+        // Setup shortcut: the sandbox file also counts chapter 2's extra as met, so Finished has a row whatever the fight did.
+        CampaignSave.Get(0).goals |= 2;
+        run.Event("setup", "sandbox case file 1 marks chapter 2's extra met (never the real save)");
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(panel.JournalButton.gameObject);
+        yield return run.Until(() => JournalPanel.IsOpen, 10f, "the journal after pressing Journal");
+        if (run.Done) {
+            yield break;
+        }
+        yield return ReadJournal("fresh", "Wallit's find");
+        // Quit and resume: write the files out and read them back.
+        string text = CampaignSave.ToText();
+        CampaignSave.Slot before = CampaignSave.Get(0);
+        int finds = before.finds;
+        int goals = before.goals;
+        Tap(JournalPanel.Instance.BackButton.gameObject);
+        yield return run.Until(() => !JournalPanel.IsOpen, 5f, "the journal closing");
+        CampaignSave.EnterSandbox(text);
+        CampaignSave.Slot after = CampaignSave.Get(0);
+        bool kept = after.finds == finds && after.goals == goals && finds != 0;
+        run.Event("journal-persist", "files written out and read back: finds " + finds + " -> " + after.finds + ", extras " + goals + " -> " + after.goals + ": " + (kept ? "kept" : "LOST"));
+        run.Metric("journalPersisted", kept ? 1 : 0);
+        if (!kept) {
+            run.Problem(PlaytestSeverity.Bug, "journal: the finds and extras did not survive a save and reload");
+        }
+        Tap(panel.JournalButton.gameObject);
+        yield return run.Until(() => JournalPanel.IsOpen, 10f, "the journal after resuming");
+        if (run.Done) {
+            yield break;
+        }
+        yield return ReadJournal("after resume", "Wallit's find");
+        // Setup shortcut: every find and extra in the file, to show the reward.
+        after.finds = (1 << Journal.Count) - 1;
+        after.goals = (1 << Journal.Count) - 1;
+        run.Event("setup", "sandbox case file 1 holds every find and extra (never the real save)");
+        Tap(JournalPanel.Instance.BackButton.gameObject);
+        yield return run.Until(() => !JournalPanel.IsOpen, 5f, "the journal closing");
+        Tap(panel.JournalButton.gameObject);
+        yield return run.Until(() => JournalPanel.IsOpen, 10f, "the journal with everything kept");
+        yield return new WaitForSecondsRealtime(1f);
+        bool paid = JournalPanel.Instance.TitleText.Contains(Journal.PaidTitle);
+        run.Event("journal-paid", JournalPanel.Instance.TitleText + " | " + JournalPanel.Instance.SummaryText + " | slot: " + panel.SlotButtons[0].GetComponentsInChildren<Text>()[1].text);
+        run.Metric("paidInFull", paid ? 1 : 0);
+        if (!paid) {
+            run.Problem(PlaytestSeverity.Bug, "journal: with every find and extra the journal does not say " + Journal.PaidTitle);
+        }
+        Tap(JournalPanel.Instance.BackButton.gameObject);
+        yield return run.Until(() => !JournalPanel.IsOpen && CampaignPanel.IsOpen, 5f, "the journal closing");
+        // Back to the real state of the file for the rest of the scenario.
+        CampaignSave.Slot back = CampaignSave.Get(0);
+        back.finds = finds;
+        back.goals = goals;
+    }
+
+    // Turns the journal's three tabs with Next and logs each; Collected must hold the named find.
+    static IEnumerator ReadJournal(string when, string unusedLabel) {
+        JournalPanel journal = JournalPanel.Instance;
+        string collected = "";
+        string active = "";
+        string finished = "";
+        for (int i = 0; i < Journal.TabNames.Length; i++) {
+            yield return new WaitForSecondsRealtime(0.8f);
+            run.Event("journal-tab", when + ": " + journal.TabLabel + " | " + journal.BodyText.Replace("\n", " / ") + " | " + journal.SummaryText);
+            if (journal.TabLabel == "Active") {
+                active = journal.BodyText;
+            } else if (journal.TabLabel == "Finished") {
+                finished = journal.BodyText;
+            } else {
+                collected = journal.BodyText;
+            }
+            Tap(journal.NextButton.gameObject);
+            yield return new WaitForSecondsRealtime(0.2f);
+        }
+        bool ok = active.Contains("Ch ") && finished.Contains(Journal.Goals[1].Name) && collected.Contains(Journal.Finds[0].Name);
+        run.Event("journal-lists", when + ": active " + active.Split('\n').Length + " rows, finished names " + Journal.Goals[1].Name + ": " + finished.Contains(Journal.Goals[1].Name) + ", collected names " + Journal.Finds[0].Name + ": " + collected.Contains(Journal.Finds[0].Name));
+        run.Metric("journalLists", ok ? 1 : 0);
+        if (!ok) {
+            run.Problem(PlaytestSeverity.Bug, "journal (" + when + "): the tabs do not list an active item, a finished extra and the collected find");
+        }
+    }
+
+    static IEnumerator LoreCheck(CampaignPanel panel, string title, string info) {
+        bool chapterShown = title.Contains("Chapter ");
+        bool timeShown = info.Contains(" on the books") || System.Text.RegularExpressions.Regex.IsMatch(info, @"\d+:\d\d:\d\d");
+        bool completionShown = info.Contains("filed (");
+        run.Event("slot-info", title + " / " + info);
+        run.Metric("slotChapterShown", chapterShown ? 1 : 0);
+        run.Metric("slotTimeShown", timeShown ? 1 : 0);
+        run.Metric("slotCompletionShown", completionShown ? 1 : 0);
+        if (!chapterShown || !timeShown || !completionShown) {
+            run.Problem(PlaytestSeverity.Bug, "lore: the case file slot must show chapter, play time and completion, it reads: " + title + " / " + info);
+        }
+        if (info.Contains("0:00:00")) {
+            run.Problem(PlaytestSeverity.Bug, "lore: a file that played a whole chapter shows no play time: " + info);
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(panel.LoreButton.gameObject);
+        yield return run.Until(() => LorePanel.IsOpen, 10f, "the lore log after pressing Lore log");
+        if (run.Done) {
+            yield break;
+        }
+        LorePanel lore = LorePanel.Instance;
+        run.Event("lore-open", lore.TitleText);
+        int open = 0;
+        int sealedCount = 0;
+        for (int i = 0; i < Lore.All.Length; i++) {
+            bool isOpen = lore.EntryTitle != "Sealed";
+            open += isOpen ? 1 : 0;
+            sealedCount += isOpen ? 0 : 1;
+            run.Event("lore-page", (lore.Page + 1) + "/" + Lore.All.Length + " " + lore.EntryTitle + ": " + lore.BodyText);
+            if (isOpen != (Lore.All[lore.Page].Reveal <= 1)) {
+                run.Problem(PlaytestSeverity.Bug, "lore: entry '" + Lore.All[lore.Page].Title + "' (revealed by Chapter " + Lore.All[lore.Page].Reveal + ") reads " + (isOpen ? "open" : "sealed") + " with one chapter filed");
+            }
+            yield return new WaitForSecondsRealtime(0.8f);
+            Tap(lore.NextButton.gameObject);
+            yield return new WaitForSecondsRealtime(0.2f);
+        }
+        run.Event("lore-summary", open + " unlocked, " + sealedCount + " sealed");
+        run.Metric("loreUnlocked", open);
+        run.Metric("loreSealed", sealedCount);
+        if (open == 0 || sealedCount == 0) {
+            run.Problem(PlaytestSeverity.Bug, "lore: after Chapter 1 the log should have some entries open and some sealed (" + open + " open, " + sealedCount + " sealed)");
+        }
+        Tap(lore.BackButton.gameObject);
+        yield return run.Until(() => !LorePanel.IsOpen && CampaignPanel.IsOpen, 5f, "the lore log closing");
+    }
+
+    // The moves scenario: the combo's three distinct hits, then the dodge pressed (X) as bots close in.
+    static IEnumerator MovesPlay(CharacterMovement player, ChapterRun chapter) {
+        run.Event("ability-slots", CampaignProgress.HudLine());
+        int seen = 0;
+        var steps = new HashSet<int>();
+        var damage = new Dictionary<int, string>();
+        System.Action drain = () => {
+            for (; seen < CampaignMoves.Log.Count; seen++) {
+                string line = CampaignMoves.Log[seen];
+                string[] f = line.Split('|');
+                if (f[0] == "combo") {
+                    steps.Add(int.Parse(f[1]));
+                    damage[int.Parse(f[1])] = f[2] + " " + f[4];
+                    run.Event("combo-hit", "hit " + f[1] + " of 3, " + f[2] + ": " + f[3] + ", " + f[4]);
+                } else if (f[0] == "dodge") {
+                    run.Event("dodge", "X pressed: " + f[2] + ", heading " + f[3]);
+                } else if (f[0] == "avoided") {
+                    run.Event("dodge-avoided", "a blow from " + f[1] + " landed inside the window and was avoided");
+                }
+            }
+        };
+        yield return Fight(player, () => { drain(); return steps.Count >= 3; }, 120f, "the combo's three hits", null, true);
+        if (run.Done) {
+            yield break;
+        }
+        var parts = new List<string>();
+        foreach (var kv in damage) {
+            parts.Add(kv.Value);
+        }
+        run.Event("combo-distinct", string.Join(" / ", parts));
+        run.Metric("comboHits", CampaignMoves.ComboHits);
+        float lastPress = 0f;
+        yield return Fight(player, () => {
+            drain();
+            if (CampaignMoves.DodgeReady && Time.realtimeSinceStartup - lastPress > 0.2f) {
+                foreach (Enemy e in Enemy.Roster) {
+                    if (e != null && e.Alive && (e.transform.position - player.transform.position).magnitude < 2.4f) {
+                        PlayInput.Tap(CampaignMoves.DodgeKey);
+                        lastPress = Time.realtimeSinceStartup;
+                        break;
+                    }
+                }
+            }
+            return CampaignMoves.Avoided > 0 || chapter.BossUp;
+        }, 150f, "a blow avoided inside the dodge window", null, true);
+        if (run.Done) {
+            yield break;
+        }
+        drain();
+        run.Metric("dodges", CampaignMoves.Dodges);
+        run.Metric("dodgesAvoided", CampaignMoves.Avoided);
+        run.Event("ability-slots", CampaignProgress.HudLine());
+        if (CampaignMoves.Dodges == 0) {
+            run.Problem(PlaytestSeverity.Bug, "moves: pressing X with bots close never started a dodge");
+        } else if (CampaignMoves.Avoided == 0) {
+            run.Problem(PlaytestSeverity.Bug, "moves: " + CampaignMoves.Dodges + " dodges and no blow was avoided in their window");
+        }
+    }
+
+    // The abilities scenario: each ability unlocks at its level, goes off on its key and shows its cooldown on the HUD.
+    static IEnumerator AbilitiesPlay(CharacterMovement player, ChapterRun chapter) {
+        run.Event("slot-line", CampaignProgress.HudLine().Replace("\n", " | "));
+        int seen = 0;
+        System.Action drain = () => {
+            for (; seen < CampaignProgress.Log.Count; seen++) {
+                string line = CampaignProgress.Log[seen];
+                if (line.StartsWith("levelup")) {
+                    run.Event("level-up", line);
+                } else if (line.StartsWith("toss-hit")) {
+                    run.Event("toss-hit", "a thrown coin landed: " + line);
+                } else if (line.StartsWith("toss") || line.StartsWith("stamp") || line.StartsWith("escrow")) {
+                    run.Event("ability-used", line);
+                }
+            }
+        };
+        int blocksBefore = CampaignMoves.Avoided;
+        bool cooldownSeen = false;
+        for (int stage = 4; stage <= 6 && !run.Done; stage++) {
+            int ability = stage == 4 ? CampaignProgress.AbToss : stage == 5 ? CampaignProgress.AbStamp : CampaignProgress.AbShield;
+            int slotIndex = stage - 2;
+            KeyCode key = CampaignProgress.SlotKeys[slotIndex];
+            if (CampaignProgress.Level < stage) {
+                yield return Fight(player, () => { drain(); return CampaignProgress.Level >= stage; }, 120f, "level " + stage + " from one more kill", null, true);
+                if (run.Done) {
+                    yield break;
+                }
+            }
+            drain();
+            run.Event("unlock-level", CampaignProgress.Abilities[ability].Name + " unlocked at level " + stage + " (level " + CampaignProgress.Level + ")");
+            run.Event("slot-line", CampaignProgress.HudLine().Replace("\n", " | "));
+            if (!CampaignProgress.Has(ability)) {
+                run.Problem(PlaytestSeverity.Bug, "abilities: " + CampaignProgress.Abilities[ability].Name + " did not unlock at level " + stage);
+            }
+            if (stage < 6) {
+                // The next level is 1 XP away (setup shortcut), so the next unlock happens on the next kill.
+                CampaignSave.Get(0).xp = CampaignProgress.XpAt(stage + 1) - 1;
+            }
+            int before = ability == CampaignProgress.AbToss ? CampaignProgress.TossHits : ability == CampaignProgress.AbStamp ? CampaignProgress.StampedBots : CampaignMoves.Avoided;
+            float lastPress = 0f;
+            yield return Fight(player, () => {
+                drain();
+                if (!cooldownSeen && CampaignProgress.Wait(ability) > 0.5f && CampaignProgress.HudLine().Contains(CampaignProgress.Abilities[ability].Name + " ")) {
+                    cooldownSeen = true;
+                    run.Event("cooldown-shown", CampaignProgress.HudLine().Replace("\n", " | "));
+                }
+                if (Time.realtimeSinceStartup - lastPress > 0.3f && CampaignProgress.Wait(ability) <= 0f) {
+                    float reach = ability == CampaignProgress.AbToss ? 20f : CampaignProgress.StampRange - 2f;
+                    foreach (Enemy e in Enemy.Roster) {
+                        if (e != null && e.Alive && (e.transform.position - player.transform.position).magnitude < reach) {
+                            PlayInput.Tap(key);
+                            lastPress = Time.realtimeSinceStartup;
+                            break;
+                        }
+                    }
+                }
+                int now = ability == CampaignProgress.AbToss ? CampaignProgress.TossHits : ability == CampaignProgress.AbStamp ? CampaignProgress.StampedBots : CampaignMoves.Avoided;
+                return now > before || chapter.BossUp;
+            }, 100f, CampaignProgress.Abilities[ability].Name + " to land", null, true);
+            if (run.Done) {
+                yield break;
+            }
+            drain();
+            if (ability == CampaignProgress.AbToss) {
+                run.Event("toss-result", CampaignProgress.Tosses + " tosses, " + CampaignProgress.TossHits + " landed");
+            } else if (ability == CampaignProgress.AbStamp) {
+                run.Event("stamp-hit", CampaignProgress.Stamps + " stamps stunned and stung " + CampaignProgress.StampedBots + " bots");
+            } else {
+                run.Event("escrow-held", CampaignProgress.Shields + " Escrow, " + (CampaignMoves.Avoided - blocksBefore) + " blows held");
+            }
+        }
+        if (cooldownSeen == false) {
+            run.Problem(PlaytestSeverity.Bug, "abilities: no cooldown showed on the HUD line after an ability was used");
+        }
+        run.Metric("tosses", CampaignProgress.Tosses);
+        run.Metric("tossHits", CampaignProgress.TossHits);
+        run.Metric("stamps", CampaignProgress.Stamps);
+        run.Metric("stampedBots", CampaignProgress.StampedBots);
+        run.Metric("shields", CampaignProgress.Shields);
+        run.Metric("shieldBlocks", CampaignMoves.Avoided - blocksBefore);
+        CampaignSave.Slot slot = CampaignSave.Get(0);
+        run.Metric("unlockMask", slot.unlocked);
+        var copy = JsonUtility.FromJson<CampaignSave.Slot>(JsonUtility.ToJson(slot));
+        run.Event("unlock-saved", "saved as JSON the file holds xp " + copy.xp + ", unlock mask " + copy.unlocked);
+        if (copy.unlocked != slot.unlocked || (copy.unlocked & 0x70) != 0x70) {
+            run.Problem(PlaytestSeverity.Bug, "abilities: the case file does not keep all three unlocks (mask " + copy.unlocked + ")");
+        }
+        if (CampaignProgress.TossHits == 0 || CampaignProgress.StampedBots == 0 || CampaignProgress.Shields == 0) {
+            run.Problem(PlaytestSeverity.Bug, "abilities: an ability did nothing (tosses landed " + CampaignProgress.TossHits + ", bots stamped " + CampaignProgress.StampedBots + ", escrows " + CampaignProgress.Shields + ")");
+        }
+    }
+
+    // The hub scenario's first half: XP from the first kills, level 3 unlocks Refund, the bot presses C and the ring works.
+    static IEnumerator HubAbility(CharacterMovement player, ChapterRun chapter) {
+        int xp0 = CampaignProgress.Xp;
+        run.Event("hud-line", CampaignProgress.HudLine());
+        yield return Fight(player, () => CampaignProgress.Level >= 3, 120f, "level 3 from the first kills", null, true);
+        if (run.Done) {
+            yield break;
+        }
+        foreach (string line in CampaignProgress.Log) {
+            run.Event(line.StartsWith("levelup") ? "level-up" : "xp-gain", line);
+        }
+        run.Metric("hubXp", CampaignProgress.Xp);
+        run.Metric("hubLevel", CampaignProgress.Level);
+        if (CampaignProgress.Xp <= xp0 || !CampaignProgress.Has(1)) {
+            run.Problem(PlaytestSeverity.Bug, "hub: kills gave no XP or level 3 did not unlock Refund (xp " + xp0 + " -> " + CampaignProgress.Xp + ")");
+        }
+        run.Event("hud-line", CampaignProgress.HudLine());
+        // Refund needs bots in range: keep batting until some are close, then press C.
+        int hitsBefore = CampaignProgress.RefundHits;
+        yield return Fight(player, () => {
+            if (CampaignProgress.RefundReady) {
+                foreach (Enemy e in Enemy.Roster) {
+                    if (e != null && e.Alive && (e.transform.position - player.transform.position).magnitude < CampaignProgress.RefundReach - 1f) {
+                        PlayInput.Tap(CampaignProgress.RefundKey);
+                        break;
+                    }
+                }
+            }
+            return CampaignProgress.Refunds > 0 || chapter.BossUp;
+        }, 90f, "Refund to go off", null, true);
+        if (run.Done) {
+            yield break;
+        }
+        run.Metric("refundHits", CampaignProgress.RefundHits - hitsBefore);
+        run.Event("refund-used", CampaignProgress.Refunds + " Refund(s), " + (CampaignProgress.RefundHits - hitsBefore) + " bots shoved and stung");
+        if (CampaignProgress.Refunds == 0) {
+            run.Problem(PlaytestSeverity.Bug, "hub: pressing C with Refund unlocked did nothing");
+        }
+    }
+
+    // The hub scenario's second half: Chapter Complete -> To the hub -> walk to the board -> replay Chapter 1.
+    static IEnumerator HubPlay(ChapterRun chapter) {
+        CampaignSave.Slot slot = CampaignSave.Get(0);
+        run.Event("progress-saved", "case file 1: " + slot.xp + " XP, level " + CampaignProgress.LevelFor(slot.xp) + ", " + slot.cleared + " cleared; case file 2: " + CampaignSave.Get(1).xp + " XP");
+        if (slot.xp < 90 || CampaignSave.Get(1).xp != 0) {
+            run.Problem(PlaytestSeverity.Bug, "hub: XP was not kept on case file 1 alone (file 1 " + slot.xp + ", file 2 " + CampaignSave.Get(1).xp + ")");
+        }
+        if (chapter.NextButton == null || !chapter.NextButton.gameObject.activeSelf) {
+            run.Problem(PlaytestSeverity.Bug, "hub: the Chapter Complete card has no way into the hub");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1.5f);
+        Tap(chapter.NextButton.gameObject);
+        run.Event("tap", "To the hub");
+        yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.Hub != null && ChapterScene.Instance.Hub.Shown && SceneManager.GetActiveScene().name == CampaignSave.Scene, 30f, "the hub after the chapter");
+        if (run.Done) {
+            yield break;
+        }
+        ChapterHub hub = ChapterScene.Instance.Hub;
+        run.Scene("Hub");
+        run.Event("hub-open", "Wallit at " + hub.Player.position.ToString("0.0") + ", board at " + ChapterHub.BoardPosition + "; " + hub.StatusText.Replace("\n", " / "));
+        yield return run.Until(() => hub.ArrivalShown >= 2, 12f, "the hub's arrival lines");
+        run.Event("hub-arrival", Story.HubArrival[0][0].Substring(2) + " / " + Story.HubArrival[0][1].Substring(2));
+        CheckScreen("hub");
+        // Walk to the board on the stick.
+        float walkStart = Time.realtimeSinceStartup;
+        while (!run.Done && !hub.NearBoard && Time.realtimeSinceStartup - walkStart < 30f) {
+            Vector3 to = ChapterHub.BoardPosition - hub.Player.position;
+            PlayInput.Axis("Horizontal", Mathf.Clamp(to.x, -1f, 1f));
+            PlayInput.Axis("Vertical", Mathf.Clamp(to.z, -1f, 1f));
+            yield return null;
+        }
+        PlayInput.Release();
+        run.Metric("hubWalked", Mathf.Round(hub.Walked * 10f) / 10f);
+        run.Event("hub-walk", "Wallit walked " + hub.Walked.ToString("0.0") + " m to the board (near: " + hub.NearBoard + ")");
+        if (!hub.NearBoard) {
+            run.Problem(PlaytestSeverity.Bug, "hub: Wallit never reached the chapter board on the stick");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(0.6f);
+        PlayInput.Tap(KeyCode.E);
+        yield return run.Until(() => hub.BoardOpen, 5f, "the chapter board after pressing E");
+        if (run.Done) {
+            yield break;
+        }
+        run.Event("board-open", hub.BoardText);
+        CheckScreen("board");
+        bool filed = hub.BoardButtons[0].interactable;
+        bool next = hub.BoardButtons[1].interactable;
+        bool locked = !hub.BoardButtons[2].interactable;
+        if (!filed || !next || !locked) {
+            run.Problem(PlaytestSeverity.Bug, "hub: the board shows chapter 1 replayable=" + filed + ", chapter 2 open=" + next + ", chapter 3 locked=" + locked);
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(hub.BoardButtons[0].gameObject);
+        yield return run.Until(() => ChapterScene.Instance.CardUp && ChapterScene.Instance.Chapter == 0 && ChapterScene.Instance.BeginButton != null, 10f, "the replayed chapter's card");
+        if (run.Done) {
+            yield break;
+        }
+        run.Event("hub-replay-card", ChapterScene.Instance.Title + " (case file " + (CampaignSave.Active + 1) + ", " + CampaignSave.Get(0).cleared + " cleared)");
+        run.Event("arcade-clean", "outside a chapter: damage x" + CampaignProgress.DamageMult.ToString("0.00") + ", crit +" + CampaignProgress.CritBonus.ToString("0.00") + ", Refund " + (CampaignProgress.RefundReady ? "on" : "off") + ", coins " + MetaProgress.Coins + " untouched by XP");
+        if (CampaignProgress.DamageMult != 1f || CampaignProgress.RefundReady || CampaignProgress.CritBonus != 0f) {
+            run.Problem(PlaytestSeverity.Bug, "hub: campaign abilities are active outside a chapter");
+        }
+        yield return new WaitForSecondsRealtime(1.5f);
+        Tap(ChapterScene.Instance.BeginButton.gameObject);
+        yield return run.Until(() => ChapterRun.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the replayed chapter's map");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        run.Scene("Chapter replay");
+        run.Event("replay-started", ChapterRun.Instance.Title + " again, " + CampaignSave.Get(0).cleared + " chapter cleared, level " + CampaignProgress.Level + " with Refund " + (CampaignProgress.Has(1) ? "unlocked" : "missing"));
+        if (ChapterRun.Instance.Chapter != 0 || CampaignSave.Get(0).cleared != 1 || !CampaignProgress.Has(1)) {
+            run.Problem(PlaytestSeverity.Bug, "hub: the replay did not start Chapter 1 with the file's progress kept");
+        }
+        yield return new WaitForSecondsRealtime(3f);
+    }
+
+    // The hub as an office, with real input: Wallit walks the room on the stick, the doors of the chapters the file has
+    // reached stand open and the others stay shut, a shut door will not let him through, an open one starts its chapter.
+    // Setup: the sandbox case file 1 has chapters 1 and 2 filed, so doors 1 to 3 are open (3 is the next) and 4 to 6 shut.
+    static IEnumerator WalkTo(ChapterHub hub, Vector3 target, float seconds, System.Func<bool> stop) {
+        float start = Time.realtimeSinceStartup;
+        while (!run.Done && !stop() && Time.realtimeSinceStartup - start < seconds) {
+            Vector3 to = target - hub.Player.position;
+            PlayInput.Axis("Horizontal", Mathf.Clamp(to.x, -1f, 1f));
+            PlayInput.Axis("Vertical", Mathf.Clamp(to.z, -1f, 1f));
+            yield return null;
+        }
+        PlayInput.Release();
+    }
+
+    static IEnumerator HubDoorsPlay() {
+        yield return run.Until(() => ChapterScene.Instance.Hub != null && ChapterScene.Instance.Hub.Shown, 20f, "the hub");
+        if (run.Done) {
+            yield break;
+        }
+        ChapterHub hub = ChapterScene.Instance.Hub;
+        run.Scene("Hub");
+        run.Metric("campaignLoaded", 1);
+        yield return new WaitForSecondsRealtime(2f);
+        run.Event("hub-office", "Wallit at " + hub.Player.position.ToString("0.0") + "; doors " + hub.DoorText + "; board at " + ChapterHub.BoardPosition + "; vacant desk at " + hub.NpcSpot);
+        CheckScreen("hub");
+        bool good = true;
+        for (int i = 0; i < hub.DoorCount; i++) {
+            bool want = i < 3;
+            if (hub.DoorOpen[i] != want) {
+                good = false;
+            }
+        }
+        run.Metric("doorsRight", good ? 1 : 0);
+        if (!good) {
+            run.Problem(PlaytestSeverity.Bug, "hub-doors: with 2 chapters filed the doors read " + hub.DoorText + " (want 1 to 3 open, 4 to 6 shut)");
+        }
+        // 1. Walk around the room: across to the board wall, then the desk.
+        Vector3 start = hub.Player.position;
+        yield return WalkTo(hub, ChapterHub.BoardPosition + new Vector3(2.5f, 0f, 0f), 15f, () => hub.NearBoard);
+        yield return WalkTo(hub, ChapterHub.DeskPosition + new Vector3(-2.5f, 0f, 0f), 15f, () => (hub.Player.position - ChapterHub.DeskPosition).magnitude < 3.2f);
+        run.Metric("hubWalked", Mathf.Round(hub.Walked * 10f) / 10f);
+        run.Event("hub-walk", "Wallit walked " + hub.Walked.ToString("0.0") + " m about the office, from " + start.ToString("0.0") + " to " + hub.Player.position.ToString("0.0"));
+        if (hub.Walked < 15f) {
+            run.Problem(PlaytestSeverity.Bug, "hub-doors: Wallit could not walk around the hub (" + hub.Walked.ToString("0.0") + " m)");
+        }
+        // 2. A shut door (chapter 4) stays shut.
+        Vector3 shut = ChapterHub.DoorPosition(3);
+        yield return WalkTo(hub, new Vector3(shut.x, 0f, shut.z + 1.5f), 25f, () => hub.NearDoor == 3 && hub.Player.position.z > shut.z - 0.8f);
+        yield return new WaitForSecondsRealtime(1.5f);
+        yield return WalkTo(hub, new Vector3(shut.x, 0f, shut.z + 1.5f), 2f, () => false);
+        bool held = hub.Shown && hub.EnteredDoor < 0 && hub.Player.position.z < ChapterHub.RoomBack + 0.1f && !ChapterScene.Instance.CardUp;
+        run.Event("door-locked", "Wallit pushed on door 4 (" + (hub.DoorOpen[3] ? "open" : "shut") + ") at " + hub.Player.position.ToString("0.0") + "; he stayed in the hub: " + held + "; prompt: " + hub.PromptText);
+        run.Metric("lockedHeld", held ? 1 : 0);
+        if (!held || hub.DoorOpen[3]) {
+            run.Problem(PlaytestSeverity.Bug, "hub-doors: the locked door of chapter 4 let Wallit through or showed open");
+        }
+        // 3. The next chapter's door (3) is open: walking in starts it.
+        Vector3 open = ChapterHub.DoorPosition(2);
+        yield return WalkTo(hub, new Vector3(open.x, 0f, open.z + 1.5f), 25f, () => hub.EnteredDoor >= 0);
+        yield return run.Until(() => ChapterScene.Instance.CardUp && ChapterScene.Instance.BeginButton != null, 10f, "the chapter card after walking through the door");
+        if (run.Done) {
+            yield break;
+        }
+        run.Event("door-entered", "Wallit went through door " + (hub.EnteredDoor + 1) + ": the card reads " + ChapterScene.Instance.Title);
+        if (ChapterScene.Instance.Chapter != 2) {
+            run.Problem(PlaytestSeverity.Bug, "hub-doors: door 3 opened chapter " + (ChapterScene.Instance.Chapter + 1));
+        }
+        yield return new WaitForSecondsRealtime(2f);
+        Tap(ChapterScene.Instance.BeginButton.gameObject);
+        yield return run.Until(() => ChapterRun.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the chapter after the door");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        run.Scene("Chapter from a door");
+        run.Event("chapter-started", ChapterRun.Instance.Title + " began from its door (chapter " + (ChapterRun.Instance.Chapter + 1) + ")");
+        if (ChapterRun.Instance.Chapter != 2) {
+            run.Problem(PlaytestSeverity.Bug, "hub-doors: the door of chapter 3 started chapter " + (ChapterRun.Instance.Chapter + 1));
+        }
+        yield return new WaitForSecondsRealtime(3f);
+    }
+
+    // The hub's lodgers, with real input. Setup: the sandbox case file 1 has chapter 1 filed. Wallit walks to each lodger and
+    // presses E; Chime's errand is taken, fetched and paid; then chapters 2 to 6 are filed by setup shortcuts and Tick (and the
+    // others' lines) must say something new after each.
+    static IEnumerator HubNpcsPlay() {
+        yield return run.Until(() => ChapterScene.Instance.Hub != null && ChapterScene.Instance.Hub.Shown, 20f, "the hub");
+        if (run.Done) {
+            yield break;
+        }
+        ChapterHub hub = ChapterScene.Instance.Hub;
+        run.Scene("Hub lodgers");
+        run.Metric("campaignLoaded", 1);
+        yield return new WaitForSecondsRealtime(2f);
+        var names = new System.Text.StringBuilder();
+        bool warrok = false;
+        for (int i = 0; i < hub.LodgerCount; i++) {
+            names.Append(hub.LodgerName(i)).Append(i < hub.LodgerCount - 1 ? ", " : "");
+            if (hub.LodgerName(i).ToLowerInvariant().Contains("warrok")) {
+                warrok = true;
+            }
+        }
+        run.Metric("lodgers", hub.LodgerCount);
+        run.Event("hub-lodgers", hub.LodgerCount + " lodgers in the hub: " + names + "; Warrok among them: " + warrok);
+        CheckScreen("hub");
+        if (hub.LodgerCount < 3 || hub.LodgerCount > 5 || warrok) {
+            run.Problem(PlaytestSeverity.Bug, "hub-npcs: " + hub.LodgerCount + " lodgers (want 3 to 5, none Warrok): " + names);
+        }
+        // 1. Walk to each lodger and talk to it, after one chapter cleared.
+        for (int i = 0; i < hub.LodgerCount && !run.Done; i++) {
+            int index = i;
+            yield return WalkTo(hub, ChapterHub.LodgerSpots[i] + new Vector3(0f, 0f, -1.5f), 20f, () => hub.NearLodger == index);
+            int talks = hub.Talks;
+            PlayInput.Tap(KeyCode.E);
+            yield return new WaitForSecondsRealtime(0.4f);
+            run.Event("npc-line", "1 cleared, " + hub.LodgerName(i) + ": " + hub.TalkText + " (E pressed " + (hub.Talks > talks ? "and they spoke" : "and nothing happened") + ")");
+            if (hub.Talks <= talks) {
+                run.Problem(PlaytestSeverity.Bug, "hub-npcs: pressing E beside " + hub.LodgerName(i) + " did nothing");
+            }
+            if (i == ChapterHub.ChimeIndex) {
+                break;
+            }
+            yield return new WaitForSecondsRealtime(0.6f);
+        }
+        // 2. Chime's errand: offered, fetched, paid.
+        int xpBefore = CampaignSave.Get(0).xp;
+        bool offered = hub.ErrandActive == 0;
+        run.Event("errand-offered", "Chime sent Wallit for " + (offered ? Story.Errands[0].Thing : "nothing") + " (XP now " + xpBefore + "); the thing lies at " + hub.ErrandItemAt.ToString("0.0"));
+        if (!offered) {
+            run.Problem(PlaytestSeverity.Bug, "hub-npcs: Chime did not offer an errand after chapter 1");
+        }
+        yield return WalkTo(hub, hub.ErrandItemAt, 25f, () => hub.ErrandCarried);
+        run.Event("errand-pickup", "Wallit " + (hub.ErrandCarried ? "picked up the " + Story.Errands[0].Thing : "never found the lost thing") + " at " + hub.Player.position.ToString("0.0") + "; prompt: " + hub.PromptText);
+        if (!hub.ErrandCarried) {
+            run.Problem(PlaytestSeverity.Bug, "hub-npcs: Wallit could not pick up Chime's lost thing");
+        }
+        yield return WalkTo(hub, ChapterHub.LodgerSpots[ChapterHub.ChimeIndex] + new Vector3(0f, 0f, -1.5f), 25f, () => hub.NearLodger == ChapterHub.ChimeIndex);
+        PlayInput.Tap(KeyCode.E);
+        yield return new WaitForSecondsRealtime(0.4f);
+        int xpAfter = CampaignSave.Get(0).xp;
+        bool kept = (CampaignSave.Get(0).errands & 1) != 0;
+        run.Metric("errandXp", xpAfter - xpBefore);
+        run.Metric("lostThings", hub.ErrandsDone);
+        run.Event("errand-paid", hub.TalkText + " XP " + xpBefore + " -> " + xpAfter + "; lost thing kept in the file: " + kept + "; the status line reads: " + hub.StatusText.Replace('\n', '|'));
+        if (xpAfter - xpBefore != Story.Errands[0].Xp || !kept) {
+            run.Problem(PlaytestSeverity.Bug, "hub-npcs: the errand paid " + (xpAfter - xpBefore) + " XP and the thing " + (kept ? "was" : "was not") + " kept (want " + Story.Errands[0].Xp + " and kept)");
+        }
+        yield return new WaitForSecondsRealtime(1.5f);
+        // 3. Lines after each chapter. Setup shortcut: the sandbox file is filed chapter by chapter; Tick is talked to each time.
+        var last = new string[hub.LodgerCount];
+        for (int i = 0; i < last.Length; i++) {
+            last[i] = hub.LodgerLine(i);
+        }
+        bool differ = true;
+        yield return WalkTo(hub, ChapterHub.LodgerSpots[0] + new Vector3(0f, 0f, -1.5f), 25f, () => hub.NearLodger == 0);
+        for (int cleared = 2; cleared <= 6 && !run.Done; cleared++) {
+            CampaignSave.Get(0).cleared = cleared;
+            CampaignSave.Get(0).chapter = Mathf.Min(cleared, CampaignSave.ChapterCount - 1);
+            CampaignSave.Get(0).reached = CampaignSave.Get(0).chapter;
+            hub.Refresh();
+            run.Event("npc-setup", "sandbox case file 1 now has " + cleared + " chapters filed");
+            PlayInput.Tap(KeyCode.E);
+            yield return new WaitForSecondsRealtime(0.4f);
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < hub.LodgerCount; i++) {
+                string line = hub.LodgerLine(i);
+                if (line == last[i]) {
+                    differ = false;
+                    run.Problem(PlaytestSeverity.Bug, "hub-npcs: " + hub.LodgerName(i) + " said the same after chapter " + cleared + " as before");
+                }
+                last[i] = line;
+                sb.Append(hub.LodgerName(i)).Append(": \"").Append(line).Append("\"  ");
+            }
+            run.Event("npc-after-chapter", cleared + " cleared. On screen: " + hub.TalkText + "  All: " + sb);
+            yield return new WaitForSecondsRealtime(1f);
+        }
+        run.Metric("linesDiffer", differ ? 1 : 0);
+        // Chime has a new errand once a chapter more is filed.
+        yield return WalkTo(hub, ChapterHub.LodgerSpots[ChapterHub.ChimeIndex] + new Vector3(0f, 0f, -1.5f), 25f, () => hub.NearLodger == ChapterHub.ChimeIndex);
+        PlayInput.Tap(KeyCode.E);
+        yield return new WaitForSecondsRealtime(0.4f);
+        run.Event("errand-next", "Chime after six chapters: " + hub.TalkText + " (errand out: " + hub.ErrandActive + ")");
+        yield return new WaitForSecondsRealtime(2f);
+    }
+
+    // Chapter 2 with real input: out to the gate (batting what is in reach on the way), the gate scene read and skipped,
+    // back to the circle, three waves, then The Plated Alpha. ChapterPlay carries on to the card and the saved file.
+    static IEnumerator GatePlay(CharacterMovement player, ChapterRun chapter) {
+        float start = Time.realtimeSinceStartup;
+        run.Event("gate-leg", chapter.ObjectiveLine);
+        while (!run.Done && chapter.Leg == 0) {
+            if (Time.realtimeSinceStartup - start > 150f) {
+                run.Problem(PlaytestSeverity.Bug, "chapter2: Wallit never reached the gate in 150 s (objective \"" + chapter.ObjectiveLine + "\")");
+                yield break;
+            }
+            if (WaveDirector.IsLost) {
+                yield return GameOver();
+                yield break;
+            }
+            if (LevelUpScreen.IsOpen) {
+                yield return PickCard();
+                continue;
+            }
+            Walk(player, chapter.Marker, 1f);
+            PlayInput.Hold(KeyCode.LeftShift, false);
+            Click(NearestInReach(player));
+            SampleFps();
+            yield return null;
+        }
+        PlayInput.Release();
+        if (run.Done) {
+            yield break;
+        }
+        run.Metric("gateReached", 1);
+        run.Event("gate-reached", "Wallit at the gate after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s; the objective now reads \"" + chapter.ObjectiveLine + "\"");
+        yield return run.Until(() => Cutscene.IsOpen, 8f, "The Gate scene at the gate");
+        if (run.Done) {
+            yield break;
+        }
+        Cutscene scene = Cutscene.Instance;
+        run.Scene("The Gate");
+        for (int read = 0; read < 3 && Cutscene.IsOpen && !run.Done; read++) {
+            yield return new WaitForSecondsRealtime(0.7f);
+            run.Event("gate-scene-page", scene.Page + "/" + scene.PageCount + " " + (scene.NameShown.Length > 0 ? scene.NameShown : "(narration)") + ": \"" + scene.TextShown.Replace('\n', ' ') + "\"");
+            if (scene.Typing) {
+                PlayInput.Tap(KeyCode.Space);
+                yield return new WaitForSecondsRealtime(0.35f);
+            }
+            PlayInput.Tap(KeyCode.Space);
+            yield return new WaitForSecondsRealtime(0.3f);
+        }
+        if (Cutscene.IsOpen) {
+            run.Event("gate-scene-skip", "Enter pressed on page " + scene.Page + "/" + scene.PageCount);
+            PlayInput.Tap(KeyCode.Return);
+        }
+        yield return run.Until(() => !Cutscene.IsOpen, 5f, "The Gate scene to close after skipping");
+        if (run.Done) {
+            yield break;
+        }
+        run.Metric("gateSceneSkipped", 1);
+        run.Scene("Chapter play");
+        yield return new WaitForSecondsRealtime(0.5f);
+        run.Event("home-leg", chapter.ObjectiveLine);
+        start = Time.realtimeSinceStartup;
+        while (!run.Done && chapter.Leg == 1) {
+            if (Time.realtimeSinceStartup - start > 150f) {
+                run.Problem(PlaytestSeverity.Bug, "chapter2: Wallit never got back to the circle in 150 s (objective \"" + chapter.ObjectiveLine + "\")");
+                yield break;
+            }
+            if (WaveDirector.IsLost) {
+                yield return GameOver();
+                yield break;
+            }
+            if (LevelUpScreen.IsOpen) {
+                yield return PickCard();
+                continue;
+            }
+            Vector3 home = Musician.Instance != null ? Musician.Instance.transform.position : player.transform.position;
+            Walk(player, home, 1f);
+            PlayInput.Hold(KeyCode.LeftShift, false);
+            Click(NearestInReach(player));
+            SampleFps();
+            yield return null;
+        }
+        PlayInput.Release();
+        if (run.Done) {
+            yield break;
+        }
+        int waveSeen = 0;
+        yield return Fight(player, () => {
+            if (chapter.WaveNow != waveSeen) {
+                waveSeen = chapter.WaveNow;
+                run.Event("chapter-wave", "wave " + waveSeen + " of 3: " + chapter.ObjectiveLine);
+            }
+            return chapter.BossUp || chapter.Completed;
+        }, 300f, "the three waves held and the boss to arrive", null, true);
+        if (run.Done) {
+            yield break;
+        }
+        run.Metric("chapterWaves", waveSeen);
+        run.Scene("Chapter boss");
+        Enemy bossEnemy = chapter.BossEnemy;
+        run.Event("boss-arrives", bossEnemy != null ? bossEnemy.Title + " (" + bossEnemy.HitsToDrop + " hits) after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s; objective \"" + chapter.ObjectiveLine + "\"" : "no boss");
+        yield return new WaitForSecondsRealtime(0.6f);
+        bool bar = bossEnemy != null && BossBarShows(bossEnemy.Title);
+        run.Event("boss-bar", bossEnemy != null ? bossEnemy.Title + ": health bar " + (bar ? "up" : "missing") + ", stamped plate " + (bossEnemy.transform.Find("Invalid Plate") != null ? "on its chest" : "missing") : "no boss");
+        run.Metric("bossBar", bar ? 1 : 0);
+        if (!bar) {
+            run.Problem(PlaytestSeverity.Bug, "chapter2: no boss health bar for the Plated Alpha");
+        }
+        yield return Fight(player, () => chapter.Completed, 420f, "the Plated Alpha defeated", null, true);
+        if (run.Done) {
+            yield break;
+        }
+        foreach (string line in ChapterRun.Events) {
+            if (line.StartsWith("defeat|") || line.StartsWith("line|")) {
+                run.Event("defeat-beat", line);
+            }
+        }
+        BossPhaseCheck("The Plated Alpha");
+run.Event("boss-defeated", "The Plated Alpha fell after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s");
+    }
+
+    // Chapter 3 with real input: the opening dialogue's lines on where Yo Bots come from are logged, Wallit walks the three
+    // stops out (the belt's scene read and skipped), the lever breaks the feed, back to the circle, the last batch, then
+    // The Foreman. ChapterPlay carries on to the card and the saved file.
+    static IEnumerator FloorPlay(CharacterMovement player, ChapterRun chapter) {
+        foreach (string raw in Story.Chapters[chapter.Chapter].Cutscene) {
+            if (raw.Contains("Crew") || raw.Contains("stamped out") || raw.Contains("Stamped out") || raw.Contains("Spider Bot") || raw.Contains("process server") || raw.Contains("Process server")) {
+                run.Event("origin-dialogue", Story.Name(Story.Speaker(raw)) + ": \"" + Story.Text(raw).Replace('\n', ' ') + "\"");
+            }
+        }
+        float start = Time.realtimeSinceStartup;
+        int stops = 0;
+        while (!run.Done && chapter.Leg < chapter.StopCount) {
+            if (Time.realtimeSinceStartup - start > 400f) {
+                run.Problem(PlaytestSeverity.Bug, "chapter3: Wallit never got through the Floor's stops in 400 s (objective \"" + chapter.ObjectiveLine + "\")");
+                yield break;
+            }
+            if (WaveDirector.IsLost) {
+                yield return GameOver();
+                yield break;
+            }
+            if (LevelUpScreen.IsOpen) {
+                yield return PickCard();
+                continue;
+            }
+            if (Cutscene.IsOpen) {
+                Cutscene scene = Cutscene.Instance;
+                run.Scene("The Belt");
+                for (int read = 0; read < 3 && Cutscene.IsOpen && !run.Done; read++) {
+                    yield return new WaitForSecondsRealtime(0.7f);
+                    run.Event("floor-scene-page", scene.Page + "/" + scene.PageCount + " " + (scene.NameShown.Length > 0 ? scene.NameShown : "(narration)") + ": \"" + scene.TextShown.Replace('\n', ' ') + "\"");
+                    if (scene.Typing) {
+                        PlayInput.Tap(KeyCode.Space);
+                        yield return new WaitForSecondsRealtime(0.35f);
+                    }
+                    PlayInput.Tap(KeyCode.Space);
+                    yield return new WaitForSecondsRealtime(0.3f);
+                }
+                if (Cutscene.IsOpen) {
+                    run.Event("floor-scene-skip", "Enter pressed on page " + scene.Page + "/" + scene.PageCount);
+                    PlayInput.Tap(KeyCode.Return);
+                }
+                yield return run.Until(() => !Cutscene.IsOpen, 5f, "The Belt scene to close after skipping");
+                run.Scene("Chapter play");
+                continue;
+            }
+            if (chapter.Leg + 1 > stops) {
+                stops = chapter.Leg + 1;
+                run.Event("floor-stop", "heading for stop " + stops + " of " + chapter.StopCount + ": \"" + chapter.ObjectiveLine + "\"");
+            }
+            Walk(player, chapter.Marker, 1f);
+            PlayInput.Hold(KeyCode.LeftShift, false);
+            Click(NearestInReach(player));
+            SampleFps();
+            yield return null;
+        }
+        PlayInput.Release();
+        if (run.Done) {
+            yield break;
+        }
+        run.Metric("floorStops", chapter.StopCount);
+        bool walk = Story.Chapters[chapter.Chapter].Walk;
+        run.Metric("feedBroken", chapter.FeedBroken ? 1 : 0);
+        run.Event(walk ? "last-lamp" : "feed-broken", (walk ? "the last lamp is reached after " : "the lever is pulled after ") + Mathf.RoundToInt(chapter.PlaySeconds) + " s; the objective now reads \"" + chapter.ObjectiveLine + "\"");
+        if (!walk && !chapter.FeedBroken) {
+            run.Problem(PlaytestSeverity.Bug, "chapter3: the lever did not break the belt feed");
+        }
+        yield return new WaitForSecondsRealtime(0.5f);
+        run.Event("home-leg", chapter.ObjectiveLine);
+        start = Time.realtimeSinceStartup;
+        while (!run.Done && chapter.Leg == chapter.StopCount) {
+            if (Time.realtimeSinceStartup - start > 200f) {
+                run.Problem(PlaytestSeverity.Bug, "chapter3: Wallit never got back to the circle in 200 s (objective \"" + chapter.ObjectiveLine + "\")");
+                yield break;
+            }
+            if (WaveDirector.IsLost) {
+                yield return GameOver();
+                yield break;
+            }
+            if (LevelUpScreen.IsOpen) {
+                yield return PickCard();
+                continue;
+            }
+            if (Cutscene.IsOpen) {
+                PlayInput.Tap(KeyCode.Return);
+                yield return new WaitForSecondsRealtime(0.5f);
+                continue;
+            }
+            Vector3 home = Musician.Instance != null ? Musician.Instance.transform.position : player.transform.position;
+            Walk(player, home, 1f);
+            PlayInput.Hold(KeyCode.LeftShift, false);
+            Click(NearestInReach(player));
+            SampleFps();
+            yield return null;
+        }
+        PlayInput.Release();
+        if (run.Done) {
+            yield break;
+        }
+        yield return Fight(player, () => chapter.BossUp || chapter.Completed, 300f, "the last batch down and the boss to arrive", null, true);
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Chapter boss");
+        Enemy bossEnemy = chapter.BossEnemy;
+        run.Event("boss-arrives", bossEnemy != null ? bossEnemy.Title + " (" + bossEnemy.HitsToDrop + " hits) after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s; objective \"" + chapter.ObjectiveLine + "\"" : "no boss");
+        yield return new WaitForSecondsRealtime(0.6f);
+        bool bar = bossEnemy != null && BossBarShows(bossEnemy.Title);
+        run.Event("boss-bar", bossEnemy != null ? bossEnemy.Title + ": health bar " + (bar ? "up" : "missing") + (walk ? ", paper " + (bossEnemy.transform.Find("Paper") != null ? "in its claw" : "missing") : ", order sheet " + (bossEnemy.transform.Find("Order Sheet") != null ? "on its chest" : "missing")) : "no boss");
+        run.Metric("bossBar", bar ? 1 : 0);
+        if (!bar) {
+            run.Problem(PlaytestSeverity.Bug, "chapter3/4: no boss health bar for " + (walk ? "the Server" : "the Foreman"));
+        }
+        if (walk) {
+            // The Server: it offers, waits, and does not strike. Each blow while the paper is out is a refusal.
+            int seenServer = 0;
+            bool struckEarly = false;
+            string lastObjective = "";
+            yield return Fight(player, () => {
+                for (; seenServer < Server.Events.Count; seenServer++) {
+                    string ev = Server.Events[seenServer];
+                    string kind = ev.StartsWith("offer|") ? "server-offer" : ev.StartsWith("refuse|") ? "server-refused" : "server-strike";
+                    run.Event(kind, ev + " (refusals " + Server.Refusals + " of " + Server.RefusalsNeeded + "; objective \"" + chapter.ObjectiveLine + "\")");
+                    if (ev.StartsWith("strike|") && Server.Refusals < Server.RefusalsNeeded) {
+                        struckEarly = true;
+                    }
+                }
+                if (chapter.ObjectiveLine != lastObjective && chapter.ObjectiveLine.StartsWith("Refuse")) {
+                    lastObjective = chapter.ObjectiveLine;
+                    run.Event("objective", lastObjective);
+                }
+                return chapter.Completed;
+            }, 420f, "the Server refused three times, striking, and defeated", null, true);
+            if (run.Done) {
+                yield break;
+            }
+            run.Metric("serverOffers", Server.Offers);
+            run.Metric("serverRefusals", Server.Refusals);
+            run.Metric("serverStruckEarly", struckEarly ? 1 : 0);
+            if (Server.Refusals < Server.RefusalsNeeded) {
+                run.Problem(PlaytestSeverity.Bug, "chapter4: the Server fell after only " + Server.Refusals + " refusals");
+            }
+            if (struckEarly) {
+                run.Problem(PlaytestSeverity.Bug, "chapter4: the Server struck before the paper was refused three times");
+            }
+        } else {
+            yield return Fight(player, () => chapter.Completed, 420f, "the Foreman defeated", null, true);
+            if (run.Done) {
+                yield break;
+            }
+        }
+        foreach (string line in ChapterRun.Events) {
+            if (line.StartsWith("defeat|") || line.StartsWith("line|")) {
+                run.Event("defeat-beat", line);
+            }
+        }
+        BossPhaseCheck(walk ? "The Server" : "The Foreman");
+        run.Event("boss-defeated", (walk ? "The Server" : "The Foreman") + " fell after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s");
+    }
+
+    // Chapter 5 with real input: the five pages held at the circle (each page's wave and the forms turning blank are logged from
+    // the chapter's event list), then The Registrar. ChapterPlay carries on to the card and the saved file.
+    static IEnumerator ReadingPlay(CharacterMovement player, ChapterRun chapter) {
+        foreach (string raw in Story.Chapters[chapter.Chapter].Cutscene) {
+            if (raw.Contains("not signed") || raw.Contains("DENIED") || raw.Contains("denied")) {
+                run.Event("cutscene-page", Story.Name(Story.Speaker(raw)) + ": \"" + Story.Text(raw).Replace('\n', ' ') + "\"");
+            }
+        }
+        int seen = 0;
+        yield return Fight(player, () => {
+            for (; seen < ChapterRun.Events.Count; seen++) {
+                string ev = ChapterRun.Events[seen];
+                if (ev.StartsWith("wave|")) {
+                    run.Event("page-start", ev + "; objective \"" + chapter.ObjectiveLine + "\"");
+                } else if (ev.StartsWith("page-read|")) {
+                    run.Event("page-read", ev + " (forms on the wall turned blank); objective \"" + chapter.ObjectiveLine + "\"");
+                } else if (ev.StartsWith("boss-called|")) {
+                    run.Event("boss-called", ev);
+                }
+            }
+            return chapter.BossUp || chapter.Completed;
+        }, 420f, "the five pages read and the Registrar to arrive", null, true);
+        if (run.Done) {
+            yield break;
+        }
+        run.Metric("pagesRead", chapter.PagesRead);
+        if (chapter.PagesRead < 5) {
+            run.Problem(PlaytestSeverity.Bug, "chapter5: the Registrar came after only " + chapter.PagesRead + " of 5 pages");
+        }
+        Enemy bossEnemy = chapter.BossEnemy;
+        run.Event("boss-arrives", bossEnemy != null ? bossEnemy.Title + " (" + bossEnemy.HitsToDrop + " hits) after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s; objective \"" + chapter.ObjectiveLine + "\"" : "no boss");
+        yield return new WaitForSecondsRealtime(0.6f);
+        bool bar = bossEnemy != null && BossBarShows(bossEnemy.Title);
+        run.Event("boss-bar", bossEnemy != null ? bossEnemy.Title + ": health bar " + (bar ? "up" : "missing") + ", ledger " + (bossEnemy.transform.Find("Ledger") != null ? "held open" : "missing") : "no boss");
+        run.Metric("bossBar", bar ? 1 : 0);
+        if (!bar) {
+            run.Problem(PlaytestSeverity.Bug, "chapter5: no boss health bar for the Registrar");
+        }
+        yield return Fight(player, () => chapter.Completed, 420f, "the Registrar defeated", null, true);
+        if (run.Done) {
+            yield break;
+        }
+        foreach (string line in ChapterRun.Events) {
+            if (line.StartsWith("defeat|") || line.StartsWith("line|")) {
+                run.Event("defeat-beat", line);
+            }
+        }
+        BossPhaseCheck("The Registrar");
+run.Event("boss-defeated", "The Registrar fell after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s");
+    }
+
+    // Chapter 6 with real input: three waves, the Spider Bot with the order, the Filed scene, the finale pages, ADDRESS FILED, the
+    // credits card, the case file marked complete and shown as filed in the Campaign panel.
+    static IEnumerator FinalPlay(CharacterMovement player, ChapterRun chapter, int before) {
+        int seen = 0;
+        yield return Fight(player, () => {
+            for (; seen < ChapterRun.Events.Count; seen++) {
+                string ev = ChapterRun.Events[seen];
+                if (ev.StartsWith("wave|")) {
+                    run.Event("wave-start", ev + "; objective \"" + chapter.ObjectiveLine + "\"");
+                } else if (ev.StartsWith("boss-called|")) {
+                    run.Event("boss-called", ev);
+                }
+            }
+            return chapter.BossUp || chapter.Completed;
+        }, 420f, "the three waves held and the Spider Bot with the order to arrive", null, true);
+        if (run.Done) {
+            yield break;
+        }
+        Enemy bossEnemy = chapter.BossEnemy;
+        run.Event("boss-arrives", bossEnemy != null ? bossEnemy.Title + " (" + bossEnemy.HitsToDrop + " hits) after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s; objective \"" + chapter.ObjectiveLine + "\"" : "no boss");
+        yield return new WaitForSecondsRealtime(0.6f);
+        bool bar = bossEnemy != null && BossBarShows(bossEnemy.Title);
+        run.Event("boss-bar", bossEnemy != null ? bossEnemy.Title + ": health bar " + (bar ? "up" : "missing") + ", order scroll " + (bossEnemy.transform.Find("Order") != null ? "on its back" : "missing") : "no boss");
+        run.Metric("bossBar", bar ? 1 : 0);
+        if (!bar) {
+            run.Problem(PlaytestSeverity.Bug, "chapter6: no boss health bar for the Spider Bot with the order");
+        }
+        yield return Fight(player, () => chapter.Completed, 420f, "the Spider Bot with the order defeated", null, true);
+        if (run.Done) {
+            yield break;
+        }
+        PlayInput.Release();
+        foreach (string line in ChapterRun.Events) {
+            if (line.StartsWith("defeat|") || line.StartsWith("line|")) {
+                run.Event("defeat-beat", line);
+            }
+        }
+        BossPhaseCheck("The Order");
+run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s");
+        // The Filed scene.
+        yield return run.Until(() => Cutscene.IsOpen, 10f, "the Filed scene");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Filed");
+        run.Event("filed-scene", Cutscene.Instance.PageCount + " pages; the ring becomes writing, then a door number");
+        float limit = Time.realtimeSinceStartup + 40f;
+        while (Cutscene.IsOpen && Time.realtimeSinceStartup < limit) {
+            yield return new WaitForSecondsRealtime(0.8f);
+            PlayInput.Tap(KeyCode.Space);
+            yield return new WaitForSecondsRealtime(0.3f);
+        }
+        // The finale pages, then ADDRESS FILED.
+        yield return run.Until(() => StoryScreen.IsOpen, 10f, "the finale pages");
+        if (run.Done) {
+            yield break;
+        }
+        StoryScreen screen = StoryScreen.Instance;
+        for (int i = 0; i < Story.Finale.Length && !StoryScreen.EndingOpen && !run.Done; i++) {
+            yield return new WaitForSecondsRealtime(1.2f);
+            run.Event("finale-page", (i + 1) + " of " + Story.Finale.Length + ": " + screen.PageText.Replace('\n', ' '));
+            PlayInput.Tap(KeyCode.Space);
+            yield return null;
+            yield return null;
+        }
+        yield return run.Until(() => StoryScreen.EndingOpen, 8f, "the ADDRESS FILED ending card");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Ending");
+        yield return new WaitForSecondsRealtime(1.5f);
+        run.Event("ending-card", Story.EndingTitle + ": " + Story.EndingLine);
+        run.Metric("endingShown", StoryScreen.EndingsShown);
+        if (StoryScreen.EndingsShown < 1) {
+            run.Problem(PlaytestSeverity.Bug, "chapter6: clearing the chapter did not show ADDRESS FILED");
+        }
+        Tap(screen.KeepButton.gameObject);
+        if (secretTest) {
+            yield return run.Until(() => Cutscene.IsOpen, 10f, "the secret ending");
+            if (run.Done) {
+                yield break;
+            }
+            run.Scene("Secret ending");
+            run.Event("secret-scene", Cutscene.Instance.PageCount + " pages; every lost thing was kept, so the secret ending plays before the credits");
+            float secretLimit = Time.realtimeSinceStartup + 60f;
+            int pagesTold = 0;
+            while (Cutscene.IsOpen && Time.realtimeSinceStartup < secretLimit) {
+                yield return new WaitForSecondsRealtime(0.8f);
+                pagesTold++;
+                run.Event("secret-page", "page " + pagesTold);
+                PlayInput.Tap(KeyCode.Space);
+                yield return new WaitForSecondsRealtime(0.3f);
+            }
+        } else {
+            yield return new WaitForSecondsRealtime(1.5f);
+            bool leaked = Cutscene.IsOpen || chapter.SecretShown;
+            run.Event("secret-absent", "a lost thing is missing from the journal: no secret ending " + (leaked ? "BUT IT PLAYED" : "plays, the credits come straight after ADDRESS FILED"));
+            run.Metric("secretEnding", leaked ? 1 : 0);
+            if (leaked) {
+                run.Problem(PlaytestSeverity.Bug, "secret ending: it played without every lost thing in the case file");
+            }
+        }
+        yield return run.Until(() => chapter.CreditsUp, 8f, "the credits card");
+        if (run.Done) {
+            yield break;
+        }
+        if (secretTest) {
+            bool credited = chapter.SecretShown && chapter.CardText.Contains(Story.SecretTitle) && CampaignSave.Get(CampaignSave.Active).secret;
+            run.Metric("secretEnding", credited ? 1 : 0);
+            if (!credited) {
+                run.Problem(PlaytestSeverity.Bug, "secret ending: it did not play, or the credits and the case file do not carry it");
+            }
+        }
+        run.Scene("Credits");
+        yield return new WaitForSecondsRealtime(1.5f);
+        run.Event("credits-card", chapter.CardText.Replace("\n", " / "));
+        CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
+        run.Event("campaign-complete", "case file now " + slot.cleared + " of " + CampaignSave.ChapterCount + " chapters cleared");
+        run.Metric("caseFileCleared", slot.cleared);
+        if (slot.cleared != CampaignSave.ChapterCount) {
+            run.Problem(PlaytestSeverity.Bug, "chapter6: the case file shows " + slot.cleared + " chapters cleared after Chapter 6");
+        }
+        Tap(chapter.MenuButton.gameObject);
+        yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu after the credits");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Main Menu");
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(Object.FindAnyObjectByType<MainMenu>().CampaignButton.gameObject);
+        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files after the finale");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        Text[] texts = CampaignPanel.Instance.SlotButtons[0].GetComponentsInChildren<Text>();
+        bool filed = texts[0].text.Contains("filed");
+        run.Event("campaign-panel-filed", texts[0].text + " / " + texts[1].text);
+        run.Metric("caseFileFiled", filed ? 1 : 0);
+        if (!filed) {
+            run.Problem(PlaytestSeverity.Bug, "chapter6: the Campaign panel does not show case file 1 as complete (\"" + texts[0].text + "\")");
+        }
+        yield return new WaitForSecondsRealtime(2f);
+    }
+
+    // New Game+: a filed file begins again at Chapter 1 with Wallit's level and abilities kept. Then the secret ending's chapter.
+    static IEnumerator NewGamePlusRun() {
+        CampaignSave.EnterSandbox();
+        // Setup shortcut: the sandbox case file is filed, level 4 and Refund in Full earned. Never the real save.
+        CampaignSave.Slot file = CampaignSave.Get(0);
+        file.used = true;
+        file.cleared = CampaignSave.ChapterCount;
+        file.chapter = CampaignSave.ChapterCount - 1;
+        file.reached = CampaignSave.ChapterCount - 1;
+        file.xp = CampaignProgress.XpAt(4);
+        file.unlocked = 0x1F;
+        file.finds = 0x0F;
+        file.rooms = 1 << CampaignSave.ChapterCount;
+        int xp = file.xp;
+        int unlocked = file.unlocked;
+        run.Event("ngplus-setup", "sandbox case file 1 filed, level " + CampaignProgress.LevelFor(xp) + " (" + xp + " XP), unlock mask " + unlocked + ", 4 finds, Refund in Full earned");
+        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(menu.CampaignButton.gameObject);
+        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(CampaignPanel.Instance.SlotButtons[0].gameObject);
+        yield return run.Until(() => ChapterScene.Instance != null && SceneManager.GetActiveScene().name == CampaignSave.Scene && ChapterScene.Instance.BeginButton != null, 45f, "the filed file's chapter card");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Filed file card");
+        ChapterScene scene = ChapterScene.Instance;
+        yield return new WaitForSecondsRealtime(1.5f);
+        run.Event("ngplus-button", "card for " + scene.Title + ": New Game+ button " + (scene.NewGamePlusButton != null ? "shown" : "missing"));
+        if (scene.NewGamePlusButton == null) {
+            run.Problem(PlaytestSeverity.Bug, "new game plus: a filed case file's card has no New Game+ button");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        Tap(scene.NewGamePlusButton.gameObject);
+        run.Event("tap", "New Game+");
+        yield return new WaitForSecondsRealtime(1.5f);
+        file = CampaignSave.Get(0);
+        bool atOne = scene.Chapter == 0 && file.chapter == 0 && file.cleared == 0 && file.plus == 1;
+        bool kept = file.xp == xp && file.unlocked == unlocked && BackRooms.HasReward(file);
+        run.Event("ngplus-started", "card now " + scene.Title + " (chapter " + (scene.Chapter + 1) + "), file on chapter " + (file.chapter + 1) + ", " + file.cleared + " cleared, loop " + file.plus + "; xp " + file.xp + ", unlock mask " + file.unlocked + ", Refund in Full " + BackRooms.HasReward(file) + ", finds " + Journal.FindCount(file));
+        run.Metric("ngPlusChapter1", atOne ? 1 : 0);
+        run.Metric("ngPlusXpKept", file.xp == xp ? 1 : 0);
+        run.Metric("ngPlusAbilitiesKept", file.unlocked == unlocked && BackRooms.HasReward(file) ? 1 : 0);
+        if (!atOne) {
+            run.Problem(PlaytestSeverity.Bug, "new game plus: the file did not start again at chapter 1 (chapter " + (file.chapter + 1) + ", " + file.cleared + " cleared)");
+        }
+        if (!kept) {
+            run.Problem(PlaytestSeverity.Bug, "new game plus: level or abilities were not kept (xp " + file.xp + " of " + xp + ", unlocks " + file.unlocked + " of " + unlocked + ")");
+        }
+        yield return run.Until(() => scene.BeginButton != null && scene.BeginButton.isActiveAndEnabled, 5f, "Chapter 1's card");
+        if (run.Done) {
+            yield break;
+        }
+        Tap(scene.BeginButton.gameObject);
+        yield return run.Until(() => ChapterRun.Instance != null && WaveDirector.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "Chapter 1 of New Game+");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("New Game+ Chapter 1");
+        ChapterRun first = ChapterRun.Instance;
+        yield return new WaitForSecondsRealtime(2f);
+        int level = CampaignProgress.Level;
+        run.Event("ngplus-run", "playing " + Story.Chapters[first.Chapter].Title + " with Wallit at level " + level + " (" + CampaignProgress.Xp + " XP)");
+        run.Event("ngplus-abilities", "unlock mask " + CampaignProgress.UnlockedMask(0) + " (kept " + unlocked + "), Spare Change bonus " + CampaignProgress.DamageMult.ToString("0.00") + "x");
+        run.Metric("ngPlusLevel", level);
+        if (first.Chapter != 0 || level < CampaignProgress.LevelFor(xp)) {
+            run.Problem(PlaytestSeverity.Bug, "new game plus: Chapter 1 started with chapter " + (first.Chapter + 1) + " at level " + level);
+        }
+        first.Abandon();
+        yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu");
+        if (run.Done) {
+            yield break;
+        }
+        // Part two: the secret ending's chapter (setup shortcut: the file stands on Chapter 6 with every lost thing).
+        secretTest = true;
+        startChapter = 5;
+        yield return CampaignRun();
+    }
+
+    static bool companionTest;
+
+    // Chapter 2's companion: she follows, fights, goes down and is revived by a held E.
+    static IEnumerator CompanionCheck(CharacterMovement player, ChapterRun chapter) {
+        yield return run.Until(() => Companion.Instance != null, 5f, "the companion Slice to be in the chapter");
+        if (run.Done) {
+            yield break;
+        }
+        Companion slice = Companion.Instance;
+        run.Event("companion-spawned", slice.Data.Name + " is with Wallit in " + chapter.Title + " (" + slice.Health + "/" + slice.MaxHealth + " health, model " + slice.HasModel + ")");
+        // 1. Follow: Wallit walks toward the gate; she must keep up. Wallit only walks: any stab is hers.
+        float startWalk = Time.realtimeSinceStartup;
+        float worst = 0f;
+        Vector3 from = player.transform.position;
+        float kills0 = RunLog.RunKills;
+        while (!run.Done && Time.realtimeSinceStartup - startWalk < 40f
+               && Vector3.Distance(from, player.transform.position) < 28f && slice.Alive) {
+            if (WaveDirector.IsLost) {
+                yield return GameOver();
+                yield break;
+            }
+            Walk(player, chapter.Marker, 1f);
+            worst = Mathf.Max(worst, slice.DistanceToPlayer);
+            yield return null;
+        }
+        Stand();
+        yield return new WaitForSecondsRealtime(1f);
+        float gap = slice.DistanceToPlayer;
+        run.Event("companion-follows", "Wallit walked " + Vector3.Distance(from, player.transform.position).ToString("0") + " m; Slice walked " + slice.Walked.ToString("0") + " m and is " + gap.ToString("0.0") + " m from him (furthest " + worst.ToString("0.0") + " m)");
+        run.Metric("companionWalked", Mathf.Round(slice.Walked));
+        if (slice.Walked < 10f || gap > 9f) {
+            run.Problem(PlaytestSeverity.Bug, "companion: Slice did not follow Wallit (walked " + slice.Walked.ToString("0") + " m, " + gap.ToString("0.0") + " m behind)");
+        }
+        // 2. Fight: Wallit stands still holding fire; bots that come at them are Slice's to stab.
+        float wait = Time.realtimeSinceStartup;
+        while (!run.Done && slice.Stabs < 2 && Time.realtimeSinceStartup - wait < 45f && slice.Alive) {
+            if (WaveDirector.IsLost) {
+                yield return GameOver();
+                yield break;
+            }
+            yield return null;
+        }
+        run.Event("companion-fights", "Slice stabbed " + slice.Stabs + " times while Wallit held fire (kills so far " + (RunLog.RunKills - kills0) + ")");
+        run.Metric("companionStabs", slice.Stabs);
+        if (slice.Stabs < 1) {
+            run.Problem(PlaytestSeverity.Bug, "companion: Slice never attacked a bot in 45 s");
+        }
+        // 3. Down: a named setup shortcut puts her down, as the bots would.
+        run.Event("setup", "companion knocked down (setup shortcut)");
+        slice.KnockDown();
+        yield return new WaitForSecondsRealtime(0.5f);
+        run.Event("companion-down", slice.Data.Name + " is down: " + (slice.Downed ? "yes" : "NO") + ", health " + slice.Health);
+        if (!slice.Downed) {
+            run.Problem(PlaytestSeverity.Bug, "companion: Slice did not go down at 0 health");
+        }
+        // 4. Revive: Wallit walks to her and holds E (real input).
+        float t0 = Time.realtimeSinceStartup;
+        while (!run.Done && slice.Downed && Time.realtimeSinceStartup - t0 < 40f) {
+            if (WaveDirector.IsLost) {
+                yield return GameOver();
+                yield break;
+            }
+            Walk(player, slice.transform.position, Companion.ReviveReach * 0.6f);
+            bool close = slice.DistanceToPlayer <= Companion.ReviveReach * 0.8f;
+            PlayInput.Hold(KeyCode.E, close);
+            if (close) {
+                Stand();
+            }
+            yield return null;
+        }
+        PlayInput.Hold(KeyCode.E, false);
+        Stand();
+        yield return new WaitForSecondsRealtime(0.5f);
+        run.Event("companion-revived", slice.Data.Name + " is back up: " + (!slice.Downed ? "yes" : "NO") + ", health " + slice.Health + "/" + slice.MaxHealth + ", revives " + slice.Revives);
+        run.Metric("companionDowns", slice.Downs);
+        run.Metric("companionRevives", slice.Revives);
+        if (slice.Downed || slice.Revives < 1) {
+            run.Problem(PlaytestSeverity.Bug, "companion: holding E over the downed Slice did not revive her");
+        }
+    }
+
+    static bool NearestInReach(CharacterMovement player) {
+        float reach = BatEquipment.Reach * 0.95f;
+        foreach (Enemy e in Enemy.Roster) {
+            if (e == null || !e.Alive) {
+                continue;
+            }
+            Vector3 to = e.transform.position - player.transform.position;
+            to.y = 0f;
+            if (to.magnitude - e.BodyScale * 0.3f <= reach) {
+                return !LevelUpScreen.HoldFire;
+            }
+        }
+        return false;
+    }
+
+    static bool watchCutscene;
+
+    // The chapter's opening scene. "campaign" only skips it (Enter) so the chapter can be played; "cutscene" reads the
+    // first pages with real key presses, logs each one, then skips the rest and checks that play starts.
+    static IEnumerator CutsceneStep() {
+        yield return run.Until(() => Cutscene.IsOpen || (ChapterRun.Instance != null && ChapterRun.Instance.PlaySeconds > 3f), 12f, "the chapter's opening cutscene");
+        if (run.Done) {
+            yield break;
+        }
+        if (!Cutscene.IsOpen) {
+            if (watchCutscene) {
+                run.Problem(PlaytestSeverity.Bug, "cutscene: Chapter 1 began without its opening dialogue scene");
+            }
+            yield break;
+        }
+        Cutscene scene = Cutscene.Instance;
+        run.Event("cutscene-open", scene.PageCount + " pages; letterbox, speaker name, portrait slot, typed lines");
+        if (!watchCutscene) {
+            yield return new WaitForSecondsRealtime(0.6f);
+            PlayInput.Tap(KeyCode.Return);
+            yield return run.Until(() => !Cutscene.IsOpen, 5f, "the cutscene to close after Enter");
+            yield break;
+        }
+        int told = 0;
+        int named = 0;
+        int read = 0;
+        string[] seen = new string[8];
+        while (read < 7 && Cutscene.IsOpen && !run.Done) {
+            yield return new WaitForSecondsRealtime(0.7f);
+            string who = scene.NameShown;
+            string text = scene.TextShown;
+            seen[read] = who;
+            if (who.Length > 0) {
+                named++;
+            }
+            run.Event("cutscene-page", (scene.Page) + "/" + scene.PageCount + " " + (who.Length > 0 ? who : "(narration)") + ": \"" + text.Replace('\n', ' ') + "\"  camera " + scene.Focus
+                + " (weight " + scene.CameraWeight.ToString("0.00") + "), letterbox " + scene.Bars.ToString("0.00") + ", voice " + (WallitVoice.FloorFree ? "idle" : "speaking " + WallitVoice.FloorOwner));
+            read++;
+            // A first press finishes the typing; the next turns the page (and cuts the page's voice).
+            if (scene.Typing) {
+                PlayInput.Tap(KeyCode.Space);
+                yield return new WaitForSecondsRealtime(0.35f);
+            }
+            PlayInput.Tap(KeyCode.Space);
+            yield return new WaitForSecondsRealtime(0.3f);
+        }
+        for (; told < Cutscene.Events.Count; told++) {
+            if (Cutscene.Events[told].StartsWith("voice|") || Cutscene.Events[told].StartsWith("overlap|") || Cutscene.Events[told].StartsWith("camera|") || Cutscene.Events[told].StartsWith("bars|")) {
+                run.Event("cutscene-voice", Cutscene.Events[told]);
+            }
+        }
+        int overlaps = Cutscene.Overlaps + WallitVoice.Overlaps;
+        run.Metric("cutscenePages", Cutscene.PagesShown);
+        run.Metric("cutsceneVoiceLines", Cutscene.VoiceLines);
+        run.Metric("cutsceneOverlaps", overlaps);
+        if (overlaps > 0) {
+            run.Problem(PlaytestSeverity.Bug, "cutscene: " + overlaps + " voice line(s) overlapped during the dialogue");
+        }
+        if (Cutscene.VoiceLines < 2) {
+            run.Problem(PlaytestSeverity.Bug, "cutscene: only " + Cutscene.VoiceLines + " voice lines went through the director in the pages read");
+        }
+        if (named < 2) {
+            run.Problem(PlaytestSeverity.Bug, "cutscene: only " + named + " of the pages read showed a speaker name");
+        }
+        if (Cutscene.IsOpen) {
+            run.Event("cutscene-skip", "Enter pressed on page " + scene.Page + "/" + scene.PageCount);
+            PlayInput.Tap(KeyCode.Return);
+        }
+        yield return run.Until(() => !Cutscene.IsOpen, 5f, "the cutscene to close after skipping");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        run.Metric("cutsceneSkipped", Cutscene.Skipped);
+        run.Event("cutscene-play", "scene closed (" + Cutscene.Skipped + " skipped), game running at time scale " + Time.timeScale.ToString("0.0") + ", objective \"" + (ChapterRun.Instance != null ? ChapterRun.Instance.ObjectiveLine : "") + "\", camera weight " + Cutscene.Instance.CameraWeight.ToString("0.00"));
+        if (Time.timeScale < 0.99f) {
+            run.Problem(PlaytestSeverity.Bug, "cutscene: skipping left the game frozen (time scale " + Time.timeScale.ToString("0.00") + ")");
+        }
     }
 
     // The mode select, played through the buttons like a mouse. The sandbox keeps the case files off the real save.
@@ -1255,6 +3861,53 @@ public static class Playtest {
     }
 
     // Plays (the batter, cards, skipping breaks) until goal is true. Not seeing it in time is a bug.
+    // Boss phases (BossPhases.cs, Courier.cs, Server.cs): every phase change and every telegraphed attack goes to the timeline as
+    // it happens (boss-phase, boss-tell, boss-land, boss-dodged, boss-interrupt), and BossPhaseCheck fails a boss that never
+    // changed phase or never showed a tell before landing.
+    static int bossPhaseSeen, courierSeen;
+    static bool sawPhase2, sawTell;
+
+    static void DrainBossPhases() {
+        if (BossPhases.Events.Count < bossPhaseSeen) {
+            bossPhaseSeen = 0;
+        }
+        for (; bossPhaseSeen < BossPhases.Events.Count; bossPhaseSeen++) {
+            string ev = BossPhases.Events[bossPhaseSeen];
+            string kind = ev.StartsWith("phase") ? "boss-phase" : ev.StartsWith("tell|") ? "boss-tell" : ev.StartsWith("land|") ? "boss-land" : ev.StartsWith("dodged|") ? "boss-dodged" : "boss-interrupt";
+            if (ev.StartsWith("phase2|")) {
+                sawPhase2 = true;
+            } else if (ev.StartsWith("tell|")) {
+                sawTell = true;
+            }
+            run.Event(kind, ev + (BossPhases.MarkUp ? " (red marks on the ground)" : ""));
+        }
+        if (Courier.Events.Count < courierSeen) {
+            courierSeen = 0;
+        }
+        for (; courierSeen < Courier.Events.Count; courierSeen++) {
+            if (Courier.Events[courierSeen] == "phase2") {
+                sawPhase2 = true;
+                run.Event("boss-phase", "phase2|The Courier (banner, red wash, faster winds)");
+            } else if (Courier.Events[courierSeen].StartsWith("wind|")) {
+                sawTell = true;
+            }
+        }
+    }
+
+    static void BossPhaseCheck(string who) {
+        DrainBossPhases();
+        run.Metric("bossPhase2", sawPhase2 ? 1 : 0);
+        run.Metric("bossTells", BossPhases.Tells + Courier.Winds);
+        if (!sawPhase2) {
+            run.Problem(PlaytestSeverity.Bug, who + " fell without ever changing phase at its health threshold");
+        }
+        if (!sawTell) {
+            run.Problem(PlaytestSeverity.Bug, who + " never showed a telegraphed attack (marks on the ground) before landing one");
+        }
+        sawPhase2 = false;
+        sawTell = false;
+    }
+
     static IEnumerator Fight(CharacterMovement player, System.Func<bool> goal, float seconds, string what, List<Enemy> only, bool lockOn, bool bat = true) {
         float start = Time.realtimeSinceStartup;
         float nextSkip = 0f;
@@ -1281,6 +3934,8 @@ public static class Playtest {
             Batter(player, building, only != null && only.Count > 0 ? only : null, lockOn);
             CheckLock(player);
             TellBat();
+            WatchNewBots();
+            DrainBossPhases();
             if ((building || Enemy.Roster.Count == 0) && now >= nextSkip) {
                 nextSkip = now + 1.5f;
                 PlayInput.Tap(KeyCode.Return);
@@ -3551,6 +6206,36 @@ public static class Playtest {
     }
 
     // The boss bar's name label, as drawn at the top of the screen.
+    static int newBotsSeen;
+    static bool miniBarChecked;
+    static float miniAt;
+
+    // Chapter content logs: each chapter's new bot behaviour and the mid-chapter mini-boss with its health bar.
+    static void WatchNewBots() {
+        if (newBotsSeen > ChapterRun.Events.Count) {
+            newBotsSeen = 0;
+        }
+        for (; newBotsSeen < ChapterRun.Events.Count; newBotsSeen++) {
+            string ev = ChapterRun.Events[newBotsSeen];
+            if (ev.StartsWith("variant|")) {
+                run.Event("new-enemy", ev);
+            } else if (ev.StartsWith("mini-boss|")) {
+                run.Event("mini-boss", ev);
+                miniBarChecked = false;
+                miniAt = Time.realtimeSinceStartup;
+            }
+        }
+        ChapterRun chapter = ChapterRun.Instance;
+        if (chapter != null && !miniBarChecked && Time.realtimeSinceStartup - miniAt > 1f && chapter.MiniEnemy != null && chapter.MiniEnemy.Alive) {
+            miniBarChecked = true;
+            bool bar = BossBarShows(chapter.MiniEnemy.Title);
+            run.Event("mini-boss-bar", chapter.MiniEnemy.Title + ": health bar " + (bar ? "up" : "missing") + ", " + chapter.MiniEnemy.HitsToDrop + " hits");
+            if (!bar) {
+                run.Problem(PlaytestSeverity.Bug, "chapter: no health bar for the mini-boss " + chapter.MiniEnemy.Title);
+            }
+        }
+    }
+
     static bool BossBarShows(string title) {
         RunHud hud = Object.FindAnyObjectByType<RunHud>();
         if (hud == null) {
@@ -3720,6 +6405,76 @@ public static class Playtest {
         run.Event("cast-in-play", "Wallit with the bat is the player, Slice is the musician, " + bots.Length + " bot(s) up");
         run.Progress(0.6f);
         yield return Play(options, 45f, false);
+    }
+
+    static IEnumerator DialogueRun(PlaytestOptions options) {
+        string[] bible = { "wallit", "slice", "yobot", "megayobot", "courier", "platedalpha", "foreman", "halfbuilt", "server", "registrar", "orderbearer" };
+        var ids = new System.Collections.Generic.List<string>();
+        foreach (Cast.Member m in Cast.All) {
+            ids.Add(m.id);
+        }
+        run.Event("cast-data", ids.Count + " members: " + string.Join(", ", ids.ToArray()));
+        run.Metric("castMembers", ids.Count);
+        if (ids.Contains("warrok")) {
+            run.Problem(PlaytestSeverity.Bug, "dialogue: the cast file lists Warrok, who is retired");
+        }
+        foreach (string id in bible) {
+            if (!ids.Contains(id)) {
+                run.Problem(PlaytestSeverity.Bug, "dialogue: the cast file has no " + id);
+            }
+        }
+        int spokeHook = 0;
+        Cast.LineSpoken += (m, line) => spokeHook++;
+        yield return new WaitForSecondsRealtime(2f);
+        string[] script = Cast.Roll();
+        run.Event("setup", "dialogue scene with " + script.Length + " lines, one per cast member");
+        Cutscene.Play(script, null);
+        yield return run.Until(() => Cutscene.IsOpen, 5f, "the dialogue scene");
+        if (run.Done) {
+            yield break;
+        }
+        Cutscene scene = Cutscene.Instance;
+        int pages = 0, named = 0, portraits = 0;
+        while (Cutscene.IsOpen && !run.Done && pages < 40) {
+            yield return new WaitForSecondsRealtime(0.5f);
+            string code = null;
+            string said = scene.TextShown;
+            // The page's speaker is the script line whose index matches the page.
+            string line = pages < script.Length ? script[pages] : null;
+            code = line != null ? Story.Speaker(line) : null;
+            string shown = scene.NameShown;
+            string expected = code != null ? Cast.NameOf(code) : "";
+            bool wantsPortrait = code != null && Cast.HasPortrait(code);
+            bool colourOk = code == null || Mathf.Abs(scene.NameColour.r - Cast.ColourOf(code).r) < 0.01f && Mathf.Abs(scene.NameColour.g - Cast.ColourOf(code).g) < 0.01f && Mathf.Abs(scene.NameColour.b - Cast.ColourOf(code).b) < 0.01f;
+            run.Event("dialogue-page", (pages + 1) + "/" + scene.PageCount + " name \"" + shown + "\" portrait " + (scene.PortraitVisible ? scene.PortraitKind + " '" + scene.PortraitLetter + "'" : "none") + " colour " + ColorUtility.ToHtmlStringRGB(scene.NameColour) + ": \"" + said.Replace('\n', ' ') + "\"");
+            if (shown == expected && shown.Length > 0) {
+                named++;
+            }
+            if (scene.PortraitVisible == wantsPortrait && wantsPortrait) {
+                portraits++;
+            }
+            if (shown != expected) {
+                run.Problem(PlaytestSeverity.Bug, "dialogue: page " + (pages + 1) + " shows name \"" + shown + "\", expected \"" + expected + "\"");
+            }
+            if (scene.PortraitVisible != wantsPortrait) {
+                run.Problem(PlaytestSeverity.Bug, "dialogue: page " + (pages + 1) + " portrait slot " + (scene.PortraitVisible ? "shown" : "hidden") + " for " + (code ?? "?"));
+            }
+            if (!colourOk) {
+                run.Problem(PlaytestSeverity.Bug, "dialogue: page " + (pages + 1) + " name colour is not the cast file's");
+            }
+            pages++;
+            if (scene.Typing) {
+                PlayInput.Tap(KeyCode.Space);
+                yield return new WaitForSecondsRealtime(0.35f);
+            }
+            PlayInput.Tap(KeyCode.Space);
+            yield return new WaitForSecondsRealtime(0.3f);
+        }
+        run.Event("dialogue-voice", "voice lines " + Cutscene.VoiceLines + ", cast hook " + spokeHook + ", overlaps " + (Cutscene.Overlaps + WallitVoice.Overlaps));
+        run.Metric("dialoguePages", pages);
+        run.Metric("dialogueNamed", named);
+        run.Metric("dialoguePortraits", portraits);
+        yield return Play(options, 5f, false);
     }
 
     static IEnumerator SiteRun(PlaytestOptions options) {

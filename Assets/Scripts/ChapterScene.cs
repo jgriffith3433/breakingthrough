@@ -5,12 +5,26 @@ using UnityEngine.UI;
 
 // The Campaign's chapter scene (Assets/Campaign.unity is an empty scene; this builds everything in it). For now a
 // placeholder: the chapter card, the place, and Wallit and Slice trading the premise from Story.Chapters. The open
-// case file's time on the books is saved when you leave. Esc, M or the Menu button goes back to the main menu.
+// case file's time on the books is saved when you leave. Begin plays the chapter (ChapterRun, in the game scene); Esc,
+// M or the Menu button goes back to the main menu.
 public class ChapterScene : MonoBehaviour {
     public static ChapterScene Instance { get; private set; }
 
+    // Set when a chapter's Chapter Complete card leads on: the next load of this scene opens in the hub (ChapterHub), not on
+    // the chapter card. Taken once.
+    public static bool HubNext;
+
     // For the playtest bot.
     public Button MenuButton { get; private set; }
+    public Button BeginButton { get; private set; }
+    public Button HubButton { get; private set; }
+    public Button DifficultyButton { get; private set; }   // only on a filed file: Standard or Hard for the chapters played from here
+    public Text DifficultyText { get; private set; }
+    public Button NewGamePlusButton { get; private set; }   // only on a filed file: begin again at Chapter 1 with level and abilities kept
+    public int NewGamePlusStarted { get; private set; }
+    public string RankText { get; private set; } = "";
+    public ChapterHub Hub { get; private set; }
+    public bool CardUp { get { return cardCanvas != null; } }
     public int Chapter { get; private set; }
     public int LinesShown { get; private set; }
     public int LineCount { get; private set; }
@@ -20,10 +34,13 @@ public class ChapterScene : MonoBehaviour {
     const float LineEvery = 1.4f;
 
     Font font;
+    GameObject cardCanvas;
     Text[] lines;
     float startedAt;
+    float cardAt;
     int shown;
     bool leaving;
+    bool handoff;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Hook() {
@@ -52,6 +69,9 @@ public class ChapterScene : MonoBehaviour {
         Title = chapter.Title;
         LineCount = chapter.Lines.Length;
         startedAt = Time.unscaledTime;
+        cardAt = startedAt;
+        bool hub = HubNext && CampaignSave.Get(CampaignSave.Active).cleared > 0;
+        HubNext = false;
 
         if (Camera.main == null) {
             var cam = new GameObject("Camera").AddComponent<Camera>();
@@ -65,8 +85,51 @@ public class ChapterScene : MonoBehaviour {
             events.AddComponent<EventSystem>();
             events.AddComponent<StandaloneInputModule>();
         }
+        if (hub) {
+            Hub = ChapterHub.Open(this);
+            RunAnalytics.Screen("hub");
+        } else {
+            Build(chapter);
+        }
+        RunAnalytics.Screen("chapter_" + (Chapter + 1));
+        RunAnalytics.CampaignStart(Chapter, CampaignSave.Scene);
+    }
+
+    // The chapter card for chapter index, from the board (replays included) or the card's own Hub button.
+    public void ShowCard(int index) {
+        Chapter = Mathf.Clamp(index, 0, CampaignSave.ChapterCount - 1);
+        Story.Chapter chapter = Story.Chapters[Chapter];
+        Title = chapter.Title;
+        LineCount = chapter.Lines.Length;
+        shown = 0;
+        LinesShown = 0;
+        cardAt = Time.unscaledTime;
+        if (Hub != null) {
+            Hub.SetShown(false);
+        }
         Build(chapter);
         RunAnalytics.Screen("chapter_" + (Chapter + 1));
+    }
+
+    // Back to the hub from a card (builds it the first time).
+    public void ShowHub() {
+        if (cardCanvas != null) {
+            Destroy(cardCanvas);
+            cardCanvas = null;
+            lines = null;
+            BeginButton = null;
+            MenuButton = null;
+            HubButton = null;
+        }
+        if (Hub == null) {
+            Hub = ChapterHub.Open(this);
+        }
+        Hub.SetShown(true);
+        RunAnalytics.Screen("hub");
+    }
+
+    public void LeaveToMenu() {
+        ToMenu();
     }
 
     void OnDestroy() {
@@ -77,7 +140,10 @@ public class ChapterScene : MonoBehaviour {
     }
 
     void Update() {
-        Open = Time.unscaledTime - startedAt;
+        Open = Time.unscaledTime - cardAt;
+        if (cardCanvas == null || lines == null) {
+            return;
+        }
         int want = Mathf.Min(LineCount, 1 + Mathf.FloorToInt((Open - 1.2f) / LineEvery));
         while (shown < want) {
             lines[shown].gameObject.SetActive(true);
@@ -85,8 +151,13 @@ public class ChapterScene : MonoBehaviour {
             LinesShown = shown;
             GameAudio.Play("paper", 0.5f);
         }
-        if (PlayInput.GetKeyDown(KeyCode.Escape) || PlayInput.GetKeyDown(KeyCode.M)) {
-            ToMenu();
+        // Enter, Space and the pad's A press whichever button the gold ring is on (MenuNav); Begin is first.
+        if (MenuNav.Back || PlayInput.GetKeyDown(KeyCode.M)) {
+            if (Hub != null && Hub.Shown == false && MenuNav.Back && CampaignSave.Get(CampaignSave.Active).cleared > 0) {
+                ShowHub();
+            } else {
+                ToMenu();
+            }
         }
     }
 
@@ -97,7 +168,44 @@ public class ChapterScene : MonoBehaviour {
         }
         leaving = true;
         CampaignSave.Record(Time.unscaledTime - startedAt);
-        CampaignSave.Close();
+        if (!handoff) {
+            CampaignSave.Close();
+        }
+    }
+
+    // Plays the chapter: the file stays open for the game scene.
+    void BeginChapter() {
+        if (handoff) {
+            return;
+        }
+        handoff = true;
+        Leave();
+        GameAudio.Play("stamp", 0.6f);
+        RunAnalytics.Screen("chapter_start_" + (Chapter + 1));
+        ChapterRun.Begin(Chapter);
+    }
+
+    // Standard <-> Hard on a filed file (CampaignSave.SetHard).
+    public void ToggleDifficulty() {
+        CampaignSave.Slot file = CampaignSave.Get(CampaignSave.Active);
+        if (CampaignSave.SetHard(!file.hard) || !file.hard) {
+            DifficultyText.text = CampaignGrade.DifficultyLabel(CampaignSave.Get(CampaignSave.Active).hard);
+        }
+    }
+
+    // New Game+ (CampaignSave.NewGamePlus): the card turns to Chapter 1, the account stays.
+    public void StartNewGamePlus() {
+        if (!CampaignSave.NewGamePlus(CampaignSave.Active)) {
+            return;
+        }
+        NewGamePlusStarted++;
+        GameAudio.Play("stamp", 0.7f);
+        if (cardCanvas != null) {
+            Destroy(cardCanvas);
+            cardCanvas = null;
+        }
+        ShowCard(0);
+        RunAnalytics.Screen("new_game_plus");
     }
 
     void ToMenu() {
@@ -108,27 +216,35 @@ public class ChapterScene : MonoBehaviour {
 
     void Build(Story.Chapter chapter) {
         var canvasGo = new GameObject("Chapter Canvas");
+        cardCanvas = canvasGo;
         canvasGo.transform.SetParent(transform, false);
         var canvas = canvasGo.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         var scaler = canvasGo.AddComponent<CanvasScaler>();
         UiFit.Apply(scaler, 0.5f);
         canvasGo.AddComponent<GraphicRaycaster>();
+        MenuNav.Attach(canvasGo, 0);
 
         var column = new GameObject("Card", typeof(RectTransform)).GetComponent<RectTransform>();
         column.SetParent(canvasGo.transform, false);
         column.anchorMin = new Vector2(0.5f, 0.5f);
         column.anchorMax = new Vector2(0.5f, 0.5f);
         column.pivot = new Vector2(0.5f, 0.5f);
-        column.sizeDelta = new Vector2(1000f, 640f);
+        CampaignSave.Slot file = CampaignSave.Get(CampaignSave.Active);
+        bool filed = CampaignGrade.Filed(file);
+        float height = filed ? 760f : 640f;
+        column.sizeDelta = new Vector2(1000f, height);
         float scale = 1f;
         if (UiFit.Compact) {
             Vector2 size = UiFit.Size;
-            scale = Mathf.Min(1f, (size.x - 40f) / 1000f, (size.y - 40f) / 640f);
+            scale = Mathf.Min(1f, (size.x - 40f) / 1000f, (size.y - 40f) / height);
         }
         column.localScale = new Vector3(scale, scale, 1f);
 
-        Label(column, "CASE FILE " + (CampaignSave.Active + 1), 26, FontStyle.Bold, new Color(0.66f, 0.72f, 0.84f), 0f, 0f, 36f);
+        int best = CampaignSave.BestRank(file, Chapter, false);
+        int bestHard = CampaignSave.BestRank(file, Chapter, true);
+        RankText = best == 0 && bestHard == 0 ? "" : "Best rank " + CampaignGrade.Letter(best) + (bestHard > 0 ? "   Hard " + CampaignGrade.Letter(bestHard) : "");
+        Label(column, "CASE FILE " + (CampaignSave.Active + 1) + (RankText.Length > 0 ? "    " + RankText : "") + (filed && file.hard ? "    HARD" : "") + (file.plus > 0 ? "    NEW GAME+ " + file.plus : ""), 26, FontStyle.Bold, new Color(0.66f, 0.72f, 0.84f), 0f, 0f, 36f);
         Label(column, chapter.Title, 64, FontStyle.Bold, new Color(1f, 0.82f, 0.38f), 0f, 44f, 90f);
         Label(column, chapter.Place, 30, FontStyle.Italic, new Color(0.87f, 0.91f, 1f), 0f, 140f, 44f);
 
@@ -139,16 +255,29 @@ public class ChapterScene : MonoBehaviour {
             string body = raw.Substring(2);
             string name = who == 'W' ? "Wallit" : who == 'S' ? "Slice" : who == 'Y' ? "Yo Bot" : "";
             Color tint = who == 'W' ? new Color(1f, 0.82f, 0.38f) : who == 'S' ? new Color(0.62f, 0.95f, 0.86f) : new Color(0.87f, 0.91f, 1f);
-            lines[i] = Label(column, name.Length > 0 ? name + ": \"" + body + "\"" : body, 38, FontStyle.BoldAndItalic, tint, 0f, 230f + i * 84f, 76f);
+            lines[i] = Label(column, name.Length > 0 ? name + ": \"" + body + "\"" : body, 32, FontStyle.BoldAndItalic, tint, 0f, 200f + i * 62f, 56f);
             lines[i].gameObject.SetActive(false);
         }
 
-        Label(column, "More of the file is still being written. Chapters to come.", 24, FontStyle.Italic, new Color(0.66f, 0.72f, 0.84f), 0f, 470f, 40f);
-
-        MenuButton = MakeButton(column, "Menu", 260f, 88f, 520f);
+        if (CampaignSave.Get(CampaignSave.Active).cleared > 0) {
+            // A file with chapters behind it: the hub (the board of cleared chapters) is one press away.
+            BeginButton = MakeButton(column, "Begin", 280f, 88f, -300f, 540f, BeginChapter);
+            HubButton = MakeButton(column, "Hub", 280f, 88f, 0f, 540f, ShowHub);
+            MenuButton = MakeButton(column, "Menu", 280f, 88f, 300f, 540f, ToMenu);
+        } else {
+            BeginButton = MakeButton(column, "Begin", 300f, 88f, -170f, 540f, BeginChapter);
+            MenuButton = MakeButton(column, "Menu", 260f, 88f, 170f, 540f, ToMenu);
+        }
+        if (filed) {
+            // A filed file may be re-run harder: one press flips it, and the choice is saved with the file.
+            DifficultyButton = MakeButton(column, CampaignGrade.DifficultyLabel(file.hard), 440f, 88f, -230f, 650f, ToggleDifficulty);
+            DifficultyText = DifficultyButton.GetComponentInChildren<Text>();
+            // New Game+: the chapters start again from Chapter 1; level and abilities stay.
+            NewGamePlusButton = MakeButton(column, "New Game+", 440f, 88f, 230f, 650f, StartNewGamePlus);
+        }
     }
 
-    Text Label(RectTransform parent, string value, int size, FontStyle style, Color color, float x, float y, float h) {
+    internal Text Label(RectTransform parent, string value, int size, FontStyle style, Color color, float x, float y, float h) {
         var go = new GameObject("Text", typeof(RectTransform));
         go.transform.SetParent(parent, false);
         var text = go.AddComponent<Text>();
@@ -175,7 +304,7 @@ public class ChapterScene : MonoBehaviour {
         return text;
     }
 
-    Button MakeButton(RectTransform parent, string label, float w, float h, float y) {
+    internal Button MakeButton(RectTransform parent, string label, float w, float h, float x, float y, UnityEngine.Events.UnityAction onClick) {
         var go = new GameObject(label, typeof(RectTransform));
         go.transform.SetParent(parent, false);
         var image = go.AddComponent<Image>();
@@ -189,13 +318,13 @@ public class ChapterScene : MonoBehaviour {
         var nav = button.navigation;
         nav.mode = Navigation.Mode.None;
         button.navigation = nav;
-        button.onClick.AddListener(ToMenu);
+        button.onClick.AddListener(onClick);
         MenuButtonFx.Add(button);
         var rect = image.rectTransform;
         rect.anchorMin = new Vector2(0.5f, 1f);
         rect.anchorMax = new Vector2(0.5f, 1f);
         rect.pivot = new Vector2(0.5f, 1f);
-        rect.anchoredPosition = new Vector2(0f, -y);
+        rect.anchoredPosition = new Vector2(x, -y);
         rect.sizeDelta = new Vector2(w, h);
         Text text = Label(rect, label, 36, FontStyle.Bold, new Color(0.97f, 0.94f, 0.86f), 0f, 0f, h);
         text.rectTransform.anchorMin = Vector2.zero;

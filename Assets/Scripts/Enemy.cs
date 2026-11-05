@@ -29,6 +29,12 @@ public class Enemy : MonoBehaviour
     public bool Elite { get; private set; }
     public bool Golden { get; private set; }
     public bool Boss { get; private set; }
+    // The Courier (Chapter 1's Alpha): it holds still and attacks in telegraphed slams (Courier.cs), never swipes.
+    public bool IsCourier { get; private set; }
+    public int BlowsTaken;      // blows that landed (the Server counts a refusal when this moves)
+    public float PhaseAt;       // a chapter boss's phase threshold (share of health left); 0 none. The boss bar draws a notch there
+    public int Phase = 1;       // 1, then 2 once Health01 falls to PhaseAt (BossPhases.EnterPhase2, Courier)
+    public float MinHealth01;   // the Server's floor: blows cannot take its health below this share until it is lifted
     public string Title { get; private set; }
     public float Health01 { get { return Mathf.Clamp01(1f - taken / Mathf.Max(1f, HitsToDrop)); } }
     public float BodyScale { get { return bodyScale; } }
@@ -90,6 +96,7 @@ public class Enemy : MonoBehaviour
     float stridePhase;
     bool lastStepSign;
     float peckAnim;
+    float holdLeft;
     float topY = 0.9f;
     Vector3 lastPos;
     Color modelTint = Color.white;
@@ -255,7 +262,13 @@ public class Enemy : MonoBehaviour
             return false;
         }
 
-        if (Boss && !down)
+        if (holdLeft > 0f)
+        {
+            holdLeft -= dt;
+            return false;
+        }
+
+        if (Boss && !IsCourier && !down)
         {
             summonIn -= dt;
             if (summonIn <= 0f)
@@ -409,6 +422,222 @@ public class Enemy : MonoBehaviour
         crestColor = new Color(1f, 0.85f, 0.25f);
         modelTint = new Color(1f, 0.8f, 0.22f);
         modelTintAmount = 0.92f;
+    }
+
+    // Stand still for a while (the Courier's wind-up and recovery). Bat hits still land.
+    public void Hold(float seconds)
+    {
+        holdLeft = Mathf.Max(0f, seconds);
+    }
+
+    // Chapter 1's Alpha Yo Bot, with a clipboard and a notice of striking. Its fight is Courier.cs.
+    public void MakeCourier(string name, int hits)
+    {
+        MakeBoss();
+        IsCourier = true;
+        Title = name;
+        gameObject.name = name;
+        HitsToDrop = Mathf.Max(1, hits);
+        modelTint = new Color(1.3f, 0.95f, 0.45f);
+        modelTintAmount = 0.35f;
+        PhaseAt = 0.5f;
+        gameObject.AddComponent<Courier>();
+    }
+
+    // Chapter 4's Alpha, the first full Spider Bot. Its fight is Server.cs: it offers a paper, will not strike until the paper
+    // is refused three times, and cannot fall before then (MinHealth01).
+    public void MakeServer(string name, int hits)
+    {
+        MakeBoss();
+        IsCourier = true;
+        Title = name;
+        gameObject.name = name;
+        HitsToDrop = Mathf.Max(1, hits);
+        MinHealth01 = 0.7f;
+        modelTint = new Color(0.8f, 1.1f, 1.2f);
+        modelTintAmount = 0.3f;
+        PhaseAt = 0.4f;
+        gameObject.AddComponent<Server>();
+    }
+
+    // A boss's second phase: it speeds up, takes on a hotter tint and a deeper crest. The tell and the banner are the caller's.
+    public void EnterPhase2(Color tint)
+    {
+        Phase = 2;
+        walkSpeed *= 1.25f;
+        chaseSpeed *= 1.25f;
+        modelTint = tint;
+        modelTintAmount = Mathf.Max(modelTintAmount, 0.45f);
+        crestColor = new Color(1f, 0.12f, 0.08f);
+    }
+
+    // The Server has been refused enough: it behaves as a plain boss from here (swipes and stabs, calls bots).
+    public void Unleash()
+    {
+        IsCourier = false;
+        MinHealth01 = 0f;
+    }
+
+    // Chapter 3's Alpha: a Mega Yo Bot grown big and amber, with the order held flat on its chest (a pale sheet with ruled
+    // lines, no collider). No special fight: it reads the order aloud and is a wall to break.
+    public void MakeForeman(string name, int hits)
+    {
+        MakeBoss();
+        Title = name;
+        gameObject.name = name;
+        HitsToDrop = Mathf.Max(1, hits);
+        modelTint = new Color(1.2f, 1f, 0.62f);
+        modelTintAmount = 0.3f;
+        var shader = SafeShader.Find("Sprites/Default");
+        var holder = new GameObject("Order Sheet");
+        holder.transform.SetParent(transform, false);
+        holder.transform.localPosition = new Vector3(0f, 0.5f, 0.62f);
+        holder.transform.localRotation = Quaternion.Euler(-6f, 0f, -3f);
+        Color paper = new Color(0.93f, 0.9f, 0.78f, 1f);
+        Color ink = new Color(0.12f, 0.1f, 0.12f, 1f);
+        for (int i = 0; i < 3; i++) {
+            var part = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            part.name = i == 0 ? "Sheet" : "Ruled Line " + i;
+            Destroy(part.GetComponent<Collider>());
+            part.transform.SetParent(holder.transform, false);
+            part.transform.localPosition = new Vector3(0f, i == 0 ? 0f : 0.09f - i * 0.09f, i == 0 ? 0f : 0.03f);
+            part.transform.localScale = i == 0 ? new Vector3(0.5f, 0.4f, 0.03f) : new Vector3(0.4f, 0.03f, 0.02f);
+            Color c = i == 0 ? paper : ink;
+            if (shader != null) {
+                part.GetComponent<Renderer>().material = new Material(shader) { color = c };
+            } else {
+                UpgradeLook.Paint(part, c);
+            }
+            part.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
+        PhaseAt = 0.5f;
+        gameObject.AddComponent<BossPhases>().Setup(BossPhases.Fight.Foreman);
+    }
+
+    // Chapter 5's Alpha: a Titan Spider Bot in gold, the Registrar, with a ledger of gold-edged pages held open in front. No
+    // special fight: it reads the pages with every leg and is the biggest wall to break so far.
+    public void MakeRegistrar(string name, int hits)
+    {
+        MakeBoss();
+        Title = name;
+        gameObject.name = name;
+        HitsToDrop = Mathf.Max(1, hits);
+        var shader = SafeShader.Find("Sprites/Default");
+        var holder = new GameObject("Ledger");
+        holder.transform.SetParent(transform, false);
+        holder.transform.localPosition = new Vector3(0f, 0.55f, 0.66f);
+        holder.transform.localRotation = Quaternion.Euler(-10f, 0f, 0f);
+        Color gold = new Color(0.95f, 0.76f, 0.28f, 1f);
+        Color paper = new Color(0.93f, 0.9f, 0.78f, 1f);
+        Color ink = new Color(0.12f, 0.1f, 0.12f, 1f);
+        for (int i = 0; i < 4; i++) {
+            var part = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            part.name = i == 0 ? "Cover" : i == 1 ? "Left Page" : i == 2 ? "Right Page" : "Ruled Line";
+            Destroy(part.GetComponent<Collider>());
+            part.transform.SetParent(holder.transform, false);
+            part.transform.localPosition = i == 0 ? Vector3.zero : i == 1 ? new Vector3(-0.17f, 0f, 0.03f) : i == 2 ? new Vector3(0.17f, 0f, 0.03f) : new Vector3(0.17f, 0.05f, 0.06f);
+            part.transform.localScale = i == 0 ? new Vector3(0.74f, 0.46f, 0.04f) : i == 3 ? new Vector3(0.26f, 0.03f, 0.02f) : new Vector3(0.32f, 0.38f, 0.03f);
+            Color c = i == 0 ? gold : i == 3 ? ink : paper;
+            if (shader != null) {
+                part.GetComponent<Renderer>().material = new Material(shader) { color = c };
+            } else {
+                UpgradeLook.Paint(part, c);
+            }
+            part.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
+        PhaseAt = 0.5f;
+        gameObject.AddComponent<BossPhases>().Setup(BossPhases.Fight.Registrar);
+    }
+
+    // Chapter 6's Alpha, the Spider Bot that carries the order: a sealed scroll across its back with a red stamp, a wall to
+    // break. No special fight. The scroll is flat, collider-free blocks.
+    public void MakeOrderBearer(string name, int hits)
+    {
+        MakeBoss();
+        Title = name;
+        gameObject.name = name;
+        HitsToDrop = Mathf.Max(1, hits);
+        var shader = SafeShader.Find("Sprites/Default");
+        var holder = new GameObject("Order");
+        holder.transform.SetParent(transform, false);
+        holder.transform.localPosition = new Vector3(0f, 0.7f, -0.1f);
+        holder.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+        Color paper = new Color(0.93f, 0.9f, 0.78f, 1f);
+        Color seal = new Color(0.78f, 0.12f, 0.12f, 1f);
+        for (int i = 0; i < 3; i++) {
+            var part = GameObject.CreatePrimitive(i == 2 ? PrimitiveType.Cube : PrimitiveType.Cylinder);
+            part.name = i == 0 ? "Scroll" : i == 1 ? "Ribbon" : "Seal";
+            Destroy(part.GetComponent<Collider>());
+            part.transform.SetParent(holder.transform, false);
+            part.transform.localPosition = i == 2 ? new Vector3(0f, 0.25f, 0.2f) : Vector3.zero;
+            part.transform.localScale = i == 0 ? new Vector3(0.22f, 0.36f, 0.22f) : i == 1 ? new Vector3(0.24f, 0.05f, 0.24f) : new Vector3(0.12f, 0.03f, 0.12f);
+            Color c = i == 0 ? paper : seal;
+            if (shader != null) {
+                part.GetComponent<Renderer>().material = new Material(shader) { color = c };
+            } else {
+                UpgradeLook.Paint(part, c);
+            }
+            part.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
+        PhaseAt = 0.5f;
+        gameObject.AddComponent<BossPhases>().Setup(BossPhases.Fight.Order);
+    }
+
+    // Chapter 2's Alpha: a Plated Yo Bot grown big, with a stamped INVALID plate on its chest. No special fight: a wall
+    // of plate to break. The plate is a flat red board with a white bar, built in code, no collider.
+    public void MakePlatedAlpha(string name, int hits)
+    {
+        MakeBoss();
+        Title = name;
+        gameObject.name = name;
+        HitsToDrop = Mathf.Max(1, hits);
+        modelTint = new Color(1.15f, 0.8f, 0.78f);
+        modelTintAmount = 0.3f;
+        var shader = SafeShader.Find("Sprites/Default");
+        var holder = new GameObject("Invalid Plate");
+        holder.transform.SetParent(transform, false);
+        holder.transform.localPosition = new Vector3(0f, 0.5f, 0.62f);
+        holder.transform.localRotation = Quaternion.Euler(-8f, 0f, 4f);
+        Color red = new Color(0.78f, 0.12f, 0.1f, 1f);
+        Color white = new Color(0.97f, 0.93f, 0.85f, 1f);
+        for (int i = 0; i < 2; i++) {
+            var part = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            part.name = i == 0 ? "Plate" : "Stamp Bar";
+            Destroy(part.GetComponent<Collider>());
+            part.transform.SetParent(holder.transform, false);
+            part.transform.localPosition = new Vector3(0f, 0f, i == 0 ? 0f : 0.03f);
+            part.transform.localScale = i == 0 ? new Vector3(0.62f, 0.36f, 0.04f) : new Vector3(0.5f, 0.07f, 0.02f);
+            Color c = i == 0 ? red : white;
+            if (shader != null) {
+                part.GetComponent<Renderer>().material = new Material(shader) { color = c };
+            } else {
+                UpgradeLook.Paint(part, c);
+            }
+            part.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
+        PhaseAt = 0.5f;
+        gameObject.AddComponent<BossPhases>().Setup(BossPhases.Fight.Plated);
+    }
+
+    // A chapter's new bot: an elite trait under the chapter's own name (Dispatch Yo Bot, Returned Yo Bot...).
+    public void MakeVariant(BotTrait trait, string name)
+    {
+        MakeElite(trait);
+        Title = name;
+        gameObject.name = name;
+    }
+
+    // A mid-chapter mini-boss: an Alpha with its own name, tint and a short health bar, never bigger than the chapter's boss.
+    public void MakeMini(string name, int hits, Color tint)
+    {
+        MakeBoss();
+        Title = name;
+        gameObject.name = name;
+        HitsToDrop = Mathf.Max(1, hits);
+        bodyScale *= 0.85f;
+        transform.localScale = shape * bodyScale;
+        modelTint = tint;
+        modelTintAmount = 0.4f;
     }
 
     public void MakeBoss()
@@ -709,7 +938,7 @@ public class Enemy : MonoBehaviour
             toPlayer.y = 0f;
             atPlayer = toPlayer.magnitude <= PlayerGrowth.Instance.BodyRadius + 1.15f + bodyScale * 0.22f;
         }
-        if (!down && musician != null && musician.Alive && (wall != null || atMusician || atPlayer))
+        if (!down && !IsCourier && musician != null && musician.Alive && (wall != null || atMusician || atPlayer))
         {
             peckIn -= dt;
             if (peckIn <= 0f)
@@ -904,6 +1133,9 @@ public class Enemy : MonoBehaviour
             return false;
 
         taken += amount;
+        BlowsTaken++;
+        if (MinHealth01 > 0f)
+            taken = Mathf.Min(taken, HitsToDrop * (1f - MinHealth01));
         RefreshBar();
         Vector3 mark = transform.position + Vector3.up * (0.7f * Mathf.Max(1f, bodyScale));
         if (kind != DamageKind.Burn)
@@ -1150,6 +1382,9 @@ public class Enemy : MonoBehaviour
         flat.y = 0f;
         if (flat.magnitude > ClimbReach())
             return;
+        // A dodge in progress is not climbed: the bot tries again when the window closes.
+        if (CampaignMoves.Invulnerable)
+            return;
 
         climbing = true;
         SetSolid(false);
@@ -1355,7 +1590,7 @@ public class Enemy : MonoBehaviour
         float scale = Mathf.Max(0.2f, transform.lossyScale.y);
         float speed = dt > 0f ? moved.magnitude / dt / scale : 0f;
         float walk = Mathf.Clamp01(speed / 2.5f);
-        if (down || frozenLeft > 0f || shortLeft > 0f)
+        if (down || frozenLeft > 0f || shortLeft > 0f || holdLeft > 0f)
             walk = 0f;
         stridePhase += dt * (spider ? 6f + speed * 4f : 5f + speed * 3.2f);
         float step = Mathf.Sin(stridePhase);

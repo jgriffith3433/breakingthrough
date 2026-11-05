@@ -62,7 +62,8 @@ public class WaveDirector : MonoBehaviour {
         Combat,
         Break,
         Build,
-        Lost
+        Lost,
+        Chapter   // a Campaign chapter in this scene: ChapterRun drives it, no waves
     }
 
     Phase phase = Phase.Intro;
@@ -116,6 +117,16 @@ public class WaveDirector : MonoBehaviour {
         RunBoons.BeginRun();
         BoonEffects.BeginRun();
         Pickups.BeginRun();
+        if (ChapterRun.Instance != null) {
+            // Campaign: the chapter sets the bots' strength, ChapterRun does the rest. Arcade's wave, best and run
+            // analytics are left alone.
+            phase = Phase.Chapter;
+            Wave = ChapterRun.Instance.Power;
+            if (PlayerGrowth.Instance != null) {
+                PlayerGrowth.Instance.SyncToWave(Wave);
+            }
+            return;
+        }
         Wave = MetaProgress.TakeStartWave();
         MetaProgress.NoteReached(Wave);
         RunAnalytics.RunStart(Wave);
@@ -130,7 +141,9 @@ public class WaveDirector : MonoBehaviour {
         if (Instance == this) {
             Instance = null;
         }
-        RunAnalytics.RunAbandoned(Wave);
+        if (phase != Phase.Chapter) {
+            RunAnalytics.RunAbandoned(Wave);
+        }
         if (pausedGame) {
             Time.timeScale = 1f;
         }
@@ -155,7 +168,12 @@ public class WaveDirector : MonoBehaviour {
             return;
         }
         // Paused: the world, the clock and the wave keys wait.
-        if (PauseMenu.IsOpen || StoryScreen.IsOpen) {
+        if (PauseMenu.IsOpen || StoryScreen.IsOpen || Cutscene.IsOpen) {
+            return;
+        }
+        if (phase == Phase.Chapter) {
+            MetaProgress.TickToast();
+            RefreshHud();
             return;
         }
 
@@ -250,7 +268,7 @@ public class WaveDirector : MonoBehaviour {
 
     // A boss calls for help: a few Yo Bots burst out around it.
     public void BossCall(Vector3 at, int count) {
-        if (phase != Phase.Combat) {
+        if (phase != Phase.Combat && phase != Phase.Chapter) {
             return;
         }
         for (int i = 0; i < count; i++) {
@@ -285,7 +303,7 @@ public class WaveDirector : MonoBehaviour {
         }
         Enemy enemy = go.AddComponent<Enemy>();
         enemy.ApplyBot(def);
-        enemy.HitsToDrop = Mathf.Max(1, Mathf.RoundToInt(enemy.HitsToDrop * HealthMult));
+        enemy.HitsToDrop = CampaignGrade.Health(Mathf.Max(1, Mathf.RoundToInt(enemy.HitsToDrop * HealthMult)));
         if (rollElite && def.Kind == BotKind.YoBot) {
             float chance = Tuning.EliteChance(Wave) * (Event == WaveEvent.EliteSurge ? 3f : 1f);
             if (Random.value < chance) {
@@ -444,6 +462,10 @@ public class WaveDirector : MonoBehaviour {
     }
 
     void Lose() {
+        if (phase == Phase.Chapter) {
+            LoseChapter();
+            return;
+        }
         RunLog.EndWave(Wave, "lost");
         phase = Phase.Lost;
         IsLost = true;
@@ -471,6 +493,87 @@ public class WaveDirector : MonoBehaviour {
         RunAnalytics.MusicianDown(Wave);
         lostBody.text = waves + "\n" + bestLine + "\n" + run + "\n\n" + earned + "\n" + purse
             + (string.IsNullOrEmpty(boons) ? "" : "\n\n<size=22>" + boons + "</size>") + (UiFit.Touch ? "\n\nTap to go on" : "\n\nPress any key");
+    }
+
+    // A Campaign chapter's bot, placed on a ring round the circle (the same ground check and drop as a wave's bots).
+    public Enemy SpawnForChapter(BotKind kind, bool boss, float radius, string bossName = null, int bossHits = 0, bool plainBoss = false) {
+        Vector3 origin = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
+        BotDef def = BotRoster.ForSpawn(kind, Wave);
+        float angle = Random.Range(0f, Mathf.PI * 2f);
+        Vector3 spot = origin + new Vector3(Mathf.Sin(angle), 0f, Mathf.Cos(angle)) * radius;
+        if (boss && ChapterMap.Current != null && ChapterMap.Current.HasArena) {
+            // The chapter's map has a boss arena: the boss walks out of it, not out of the ring.
+            spot = ChapterMap.Current.BossSpot + new Vector3(Random.Range(-3f, 3f), 0f, Random.Range(-3f, 3f));
+        }
+        spot.y = GroundNear(spot, origin.y) + 0.55f + def.Scale * 0.08f;
+        Enemy enemy = Spawn(def, spot, !boss);
+        if (boss) {
+            if (bossName != null && kind == BotKind.TitanSpiderBot) {
+                enemy.MakeRegistrar(bossName, bossHits);
+            } else if (bossName != null && plainBoss && kind == BotKind.SpiderBot) {
+                enemy.MakeOrderBearer(bossName, bossHits);
+            } else if (bossName != null && kind == BotKind.SpiderBot) {
+                enemy.MakeServer(bossName, bossHits);
+            } else if (bossName != null && plainBoss && kind == BotKind.MegaYoBot) {
+                enemy.MakeForeman(bossName, bossHits);
+            } else if (bossName != null && plainBoss) {
+                enemy.MakePlatedAlpha(bossName, bossHits);
+            } else if (bossName != null) {
+                enemy.MakeCourier(bossName, bossHits);
+            } else {
+                enemy.MakeBoss();
+            }
+            if (bossName != null) {
+                enemy.HitsToDrop = CampaignGrade.Health(enemy.HitsToDrop);   // the named bosses set their own health after the spawn
+            }
+            UpgradeLook.Say(enemy.Title + " approaches!", 2.8f, 160f);
+            GameAudio.Play("stomp", 1f, 0.6f);
+        }
+        return enemy;
+    }
+
+    // A chapter's mid-way mini-boss, placed on the ring like the chapter's bots.
+    public Enemy SpawnMini(BotKind kind, string name, int hits, Color tint, float radius) {
+        Vector3 origin = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
+        BotDef def = BotRoster.ForSpawn(kind, Wave);
+        float angle = Random.Range(0f, Mathf.PI * 2f);
+        Vector3 spot = origin + new Vector3(Mathf.Sin(angle), 0f, Mathf.Cos(angle)) * radius;
+        spot.y = GroundNear(spot, origin.y) + 0.55f + def.Scale * 0.08f;
+        Enemy enemy = Spawn(def, spot, false);
+        enemy.MakeMini(name, hits, tint);
+        enemy.HitsToDrop = CampaignGrade.Health(enemy.HitsToDrop);
+        UpgradeLook.Say(name + " approaches!", 2.4f, 160f);
+        GameAudio.Play("stomp", 0.9f, 0.7f);
+        return enemy;
+    }
+
+    // An optional encounter's mini-boss, placed at a spot (a back room) instead of on the ring.
+    public Enemy SpawnMiniAt(BotKind kind, string name, int hits, Color tint, Vector3 spot) {
+        BotDef def = BotRoster.ForSpawn(kind, Wave);
+        spot.y = GroundNear(spot, spot.y) + 0.55f + def.Scale * 0.08f;
+        Enemy enemy = Spawn(def, spot, false);
+        enemy.MakeMini(name, hits, tint);
+        enemy.HitsToDrop = CampaignGrade.Health(enemy.HitsToDrop);
+        UpgradeLook.Say(name + " approaches!", 2.4f, 160f);
+        GameAudio.Play("stomp", 0.9f, 0.7f);
+        return enemy;
+    }
+
+    // Slice fell in a chapter: the same pause and any-key return, with the chapter's own words.
+    void LoseChapter() {
+        phase = Phase.Lost;
+        IsLost = true;
+        IsBuilding = false;
+        if (PlayerGrowth.Instance != null) {
+            PlayerGrowth.Instance.OnDeath();
+        }
+        pausedGame = true;
+        Time.timeScale = 0f;
+        lostPanel.SetActive(true);
+        returnReadyAt = Time.unscaledTime + 0.4f;
+        ChapterRun.Instance.OnLost();
+        lostBody.text = "Slice fell.\n" + ChapterRun.Instance.Title + " is still open.\nThe file keeps its place."
+            + (UiFit.Touch ? "\n\nTap to go on" : "\n\nPress any key");
     }
 
     float SpawnOne(int index) {
@@ -811,6 +914,9 @@ public class WaveDirector : MonoBehaviour {
         } else if (phase == Phase.Break) {
             waveText.text = "Next wave in " + Mathf.CeilToInt(Mathf.Max(phaseLeft, 0f)) + "   ·   " + StartHint();
             detailText.text = Flavor(Wave);
+        } else if (phase == Phase.Chapter) {
+            waveText.text = ChapterRun.Instance != null ? ChapterRun.Instance.Title : "";
+            detailText.text = ChapterRun.Instance != null ? ChapterRun.Instance.Place : "";
         } else if (phase == Phase.Lost) {
             waveText.text = "Slice fell";
             detailText.text = "";

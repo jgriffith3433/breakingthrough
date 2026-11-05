@@ -224,6 +224,31 @@ public class WallitVoice : MonoBehaviour {
         }
     }
 
+    // A cutscene line (Cutscene.cs): spoken now, the director's "cutscene" key priority, no subtitle of its own (the scene
+    // shows the text). Returns how long it takes. Without a Wallit in the scene it still takes the floor for its length.
+    public static float Cutscene(string line) {
+        if (Instance != null) {
+            return Instance.Speak(line, "cutscene");
+        }
+        float length = EstimateSeconds(line);
+        Claim("wallit", length);
+        VoiceDirector.Spoke(line, "cutscene", VoiceDirector.Priority.Key);
+        return length;
+    }
+
+    // Cuts whatever he is saying and frees the floor (a cutscene page was skipped or the scene ended).
+    public static void Silence() {
+        Speaking = false;
+        Current = "";
+        FloorUntil = Time.unscaledTime;
+        if (Instance != null) {
+            Instance.pending.Clear();
+            if (Instance.audioOut != null) {
+                Instance.audioOut.Stop();
+            }
+        }
+    }
+
     // A line of Slice's banter: he speaks it now, whatever is queued. Returns how long it takes.
     public static float Banter(string line) {
         if (Instance == null) {
@@ -321,7 +346,7 @@ public class WallitVoice : MonoBehaviour {
             audioOut.Play();
         }
         shown = Mathf.Max(2.4f, lineLength + 0.5f);
-        if (text != null && why != "beat") {
+        if (text != null && why != "beat" && why != "cutscene") {
             text.text = "WALLIT  " + line;
             text.enabled = true;
         }

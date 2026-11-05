@@ -53,6 +53,10 @@ public class Musician : MonoBehaviour {
     public float QuietFor { get { return quietFor; } }
     // Playtest look: keeps her up on her feet in the wary idle with the knife out, with no bot near.
     public bool HoldKnifeUp { get; set; }
+    // The companion Slice is out with Wallit (Companion.cs): the figure on the ring is hidden and does not stab. The
+    // ring stays staked: its health bar and the run's end are unchanged.
+    public bool Away { get; set; }
+    bool wasAway;
     public float LastStabAt { get; private set; } = -99f;
     public Enemy LastStabbed { get; private set; }
     public float LastStabDamage { get; private set; }
@@ -245,6 +249,7 @@ public class Musician : MonoBehaviour {
         if (!Alive || amount <= 0) {
             return;
         }
+        amount = CampaignGrade.Blow(amount);   // Hard (Campaign, a filed file) doubles every blow
         Health = Mathf.Max(0, Health - amount);
         DamageTaken += amount;
         RunAnalytics.NoteHurt(by, amount);
@@ -342,6 +347,7 @@ public class Musician : MonoBehaviour {
                 }
             }
         }
+        TickAway();
         TickKnife();
         if (barScaler != null && barStamp != UiFit.Stamp) {
             LayoutBar();
@@ -722,7 +728,7 @@ public class Musician : MonoBehaviour {
             return;
         }
         float dt = Time.deltaTime;
-        Enemy near = Alive && !WaveDirector.IsLost ? NearestInReach() : null;
+        Enemy near = Alive && !Away && !WaveDirector.IsLost ? NearestInReach() : null;
         if (near != null) {
             quietFor = 0f;
             Vector3 to = near.transform.position - transform.position;
@@ -767,9 +773,21 @@ public class Musician : MonoBehaviour {
             pianoHands.speed = stand > 0.02f ? 0f : 1f;
         }
         if (knife != null) {
-            knife.gameObject.SetActive(Alive && (stand > 0.15f || standingUp || strikeLeft > 0f));
+            knife.gameObject.SetActive(Alive && !Away && (stand > 0.15f || standingUp || strikeLeft > 0f));
         }
         TickSlash(dt);
+    }
+
+    void TickAway() {
+        if (slice == null || Away == wasAway) {
+            return;
+        }
+        wasAway = Away;
+        foreach (Renderer r in slice.GetComponentsInChildren<Renderer>(true)) {
+            if (r != slash) {
+                r.enabled = !Away;
+            }
+        }
     }
 
     Enemy NearestInReach() {
