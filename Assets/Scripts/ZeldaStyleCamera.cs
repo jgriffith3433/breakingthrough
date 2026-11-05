@@ -83,6 +83,25 @@ public class ZeldaStyleCamera : MonoBehaviour {
         LockOn
     }
 
+    // A camera made in code (the campaign levels, Level*.cs) takes the numbers scene2's camera has serialized.
+    public void ConfigureForLevel(GameObject follow, GameObject crosshair, GameObject firstPerson) {
+        Target = follow;
+        LockedOnCrosshair = crosshair;
+        FirstPersonCamPos = firstPerson;
+        MaxDistance = 5f;
+        MinDistance = 3f;
+        DistanceUp = 2f;
+        LeftAndRightLockOnDistance = 2f;
+        Smooth = 1f;
+        LockedOnCamSpeed = 10f;
+        CamSmoothDampTime = 10f;
+        CamCirclingSmoothDampTime = 40f;
+        LockOnSnapSmoothDampTime = 5f;
+        UnlockDistance = 5f;
+        FirstPersonLookUpAndDownSpeed = 2f;
+        FirstPersonTurnLeftAndRightSpeed = 5f;
+    }
+
     void Start() {
         LastChaaracterPos = Target.transform.position;
         FollowXForm = GameObject.FindWithTag("Player").transform;
