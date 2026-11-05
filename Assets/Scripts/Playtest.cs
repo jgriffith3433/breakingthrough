@@ -3032,7 +3032,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         if (StoryScreen.EndingsShown < 1) {
             run.Problem(PlaytestSeverity.Bug, "chapter6: clearing the chapter did not show ADDRESS FILED");
         }
-        Tap(screen.KeepButton.gameObject);
+        Tap(StoryScreen.Instance.KeepButton.gameObject);
         if (secretTest) {
             yield return run.Until(() => Cutscene.IsOpen, 10f, "the secret ending");
             if (run.Done) {
