@@ -90,7 +90,7 @@ hold the circle against six Yo Bots, then bring down the Courier (below).
 - Slice: "No sender. No refund. Stay in the circle."
 
 `Assets/Scripts/Story.cs` holds the chapter data (`Story.Chapters`); `CampaignSave.cs` holds the case files;
-The full plan for the six chapters (spine, bot origins, bosses, open questions) is in `Docs/CampaignBible.md`. `CampaignPanel.cs` is the slot screen; `ChapterScene.cs` builds the placeholder in `Assets/Campaign.unity`.
+The full screenplay for the six chapters and the ending (scene scripts, choices, set pieces, shot lists, map sheets, open questions) is in `Docs/CampaignBible.md`, rendered from `Assets/Resources/Story/campaign_script.json` (`CampaignScript.cs`, `bible` playtest). `CampaignPanel.cs` is the slot screen; `ChapterScene.cs` builds the placeholder in `Assets/Campaign.unity`.
 
 ### Grades and Hard
 
