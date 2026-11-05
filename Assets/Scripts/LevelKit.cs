@@ -20,20 +20,50 @@ public static class LevelKit {
         return m;
     }
 
-    // A flat-coloured primitive. Solid ones keep their collider (the level's walls, stones and trunks); the rest lose it.
-    public static GameObject Block(Transform parent, string name, PrimitiveType type, Vector3 pos, Vector3 scale, Color c, bool solid = false) {
-        GameObject go = GameObject.CreatePrimitive(type);
-        go.name = name;
+    static Mesh decal;
+
+    // A flat, two-triangle decal mesh (ink, marks on the floor): not a primitive quad, a named mesh of its own.
+    public static Mesh DecalMesh() {
+        if (decal != null) {
+            return decal;
+        }
+        decal = new Mesh { name = "Decal" };
+        decal.SetVertices(new[] { new Vector3(-0.5f, 0f, -0.5f), new Vector3(-0.5f, 0f, 0.5f), new Vector3(0.5f, 0f, 0.5f), new Vector3(0.5f, 0f, -0.5f) });
+        decal.SetNormals(new[] { Vector3.up, Vector3.up, Vector3.up, Vector3.up });
+        decal.SetUVs(0, new[] { new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(1f, 0f) });
+        decal.SetTriangles(new[] { 0, 1, 2, 0, 2, 3 }, 0);
+        return decal;
+    }
+
+    // A round flat disc or a pale column as a lathe mesh of its own (the objective marker), never a Unity cylinder.
+    public static Mesh DiscMesh(string name, float radius, float height) {
+        var km = new KitMesh { Name = name };
+        km.Lathe(new List<Vector2> { new Vector2(0f, 0f), new Vector2(radius, 0f), new Vector2(radius, height), new Vector2(0f, height) }, 18, false);
+        return km.ToMesh();
+    }
+
+    public static GameObject Solid(Transform parent, string name, Mesh mesh, Vector3 pos) {
+        var go = new GameObject(name);
         go.transform.SetParent(parent, false);
         go.transform.localPosition = pos;
-        go.transform.localScale = scale;
-        Renderer r = go.GetComponent<Renderer>();
+        go.AddComponent<MeshFilter>().sharedMesh = mesh;
+        var r = go.AddComponent<MeshRenderer>();
+        r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        r.receiveShadows = false;
+        return go;
+    }
+
+    // A flat colour mark lying on the ground (the stamp's telegraph and print). Not solid, casts nothing.
+    public static GameObject Decal(Transform parent, string name, Vector3 pos, Vector2 size, Color c) {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        go.transform.localPosition = pos;
+        go.transform.localScale = new Vector3(size.x, 1f, size.y);
+        go.AddComponent<MeshFilter>().sharedMesh = DecalMesh();
+        var r = go.AddComponent<MeshRenderer>();
         r.sharedMaterial = Flat(c);
         r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         r.receiveShadows = false;
-        if (!solid) {
-            Object.Destroy(go.GetComponent<Collider>());
-        }
         return go;
     }
 

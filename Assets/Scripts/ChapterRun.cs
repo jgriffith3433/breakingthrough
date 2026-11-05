@@ -1027,132 +1027,47 @@ public class ChapterRun : MonoBehaviour {
         beacon = new GameObject("Chapter Place");
         beacon.transform.position = at;
         var shader = SafeShader.Find("Sprites/Default");
-        var disc = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        disc.name = "Place Disc";
-        Destroy(disc.GetComponent<Collider>());
-        disc.transform.SetParent(beacon.transform, false);
-        disc.transform.localScale = new Vector3(ReachRadius * 2f, 0.04f, ReachRadius * 2f);
-        disc.transform.localPosition = new Vector3(0f, 0.06f, 0f);
-        var pillar = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        pillar.name = "Place Pillar";
-        Destroy(pillar.GetComponent<Collider>());
-        pillar.transform.SetParent(beacon.transform, false);
-        pillar.transform.localScale = new Vector3(2.6f, 14f, 2.6f);
-        pillar.transform.localPosition = new Vector3(0f, 14f, 0f);
+        GameObject disc = LevelKit.Solid(beacon.transform, "Place Disc", LevelKit.DiscMesh("Place Disc", ReachRadius, 0.04f), new Vector3(0f, 0.06f, 0f));
+        GameObject pillar = LevelKit.Solid(beacon.transform, "Place Pillar", LevelKit.DiscMesh("Place Pillar", 1.3f, 28f), new Vector3(0f, 0.2f, 0f));
         if (shader != null) {
             disc.GetComponent<Renderer>().material = new Material(shader) { color = new Color(1f, 0.82f, 0.38f, 0.45f) };
             pillar.GetComponent<Renderer>().material = new Material(shader) { color = new Color(1f, 0.9f, 0.6f, 0.18f) };
         }
     }
 
-    // The gate with no handle, a stretch of the Department's wall either side and a signpost with nothing on it. Flat
-    // blocks with no colliders (the playfield stays free of anything solid), turned to face the circle.
+    // The gate with no handle, the Department's wall, the gate hall and the clearing floor are dressed by the chapter's own map
+    // scene from the Model Kit (EdgeMap, FloorMap in OwnMapChapters.cs; Docs/Levels1to3.md). The run keeps empty holders so the
+    // chapter's props have a root that is cleaned up with it, and the Floor's feed flag (FloorState) the lamps read.
     void BuildGate(Vector3 at, Vector3 origin) {
         gateProps = new GameObject("Chapter Gate");
         gateProps.transform.position = at;
-        Vector3 toCircle = origin - at;
-        toCircle.y = 0f;
-        gateProps.transform.rotation = Quaternion.LookRotation(toCircle.sqrMagnitude > 0.01f ? toCircle.normalized : Vector3.forward, Vector3.up);
-        Color stone = new Color(0.2f, 0.21f, 0.27f, 1f);
-        Color dark = new Color(0.1f, 0.11f, 0.15f, 1f);
-        Color pale = new Color(0.82f, 0.8f, 0.72f, 1f);
-        Block("Post L", new Vector3(-4.6f, 4.5f, 0f), new Vector3(1.4f, 9f, 1.4f), stone);
-        Block("Post R", new Vector3(4.6f, 4.5f, 0f), new Vector3(1.4f, 9f, 1.4f), stone);
-        Block("Lintel", new Vector3(0f, 9.4f, 0f), new Vector3(11.4f, 1.6f, 1.6f), stone);
-        Block("Door", new Vector3(0f, 4.4f, 0.1f), new Vector3(7.8f, 8.8f, 0.5f), dark);
-        Block("Wall L", new Vector3(-13.5f, 3.5f, 0f), new Vector3(16f, 7f, 1.2f), dark);
-        Block("Wall R", new Vector3(13.5f, 3.5f, 0f), new Vector3(16f, 7f, 1.2f), dark);
-        Block("Signpost", new Vector3(8.5f, 2f, 5f), new Vector3(0.35f, 4f, 0.35f), stone);
-        Block("Blank Sign", new Vector3(8.5f, 3.9f, 5.25f), new Vector3(2.4f, 1.2f, 0.12f), pale);
     }
 
-    // The Clearing Floor: at each stop a few flat, collider-free blocks (hooks with chassis, the belt with cleared things,
-    // the lever and its red lamp), so the way out reads as a place. Nothing solid within the playfield.
     void BuildFloor(Vector3 origin) {
         gateProps = new GameObject("Chapter Floor");
         floorProps = gateProps.AddComponent<FloorState>();
-        Color iron = new Color(0.16f, 0.17f, 0.22f, 1f);
-        Color lamp = new Color(1f, 0.74f, 0.35f, 1f);
-        Color chassis = new Color(0.55f, 0.58f, 0.66f, 1f);
-        Color red = new Color(0.9f, 0.14f, 0.1f, 1f);
-        for (int i = 0; i < data.Stops.Length; i++) {
-            Vector3 at = StopPoint(data.Stops[i]);
-            var holder = new GameObject("Stop " + (i + 1) + " " + data.Stops[i].Name);
-            holder.transform.SetParent(gateProps.transform, false);
-            holder.transform.position = at;
-            Vector3 toCircle = origin - at;
-            toCircle.y = 0f;
-            holder.transform.rotation = Quaternion.LookRotation(toCircle.sqrMagnitude > 0.01f ? toCircle.normalized : Vector3.forward, Vector3.up);
-            if (i == 0) {
-                // Broken gate: two leaning posts and a hook row with chassis.
-                Block(holder.transform, "Post L", new Vector3(-6f, 3.5f, 0f), new Vector3(1.2f, 7f, 1.2f), iron, 8f);
-                Block(holder.transform, "Post R", new Vector3(6f, 2.2f, 0f), new Vector3(1.2f, 4.4f, 1.2f), iron, -14f);
-                for (int k = -2; k <= 2; k++) {
-                    Block(holder.transform, "Hook " + k, new Vector3(k * 4f, 6f, -9f), new Vector3(0.2f, 3f, 0.2f), iron, 0f);
-                    Block(holder.transform, "Chassis " + k, new Vector3(k * 4f, 4.3f, -9f), new Vector3(1.6f, 1.8f, 1.2f), chassis, 0f);
-                }
-            } else if (i == data.Stops.Length - 1) {
-                // Lever and a red lamp lens.
-                Block(holder.transform, "Lever Post", new Vector3(0f, 1.6f, 0f), new Vector3(1f, 3.2f, 1f), iron, 0f);
-                Block(holder.transform, "Lever", new Vector3(0f, 3.8f, 0f), new Vector3(0.3f, 3.4f, 0.3f), lamp, 35f);
-                Block(holder.transform, "Red Lamp", new Vector3(0f, 9f, -6f), new Vector3(2.4f, 2.4f, 0.5f), red, 0f);
-                Block(holder.transform, "Chute", new Vector3(0f, 1.5f, -8f), new Vector3(8f, 3f, 6f), iron, 0f);
-            } else {
-                // The belt, with cleared things riding it: a hat, a clock, a bell.
-                Block(holder.transform, "Belt", new Vector3(0f, 0.5f, 0f), new Vector3(30f, 1f, 3.4f), iron, 0f);
-                Block(holder.transform, "Hat", new Vector3(-8f, 1.5f, 0f), new Vector3(1.6f, 1.0f, 1.6f), new Color(0.35f, 0.3f, 0.4f, 1f), 0f);
-                Block(holder.transform, "Clock", new Vector3(0f, 1.8f, 0f), new Vector3(1.6f, 1.6f, 0.4f), lamp, 0f);
-                Block(holder.transform, "Bell", new Vector3(8f, 1.7f, 0f), new Vector3(1.0f, 1.4f, 1.0f), new Color(0.8f, 0.65f, 0.3f, 1f), 0f);
-            }
-        }
     }
 
-    // Marks whether the belt feed still runs (the lamps shown on the props); a plain flag the chapter flips at the lever.
+    // What this run adds to the scene besides the map's own scene (for the scene scan).
+    public List<GameObject> DressingRoots() {
+        var list = new List<GameObject>();
+        if (beacon != null) {
+            list.Add(beacon);
+        }
+        if (gateProps != null) {
+            list.Add(gateProps);
+        }
+        return list;
+    }
+
+    // Marks whether the belt feed still runs; a plain flag the chapter flips at the lever (FloorMap reads ChapterRun.FeedBroken).
     public class FloorState : MonoBehaviour {
-        bool feed = true;
+        public bool Feed { get; private set; } = true;
         public void SetBool(string key, bool value) {
             if (key == "feed") {
-                feed = value;
-                foreach (Renderer r in GetComponentsInChildren<Renderer>()) {
-                    if (r.name == "Red Lamp") {
-                        r.material.color = value ? new Color(0.9f, 0.14f, 0.1f, 1f) : new Color(0.25f, 0.05f, 0.05f, 1f);
-                    }
-                }
+                Feed = value;
             }
         }
-    }
-
-    void Block(Transform parent, string name, Vector3 local, Vector3 size, Color color, float roll) {
-        var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        cube.name = name;
-        Destroy(cube.GetComponent<Collider>());
-        cube.transform.SetParent(parent, false);
-        cube.transform.localPosition = local;
-        cube.transform.localScale = size;
-        cube.transform.localRotation = Quaternion.Euler(0f, 0f, roll);
-        var shader = SafeShader.Find("Sprites/Default");
-        if (shader != null) {
-            cube.GetComponent<Renderer>().material = new Material(shader) { color = color };
-        } else {
-            UpgradeLook.Paint(cube, color);
-        }
-        cube.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-    }
-
-    void Block(string name, Vector3 local, Vector3 size, Color color) {
-        var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        cube.name = name;
-        Destroy(cube.GetComponent<Collider>());
-        cube.transform.SetParent(gateProps.transform, false);
-        cube.transform.localPosition = local;
-        cube.transform.localScale = size;
-        var shader = SafeShader.Find("Sprites/Default");
-        if (shader != null) {
-            cube.GetComponent<Renderer>().material = new Material(shader) { color = color };
-        } else {
-            UpgradeLook.Paint(cube, color);
-        }
-        cube.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
     }
 
     // ---------------------------------------------------------------- Journal

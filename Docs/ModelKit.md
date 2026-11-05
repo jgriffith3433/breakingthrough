@@ -4,7 +4,7 @@ Status: spec, written and committed **before** any kit code (see Docs/CampaignDe
 
 ## 1. What the kit is
 
-A shared set of **82** authored pieces, grouped into 9 palettes (six chapters, the street/office shared sets, boss arenas). Each piece is a real mesh built from bevelled boxes, lathes, extrusions with ear-clipped caps and wall panels with cut-out openings, framed with trims and sills. No piece is a primitive mesh or a recoloured copy: silhouettes differ, and each is checked by the validator (section 5).
+A shared set of **102** authored pieces (82 in the first pass, 20 added for Chapters 1 to 3, section 9), grouped into 9 palettes (six chapters, the street/office shared sets, boss arenas). Each piece is a real mesh built from bevelled boxes, lathes, extrusions with ear-clipped caps and wall panels with cut-out openings, framed with trims and sills. No piece is a primitive mesh or a recoloured copy: silhouettes differ, and each is checked by the validator (section 5).
 
 Rules: a piece is **at least 24 vertices** and never a built-in mesh named Cube, Sphere, Capsule, Cylinder, Plane or Quad. A piece below 24 vertices would need a written reason in `KitCatalog` (none are planned: the smallest piece is the pale slab, about 80 triangles).
 
@@ -46,7 +46,7 @@ Memory: 12 sets, albedo + normal each, RGBA32 with mipmaps: 7 sets at 256 px (0.
 | Materials per piece | 1 or 2 submeshes | `Renderer.sharedMaterials.Length` |
 | Draw calls | shared materials, GPU instancing on | `material.enableInstancing` checked by the validator |
 
-Planned total for all 82 pieces once each: about 27490 triangles. A dressed level repeats pieces (instanced), and levels should stay within 150k visible by keeping about 150 placed pieces or fewer in view (average 450 triangles gives 68k).
+Planned total for the first 82 pieces once each: about 27490 triangles (the 20 of section 9 add about 8,000). A dressed level repeats pieces (instanced), and levels should stay within 150k visible by keeping about 150 placed pieces or fewer in view (average 450 triangles gives 68k).
 
 ## 5. Measuring and validating
 
@@ -206,7 +206,7 @@ Mood: reuses its chapter's hero colour, shared silhouettes. 3 pieces.
 | `ar_brazier` | tripod brazier: legs, bowl, ember bed (matte), handle ring | 340 | iron |
 | `ar_boss_gate` | wide gate wall with a centred arch and flanking buttresses | 520 | stone |
 
-Total: 82 pieces.
+Total: 82 pieces in the first pass, 102 with section 9.
 
 ## 7. Vertical slice, then the rest
 
@@ -222,3 +222,40 @@ Total: 82 pieces.
 - Floor: riveted steel, grating, cages, amber tint, no soft curves.
 - Walk: thin tall iron and slab stone, violet glass.
 - Filed: white plaster and pale stone, gold trim, symmetrical doorframes.
+
+## 9. Added for Chapters 1 to 3 (Docs/Levels1to3.md)
+
+The levels needed things the first pass did not have. These 20 are authored in `KitCatalogLevels.cs` the same way (bevelled boxes,
+lathes, extrusions), at the size they are used, so none is a scaled copy of another. Triangle counts are estimates; the validator prints the real ones.
+
+| Piece | Palette | Silhouette | Tris | Material |
+|---|---|---|---|---|
+| `yd_dead_tree` | yard | tapering trunk with root flares, five branches with twigs, boulders at the foot | 520 | wood+stone |
+| `yd_drop_box` | yard | the dead-letter drop box: plinth, body, lid, sloped hood, slot and straps | 330 | metal+brass |
+| `yd_notice_board` | yard | two posts, framed board with a little roof and pinned papers | 280 | wood+paper |
+| `yd_slot_frame` | yard | the Return Slot's stone frame: posts, plinths, lintel, cornice, amber strip | 330 | stone+lamp |
+| `yd_slot_shutter` | yard | rolled shutter: twelve slats, side rails, name plate | 400 | metal+brass |
+| `yd_mail_flag` | yard | the lost flag: pole, base, pennant (tinted red by the placer) | 170 | metal+cloth |
+| `yd_clock_tower` | yard | the landmark: plinth, shaft with bands, clock stage with four glowing faces and hands, pyramid cap, pinnacles | 900 | brick+lamp |
+| `gt_press_frame` | gate | the big press's frame: posts, braces, beam, ram sleeve, print bed | 460 | iron+paper |
+| `gt_press_head` | gate | the press's moving head: platen, ink pad, ram rod (the Slammer moves it) | 260 | iron+paper |
+| `gt_wall_bay` | gate | 6 m of the Department wall: plinth, buttresses, cornice, battlements, bands | 400 | stone+iron |
+| `gt_wall_tower` | gate | wall tower with buttresses, a pyramid cap and two lit slits | 360 | stone+lamp |
+| `gt_gate_door` | gate | the gate's sealed, handleless door: arched slab with seam, straps, a crossed INVALID plate | 280 | iron+brass |
+| `fl_press_frame` | floor | crusher frame: posts, collars, beam, ram sleeve, print bed | 480 | iron+metal |
+| `fl_press_head` | floor | crusher head: platen, pad, rod, corner blocks | 330 | iron+metal |
+| `fl_stack` | floor | the smokestack, 32 m: base, tapered shaft, rings, ladder, glowing mouth | 520 | metal+lamp |
+| `fl_lever_stand` | floor | lever housing, handle, knob, lamp mast with the red lens | 340 | iron+lamp |
+| `fl_hung_chassis` | floor | an un-built Yo Bot chassis on a hook: torso, head dome, limbs | 260 | metal+iron |
+| `fl_belt_hat` | floor | a bowler on the belt | 180 | cloth+metal |
+| `fl_belt_clock` | floor | a cleared clock with a glowing face | 200 | metal+lamp |
+| `fl_belt_bell` | floor | a small brass bell | 150 | brass+iron |
+
+### 9.1 Placing them: `LevelDress.cs`
+
+`LevelDress.Put/PutEuler/PutFlat` place a piece (no colliders, no shadows), `Tint` gives one submesh another colour through a cached
+copy of the kit's material (a red flag, the red mark under a press), `Proxy` adds an invisible box collider on its own object,
+`Facade` builds a building from 4 m bays, roofs, chimneys and side returns, `GridMesh`/`Surface`/`GroundSkin` make tiled ground (a
+heightfield for Chapter 1, a skin baked from the Arcade's ground for Chapters 2 and 3), `Sky` makes the gradient sky and `ArenaHider`
+hides the Arcade's meadow while a chapter map is up. Budgets for a level are Section 4's; `SceneValidation` measures them
+(`ScanChapter`: renderers, primitives, triangles, visible triangles, estimated draw calls) and `LevelValidationTests` fails on a primitive.
