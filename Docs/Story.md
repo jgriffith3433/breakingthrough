@@ -277,6 +277,22 @@ Received." Wallit: "Received. In full. Pay up." The credits gain a RECEIVED bloc
 (`Slot.secret`, `RECEIVED` on the journal's counter). Without every find it never plays. A New Game+ loop clears the finds, so it is earned
 again each loop. `newgameplus` and `secret-ending` playtests.
 
+## Endings and New Game+
+
+**Three ADDRESS FILED endings.** When Chapter 6 is filed, the case file's choices and hub errands pick one closing reel, played after
+the `ch6_close` reel and before the ending notes and the ADDRESS FILED card (the card's line changes too). `Endings.cs` decides:
+- **Two Doors** (`ending_doors`): 3 or more company points from tipping Slice (1.c2), reading the page aloud (5.c2), handing her the
+  stamp (6.c1) and asking for two numbers (6.c2). Slice writes the number twice; the second door sits beside the first.
+- **The Open Door** (`ending_open`): otherwise, 6 or more of the hub's side slips and favours done (`HubLife.SideCount`). Every lodger is on the books.
+- **The Ledger** (`ending_ledger`): everything else. Wallit's stamp, his door, one name. Slice keeps the ring.
+Voices stay as ever: Wallit money, Slice clipped ("Clean.", "Numbered."), Yo Bots chirpy. The reels are data (`Tools/Cinematics/make_endings.py`) on stand-in stills; real keyframes named `ending_<variant>_<n>_back` replace them when they exist.
+
+**Ratings and the chapter select.** The hub's chapter board lists each filed chapter with its best rank (and Hard rank); the case files list shows all six ranks per file.
+
+**New Game+ from the case files.** A filed file has a New Game+ button on its row. Each loop sends bots with +25% health and +20% more bots (to
+four loops, `CampaignGrade.PlusCount`/`PlusHealthMult`), and every chapter opens with one line that remembers the ending of the loop before
+(`Endings.EchoFor`, saved as `Slot.ending`, save version 9; older files derive it from their choices and errands).
+
 ## New bots and mini-bosses in the chapters
 
 Each chapter brings one new bot into its crew: every few bots in, one of the Yo Bots arrives as the chapter's own variant (named on
@@ -361,9 +377,27 @@ workers: they are lost things, and they talk about what they lost.
   80) and the thing is kept in the case file (`Slot.errands`, "LOST THINGS n/6" on the hub's top-left line). `CampaignProgress.Grant` pays the XP the way a kill does.
   Campaign only; the `hub-npcs` playtest plays it.
 
+## The hub after the chapters
+
+The office is a place to stay in. The lodgers (Tick, Brim, Spare, Chime) each have a short arc of three optional conversations
+(`HubLife.Chats`); two new ones open after every chapter, and a gold **!** hangs over a lodger with one unheard. Press E: the whole exchange
+shows (Wallit, the lodger, sometimes Slice) and is kept in the case file (`Slot.chats`). Tick learns he may keep his own hour; Brim
+wants a wall with a hook; Spare finds out a spare is what you keep in case somebody needs it, and somebody does; Chime rings for
+what is missing, and at the end for the right address.
+
+Each chapter also leaves **three errands**: Chime's lost thing (as before), a **favour** (a lodger asks for a lost bit: the Yo Bot Lid, Hatband,
+Mainspring Pin, Chirp Whistle, Address Label, Winding Key; carry it back) and a loose **notice** (a slip lying in the room; walk over it and it
+is pinned to the left wall). Favours and notices pay XP and are saved (`Slot.side`, save version 8). The office shows the story: the
+desk is taken by a different lodger as the file advances (Tick, Spare, Brim, Tick again) and the others move; a slip appears on the
+wall for every errand finished and a lamp lights on the right wall for every conversation had, on top of the window light, stamps
+and cabinets. The ending reads what was kept: `?|side:<id>|`, `?|sides:12|` and `?|chat:<id>|` lines in `Story.Chapters[5].Ending`
+(Spare's lid on straight, Brim's own name on its label, Tick wound, twelve slips pinned, Chime's quiet bell). New Game+ clears them.
+Code: `HubLife.cs`, `ChapterHub.cs`, `OfficeMap.Dress`; the `hub-life` playtest plays all of it.
+
 ## Canon established here
 
 - The lodgers: Tick (clock), Brim (hat), Spare (half-built Yo Bot) and Chime (bell) live in the hub; their lines change after each chapter. Chime's errands pay XP and a kept lost thing.
+- The lodgers' arcs: Tick keeps his own hour (a Winding Key), Brim wants an address (a Hatband, then an Address Label), Spare is a spare kept in case somebody needs it, Chime rings for the right address. Their favours and the loose notices change the ending's lines.
 
 - The back rooms: each chapter's map hides one room the Department never filed, found by the clue on the chapter's lost thing. In Chapter 4's room, the Dead Letter (a Spider Bot carrying a paper that cannot be refused) guards Refund in Full, Wallit's one unique ability upgrade.
 
