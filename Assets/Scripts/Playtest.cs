@@ -34,6 +34,7 @@ public static class Playtest {
         new PlaytestScenario("upgrades", "The bat upgrades: the shop lists Corked Core and Aluminum! Not wood! (setup: both owned in the sandbox) and the metal bat is in the player's hands; wave 1's first level-up cards are read off the screen (bat upgrades, no retired cast words); setup: the testing wave key (=) to wave 14 for tougher Plated Yo Bots and a handful of bat boons granted (Wide Arc, Pine Tar, Ice Bat, Live Wire, Grand Slam, Long Ball and more), each one's mark on the bat logged; then the bot plays until each effect is seen: a wider swing, bots burning, bots slowed, chain sparks shorting bots out, a 360 spin swing, batted bolts landing. Then Thunder Bat is granted for a lightning spin, and 30 s of play", 330, "content"),
         new PlaytestScenario("wallit", "Wallit as the player: checks Wallit's wallet body, bills, gloves, sneakers and bat on the live player, exercises running, locked-on strafing (strafeLeft, strafeRight, backPedal), jumping (jump, landing), getting hit (hitReact), and every bat swing (swing1, swing2, swing3, groundSmash, homeRunCharge, homeRunRelease) with OnBatContact damage, then checks all 17 Animator clips", 200, "content"),
         new PlaytestScenario("locomotion", "Wallit's feet on the ground: walks, runs, starts, stops and turns free, then locked on to a Yo Bot strafes left and right, back pedals, runs at it and stops, all through the keys. Each segment logs the planted foot's slide and the hips' largest jump (`loco` events; a slide or a pop is a bug)", 75, "content"),
+        new PlaytestScenario("bible", "The Campaign screenplay as data (Resources/Story/campaign_script.json, rendered into Docs/CampaignBible.md): loaded and checked chapter by chapter. Each of the six chapters and the ending must have a script with named speakers, at least one dialogue choice with two options, an opening and a closing shot list (shot, camera, speaker, voice line, music) and a map design sheet (setting, landmarks, route, hazards, boss arena, palette, props); the Courier, the Stamp and RECEIVED are present and the retired cast is not (events bible-chapter, bible-choice, bible-canon, bible-questions; a problem for anything missing). Then, with real key presses, the dialogue box plays Chapter 1's opening shot list and the ending's closing one (event bible-cutscene). Metrics bibleChapters, bibleLines, bibleSpeakers, bibleChoices, bibleShots, bibleQuestions, bibleProblems", 240, "content"),
         new PlaytestScenario("dialogue", "Dialogue boxes and the cast: the cast file (Resources/Cast/cast.json) is read and must list every character of the bible and not Warrok (event cast-data, a problem if Warrok is there or a bible name is missing). Arcade starts, then setup: a dialogue scene with one line per cast member plays over the run. The bot reads each page with real key presses and every page must show the speaker's name, a portrait (art or the stand-in disc with its glyph) and the cast file's colour for that speaker (events dialogue-page, a problem if a named line has no name or portrait, or the colour is wrong); Wallit and Slice lines go through their voices and the rest through the Cast.LineSpoken hook (dialogue-voice). Metrics castMembers, dialoguePages, dialogueNamed, dialoguePortraits", 240, "content"),
         new PlaytestScenario("cast", "The new cast, in 90 s: the main menu with the key art up (MenuArt, its size and that the menu shows it), What's new opened from the site over the game with the release note naming Wallit, Slice and the bots (read from releases.json), then a run where the player is Wallit with his bat, the bar says Slice, and wave 1's Yo Bots close in and are batted. The AGENTS.md and README cast text lives in the repo, not the build: the review reads it from the diff", 120, "content"),
         new PlaytestScenario("modes", "The mode select: the main menu shows Campaign and Arcade; Campaign opens the three case files (save slots, setup: the sandbox keeps them off the real save), opening an empty file loads the placeholder Chapter 1 scene with Wallit and Slice's lines, Menu returns and the file now reads Chapter 1 with its time on the books, Erase (asked twice) empties it; then Arcade starts today's wave defense and the bot plays 40 s of it with the bat. Events mode-select, campaign-files, chapter-open, chapter-lines, campaign-saved, campaign-erased, arcade-start", 200, "content"),
@@ -353,6 +354,8 @@ public static class Playtest {
                 yield return CastRun(options);
             } else if (id == "dialogue") {
                 yield return DialogueRun(options);
+            } else if (id == "bible") {
+                yield return BibleRun(options);
             } else if (id == "wallit") {
                 yield return WallitRun(options);
             } else if (id == "locomotion") {
@@ -6405,6 +6408,83 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         run.Event("cast-in-play", "Wallit with the bat is the player, Slice is the musician, " + bots.Length + " bot(s) up");
         run.Progress(0.6f);
         yield return Play(options, 45f, false);
+    }
+
+    static string[] ShotScript(CampaignScript.Shot[] shots) {
+        var lines = new System.Collections.Generic.List<string> { "B|on", "C|wide" };
+        foreach (CampaignScript.Shot sh in shots) {
+            if (string.IsNullOrEmpty(sh.line)) {
+                lines.Add("N|" + sh.shot);
+            } else {
+                lines.Add(sh.speaker + "|" + sh.line);
+            }
+        }
+        return lines.ToArray();
+    }
+
+    static IEnumerator BibleRun(PlaytestOptions options) {
+        CampaignScript.Doc d = CampaignScript.Load();
+        int lines, speakers;
+        System.Collections.Generic.List<string> bad = CampaignScript.Check(d, CampaignScript.Raw(), out lines, out speakers);
+        int choices = 0, shots = 0;
+        if (d != null && d.chapters != null) {
+            var all = new System.Collections.Generic.List<CampaignScript.Chapter>(d.chapters);
+            if (d.ending != null) {
+                all.Add(d.ending);
+            }
+            foreach (CampaignScript.Chapter c in all) {
+                int cl = 0;
+                foreach (CampaignScript.Scene sc in c.scenes) {
+                    cl += sc.lines.Length;
+                }
+                string label = c.n > 0 ? "Chapter " + c.n + ": " + c.title : "Ending: " + c.title;
+                run.Event("bible-chapter", label + " | " + c.scenes.Length + " scenes, " + cl + " lines | opening " + c.opening.Length + " shots, closing " + c.closing.Length + " shots | map " + (c.map != null ? c.map.id + ", " + c.map.landmarks.Length + " landmarks, " + c.map.hazards.Length + " hazards, " + c.map.props.Length + " props" : "MISSING"));
+                foreach (CampaignScript.Choice ch in c.choices) {
+                    choices++;
+                    run.Event("bible-choice", ch.id + " at " + ch.at + ": " + ch.prompt + " [" + ch.options.Length + " options: " + ch.options[0].key + " / " + ch.options[1].key + "]");
+                }
+                shots += c.opening.Length + c.closing.Length;
+            }
+            run.Event("bible-questions", (d.openQuestions != null ? d.openQuestions.Length : 0) + " open canon questions listed separately");
+            run.Metric("bibleChapters", d.chapters.Length);
+            run.Metric("bibleQuestions", d.openQuestions != null ? d.openQuestions.Length : 0);
+        }
+        string raw = CampaignScript.Raw();
+        run.Event("bible-canon", "Courier " + raw.Contains("Courier") + ", Stamp " + raw.Contains("Stamp") + ", RECEIVED " + raw.Contains("RECEIVED") + ", retired cast named " + raw.ToLowerInvariant().Contains("war" + "rok"));
+        run.Metric("bibleLines", lines);
+        run.Metric("bibleSpeakers", speakers);
+        run.Metric("bibleChoices", choices);
+        run.Metric("bibleShots", shots);
+        run.Metric("bibleProblems", bad.Count);
+        foreach (string b in bad) {
+            run.Problem(PlaytestSeverity.Bug, "bible: " + b);
+        }
+        yield return new WaitForSecondsRealtime(2f);
+        if (d == null || d.chapters == null || d.chapters.Length == 0 || d.ending == null) {
+            yield break;
+        }
+        var parts = new[] { ShotScript(d.chapters[0].opening), ShotScript(d.ending.closing) };
+        foreach (string[] script in parts) {
+            run.Event("bible-cutscene", script.Length + " lines of a shot list play in the dialogue box");
+            Cutscene.Play(script, null);
+            yield return run.Until(() => Cutscene.IsOpen, 5f, "the shot list scene");
+            if (run.Done) {
+                yield break;
+            }
+            int pages = 0;
+            while (Cutscene.IsOpen && !run.Done && pages < 30) {
+                yield return new WaitForSecondsRealtime(0.4f);
+                run.Event("bible-page", Cutscene.Instance.NameShown + ": " + Cutscene.Instance.TextShown.Replace('\n', ' '));
+                pages++;
+                if (Cutscene.Instance.Typing) {
+                    PlayInput.Tap(KeyCode.Space);
+                    yield return new WaitForSecondsRealtime(0.35f);
+                }
+                PlayInput.Tap(KeyCode.Space);
+                yield return new WaitForSecondsRealtime(0.3f);
+            }
+        }
+        yield return Play(options, 5f, false);
     }
 
     static IEnumerator DialogueRun(PlaytestOptions options) {
