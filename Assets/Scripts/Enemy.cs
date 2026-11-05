@@ -119,6 +119,11 @@ public class Enemy : MonoBehaviour
     float taken;
     bool down;
     bool grounded;
+
+    // Campaign levels (Level*.cs): there is no circle to strike, so awake bots walk at Wallit himself, and a bot placed in a
+    // room is Dormant (it does nothing) until its encounter wakes it or a blow lands on it.
+    public static bool Hunt;
+    public bool Dormant;
     bool flying;
     bool splitter;
     bool juker;
@@ -808,6 +813,9 @@ public class Enemy : MonoBehaviour
         float dt = Time.deltaTime;
         FaceBar();
 
+        if (Dormant && !down)
+            return;
+
         if (ragdoll)
         {
             TickRagdoll(dt);
@@ -824,6 +832,7 @@ public class Enemy : MonoBehaviour
             return;
 
         bool swarm = GoesForPlayer();
+        bool hunting = Hunt && !swarm && !down && !Golden && PlayerGrowth.Instance != null;
         if (swarm)
         {
             Vector3 flat = PlayerGrowth.Instance.transform.position - transform.position;
@@ -840,7 +849,7 @@ public class Enemy : MonoBehaviour
         float reach = 1.15f + bodyScale * 0.22f;
         bool diving = false;
 
-        if (swarm)
+        if (swarm || hunting)
         {
             toTarget = PlayerGrowth.Instance.transform.position - transform.position;
             toTarget.y = 0f;
@@ -938,7 +947,7 @@ public class Enemy : MonoBehaviour
             toPlayer.y = 0f;
             atPlayer = toPlayer.magnitude <= PlayerGrowth.Instance.BodyRadius + 1.15f + bodyScale * 0.22f;
         }
-        if (!down && !IsCourier && musician != null && musician.Alive && (wall != null || atMusician || atPlayer))
+        if (!down && !IsCourier && (hunting || (musician != null && musician.Alive)) && (wall != null || atMusician || atPlayer))
         {
             peckIn -= dt;
             if (peckIn <= 0f)
@@ -1132,6 +1141,7 @@ public class Enemy : MonoBehaviour
         if (down || amount <= 0f)
             return false;
 
+        Dormant = false;
         taken += amount;
         BlowsTaken++;
         if (MinHealth01 > 0f)

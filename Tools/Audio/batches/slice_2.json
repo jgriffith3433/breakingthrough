@@ -1,0 +1,248 @@
+{
+"cast": "slice",
+"voice": "hv_heroine",
+"ids": [
+"slice_page_and_stamp_together_keep_moving",
+"slice_process_servers_they_stand_and_wait_while_it_s_read",
+"slice_pull_it_wallit",
+"slice_pull_the_lever_the_belt_stops_the_crew_stops",
+"slice_refused_mine_to_refuse",
+"slice_ring_s_staked_i_m_coming",
+"slice_say_it",
+"slice_second_ring_holds_next",
+"slice_seventy_metres_then_back",
+"slice_slice_this_is_the_circle_the_one_address_in_the_hollow_that_s_filed_inside_it_things_exist",
+"slice_spare_parts_spare_orders",
+"slice_spider_it_carries_the_order",
+"slice_still_here_plate_s_cracked",
+"slice_still_standing",
+"slice_swing_it",
+"slice_tch_plated",
+"slice_that_is_how_it_s_done_refuse_the_paper_and_it_has_to_strike",
+"slice_the_circle_s_yours_the_lease_is_paid_board",
+"slice_the_clearing_crew_stamped_out_here_one_batch_for_every_unfiled_thing_in_the_hollow",
+"slice_the_clearing_floor_the_chirpy_ones_are_stamped_out_there_one_batch_for_every_unfiled_thing_in_the_hollow",
+"slice_the_courier_it_reads_the_order_out_then_it_lands",
+"slice_the_floor_sends_the_same_unit_again_heavier_when_the_cheap_ones_fail",
+"slice_the_foreman_it_reads_the_order_to_the_crew_don_t_let_it_finish",
+"slice_the_last_word_was_a_ball_good",
+"slice_the_order_it_comes_down_the_path_last_hold_the_circle_until_it_does",
+"slice_the_plated_alpha_plate_says_invalid",
+"slice_the_registrar_it_reads_the_pages_with_every_leg_break_it_before_it_signs",
+"slice_the_room_is_blank_nothing_left_to_read",
+"slice_the_server_it_will_not_strike_until_it_has_offered_the_paper_three_times_and_been_refused_three_times",
+"slice_the_wall_is_gone_the_circle_is_brighter",
+"slice_their_own_pay_a_yo_bot_is_held_together_by_its_wages",
+"slice_then_answer_it_board",
+"slice_then_pay_with_swings",
+"slice_then_we_collect",
+"slice_they_aren_t_they_re_what_the_yo_bots_are_for",
+"slice_they_know_mine",
+"slice_third_hits_all_twelve",
+"slice_three_knocks_on_record_they_will_remember",
+"slice_three_refusals_on_the_record_it_has_nothing_left_but_force",
+"slice_tougher_i_m_fine"
+],
+"lines": [
+{
+"who": "slice",
+"text": "Page and stamp together. Keep moving.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Process servers. They stand and wait while it's read.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Pull it, Wallit.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Pull the lever. The belt stops. The Crew stops.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Refused. Mine to refuse.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Ring's staked. I'm coming.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Say it.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Second ring holds. Next.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Seventy metres. Then back.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Slice. This is the circle: the one address in the Hollow that's filed. Inside it, things exist.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Spare parts. Spare orders.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Spider. It carries the order.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Still here. Plate's cracked.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Still standing.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Swing it.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Tch. Plated.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "That is how it's done. Refuse the paper, and it has to strike.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "The circle's yours. The lease is paid. Board.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "The Clearing Crew. Stamped out here, one batch for every unfiled thing in the Hollow.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "The Clearing Floor. The chirpy ones are stamped out there, one batch for every unfiled thing in the Hollow.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "The Courier. It reads the order out, then it lands.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "The Floor sends the same unit again, heavier, when the cheap ones fail.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "The Foreman. It reads the order to the Crew. Don't let it finish.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "The last word was a ball. Good.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "The order. It comes down the path, last. Hold the circle until it does.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "The Plated Alpha. Plate says invalid.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "The Registrar. It reads the pages with every leg. Break it before it signs.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "The room is blank. Nothing left to read.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "The Server. It will not strike until it has offered the paper three times and been refused three times.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "The wall is gone. The circle is brighter.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Their own pay. A Yo Bot is held together by its wages.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Then answer it. Board.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Then pay with swings.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Then we collect.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "They aren't. They're what the Yo Bots are for.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "They know mine.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Third hits. All twelve.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Three knocks on record. They will remember.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Three refusals on the record. It has nothing left but force.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Tougher. I'm fine.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+}
+]
+}

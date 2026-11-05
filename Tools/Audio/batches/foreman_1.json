@@ -1,0 +1,32 @@
+{
+"cast": "foreman",
+"voice": "hv_trailer",
+"ids": [
+"foreman_order_read_aloud_one_hat_blue_uploading_that_is_not_the_order",
+"foreman_order_read_aloud_strike_this_address",
+"foreman_order_unread",
+"foreman_strike_this_address"
+],
+"lines": [
+{
+"who": "foreman",
+"text": "Order, read aloud: ONE. HAT. BLUE. Uploading... that is not the order?",
+"direction": "deep, flat, reads overtime as law"
+},
+{
+"who": "foreman",
+"text": "Order, read aloud: STRIKE. THIS. ADDRESS.",
+"direction": "deep, flat, reads overtime as law"
+},
+{
+"who": "foreman",
+"text": "Order... unread...",
+"direction": "deep, flat, reads overtime as law"
+},
+{
+"who": "foreman",
+"text": "STRIKE. THIS. ADDRESS.",
+"direction": "deep, flat, reads overtime as law"
+}
+]
+}

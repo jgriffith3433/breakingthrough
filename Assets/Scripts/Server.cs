@@ -9,7 +9,9 @@ using UnityEngine;
 // before it has been refused. Enemy.IsCourier keeps it from swiping and summoning, Enemy.Hold keeps it still.
 public class Server : MonoBehaviour {
     public const float OfferRange = 8f;
-    public const int RefusalsNeeded = 3;
+    public const int DefaultRefusals = 3;
+    // Three refusals, or two when Wallit took the paper and read it (choice 4.c1): it has been offered the order once already.
+    public static int RefusalsNeeded { get { return Choices.Is("4.c1", "take") ? 2 : DefaultRefusals; } }
     public const int StrikeDamage = 14;
     const float StrikeWind = 2.0f;
     const float BackOffSeconds = 2.4f;

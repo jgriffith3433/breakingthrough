@@ -1,0 +1,14 @@
+{
+"cast": "courier",
+"voice": "hv_young_hero",
+"ids": [
+"courier_notice_undelivered_uploading_defeat"
+],
+"lines": [
+{
+"who": "courier",
+"text": "Notice... undelivered... uploading... defeat?",
+"direction": "cheerful delivery clerk, upbeat and unbothered"
+}
+]
+}

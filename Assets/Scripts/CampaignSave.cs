@@ -29,6 +29,10 @@ public static class CampaignSave {
         public bool hard;        // Hard is chosen: only ever true on a filed file (every chapter cleared)
         public int plus;         // New Game+ loops begun on this file (NewGamePlus): xp, unlocks and Refund in Full carry over, the chapters start again
         public bool secret;      // the secret ending (Story.SecretEnding) has been seen on this file
+        public int chats;        // bit per HubLife.Chats row: the optional hub conversation was heard (version 8)
+        public int side;         // bit per HubLife.Sides row: the favour was returned or the notice pinned (version 8)
+        public int choices;      // 2 bits per Choices.All row: 0 not made, 1 first option, 2 second (the file's dialogue choices)
+        public int ending;       // the ADDRESS FILED variant last seen (Endings: 1 Ledger, 2 Two Doors, 3 Open Door; 0 never): New Game+ echoes it (version 9)
     }
 
     // Save format. 1: the first files (no stamp on the oldest; no xp, unlocks, errands or lore bits). 2: stamped, every
@@ -36,8 +40,12 @@ public static class CampaignSave {
     // bits (nothing to derive: older files start with none). 4: the back rooms' bits and the Dead Letter's reward (older files
     // start with none). 5: the chapter ranks, Standard and Hard, and the Hard choice (older files start with none, Standard).
     // 6: New Game+ loops and the secret ending seen (older files start at none: nothing to derive).
+    // 7: the dialogue choices (Choices.cs), 2 bits a choice (older files start with none: nothing to derive).
+    // 8: the hub's conversations and side errands (HubLife), a bit a row (older files start with none: nothing to derive).
+    // 9: the ending variant last seen (Endings), so New Game+ can echo it; older files start with none and a filed one derives it
+    // from its choices and errands the first time New Game+ is begun.
     // Bump it with a step in Migrate.
-    public const int Version = 6;
+    public const int Version = 9;
     const string BadKey = "hawkes.campaign.bad";
 
     [Serializable]
@@ -110,6 +118,10 @@ public static class CampaignSave {
             s.reached = Mathf.Clamp(Mathf.Max(s.reached, s.chapter), 0, ChapterCount - 1);
             s.xp = Mathf.Max(0, s.xp);
             s.plus = Mathf.Clamp(s.plus, 0, 99);   // v6
+            s.chats &= (1 << HubLife.Chats.Length) - 1;   // v8
+            s.side &= (1 << HubLife.Sides.Length) - 1;
+            s.ending = s.ending >= 1 && s.ending <= Endings.Count ? s.ending : 0;   // v9
+            s.choices = Choices.Clean(s.choices);   // v7: only choices that exist, never the unused pattern 3
             s.seconds = float.IsNaN(s.seconds) || float.IsInfinity(s.seconds) ? 0f : Mathf.Max(0f, s.seconds);
         }
         d.version = Version;
@@ -336,18 +348,46 @@ public static class CampaignSave {
         if (!s.used || s.cleared < ChapterCount) {
             return false;
         }
+        if (s.ending == 0) {
+            s.ending = Endings.VariantOf(s);   // an older file that never saw the variant: read it from what the loop did
+        }
         s.plus = Mathf.Min(99, s.plus + 1);
         s.cleared = 0;
         s.chapter = 0;
         s.reached = 0;
         s.finds = 0;
         s.goals = 0;
+        s.choices = 0;   // the loop is a fresh case: the choices are made again
         s.errands = 0;
+        s.chats = 0;   // the loop's hub starts quiet again: every conversation and side errand can be had once more
+        s.side = 0;
         s.rooms &= 1 << ChapterCount;   // only the Dead Letter's reward is kept
         s.hard = false;
         Touch(s);
         Save();
         return true;
+    }
+
+    // Keeps the ending variant just played on the open file (Endings), for the next loop's echo lines.
+    public static void MarkEnding(int variant) {
+        if (Active < 0) {
+            return;
+        }
+        Slot s = Get(Active);
+        s.ending = Mathf.Clamp(variant, 0, Endings.Count);
+        Touch(s);
+        Save();
+    }
+
+    // Stores a dialogue choice on the open file (Choices.Pick): option 1 or 2 for the row, saved at once. Not in a chapter: nothing.
+    public static void Choose(int row, int option) {
+        if (Active < 0) {
+            return;
+        }
+        Slot s = Get(Active);
+        s.choices = Choices.With(s.choices, row, option);
+        Touch(s);
+        Save();
     }
 
     // Adds time on the books to the open file and saves it.

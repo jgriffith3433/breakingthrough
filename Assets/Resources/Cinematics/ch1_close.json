@@ -1,0 +1,117 @@
+{
+  "id": "ch1_close",
+  "bed": "ch1_score",
+  "shots": [
+    {
+      "id": "s1",
+      "back": "ch1_close_1",
+      "speaker": "K",
+      "seconds": 4.2,
+      "fade": 0.0,
+      "level": 0.8,
+      "from": [
+        0,
+        0,
+        1.05
+      ],
+      "to": [
+        0,
+        0,
+        1.1
+      ],
+      "cast": [
+        "courier"
+      ],
+      "line": "Notice... undelivered... uploading... defeat?"
+    },
+    {
+      "id": "s2",
+      "back": "ch1_close_2",
+      "speaker": "W",
+      "seconds": 3.2,
+      "fade": 0.7,
+      "level": 0.8,
+      "from": [
+        0.3,
+        0,
+        1.1
+      ],
+      "to": [
+        -0.3,
+        0,
+        1.2
+      ],
+      "cast": [
+        "wallit"
+      ],
+      "line": "Return to sender."
+    },
+    {
+      "id": "s3",
+      "back": "ch1_close_3",
+      "speaker": "S",
+      "seconds": 2.8,
+      "fade": 0.7,
+      "level": 0.6,
+      "from": [
+        0,
+        0.3,
+        1.4
+      ],
+      "to": [
+        0,
+        0,
+        1.1
+      ],
+      "cast": [
+        "slice"
+      ],
+      "line": "Clean."
+    },
+    {
+      "id": "s4",
+      "back": "ch1_close_4",
+      "speaker": "W",
+      "seconds": 3.6,
+      "fade": 0.7,
+      "level": 0.7,
+      "from": [
+        0,
+        0,
+        1.3
+      ],
+      "to": [
+        0,
+        0,
+        1.15
+      ],
+      "cast": [
+        "wallit"
+      ],
+      "line": "Bolts. Somebody's paying me."
+    },
+    {
+      "id": "s5",
+      "back": "ch1_close_5",
+      "speaker": "S",
+      "seconds": 4.0,
+      "fade": 0.7,
+      "level": 0.5,
+      "from": [
+        0.3,
+        0,
+        1.3
+      ],
+      "to": [
+        -0.4,
+        0,
+        1.1
+      ],
+      "cast": [
+        "slice"
+      ],
+      "alt": "slice_back",
+      "line": "Not somebody. Something."
+    }
+  ]
+}

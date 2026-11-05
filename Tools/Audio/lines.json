@@ -1,0 +1,1970 @@
+[
+ {
+  "code": "K",
+  "cast": "courier",
+  "id": "courier_notice_undelivered_uploading_defeat",
+  "text": "Notice... undelivered... uploading... defeat?"
+ },
+ {
+  "code": "F",
+  "cast": "foreman",
+  "id": "foreman_order_read_aloud_one_hat_blue_uploading_that_is_not_the_order",
+  "text": "Order, read aloud: ONE. HAT. BLUE. Uploading... that is not the order?"
+ },
+ {
+  "code": "F",
+  "cast": "foreman",
+  "id": "foreman_order_read_aloud_strike_this_address",
+  "text": "Order, read aloud: STRIKE. THIS. ADDRESS."
+ },
+ {
+  "code": "F",
+  "cast": "foreman",
+  "id": "foreman_order_unread",
+  "text": "Order... unread..."
+ },
+ {
+  "code": "F",
+  "cast": "foreman",
+  "id": "foreman_strike_this_address",
+  "text": "STRIKE. THIS. ADDRESS."
+ },
+ {
+  "code": "H",
+  "cast": "halfbuilt",
+  "id": "halfbuilt_hello_i_am_not_finished_uploading_victory",
+  "text": "Hello! I am... not finished! Uploading victory?"
+ },
+ {
+  "code": "H",
+  "cast": "halfbuilt",
+  "id": "halfbuilt_hello_thank_you_uploading_i_do_not_know_what",
+  "text": "Hello! Thank you? Uploading... I do not know what."
+ },
+ {
+  "code": "M",
+  "cast": "megayobot",
+  "id": "megayobot_order_read_aloud_strike_this_address",
+  "text": "Order, read aloud: STRIKE. THIS. ADDRESS."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_a_bare_round_hall_the_circle_is_drawn_on_its_floor_at_the_hollow_s_scale_and_every_wall_is_lined_with_identical_forms",
+  "text": "A bare round hall. The circle is drawn on its floor at the Hollow's scale, and every wall is lined with identical forms."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_a_causeway_of_pale_slabs_runs_out_over_a_pit_of_mist_six_lamps_stand_along_it_paired_like_folded_legs",
+  "text": "A causeway of pale slabs runs out over a pit of mist. Six lamps stand along it, paired like folded legs."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_at_the_foot_of_the_gate_a_postmark_is_torn_into_the_stone_half_of_it_is_his",
+  "text": "At the foot of the gate, a postmark is torn into the stone. Half of it is his."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_extra_never_asked",
+  "text": "Extra, never asked:"
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_filed_the_ring_around_the_circle_becomes_a_line_of_writing_then_a_door_number_slice_writes_it_with_her_scalpel_one_stroke_at_a_time",
+  "text": "FILED\nThe ring around the circle becomes a line of writing, then a door number. Slice writes it with her scalpel, one stroke at a time."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_found",
+  "text": "Found:"
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_it_lands_on_leather_a_wallet_hits_the_grass_and_rolls_and_the_circle_s_ring_lights_around_him",
+  "text": "It lands on leather. A wallet hits the grass and rolls, and the circle's ring lights around him."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_no_fixed_address_past_the_last_lantern_the_hollow_runs_out_far_off_a_gate_stands_in_the_dark_with_nothing_written_on_it",
+  "text": "NO FIXED ADDRESS\nPast the last lantern the Hollow runs out. Far off, a gate stands in the dark with nothing written on it."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_nothing_answers_a_polite_knock",
+  "text": "Nothing answers a polite knock."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_one_number_one_door_for_the_circle",
+  "text": "One number. One door, for the circle."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_out_of_the_dark_comes_a_stamp_return_to_sender_its_ink_is_the_only_bright_thing_in_the_hollow",
+  "text": "Out of the dark comes a stamp: RETURN TO SENDER. Its ink is the only bright thing in the Hollow."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_past_the_broken_gate_the_ground_drops_away_into_a_yard_lit_by_lamps_rows_of_yo_bot_chassis_hang_on_hooks",
+  "text": "Past the broken gate the ground drops away into a yard lit by lamps. Rows of Yo Bot chassis hang on hooks."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_past_the_last_lantern_the_hollow_runs_out_far_off_a_gate_stands_in_the_dark_with_nothing_written_on_it",
+  "text": "Past the last lantern the Hollow runs out. Far off, a gate stands in the dark with nothing written on it."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_served_out_on_the_slabs_a_spider_bot_stops_a_step_short_of_the_lamps_folds_one_leg_and_offers_a_paper_on_the_tip_of_its_claw_politely_the_way_a_courier_would_slice_does_not_take_it_it_waits",
+  "text": "SERVED\nOut on the slabs a Spider Bot stops a step short of the lamps, folds one leg, and offers a paper on the tip of its claw, politely, the way a courier would. Slice does not take it. It waits."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_served_the_server_comes_down_the_last_slabs_and_stops_a_step_short_of_the_lamps_it_folds_one_leg_and_offers_a_paper_on_the_tip_of_its_claw",
+  "text": "SERVED\nThe Server comes down the last slabs and stops a step short of the lamps. It folds one leg and offers a paper on the tip of its claw."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_six_deliveries_worth_of_bolts_lie_in_the_grass_warm_as_coins",
+  "text": "Six deliveries' worth of bolts lie in the grass, warm as coins."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_six_lost_things_a_postcard_a_key_a_hat_a_paper_a_page_a_stamp_wallit_sets_them_down_in_the_ring_one_at_a_time",
+  "text": "SIX LOST THINGS\nA postcard. A key. A hat. A paper. A page. A stamp. Wallit sets them down in the ring, one at a time."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_slice_guards_the_circle_clean",
+  "text": "SLICE: guards the circle. Clean."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_slice_takes_her_scalpel_and_begins_on_the_door_number_one_stroke_at_a_time",
+  "text": "Slice takes her scalpel and begins on the door number, one stroke at a time."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_belt_a_slow_belt_carries_flat_cleared_things_past_the_hooks_a_hat_a_clock_a_small_bell",
+  "text": "THE BELT\nA slow belt carries flat, cleared things past the hooks: a hat, a clock, a small bell."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_belt_runs_on_into_a_chute_lit_by_a_single_red_lamp_the_lamp_is_a_lens_it_turns_toward_the_hollow_and_the_circle_blinks_once",
+  "text": "The belt runs on into a chute lit by a single red lamp. The lamp is a lens. It turns toward the Hollow, and the circle blinks once."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_camera_pulls_back_the_hollow_is_quiet",
+  "text": "The camera pulls back. The Hollow is quiet."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_causeway_is_stone_slabs_over_a_pit_of_mist_a_pair_of_lamps_burns_at_each_stop_one_for_every_leg",
+  "text": "The causeway is stone slabs over a pit of mist. A pair of lamps burns at each stop, one for every leg."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_circle_stands_slice_and_wallit_are_on_the_books_thanks_for_playing",
+  "text": "The circle stands. Slice and Wallit are on the books. Thanks for playing."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_clearing_floor_beyond_the_broken_gate_a_yard_lies_sunken_in_the_dark_lit_by_lamps_along_a_slow_conveyor",
+  "text": "THE CLEARING FLOOR\nBeyond the broken gate a yard lies sunken in the dark, lit by lamps along a slow conveyor."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_gate_no_handle_no_hinges_no_doormat_wallit_knocks_with_the_bat",
+  "text": "THE GATE\nNo handle. No hinges. No doormat. Wallit knocks with the bat."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_half_built_the_belt_has_stopped_in_the_chute_the_half_built_yo_bot_still_hangs_by_one_hook_one_claw_out_wanting_finishing",
+  "text": "THE HALF-BUILT\nThe belt has stopped. In the chute, the Half-Built Yo Bot still hangs by one hook, one claw out, wanting finishing."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_last_pair_of_lamps_ahead_the_slabs_end_in_the_mist_and_something_tall_is_walking_up_them_slowly_to_wait",
+  "text": "The last pair of lamps. Ahead the slabs end in the mist, and something tall is walking up them, slowly, to wait."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_last_stamp_the_order_drops_unsigned_the_ring_on_the_grass_waits_for_one_more_stamp",
+  "text": "THE LAST STAMP\nThe order drops, unsigned. The ring on the grass waits for one more stamp."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_lever_drops_down_the_line_the_hooks_swing_empty_and_the_belt_coughs_and_stops",
+  "text": "The lever drops. Down the line the hooks swing empty, and the belt coughs and stops."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_long_walk_a_causeway_of_stone_slabs_runs_out_over_a_pit_of_mist_six_lamps_on_either_side_a_single_path_no_cover",
+  "text": "THE LONG WALK\nA causeway of stone slabs runs out over a pit of mist, six lamps on either side. A single path. No cover."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_moonlit_hollow_changed_the_wall_of_the_department_is_a_row_of_broken_stumps_and_a_path_of_pale_slabs_runs_out_to_nothing",
+  "text": "The Moonlit Hollow, changed. The wall of the Department is a row of broken stumps, and a path of pale slabs runs out to nothing."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_moonlit_hollow_the_wall_is_gone_a_path_of_pale_slabs_leads_out_of_the_hollow_and_stops_at_nothing_the_circle_is_brighter_than_it_has_ever_been",
+  "text": "THE MOONLIT HOLLOW\nThe wall is gone. A path of pale slabs leads out of the Hollow and stops at nothing. The circle is brighter than it has ever been."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_notice_the_courier_comes_apart_its_notice_drifts_down_onto_the_grass_nobody_has_signed_it",
+  "text": "THE NOTICE\nThe Courier comes apart. Its notice drifts down onto the grass. Nobody has signed it."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_order_read_aloud_the_foreman_steps_off_its_plinth_the_order_held_flat_on_its_chest_it_holds_the_sheet_out_to_be_read_in_the_cleared_pile_by_wallit_s_boot_lies_a_hat_tag_from_the_belt",
+  "text": "THE ORDER, READ ALOUD\nThe Foreman steps off its plinth, the order held flat on its chest. It holds the sheet out to be read. In the cleared pile by Wallit's boot lies a hat-tag from the belt."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_paper_reads_strike_this_address_no_signature_the_server_s_leg_unfolds",
+  "text": "The paper reads: STRIKE THIS ADDRESS. No signature. The Server's leg unfolds."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_place_department_where_things_that_should_not_exist_are_given_an_address",
+  "text": "THE PLACE DEPARTMENT\nWhere things that should not exist are given an address."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_reading_room_a_bare_round_hall_the_circle_is_drawn_on_its_floor_at_the_size_of_the_hollow_s_the_walls_are_lined_with_forms_all_identical_all_this_order_in_the_middle_a_desk_empty",
+  "text": "THE READING ROOM\nA bare round hall. The circle is drawn on its floor at the size of the Hollow's. The walls are lined with forms, all identical, all this order. In the middle, a desk. Empty."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_registrar_a_gold_spider_bot_with_a_ledger_on_its_back_takes_the_desk_it_opens_the_first_page_and_begins_to_read",
+  "text": "THE REGISTRAR\nA gold Spider Bot with a ledger on its back takes the desk. It opens the first page and begins to read."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_rise_a_plate_catches_the_lantern_light_on_the_far_rise_invalid_it_says_in_red_it_is_coming_down_the_hill",
+  "text": "THE RISE\nA plate catches the lantern light on the far rise. INVALID, it says, in red. It is coming down the hill."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_server_s_last_paper_slides_along_the_slab_addressed_to_the_circle_slice_looks_at_it",
+  "text": "The Server's last paper slides along the slab, addressed to the circle. Slice looks at it."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_spider_bot_comes_apart_the_order_drops",
+  "text": "The Spider Bot comes apart. The order drops."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_stamp_comes_down_for_the_first_time_it_says_address_and_nothing_strikes_it_every_lost_thing_in_the_hollow_gets_a_door",
+  "text": "The stamp comes down. For the first time it says ADDRESS, and nothing strikes it. Every lost thing in the Hollow gets a door."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_stamp_out_of_the_dark_comes_a_stamp_return_to_sender_its_ink_is_the_only_bright_thing_in_the_hollow",
+  "text": "THE STAMP\nOut of the dark comes a stamp: RETURN TO SENDER. Its ink is the only bright thing in the Hollow."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_stamp_prints_address_nothing_strikes_it_every_lost_thing_in_the_hollow_gets_a_door",
+  "text": "The stamp prints ADDRESS. Nothing strikes it. Every lost thing in the Hollow gets a door."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_stamp_reversed_he_presses_the_department_s_own_stamp_to_the_first_page_the_ink_shows_nothing_then_denied_every_form_on_the_walls_turns_over_at_once_blank",
+  "text": "THE STAMP, REVERSED\nHe presses the Department's own stamp to the first page. The ink shows nothing, then DENIED. Every form on the walls turns over at once, blank."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_the_wall_answers_from_the_other_side_pressed_through_the_dark_the_same_stamp_return_to_sender",
+  "text": "The wall answers. From the other side, pressed through the dark, the same stamp: RETURN TO SENDER."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_two_numbers_side_by_side_two_doors_one_beside_the_other",
+  "text": "Two numbers, side by side. Two doors, one beside the other."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_wallit_holds_up_the_return_to_sender_stamp_he_picked_up_at_the_gate",
+  "text": "Wallit holds up the RETURN TO SENDER stamp he picked up at the gate."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_wallit_one_wallet_one_bat_pay_up",
+  "text": "WALLIT: one wallet, one bat. Pay up."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_wallit_sets_six_things_down_in_the_ring_a_postcard_a_key_a_hat_a_paper_a_leaf_a_stamp",
+  "text": "Wallit sets six things down in the ring: a postcard, a key, a hat, a paper, a leaf, a stamp."
+ },
+ {
+  "code": "N",
+  "cast": "narrator",
+  "id": "narrator_yo_bots_uploading_victory_spider_bots_by_order_of_nobody",
+  "text": "YO BOTS: uploading victory. SPIDER BOTS: by order of nobody."
+ },
+ {
+  "code": "O",
+  "cast": "orderbearer",
+  "id": "orderbearer_order_in_force_strike_this_address",
+  "text": "Order, in force: STRIKE. THIS. ADDRESS."
+ },
+ {
+  "code": "P",
+  "cast": "platedalpha",
+  "id": "platedalpha_plate_voided_uploading_nothing",
+  "text": "Plate... voided... uploading... nothing?"
+ },
+ {
+  "code": "R",
+  "cast": "registrar",
+  "id": "registrar_register_closed_uploading_nothing",
+  "text": "Register... closed... uploading... nothing?"
+ },
+ {
+  "code": "V",
+  "cast": "server",
+  "id": "server_delivery_is_to_the_named_address",
+  "text": "Delivery is to the named address."
+ },
+ {
+  "code": "V",
+  "cast": "server",
+  "id": "server_delivery_undelivered_chirp",
+  "text": "Delivery... undelivered... chirp?"
+ },
+ {
+  "code": "V",
+  "cast": "server",
+  "id": "server_three_knocks_on_record",
+  "text": "Three knocks on record."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_a_form_can_be_answered",
+  "text": "A form can be answered."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_a_scratch",
+  "text": "A scratch."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_again_behind_me_wallit",
+  "text": "Again. Behind me, Wallit."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_and_then_you_are_standing_in_front_of_it",
+  "text": "And then you are standing in front of it."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_before_you",
+  "text": "Before you."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_big_one_next_be_ready",
+  "text": "Big one next. Be ready."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_board_next_case",
+  "text": "Board. Next case."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_clean",
+  "text": "Clean."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_clean_good_swing_wallit",
+  "text": "Clean. Good swing, Wallit."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_clean_replays_are_on_the_board",
+  "text": "Clean. Replays are on the board."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_crew_they_chirp_because_every_job_closes_with_a_report_uploading_victory_means_filed_as_cleared",
+  "text": "Crew. They chirp because every job closes with a report. \"Uploading victory\" means \"filed as cleared.\""
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_denied_by_whom",
+  "text": "Denied by whom?"
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_don_t",
+  "text": "Don't."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_don_t_look_at_the_order_look_at_them",
+  "text": "Don't look at the order. Look at them."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_doors_have_locks_come_back",
+  "text": "Doors have locks. Come back."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_every_find_kept_every_extra_filed_paid_in_full",
+  "text": "Every find kept. Every extra filed. Paid in full."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_every_spider_bot_walks_out_of_this_room_with_one",
+  "text": "Every Spider Bot walks out of this room with one."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_filed_properly_this_time",
+  "text": "Filed. Properly, this time."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_five_pages_the_room_reads_them_all_and_the_crew_comes_with_each_hold_the_circle_at_the_desk",
+  "text": "Five pages. The room reads them all, and the Crew comes with each. Hold the circle at the desk."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_free",
+  "text": "Free."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_good",
+  "text": "Good."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_good_swing",
+  "text": "Good swing."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_hold_the_circle_nobody_signs_it",
+  "text": "Hold the circle. Nobody signs it."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_holding",
+  "text": "Holding."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_i_am",
+  "text": "I am."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_i_ll_hold_a_second_ring_here_staked_in_the_floor_go_out_break_the_belt_and_come_back",
+  "text": "I'll hold a second ring here, staked in the floor. Go out, break the belt, and come back."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_i_pressed_the_stamp_myself",
+  "text": "I pressed the stamp myself."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_it_files_what_it_cannot_read",
+  "text": "It files what it cannot read."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_it_isn_t",
+  "text": "It isn't."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_it_knows_you_reader_recognized",
+  "text": "It knows you. Reader recognized."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_it_prints_true_backwards_filed",
+  "text": "It prints true. Backwards, filed."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_it_reads_what_it_is_handed_it_has_not_stopped_to_think",
+  "text": "It reads what it is handed. It has not stopped to think."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_it_repeats_it_does_not_give_up",
+  "text": "It repeats. It does not give up."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_it_s_reading_it_out",
+  "text": "It's reading it out."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_it_s_reading_it_out_each_reading_calls_the_crew",
+  "text": "It's reading it out. Each reading calls the Crew."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_it_stands_and_waits_it_will_keep_waiting_back_to_the_circle_wallit",
+  "text": "It stands and waits. It will keep waiting. Back to the circle, Wallit."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_last_wave_something_heavier_follows",
+  "text": "Last wave. Something heavier follows."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_louder_now",
+  "text": "Louder now."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_mind_the_legs",
+  "text": "Mind the legs."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_my_address_struck",
+  "text": "My address. Struck."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_no",
+  "text": "No."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_no_address",
+  "text": "No address."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_no_new_units_back_to_the_circle_the_ring_won_t_hold_itself",
+  "text": "No new units. Back to the circle. The ring won't hold itself."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_no_sender_no_refund_stay_in_the_circle",
+  "text": "No sender. No refund. Stay in the circle."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_nobody_asks_come_inside_the_ring",
+  "text": "Nobody asks. Come inside the ring."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_nobody_signs_it_that_s_how_it_works",
+  "text": "Nobody signs it. That's how it works."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_not_mine",
+  "text": "Not mine."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_not_somebody_something",
+  "text": "Not somebody. Something."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_not_this_time_received",
+  "text": "Not this time. Received."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_noted",
+  "text": "Noted."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_noted_board",
+  "text": "Noted. Board."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_noted_you_went_out_alone",
+  "text": "Noted. You went out alone."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_numbered",
+  "text": "Numbered."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_one",
+  "text": "One."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_one_more_then_the_big_one",
+  "text": "One more. Then the big one."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_outside_they_re_cleared_if_i_fall_the_circle_goes_and_everything_in_it_don_t_let_me_fall",
+  "text": "Outside, they're cleared. If I fall, the circle goes, and everything in it. Don't let me fall."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_overtime",
+  "text": "Overtime."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_overtime_march_and_page_together_watch_the_feet",
+  "text": "Overtime. March and page together. Watch the feet."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_page_and_stamp_together_keep_moving",
+  "text": "Page and stamp together. Keep moving."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_process_servers_they_stand_and_wait_while_it_s_read",
+  "text": "Process servers. They stand and wait while it's read."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_pull_it_wallit",
+  "text": "Pull it, Wallit."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_pull_the_lever_the_belt_stops_the_crew_stops",
+  "text": "Pull the lever. The belt stops. The Crew stops."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_refused_mine_to_refuse",
+  "text": "Refused. Mine to refuse."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_ring_s_staked_i_m_coming",
+  "text": "Ring's staked. I'm coming."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_say_it",
+  "text": "Say it."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_second_ring_holds_next",
+  "text": "Second ring holds. Next."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_seventy_metres_then_back",
+  "text": "Seventy metres. Then back."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_slice_this_is_the_circle_the_one_address_in_the_hollow_that_s_filed_inside_it_things_exist",
+  "text": "Slice. This is the circle: the one address in the Hollow that's filed. Inside it, things exist."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_spare_parts_spare_orders",
+  "text": "Spare parts. Spare orders."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_spider_it_carries_the_order",
+  "text": "Spider. It carries the order."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_still_here_plate_s_cracked",
+  "text": "Still here. Plate's cracked."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_still_standing",
+  "text": "Still standing."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_swing_it",
+  "text": "Swing it."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_tch_plated",
+  "text": "Tch. Plated."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_that_is_how_it_s_done_refuse_the_paper_and_it_has_to_strike",
+  "text": "That is how it's done. Refuse the paper, and it has to strike."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_the_circle_s_yours_the_lease_is_paid_board",
+  "text": "The circle's yours. The lease is paid. Board."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_the_clearing_crew_stamped_out_here_one_batch_for_every_unfiled_thing_in_the_hollow",
+  "text": "The Clearing Crew. Stamped out here, one batch for every unfiled thing in the Hollow."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_the_clearing_floor_the_chirpy_ones_are_stamped_out_there_one_batch_for_every_unfiled_thing_in_the_hollow",
+  "text": "The Clearing Floor. The chirpy ones are stamped out there, one batch for every unfiled thing in the Hollow."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_the_courier_it_reads_the_order_out_then_it_lands",
+  "text": "The Courier. It reads the order out, then it lands."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_the_floor_sends_the_same_unit_again_heavier_when_the_cheap_ones_fail",
+  "text": "The Floor sends the same unit again, heavier, when the cheap ones fail."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_the_foreman_it_reads_the_order_to_the_crew_don_t_let_it_finish",
+  "text": "The Foreman. It reads the order to the Crew. Don't let it finish."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_the_last_word_was_a_ball_good",
+  "text": "The last word was a ball. Good."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_the_order_it_comes_down_the_path_last_hold_the_circle_until_it_does",
+  "text": "The order. It comes down the path, last. Hold the circle until it does."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_the_plated_alpha_plate_says_invalid",
+  "text": "The Plated Alpha. Plate says invalid."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_the_registrar_it_reads_the_pages_with_every_leg_break_it_before_it_signs",
+  "text": "The Registrar. It reads the pages with every leg. Break it before it signs."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_the_room_is_blank_nothing_left_to_read",
+  "text": "The room is blank. Nothing left to read."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_the_server_it_will_not_strike_until_it_has_offered_the_paper_three_times_and_been_refused_three_times",
+  "text": "The Server. It will not strike until it has offered the paper three times and been refused three times."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_the_wall_is_gone_the_circle_is_brighter",
+  "text": "The wall is gone. The circle is brighter."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_their_own_pay_a_yo_bot_is_held_together_by_its_wages",
+  "text": "Their own pay. A Yo Bot is held together by its wages."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_then_answer_it_board",
+  "text": "Then answer it. Board."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_then_pay_with_swings",
+  "text": "Then pay with swings."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_then_we_collect",
+  "text": "Then we collect."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_they_aren_t_they_re_what_the_yo_bots_are_for",
+  "text": "They aren't. They're what the Yo Bots are for."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_they_know_mine",
+  "text": "They know mine."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_third_hits_all_twelve",
+  "text": "Third hits. All twelve."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_three_knocks_on_record_they_will_remember",
+  "text": "Three knocks on record. They will remember."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_three_refusals_on_the_record_it_has_nothing_left_but_force",
+  "text": "Three refusals on the record. It has nothing left but force."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_tougher_i_m_fine",
+  "text": "Tougher. I'm fine."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_walk_the_lamps_hold_each_i_ll_keep_the_ring",
+  "text": "Walk the lamps. Hold each. I'll keep the ring."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_wallit_come_back",
+  "text": "Wallit. Come back."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_wallit_stay_close",
+  "text": "Wallit. Stay close."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_wallit_that_s_a_lot_of_nerve",
+  "text": "Wallit. That's a lot of nerve."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_yo_bots_clear_spider_bots_serve_every_spider_bot_comes_down_the_long_walk_from_the_department_with_one_paper_to_hand_over",
+  "text": "Yo Bots clear. Spider Bots serve. Every Spider Bot comes down the Long Walk from the Department with one paper to hand over."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_you_cut_it_down_noted",
+  "text": "You cut it down. Noted."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_you_have_an_address_the_circle",
+  "text": "You have an address. The circle."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_you_kept_it",
+  "text": "You kept it."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_you_knock_like_you_re_owed",
+  "text": "You knock like you're owed."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_you_re_inside_inside_you_exist",
+  "text": "You're inside. Inside, you exist."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_you_swing_like_you_mean_it",
+  "text": "You swing like you mean it."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_you_tipped_cleared_things_don_t_tip",
+  "text": "You tipped. Cleared things don't tip."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_you_tipped_i_noticed",
+  "text": "You tipped. I noticed."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_you_tipped_me_the_first_bolt_i_filed_it",
+  "text": "You tipped me the first bolt. I filed it."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_you_tore_it_it_will_send_another",
+  "text": "You tore it. It will send another."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_you_tore_the_first_one_we_take_another",
+  "text": "You tore the first one. We take another."
+ },
+ {
+  "code": "S",
+  "cast": "slice",
+  "id": "slice_yours",
+  "text": "Yours."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_a_door_number_does_it_come_with_a_door",
+  "text": "A door number. Does it come with a door?"
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_and_the_bolts_they_drop",
+  "text": "And the bolts they drop?"
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_and_the_plates_the_big_ones",
+  "text": "And the plates? The big ones?"
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_and_then",
+  "text": "And then?"
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_bolts_are_wages_collect",
+  "text": "Bolts are wages. Collect."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_bolts_somebody_s_paying_me",
+  "text": "Bolts. Somebody's paying me."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_by_the_guy_with_the_stamp",
+  "text": "By the guy with the stamp."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_cleared_things_somebody_s_hat_somebody_s_clock_that_could_be_me",
+  "text": "Cleared things. Somebody's hat. Somebody's clock. That could be me."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_cover_me_slice_i_m_collecting_a_refund",
+  "text": "Cover me, Slice. I'm collecting a refund."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_does_existing_come_with_a_receipt",
+  "text": "Does existing come with a receipt?"
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_door_s_down_still_no_sender",
+  "text": "Door's down. Still no sender."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_every_bot_that_s_come_at_us_they_re_coming_from_down_there",
+  "text": "Every bot that's come at us. They're coming from down there."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_every_page_turned_over_denied",
+  "text": "Every page turned over. DENIED."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_evidence_every_bill_has_a_paper_trail",
+  "text": "Evidence. Every bill has a paper trail."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_feed_s_broken_their_pay_is_mine_now",
+  "text": "Feed's broken. Their pay is mine now."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_flat_every_one_pay_up",
+  "text": "Flat. Every one. Pay up."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_guard_slice_swing_at_anything_chirpy_pay_up",
+  "text": "Guard Slice. Swing at anything chirpy. Pay up."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_hello_sender_i_d_like_a_word_and_a_receipt",
+  "text": "Hello? Sender? I'd like a word, and a receipt."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_holding_slice",
+  "text": "Holding, Slice?"
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_i_am",
+  "text": "I am."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_i_m_covering_you_tab_s_open",
+  "text": "I'm covering you. Tab's open."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_i_ve_seen_it_i_don_t_need_to_be_told",
+  "text": "I've seen it. I don't need to be told."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_it_s_filed_all_of_it",
+  "text": "It's filed. All of it."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_it_s_got_my_notice_in_there_somewhere_i_keep_receipts",
+  "text": "It's got my notice in there somewhere. I keep receipts."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_it_s_not_signed",
+  "text": "It's not signed."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_it_s_watching_the_circle",
+  "text": "It's watching the circle."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_it_waited_for_me_to_take_it_three_times_refused_all_three",
+  "text": "It waited for me to take it. Three times. Refused all three."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_last_of_the_crew_then_the_big_one_exact_change",
+  "text": "Last of the Crew. Then the big one. Exact change."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_last_stretch_pay_up",
+  "text": "Last stretch. Pay up."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_leased_by_you",
+  "text": "Leased. By you."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_locks_have_keys_keys_have_owners_owners_get_paid",
+  "text": "Locks have keys. Keys have owners. Owners get paid."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_meaning",
+  "text": "Meaning?"
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_my_stamp_my_door",
+  "text": "My stamp. My door."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_neither_do_i_pay_up",
+  "text": "Neither do I. Pay up."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_nerve_s_free_the_swing_s_extra",
+  "text": "Nerve's free. The swing's extra."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_next_time_i_m_billing_the_floor",
+  "text": "Next time I'm billing the Floor."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_no",
+  "text": "No."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_nobody_signs_it_that_s_the_whole_trick",
+  "text": "Nobody signs it. That's the whole trick."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_nobody_touches_her_nobody",
+  "text": "Nobody touches her. Nobody."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_none_of_this_is_mine_i_m_keeping_it_anyway",
+  "text": "None of this is mine. I'm keeping it anyway."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_not_for_free",
+  "text": "Not for free."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_nothing_not_even_a_doormat_i_d_say_that_s_rude_but_i_m_the_one_with_no_address",
+  "text": "Nothing. Not even a doormat. I'd say that's rude, but I'm the one with no address."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_nothing_s_free",
+  "text": "Nothing's free."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_one_lever_no_sign_somebody_trusts_the_floor",
+  "text": "One lever. No sign. Somebody trusts the floor."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_one_notice_returned_where_s_my_tip",
+  "text": "One notice, returned. Where's my tip?"
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_open_up_i_know_you_re_in_there_it_s_a_stamp_not_a_person",
+  "text": "Open up. I know you're in there. It's a stamp, not a person."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_overhead_don_t_look_at_me_like_that",
+  "text": "Overhead. Don't look at me like that."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_overtime_pays_double",
+  "text": "Overtime pays double."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_ow_that_s_extra",
+  "text": "Ow! That's extra!"
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_pages_four_and_five_are_the_small_print_nobody_reads_the_small_print_i_do",
+  "text": "Pages four and five are the small print. Nobody reads the small print. I do."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_paid_in_full",
+  "text": "Paid in full."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_pay_up",
+  "text": "Pay up."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_pay_up_bots",
+  "text": "Pay up, bots."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_plates_cost_more_pay_up",
+  "text": "Plates cost more. Pay up."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_read_what",
+  "text": "Read what?"
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_received_in_full_pay_up",
+  "text": "Received. In full. Pay up."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_refused",
+  "text": "Refused."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_refused_i_can_do_refused_free_of_charge",
+  "text": "Refused. I can do refused. Free of charge."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_refused_the_paper_three_times_put_that_in_writing",
+  "text": "Refused the paper three times. Put that in writing."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_return_to_sender",
+  "text": "Return to sender."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_return_to_sender_which_sender_i_want_a_refund",
+  "text": "Return to sender. Which sender? I want a refund."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_signed_by_nobody_told_you",
+  "text": "Signed by nobody. Told you."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_since_when",
+  "text": "Since when?"
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_slice_hold_on",
+  "text": "Slice! Hold on!"
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_so_does_my_refund_pay_up",
+  "text": "So does my refund. Pay up."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_so_the_order_is_only_a_form",
+  "text": "So the order is only a form."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_so_we_exist",
+  "text": "So we exist."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_something_big_s_coming_i_can_smell_the_invoice",
+  "text": "Something big's coming. I can smell the invoice."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_spiders_bigger_than_anything_so_far_and_not_bigger_yo_bots",
+  "text": "Spiders. Bigger than anything so far, and not bigger Yo Bots."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_stamped_out_so_they_re_the_department_s_employees",
+  "text": "Stamped out. So they're the Department's. Employees."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_strike_this_address_sounds_worse_when_it_s_yours",
+  "text": "STRIKE. THIS. ADDRESS. Sounds worse when it's yours."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_strike_this_address_stamped_denied_ha",
+  "text": "\"Strike this address.\" Stamped DENIED. Ha."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_struck_from_the_record",
+  "text": "Struck from the record."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_take_it",
+  "text": "Take it."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_that_s_a_tip_i_keep_tips",
+  "text": "That's a tip. I keep tips."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_that_s_my_stamp_torn",
+  "text": "That's my stamp. Torn."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_the_notice_is_in_my_pocket_evidence",
+  "text": "The notice is in my pocket. Evidence."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_the_order_s_a_form_a_form_can_be_answered",
+  "text": "The order's a form. A form can be answered."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_then_give_it_one_you_ve_got_the_stamp",
+  "text": "Then give it one. You've got the stamp."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_then_i_ll_make_it_a_refund",
+  "text": "Then I'll make it a refund."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_then_i_ll_read_it_the_invoice",
+  "text": "Then I'll read it the invoice."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_then_i_m_reading_mine_pay_up",
+  "text": "Then I'm reading mine. Pay up."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_then_i_ve_been_collecting_what_s_owed_good_now_i_want_the_lever",
+  "text": "Then I've been collecting what's owed. Good. Now I want the lever."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_then_it_can_be_denied",
+  "text": "Then it can be denied."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_then_it_can_read_me_the_bill",
+  "text": "Then it can read me the bill."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_then_it_carries_my_bill",
+  "text": "Then it carries my bill."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_then_let_s_file_it_pay_up",
+  "text": "Then let's file it. Pay up."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_then_they_re_out_of_walls_let_s_file_it_pay_up",
+  "text": "Then they're out of walls. Let's file it. Pay up."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_then_we_answer_it_pay_up",
+  "text": "Then we answer it. Pay up."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_there_s_a_door_doors_have_senders",
+  "text": "There's a door. Doors have senders."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_they_keep_coming_down_the_same_path_nobody_s_lost_they_know_the_address",
+  "text": "They keep coming down the same path. Nobody's lost. They know the address."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_they_keep_the_order_here_every_copy_of_it",
+  "text": "They keep the order here. Every copy of it."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_they_re_all_the_same_unit",
+  "text": "They're all the same unit."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_they_re_not_bigger_yo_bots_they_re_deliveries",
+  "text": "They're not bigger Yo Bots. They're deliveries."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_they_want_her_circle_not_on_my_watch",
+  "text": "They want her circle. Not on my watch."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_they_were_only_ever_stamped_out_nobody_asked_them",
+  "text": "They were only ever stamped out. Nobody asked them."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_those_bolts_are_the_same_ones_they_ve_been_paying_me",
+  "text": "Those bolts are the same ones they've been paying me."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_twenty_five_waves_i_m_owed_a_bonus",
+  "text": "Twenty-five waves. I'm owed a bonus."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_two_out_of_the_yard_that_s_a_tip",
+  "text": "Two out of the yard. That's a tip."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_two_put_me_next_to_you",
+  "text": "Two. Put me next to you."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_under_time_charge_extra",
+  "text": "Under time. Charge extra."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_void_i_don_t_take_bills_i_didn_t_order",
+  "text": "Void. I don't take bills I didn't order."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_void_your_own_stamp",
+  "text": "Void your own stamp."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_waiting_s_billable",
+  "text": "Waiting's billable."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_wallit_one_wallet_one_bat_no_refunds_they_stamped_me_return_to_sender_and_threw_me_in_here",
+  "text": "Wallit. One wallet, one bat, no refunds. They stamped me \"Return to sender\" and threw me in here."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_walls_cost_worth_it",
+  "text": "Walls cost. Worth it."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_wasn_t_going_to_not_for_free",
+  "text": "Wasn't going to. Not for free."
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_where_do_i_sign_for_this_bat",
+  "text": "Where do I sign for this bat?"
+ },
+ {
+  "code": "W",
+  "cast": "wallit",
+  "id": "wallit_you_re_bleeding_slice",
+  "text": "You're bleeding, Slice."
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_address_still_unknown_deleting_twice",
+  "text": "Address still unknown! Deleting twice!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_address_unknown_deleting",
+  "text": "Address unknown! Deleting!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_batch_interrupted_uploading_victory",
+  "text": "Batch... interrupted? Uploading... victory?"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_delivery_delivery_oh_it_s_for_us",
+  "text": "Delivery! Delivery! ... Oh. It's for us?"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_delivery_oh_it_s_for_us",
+  "text": "Delivery! ... Oh. It's for us?"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_delivery_undelivered_chirp",
+  "text": "Delivery... undelivered... chirp?"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_hello_i_am_not_finished_uploading_victory",
+  "text": "Hello! I am... not finished! Uploading victory?"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_hello_uploading_victory",
+  "text": "Hello! Uploading victory!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_hello_uploading_victory_striking_this_address_now",
+  "text": "Hello! Uploading victory! Striking this address now!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_i_am_not_finished_finish_me",
+  "text": "I am... not finished! Finish me?"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_notice_this_plate_is_stamped_invalid",
+  "text": "Notice! This plate is stamped: INVALID!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_notice_undelivered_uploading_defeat",
+  "text": "Notice... undelivered... uploading... defeat?"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_order_delivery_signature_required",
+  "text": "Order delivery! Signature required!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_order_read_aloud_strike_this_address",
+  "text": "Order, read aloud: STRIKE. THIS. ADDRESS."
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_order_received_strike_the_address",
+  "text": "Order received! Strike the address!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_order_unread_uploading_nothing",
+  "text": "Order... unread... uploading... nothing?"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_page_five_by_order_of_nobody_filed",
+  "text": "Page five! BY ORDER OF NOBODY. Filed!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_page_one_strike",
+  "text": "Page one! STRIKE."
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_page_ten_filing_in_progress",
+  "text": "Page ten! Filing in progress!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_page_three_address_chirp",
+  "text": "Page three! ADDRESS. Chirp!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_page_turned_turning_again",
+  "text": "Page turned! Turning again!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_page_two_this",
+  "text": "Page two! THIS."
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_plate_voided_uploading_nothing",
+  "text": "Plate... voided... uploading... nothing?"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_register_closed_uploading_nothing",
+  "text": "Register... closed... uploading... nothing?"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_registrar_on_the_floor_please_remain_seated",
+  "text": "Registrar on the floor! Please remain seated!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_reissued_heavier_uploading_victory",
+  "text": "Reissued! Heavier! Uploading victory!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_return_to_sender_return_to_sender",
+  "text": "Return to sender! Return to sender!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_rush_delivery_rush_delivery",
+  "text": "Rush delivery! Rush delivery!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_sealed_and_stamped_delivering",
+  "text": "Sealed and stamped! Delivering!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_second_notice_this_address_is_still_unknown",
+  "text": "Second notice! This address is still unknown!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_signature_required_uploading_nothing",
+  "text": "Signature... required... uploading... nothing?"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_skipping_the_queue_chirp",
+  "text": "Skipping the queue! Chirp!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_special_delivery_notice_of_striking",
+  "text": "Special delivery! Notice of striking!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_spiders_en_route_chirp",
+  "text": "Spiders en route! Chirp!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_strike_the_address_strike_the_address",
+  "text": "Strike the address. Strike the address."
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_upgraded_now_with_plates",
+  "text": "Upgraded! Now with plates!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_uploading_victory_almost",
+  "text": "Uploading victory! Almost!"
+ },
+ {
+  "code": "Y",
+  "cast": "yobot",
+  "id": "yobot_victory_loading_94",
+  "text": "Victory loading... 94%!"
+ }
+]

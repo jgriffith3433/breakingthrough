@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 // On-screen controls for phones and tablets: a stick on the left, Swing (hold it to wind up a home run), Lock and
 // Jump on the right, Shake once birds climb, Next wave in breaks, and Turn in the build window. They press PlayInput's keys, so gameplay reads
-// them exactly like the keyboard and mouse. A drag on the right half (or on Swing) turns the camera; in the build
+// them exactly like the keyboard and mouse. A drag that starts off the buttons turns the camera (a finger on a button never does); in the build
 // window a drag shows the piece and letting go drops it. Hidden unless the device has touch.
 public class TouchControls : MonoBehaviour {
     public static TouchControls Instance { get; private set; }
@@ -27,8 +27,11 @@ public class TouchControls : MonoBehaviour {
         Shake,
         Next,
         TurnLeft,
-        TurnRight
+        TurnRight,
+        Revive
     }
+
+    class Spots : Dictionary<int, Vector2> { }
 
     class Finger {
         public Role Role;
@@ -45,10 +48,10 @@ public class TouchControls : MonoBehaviour {
         public Color Rest;
     }
 
-    static readonly Dictionary<int, Vector2> botFingers = new Dictionary<int, Vector2>();
+    static readonly Spots botFingers = new Spots();
 
     readonly Dictionary<int, Finger> fingers = new Dictionary<int, Finger>();
-    readonly Dictionary<int, Vector2> seen = new Dictionary<int, Vector2>();
+    readonly Spots seen = new Spots();
     readonly List<int> gone = new List<int>();
     readonly List<Pad> pads = new List<Pad>();
     Font font;
@@ -65,6 +68,7 @@ public class TouchControls : MonoBehaviour {
     Pad next;
     Pad turnLeft;
     Pad turnRight;
+    Pad revive;
     bool locked;
     bool shown;
     UiMode laidOut;
@@ -84,7 +88,7 @@ public class TouchControls : MonoBehaviour {
 
     static void Ensure() {
         botFingers.Clear();
-        if (SceneManager.GetActiveScene().name != MetaProgress.GameScene) {
+        if ((SceneManager.GetActiveScene().name != MetaProgress.GameScene && !SceneManager.GetActiveScene().name.StartsWith("Level_"))) {
             return;
         }
         if (FindAnyObjectByType<TouchControls>() != null) {
@@ -177,7 +181,7 @@ public class TouchControls : MonoBehaviour {
         Gather();
 
         bool lost = WaveDirector.IsLost;
-        bool show = touch && WaveDirector.Instance != null && !lost && !LevelUpScreen.IsOpen && !PauseMenu.IsOpen && !Cutscene.IsOpen;
+        bool show = touch && (WaveDirector.Instance != null || LevelScene.Instance != null) && !lost && !LevelUpScreen.IsOpen && !PauseMenu.IsOpen && !Cutscene.IsOpen;
         if (show != shown) {
             shown = show;
             root.SetActive(show);
@@ -223,6 +227,7 @@ public class TouchControls : MonoBehaviour {
         SetShown(next, WaveDirector.Waiting);
         SetShown(turnLeft, building);
         SetShown(turnRight, building);
+        SetShown(revive, !building && Companion.Instance != null && Companion.Instance.ReviveReady);
         if (building && locked) {
             locked = false;
         }
@@ -254,7 +259,7 @@ public class TouchControls : MonoBehaviour {
             }
             Vector2 delta = pair.Value - finger.Last;
             finger.Last = pair.Value;
-            if (finger.Role == Role.Look || finger.Role == Role.Swing) {
+            if (finger.Role == Role.Look) {   // only a finger that began off the buttons turns the camera
                 look += delta;
             } else if (finger.Role == Role.Place) {
                 PlayInput.PadPoint(pair.Value);
@@ -345,6 +350,9 @@ public class TouchControls : MonoBehaviour {
             case Role.TurnRight:
                 PlayInput.PadTap(KeyCode.E);
                 break;
+            case Role.Revive:
+                PlayInput.PadHold(KeyCode.E, true);   // held, like E: she comes up while the finger stays
+                break;
         }
     }
 
@@ -366,6 +374,9 @@ public class TouchControls : MonoBehaviour {
                 break;
             case Role.Jump:
                 PlayInput.PadHold(KeyCode.Space, false);
+                break;
+            case Role.Revive:
+                PlayInput.PadHold(KeyCode.E, false);
                 break;
         }
     }
@@ -466,6 +477,7 @@ public class TouchControls : MonoBehaviour {
         turnLeft = MakePad(Role.TurnLeft, "Turn\nleft", 130f, 24, new Color(0.28f, 0.22f, 0.12f, 0.7f));
         turnRight = MakePad(Role.TurnRight, "Turn\nright", 130f, 24, new Color(0.28f, 0.22f, 0.12f, 0.7f));
 
+        revive = MakePad(Role.Revive, "Revive", 170f, 30, new Color(0.14f, 0.34f, 0.3f, 0.7f));
         next = MakePad(Role.Next, "Next wave", 0f, 30, new Color(0.22f, 0.38f, 0.22f, 0.9f));
         UiSkin.Round(next.Image, 0.6f);
         next.Rect.SetParent(root.transform, false);
@@ -494,6 +506,7 @@ public class TouchControls : MonoBehaviour {
         stickHome = new Vector2(StickSize * 0.5f + 12f, StickSize * 0.5f + 12f);
         stickBase.anchoredPosition = stickHome;
         Corner(fire, new Vector2(-105f, 105f));
+        Corner(revive, laidOut == UiMode.Tall ? new Vector2(-105f, 440f) : new Vector2(-440f, 120f));
         Corner(turnLeft, new Vector2(-260f, 90f));
         Corner(turnRight, new Vector2(-90f, 90f));
         bool tall = laidOut == UiMode.Tall;

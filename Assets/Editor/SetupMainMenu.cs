@@ -64,10 +64,20 @@ static class SetupMainMenu {
     }
 
     static void EnsureBuild() {
-        var scenes = new EditorBuildSettingsScene[3];
+        var scenes = new EditorBuildSettingsScene[11];
         scenes[0] = new EditorBuildSettingsScene(ScenePath, true);
         scenes[1] = new EditorBuildSettingsScene("Assets/scene2.unity", true);
         scenes[2] = new EditorBuildSettingsScene("Assets/Campaign.unity", true);
+        // Every chapter map and the hub office have their own scenes (ChapterMap loads them additively; OwnMap builds each place).
+        scenes[3] = new EditorBuildSettingsScene("Assets/Maps/Map_Hollow.unity", true);
+        scenes[4] = new EditorBuildSettingsScene("Assets/Maps/Map_Edge.unity", true);
+        scenes[5] = new EditorBuildSettingsScene("Assets/Maps/Map_Floor.unity", true);
+        scenes[6] = new EditorBuildSettingsScene("Assets/Maps/Map_Walk.unity", true);
+        scenes[7] = new EditorBuildSettingsScene("Assets/Maps/Map_Reading.unity", true);
+        scenes[8] = new EditorBuildSettingsScene("Assets/Maps/Map_Filed.unity", true);
+        scenes[9] = new EditorBuildSettingsScene("Assets/Maps/Map_Office.unity", true);
+        // Campaign levels are their own scenes (Level*.cs): Level_1_Yard is Chapter 1.
+        scenes[10] = new EditorBuildSettingsScene("Assets/Maps/Level_1_Yard.unity", true);
         EditorBuildSettings.scenes = scenes;
         AssetDatabase.SaveAssets();
     }

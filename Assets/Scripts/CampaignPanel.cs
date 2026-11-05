@@ -7,9 +7,9 @@ using UnityEngine.UI;
 // empty one starts Chapter 1) and loads the chapter scene; Erase asks twice. Same look and sizing rules as the
 // Settings panel: one layout scaled to fit a phone, 88-unit buttons.
 public class CampaignPanel : MonoBehaviour {
-    const float PanelWidth = 760f;
+    const float PanelWidth = 920f;
     const float PanelHeight = 700f;
-    const float RowHeight = 108f;
+    const float RowHeight = 124f;
 
     static CampaignPanel instance;
 
@@ -26,6 +26,8 @@ public class CampaignPanel : MonoBehaviour {
     }
     public Button[] SlotButtons { get; private set; } = new Button[CampaignSave.SlotCount];
     public Button[] EraseButtons { get; private set; } = new Button[CampaignSave.SlotCount];
+    public Button[] PlusButtons { get; private set; } = new Button[CampaignSave.SlotCount];   // New Game+ on a filed file, straight from the menu
+    public string RanksShown(int index) { return slotRanks[index] != null ? slotRanks[index].text : ""; }
     public Button BackButton { get; private set; }
     public Button LoreButton { get; private set; }
     public Button JournalButton { get; private set; }
@@ -41,6 +43,7 @@ public class CampaignPanel : MonoBehaviour {
     RectTransform panel;
     readonly Text[] slotTitles = new Text[CampaignSave.SlotCount];
     readonly Text[] slotInfo = new Text[CampaignSave.SlotCount];
+    readonly Text[] slotRanks = new Text[CampaignSave.SlotCount];
     readonly Text[] eraseLabels = new Text[CampaignSave.SlotCount];
     readonly Image[] slotImages = new Image[CampaignSave.SlotCount];
     int armedErase = -1;
@@ -113,10 +116,25 @@ public class CampaignPanel : MonoBehaviour {
             CampaignSave.Slot slot = CampaignSave.Get(i);
             slotTitles[i].text = "Case file " + (i + 1) + (slot.used ? ": " + CampaignSave.Describe(slot) : "");
             slotInfo[i].text = slot.used ? CampaignSave.Clock(slot) + "  |  " + CampaignSave.Completion(slot) + "  |  Lore " + Lore.UnlockedCount(slot) + "/" + Lore.All.Length + "  |  " + (Journal.PaidInFull(slot) ? Journal.PaidTitle : "Journal " + (Journal.FindCount(slot) + Journal.GoalCount(slot)) + "/" + (Journal.Count * 2)) + (slot.hard ? "  |  HARD" : "") : "No file yet. Press to open a new one.";
+            slotRanks[i].text = slot.used ? RanksLine(slot) : "";
+            PlusButtons[i].gameObject.SetActive(CampaignGrade.Filed(slot));
             slotImages[i].color = slot.used ? new Color(0.3f, 0.24f, 0.12f, 1f) : new Color(0.14f, 0.15f, 0.21f, 1f);
             EraseButtons[i].gameObject.SetActive(slot.used);
             eraseLabels[i].text = armedErase == i ? "Sure?" : "Erase";
             EraseButtons[i].GetComponent<Image>().color = armedErase == i ? new Color(0.7f, 0.16f, 0.12f, 1f) : new Color(0.28f, 0.2f, 0.18f, 1f);
+        }
+    }
+
+    // "Ranks 1 A  2 B  3 S  4 -  5 -  6 -", with the loop on a New Game+ file.
+    static string RanksLine(CampaignSave.Slot slot) {
+        return "Ranks " + CampaignSave.RankLine(slot) + (slot.plus > 0 ? "   |   NEW GAME+ " + slot.plus : "");
+    }
+
+    // New Game+ from the case files: the filed file starts again at Chapter 1 (harder bots, an echo line a chapter) and opens.
+    public void PlusSlot(int index) {
+        if (CampaignSave.NewGamePlus(index)) {
+            RunAnalytics.Screen("new_game_plus");
+            OpenSlot(index);
         }
     }
 
@@ -193,7 +211,7 @@ public class CampaignPanel : MonoBehaviour {
         Place(sub.rectTransform, new Vector2(0f, -90f), new Vector2(PanelWidth - 60f, 40f), new Vector2(0.5f, 1f), false);
 
         float eraseWidth = 150f;
-        float slotWidth = PanelWidth - 80f - eraseWidth - 14f;
+        float slotWidth = PanelWidth - 80f - 2f * eraseWidth - 28f;
         for (int i = 0; i < CampaignSave.SlotCount; i++) {
             int index = i;
             float y = -150f - i * (RowHeight + 16f);
@@ -203,16 +221,25 @@ public class CampaignPanel : MonoBehaviour {
             slotImages[i] = slotButton.GetComponent<Image>();
             Place((RectTransform)slotButton.transform, new Vector2(40f, y), new Vector2(slotWidth, RowHeight), new Vector2(0f, 1f), true, true);
             slotTitles[i] = MakeText(slotButton.transform, "", 30, FontStyle.Bold, TextAnchor.MiddleLeft);
-            Place(slotTitles[i].rectTransform, new Vector2(24f, -12f), new Vector2(slotWidth - 40f, 44f), new Vector2(0f, 1f), true, true);
+            Place(slotTitles[i].rectTransform, new Vector2(24f, -8f), new Vector2(slotWidth - 40f, 40f), new Vector2(0f, 1f), true, true);
             slotTitles[i].horizontalOverflow = HorizontalWrapMode.Overflow;
             slotInfo[i] = MakeText(slotButton.transform, "", 22, FontStyle.Normal, TextAnchor.MiddleLeft);
             slotInfo[i].color = new Color(0.85f, 0.88f, 0.95f, 0.8f);
-            Place(slotInfo[i].rectTransform, new Vector2(24f, -58f), new Vector2(slotWidth - 40f, 36f), new Vector2(0f, 1f), true, true);
+            Place(slotInfo[i].rectTransform, new Vector2(24f, -48f), new Vector2(slotWidth - 40f, 32f), new Vector2(0f, 1f), true, true);
             slotInfo[i].horizontalOverflow = HorizontalWrapMode.Overflow;
+            slotRanks[i] = MakeText(slotButton.transform, "", 22, FontStyle.Bold, TextAnchor.MiddleLeft);
+            slotRanks[i].color = new Color(1f, 0.82f, 0.38f, 0.95f);
+            Place(slotRanks[i].rectTransform, new Vector2(24f, -84f), new Vector2(slotWidth - 40f, 32f), new Vector2(0f, 1f), true, true);
+            slotRanks[i].horizontalOverflow = HorizontalWrapMode.Overflow;
 
             EraseButtons[i] = MakeButton(panel, "Erase " + (i + 1), new Vector2(eraseWidth, RowHeight), () => EraseSlot(index), out eraseLabels[i]);
             Place((RectTransform)EraseButtons[i].transform, new Vector2(40f + slotWidth + 14f, y), new Vector2(eraseWidth, RowHeight), new Vector2(0f, 1f), true, true);
             eraseLabels[i].fontSize = 26;
+            PlusButtons[i] = MakeButton(panel, "New Game+ " + (i + 1), new Vector2(eraseWidth, RowHeight), () => PlusSlot(index), out Text plusLabel);
+            Place((RectTransform)PlusButtons[i].transform, new Vector2(40f + slotWidth + 14f + eraseWidth + 14f, y), new Vector2(eraseWidth, RowHeight), new Vector2(0f, 1f), true, true);
+            plusLabel.text = "New Game+";
+            plusLabel.fontSize = 24;
+            PlusButtons[i].GetComponent<Image>().color = new Color(0.2f, 0.3f, 0.4f, 1f);
         }
 
         LoreButton = MakeButton(panel, "Lore log", new Vector2(220f, 88f), OpenLore, out Text loreLabel);

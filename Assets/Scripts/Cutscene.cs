@@ -17,7 +17,7 @@ using UnityEngine.UI;
 //         (Resources/Voice/<speaker>_<line>.mp3) is the text alone and holds the floor for its estimated length.
 // Portraits: Resources/Portraits/<wallit|slice|yobot>.png if the file exists, else a coloured disc with the initial.
 [DefaultExecutionOrder(-5000)]
-public class Cutscene : MonoBehaviour {
+public partial class Cutscene : MonoBehaviour {
     static Cutscene instance;
 
     public static bool IsOpen { get { return instance != null && instance.open; } }
@@ -106,11 +106,17 @@ public class Cutscene : MonoBehaviour {
         Overlaps = 0;
         Skipped = 0;
         Finished = 0;
+        ShotsShown = 0;
+        ShotsSkipped = 0;
+        SubtitleLines = 0;
+        DuckedLowest = 1f;
     }
 
     void Awake() {
         instance = this;
         Build();
+        BuildShots();
+        BuildChoice();
     }
 
     void OnDestroy() {
@@ -128,13 +134,16 @@ public class Cutscene : MonoBehaviour {
     // ---------------------------------------------------------------- playing
 
     void Begin(string[] lines, Action onDone) {
+        shotMode = false;
+        shotRoot.SetActive(false);
+        subtitle.gameObject.SetActive(false);
         script = lines;
         cursor = 0;
         page = 0;
         pageCount = 0;
         foreach (string line in lines) {
             string who = Story.Speaker(line);
-            if (who != "C" && who != "B") {
+            if (who != "C" && who != "B" && who != "?") {
                 pageCount++;
             }
         }
@@ -160,7 +169,10 @@ public class Cutscene : MonoBehaviour {
     // Reads directives up to the next page, then shows it. Past the last page the scene ends.
     void NextPage() {
         while (cursor < script.Length) {
-            string line = script[cursor++];
+            string line = Choices.Expand(script[cursor++]);   // a ? line is the plain line, or nothing if its choice went the other way
+            if (line == null) {
+                continue;
+            }
             string who = Story.Speaker(line);
             string arg = Story.Text(line).Trim().ToLowerInvariant();
             if (who == "C") {
@@ -172,6 +184,14 @@ public class Cutscene : MonoBehaviour {
                 barsOn = arg != "off";
                 Events.Add("bars|" + (barsOn ? "on" : "off"));
                 continue;
+            }
+            if (who == "Q") {
+                Choices.Row row = Choices.Get(Story.Text(line).Trim());
+                if (row == null || CampaignSave.Active < 0 || Choices.Picked(row.Id) > 0) {
+                    continue;   // no such choice, no open file (Arcade), or already made on this file: not asked twice
+                }
+                ShowChoice(row);
+                return;
             }
             ShowPage(who, Story.Text(line));
             return;
@@ -200,8 +220,14 @@ public class Cutscene : MonoBehaviour {
     void Speak(string who, string text) {
         WallitVoice.Silence();
         SliceVoice.Silence();
+        CastVoice.Silence();
         if (who != "W" && who != "S") {
-            Cast.Spoke(who, text);
+            // Everyone else speaks in their own cast voice (CastVoice: one at a time, on the shared floor).
+            float said = CastVoice.SayNow(who, text, "cutscene");
+            if (said > 0f) {
+                VoiceLines++;
+                Events.Add("voice|" + who + "|" + said.ToString("0.00"));
+            }
             return;
         }
         if (!WallitVoice.FloorFree) {
@@ -222,13 +248,22 @@ public class Cutscene : MonoBehaviour {
             return;
         }
         open = false;
+        ClosedFrame = Time.frameCount;
+        HideChoice();
         WallitVoice.Silence();
         SliceVoice.Silence();
+        CastVoice.Silence();
         VoiceDirector.Scene = false;
         barsOn = false;
         Time.timeScale = savedScale;
         panel.gameObject.SetActive(false);
         SkipButton.gameObject.SetActive(false);
+        if (shotMode) {
+            if (skipped) {
+                ShotsSkipped++;
+            }
+            EndShots();
+        }
         if (skipped) {
             Skipped++;
         } else {
@@ -250,12 +285,21 @@ public class Cutscene : MonoBehaviour {
             Layout();
         }
         float dt = Time.unscaledDeltaTime;
+        TickBed(dt);
         barsNow = Mathf.MoveTowards(barsNow, barsOn ? 1f : 0f, dt * 2.2f);
         SetBars();
         if (!open) {
             return;
         }
         Time.timeScale = 0f;
+        if (ComfortTick()) {
+            return;
+        }
+        if (shotMode) {
+            LayoutSubtitle();
+            TickShots(dt);
+            return;
+        }
         if (typed < full.Length) {
             typed = Mathf.Min(full.Length, typed + TypeSpeed * dt);
             lineText.text = full.Substring(0, Mathf.FloorToInt(typed));
@@ -263,8 +307,12 @@ public class Cutscene : MonoBehaviour {
         if (Time.unscaledTime < readyAt) {
             return;
         }
-        if (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter)) {
+        if (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter) || PadSkip()) {
             Close(true);
+            return;
+        }
+        if (choosing) {
+            TickChoice();
             return;
         }
         if (PlayInput.AnyKeyDown || TouchBegan()) {
@@ -315,6 +363,9 @@ public class Cutscene : MonoBehaviour {
     void Shoot() {
         float target = open ? 1f : 0f;
         weight = Mathf.MoveTowards(weight, target, Time.unscaledDeltaTime * (open ? 1.8f : 1.5f));
+        if (ComfortOptions.ReducedMotion) {
+            weight = 0f;   // the camera stays where the game left it: no sweep to the speaker
+        }
         if (weight <= 0.001f) {
             focusSet = false;
             return;
@@ -420,7 +471,7 @@ public class Cutscene : MonoBehaviour {
         if (UiFit.Touch) {
             hintText.text = count + (UiFit.Mode == UiMode.Tall ? "\n" : "     ") + "Tap to continue   ·   Tap Skip to skip";
         } else {
-            hintText.text = count + "     Any key: next   ·   Enter: skip";
+            hintText.text = count + (ComfortOptions.PadConnected ? "     A: next   ·   Y: skip   ·   Start: pause" : "     Any key: next   ·   Enter: skip   ·   P: pause");
         }
     }
 
@@ -551,6 +602,12 @@ public class Cutscene : MonoBehaviour {
             skipRect.sizeDelta = new Vector2(240f, 88f);
             skipLabel.fontSize = 34;
         }
+        float grow = ComfortOptions.SubtitleScale;
+        if (grow > 1f) {
+            nameSize = Mathf.Round(nameSize * grow);
+            lineSize = Mathf.Round(lineSize * grow);
+            height = Mathf.Min(size.y * 0.6f, height * (1f + (grow - 1f) * 1.1f));
+        }
         panel.sizeDelta = new Vector2(width, height);
         portraitRect.anchorMin = portraitRect.anchorMax = new Vector2(0f, 1f);
         portraitRect.pivot = new Vector2(0f, 1f);
@@ -566,6 +623,8 @@ public class Cutscene : MonoBehaviour {
         hintText.rectTransform.anchoredPosition = new Vector2(textLeft, 12f);
         SetHint();
         SetBars();
+        LayoutChoice();
+        ApplyComfort();
     }
 
     // Top-left anchored text box inside the panel.

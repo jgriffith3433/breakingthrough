@@ -56,6 +56,7 @@ public class ChapterScene : MonoBehaviour {
 
     void Awake() {
         Instance = this;
+        MusicDirector.Play("theme_department");   // the hub raises its own (ChapterHub.Awake)
         Time.timeScale = 1f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
@@ -182,6 +183,10 @@ public class ChapterScene : MonoBehaviour {
         Leave();
         GameAudio.Play("stamp", 0.6f);
         RunAnalytics.Screen("chapter_start_" + (Chapter + 1));
+        if (LevelScene.Replaces(Chapter)) {
+            LevelScene.Enter(Chapter);   // its own scene (Level*.cs), no chapter run
+            return;
+        }
         ChapterRun.Begin(Chapter);
     }
 

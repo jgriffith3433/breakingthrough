@@ -1,0 +1,25 @@
+{
+  "id": "sample",
+  "bed": "pad",
+  "shots": [
+    { "id": "stamp", "back": "stamp_back", "front": "stamp_front", "speaker": "N",
+      "line": "Out of the dark comes a stamp: RETURN TO SENDER. Its ink is the only bright thing in the Hollow.",
+      "seconds": 4.5, "fade": 1.0, "level": 0.6, "from": [0, -0.6, 1.1], "to": [0, 0.5, 1.25] },
+    { "id": "landing", "back": "hollow_back", "front": "wallet_front", "speaker": "W",
+      "line": "Ow! That's extra!",
+      "seconds": 3.5, "fade": 0.3, "level": 0.9, "from": [0.8, 0.2, 1.3], "to": [-0.4, 0, 1.1] },
+    { "id": "ring", "back": "ring_back", "speaker": "N",
+      "seconds": 3.0, "fade": 1.0, "level": 1.0, "from": [0, 0, 1.4], "to": [0, 0, 1.08] },
+    { "id": "slice", "back": "slice_back", "front": "slice_front", "speaker": "S",
+      "line": "You're inside. Inside, you exist.",
+      "seconds": 3.5, "fade": 0.7, "level": 0.5, "from": [-0.5, 0.6, 1.08], "to": [0.2, -0.2, 1.3] },
+    { "id": "receipt", "back": "slice_back", "front": "slice_front", "speaker": "W",
+      "line": "Does existing come with a receipt?",
+      "seconds": 3.0, "fade": 0.0, "level": 0.4, "from": [0.2, -0.2, 1.3], "to": [0.6, 0, 1.2] },
+    { "id": "crest", "back": "crest_back", "front": "crest_front", "speaker": "Y",
+      "line": "Hello! Uploading victory! Striking this address now!",
+      "seconds": 4.0, "fade": 0.8, "level": 1.0, "from": [0.6, 0, 1.3], "to": [-0.2, 0, 1.08] },
+    { "id": "ring-world", "world": "wide", "speaker": "N",
+      "seconds": 3.0, "fade": 1.2, "level": 0.8 }
+  ]
+}

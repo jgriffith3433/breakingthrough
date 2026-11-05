@@ -1,0 +1,94 @@
+{
+  "id": "boss_order",
+  "bed": "boss_orderbearer",
+  "shots": [
+    {
+      "id": "s1",
+      "back": "boss_order_1",
+      "speaker": "Y",
+      "seconds": 3.2,
+      "fade": 0.0,
+      "level": 0.9,
+      "from": [
+        0,
+        0.3,
+        1.1
+      ],
+      "to": [
+        0,
+        0,
+        1.4
+      ],
+      "cast": [
+        "orderbearer"
+      ],
+      "line": "Order delivery! Signature required!"
+    },
+    {
+      "id": "s2",
+      "back": "boss_order_2",
+      "speaker": "S",
+      "seconds": 2.8,
+      "fade": 0.7,
+      "level": 0.6,
+      "from": [
+        0,
+        0,
+        1.3
+      ],
+      "to": [
+        0.2,
+        0,
+        1.1
+      ],
+      "cast": [
+        "slice"
+      ],
+      "line": "Spider. It carries the order."
+    },
+    {
+      "id": "s3",
+      "back": "boss_order_3",
+      "speaker": "O",
+      "seconds": 4.0,
+      "fade": 0.7,
+      "level": 0.9,
+      "from": [
+        0,
+        0,
+        1.1
+      ],
+      "to": [
+        0,
+        0,
+        1.4
+      ],
+      "cast": [
+        "orderbearer"
+      ],
+      "line": "Order, in force: STRIKE. THIS. ADDRESS."
+    },
+    {
+      "id": "s4",
+      "back": "boss_order_4",
+      "speaker": "W",
+      "seconds": 2.8,
+      "fade": 0.7,
+      "level": 0.9,
+      "from": [
+        0,
+        0,
+        1.25
+      ],
+      "to": [
+        0,
+        0,
+        1.4
+      ],
+      "cast": [
+        "wallit"
+      ],
+      "line": "Then it carries my bill."
+    }
+  ]
+}

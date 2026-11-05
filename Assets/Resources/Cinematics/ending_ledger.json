@@ -1,0 +1,130 @@
+{
+  "id": "ending_ledger",
+  "bed": "ch6_score",
+  "shots": [
+    {
+      "id": "s1",
+      "back": "ending_ledger_1_back",
+      "speaker": "N",
+      "seconds": 5.6,
+      "fade": 0.0,
+      "level": 0.6,
+      "from": [
+        0,
+        0,
+        1.3
+      ],
+      "to": [
+        0,
+        0,
+        1.05
+      ],
+      "alt": "ring_back",
+      "line": "THE LEDGER. One line of writing around the ring, then one door number, in Wallit's own hand."
+    },
+    {
+      "id": "s2",
+      "back": "ending_ledger_2_back",
+      "speaker": "W",
+      "seconds": 3.2,
+      "fade": 0.7,
+      "level": 0.7,
+      "from": [
+        0,
+        0,
+        1.3
+      ],
+      "to": [
+        0,
+        0,
+        1.05
+      ],
+      "alt": "stamp_back",
+      "line": "My stamp. My door.",
+      "front": "stamp_front"
+    },
+    {
+      "id": "s3",
+      "back": "ending_ledger_3_back",
+      "speaker": "S",
+      "seconds": 2.6,
+      "fade": 0.7,
+      "level": 0.8,
+      "from": [
+        0,
+        0,
+        1.3
+      ],
+      "to": [
+        0,
+        0,
+        1.05
+      ],
+      "alt": "slice_back",
+      "line": "One door.",
+      "front": "slice_front"
+    },
+    {
+      "id": "s4",
+      "back": "ending_ledger_4_back",
+      "speaker": "W",
+      "seconds": 3.4,
+      "fade": 0.7,
+      "level": 0.9,
+      "from": [
+        0,
+        0,
+        1.3
+      ],
+      "to": [
+        0,
+        0,
+        1.05
+      ],
+      "alt": "hollow_back",
+      "line": "Paid in full. Nobody else's name on it.",
+      "front": "wallet_front"
+    },
+    {
+      "id": "s5",
+      "back": "ending_ledger_5_back",
+      "speaker": "N",
+      "seconds": 5.0,
+      "fade": 0.7,
+      "level": 1.0,
+      "from": [
+        0,
+        0,
+        1.3
+      ],
+      "to": [
+        0,
+        0,
+        1.05
+      ],
+      "alt": "ring_back",
+      "line": "The ledger closes. The ring keeps the one name on it, and Slice keeps the ring."
+    },
+    {
+      "id": "s6",
+      "back": "ending_ledger_6_back",
+      "speaker": "S",
+      "seconds": 2.8,
+      "fade": 0.7,
+      "level": 1.0,
+      "from": [
+        0,
+        0,
+        1.3
+      ],
+      "to": [
+        0,
+        0,
+        1.05
+      ],
+      "alt": "slice_back",
+      "line": "Clean.",
+      "front": "slice_front"
+    }
+  ]
+}

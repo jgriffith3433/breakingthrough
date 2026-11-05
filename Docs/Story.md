@@ -90,7 +90,7 @@ hold the circle against six Yo Bots, then bring down the Courier (below).
 - Slice: "No sender. No refund. Stay in the circle."
 
 `Assets/Scripts/Story.cs` holds the chapter data (`Story.Chapters`); `CampaignSave.cs` holds the case files;
-The full plan for the six chapters (spine, bot origins, bosses, open questions) is in `Docs/CampaignBible.md`. `CampaignPanel.cs` is the slot screen; `ChapterScene.cs` builds the placeholder in `Assets/Campaign.unity`.
+The full screenplay for the six chapters and the ending (scene scripts, choices, set pieces, shot lists, map sheets, open questions) is in `Docs/CampaignBible.md`, rendered from `Assets/Resources/Story/campaign_script.json` (`CampaignScript.cs`, `bible` playtest). `CampaignPanel.cs` is the slot screen; `ChapterScene.cs` builds the placeholder in `Assets/Campaign.unity`.
 
 ### Grades and Hard
 
@@ -195,6 +195,28 @@ Code: `BossPhases.cs` (all but the Courier and the Server's paper), `Courier.cs`
 the notch in `RunHud`. The campaign playtests log `boss-phase`, `boss-tell`, `boss-land`, `boss-dodged`, `boss-interrupt` and fail a
 boss that never changes phase or never shows a tell.
 
+### Dialogue choices
+
+Eleven choices from the screenplay (`Docs/CampaignBible.md`, "Choice flags") are asked in the dialogue box: a page with the question
+and two buttons (keys 1 and 2, a click or a tap; Enter still skips the scene and nothing is saved for a skipped choice). The pick is
+saved in the open case file (two bits a choice, `CampaignSave.Slot.choices`, save version 7), the pick's own reply plays at once, and
+a choice is asked once per file (New Game+ asks again). Scenes are data (`Story.Chapter`): `Cutscene`/`GateScene`/stop scenes,
+`Crossroads` (played as the boss is called, before its intro reel), `After` (played when the boss falls, before the closing reel and
+the card). `Q|<id>` asks a choice; `?|<id>:<key>|<speaker>|<text>` is a line that plays only if that option was taken (Done card,
+`PhaseTwo` lines the companion says when the boss changes phase, the ending's notes after ADDRESS FILED). `Choices.cs` holds the rows.
+
+| Chapter | Asked | Read later |
+|---|---|---|
+| 1 | Keep or tear the notice; tip Slice or keep the bolts (After) | Ch1 Done card; Ch5 Reading Room opening (the notice, the page off the wall); Ch3 belt (Slice on the tip); Ch6 last stamp |
+| 2 | Knock once or hard at the gate (Gate scene); hold at the ring or go out to meet the Alpha (Crossroads) | Gate scene and Done card; Slice's phase-two line; Ch4 Done card ("Three knocks on record") |
+| 3 | The true order or the hat-tag for the Foreman to read (Crossroads); leave or unhook the Half-Built (After) | Slice's phase-two line; Done card |
+| 4 | Refuse or take the Server's paper (Crossroads); who answers for Slice (After) | **Outcome:** a taken paper means the Server strikes after two refusals, not three; phase-two line; Ch5 opening |
+| 5 | Read the first page aloud or silent (Crossroads) | Slice's phase-two line ("It knows you.") |
+| 6 | Who presses the last stamp; one door number or two (After) | The ending notes after ADDRESS FILED |
+
+Slice's replies are the companion reacting. Playtest `choices` plays Chapter 1 and its choice pages, reads the card, reloads the file,
+puts up the later pages and reads every reader under both options.
+
 ### Chapter 4: The Process Servers
 
 Where the Spider Bots come from. The opening scene at the circle: the **Long Walk** is a causeway of stone slabs over a pit of mist,
@@ -255,6 +277,22 @@ Received." Wallit: "Received. In full. Pay up." The credits gain a RECEIVED bloc
 (`Slot.secret`, `RECEIVED` on the journal's counter). Without every find it never plays. A New Game+ loop clears the finds, so it is earned
 again each loop. `newgameplus` and `secret-ending` playtests.
 
+## Endings and New Game+
+
+**Three ADDRESS FILED endings.** When Chapter 6 is filed, the case file's choices and hub errands pick one closing reel, played after
+the `ch6_close` reel and before the ending notes and the ADDRESS FILED card (the card's line changes too). `Endings.cs` decides:
+- **Two Doors** (`ending_doors`): 3 or more company points from tipping Slice (1.c2), reading the page aloud (5.c2), handing her the
+  stamp (6.c1) and asking for two numbers (6.c2). Slice writes the number twice; the second door sits beside the first.
+- **The Open Door** (`ending_open`): otherwise, 6 or more of the hub's side slips and favours done (`HubLife.SideCount`). Every lodger is on the books.
+- **The Ledger** (`ending_ledger`): everything else. Wallit's stamp, his door, one name. Slice keeps the ring.
+Voices stay as ever: Wallit money, Slice clipped ("Clean.", "Numbered."), Yo Bots chirpy. The reels are data (`Tools/Cinematics/make_endings.py`) on stand-in stills; real keyframes named `ending_<variant>_<n>_back` replace them when they exist.
+
+**Ratings and the chapter select.** The hub's chapter board lists each filed chapter with its best rank (and Hard rank); the case files list shows all six ranks per file.
+
+**New Game+ from the case files.** A filed file has a New Game+ button on its row. Each loop sends bots with +25% health and +20% more bots (to
+four loops, `CampaignGrade.PlusCount`/`PlusHealthMult`), and every chapter opens with one line that remembers the ending of the loop before
+(`Endings.EchoFor`, saved as `Slot.ending`, save version 9; older files derive it from their choices and errands).
+
 ## New bots and mini-bosses in the chapters
 
 Each chapter brings one new bot into its crew: every few bots in, one of the Yo Bots arrives as the chapter's own variant (named on
@@ -268,6 +306,24 @@ Chapters 2, 3 and 5 also have a **mini-boss** midway, with its own health bar, w
 a hook, "I am... not finished!"; once Wallit reaches the belt) and **The Clerk** (Ch5, a Spider Bot that files what it cannot read;
 half the pages down). Data: `Chapter.Mini*`, `Enemy.MakeMini`, `WaveDirector.SpawnMini`. Arcade is untouched. Playtests log
 `new-enemy`, `mini-boss` and `mini-boss-bar` in any chapter scenario.
+
+## The places (chapter maps and the office)
+
+Every place is its own Unity scene (`Assets/Maps/Map_*.unity`, built by `OwnMap` subclasses; map design sheets in `Docs/CampaignBible.md`).
+Chapters 4 and 5 and 6 each have a boss arena on the far side of the circle from the route, a dais the boss walks out of.
+
+- **The Long Walk (Chapter 4, `Map_Walk`)**: slate-blue dusk, a causeway of pale slabs over a pit of mist, six lamp stilts whose heads
+  keep three folded legs, the last slabs fallen in. Arena: the Servers' Dais (bearing 150) with a paper stand. Set piece: the stand's
+  paper lifts and its lamp burns violet whenever The Server holds its paper out.
+- **The Reading Room (Chapter 5, `Map_Reading`)**: a bare round hall under a dark vault, lamp-gold. Five sections of forms on the wall go
+  blank page by page; five lecterns lift their pages; a carpet aisle runs from the white door to the empty desk. Arena: the Registrar's
+  Gallery (bearing 0) rises out of the floor after the fifth page.
+- **The Moonlit Hollow, filed (Chapter 6, `Map_Filed`)**: dawn-blue grass, the Department wall gone to stumps, a pale path that stops at
+  nothing, the circle in white. Arena: the Threshold (bearing 20), a white doorframe on a dais with the Order-Bearer's stamp marks.
+  Set piece: when the chapter is filed the ring unrolls into a line of writing and a number, 1 (proposed: Wallit's first coin counted).
+- **The office (the hub, `Map_Office`)**: the same walkable room (`ChapterHub`), dressed for the chapters filed. Window light goes from night
+  to dawn, each door has a plaque in its chapter's colours and a red FILED stamp once cleared, the filing cabinets and paper stacks grow,
+  the ring warms from blue to brass, and when all six are filed the brass door number hangs on the back wall.
 
 ## The hub and Wallit's account
 
@@ -321,9 +377,27 @@ workers: they are lost things, and they talk about what they lost.
   80) and the thing is kept in the case file (`Slot.errands`, "LOST THINGS n/6" on the hub's top-left line). `CampaignProgress.Grant` pays the XP the way a kill does.
   Campaign only; the `hub-npcs` playtest plays it.
 
+## The hub after the chapters
+
+The office is a place to stay in. The lodgers (Tick, Brim, Spare, Chime) each have a short arc of three optional conversations
+(`HubLife.Chats`); two new ones open after every chapter, and a gold **!** hangs over a lodger with one unheard. Press E: the whole exchange
+shows (Wallit, the lodger, sometimes Slice) and is kept in the case file (`Slot.chats`). Tick learns he may keep his own hour; Brim
+wants a wall with a hook; Spare finds out a spare is what you keep in case somebody needs it, and somebody does; Chime rings for
+what is missing, and at the end for the right address.
+
+Each chapter also leaves **three errands**: Chime's lost thing (as before), a **favour** (a lodger asks for a lost bit: the Yo Bot Lid, Hatband,
+Mainspring Pin, Chirp Whistle, Address Label, Winding Key; carry it back) and a loose **notice** (a slip lying in the room; walk over it and it
+is pinned to the left wall). Favours and notices pay XP and are saved (`Slot.side`, save version 8). The office shows the story: the
+desk is taken by a different lodger as the file advances (Tick, Spare, Brim, Tick again) and the others move; a slip appears on the
+wall for every errand finished and a lamp lights on the right wall for every conversation had, on top of the window light, stamps
+and cabinets. The ending reads what was kept: `?|side:<id>|`, `?|sides:12|` and `?|chat:<id>|` lines in `Story.Chapters[5].Ending`
+(Spare's lid on straight, Brim's own name on its label, Tick wound, twelve slips pinned, Chime's quiet bell). New Game+ clears them.
+Code: `HubLife.cs`, `ChapterHub.cs`, `OfficeMap.Dress`; the `hub-life` playtest plays all of it.
+
 ## Canon established here
 
 - The lodgers: Tick (clock), Brim (hat), Spare (half-built Yo Bot) and Chime (bell) live in the hub; their lines change after each chapter. Chime's errands pay XP and a kept lost thing.
+- The lodgers' arcs: Tick keeps his own hour (a Winding Key), Brim wants an address (a Hatband, then an Address Label), Spare is a spare kept in case somebody needs it, Chime rings for the right address. Their favours and the loose notices change the ending's lines.
 
 - The back rooms: each chapter's map hides one room the Department never filed, found by the clue on the chapter's lost thing. In Chapter 4's room, the Dead Letter (a Spider Bot carrying a paper that cannot be refused) guards Refund in Full, Wallit's one unique ability upgrade.
 
@@ -400,3 +474,25 @@ open and the Dead Letter gone; the reward is never paid twice. Wallit: "Returned
 Every voice in a dialogue box is a row in `Assets/Resources/Cast/cast.json`: Wallit, Slice, the Yo Bots (Yo Bot, Mega Yo Bot,
 the Half-Built) and the named bosses (the Courier, the Plated Alpha, the Foreman, the Server, the Registrar, the Order-Bearer),
 plus the narrator. Warrok is retired and has no row. Each row has a speaker code, name, colour, portrait path and voice hook.
+
+### Cinematics
+
+A cinematic is a reel of shots, not pages: each shot is a still (or a streamed video) with a slow Ken Burns move, a front layer that
+drifts faster than the back, a crossfade in, letterbox bars, one voice line and a music level. The line is typed as a subtitle,
+so the words are never the picture. A shot can also hand back to the game itself (`world`: wallit, slice or wide). Voices keep
+the cast: Wallit money, Slice clipped, Yo Bots chirpy; Slice and Wallit lines go through the voice director one at a time.
+Reels live in `Assets/Resources/Cinematics/<id>.json` and play with `Cutscene.PlayShots(id, done)` (`CutsceneShots.cs`);
+`sample` is the Chapter 1 opening (the stamp, "Ow! That's extra!", the ring, "You're inside. Inside, you exist.") on placeholder art
+from `Tools/Cinematics/make_placeholders.py`. Space or a click goes to the next shot; Enter, Escape or Skip leaves at any point.
+Chapters 1-3 now open and close with reels (`ch1_open` .. `ch3_close`, written by `Tools/Cinematics/make_reels.py` from the shot lists
+in `CampaignBible.md`; `ChapterRun.Start` and `Complete` play them before the page scenes, which remain for chapters 4-6). Each shot names its final
+art (`Art/<reel>_<n>_back|front`) and an `alt` placeholder shown until Hawkes Gen's stills are in. Courier (K), Plated Alpha (P), Half-Built (H),
+Foreman (F) and Yo Bot (Y) lines play from `Resources/Voice/cinema/<reel>_<shot>.mp3` when present. `Tools/Cinematics/gen_manifest.json` lists
+every sheet, still, clip, voice and sound still to make. Wallit and Slice keep their voice systems.
+
+Part two (chapters 4-6): `ch4_open` .. `ch6_close` complete the set, so every chapter opens and closes with a reel (`ChapterRun.Start`, `Complete`). The four named
+bosses with their own fight get an intro reel as they arrive, over the frozen field (`boss_courier`, `boss_foreman`, `boss_server`, `boss_order`;
+`ChapterRun.PlayBossIntro`, which replaces their `BossLines`). Chapter 6's `ch6_close` is ADDRESS FILED as a cutscene (the order drops, DENIED, the door number,
+the title card) and plays before the ADDRESS FILED card (`StoryScreen.ShowEndCard`); then the RECEIVED reel `ending_received` when the secret is earned, then the
+`credits` reel, then the credits card. All are skippable (Enter, Escape, Skip). New speaker voices: Server (V), Registrar (R), Order-Bearer (O), Mega Yo Bot (M),
+from `Resources/Voice/cinema/<reel>_<shot>.mp3` once made. Page scenes remain as fallback when a reel is missing.

@@ -32,7 +32,7 @@ public class Fx : MonoBehaviour {
     }
 
     static void Ensure() {
-        if (SceneManager.GetActiveScene().name != MetaProgress.GameScene || FindAnyObjectByType<Fx>() != null) {
+        if ((SceneManager.GetActiveScene().name != MetaProgress.GameScene && !SceneManager.GetActiveScene().name.StartsWith("Level_")) || FindAnyObjectByType<Fx>() != null) {
             return;
         }
         new GameObject("Fx").AddComponent<Fx>();

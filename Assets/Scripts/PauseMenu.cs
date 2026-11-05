@@ -25,6 +25,10 @@ public class PauseMenu : MonoBehaviour {
     public Button SettingsButton { get; private set; }
     public Button JournalButton { get; private set; }
     public Button QuitButton { get; private set; }
+    public Button SkipSceneButton { get; private set; }
+    public Button RestartButton { get; private set; }
+    public static int SceneSkips { get; private set; }
+    public static int Restarts { get; private set; }
 
     Font font;
     CanvasScaler hudScaler;
@@ -35,6 +39,8 @@ public class PauseMenu : MonoBehaviour {
     Text hint;
     Text quitLabel;
     bool quitArmed;
+    bool restartArmed;
+    Text restartLabel;
     bool wasLocked;
     int laidStamp = -1;
 
@@ -72,7 +78,7 @@ public class PauseMenu : MonoBehaviour {
 
     // Nothing to pause during a level-up card, after the musician falls, or before the run is set up.
     static bool CanPause {
-        get { return WaveDirector.Instance != null && !WaveDirector.IsLost && !LevelUpScreen.IsOpen && !StoryScreen.IsOpen && !Cutscene.IsOpen; }
+        get { return WaveDirector.Instance != null && !WaveDirector.IsLost && !LevelUpScreen.IsOpen && !StoryScreen.IsOpen; }
     }
 
     void Awake() {
@@ -132,12 +138,21 @@ public class PauseMenu : MonoBehaviour {
 
     void ArrangeButtons() {
         bool chapter = ChapterRun.Instance != null && CampaignSave.Active >= 0;
+        // Resume, then (in a chapter) Skip scene while a scene plays, Journal, Restart chapter, then Settings and Quit.
+        SkipSceneButton.gameObject.SetActive(chapter && Cutscene.IsOpen);
         JournalButton.gameObject.SetActive(chapter);
-        float shift = chapter ? 108f : 0f;
-        Place((RectTransform)SettingsButton.transform, new Vector2(0f, -264f - shift), new Vector2(320f, 88f));
-        Place((RectTransform)QuitButton.transform, new Vector2(0f, -372f - shift), new Vector2(320f, 88f));
-        Place(hint.rectTransform, new Vector2(0f, -490f - shift), new Vector2(460f, 32f));
-        deck.sizeDelta = new Vector2(520f, 580f + shift);
+        RestartButton.gameObject.SetActive(chapter && !ChapterRun.Instance.Completed);
+        DisarmRestart();
+        float y = -264f;
+        foreach (Button b in new[] { SkipSceneButton, JournalButton, RestartButton, SettingsButton, QuitButton }) {
+            if (!b.gameObject.activeSelf) {
+                continue;
+            }
+            Place((RectTransform)b.transform, new Vector2(0f, y), new Vector2(320f, 88f));
+            y -= 108f;
+        }
+        Place(hint.rectTransform, new Vector2(0f, y - 10f), new Vector2(460f, 32f));
+        deck.sizeDelta = new Vector2(520f, -y + 90f);
         Layout();
     }
 
@@ -150,6 +165,44 @@ public class PauseMenu : MonoBehaviour {
         if (quitLabel != null) {
             quitLabel.text = "Quit to menu";
         }
+    }
+
+    void DisarmRestart() {
+        restartArmed = false;
+        if (restartLabel != null) {
+            restartLabel.text = "Restart chapter";
+        }
+    }
+
+    // The scene under the pause is over: the same as its Skip button, then play goes on.
+    void SkipScene() {
+        if (Cutscene.Instance == null || !Cutscene.IsOpen) {
+            return;
+        }
+        SceneSkips++;
+        Resume();
+        Cutscene.Instance.SkipFromPause();
+    }
+
+    // Starts the chapter again from its opening (the file keeps its XP and finds). Asked twice, like Quit.
+    void RestartChapter() {
+        if (ChapterRun.Instance == null) {
+            return;
+        }
+        if (!restartArmed) {
+            restartArmed = true;
+            restartLabel.text = "Sure? Press again";
+            return;
+        }
+        Restarts++;
+        SettingsPanel.Close();
+        IsOpen = false;
+        Time.timeScale = 1f;
+        if (root != null) {
+            root.SetActive(false);
+        }
+        RunAnalytics.Screen("chapter_restart");
+        ChapterRun.Instance.Restart();
     }
 
     // Asks twice, like Erase on the case files: the run on the table is lost.
@@ -208,11 +261,11 @@ public class PauseMenu : MonoBehaviour {
             } else if (key && !settings) {
                 Resume();
             }
-        } else if (CanPause && !settings && (key || lostMouse)) {
+        } else if (CanPause && !settings && Cutscene.ClosedFrame != Time.frameCount && (key || lostMouse)) {
             Open();
         }
 
-        bool showButton = !IsOpen && CanPause;
+        bool showButton = !IsOpen && CanPause && !Cutscene.IsOpen;
         if (PauseButton.gameObject.activeSelf != showButton) {
             PauseButton.gameObject.SetActive(showButton);
         }
@@ -276,6 +329,12 @@ public class PauseMenu : MonoBehaviour {
         JournalButton = MakeButton(deck, "Journal", "Journal", new Vector2(320f, 88f), 32, OpenJournal);
         Place((RectTransform)JournalButton.transform, new Vector2(0f, -264f), new Vector2(320f, 88f));
         JournalButton.gameObject.SetActive(false);
+        SkipSceneButton = MakeButton(deck, "Skip scene", "Skip scene", new Vector2(320f, 88f), 32, SkipScene);
+        SkipSceneButton.gameObject.SetActive(false);
+        RestartButton = MakeButton(deck, "Restart", "Restart chapter", new Vector2(320f, 88f), 32, RestartChapter);
+        RestartButton.GetComponent<Image>().color = new Color(0.36f, 0.16f, 0.14f, 1f);
+        restartLabel = RestartButton.GetComponentInChildren<Text>();
+        RestartButton.gameObject.SetActive(false);
         SettingsButton = MakeButton(deck, "Settings", "Settings", new Vector2(320f, 88f), 32, OpenSettings);
         Place((RectTransform)SettingsButton.transform, new Vector2(0f, -264f), new Vector2(320f, 88f));
 

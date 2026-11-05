@@ -1,0 +1,345 @@
+{
+ "schemaVersion": 1,
+ "note": "The Campaign screenplay as data (Docs/CampaignBible.md is rendered from this file by Tools/Story/render_bible.py; edit here, then re-render). Lines are '<code>|<text>' as in Story.cs: W Wallit, S Slice, Y Yo Bot, M Mega Yo Bot, K Courier, P Plated Alpha, F Foreman, H Half-Built, V Server, R Registrar, O Order-Bearer, N narration; codes come from Resources/Cast/cast.json. Status: every chapter's opening and closing lines that already exist in Story.cs are canon; everything marked proposed awaits J and is NOT wired into Story.Chapters. Choices set flags (set), and a later line or outcome reads them (reads).",
+ "tagline": "Where things that should not exist are given an address.",
+ "canonRequired": ["Courier", "Stamp", "RECEIVED"],
+ "department": {
+  "arc": "A process with no face. Ch1 it only stamps. Ch2 it answers from behind a wall. Ch3 it is a floor that makes crews. Ch4 it is politeness: it serves, it waits. Ch5 it is a form nobody signed. Ch6 it is denied. Ending: a thing it cannot strike is given a door. It never hates anyone; it only clears.",
+  "unseen": "The creature behind the order is never seen, named or quoted."
+ },
+ "arcs": [
+  { "who": "Wallit", "start": "Wants a refund and a sender to bill.", "turns": ["Ch1: takes the stamp on himself for Slice", "Ch2: finds the postmark that is half his", "Ch3: sees he could be one of the cleared things", "Ch4: has no joke when Slice says before you", "Ch5: uses the Department's stamp against it", "Ch6: reads the order and says DENIED"], "end": "Chooses an address for others, not for himself: he gives the stamp away." },
+  { "who": "Slice", "start": "Stay in the circle. Explains nothing.", "turns": ["Ch1: names what pays him", "Ch2: leaves the ring to follow him, staked", "Ch3: her longest beat is It isn't", "Ch4: says the order was aimed at her before him", "Ch5: lets him use the stamp, asks only whether he has the nerve", "Ch6: files the circle herself"], "end": "Admits she needs him, in one word, and writes the door number." },
+  { "who": "The Courier", "start": "A cheerful delivery with a clipboard.", "turns": ["Ch1: reads the notice, lands it, is broken", "Ch5 (flag notice_kept): its notice is the page Wallit stamps first", "Ending: its clipboard is one of the things set down in the ring"], "end": "Its last line is a question it cannot answer: defeat?" },
+  { "who": "The Foreman", "start": "A Mega Yo Bot that reads the order on its charges.", "turns": ["Ch3: overtime, the only one who understands the shift is a debt", "Ch3 choice: can be made to read the order wrong"], "end": "Order... unread." },
+  { "who": "The Server", "start": "A Spider Bot holding out a paper like a courtesy.", "turns": ["Ch4: offers, waits, offers", "refused three times it strikes, because that is the rule, not the want"], "end": "Delivery... undelivered... chirp?" },
+  { "who": "The Department", "start": "Stamp, wall, floor, paper.", "turns": ["see department.arc"], "end": "Denied by its own stamp." }
+ ],
+ "flags": [
+  { "id": "notice_kept", "set": "Ch1 choice 1: keep the Courier's notice", "reads": "Ch5 The Stamp, Reversed; Ending" },
+  { "id": "tipped_slice", "set": "Ch1 choice 2: pay Slice the first bolt", "reads": "Ch3 The Belt; Ch6 Filed" },
+  { "id": "knocked_twice", "set": "Ch2 choice 1: knock twice at the gate", "reads": "Ch2 Done card; Ch4 Served" },
+  { "id": "left_ring", "set": "Ch2 choice 2: wait for Slice at the ring vs go on ahead", "reads": "Ch2 boss lines" },
+  { "id": "foreman_misread", "set": "Ch3 choice 1: hand the Foreman the wrong sheet", "reads": "Ch3 Foreman fight (phase two lines)" },
+  { "id": "paper_taken", "set": "Ch4 choice 1: Wallit takes the paper instead of refusing it", "reads": "Ch4 Server fight; Ch5 reading" },
+  { "id": "slice_answered", "set": "Ch4 choice 2: let Slice answer the Server herself", "reads": "Ch6 Filed" },
+  { "id": "page_read_aloud", "set": "Ch5 choice 1: read the first page aloud", "reads": "Ch5 Registrar lines" },
+  { "id": "stamp_shared", "set": "Ch6 choice 1: hand Slice the stamp", "reads": "Ending" },
+  { "id": "door_for_both", "set": "Ch6 choice 2: ask for two door numbers", "reads": "Ending" }
+ ],
+ "chapters": [
+  {
+   "n": 1, "id": "return-to-sender", "title": "Return to Sender", "stamp": "RETURN TO SENDER", "status": "built; text extended here as proposed",
+   "emotion": "Alone, then not alone. Anger turning into a first debt.",
+   "scenes": [
+    { "id": "1.1", "name": "The Stamp", "where": "The Moonlit Hollow, frozen", "beat": "The stamp falls on leather; a wallet rolls into the ring.", "status": "canon",
+      "lines": ["N|Out of the dark comes a stamp: RETURN TO SENDER. Its ink is the only bright thing in the Hollow.", "W|Ow! That's extra!", "S|You're inside. Inside, you exist.", "W|Does existing come with a receipt?", "S|No.", "W|Where do I sign for this bat?", "S|Swing it.", "Y|Hello! Uploading victory! Striking this address now!", "W|Pay up, bots."] },
+    { "id": "1.2", "name": "Six Deliveries", "where": "The circle", "beat": "The first wave: move, bat, lock-on. Bolts drop.", "status": "proposed",
+      "lines": ["Y|Rush delivery! Rush delivery!", "W|They are fast, I'll give them that. Pay up.", "S|Lock on. Shift.", "W|I know how to hit a thing, Slice.", "S|Then hit it.", "W|Bolts. Somebody's paying me.", "S|Not somebody. Something."] },
+    { "id": "1.3", "name": "The Notice", "where": "The circle, dusk", "beat": "The Courier arrives with a clipboard and reads the order out.", "status": "canon",
+      "lines": ["K|Special delivery! Notice of striking!", "S|The Courier. It reads the order out, then it lands.", "W|Then it can read me the bill.", "S|Red is where it lands. Move, or break it."] },
+    { "id": "1.4", "name": "Notice Undelivered", "where": "The circle", "beat": "The Courier falls. The notice floats down, unsigned.", "status": "canon + proposed (last line)",
+      "lines": ["K|Notice... undelivered... uploading... defeat?", "W|Return to sender.", "S|Clean.", "N|The notice drifts down. Nobody has signed it."] }
+   ],
+   "scriptedSetPiece": { "name": "The Courier's Notice", "status": "built (Courier.cs)", "text": "The Courier lifts the notice; a red mark fills on the circle's ground over two seconds. Break the wind-up with a tenth of its health, or stand in the mark and take the stamp yourself. Wallit takes the stamp: Slice is spared." },
+   "choices": [
+    { "id": "1.c1", "at": "1.4 Notice Undelivered", "prompt": "The notice lies on the grass. What does Wallit do?", "options": [
+      { "key": "keep", "label": "Pocket it. 'Evidence.'", "set": "notice_kept", "now": "W|Evidence. Every bill has a paper trail.", "later": "Ch5 The Stamp, Reversed: Wallit presses the stamp to this notice first and Slice says 'You kept it.' W: 'I keep receipts.'" },
+      { "key": "tear", "label": "Tear it. 'Void.'", "set": "", "now": "W|Void. I don't take bills I didn't order.", "later": "Ch5: Wallit has to pull a page off the wall instead; Slice: 'You tore the first one. We take another.'" } ] },
+    { "id": "1.c2", "at": "1.2 Six Deliveries", "prompt": "First bolts in hand. Slice says nothing. Wallit decides.", "options": [
+      { "key": "tip", "label": "Hold one out to Slice. 'Your cut.'", "set": "tipped_slice", "now": "S|Not mine.", "later": "Ch3 The Belt: Slice says 'It isn't' and adds 'You tipped. Cleared things don't tip.' Ch6: she files the bolt into the door." },
+      { "key": "keep", "label": "Keep every bolt. 'Overhead.'", "set": "", "now": "W|Overhead. Don't look at me like that.", "later": "Ch3 The Belt: Slice says only 'It isn't.' The line lands drier." } ] }
+   ],
+   "opening": [
+    { "shot": "Black. Far above, a hand-cut stamp turns, RETURN TO SENDER inked in red.", "camera": "Static, tilt down 40 degrees over four seconds", "speaker": "N", "line": "Out of the dark comes a stamp: RETURN TO SENDER. Its ink is the only bright thing in the Hollow.", "music": "Low cello pedal, no melody; one cold bell" },
+    { "shot": "The stamp falls onto brown leather; ink flashes; the Hollow's grass takes the wallet's roll.", "camera": "Follow the fall, hard cut to ground level at the landing", "speaker": "W", "line": "Ow! That's extra!", "music": "The pedal breaks into a short run of strings" },
+    { "shot": "The circle's ring lights around him in pale gold, one stone at a time.", "camera": "Slow crane up to a top-down of the ring", "speaker": "N", "line": "", "music": "Held chord, bell on each stone" },
+    { "shot": "Slice, standing in the ring, knife down, face in shadow.", "camera": "Low angle, push in on her eyes", "speaker": "S", "line": "You're inside. Inside, you exist.", "music": "Strings drop out; room tone only" },
+    { "shot": "Wallit's wallet-face, looking up, bills falling out of his pocket.", "camera": "Over-the-shoulder from Slice", "speaker": "W", "line": "Does existing come with a receipt?", "music": "Silence, then one dry plucked note" },
+    { "shot": "Wide: a Yo Bot crests the hill, chirping, behind them the whole Hollow.", "camera": "Pull back to a wide, Wallit and Slice small in the ring", "speaker": "Y", "line": "Hello! Uploading victory! Striking this address now!", "music": "Pulse enters: bright, thin, unfriendly" }
+   ],
+   "closing": [
+    { "shot": "The Courier, split, on one knee; its clipboard falls flat to the grass.", "camera": "Locked wide, 2 s hold", "speaker": "K", "line": "Notice... undelivered... uploading... defeat?", "music": "Pulse cuts. A single dying chirp" },
+    { "shot": "Wallit stands over the clipboard, bat on his shoulder; the notice drifts down beside him.", "camera": "Medium, handheld sway removed (no shake), slow orbit 90 degrees", "speaker": "W", "line": "Return to sender.", "music": "Cello pedal returns, warmer" },
+    { "shot": "Slice's knife is lowered, then re-raised to the dark.", "camera": "Cut to her hand and blade, then her face", "speaker": "S", "line": "Clean.", "music": "Bell, one note" },
+    { "shot": "Wallit gathers three bolts into his coin slot, looking at them.", "camera": "Close on his hands", "speaker": "W", "line": "Bolts. Somebody's paying me.", "music": "Held string, rising a half step" },
+    { "shot": "Slice, eyes on the far dark past the Hollow's wall.", "camera": "Push in on her profile, then past her to the wall", "speaker": "S", "line": "Not somebody. Something.", "music": "Pedal falls to a low drone; hold" }
+   ],
+   "map": { "id": "hollow", "setting": "The Moonlit Hollow: a grassy bowl under a cold moon with the circle at its centre, the wall of the Department a long way out at 205 m.",
+     "landmarks": ["The circle: nine standing stones around a pale ring", "Fallen Mailbox with a red RETURN TO SENDER stamp on its flag", "Mist Bog of dead trunks to the west"],
+     "route": "Stepping-stone trail at bearing 20 out to the Fallen Mailbox; the fight stays at the circle.",
+     "hazards": ["Mist Bog: slows sightlines to 25 m, nothing solid", "The Courier's red notice mark on the circle's ground"],
+     "bossArena": "The circle itself. The Courier walks in from the Mailbox side to 7.5 m of Slice.",
+     "palette": ["#0B1226", "#1E2F57", "#C9D6FF", "#F2CC66", "#C23B3B"],
+     "props": ["standing stones (9)", "fallen mailbox", "dead trunks", "chalk stepping stones", "lantern posts (4)", "the red stamp ink splash"] }
+  },
+  {
+   "n": 2, "id": "no-fixed-address", "title": "No Fixed Address", "stamp": "INVALID", "status": "built; text extended here as proposed",
+   "emotion": "Hope against a wall. A thing that was his, torn in half.",
+   "scenes": [
+    { "id": "2.1", "name": "A Door With No Name", "where": "The Hollow's last lantern", "beat": "Wallit sees the gate and goes for it.", "status": "canon",
+      "lines": ["W|There's a door. Doors have senders.", "S|Doors have locks. Come back.", "W|Locks have keys. Keys have owners. Owners get paid.", "S|Seventy metres. Then back.", "Y|Address unknown! Deleting!", "W|Cover me, Slice. I'm collecting a refund.", "S|Ring's staked. I'm coming."] },
+    { "id": "2.2", "name": "The Road", "where": "Chalk road between paired lamps", "beat": "Slice walks one step behind. Bots come. The Second Notice.", "status": "canon + proposed",
+      "lines": ["S|Left.", "W|I saw it.", "S|You saw it late.", "Y|Second notice! This address is still unknown!", "S|It repeats. It does not give up.", "W|Neither do I. Pay up."] },
+    { "id": "2.3", "name": "The Gate", "where": "The gate", "beat": "He knocks. The wall answers with the same stamp. A torn postmark: half of it his.", "status": "canon",
+      "lines": ["W|Hello? Sender? I'd like a word, and a receipt.", "N|The wall answers. From the other side, pressed through the dark, the same stamp: RETURN TO SENDER.", "W|Nothing. Not even a doormat. I'd say that's rude, but I'm the one with no address.", "N|At the foot of the gate, a postmark is torn into the stone. Half of it is his.", "W|That's my stamp. Torn.", "S|Wallit. Come back."] },
+    { "id": "2.4", "name": "Plate Stamped Invalid", "where": "The circle", "beat": "Three waves, then the Plated Alpha.", "status": "canon",
+      "lines": ["P|Notice! This plate is stamped: INVALID!", "S|The Plated Alpha. Plate says invalid.", "W|So does my refund. Pay up.", "P|Plate... voided... uploading... nothing?", "W|Void your own stamp.", "S|Clean.", "S|You have an address. The circle.", "W|Leased. By you.", "S|Free.", "W|Nothing's free.", "S|Then pay with swings."] }
+   ],
+   "scriptedSetPiece": { "name": "The Stamp Press", "status": "proposed (map hazard exists as a stand-in)", "text": "Beside the chalk road a Department stamp press drops its plate on a red INVALID mark every four seconds, flat and telegraphed. Wallit can lure bots under it. Slice calls the timing: 'Now.' One press, one Yo Bot." },
+   "choices": [
+    { "id": "2.c1", "at": "2.3 The Gate", "prompt": "The wall answers. How does Wallit answer back?", "options": [
+      { "key": "once", "label": "Knock once. Wait.", "set": "", "now": "N|Nothing answers a polite knock.", "later": "Ch2 Done card is the canon one." },
+      { "key": "twice", "label": "Knock twice, then a third time, hard, with the bat.", "set": "knocked_twice", "now": "W|Open up. I know you're in there. It's a stamp, not a person.", "later": "Ch2 Done card gains S: 'You knock like you're owed.' W: 'I am.' Ch4 Served: the Server notes the knocks: 'Three knocks on record.'" } ] },
+    { "id": "2.c2", "at": "2.1 A Door With No Name", "prompt": "Slice stakes the ring and says she is coming.", "options": [
+      { "key": "wait", "label": "Wait for her to catch up.", "set": "", "now": "S|Good.", "later": "Ch2 boss lines: Slice stays within a step; the Plated Alpha stamps once before phase two." },
+      { "key": "ahead", "label": "Go on ahead. 'Keep up.'", "set": "left_ring", "now": "S|I am.", "later": "Ch2 boss lines: Slice is down once earlier (revive E hold) and says 'Noted.' with a hard edge." } ] }
+   ],
+   "opening": [
+    { "shot": "The Hollow's edge: a last lantern guttering; beyond it blue dark and a thin gate.", "camera": "Slow dolly out from the lantern to a wide", "speaker": "N", "line": "Past the last lantern the Hollow runs out. Far off, a gate stands in the dark with nothing written on it.", "music": "Low drone, distant wind chime" },
+    { "shot": "Wallit, hands on hips, bat leaning on his shoulder, looking to the gate.", "camera": "Medium, slight low angle", "speaker": "W", "line": "There's a door. Doors have senders.", "music": "Drone holds; a small hopeful two-note figure" },
+    { "shot": "Slice, one hand on the ring's last stone.", "camera": "Cut to profile, shallow focus", "speaker": "S", "line": "Doors have locks. Come back.", "music": "Figure ends; held low note" },
+    { "shot": "Close on Wallit's boots stepping over the ring's edge.", "camera": "Low tracking shot", "speaker": "W", "line": "Locks have keys. Keys have owners. Owners get paid.", "music": "Pace enters: soft low drum, 70 bpm" },
+    { "shot": "Slice drives her knife into the ground; the ring's light jumps to a second ring.", "camera": "Close on blade then crane up", "speaker": "S", "line": "Ring's staked. I'm coming.", "music": "Drum doubles; strings on the beat" }
+   ],
+   "closing": [
+    { "shot": "The Plated Alpha, plate cracked down the middle; INVALID splits into IN and VALID.", "camera": "Medium, slow push", "speaker": "P", "line": "Plate... voided... uploading... nothing?", "music": "Drum stops; a clipped metallic ring" },
+    { "shot": "Wallit kicks the plate flat.", "camera": "Over-the-shoulder, 2 s hold", "speaker": "W", "line": "Void your own stamp.", "music": "Silence" },
+    { "shot": "Back at the ring; Slice pulls the staked knife and the second ring folds into the first.", "camera": "Wide, rings merging", "speaker": "S", "line": "You have an address. The circle.", "music": "Warm bell, one note" },
+    { "shot": "Wallit looks at the torn half-postmark in his hand.", "camera": "Close on the stone chip", "speaker": "W", "line": "Leased. By you.", "music": "Strings reply under him" },
+    { "shot": "The two stand shoulder to shoulder at the ring, looking back at the dark gate.", "camera": "Pull back to a wide, locked", "speaker": "S", "line": "Then pay with swings.", "music": "Resolving chord; fade on the drone" }
+   ],
+   "map": { "id": "hollow-edge", "setting": "The edge of the Hollow: the Department's wall at 205 m, a gate with no handle, a signpost with nothing on it.",
+     "landmarks": ["The gate with no handle (70 m, bearing 150)", "The blank signpost", "Slice's radius: a red ring painted on the grass"],
+     "route": "Chalk road with paired lamps from the circle to the gate, then back along the same chalk.",
+     "hazards": ["The stamp press, its plate falling on a red INVALID mark every four seconds", "Bots arrive the whole way out"],
+     "bossArena": "The circle again; the Plated Alpha walks in from the gate side.",
+     "palette": ["#0A1020", "#243A5C", "#8FA3C9", "#D8D1BE", "#C23B3B"],
+     "props": ["gate and wall (flat blocks, no colliders)", "blank signpost", "paired lamps (10)", "stamp press", "chalk road tiles", "torn postmark stone"] }
+  },
+  {
+   "n": 3, "id": "clearing-floor", "title": "The Clearing Floor", "stamp": "REISSUED", "status": "built; text extended here as proposed",
+   "emotion": "Recognition. The enemy is a factory, and Wallit sees himself on its belt.",
+   "scenes": [
+    { "id": "3.1", "name": "Past the Broken Gate", "where": "The yard's lip", "beat": "A sunken yard of hooks and unfinished chassis.", "status": "canon",
+      "lines": ["N|Past the broken gate the ground drops away into a yard lit by lamps. Rows of Yo Bot chassis hang on hooks.", "H|Hello! I am... not finished! Uploading victory?", "W|They're all the same unit.", "S|Spare parts. Spare orders."] },
+    { "id": "3.2", "name": "The Belt", "where": "The belt", "beat": "Cleared things ride past: a hat, a clock, a small bell.", "status": "canon",
+      "lines": ["N|A slow belt carries flat, cleared things past the hooks: a hat, a clock, a small bell.", "W|Cleared things. Somebody's hat. Somebody's clock. That could be me.", "S|It isn't.", "N|The belt runs on into a chute lit by a single red lamp. The lamp is a lens. It turns toward the Hollow, and the circle blinks once.", "W|It's watching the circle.", "S|Pull the lever. The belt stops. The Crew stops."] },
+    { "id": "3.3", "name": "The Lever", "where": "The lever, 105 m out", "beat": "He pulls it. The hooks swing empty.", "status": "canon + proposed",
+      "lines": ["W|One lever. No sign. Somebody trusts the floor.", "W|Those bolts are the same ones they've been paying me.", "S|Then we collect.", "N|The hooks swing empty. The belt stops with a cleared clock still on it, ticking."] },
+    { "id": "3.4", "name": "Order, Read Aloud", "where": "The circle", "beat": "The last batch, then the Foreman, who reads the order.", "status": "canon",
+      "lines": ["F|Order, read aloud: STRIKE. THIS. ADDRESS.", "W|It reads it like a bill of lading.", "F|Order... unread...", "W|Paid in full.", "S|Clean."] }
+   ],
+   "scriptedSetPiece": { "name": "The Belt Stops", "status": "proposed (belt props exist as stand-ins)", "text": "At the lever the whole yard's sound cuts at once: conveyors, lamps, chirps. For three seconds only the cleared clock ticks. Then the Half-Built, hanging by one hook, asks: 'Finish me?' Slice: 'Don't.' Wallit: 'Wasn't going to. Not for free.'" },
+   "choices": [
+    { "id": "3.c1", "at": "3.4 Order, Read Aloud", "prompt": "The Foreman holds out the order sheet to be read. Wallit has a second sheet in the cleared pile.", "options": [
+      { "key": "true", "label": "Let it read the true order.", "set": "", "now": "F|STRIKE. THIS. ADDRESS.", "later": "Foreman's phase two is the canon overtime: march plus page together." },
+      { "key": "wrong", "label": "Swap in the hat-tag from the belt. 'Read this one.'", "set": "foreman_misread", "now": "F|Order, read aloud: ONE. HAT. BLUE. Uploading... that is not the order?", "later": "Foreman phase two begins with a stalled line and a shorter march; Slice: 'It reads what it is handed.'" } ] },
+    { "id": "3.c2", "at": "3.3 The Lever", "prompt": "The Half-Built hangs by one hook and wants finishing.", "options": [
+      { "key": "leave", "label": "Leave it on the hook.", "set": "", "now": "W|Not for free.", "later": "Ch5: the Clerk's line 'Page turned!' has no echo." },
+      { "key": "unhook", "label": "Cut its hook. Let it drop.", "set": "", "now": "H|Hello! Thank you? Uploading... I do not know what.", "later": "Ending: a half-built Yo Bot is among the things given a door; its line is 'Hello! I am... received?'" } ] }
+   ],
+   "opening": [
+    { "shot": "The lip of a sunken yard lit amber; hooks hang in rows like a ribcage.", "camera": "Crane over the lip, slow tilt down", "speaker": "N", "line": "Past the broken gate the ground drops away into a yard lit by lamps. Rows of Yo Bot chassis hang on hooks.", "music": "Slow industrial pulse; steam breath" },
+    { "shot": "A half-built Yo Bot twitches on a hook, one eye lit.", "camera": "Close, rack focus from Wallit to the bot", "speaker": "H", "line": "Hello! I am... not finished! Uploading victory?", "music": "Pulse skips a beat, thin chirp" },
+    { "shot": "Wallit studies the rows: every chassis the same.", "camera": "Slow pan across the hooks, matching frames", "speaker": "W", "line": "They're all the same unit.", "music": "Pulse steadies" },
+    { "shot": "Slice at his shoulder, reading the yard's lamps.", "camera": "Two-shot, still", "speaker": "S", "line": "Spare parts. Spare orders.", "music": "Low drone under the pulse" },
+    { "shot": "Wide: the belt visible far off, glowing.", "camera": "Pull back and up to reveal the yard's scale", "speaker": "N", "line": "", "music": "Brass swell, then cut" }
+   ],
+   "closing": [
+    { "shot": "The Foreman on its knees, the order sheet fluttering off its chest.", "camera": "Medium, low", "speaker": "F", "line": "Order... unread...", "music": "Pulse stops; a last factory sigh" },
+    { "shot": "Wallit, bat on shoulder, lets a bolt tumble from the Foreman's seam into his palm.", "camera": "Close on hand", "speaker": "W", "line": "Paid in full.", "music": "Quiet bell" },
+    { "shot": "Slice looks at the dead belt, the red lamp dark.", "camera": "Push in on her eyes in the lamp's last glow", "speaker": "S", "line": "Clean.", "music": "Drone only" },
+    { "shot": "The red lamp, once more, turns a degree toward the Hollow, and blinks.", "camera": "Cut to the lamp lens, 2 s hold", "speaker": "N", "line": "", "music": "One cold bell; cut to silence" }
+   ],
+   "map": { "id": "clearing-floor", "setting": "A sunken yard beyond the broken gate, lit by conveyor lamps: rows of un-built chassis on hooks and a slow belt of flat, cleared things.",
+     "landmarks": ["The broken gate (36 m, bearing 200)", "The belt (70 m)", "The lever (105 m)", "The red-lamp chute"],
+     "route": "Lit yard path through three stops, then back along the same path to the circle.",
+     "hazards": ["Three crushers slamming in turn along the route", "Yo Bots arriving the whole way"],
+     "bossArena": "The circle; the Foreman walks out of the hooks' end, to the south of the yard.",
+     "palette": ["#1B120A", "#5C3B14", "#E8A33D", "#C9C2B0", "#C23B3B"],
+     "props": ["hook gantries (6) with chassis", "belts (2) with hat, clock and bell", "crushers (3)", "red-lamp chute", "lever stand", "sorting bins"] }
+  },
+  {
+   "n": 4, "id": "process-servers", "title": "The Process Servers", "stamp": "SERVED", "status": "built; text extended here as proposed",
+   "emotion": "Dread and politeness. The cruelty is the courtesy.",
+   "scenes": [
+    { "id": "4.1", "name": "The Long Walk", "where": "A causeway of stone slabs over a pit of mist", "beat": "Six lamps, a single path, no cover.", "status": "canon",
+      "lines": ["Y|Spiders en route! Chirp!", "S|Mind the legs.", "W|They're not bigger Yo Bots. They're... deliveries.", "S|Process servers. They stand and wait while it's read."] },
+    { "id": "4.2", "name": "Served", "where": "The first lamp", "beat": "A Spider Bot offers a paper on the tip of a claw.", "status": "canon",
+      "lines": ["W|Read what?", "S|My address. Struck.", "W|Since when?", "S|Before you.", "N|The Spider Bot folds one leg and holds out a paper. It waits."] },
+    { "id": "4.3", "name": "Refusals", "where": "The circle", "beat": "The Server offers three times. Each is refused with a blow.", "status": "canon",
+      "lines": ["V|Please accept this delivery.", "W|Refused.", "V|Please accept this delivery.", "W|Refused. Still refused.", "V|This is your third offer. After this, service is by force.", "S|It's polite. That's the worst of it."] },
+    { "id": "4.4", "name": "Undelivered", "where": "The circle", "beat": "It strikes after the third; it falls.", "status": "canon",
+      "lines": ["V|Delivery... undelivered... chirp?", "W|Return to sender.", "S|Clean."] }
+   ],
+   "scriptedSetPiece": { "name": "The Paper Is Out", "status": "built (Server.cs)", "text": "The Server stops a step short of the circle, folds a leg and holds the paper out. It will not strike while the paper is out. Wallit refuses it by landing a blow. It backs off and offers again, three times. Its health cannot fall below 70% until the third refusal." },
+   "choices": [
+    { "id": "4.c1", "at": "4.3 Refusals", "prompt": "The paper is out. Taking it ends the offer.", "options": [
+      { "key": "refuse", "label": "Refuse it. Strike the Server's claw.", "set": "", "now": "W|Refused.", "later": "Canon fight: three refusals, then force." },
+      { "key": "take", "label": "Take the paper and read it.", "set": "paper_taken", "now": "N|The paper reads: STRIKE THIS ADDRESS. No signature. The Server's leg unfolds.", "later": "The Server skips the second offer and winds up at once but with a shorter march; Ch5 the reading opens with Wallit already knowing the order is unsigned: W: 'I've seen it. I don't need to be told.'" } ] },
+    { "id": "4.c2", "at": "4.2 Served", "prompt": "The Server's paper is for Slice. Who answers?", "options": [
+      { "key": "wallit", "label": "Wallit steps between: 'Talk to me.'", "set": "", "now": "V|Delivery is to the named address.", "later": "Canon: Slice stays at the circle." },
+      { "key": "slice", "label": "Slice answers herself: 'Refused.'", "set": "slice_answered", "now": "S|Refused. Mine to refuse.", "later": "Ch6 Filed: Slice writes the door number without being asked; Wallit: 'You answered it first.'" } ] }
+   ],
+   "opening": [
+    { "shot": "A causeway of pale slabs runs out over a pit of mist; paired lamps like six folded legs.", "camera": "Long lateral track along the parapet", "speaker": "N", "line": "", "music": "Three held notes, string harmonics" },
+    { "shot": "Far off a Spider Bot lifts a foreleg and tilts its glass toward them.", "camera": "Long lens, shallow depth", "speaker": "Y", "line": "Spiders en route! Chirp!", "music": "A single bright chirp, then silence" },
+    { "shot": "Slice, eyes on the bot.", "camera": "Close profile", "speaker": "S", "line": "Mind the legs.", "music": "Harmonics hold" },
+    { "shot": "Wallit hefts the bat, watching the walk of the legs.", "camera": "Medium, slight handheld sway off (no shake): locked", "speaker": "W", "line": "They're not bigger Yo Bots. They're... deliveries.", "music": "Low hum underneath" },
+    { "shot": "The Server stops, folds one leg, offers a paper on its claw tip.", "camera": "Push in on the paper", "speaker": "S", "line": "Process servers. They stand and wait while it's read.", "music": "A polite minor figure on harp, nothing else" }
+   ],
+   "closing": [
+    { "shot": "The Server stands in pieces on a lamp stand, its paper fluttering to the pit.", "camera": "Wide, then tilt down with the paper", "speaker": "V", "line": "Delivery... undelivered... chirp?", "music": "Harp figure stops mid-phrase" },
+    { "shot": "Wallit watches the paper vanish in the mist.", "camera": "Over-the-shoulder, hold", "speaker": "W", "line": "Return to sender.", "music": "Silence, then one low bell" },
+    { "shot": "Slice, blade lowered, looks along the causeway where the next lamp is lit.", "camera": "Slow push to her face", "speaker": "S", "line": "Clean.", "music": "Harp resumes, a half step higher" },
+    { "shot": "The next lamp, six legs of light, glows on the far side.", "camera": "Locked wide, fade on the lamp", "speaker": "N", "line": "", "music": "Harmonics, fade" }
+   ],
+   "map": { "id": "long-walk", "setting": "The Long Walk: a causeway of stone slabs over a pit of mist, with six lamp stilts on either side, a single path, no cover.",
+     "landmarks": ["Lamp 1 (30 m)", "Lamp 2 (62 m)", "Lamp 3 (95 m), where the way turns round", "The Servers' Dais (78 m, bearing 150)"],
+     "route": "Causeway at bearing 330 through three lamp stops, turning back at the last.",
+     "hazards": ["The pit with the last slabs fallen in", "Servers appear only at lamps"],
+     "bossArena": "The Servers' Dais at bearing 150, with a paper stand where the Server waits.",
+     "palette": ["#0A0F1A", "#2B3550", "#9FB1D6", "#E5E1D3", "#7A5CC7"],
+     "props": ["slab causeway", "parapets", "lamp stilts (12)", "mist pit", "paper stand", "folded-leg lamp heads"] }
+  },
+  {
+   "n": 5, "id": "strike-this-address", "title": "Strike This Address", "stamp": "DENIED", "status": "built; text extended here as proposed",
+   "emotion": "Cold clarity, then nerve. The order has no author, so it has no power.",
+   "scenes": [
+    { "id": "5.1", "name": "The Reading Room", "where": "A bare round hall", "beat": "The circle drawn on the floor at the Hollow's scale; forms on every wall.", "status": "canon",
+      "lines": ["M|Order, read aloud: STRIKE. THIS. ADDRESS.", "S|It's reading it out.", "W|Then I'm reading mine. Pay up.", "W|It's not signed.", "S|Nobody signs it. That's how it works."] },
+    { "id": "5.2", "name": "The Stamp, Reversed", "where": "The desk", "beat": "Wallit presses the Department's own stamp to the first page.", "status": "canon",
+      "lines": ["W|Then it can be denied.", "S|Denied by whom?", "W|By the guy with the stamp.", "S|Wallit. That's a lot of nerve.", "W|Nerve's free. The swing's extra.", "N|The ink shows nothing, then DENIED. All the forms on the walls turn over at once, blank."] },
+    { "id": "5.3", "name": "Five Pages", "where": "The circle", "beat": "Five waves, one per page. The Clerk files what it cannot read.", "status": "canon + proposed",
+      "lines": ["Y|Page turned!", "S|One.", "W|Two. Three. Don't count with me.", "S|Four.", "W|Five. I read it."] },
+    { "id": "5.4", "name": "The Ledger", "where": "The Registrar's Gallery", "beat": "The Registrar reads every page with every leg.", "status": "canon",
+      "lines": ["R|Register... closed... uploading... nothing?", "W|Struck from the record.", "S|Clean.", "W|Then we answer it. Pay up."] }
+   ],
+   "scriptedSetPiece": { "name": "The Forms Turn", "status": "built (BuildReadingRoom, PageRead)", "text": "As each page's wave falls, that page's section of forms on the wall turns blank. At the fifth the whole room is white and the Registrar's Gallery opens behind the desk." },
+   "choices": [
+    { "id": "5.c1", "at": "5.2 The Stamp, Reversed", "prompt": "Which page takes the stamp?", "options": [
+      { "key": "notice", "label": "The Courier's notice (needs notice_kept).", "set": "", "now": "S|You kept it.\nW|I keep receipts.", "later": "Stamped DENIED on the Courier's name; Ending: the clipboard is among the set-down things." },
+      { "key": "wall", "label": "A page off the wall.", "set": "", "now": "S|You tore the first one. We take another.", "later": "Same DENIED; the Registrar has a different phase-two taunt." } ] },
+    { "id": "5.c2", "at": "5.1 The Reading Room", "prompt": "The Mega Yo Bot reads the order aloud. Wallit can read along.", "options": [
+      { "key": "aloud", "label": "Read the first page aloud with it.", "set": "page_read_aloud", "now": "W|STRIKE. THIS. ADDRESS. Sounds worse when it's yours.", "later": "Registrar fight: R: 'Reader recognized.' Slice, flat: 'It knows you.'" },
+      { "key": "silent", "label": "Read it silently.", "set": "", "now": "S|Say it.\nW|No.", "later": "Registrar fight: canon, no reader line." } ] }
+   ],
+   "opening": [
+    { "shot": "A bare round hall, the circle on its floor, every wall lined with identical forms.", "camera": "Slow orbit, 360 degrees over six seconds", "speaker": "N", "line": "", "music": "Held choir pad, no words" },
+    { "shot": "A Mega Yo Bot at a lectern reads the forms in an even voice.", "camera": "Low angle, centered", "speaker": "M", "line": "Order, read aloud: STRIKE. THIS. ADDRESS.", "music": "Choir pad swells on each word" },
+    { "shot": "Slice near the desk, hand on the circle's edge.", "camera": "Medium, locked", "speaker": "S", "line": "It's reading it out.", "music": "Pad holds" },
+    { "shot": "Wallit holds the RETURN TO SENDER stamp up to the light.", "camera": "Close on the stamp", "speaker": "W", "line": "Then I'm reading mine. Pay up.", "music": "Pad drops; one dry strike of a wooden block" },
+    { "shot": "Wallit's eyes on the form: no signature line.", "camera": "Insert on the blank line", "speaker": "W", "line": "It's not signed.", "music": "Silence" }
+   ],
+   "closing": [
+    { "shot": "The Registrar, gold trim cracked, ledger open on its knees, every page blank.", "camera": "Wide, locked", "speaker": "R", "line": "Register... closed... uploading... nothing?", "music": "Pad drops to a single held note" },
+    { "shot": "Wallit presses the stamp on the final page; DENIED appears.", "camera": "Insert on the ink", "speaker": "W", "line": "Struck from the record.", "music": "Wooden block, one strike" },
+    { "shot": "Slice reading the white walls, then the door.", "camera": "Slow pan to the door, now open", "speaker": "S", "line": "Clean.", "music": "Pad warms by a third" },
+    { "shot": "Wallit and Slice, side by side at the door.", "camera": "Pull out to a wide", "speaker": "W", "line": "Then we answer it. Pay up.", "music": "Brass stab, then silence" }
+   ],
+   "map": { "id": "reading-room", "setting": "The Reading Room: a bare round hall, the circle drawn on its floor at the Hollow's scale, walls lined with identical forms, an empty desk beside it.",
+     "landmarks": ["The empty desk", "Page lecterns (5)", "The Registrar's Gallery (80 m, bearing 0) round the Great Ledger", "The door (bearing 180)"],
+     "route": "Carpet aisle from the door to the desk; the fight is at the circle.",
+     "hazards": ["Pages that lift and settle on the lecterns (telegraphed)", "Forms blank page by page, then the Gallery opens"],
+     "bossArena": "The Registrar's Gallery: a round dais with the Great Ledger.",
+     "palette": ["#14110A", "#4A3F23", "#F0E7C8", "#E6B85C", "#8A1E1E"],
+     "props": ["wall racks of forms (10)", "page lecterns (5)", "desk", "Great Ledger", "carpet aisle", "white door"] }
+  },
+  {
+   "n": 6, "id": "address-filed", "title": "Address Filed", "stamp": "ADDRESS FILED", "status": "built; text extended here as proposed",
+   "emotion": "Release. The order is answered; the cost is that someone has to write the door.",
+   "scenes": [
+    { "id": "6.1", "name": "The Wall Is Gone", "where": "The Moonlit Hollow, changed", "beat": "The wall of the Department is broken stumps; a pale path leads nowhere.", "status": "canon",
+      "lines": ["S|The wall is gone. The circle is brighter.", "W|Then let's file it. Pay up."] },
+    { "id": "6.2", "name": "Three Waves", "where": "The circle", "beat": "The Sealed Yo Bots; the order stirs.", "status": "proposed",
+      "lines": ["Y|Sealed! Uploading... uploading...", "S|They're not chirping right.", "W|Frightened bots. That's new."] },
+    { "id": "6.3", "name": "The Order", "where": "The Threshold", "beat": "The Order-Bearer, scroll across its back with a red seal.", "status": "canon + proposed",
+      "lines": ["O|Order, in force: STRIKE. THIS. ADDRESS.", "S|Red is where it lands. Move, or break it.", "W|Signature required. I'll sign it for you.", "O|Signature... required... uploading... nothing?"] },
+    { "id": "6.4", "name": "Filed", "where": "The circle", "beat": "The order drops; DENIED; Slice writes the door number.", "status": "canon",
+      "lines": ["N|The Spider Bot comes apart. The order drops.", "W|'Strike this address.' Stamped DENIED. Ha.", "S|Filed. Properly, this time.", "W|So we exist.", "S|Clean. Good swing, Wallit.", "W|Pay up."] }
+   ],
+   "scriptedSetPiece": { "name": "The Door Number", "status": "built (Filed scene) + proposed beat", "text": "The ring becomes a line of writing, then a door number. Slice writes it with her scalpel; the camera pulls back to ADDRESS FILED. Proposed: the number is Wallit's first coin counted." },
+   "choices": [
+    { "id": "6.c1", "at": "6.4 Filed", "prompt": "The stamp is in Wallit's hand. The ring needs one more stamp.", "options": [
+      { "key": "keep", "label": "Stamp it himself.", "set": "", "now": "W|My stamp, my door.", "later": "Ending: the stamp stays in Wallit's hand." },
+      { "key": "share", "label": "Hand the stamp to Slice.", "set": "stamp_shared", "now": "S|Yours.\nW|Take it.", "later": "Ending: Slice presses the RECEIVED stamp herself." } ] },
+    { "id": "6.c2", "at": "6.4 Filed", "prompt": "Slice writes a door number with her scalpel. Wallit has a request.", "options": [
+      { "key": "one", "label": "One number, for the circle.", "set": "", "now": "S|One.", "later": "Ending: one door; the lost things get theirs." },
+      { "key": "two", "label": "Two numbers, one beside the other.", "set": "door_for_both", "now": "W|Two. Put me next to you.\nS|...Clean.", "later": "Ending: the door has two numbers; credits card: a second line." } ] }
+   ],
+   "opening": [
+    { "shot": "The Hollow at dawn-blue, the wall a row of broken stumps, a path of pale slabs running to nothing.", "camera": "Slow aerial pullback to reveal the missing wall", "speaker": "N", "line": "", "music": "Cello pedal from Chapter 1, now with a third above it" },
+    { "shot": "Slice at the ring, looking to where the wall was.", "camera": "Medium, locked", "speaker": "S", "line": "The wall is gone. The circle is brighter.", "music": "Pedal holds" },
+    { "shot": "Wallit swings the bat once, testing it, grinning.", "camera": "Low angle", "speaker": "W", "line": "Then let's file it. Pay up.", "music": "Pulse enters, bright" },
+    { "shot": "A great gold seal rises at the far end of the pale path.", "camera": "Push toward the seal", "speaker": "N", "line": "", "music": "Brass note, held" }
+   ],
+   "closing": [
+    { "shot": "The Order-Bearer collapses; the order floats down in the dawn light.", "camera": "Wide, then follow the page down", "speaker": "N", "line": "The Spider Bot comes apart. The order drops.", "music": "All silent; a held breath" },
+    { "shot": "Wallit reads the order in his hands; the stamp falls on it, DENIED.", "camera": "Over-the-shoulder, insert on stamp", "speaker": "W", "line": "'Strike this address.' Stamped DENIED. Ha.", "music": "Wooden block, then a bell" },
+    { "shot": "Slice writes the door number with her scalpel across the ring.", "camera": "Top-down, slow rotation", "speaker": "S", "line": "Filed. Properly, this time.", "music": "Strings reply, full and warm" },
+    { "shot": "Wallit looks at the number and the ring glowing under his feet.", "camera": "Medium", "speaker": "W", "line": "So we exist.", "music": "Chord rises" },
+    { "shot": "Two figures, small, in a gold ring at dawn.", "camera": "Pull back to a very wide; title: ADDRESS FILED", "speaker": "S", "line": "Clean. Good swing, Wallit.", "music": "Resolve; ring the bell once" },
+    { "shot": "Black. Wallit's voice, over the card.", "camera": "None", "speaker": "W", "line": "Pay up.", "music": "Silence; then fade into the credits theme" }
+   ],
+   "map": { "id": "hollow-filed", "setting": "The Moonlit Hollow, changed: the wall gone, a pale path leading nowhere, the circle drawn in white and brighter.",
+     "landmarks": ["The pale path run on to 180 m where it stops at nothing", "Broken stumps of the Department wall (190 m)", "The Threshold (80 m, bearing 20): a bare white doorframe on a dais"],
+     "route": "The pale path out to the Threshold; the fight is at the circle.",
+     "hazards": ["Sealed Yo Bots (juggernauts, stamped shut)", "The Order-Bearer's stamp marks"],
+     "bossArena": "The Threshold: a bare white doorframe on a dais, bearing 20.",
+     "palette": ["#0E1730", "#324C86", "#E8EEFF", "#F2CC66", "#FFFFFF"],
+     "props": ["broken wall stumps", "pale slab path", "white doorframe", "gold seal", "circle in white", "dawn-lit grass"] }
+  }
+ ],
+ "ending": {
+  "title": "RECEIVED", "status": "built (Story.SecretEnding); screenplay extended here as proposed",
+  "gate": "All six lost things in the case file when Chapter 6 is filed (the Unsent Postcard, Key With No Lock, A Cleared Hat, Thrice-Refused Paper, Ledger Leaf, The Circle's Stamp).",
+  "emotion": "Grace. The Department's tool is given back as a gift.",
+  "scenes": [
+   { "id": "E.1", "name": "Set Down", "where": "The filed circle", "beat": "Wallit sets the six things down in the ring.", "status": "canon",
+     "lines": ["N|Wallit sets six things down in the ring: a postcard, a key, a hat, a paper, a leaf, a stamp.", "S|No address.", "W|Then give it one. You've got the stamp."] },
+   { "id": "E.2", "name": "Stamped ADDRESS", "where": "The ring", "beat": "The stamp prints ADDRESS; nothing strikes it.", "status": "canon",
+     "lines": ["N|The stamp prints ADDRESS. Nothing strikes it.", "N|Every lost thing in the Hollow gets a door.", "Y|Delivery! ... Oh. It's for us?"] },
+   { "id": "E.3", "name": "Received", "where": "The ring", "beat": "The last word is not RETURN TO SENDER.", "status": "canon",
+     "lines": ["W|Return to sender?", "S|Not this time. Received.", "W|Received. In full. Pay up."] }
+  ],
+  "setPiece": { "name": "The Doors Open", "text": "Every lost thing set in the ring rises one at a time and a door appears behind each. The Courier's clipboard (if notice_kept) is among them; so is a half-built Yo Bot (if Ch3 unhook). The last door is Slice's. It has a number in her handwriting. If door_for_both it has two numbers." },
+  "choices": [
+   { "id": "E.c1", "at": "E.3 Received", "prompt": "The RECEIVED stamp is ready. Who presses it?", "options": [
+     { "key": "wallit", "label": "Wallit presses it.", "set": "", "now": "W|Received. In full.", "later": "Credits card: Wallit's line over RECEIVED." },
+     { "key": "slice", "label": "Slice presses it (needs stamp_shared).", "set": "", "now": "S|Received.", "later": "Credits card: Slice's line over RECEIVED. Wallit: 'First time you've said it.'" } ] }
+  ],
+  "opening": [
+   { "shot": "The filed circle at dawn, six small things in a row inside it.", "camera": "Top-down, then slow descent", "speaker": "N", "line": "Wallit sets six things down in the ring: a postcard, a key, a hat, a paper, a leaf, a stamp.", "music": "Cello pedal; harp figure from Chapter 4, now resolved" },
+   { "shot": "Slice looks at the six things, the ring, and Wallit.", "camera": "Medium two-shot", "speaker": "S", "line": "No address.", "music": "Pedal holds" },
+   { "shot": "Wallit lifts the stamp.", "camera": "Close on the stamp", "speaker": "W", "line": "Then give it one. You've got the stamp.", "music": "Pedal lifts a step" }
+  ],
+  "closing": [
+   { "shot": "The stamp comes down on the ring: ADDRESS.", "camera": "Insert, then pull back as doors rise", "speaker": "N", "line": "The stamp prints ADDRESS. Nothing strikes it.", "music": "Bells in a line, no pulse" },
+   { "shot": "A small Yo Bot with a paper, puzzled, in front of a new door.", "camera": "Low angle, soft focus", "speaker": "Y", "line": "Delivery! ... Oh. It's for us?", "music": "A single, kind chirp" },
+   { "shot": "Wallit and Slice in the gold light; the stamp reads RECEIVED.", "camera": "Slow pull back to a wide", "speaker": "S", "line": "Not this time. Received.", "music": "Full strings resolve" },
+   { "shot": "Wallit, grinning, bat on his shoulder, in front of the stamped ring.", "camera": "Medium, hold", "speaker": "W", "line": "Received. In full. Pay up.", "music": "Final bell; fade to the credits" }
+  ],
+  "map": { "id": "hollow-filed", "setting": "The same filed Hollow as Chapter 6, an hour later: soft light, six small things in the ring.",
+    "landmarks": ["The ring with the six things", "The doors that appear one by one", "The Threshold left open"],
+    "route": "None; the scene plays at the circle.",
+    "hazards": ["None"],
+    "bossArena": "None.",
+    "palette": ["#14223F", "#4B6AA5", "#F4F0E0", "#F2CC66", "#FFFFFF"],
+    "props": ["six lost things", "new doors (up to 7)", "RECEIVED stamp", "dawn grass", "the Courier's clipboard (if kept)"] }
+ },
+ "openQuestions": [
+  { "id": "Q1", "q": "Who is the Department? A person, a machine, a building, a rule?", "assumed": "A process with no face; its parts are the bots, the walls and the stamps." },
+  { "id": "Q2", "q": "Did Slice once work for the Department's order, and why did she stop?", "assumed": "Yes, once. Why is never said; her care is shown, not told." },
+  { "id": "Q3", "q": "What is Wallit: a lost thing, a made thing, or a filed thing that went wrong? Whose money was in him?", "assumed": "Unsaid. The torn postmark is half his; the other half is never found." },
+  { "id": "Q4", "q": "Who is the sender?", "assumed": "No one. The stamp is automatic." },
+  { "id": "Q5", "q": "Are the cleared things on the Floor alive?", "assumed": "No, but Wallit fears they might be; Ending lets J decide whether they wake." },
+  { "id": "Q6", "q": "Does a Half-Built Yo Bot count as unfiled?", "assumed": "Yes; it appears in the ending only if Ch3 unhook was chosen." },
+  { "id": "Q7", "q": "Should the choices change real outcomes, or only later lines?", "assumed": "Only lines and one scene variant, so no save-format change is needed beyond a flag word in the case file." },
+  { "id": "Q8", "q": "Should choices be made in dialogue boxes (Cutscene.cs supports none yet) or in the world?", "assumed": "In the dialogue box with two buttons; requires a Cutscene.cs choice page." },
+  { "id": "Q9", "q": "Who is the Courier's sender?", "assumed": "Unknown. It reads from a clipboard that is blank when examined." },
+  { "id": "Q10", "q": "Why 30 waves in Arcade and 3 in Chapter 6?", "assumed": "Arcade is the Department trying again; the campaign is the Department being answered." },
+  { "id": "Q11", "q": "Does the player ever get an address of their own?", "assumed": "Wallit is on the books through the circle only. A sequel hook could give him a door of his own." },
+  { "id": "Q12", "q": "Should every line have a Hawkes Gen voice?", "assumed": "Subtitles first; Wallit and Slice voiced where files exist." }
+ ]
+}

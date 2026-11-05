@@ -37,6 +37,12 @@ public static class PlayInput {
 
     public static float GetAxis(string name) {
         float best = Input.GetAxis(name);
+        // A finger on the screen can show up as a mouse drag (the browser's touch-to-mouse). Only the touch
+        // controls decide what a finger does, so while one is down the real look axes stay quiet: a finger
+        // held on Swing, Jump or Lock must not turn the camera.
+        if ((name == "Mouse X" || name == "Mouse Y") && Input.touchCount > 0) {
+            best = 0f;
+        }
         if (axes.TryGetValue(name, out float bot) && Mathf.Abs(bot) > Mathf.Abs(best)) {
             best = bot;
         }

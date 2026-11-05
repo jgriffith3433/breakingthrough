@@ -1,0 +1,110 @@
+{
+"cast": "slice",
+"voice": "hv_heroine",
+"ids": [
+"slice_walk_the_lamps_hold_each_i_ll_keep_the_ring",
+"slice_wallit_come_back",
+"slice_wallit_stay_close",
+"slice_wallit_that_s_a_lot_of_nerve",
+"slice_yo_bots_clear_spider_bots_serve_every_spider_bot_comes_down_the_long_walk_from_the_department_with_one_paper_to_hand_over",
+"slice_you_cut_it_down_noted",
+"slice_you_have_an_address_the_circle",
+"slice_you_kept_it",
+"slice_you_knock_like_you_re_owed",
+"slice_you_re_inside_inside_you_exist",
+"slice_you_swing_like_you_mean_it",
+"slice_you_tipped_cleared_things_don_t_tip",
+"slice_you_tipped_i_noticed",
+"slice_you_tipped_me_the_first_bolt_i_filed_it",
+"slice_you_tore_it_it_will_send_another",
+"slice_you_tore_the_first_one_we_take_another",
+"slice_yours"
+],
+"lines": [
+{
+"who": "slice",
+"text": "Walk the lamps. Hold each. I'll keep the ring.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Wallit. Come back.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Wallit. Stay close.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Wallit. That's a lot of nerve.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Yo Bots clear. Spider Bots serve. Every Spider Bot comes down the Long Walk from the Department with one paper to hand over.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "You cut it down. Noted.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "You have an address. The circle.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "You kept it.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "You knock like you're owed.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "You're inside. Inside, you exist.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "You swing like you mean it.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "You tipped. Cleared things don't tip.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "You tipped. I noticed.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "You tipped me the first bolt. I filed it.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "You tore it. It will send another.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "You tore the first one. We take another.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Yours.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+}
+]
+}
