@@ -28,6 +28,7 @@ public partial class Cutscene {
         public string world;
         public string speaker = "N";
         public string line;
+        public string alt;     // stand-in still in Art, shown while the generated one is not in the build
         public float seconds = 4f;
         public float fade = 0.6f;
         public float level = 1f;
@@ -233,6 +234,9 @@ public partial class Cutscene {
 
     void FillSlot(ShotSlot slot, Shot s) {
         slot.back.texture = LoadArt(s.back);
+        if (slot.back.texture == null && !string.IsNullOrEmpty(s.alt)) {
+            slot.back.texture = LoadArt(s.alt);
+        }
         slot.back.enabled = slot.back.texture != null;
         slot.front.texture = LoadArt(s.front);
         slot.front.enabled = slot.front.texture != null;
@@ -406,12 +410,39 @@ public partial class Cutscene {
             }
         } else {
             Cast.Spoke(shotSpeaker, shotLine);
+            seconds = PlayCastVoice();
         }
         float reading = Mathf.Max(seconds, shotLine.Length / 16f + 0.8f);
         typeSeconds = Mathf.Max(0.8f, Mathf.Min(reading, seconds > 0f ? seconds * 0.85f : reading * 0.8f));
         shotLength = Mathf.Max(shotLength, 0.35f + reading + 0.5f);
         SubtitleLines++;
         Events.Add("subtitle|" + shotSpeaker + "|" + shotLine.Replace('\n', ' '));
+    }
+
+    // The other speakers (Courier, Foreman, Alpha, Yo Bots, narration) speak from Resources/Voice/cinema/<reel>_<shot>.mp3 when
+    // the file exists (made through Hawkes Gen audio.voice, one voice per character); with none the subtitle is the line.
+    AudioSource castVoice;
+    float PlayCastVoice() {
+        if (castVoice != null) {
+            castVoice.Stop();
+        }
+        if (reel == null || shotIndex < 0 || shotIndex >= ShotCount) {
+            return 0f;
+        }
+        AudioClip clip = Resources.Load<AudioClip>("Voice/cinema/" + reel.id + "_" + reel.shots[shotIndex].id);
+        if (clip == null) {
+            return 0f;
+        }
+        if (castVoice == null) {
+            castVoice = gameObject.AddComponent<AudioSource>();
+            castVoice.playOnAwake = false;
+        }
+        castVoice.clip = clip;
+        castVoice.volume = Mathf.Clamp01(SoundSettings.EffectsLevel);
+        castVoice.Play();
+        VoiceLines++;
+        Events.Add("voice|" + shotSpeaker + "|" + clip.length.ToString("0.00"));
+        return clip.length;
     }
 
     void TickSubtitle(float t) {
@@ -479,7 +510,7 @@ public partial class Cutscene {
         if (bed == null || !bed.isPlaying) {
             return;
         }
-        bool voice = !WallitVoice.FloorFree;
+        bool voice = !WallitVoice.FloorFree || (castVoice != null && castVoice.isPlaying);
         duck = Mathf.MoveTowards(duck, voice ? 0.3f : 1f, dt * 3f);
         if (open && shotMode) {
             DuckedLowest = Mathf.Min(DuckedLowest, duck);
@@ -495,6 +526,9 @@ public partial class Cutscene {
 
     void EndShots() {
         shotMode = false;
+        if (castVoice != null) {
+            castVoice.Stop();
+        }
         bedWanted = false;
         if (video != null) {
             video.prepareCompleted -= OnVideoReady;

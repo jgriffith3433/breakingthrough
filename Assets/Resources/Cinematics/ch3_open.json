@@ -1,0 +1,108 @@
+{
+  "id": "ch3_open",
+  "bed": "ch3_score",
+  "shots": [
+    {
+      "id": "s1",
+      "back": "ch3_open_1_back",
+      "speaker": "N",
+      "seconds": 5.8,
+      "fade": 0.7,
+      "level": 0.7,
+      "from": [
+        0,
+        0.5,
+        1.1
+      ],
+      "to": [
+        0,
+        -0.4,
+        1.25
+      ],
+      "alt": "hollow_back",
+      "line": "Past the broken gate the ground drops away into a yard lit by lamps. Rows of Yo Bot chassis hang on hooks."
+    },
+    {
+      "id": "s2",
+      "back": "ch3_open_2_back",
+      "speaker": "H",
+      "seconds": 4.0,
+      "fade": 0.7,
+      "level": 0.8,
+      "from": [
+        0.4,
+        0,
+        1.3
+      ],
+      "to": [
+        0,
+        0,
+        1.1
+      ],
+      "alt": "crest_back",
+      "front": "ch3_open_2_front",
+      "line": "Hello! I am... not finished! Uploading victory?"
+    },
+    {
+      "id": "s3",
+      "back": "ch3_open_3_back",
+      "speaker": "W",
+      "seconds": 3.0,
+      "fade": 0.7,
+      "level": 0.7,
+      "from": [
+        -0.5,
+        0,
+        1.1
+      ],
+      "to": [
+        0.5,
+        0,
+        1.1
+      ],
+      "alt": "hollow_back",
+      "front": "ch3_open_3_front",
+      "line": "They're all the same unit."
+    },
+    {
+      "id": "s4",
+      "back": "ch3_open_4_back",
+      "speaker": "S",
+      "seconds": 3.0,
+      "fade": 0.7,
+      "level": 0.5,
+      "from": [
+        0,
+        0,
+        1.08
+      ],
+      "to": [
+        0,
+        0,
+        1.1
+      ],
+      "alt": "slice_back",
+      "front": "ch3_open_4_front",
+      "line": "Spare parts. Spare orders."
+    },
+    {
+      "id": "s5",
+      "back": "ch3_open_5_back",
+      "speaker": "N",
+      "seconds": 3.5,
+      "fade": 0.7,
+      "level": 1.0,
+      "from": [
+        0,
+        -0.4,
+        1.4
+      ],
+      "to": [
+        0,
+        0.2,
+        1.05
+      ],
+      "alt": "hollow_back"
+    }
+  ]
+}

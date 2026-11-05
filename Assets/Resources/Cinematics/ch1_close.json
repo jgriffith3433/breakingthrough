@@ -1,0 +1,111 @@
+{
+  "id": "ch1_close",
+  "bed": "ch1_score",
+  "shots": [
+    {
+      "id": "s1",
+      "back": "ch1_close_1_back",
+      "speaker": "K",
+      "seconds": 4.2,
+      "fade": 0.0,
+      "level": 0.8,
+      "from": [
+        0,
+        0,
+        1.05
+      ],
+      "to": [
+        0,
+        0,
+        1.1
+      ],
+      "alt": "hollow_back",
+      "front": "ch1_close_1_front",
+      "line": "Notice... undelivered... uploading... defeat?"
+    },
+    {
+      "id": "s2",
+      "back": "ch1_close_2_back",
+      "speaker": "W",
+      "seconds": 3.2,
+      "fade": 0.7,
+      "level": 0.8,
+      "from": [
+        0.3,
+        0,
+        1.1
+      ],
+      "to": [
+        -0.3,
+        0,
+        1.2
+      ],
+      "alt": "hollow_back",
+      "front": "ch1_close_2_front",
+      "line": "Return to sender."
+    },
+    {
+      "id": "s3",
+      "back": "ch1_close_3_back",
+      "speaker": "S",
+      "seconds": 2.8,
+      "fade": 0.7,
+      "level": 0.6,
+      "from": [
+        0,
+        0.3,
+        1.4
+      ],
+      "to": [
+        0,
+        0,
+        1.1
+      ],
+      "alt": "slice_back",
+      "front": "ch1_close_3_front",
+      "line": "Clean."
+    },
+    {
+      "id": "s4",
+      "back": "ch1_close_4_back",
+      "speaker": "W",
+      "seconds": 3.6,
+      "fade": 0.7,
+      "level": 0.7,
+      "from": [
+        0,
+        0,
+        1.3
+      ],
+      "to": [
+        0,
+        0,
+        1.15
+      ],
+      "alt": "wallet_front",
+      "front": "ch1_close_4_front",
+      "line": "Bolts. Somebody's paying me."
+    },
+    {
+      "id": "s5",
+      "back": "ch1_close_5_back",
+      "speaker": "S",
+      "seconds": 4.0,
+      "fade": 0.7,
+      "level": 0.5,
+      "from": [
+        0.3,
+        0,
+        1.3
+      ],
+      "to": [
+        -0.4,
+        0,
+        1.1
+      ],
+      "alt": "slice_back",
+      "front": "ch1_close_5_front",
+      "line": "Not somebody. Something."
+    }
+  ]
+}

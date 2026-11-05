@@ -1,0 +1,88 @@
+{
+  "id": "ch3_close",
+  "bed": "ch3_score",
+  "shots": [
+    {
+      "id": "s1",
+      "back": "ch3_close_1_back",
+      "speaker": "F",
+      "seconds": 3.4,
+      "fade": 0.0,
+      "level": 0.6,
+      "from": [
+        0,
+        0.2,
+        1.2
+      ],
+      "to": [
+        0,
+        0,
+        1.1
+      ],
+      "alt": "crest_back",
+      "front": "ch3_close_1_front",
+      "line": "Order... unread..."
+    },
+    {
+      "id": "s2",
+      "back": "ch3_close_2_back",
+      "speaker": "W",
+      "seconds": 3.0,
+      "fade": 0.7,
+      "level": 0.5,
+      "from": [
+        0,
+        0,
+        1.4
+      ],
+      "to": [
+        0,
+        0,
+        1.2
+      ],
+      "alt": "wallet_front",
+      "front": "ch3_close_2_front",
+      "line": "Paid in full."
+    },
+    {
+      "id": "s3",
+      "back": "ch3_close_3_back",
+      "speaker": "S",
+      "seconds": 2.8,
+      "fade": 0.7,
+      "level": 0.4,
+      "from": [
+        0,
+        0.1,
+        1.3
+      ],
+      "to": [
+        0,
+        0,
+        1.1
+      ],
+      "alt": "slice_back",
+      "front": "ch3_close_3_front",
+      "line": "Clean."
+    },
+    {
+      "id": "s4",
+      "back": "ch3_close_4_back",
+      "speaker": "N",
+      "seconds": 3.5,
+      "fade": 0.7,
+      "level": 1.0,
+      "from": [
+        0,
+        0,
+        1.4
+      ],
+      "to": [
+        0,
+        0,
+        1.08
+      ],
+      "alt": "hollow_back"
+    }
+  ]
+}

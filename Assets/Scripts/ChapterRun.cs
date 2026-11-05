@@ -163,7 +163,12 @@ public class ChapterRun : MonoBehaviour {
         StartJournal();
         gameObject.AddComponent<BackRoom>();   // the chapter's secret room, once its clue is held (BackRooms.cs)
         RunAnalytics.Screen("chapter_play_" + (Chapter + 1));
-        if (data.Cutscene != null && data.Cutscene.Length > 0) {
+        Cutscene.Reel openReel = Chapter < 3 ? Cutscene.LoadReel("ch" + (Chapter + 1) + "_open") : null;
+        if (openReel != null) {
+            // Chapters 1-3 open with a shot reel (Resources/Cinematics/ch<n>_open.json, Tools/Cinematics/make_reels.py).
+            Events.Add("cinematic|" + data.Id + "|open");
+            Cutscene.PlayShots(openReel, () => Events.Add("play|" + data.Id));
+        } else if (data.Cutscene != null && data.Cutscene.Length > 0) {
             // The chapter's opening scene plays over the frozen map; reading it or skipping it hands over to play.
             Events.Add("cutscene|" + data.Id);
             Cutscene.Play(data.Cutscene, () => Events.Add("play|" + data.Id));
@@ -676,6 +681,17 @@ public class ChapterRun : MonoBehaviour {
             CompleteFinal();
             return;
         }
+        Cutscene.Reel closeReel = Chapter < 3 ? Cutscene.LoadReel("ch" + (Chapter + 1) + "_close") : null;
+        if (closeReel != null) {
+            // Chapters 1-3 close with a reel before the Chapter Complete card.
+            Events.Add("cinematic|" + data.Id + "|close");
+            Cutscene.PlayShots(closeReel, () => ShowCompleteCard(extra, best));
+        } else {
+            ShowCompleteCard(extra, best);
+        }
+    }
+
+    void ShowCompleteCard(string extra, int best) {
         bool more = Chapter + 1 < CampaignSave.ChapterCount;
         cardTitle.text = "CHAPTER COMPLETE";
         var body = new System.Text.StringBuilder(data.Title);
