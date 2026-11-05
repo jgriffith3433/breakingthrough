@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 // On-screen controls for phones and tablets: a stick on the left, Swing (hold it to wind up a home run), Lock and
 // Jump on the right, Shake once birds climb, Next wave in breaks, and Turn in the build window. They press PlayInput's keys, so gameplay reads
-// them exactly like the keyboard and mouse. A drag on the right half (or on Swing) turns the camera; in the build
+// them exactly like the keyboard and mouse. A drag that starts off the buttons turns the camera (a finger on a button never does); in the build
 // window a drag shows the piece and letting go drops it. Hidden unless the device has touch.
 public class TouchControls : MonoBehaviour {
     public static TouchControls Instance { get; private set; }
@@ -259,7 +259,7 @@ public class TouchControls : MonoBehaviour {
             }
             Vector2 delta = pair.Value - finger.Last;
             finger.Last = pair.Value;
-            if (finger.Role == Role.Look || finger.Role == Role.Swing) {
+            if (finger.Role == Role.Look) {   // only a finger that began off the buttons turns the camera
                 look += delta;
             } else if (finger.Role == Role.Place) {
                 PlayInput.PadPoint(pair.Value);
