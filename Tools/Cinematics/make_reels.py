@@ -80,24 +80,24 @@ R.update({
  ("W","So we exist.",2.6,[0,0,1.4],[0,0,1.2],0.9,"the number and the ring glowing under his feet","Wallit looking down","Chord rises","ring_back"),
  ("S","Clean. Good swing, Wallit.",3.4,[0,0,1.6],[0,0,1.0],1.0,"two small figures in a gold ring at dawn, title card ADDRESS FILED",None,"Resolve; ring the bell once","ring_back"),
  ("W","Pay up.",2.4,[0,0,1.0],[0,0,1.0],0.3,"black, a faint gold edge",None,"Silence; then fade into the credits theme","stamp_back")]),
-"boss_courier": ("ch1_score", [
+"boss_courier": ("boss_courier", [
  ("Y","Special delivery! Notice of striking!",3.4,[0,0.2,1.15],[0,0,1.35],0.9,"the Courier on the Hollow's rim, clipboard raised, red seal","the Courier, clipboard up","Cello pedal, a bright rising figure","hollow_back"),
  ("S","The Courier. It reads the order out, then it lands.",4.2,[0.2,0,1.3],[-0.1,0,1.1],0.6,"the circle, a shadow on the grass","Slice, knife low","Pedal holds","slice_back"),
  ("W","Then it can read me the bill.",3.0,[0,0,1.2],[0,0,1.35],0.8,"the clipboard shadow crossing the ring","Wallit, bat on shoulder","Bright pulse enters","wallet_front")]),
-"boss_foreman": ("ch3_score", [
+"boss_foreman": ("boss_foreman", [
  ("F","Order, read aloud: STRIKE. THIS. ADDRESS.",4.0,[0,0.2,1.1],[0,-0.1,1.3],0.9,"the Foreman rising over the belt, lamps red behind it","the Foreman, order sheet on its chest","Pulse doubles, brass under it","crest_back"),
  ("S","The Foreman. It reads the order to the Crew. Don't let it finish.",4.6,[0.1,0,1.2],[-0.2,0,1.1],0.6,"rows of hooked chassis behind her","Slice, eyes on the belt","Drone, pulse low","slice_back"),
  ("W","Then I'll read it the invoice.",3.0,[0,0,1.2],[0,0,1.4],0.8,"the belt lamps","Wallit hefting the bat","Brass hit, cut","wallet_front")]),
-"boss_server": ("ch4_score", [
+"boss_server": ("boss_server", [
  ("Y","Order delivery! Signature required!",3.2,[0,0,1.2],[0,0,1.4],0.8,"the Servers' Dais at the end of the causeway, a Spider Bot standing very still","the Server, paper held out","A polite minor figure on harp","crest_back"),
  ("S","The Server. It will not strike until it has offered the paper three times and been refused three times.",6.0,[0.2,0,1.25],[-0.1,0,1.1],0.5,"mist and lamp stilts","Slice in profile","Harp holds, harmonics","slice_back"),
  ("W","Refused. I can do refused. Free of charge.",3.6,[0,0,1.2],[0,0,1.4],0.8,"a paper hanging in the air","Wallit grinning, bat up","Harp stops; a low bell","wallet_front")]),
-"boss_order": ("ch6_score", [
+"boss_order": ("boss_orderbearer", [
  ("Y","Order delivery! Signature required!",3.2,[0,0.3,1.1],[0,0,1.4],0.9,"the white doorframe on its dais at dawn, a Spider Bot carrying a scroll with a red seal","the Order-Bearer, scroll across its back","Brass note, held under the cello pedal","crest_back"),
  ("S","Spider. It carries the order.",2.8,[0,0,1.3],[0.2,0,1.1],0.6,"the ring at dawn","Slice, knife out","Pedal holds","slice_back"),
  ("O","Order, in force: STRIKE. THIS. ADDRESS.",4.0,[0,0,1.1],[0,0,1.4],0.9,"the red seal glowing on the scroll","the Order-Bearer","Brass swell, cut","stamp_back"),
  ("W","Then it carries my bill.",2.8,[0,0,1.25],[0,0,1.4],0.9,"Wallit squaring up","Wallit, bat on his shoulder","Pulse enters, full","wallet_front")]),
-"ending_received": ("ch6_score", [
+"ending_received": ("ending", [
  ("N","Wallit sets six things down in the ring: a postcard, a key, a hat, a paper, a leaf, a stamp.",5.6,[0,0,1.5],[0,0,1.05],0.6,"top-down on the filed circle at dawn, six small things in a row inside it",None,"Cello pedal; the harp figure from Chapter 4, now resolved","ring_back"),
  ("S","No address.",2.4,[-0.3,0,1.2],[0.3,0,1.15],0.4,"the six things, the ring","Slice looking at the six things, the ring and Wallit","Pedal holds","slice_back"),
  ("W","Then give it one. You've got the stamp.",3.6,[0,0,1.4],[0,0,1.2],0.6,"close on the RETURN TO SENDER stamp lifted","Wallit lifting the stamp","Pedal lifts a step","stamp_back"),
@@ -105,7 +105,7 @@ R.update({
  ("Y","Delivery! ... Oh. It's for us?",3.4,[0,0,1.3],[0,0,1.1],0.7,"a new door glowing, soft focus","a small Yo Bot with a paper, puzzled","A single, kind chirp","crest_back"),
  ("S","Not this time. Received.",3.0,[0,0,1.1],[0,0,1.3],0.9,"Wallit and Slice in gold light, the stamp reading RECEIVED","Slice, a small smile only in her eyes","Full strings resolve","slice_back"),
  ("W","Received. In full. Pay up.",3.4,[0,0,1.25],[0,0,1.1],1.0,"the stamped ring","Wallit grinning, bat on his shoulder","Final bell; fade to the credits","wallet_front")]),
-"credits": ("ch6_score", [
+"credits": ("credits", [
  ("N","WALLIT: one wallet, one bat. Pay up.",3.4,[0,0,1.05],[0,0,1.15],0.7,"the filed circle at dawn, wide",None,"Cello pedal, warm","ring_back"),
  ("N","SLICE: guards the circle. Clean.",3.2,[0,0,1.1],[0,0,1.2],0.7,"the circle, a knife standing in the grass",None,"Harp figure","slice_back"),
  ("N","YO BOTS: uploading victory. SPIDER BOTS: by order of nobody.",4.0,[0,0,1.1],[0,0,1.2],0.7,"a Yo Bot and a Spider Bot standing in a field of doors",None,"Strings lift","crest_back"),

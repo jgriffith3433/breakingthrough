@@ -115,6 +115,7 @@ public class ChapterHub : MonoBehaviour {
 
     void Awake() {
         Instance = this;
+        MusicDirector.Play("hub");
     }
 
     void OnDestroy() {

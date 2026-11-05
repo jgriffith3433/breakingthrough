@@ -1,6 +1,6 @@
 {
   "id": "boss_courier",
-  "bed": "ch1_score",
+  "bed": "boss_courier",
   "shots": [
     {
       "id": "s1",

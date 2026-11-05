@@ -1,0 +1,26 @@
+{
+"cast": "server",
+"voice": "hv_british",
+"ids": [
+"server_delivery_is_to_the_named_address",
+"server_delivery_undelivered_chirp",
+"server_three_knocks_on_record"
+],
+"lines": [
+{
+"who": "server",
+"text": "Delivery is to the named address.",
+"direction": "impeccably polite, patient, offers and waits"
+},
+{
+"who": "server",
+"text": "Delivery... undelivered... chirp?",
+"direction": "impeccably polite, patient, offers and waits"
+},
+{
+"who": "server",
+"text": "Three knocks on record.",
+"direction": "impeccably polite, patient, offers and waits"
+}
+]
+}

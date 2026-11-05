@@ -1,0 +1,14 @@
+{
+"cast": "registrar",
+"voice": "hv_elder",
+"ids": [
+"registrar_register_closed_uploading_nothing"
+],
+"lines": [
+{
+"who": "registrar",
+"text": "Register... closed... uploading... nothing?",
+"direction": "dry gravelly clerk reading a ledger"
+}
+]
+}

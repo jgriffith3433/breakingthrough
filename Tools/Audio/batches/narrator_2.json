@@ -1,0 +1,98 @@
+{
+"cast": "narrator",
+"voice": "hv_narrator_warm",
+"ids": [
+"narrator_the_belt_a_slow_belt_carries_flat_cleared_things_past_the_hooks_a_hat_a_clock_a_small_bell",
+"narrator_the_belt_runs_on_into_a_chute_lit_by_a_single_red_lamp_the_lamp_is_a_lens_it_turns_toward_the_hollow_and_the_circle_blinks_once",
+"narrator_the_camera_pulls_back_the_hollow_is_quiet",
+"narrator_the_causeway_is_stone_slabs_over_a_pit_of_mist_a_pair_of_lamps_burns_at_each_stop_one_for_every_leg",
+"narrator_the_circle_stands_slice_and_wallit_are_on_the_books_thanks_for_playing",
+"narrator_the_clearing_floor_beyond_the_broken_gate_a_yard_lies_sunken_in_the_dark_lit_by_lamps_along_a_slow_conveyor",
+"narrator_the_gate_no_handle_no_hinges_no_doormat_wallit_knocks_with_the_bat",
+"narrator_the_half_built_the_belt_has_stopped_in_the_chute_the_half_built_yo_bot_still_hangs_by_one_hook_one_claw_out_wanting_finishing",
+"narrator_the_last_pair_of_lamps_ahead_the_slabs_end_in_the_mist_and_something_tall_is_walking_up_them_slowly_to_wait",
+"narrator_the_last_stamp_the_order_drops_unsigned_the_ring_on_the_grass_waits_for_one_more_stamp",
+"narrator_the_lever_drops_down_the_line_the_hooks_swing_empty_and_the_belt_coughs_and_stops",
+"narrator_the_long_walk_a_causeway_of_stone_slabs_runs_out_over_a_pit_of_mist_six_lamps_on_either_side_a_single_path_no_cover",
+"narrator_the_moonlit_hollow_changed_the_wall_of_the_department_is_a_row_of_broken_stumps_and_a_path_of_pale_slabs_runs_out_to_nothing",
+"narrator_the_moonlit_hollow_the_wall_is_gone_a_path_of_pale_slabs_leads_out_of_the_hollow_and_stops_at_nothing_the_circle_is_brighter_than_it_has_ever_been",
+"narrator_the_notice_the_courier_comes_apart_its_notice_drifts_down_onto_the_grass_nobody_has_signed_it"
+],
+"lines": [
+{
+"who": "narrator",
+"text": "THE BELT\nA slow belt carries flat, cleared things past the hooks: a hat, a clock, a small bell.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "The belt runs on into a chute lit by a single red lamp. The lamp is a lens. It turns toward the Hollow, and the circle blinks once.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "The camera pulls back. The Hollow is quiet.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "The causeway is stone slabs over a pit of mist. A pair of lamps burns at each stop, one for every leg.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "The circle stands. Slice and Wallit are on the books. Thanks for playing.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "THE CLEARING FLOOR\nBeyond the broken gate a yard lies sunken in the dark, lit by lamps along a slow conveyor.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "THE GATE\nNo handle. No hinges. No doormat. Wallit knocks with the bat.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "THE HALF-BUILT\nThe belt has stopped. In the chute, the Half-Built Yo Bot still hangs by one hook, one claw out, wanting finishing.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "The last pair of lamps. Ahead the slabs end in the mist, and something tall is walking up them, slowly, to wait.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "THE LAST STAMP\nThe order drops, unsigned. The ring on the grass waits for one more stamp.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "The lever drops. Down the line the hooks swing empty, and the belt coughs and stops.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "THE LONG WALK\nA causeway of stone slabs runs out over a pit of mist, six lamps on either side. A single path. No cover.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "The Moonlit Hollow, changed. The wall of the Department is a row of broken stumps, and a path of pale slabs runs out to nothing.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "THE MOONLIT HOLLOW\nThe wall is gone. A path of pale slabs leads out of the Hollow and stops at nothing. The circle is brighter than it has ever been.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "THE NOTICE\nThe Courier comes apart. Its notice drifts down onto the grass. Nobody has signed it.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+}
+]
+}

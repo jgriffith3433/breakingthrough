@@ -1,0 +1,248 @@
+{
+"cast": "wallit",
+"voice": "CwhRBWXzGAHq8TQ4Fs17",
+"ids": [
+"wallit_return_to_sender_which_sender_i_want_a_refund",
+"wallit_signed_by_nobody_told_you",
+"wallit_since_when",
+"wallit_so_does_my_refund_pay_up",
+"wallit_so_the_order_is_only_a_form",
+"wallit_so_we_exist",
+"wallit_spiders_bigger_than_anything_so_far_and_not_bigger_yo_bots",
+"wallit_stamped_out_so_they_re_the_department_s_employees",
+"wallit_strike_this_address_sounds_worse_when_it_s_yours",
+"wallit_strike_this_address_stamped_denied_ha",
+"wallit_struck_from_the_record",
+"wallit_take_it",
+"wallit_that_s_my_stamp_torn",
+"wallit_the_notice_is_in_my_pocket_evidence",
+"wallit_the_order_s_a_form_a_form_can_be_answered",
+"wallit_then_give_it_one_you_ve_got_the_stamp",
+"wallit_then_i_ll_make_it_a_refund",
+"wallit_then_i_ll_read_it_the_invoice",
+"wallit_then_i_ve_been_collecting_what_s_owed_good_now_i_want_the_lever",
+"wallit_then_it_can_be_denied",
+"wallit_then_it_can_read_me_the_bill",
+"wallit_then_let_s_file_it_pay_up",
+"wallit_then_they_re_out_of_walls_let_s_file_it_pay_up",
+"wallit_then_we_answer_it_pay_up",
+"wallit_there_s_a_door_doors_have_senders",
+"wallit_they_keep_coming_down_the_same_path_nobody_s_lost_they_know_the_address",
+"wallit_they_keep_the_order_here_every_copy_of_it",
+"wallit_they_re_all_the_same_unit",
+"wallit_they_re_not_bigger_yo_bots_they_re_deliveries",
+"wallit_they_were_only_ever_stamped_out_nobody_asked_them",
+"wallit_those_bolts_are_the_same_ones_they_ve_been_paying_me",
+"wallit_two_out_of_the_yard_that_s_a_tip",
+"wallit_two_put_me_next_to_you",
+"wallit_under_time_charge_extra",
+"wallit_void_i_don_t_take_bills_i_didn_t_order",
+"wallit_void_your_own_stamp",
+"wallit_waiting_s_billable",
+"wallit_wallit_one_wallet_one_bat_no_refunds_they_stamped_me_return_to_sender_and_threw_me_in_here",
+"wallit_wasn_t_going_to_not_for_free",
+"wallit_where_do_i_sign_for_this_bat"
+],
+"lines": [
+{
+"who": "wallit",
+"text": "Return to sender. Which sender? I want a refund.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Signed by nobody. Told you.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Since when?",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "So does my refund. Pay up.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "So the order is only a form.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "So we exist.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Spiders. Bigger than anything so far, and not bigger Yo Bots.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Stamped out. So they're the Department's. Employees.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "STRIKE. THIS. ADDRESS. Sounds worse when it's yours.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "\"Strike this address.\" Stamped DENIED. Ha.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Struck from the record.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Take it.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "That's my stamp. Torn.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "The notice is in my pocket. Evidence.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "The order's a form. A form can be answered.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Then give it one. You've got the stamp.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Then I'll make it a refund.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Then I'll read it the invoice.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Then I've been collecting what's owed. Good. Now I want the lever.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Then it can be denied.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Then it can read me the bill.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Then let's file it. Pay up.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Then they're out of walls. Let's file it. Pay up.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Then we answer it. Pay up.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "There's a door. Doors have senders.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "They keep coming down the same path. Nobody's lost. They know the address.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "They keep the order here. Every copy of it.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "They're all the same unit.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "They're not bigger Yo Bots. They're deliveries.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "They were only ever stamped out. Nobody asked them.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Those bolts are the same ones they've been paying me.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Two out of the yard. That's a tip.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Two. Put me next to you.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Under time. Charge extra.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Void. I don't take bills I didn't order.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Void your own stamp.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Waiting's billable.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Wallit. One wallet, one bat, no refunds. They stamped me \"Return to sender\" and threw me in here.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Wasn't going to. Not for free.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Where do I sign for this bat?",
+"direction": "brash, angry, money-minded"
+}
+]
+}

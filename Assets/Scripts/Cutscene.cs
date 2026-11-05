@@ -220,8 +220,14 @@ public partial class Cutscene : MonoBehaviour {
     void Speak(string who, string text) {
         WallitVoice.Silence();
         SliceVoice.Silence();
+        CastVoice.Silence();
         if (who != "W" && who != "S") {
-            Cast.Spoke(who, text);
+            // Everyone else speaks in their own cast voice (CastVoice: one at a time, on the shared floor).
+            float said = CastVoice.SayNow(who, text, "cutscene");
+            if (said > 0f) {
+                VoiceLines++;
+                Events.Add("voice|" + who + "|" + said.ToString("0.00"));
+            }
             return;
         }
         if (!WallitVoice.FloorFree) {
@@ -245,6 +251,7 @@ public partial class Cutscene : MonoBehaviour {
         HideChoice();
         WallitVoice.Silence();
         SliceVoice.Silence();
+        CastVoice.Silence();
         VoiceDirector.Scene = false;
         barsOn = false;
         Time.timeScale = savedScale;

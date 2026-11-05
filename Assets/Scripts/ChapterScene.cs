@@ -56,6 +56,7 @@ public class ChapterScene : MonoBehaviour {
 
     void Awake() {
         Instance = this;
+        MusicDirector.Play("theme_department");   // the hub raises its own (ChapterHub.Awake)
         Time.timeScale = 1f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
