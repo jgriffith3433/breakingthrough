@@ -755,7 +755,7 @@ public static class WebGlBuild
         string releases = Path.Combine(SiteRoot, "releases.json");
         if (!File.Exists(releases))
         {
-            var empty = new Regex(@"""build""\s*:\s*""""");
+            var empty = new Regex("\"build\"\\s*:\\s*\"\"");
             File.WriteAllText(releases, empty.Replace(WebTemplate("releases.json"), "\"build\": \"" + version + "\"", 1));
             Debug.Log("[WebGlBuild] What's new: wrote the first releases.json (build " + version + ")");
         }
