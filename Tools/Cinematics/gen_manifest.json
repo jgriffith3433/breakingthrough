@@ -268,6 +268,451 @@
       "file": "ch3_close_4_back",
       "prompt": "the red lamp lens turning a degree toward the Hollow, blinking",
       "music": "One cold bell, cut to silence"
+    },
+    {
+      "file": "ch4_open_1_back",
+      "prompt": "a long pale causeway over a pit of mist at dusk, paired lamp stilts like folded spider legs",
+      "music": "Three held notes, string harmonics"
+    },
+    {
+      "file": "ch4_open_2_front",
+      "prompt": "Yo Bot, chirpy, claws up",
+      "from_sheet": true
+    },
+    {
+      "file": "ch4_open_2_back",
+      "prompt": "far down the causeway a Spider Bot lifts a foreleg and tilts its glass toward us",
+      "music": "A single bright chirp, then silence"
+    },
+    {
+      "file": "ch4_open_3_front",
+      "prompt": "Slice in profile, eyes on the bot",
+      "from_sheet": true
+    },
+    {
+      "file": "ch4_open_3_back",
+      "prompt": "the mist pit, lamp light on her face",
+      "music": "Harmonics hold"
+    },
+    {
+      "file": "ch4_open_4_front",
+      "prompt": "Wallit hefting the bat, watching the legs",
+      "from_sheet": true
+    },
+    {
+      "file": "ch4_open_4_back",
+      "prompt": "the causeway slabs, legs walking in the distance",
+      "music": "Low hum underneath"
+    },
+    {
+      "file": "ch4_open_5_front",
+      "prompt": "a paper on a claw",
+      "from_sheet": true
+    },
+    {
+      "file": "ch4_open_5_back",
+      "prompt": "a Spider Bot stops, folds one leg and offers a paper on its claw tip",
+      "music": "A polite minor figure on harp, nothing else"
+    },
+    {
+      "file": "ch4_close_1_front",
+      "prompt": "the Server, split, one leg folded",
+      "from_sheet": true
+    },
+    {
+      "file": "ch4_close_1_back",
+      "prompt": "the Server in pieces on a lamp stand, its paper fluttering toward the pit",
+      "music": "Harp figure stops mid-phrase"
+    },
+    {
+      "file": "ch4_close_2_front",
+      "prompt": "Wallit over the shoulder, hold",
+      "from_sheet": true
+    },
+    {
+      "file": "ch4_close_2_back",
+      "prompt": "the paper vanishing into the mist",
+      "music": "Silence, then one low bell"
+    },
+    {
+      "file": "ch4_close_3_front",
+      "prompt": "Slice, blade lowered",
+      "from_sheet": true
+    },
+    {
+      "file": "ch4_close_3_back",
+      "prompt": "a lowered blade, the next lamp lit down the causeway",
+      "music": "Harp resumes, a half step higher"
+    },
+    {
+      "file": "ch4_close_4_back",
+      "prompt": "the next lamp, six legs of light, glowing on the far side",
+      "music": "Harmonics, fade"
+    },
+    {
+      "file": "ch5_open_1_back",
+      "prompt": "a bare round hall, a circle drawn on the floor, walls lined with identical forms, lamp-gold",
+      "music": "Held choir pad, no words"
+    },
+    {
+      "file": "ch5_open_2_front",
+      "prompt": "Mega Yo Bot at a lectern, reading evenly",
+      "from_sheet": true
+    },
+    {
+      "file": "ch5_open_2_back",
+      "prompt": "a lectern in a round hall, forms behind it",
+      "music": "Choir pad swells on each word"
+    },
+    {
+      "file": "ch5_open_3_front",
+      "prompt": "Slice, hand on the circle's edge",
+      "from_sheet": true
+    },
+    {
+      "file": "ch5_open_3_back",
+      "prompt": "the circle's edge on the floor",
+      "music": "Pad holds"
+    },
+    {
+      "file": "ch5_open_4_front",
+      "prompt": "Wallit holding the stamp up",
+      "from_sheet": true
+    },
+    {
+      "file": "ch5_open_4_back",
+      "prompt": "the RETURN TO SENDER stamp held up to the lamplight",
+      "music": "Pad drops; one dry strike of a wooden block"
+    },
+    {
+      "file": "ch5_open_5_back",
+      "prompt": "a form with a blank signature line",
+      "music": "Silence"
+    },
+    {
+      "file": "ch5_close_1_front",
+      "prompt": "the Registrar",
+      "from_sheet": true
+    },
+    {
+      "file": "ch5_close_1_back",
+      "prompt": "the Registrar, gold trim cracked, ledger open on its knees, every page blank",
+      "music": "Pad drops to a single held note"
+    },
+    {
+      "file": "ch5_close_2_back",
+      "prompt": "the stamp pressed on the final page, DENIED appearing in ink",
+      "music": "Wooden block, one strike"
+    },
+    {
+      "file": "ch5_close_3_front",
+      "prompt": "Slice reading the white walls",
+      "from_sheet": true
+    },
+    {
+      "file": "ch5_close_3_back",
+      "prompt": "the white walls, then the door now open",
+      "music": "Pad warms by a third"
+    },
+    {
+      "file": "ch5_close_4_front",
+      "prompt": "Wallit with the bat on his shoulder",
+      "from_sheet": true
+    },
+    {
+      "file": "ch5_close_4_back",
+      "prompt": "Wallit and Slice side by side at the open white door",
+      "music": "Brass stab, then silence"
+    },
+    {
+      "file": "ch6_open_1_back",
+      "prompt": "the Hollow at dawn-blue, the Department wall a row of broken stumps, a pale slab path to nothing",
+      "music": "Cello pedal from Chapter 1, now with a third above it"
+    },
+    {
+      "file": "ch6_open_2_front",
+      "prompt": "Slice at the ring, looking to where the wall was",
+      "from_sheet": true
+    },
+    {
+      "file": "ch6_open_2_back",
+      "prompt": "the ring glowing white at dawn",
+      "music": "Pedal holds"
+    },
+    {
+      "file": "ch6_open_3_front",
+      "prompt": "Wallit swinging the bat once, grinning",
+      "from_sheet": true
+    },
+    {
+      "file": "ch6_open_3_back",
+      "prompt": "low angle, dawn sky",
+      "music": "Pulse enters, bright"
+    },
+    {
+      "file": "ch6_open_4_back",
+      "prompt": "a great gold seal rising at the far end of the pale path",
+      "music": "Brass note, held"
+    },
+    {
+      "file": "ch6_close_1_front",
+      "prompt": "the Order-Bearer, split",
+      "from_sheet": true
+    },
+    {
+      "file": "ch6_close_1_back",
+      "prompt": "the Order-Bearer collapsing at the white doorframe, a page floating down in dawn light",
+      "music": "All silent; a held breath"
+    },
+    {
+      "file": "ch6_close_2_front",
+      "prompt": "Wallit over the shoulder",
+      "from_sheet": true
+    },
+    {
+      "file": "ch6_close_2_back",
+      "prompt": "the order in his hands, the stamp falling on it, DENIED",
+      "music": "Wooden block, then a bell"
+    },
+    {
+      "file": "ch6_close_3_front",
+      "prompt": "Slice's hand and scalpel",
+      "from_sheet": true
+    },
+    {
+      "file": "ch6_close_3_back",
+      "prompt": "top-down, a scalpel writing a door number across the ring",
+      "music": "Strings reply, full and warm"
+    },
+    {
+      "file": "ch6_close_4_front",
+      "prompt": "Wallit looking down",
+      "from_sheet": true
+    },
+    {
+      "file": "ch6_close_4_back",
+      "prompt": "the number and the ring glowing under his feet",
+      "music": "Chord rises"
+    },
+    {
+      "file": "ch6_close_5_back",
+      "prompt": "two small figures in a gold ring at dawn, title card ADDRESS FILED",
+      "music": "Resolve; ring the bell once"
+    },
+    {
+      "file": "ch6_close_6_back",
+      "prompt": "black, a faint gold edge",
+      "music": "Silence; then fade into the credits theme"
+    },
+    {
+      "file": "boss_courier_1_front",
+      "prompt": "the Courier, clipboard up",
+      "from_sheet": true
+    },
+    {
+      "file": "boss_courier_1_back",
+      "prompt": "the Courier on the Hollow's rim, clipboard raised, red seal",
+      "music": "Cello pedal, a bright rising figure"
+    },
+    {
+      "file": "boss_courier_2_front",
+      "prompt": "Slice, knife low",
+      "from_sheet": true
+    },
+    {
+      "file": "boss_courier_2_back",
+      "prompt": "the circle, a shadow on the grass",
+      "music": "Pedal holds"
+    },
+    {
+      "file": "boss_courier_3_front",
+      "prompt": "Wallit, bat on shoulder",
+      "from_sheet": true
+    },
+    {
+      "file": "boss_courier_3_back",
+      "prompt": "the clipboard shadow crossing the ring",
+      "music": "Bright pulse enters"
+    },
+    {
+      "file": "boss_foreman_1_front",
+      "prompt": "the Foreman, order sheet on its chest",
+      "from_sheet": true
+    },
+    {
+      "file": "boss_foreman_1_back",
+      "prompt": "the Foreman rising over the belt, lamps red behind it",
+      "music": "Pulse doubles, brass under it"
+    },
+    {
+      "file": "boss_foreman_2_front",
+      "prompt": "Slice, eyes on the belt",
+      "from_sheet": true
+    },
+    {
+      "file": "boss_foreman_2_back",
+      "prompt": "rows of hooked chassis behind her",
+      "music": "Drone, pulse low"
+    },
+    {
+      "file": "boss_foreman_3_front",
+      "prompt": "Wallit hefting the bat",
+      "from_sheet": true
+    },
+    {
+      "file": "boss_foreman_3_back",
+      "prompt": "the belt lamps",
+      "music": "Brass hit, cut"
+    },
+    {
+      "file": "boss_server_1_front",
+      "prompt": "the Server, paper held out",
+      "from_sheet": true
+    },
+    {
+      "file": "boss_server_1_back",
+      "prompt": "the Servers' Dais at the end of the causeway, a Spider Bot standing very still",
+      "music": "A polite minor figure on harp"
+    },
+    {
+      "file": "boss_server_2_front",
+      "prompt": "Slice in profile",
+      "from_sheet": true
+    },
+    {
+      "file": "boss_server_2_back",
+      "prompt": "mist and lamp stilts",
+      "music": "Harp holds, harmonics"
+    },
+    {
+      "file": "boss_server_3_front",
+      "prompt": "Wallit grinning, bat up",
+      "from_sheet": true
+    },
+    {
+      "file": "boss_server_3_back",
+      "prompt": "a paper hanging in the air",
+      "music": "Harp stops; a low bell"
+    },
+    {
+      "file": "boss_order_1_front",
+      "prompt": "the Order-Bearer, scroll across its back",
+      "from_sheet": true
+    },
+    {
+      "file": "boss_order_1_back",
+      "prompt": "the white doorframe on its dais at dawn, a Spider Bot carrying a scroll with a red seal",
+      "music": "Brass note, held under the cello pedal"
+    },
+    {
+      "file": "boss_order_2_front",
+      "prompt": "Slice, knife out",
+      "from_sheet": true
+    },
+    {
+      "file": "boss_order_2_back",
+      "prompt": "the ring at dawn",
+      "music": "Pedal holds"
+    },
+    {
+      "file": "boss_order_3_front",
+      "prompt": "the Order-Bearer",
+      "from_sheet": true
+    },
+    {
+      "file": "boss_order_3_back",
+      "prompt": "the red seal glowing on the scroll",
+      "music": "Brass swell, cut"
+    },
+    {
+      "file": "boss_order_4_front",
+      "prompt": "Wallit, bat on his shoulder",
+      "from_sheet": true
+    },
+    {
+      "file": "boss_order_4_back",
+      "prompt": "Wallit squaring up",
+      "music": "Pulse enters, full"
+    },
+    {
+      "file": "ending_received_1_back",
+      "prompt": "top-down on the filed circle at dawn, six small things in a row inside it",
+      "music": "Cello pedal; the harp figure from Chapter 4, now resolved"
+    },
+    {
+      "file": "ending_received_2_front",
+      "prompt": "Slice looking at the six things, the ring and Wallit",
+      "from_sheet": true
+    },
+    {
+      "file": "ending_received_2_back",
+      "prompt": "the six things, the ring",
+      "music": "Pedal holds"
+    },
+    {
+      "file": "ending_received_3_front",
+      "prompt": "Wallit lifting the stamp",
+      "from_sheet": true
+    },
+    {
+      "file": "ending_received_3_back",
+      "prompt": "close on the RETURN TO SENDER stamp lifted",
+      "music": "Pedal lifts a step"
+    },
+    {
+      "file": "ending_received_4_back",
+      "prompt": "the stamp coming down on the ring, ADDRESS, doors rising one by one",
+      "music": "Bells in a line, no pulse"
+    },
+    {
+      "file": "ending_received_5_front",
+      "prompt": "a small Yo Bot with a paper, puzzled",
+      "from_sheet": true
+    },
+    {
+      "file": "ending_received_5_back",
+      "prompt": "a new door glowing, soft focus",
+      "music": "A single, kind chirp"
+    },
+    {
+      "file": "ending_received_6_front",
+      "prompt": "Slice, a small smile only in her eyes",
+      "from_sheet": true
+    },
+    {
+      "file": "ending_received_6_back",
+      "prompt": "Wallit and Slice in gold light, the stamp reading RECEIVED",
+      "music": "Full strings resolve"
+    },
+    {
+      "file": "ending_received_7_front",
+      "prompt": "Wallit grinning, bat on his shoulder",
+      "from_sheet": true
+    },
+    {
+      "file": "ending_received_7_back",
+      "prompt": "the stamped ring",
+      "music": "Final bell; fade to the credits"
+    },
+    {
+      "file": "credits_1_back",
+      "prompt": "the filed circle at dawn, wide",
+      "music": "Cello pedal, warm"
+    },
+    {
+      "file": "credits_2_back",
+      "prompt": "the circle, a knife standing in the grass",
+      "music": "Harp figure"
+    },
+    {
+      "file": "credits_3_back",
+      "prompt": "a Yo Bot and a Spider Bot standing in a field of doors",
+      "music": "Strings lift"
+    },
+    {
+      "file": "credits_4_back",
+      "prompt": "wide dawn Hollow, a gold ring, two small figures",
+      "music": "Resolve, last bell"
     }
   ],
   "clips": [
@@ -330,6 +775,126 @@
       "from": "ch3_close_4_back",
       "seconds": 5,
       "file": "StreamingAssets/Cinematics/ch3_close_4.mp4"
+    },
+    {
+      "from": "ch4_open_1_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch4_open_1.mp4"
+    },
+    {
+      "from": "ch4_open_5_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch4_open_5.mp4"
+    },
+    {
+      "from": "ch4_close_1_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch4_close_1.mp4"
+    },
+    {
+      "from": "ch4_close_4_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch4_close_4.mp4"
+    },
+    {
+      "from": "ch5_open_1_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch5_open_1.mp4"
+    },
+    {
+      "from": "ch5_open_5_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch5_open_5.mp4"
+    },
+    {
+      "from": "ch5_close_1_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch5_close_1.mp4"
+    },
+    {
+      "from": "ch5_close_4_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch5_close_4.mp4"
+    },
+    {
+      "from": "ch6_open_1_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch6_open_1.mp4"
+    },
+    {
+      "from": "ch6_open_4_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch6_open_4.mp4"
+    },
+    {
+      "from": "ch6_close_1_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch6_close_1.mp4"
+    },
+    {
+      "from": "ch6_close_6_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch6_close_6.mp4"
+    },
+    {
+      "from": "boss_courier_1_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/boss_courier_1.mp4"
+    },
+    {
+      "from": "boss_courier_3_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/boss_courier_3.mp4"
+    },
+    {
+      "from": "boss_foreman_1_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/boss_foreman_1.mp4"
+    },
+    {
+      "from": "boss_foreman_3_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/boss_foreman_3.mp4"
+    },
+    {
+      "from": "boss_server_1_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/boss_server_1.mp4"
+    },
+    {
+      "from": "boss_server_3_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/boss_server_3.mp4"
+    },
+    {
+      "from": "boss_order_1_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/boss_order_1.mp4"
+    },
+    {
+      "from": "boss_order_4_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/boss_order_4.mp4"
+    },
+    {
+      "from": "ending_received_1_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ending_received_1.mp4"
+    },
+    {
+      "from": "ending_received_7_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ending_received_7.mp4"
+    },
+    {
+      "from": "credits_1_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/credits_1.mp4"
+    },
+    {
+      "from": "credits_4_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/credits_4.mp4"
     }
   ],
   "voices": [
@@ -357,12 +922,63 @@
       "file": "Voice/cinema/ch3_close_s1.mp3",
       "speaker": "F",
       "line": "Order... unread..."
+    },
+    {
+      "file": "Voice/cinema/ch4_open_s2.mp3",
+      "speaker": "Y",
+      "line": "Spiders en route! Chirp!"
+    },
+    {
+      "file": "Voice/cinema/ch4_close_s1.mp3",
+      "speaker": "V",
+      "line": "Delivery... undelivered... chirp?"
+    },
+    {
+      "file": "Voice/cinema/ch5_open_s2.mp3",
+      "speaker": "M",
+      "line": "Order, read aloud: STRIKE. THIS. ADDRESS."
+    },
+    {
+      "file": "Voice/cinema/ch5_close_s1.mp3",
+      "speaker": "R",
+      "line": "Register... closed... uploading... nothing?"
+    },
+    {
+      "file": "Voice/cinema/boss_courier_s1.mp3",
+      "speaker": "Y",
+      "line": "Special delivery! Notice of striking!"
+    },
+    {
+      "file": "Voice/cinema/boss_foreman_s1.mp3",
+      "speaker": "F",
+      "line": "Order, read aloud: STRIKE. THIS. ADDRESS."
+    },
+    {
+      "file": "Voice/cinema/boss_server_s1.mp3",
+      "speaker": "Y",
+      "line": "Order delivery! Signature required!"
+    },
+    {
+      "file": "Voice/cinema/boss_order_s1.mp3",
+      "speaker": "Y",
+      "line": "Order delivery! Signature required!"
+    },
+    {
+      "file": "Voice/cinema/boss_order_s3.mp3",
+      "speaker": "O",
+      "line": "Order, in force: STRIKE. THIS. ADDRESS."
+    },
+    {
+      "file": "Voice/cinema/ending_received_s5.mp3",
+      "speaker": "Y",
+      "line": "Delivery! ... Oh. It's for us?"
     }
   ],
   "beds": {
     "ch1_score": [
       "ch1_open",
-      "ch1_close"
+      "ch1_close",
+      "boss_courier"
     ],
     "ch2_score": [
       "ch2_open",
@@ -370,13 +986,40 @@
     ],
     "ch3_score": [
       "ch3_open",
-      "ch3_close"
+      "ch3_close",
+      "boss_foreman"
+    ],
+    "ch4_score": [
+      "ch4_open",
+      "ch4_close",
+      "boss_server"
+    ],
+    "ch5_score": [
+      "ch5_open",
+      "ch5_close"
+    ],
+    "ch6_score": [
+      "ch6_open",
+      "ch6_close",
+      "boss_order",
+      "ending_received",
+      "credits"
     ]
   },
   "sfx": [
     "stamp_land",
     "lantern_gutter",
     "belt_stop",
-    "red_lamp_blink"
+    "red_lamp_blink",
+    "paper_slide",
+    "ledger_close",
+    "seal_crack",
+    "door_open"
+  ],
+  "new_sheets": [
+    "The Server",
+    "The Registrar",
+    "The Order-Bearer",
+    "Mega Yo Bot"
   ]
 }

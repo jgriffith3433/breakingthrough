@@ -163,9 +163,9 @@ public class ChapterRun : MonoBehaviour {
         StartJournal();
         gameObject.AddComponent<BackRoom>();   // the chapter's secret room, once its clue is held (BackRooms.cs)
         RunAnalytics.Screen("chapter_play_" + (Chapter + 1));
-        Cutscene.Reel openReel = Chapter < 3 ? Cutscene.LoadReel("ch" + (Chapter + 1) + "_open") : null;
+        Cutscene.Reel openReel = Cutscene.LoadReel("ch" + (Chapter + 1) + "_open");
         if (openReel != null) {
-            // Chapters 1-3 open with a shot reel (Resources/Cinematics/ch<n>_open.json, Tools/Cinematics/make_reels.py).
+            // Every chapter opens with a shot reel (Resources/Cinematics/ch<n>_open.json, Tools/Cinematics/make_reels.py).
             Events.Add("cinematic|" + data.Id + "|open");
             Cutscene.PlayShots(openReel, () => Events.Add("play|" + data.Id));
         } else if (data.Cutscene != null && data.Cutscene.Length > 0) {
@@ -350,13 +350,17 @@ public class ChapterRun : MonoBehaviour {
                 bossCalled = true;
                 spawnIn = 3.5f;
                 Events.Add("boss-called|" + data.BossName);
-                Tell(data.BossLines);
+                string introId = BossReelId(data.BossName);
+                if (introId == null || Cutscene.LoadReel(introId) == null) {
+                    Tell(data.BossLines);   // a boss with an intro reel says these lines in it instead
+                }
             }
         } else if (!bossSpawned) {
             if (spawnIn <= 0f) {
                 bossSpawned = true;
                 boss = director.SpawnForChapter(data.Boss, true, RingRadius, data.BossName, data.BossHits, data.PlainBoss);
                 Events.Add("boss|" + boss.Title + "|" + boss.HitsToDrop);
+                PlayBossIntro();
             }
         } else if (defeatIn > 0f) {
             defeatIn -= Time.deltaTime;
@@ -681,9 +685,9 @@ public class ChapterRun : MonoBehaviour {
             CompleteFinal();
             return;
         }
-        Cutscene.Reel closeReel = Chapter < 3 ? Cutscene.LoadReel("ch" + (Chapter + 1) + "_close") : null;
+        Cutscene.Reel closeReel = Cutscene.LoadReel("ch" + (Chapter + 1) + "_close");
         if (closeReel != null) {
-            // Chapters 1-3 close with a reel before the Chapter Complete card.
+            // Chapters 1-5 close with a reel before the Chapter Complete card.
             Events.Add("cinematic|" + data.Id + "|close");
             Cutscene.PlayShots(closeReel, () => ShowCompleteCard(extra, best));
         } else {
@@ -730,30 +734,79 @@ public class ChapterRun : MonoBehaviour {
         Events.Add("finale|start");
         RunAnalytics.Screen("chapter_complete_" + (Chapter + 1));
         string stats = "Case file " + (CampaignSave.Active + 1) + ": filed\n" + CampaignSave.Played(CampaignSave.Get(CampaignSave.Active)) + "\n" + CampaignGrade.Line(Chapter, Rank, PlaySeconds, DamageTaken, Hard);
+        // ADDRESS FILED plays as a reel (ch6_close: the order drops, DENIED, the door number); the old page scene is the fallback.
+        Cutscene.Reel filed = Cutscene.LoadReel("ch6_close");
+        if (filed != null) {
+            Events.Add("cinematic|" + data.Id + "|close");
+            Cutscene.PlayShots(filed, () => {
+                Events.Add("finale|reel");
+                StoryScreen.Ensure().ShowEndCard(stats, keepGoing => AfterFiled(keepGoing));
+            });
+            return;
+        }
         Cutscene.Play(data.Ending, () => {
             Events.Add("finale|pages");
-            StoryScreen.Ensure().ShowFinale(stats, keepGoing => {
-                Events.Add("finale|" + (keepGoing ? "credits" : "menu"));
-                // The secret ending follows ADDRESS FILED, and only when every lost thing is in the case file.
-                if (CampaignSave.SecretEarned(CampaignSave.Get(CampaignSave.Active))) {
-                    SecretShown = true;
-                    CampaignSave.MarkSecret();
-                    Events.Add("secret|ending");
-                    RunAnalytics.Screen("secret_ending");
-                    Cutscene.Play(Story.SecretEnding, () => {
-                        if (keepGoing) {
-                            ShowCredits();
-                        } else {
-                            ToMenu();
-                        }
-                    });
-                } else if (keepGoing) {
-                    ShowCredits();
+            StoryScreen.Ensure().ShowFinale(stats, keepGoing => AfterFiled(keepGoing));
+        });
+    }
+
+    // After the ADDRESS FILED card: the secret ending (every lost thing kept) as a reel, then the credits reel and card.
+    void AfterFiled(bool keepGoing) {
+        Events.Add("finale|" + (keepGoing ? "credits" : "menu"));
+        if (CampaignSave.SecretEarned(CampaignSave.Get(CampaignSave.Active))) {
+            SecretShown = true;
+            CampaignSave.MarkSecret();
+            Events.Add("secret|ending");
+            RunAnalytics.Screen("secret_ending");
+            Cutscene.Reel received = Cutscene.LoadReel("ending_received");
+            System.Action after = () => {
+                if (keepGoing) {
+                    PlayCreditsReel();
                 } else {
                     ToMenu();
                 }
-            });
-        });
+            };
+            if (received != null) {
+                Cutscene.PlayShots(received, after);
+            } else {
+                Cutscene.Play(Story.SecretEnding, after);
+            }
+        } else if (keepGoing) {
+            PlayCreditsReel();
+        } else {
+            ToMenu();
+        }
+    }
+
+    void PlayCreditsReel() {
+        Cutscene.Reel credits = Cutscene.LoadReel("credits");
+        if (credits == null) {
+            ShowCredits();
+            return;
+        }
+        Events.Add("cinematic|" + data.Id + "|credits");
+        Cutscene.PlayShots(credits, ShowCredits);
+    }
+
+    // The named boss's intro reel (boss_courier, boss_foreman, boss_server, boss_order) plays as it arrives, over the frozen field.
+    void PlayBossIntro() {
+        string id = BossReelId(data.BossName);
+        Cutscene.Reel reel = id != null ? Cutscene.LoadReel(id) : null;
+        if (reel == null) {
+            return;
+        }
+        Events.Add("cinematic|" + data.Id + "|" + id);
+        Cutscene.PlayShots(reel, () => Events.Add("boss-intro-done|" + id));
+    }
+
+    public static string BossReelId(string bossName) {
+        switch (bossName) {
+            case "The Courier": return "boss_courier";
+            case "The Foreman": return "boss_foreman";
+            case "The Server": return "boss_server";
+            case "The Order": return "boss_order";
+        }
+        return null;
     }
 
     void ShowCredits() {

@@ -1,0 +1,86 @@
+{
+  "id": "credits",
+  "bed": "ch6_score",
+  "shots": [
+    {
+      "id": "s1",
+      "back": "credits_1_back",
+      "speaker": "N",
+      "seconds": 3.4,
+      "fade": 0.0,
+      "level": 0.7,
+      "from": [
+        0,
+        0,
+        1.05
+      ],
+      "to": [
+        0,
+        0,
+        1.15
+      ],
+      "alt": "ring_back",
+      "line": "WALLIT: one wallet, one bat. Pay up."
+    },
+    {
+      "id": "s2",
+      "back": "credits_2_back",
+      "speaker": "N",
+      "seconds": 3.2,
+      "fade": 0.7,
+      "level": 0.7,
+      "from": [
+        0,
+        0,
+        1.1
+      ],
+      "to": [
+        0,
+        0,
+        1.2
+      ],
+      "alt": "slice_back",
+      "line": "SLICE: guards the circle. Clean."
+    },
+    {
+      "id": "s3",
+      "back": "credits_3_back",
+      "speaker": "N",
+      "seconds": 4.0,
+      "fade": 0.7,
+      "level": 0.7,
+      "from": [
+        0,
+        0,
+        1.1
+      ],
+      "to": [
+        0,
+        0,
+        1.2
+      ],
+      "alt": "crest_back",
+      "line": "YO BOTS: uploading victory. SPIDER BOTS: by order of nobody."
+    },
+    {
+      "id": "s4",
+      "back": "credits_4_back",
+      "speaker": "N",
+      "seconds": 4.6,
+      "fade": 0.7,
+      "level": 0.8,
+      "from": [
+        0,
+        0,
+        1.2
+      ],
+      "to": [
+        0,
+        0,
+        1.0
+      ],
+      "alt": "hollow_back",
+      "line": "The circle stands. Slice and Wallit are on the books. Thanks for playing."
+    }
+  ]
+}

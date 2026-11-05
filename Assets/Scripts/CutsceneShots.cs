@@ -53,6 +53,8 @@ public partial class Cutscene {
     public int ShotIndex { get { return shotIndex; } }
     public int ShotCount { get { return reel != null && reel.shots != null ? reel.shots.Length : 0; } }
     public string ShotId { get { return reel != null && shotIndex >= 0 && shotIndex < ShotCount ? reel.shots[shotIndex].id : ""; } }
+    public string ReelId { get { return reel != null && reel.id != null ? reel.id : ""; } }
+    public string Speaker { get { return shotSpeaker ?? ""; } }
     public string Subtitle { get { return subtitle != null ? subtitle.text : ""; } }
     public float Zoom { get; private set; } = 1f;
     public float Pan { get; private set; }
