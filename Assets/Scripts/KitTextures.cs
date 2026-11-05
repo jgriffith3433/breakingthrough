@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using TexMap = System.Collections.Generic.Dictionary<string, UnityEngine.Texture2D>;
 
 // The Model Kit's procedural textures and materials (Docs/ModelKit.md section 3). Everything is generated in code and
 // tileable (periodic noise, wrapped Voronoi). Each set has an albedo and a normal map made from its height field; palettes
@@ -7,8 +8,8 @@ using UnityEngine;
 public static class KitTextures {
     public static readonly string[] Sets = { "brick", "plaster", "wood", "metal", "iron", "brass", "stone", "concrete", "slate", "cloth", "paper", "glass" };
 
-    static readonly Dictionary<string, Texture2D> albedo = new Dictionary<string, Texture2D>();
-    static readonly Dictionary<string, Texture2D> normals = new Dictionary<string, Texture2D>();
+    static readonly TexMap albedo = new TexMap();
+    static readonly TexMap normals = new TexMap();
     static readonly Dictionary<string, Material> materials = new Dictionary<string, Material>();
 
     public static int SizeOf(string set) { return set == "glass" ? 64 : (set == "brass" || set == "cloth" || set == "paper") ? 128 : 256; }
