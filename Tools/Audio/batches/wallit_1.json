@@ -1,0 +1,302 @@
+{
+"cast": "wallit",
+"voice": "CwhRBWXzGAHq8TQ4Fs17",
+"ids": [
+"wallit_a_door_number_does_it_come_with_a_door",
+"wallit_and_the_bolts_they_drop",
+"wallit_and_the_plates_the_big_ones",
+"wallit_and_then",
+"wallit_bolts_somebody_s_paying_me",
+"wallit_by_the_guy_with_the_stamp",
+"wallit_cleared_things_somebody_s_hat_somebody_s_clock_that_could_be_me",
+"wallit_cover_me_slice_i_m_collecting_a_refund",
+"wallit_does_existing_come_with_a_receipt",
+"wallit_door_s_down_still_no_sender",
+"wallit_every_bot_that_s_come_at_us_they_re_coming_from_down_there",
+"wallit_every_page_turned_over_denied",
+"wallit_evidence_every_bill_has_a_paper_trail",
+"wallit_feed_s_broken_their_pay_is_mine_now",
+"wallit_flat_every_one_pay_up",
+"wallit_guard_slice_swing_at_anything_chirpy_pay_up",
+"wallit_hello_sender_i_d_like_a_word_and_a_receipt",
+"wallit_i_am",
+"wallit_i_ve_seen_it_i_don_t_need_to_be_told",
+"wallit_it_s_filed_all_of_it",
+"wallit_it_s_got_my_notice_in_there_somewhere_i_keep_receipts",
+"wallit_it_s_not_signed",
+"wallit_it_s_watching_the_circle",
+"wallit_it_waited_for_me_to_take_it_three_times_refused_all_three",
+"wallit_last_of_the_crew_then_the_big_one_exact_change",
+"wallit_leased_by_you",
+"wallit_locks_have_keys_keys_have_owners_owners_get_paid",
+"wallit_meaning",
+"wallit_my_stamp_my_door",
+"wallit_neither_do_i_pay_up",
+"wallit_nerve_s_free_the_swing_s_extra",
+"wallit_next_time_i_m_billing_the_floor",
+"wallit_no",
+"wallit_nobody_signs_it_that_s_the_whole_trick",
+"wallit_none_of_this_is_mine_i_m_keeping_it_anyway",
+"wallit_not_for_free",
+"wallit_nothing_not_even_a_doormat_i_d_say_that_s_rude_but_i_m_the_one_with_no_address",
+"wallit_nothing_s_free",
+"wallit_one_lever_no_sign_somebody_trusts_the_floor",
+"wallit_one_notice_returned_where_s_my_tip",
+"wallit_open_up_i_know_you_re_in_there_it_s_a_stamp_not_a_person",
+"wallit_overhead_don_t_look_at_me_like_that",
+"wallit_pages_four_and_five_are_the_small_print_nobody_reads_the_small_print_i_do",
+"wallit_read_what",
+"wallit_received_in_full_pay_up",
+"wallit_refused",
+"wallit_refused_i_can_do_refused_free_of_charge",
+"wallit_refused_the_paper_three_times_put_that_in_writing",
+"wallit_return_to_sender"
+],
+"lines": [
+{
+"who": "wallit",
+"text": "A door number. Does it come with a door?",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "And the bolts they drop?",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "And the plates? The big ones?",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "And then?",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Bolts. Somebody's paying me.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "By the guy with the stamp.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Cleared things. Somebody's hat. Somebody's clock. That could be me.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Cover me, Slice. I'm collecting a refund.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Does existing come with a receipt?",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Door's down. Still no sender.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Every bot that's come at us. They're coming from down there.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Every page turned over. DENIED.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Evidence. Every bill has a paper trail.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Feed's broken. Their pay is mine now.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Flat. Every one. Pay up.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Guard Slice. Swing at anything chirpy. Pay up.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Hello? Sender? I'd like a word, and a receipt.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "I am.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "I've seen it. I don't need to be told.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "It's filed. All of it.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "It's got my notice in there somewhere. I keep receipts.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "It's not signed.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "It's watching the circle.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "It waited for me to take it. Three times. Refused all three.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Last of the Crew. Then the big one. Exact change.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Leased. By you.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Locks have keys. Keys have owners. Owners get paid.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Meaning?",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "My stamp. My door.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Neither do I. Pay up.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Nerve's free. The swing's extra.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Next time I'm billing the Floor.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "No.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Nobody signs it. That's the whole trick.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "None of this is mine. I'm keeping it anyway.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Not for free.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Nothing. Not even a doormat. I'd say that's rude, but I'm the one with no address.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Nothing's free.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "One lever. No sign. Somebody trusts the floor.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "One notice, returned. Where's my tip?",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Open up. I know you're in there. It's a stamp, not a person.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Overhead. Don't look at me like that.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Pages four and five are the small print. Nobody reads the small print. I do.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Read what?",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Received. In full. Pay up.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Refused.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Refused. I can do refused. Free of charge.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Refused the paper three times. Put that in writing.",
+"direction": "brash, angry, money-minded"
+},
+{
+"who": "wallit",
+"text": "Return to sender.",
+"direction": "brash, angry, money-minded"
+}
+]
+}

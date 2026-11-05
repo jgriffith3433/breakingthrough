@@ -1,6 +1,6 @@
 {
   "id": "boss_server",
-  "bed": "ch4_score",
+  "bed": "boss_server",
   "shots": [
     {
       "id": "s1",

@@ -166,6 +166,7 @@ public partial class Cutscene {
         VoiceDirector.Scene = true;
         WallitVoice.Silence();
         SliceVoice.Silence();
+        CastVoice.Silence();
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         root.SetActive(true);
@@ -191,13 +192,41 @@ public partial class Cutscene {
     void NextShot() {
         WallitVoice.Silence();
         SliceVoice.Silence();
+        CastVoice.Silence();
         shotIndex++;
         if (shotIndex >= reel.shots.Length) {
             Close(false);
             return;
         }
         StartShot(reel.shots[shotIndex]);
+        PlayShotSfx(reel.shots[shotIndex].id);
     }
+
+    // Set-piece sounds (the stamp, RECEIVED, the Courier's clipboard...): Resources/Cinematics/sfx.json rows "<reel>:<shot>=<sfx>".
+    static Dictionary<string, string> shotSfx;
+    public static int SfxPlayed { get; private set; }
+    void PlayShotSfx(string shotId) {
+        if (shotSfx == null) {
+            shotSfx = new Dictionary<string, string>();
+            TextAsset t = Resources.Load<TextAsset>("Cinematics/sfx");
+            SfxRows rows = t != null ? JsonUtility.FromJson<SfxRows>(t.text) : null;
+            if (rows != null && rows.rows != null) {
+                foreach (string row in rows.rows) {
+                    int eq = row.IndexOf('=');
+                    if (eq > 0) {
+                        shotSfx[row.Substring(0, eq)] = row.Substring(eq + 1);
+                    }
+                }
+            }
+        }
+        string name;
+        if (reel != null && shotSfx.TryGetValue(reel.id + ":" + shotId, out name)) {
+            GameAudio.Play(name, 0.9f);
+            SfxPlayed++;
+            Events.Add("sfx|" + name);
+        }
+    }
+    [System.Serializable] class SfxRows { public string[] rows; }
 
     void StartShot(Shot s) {
         shotStart = Time.unscaledTime;
@@ -402,6 +431,7 @@ public partial class Cutscene {
         if (shotSpeaker == "W" || shotSpeaker == "S") {
             WallitVoice.Silence();
             SliceVoice.Silence();
+            CastVoice.Silence();
             if (!WallitVoice.FloorFree) {
                 Overlaps++;
                 Events.Add("overlap|" + shotSpeaker + "|" + shotLine);
@@ -411,8 +441,17 @@ public partial class Cutscene {
                 Events.Add("voice|" + shotSpeaker + "|" + seconds.ToString("0.00"));
             }
         } else {
-            Cast.Spoke(shotSpeaker, shotLine);
+            CastVoice.Silence();
             seconds = PlayCastVoice();
+            if (seconds <= 0f) {
+                seconds = CastVoice.SayNow(shotSpeaker, shotLine, "cutscene");
+                if (seconds > 0f) {
+                    VoiceLines++;
+                    Events.Add("voice|" + shotSpeaker + "|" + seconds.ToString("0.00"));
+                }
+            } else {
+                Cast.Spoke(shotSpeaker, shotLine);
+            }
         }
         float reading = Mathf.Max(seconds, shotLine.Length / 16f + 0.8f);
         typeSeconds = Mathf.Max(0.8f, Mathf.Min(reading, seconds > 0f ? seconds * 0.85f : reading * 0.8f));
@@ -472,7 +511,7 @@ public partial class Cutscene {
             bed.spatialBlend = 0f;
             bed.ignoreListenerPause = true;
         }
-        AudioClip clip = string.IsNullOrEmpty(name) ? null : Resources.Load<AudioClip>("Cinematics/" + name);
+        AudioClip clip = string.IsNullOrEmpty(name) ? null : Resources.Load<AudioClip>("Music/" + name) ?? Resources.Load<AudioClip>("Cinematics/" + name);
         if (clip == null && !string.IsNullOrEmpty(name)) {
             clip = Pad();
         }
@@ -512,7 +551,7 @@ public partial class Cutscene {
         if (bed == null || !bed.isPlaying) {
             return;
         }
-        bool voice = !WallitVoice.FloorFree || (castVoice != null && castVoice.isPlaying);
+        bool voice = !WallitVoice.FloorFree || CastVoice.Speaking || (castVoice != null && castVoice.isPlaying);
         duck = Mathf.MoveTowards(duck, voice ? 0.3f : 1f, dt * 3f);
         if (open && shotMode) {
             DuckedLowest = Mathf.Min(DuckedLowest, duck);

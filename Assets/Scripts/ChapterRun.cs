@@ -154,6 +154,7 @@ public class ChapterRun : MonoBehaviour {
         Events.Clear();
         Events.Add("start|" + data.Id + "|" + data.Objective + "|" + data.Target + (Hard ? "|hard" : ""));
         CampaignProgress.BeginChapter();
+        MusicDirector.Play(MusicDirector.ChapterTrack(Chapter));
         gameObject.AddComponent<CampaignAbilities>();
         if (!string.IsNullOrEmpty(data.Companion)) {
             // A companion walks with Wallit in the chapters that name one (Arcade has no ChapterRun, so never there).
@@ -386,6 +387,7 @@ public class ChapterRun : MonoBehaviour {
                 bossSpawned = true;
                 boss = director.SpawnForChapter(data.Boss, true, RingRadius, data.BossName, data.BossHits, data.PlainBoss);
                 Events.Add("boss|" + boss.Title + "|" + boss.HitsToDrop);
+                MusicDirector.Play(MusicDirector.BossTrack(data.BossName));
                 PlayBossIntro();
             }
         } else if (defeatIn > 0f) {
@@ -398,7 +400,9 @@ public class ChapterRun : MonoBehaviour {
             Progress = 1;
             defeatIn = (data.DefeatLines != null ? data.DefeatLines.Length : 0) * 2.8f + 1f;
             Events.Add("defeat|" + data.BossName);
+            MusicDirector.Play(MusicDirector.ChapterTrack(Chapter));
             GameAudio.Play("stamp", 0.8f, 0.8f);
+            GameAudio.Play(data.BossName == "The Registrar" ? "ledger_close" : data.BossName == "The Courier" ? "courier_clip" : "seal_crack", 0.8f);
             Tell(data.DefeatLines);
         }
     }
@@ -752,6 +756,8 @@ public class ChapterRun : MonoBehaviour {
     }
 
     void ShowCompleteCard(string extra, int best) {
+        MusicDirector.Play("theme_slice");
+        GameAudio.Play("stamp_heavy", 0.9f);   // the case is stamped
         bool more = Chapter + 1 < CampaignSave.ChapterCount;
         cardTitle.text = "CHAPTER COMPLETE";
         var body = new System.Text.StringBuilder(data.Title);
@@ -787,6 +793,8 @@ public class ChapterRun : MonoBehaviour {
         if (extraText != null) {
             extraText.text = "";
         }
+        MusicDirector.Play("ending");
+        GameAudio.Play("received", 0.9f);   // RECEIVED
         Events.Add("finale|start");
         RunAnalytics.Screen("chapter_complete_" + (Chapter + 1));
         string stats = "Case file " + (CampaignSave.Active + 1) + ": filed\n" + CampaignSave.Played(CampaignSave.Get(CampaignSave.Active)) + "\n" + CampaignGrade.Line(Chapter, Rank, PlaySeconds, DamageTaken, Hard);
@@ -852,6 +860,7 @@ public class ChapterRun : MonoBehaviour {
     }
 
     void PlayCreditsReel() {
+        MusicDirector.Play("credits");
         Cutscene.Reel credits = Cutscene.LoadReel("credits");
         if (credits == null) {
             ShowCredits();
@@ -883,6 +892,7 @@ public class ChapterRun : MonoBehaviour {
     }
 
     void ShowCredits() {
+        MusicDirector.Play("credits");
         CreditsUp = true;
         creditsAt = Time.unscaledTime + 0.7f;
         cardTitle.text = Story.CreditsTitle;
@@ -974,6 +984,9 @@ public class ChapterRun : MonoBehaviour {
     public static void Say(string raw, float seconds) {
         if (!string.IsNullOrEmpty(raw)) {
             UpgradeLook.Say(Spoken(raw), seconds, 230f);
+            if (raw.Length > 2 && raw[1] == '|') {
+                CastVoice.SayLater(raw.Substring(0, 1), raw.Substring(2), "beat");   // in its speaker's voice, when the floor is free
+            }
         }
     }
 

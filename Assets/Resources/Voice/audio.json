@@ -17,13 +17,13 @@
    "id": "wallit_pay_up",
    "voice": "wallit",
    "text": "Pay up.",
-   "asset": "a_e77e878a64d3da39"
+   "asset": "a_e9ab04695fa6fed2"
   },
   {
    "id": "wallit_paid_in_full",
    "voice": "wallit",
    "text": "Paid in full.",
-   "asset": "a_7d90f5c6a556027b"
+   "asset": "a_dfe35d950cfe77f0"
   },
   {
    "id": "wallit_cha_ching",
@@ -173,7 +173,7 @@
    "id": "wallit_ow_that_s_extra",
    "voice": "wallit",
    "text": "Ow! That's extra!",
-   "asset": "a_e84c128a4f1b9e5c"
+   "asset": "a_f7e0dd0df6f692a6"
   },
   {
    "id": "wallit_hey_watch_the_leather",
@@ -317,7 +317,7 @@
    "id": "wallit_slice_hold_on",
    "voice": "wallit",
    "text": "Slice! Hold on!",
-   "asset": "a_9f64a4d55c3bc194"
+   "asset": "a_178e872138681fd6"
   },
   {
    "id": "wallit_i_m_coming",
@@ -371,7 +371,7 @@
    "id": "wallit_pay_up_bots",
    "voice": "wallit",
    "text": "Pay up, bots.",
-   "asset": "a_ac75f43a05e41354"
+   "asset": "a_2be88b5b7fb81108"
   },
   {
    "id": "wallit_they_ll_feel_it",
@@ -413,91 +413,625 @@
    "id": "wallit_bolts_are_wages_collect",
    "voice": "wallit",
    "text": "Bolts are wages. Collect.",
-   "asset": "a_00642c38f7afff1e"
+   "asset": "a_32148a89db6e5477"
   },
   {
    "id": "wallit_walls_cost_worth_it",
    "voice": "wallit",
    "text": "Walls cost. Worth it.",
-   "asset": "a_334b5a0d43051e26"
+   "asset": "a_2a2bc3383b407e3e"
   },
   {
    "id": "wallit_that_s_a_tip_i_keep_tips",
    "voice": "wallit",
    "text": "That's a tip. I keep tips.",
-   "asset": "a_e44288a16edf6c2b"
+   "asset": "a_4f7f2f13f4c21408"
   },
   {
    "id": "wallit_they_want_her_circle_not_on_my_watch",
    "voice": "wallit",
    "text": "They want her circle. Not on my watch.",
-   "asset": "a_e7f8263db9c0c6e1"
+   "asset": "a_7e9e7a845e12dfb9"
   },
   {
    "id": "wallit_plates_cost_more_pay_up",
    "voice": "wallit",
    "text": "Plates cost more. Pay up.",
-   "asset": "a_bc17271150f5da53"
+   "asset": "a_316bfc449cee1a30"
   },
   {
    "id": "wallit_you_re_bleeding_slice",
    "voice": "wallit",
    "text": "You're bleeding, Slice.",
-   "asset": "a_12d1ecb8cb38d45c"
+   "asset": "a_72f91688f7301f62"
   },
   {
    "id": "wallit_i_m_covering_you_tab_s_open",
    "voice": "wallit",
    "text": "I'm covering you. Tab's open.",
-   "asset": "a_479058f8459de174"
+   "asset": "a_9fceb2eea3edc246"
   },
   {
    "id": "wallit_nobody_touches_her_nobody",
    "voice": "wallit",
    "text": "Nobody touches her. Nobody.",
-   "asset": "a_dc16bea0e9da2028"
+   "asset": "a_6389fb89608093d0"
   },
   {
    "id": "wallit_something_big_s_coming_i_can_smell_the_invoice",
    "voice": "wallit",
    "text": "Something big's coming. I can smell the invoice.",
-   "asset": "a_f412a70dcc6a6a7d"
+   "asset": "a_62a61566dcef7dc8"
   },
   {
    "id": "wallit_then_i_m_reading_mine_pay_up",
    "voice": "wallit",
    "text": "Then I'm reading mine. Pay up.",
-   "asset": "a_138fc7f8195db562"
+   "asset": "a_478622f15c27dc0f"
   },
   {
    "id": "wallit_holding_slice",
    "voice": "wallit",
    "text": "Holding, Slice?",
-   "asset": "a_634b9b86fbbb037e"
+   "asset": "a_3037f1940a80c800"
   },
   {
    "id": "wallit_twenty_five_waves_i_m_owed_a_bonus",
    "voice": "wallit",
    "text": "Twenty-five waves. I'm owed a bonus.",
-   "asset": "a_5a4434f90eb1e128"
+   "asset": "a_5c989a37effe2eab"
   },
   {
    "id": "wallit_last_stretch_pay_up",
    "voice": "wallit",
    "text": "Last stretch. Pay up.",
-   "asset": "a_b6327de754decc47"
+   "asset": "a_bd8b689df0077814"
   },
   {
    "id": "wallit_then_it_carries_my_bill",
    "voice": "wallit",
    "text": "Then it carries my bill.",
-   "asset": "a_a20be1a0aff25739"
+   "asset": "a_50e186b57cb46090"
   },
   {
    "id": "wallit_overtime_pays_double",
    "voice": "wallit",
    "text": "Overtime pays double.",
-   "asset": "a_d888c9442c6398c2"
+   "asset": "a_4bdb100fe54c3a4d"
+  },
+  {
+   "id": "wallit_a_door_number_does_it_come_with_a_door",
+   "voice": "wallit",
+   "text": "A door number. Does it come with a door?",
+   "asset": "a_065c7e87af547970"
+  },
+  {
+   "id": "wallit_and_the_bolts_they_drop",
+   "voice": "wallit",
+   "text": "And the bolts they drop?",
+   "asset": "a_dd10304b8340dab2"
+  },
+  {
+   "id": "wallit_and_the_plates_the_big_ones",
+   "voice": "wallit",
+   "text": "And the plates? The big ones?",
+   "asset": "a_4b107f33787c0f0f"
+  },
+  {
+   "id": "wallit_and_then",
+   "voice": "wallit",
+   "text": "And then?",
+   "asset": "a_55af8105a3cd4170"
+  },
+  {
+   "id": "wallit_bolts_somebody_s_paying_me",
+   "voice": "wallit",
+   "text": "Bolts. Somebody's paying me.",
+   "asset": "a_a3785e8c14403fac"
+  },
+  {
+   "id": "wallit_by_the_guy_with_the_stamp",
+   "voice": "wallit",
+   "text": "By the guy with the stamp.",
+   "asset": "a_8b4b668b47e19bb0"
+  },
+  {
+   "id": "wallit_cleared_things_somebody_s_hat_somebody_s_clock_that_could_be_me",
+   "voice": "wallit",
+   "text": "Cleared things. Somebody's hat. Somebody's clock. That could be me.",
+   "asset": "a_420f3ddb75810e68"
+  },
+  {
+   "id": "wallit_cover_me_slice_i_m_collecting_a_refund",
+   "voice": "wallit",
+   "text": "Cover me, Slice. I'm collecting a refund.",
+   "asset": "a_85c2c6572274162e"
+  },
+  {
+   "id": "wallit_does_existing_come_with_a_receipt",
+   "voice": "wallit",
+   "text": "Does existing come with a receipt?",
+   "asset": "a_ea9eaba559b274c1"
+  },
+  {
+   "id": "wallit_door_s_down_still_no_sender",
+   "voice": "wallit",
+   "text": "Door's down. Still no sender.",
+   "asset": "a_f7b345c1b18f8097"
+  },
+  {
+   "id": "wallit_every_bot_that_s_come_at_us_they_re_coming_from_down_there",
+   "voice": "wallit",
+   "text": "Every bot that's come at us. They're coming from down there.",
+   "asset": "a_949d508083c9440a"
+  },
+  {
+   "id": "wallit_every_page_turned_over_denied",
+   "voice": "wallit",
+   "text": "Every page turned over. DENIED.",
+   "asset": "a_acbae6d4762fe7f4"
+  },
+  {
+   "id": "wallit_evidence_every_bill_has_a_paper_trail",
+   "voice": "wallit",
+   "text": "Evidence. Every bill has a paper trail.",
+   "asset": "a_95940376545002a2"
+  },
+  {
+   "id": "wallit_feed_s_broken_their_pay_is_mine_now",
+   "voice": "wallit",
+   "text": "Feed's broken. Their pay is mine now.",
+   "asset": "a_0398f35bf1ea1be4"
+  },
+  {
+   "id": "wallit_flat_every_one_pay_up",
+   "voice": "wallit",
+   "text": "Flat. Every one. Pay up.",
+   "asset": "a_70207415b258a4e5"
+  },
+  {
+   "id": "wallit_guard_slice_swing_at_anything_chirpy_pay_up",
+   "voice": "wallit",
+   "text": "Guard Slice. Swing at anything chirpy. Pay up.",
+   "asset": "a_b82f62d4877b2ef3"
+  },
+  {
+   "id": "wallit_hello_sender_i_d_like_a_word_and_a_receipt",
+   "voice": "wallit",
+   "text": "Hello? Sender? I'd like a word, and a receipt.",
+   "asset": "a_3fb560d1de9bf46d"
+  },
+  {
+   "id": "wallit_i_am",
+   "voice": "wallit",
+   "text": "I am.",
+   "asset": "a_700a5fbd83c4485c"
+  },
+  {
+   "id": "wallit_i_ve_seen_it_i_don_t_need_to_be_told",
+   "voice": "wallit",
+   "text": "I've seen it. I don't need to be told.",
+   "asset": "a_cf7c550f3b986ca3"
+  },
+  {
+   "id": "wallit_it_s_filed_all_of_it",
+   "voice": "wallit",
+   "text": "It's filed. All of it.",
+   "asset": "a_e5ef53953cede4b0"
+  },
+  {
+   "id": "wallit_it_s_got_my_notice_in_there_somewhere_i_keep_receipts",
+   "voice": "wallit",
+   "text": "It's got my notice in there somewhere. I keep receipts.",
+   "asset": "a_9dc97c4c80cd69a9"
+  },
+  {
+   "id": "wallit_it_s_not_signed",
+   "voice": "wallit",
+   "text": "It's not signed.",
+   "asset": "a_5d920cd9388e96f1"
+  },
+  {
+   "id": "wallit_it_s_watching_the_circle",
+   "voice": "wallit",
+   "text": "It's watching the circle.",
+   "asset": "a_99de6b7d4df76fae"
+  },
+  {
+   "id": "wallit_it_waited_for_me_to_take_it_three_times_refused_all_three",
+   "voice": "wallit",
+   "text": "It waited for me to take it. Three times. Refused all three.",
+   "asset": "a_c61737286c152a2c"
+  },
+  {
+   "id": "wallit_last_of_the_crew_then_the_big_one_exact_change",
+   "voice": "wallit",
+   "text": "Last of the Crew. Then the big one. Exact change.",
+   "asset": "a_4124c29f3af514c3"
+  },
+  {
+   "id": "wallit_leased_by_you",
+   "voice": "wallit",
+   "text": "Leased. By you.",
+   "asset": "a_6d749b28fd0ecdfc"
+  },
+  {
+   "id": "wallit_locks_have_keys_keys_have_owners_owners_get_paid",
+   "voice": "wallit",
+   "text": "Locks have keys. Keys have owners. Owners get paid.",
+   "asset": "a_7c3b792cd4fd73f0"
+  },
+  {
+   "id": "wallit_meaning",
+   "voice": "wallit",
+   "text": "Meaning?",
+   "asset": "a_3892b66f828eb30a"
+  },
+  {
+   "id": "wallit_my_stamp_my_door",
+   "voice": "wallit",
+   "text": "My stamp. My door.",
+   "asset": "a_19dfeafc68b7d0b2"
+  },
+  {
+   "id": "wallit_neither_do_i_pay_up",
+   "voice": "wallit",
+   "text": "Neither do I. Pay up.",
+   "asset": "a_ef22ddcbf6396c86"
+  },
+  {
+   "id": "wallit_nerve_s_free_the_swing_s_extra",
+   "voice": "wallit",
+   "text": "Nerve's free. The swing's extra.",
+   "asset": "a_c48e4d98f80fa885"
+  },
+  {
+   "id": "wallit_next_time_i_m_billing_the_floor",
+   "voice": "wallit",
+   "text": "Next time I'm billing the Floor.",
+   "asset": "a_8cf17d254e54e855"
+  },
+  {
+   "id": "wallit_no",
+   "voice": "wallit",
+   "text": "No.",
+   "asset": "a_d459de7e55289667"
+  },
+  {
+   "id": "wallit_nobody_signs_it_that_s_the_whole_trick",
+   "voice": "wallit",
+   "text": "Nobody signs it. That's the whole trick.",
+   "asset": "a_fcb5bc4f9b98d555"
+  },
+  {
+   "id": "wallit_none_of_this_is_mine_i_m_keeping_it_anyway",
+   "voice": "wallit",
+   "text": "None of this is mine. I'm keeping it anyway.",
+   "asset": "a_004af85d25790606"
+  },
+  {
+   "id": "wallit_not_for_free",
+   "voice": "wallit",
+   "text": "Not for free.",
+   "asset": "a_f9d9cee3b70ff0e2"
+  },
+  {
+   "id": "wallit_nothing_not_even_a_doormat_i_d_say_that_s_rude_but_i_m_the_one_with_no_address",
+   "voice": "wallit",
+   "text": "Nothing. Not even a doormat. I'd say that's rude, but I'm the one with no address.",
+   "asset": "a_3fe0425e61cbbd19"
+  },
+  {
+   "id": "wallit_nothing_s_free",
+   "voice": "wallit",
+   "text": "Nothing's free.",
+   "asset": "a_c2ef37626b879fca"
+  },
+  {
+   "id": "wallit_one_lever_no_sign_somebody_trusts_the_floor",
+   "voice": "wallit",
+   "text": "One lever. No sign. Somebody trusts the floor.",
+   "asset": "a_3034490042911987"
+  },
+  {
+   "id": "wallit_one_notice_returned_where_s_my_tip",
+   "voice": "wallit",
+   "text": "One notice, returned. Where's my tip?",
+   "asset": "a_5c7ca68a0aa0d68d"
+  },
+  {
+   "id": "wallit_open_up_i_know_you_re_in_there_it_s_a_stamp_not_a_person",
+   "voice": "wallit",
+   "text": "Open up. I know you're in there. It's a stamp, not a person.",
+   "asset": "a_264d329baeb4e8fd"
+  },
+  {
+   "id": "wallit_overhead_don_t_look_at_me_like_that",
+   "voice": "wallit",
+   "text": "Overhead. Don't look at me like that.",
+   "asset": "a_b7a2a1bde88f9dbf"
+  },
+  {
+   "id": "wallit_pages_four_and_five_are_the_small_print_nobody_reads_the_small_print_i_do",
+   "voice": "wallit",
+   "text": "Pages four and five are the small print. Nobody reads the small print. I do.",
+   "asset": "a_cc3d360338bf61d2"
+  },
+  {
+   "id": "wallit_read_what",
+   "voice": "wallit",
+   "text": "Read what?",
+   "asset": "a_e10258e762c7aa2b"
+  },
+  {
+   "id": "wallit_received_in_full_pay_up",
+   "voice": "wallit",
+   "text": "Received. In full. Pay up.",
+   "asset": "a_d82e674720eebc56"
+  },
+  {
+   "id": "wallit_refused",
+   "voice": "wallit",
+   "text": "Refused.",
+   "asset": "a_7ba74397d2f92c2e"
+  },
+  {
+   "id": "wallit_refused_i_can_do_refused_free_of_charge",
+   "voice": "wallit",
+   "text": "Refused. I can do refused. Free of charge.",
+   "asset": "a_954e85d1cdf5c9a9"
+  },
+  {
+   "id": "wallit_refused_the_paper_three_times_put_that_in_writing",
+   "voice": "wallit",
+   "text": "Refused the paper three times. Put that in writing.",
+   "asset": "a_05a55f8b0b671dc7"
+  },
+  {
+   "id": "wallit_return_to_sender",
+   "voice": "wallit",
+   "text": "Return to sender.",
+   "asset": "a_0e9c4098c48cf3fd"
+  },
+  {
+   "id": "wallit_return_to_sender_which_sender_i_want_a_refund",
+   "voice": "wallit",
+   "text": "Return to sender. Which sender? I want a refund.",
+   "asset": "a_e8c8a2461c185535"
+  },
+  {
+   "id": "wallit_signed_by_nobody_told_you",
+   "voice": "wallit",
+   "text": "Signed by nobody. Told you.",
+   "asset": "a_610586065210ffd9"
+  },
+  {
+   "id": "wallit_since_when",
+   "voice": "wallit",
+   "text": "Since when?",
+   "asset": "a_13974c970f46f1da"
+  },
+  {
+   "id": "wallit_so_does_my_refund_pay_up",
+   "voice": "wallit",
+   "text": "So does my refund. Pay up.",
+   "asset": "a_1dd04629f48dd50b"
+  },
+  {
+   "id": "wallit_so_the_order_is_only_a_form",
+   "voice": "wallit",
+   "text": "So the order is only a form.",
+   "asset": "a_65093d9ed8cab343"
+  },
+  {
+   "id": "wallit_so_we_exist",
+   "voice": "wallit",
+   "text": "So we exist.",
+   "asset": "a_89d1755613869102"
+  },
+  {
+   "id": "wallit_spiders_bigger_than_anything_so_far_and_not_bigger_yo_bots",
+   "voice": "wallit",
+   "text": "Spiders. Bigger than anything so far, and not bigger Yo Bots.",
+   "asset": "a_24a5c43e9b8bba29"
+  },
+  {
+   "id": "wallit_stamped_out_so_they_re_the_department_s_employees",
+   "voice": "wallit",
+   "text": "Stamped out. So they're the Department's. Employees.",
+   "asset": "a_f25261c586240067"
+  },
+  {
+   "id": "wallit_strike_this_address_sounds_worse_when_it_s_yours",
+   "voice": "wallit",
+   "text": "STRIKE. THIS. ADDRESS. Sounds worse when it's yours.",
+   "asset": "a_f3dc2d70185c1bdc"
+  },
+  {
+   "id": "wallit_strike_this_address_stamped_denied_ha",
+   "voice": "wallit",
+   "text": "\"Strike this address.\" Stamped DENIED. Ha.",
+   "asset": "a_c9b36c6ed12ff283"
+  },
+  {
+   "id": "wallit_struck_from_the_record",
+   "voice": "wallit",
+   "text": "Struck from the record.",
+   "asset": "a_e64029b8f96d17e2"
+  },
+  {
+   "id": "wallit_take_it",
+   "voice": "wallit",
+   "text": "Take it.",
+   "asset": "a_094cf6908eb4382d"
+  },
+  {
+   "id": "wallit_that_s_my_stamp_torn",
+   "voice": "wallit",
+   "text": "That's my stamp. Torn.",
+   "asset": "a_84d5b9d1fac2356b"
+  },
+  {
+   "id": "wallit_the_notice_is_in_my_pocket_evidence",
+   "voice": "wallit",
+   "text": "The notice is in my pocket. Evidence.",
+   "asset": "a_75a67b8c8058daf7"
+  },
+  {
+   "id": "wallit_the_order_s_a_form_a_form_can_be_answered",
+   "voice": "wallit",
+   "text": "The order's a form. A form can be answered.",
+   "asset": "a_ef577b74f3976773"
+  },
+  {
+   "id": "wallit_then_give_it_one_you_ve_got_the_stamp",
+   "voice": "wallit",
+   "text": "Then give it one. You've got the stamp.",
+   "asset": "a_cf066450c560c9b7"
+  },
+  {
+   "id": "wallit_then_i_ll_make_it_a_refund",
+   "voice": "wallit",
+   "text": "Then I'll make it a refund.",
+   "asset": "a_314d686886f9cb21"
+  },
+  {
+   "id": "wallit_then_i_ll_read_it_the_invoice",
+   "voice": "wallit",
+   "text": "Then I'll read it the invoice.",
+   "asset": "a_6e8a58d6d63804d3"
+  },
+  {
+   "id": "wallit_then_i_ve_been_collecting_what_s_owed_good_now_i_want_the_lever",
+   "voice": "wallit",
+   "text": "Then I've been collecting what's owed. Good. Now I want the lever.",
+   "asset": "a_86bb4d85ac349e4b"
+  },
+  {
+   "id": "wallit_then_it_can_be_denied",
+   "voice": "wallit",
+   "text": "Then it can be denied.",
+   "asset": "a_7d9632cb7b0f5658"
+  },
+  {
+   "id": "wallit_then_it_can_read_me_the_bill",
+   "voice": "wallit",
+   "text": "Then it can read me the bill.",
+   "asset": "a_5c3a78981330302c"
+  },
+  {
+   "id": "wallit_then_let_s_file_it_pay_up",
+   "voice": "wallit",
+   "text": "Then let's file it. Pay up.",
+   "asset": "a_fb85ad134e39d366"
+  },
+  {
+   "id": "wallit_then_they_re_out_of_walls_let_s_file_it_pay_up",
+   "voice": "wallit",
+   "text": "Then they're out of walls. Let's file it. Pay up.",
+   "asset": "a_0320eab302eb7e4d"
+  },
+  {
+   "id": "wallit_then_we_answer_it_pay_up",
+   "voice": "wallit",
+   "text": "Then we answer it. Pay up.",
+   "asset": "a_a3a8d400a8f3644b"
+  },
+  {
+   "id": "wallit_there_s_a_door_doors_have_senders",
+   "voice": "wallit",
+   "text": "There's a door. Doors have senders.",
+   "asset": "a_89596ede07d31f0d"
+  },
+  {
+   "id": "wallit_they_keep_coming_down_the_same_path_nobody_s_lost_they_know_the_address",
+   "voice": "wallit",
+   "text": "They keep coming down the same path. Nobody's lost. They know the address.",
+   "asset": "a_21a6ceb986033d13"
+  },
+  {
+   "id": "wallit_they_keep_the_order_here_every_copy_of_it",
+   "voice": "wallit",
+   "text": "They keep the order here. Every copy of it.",
+   "asset": "a_e61459f2900283e5"
+  },
+  {
+   "id": "wallit_they_re_all_the_same_unit",
+   "voice": "wallit",
+   "text": "They're all the same unit.",
+   "asset": "a_bf34168583cfa1c2"
+  },
+  {
+   "id": "wallit_they_re_not_bigger_yo_bots_they_re_deliveries",
+   "voice": "wallit",
+   "text": "They're not bigger Yo Bots. They're deliveries.",
+   "asset": "a_54d7633e12b16773"
+  },
+  {
+   "id": "wallit_they_were_only_ever_stamped_out_nobody_asked_them",
+   "voice": "wallit",
+   "text": "They were only ever stamped out. Nobody asked them.",
+   "asset": "a_5da74c4eb77c31e7"
+  },
+  {
+   "id": "wallit_those_bolts_are_the_same_ones_they_ve_been_paying_me",
+   "voice": "wallit",
+   "text": "Those bolts are the same ones they've been paying me.",
+   "asset": "a_42326f19673cc5f0"
+  },
+  {
+   "id": "wallit_two_out_of_the_yard_that_s_a_tip",
+   "voice": "wallit",
+   "text": "Two out of the yard. That's a tip.",
+   "asset": "a_0cfd11835aeb6364"
+  },
+  {
+   "id": "wallit_two_put_me_next_to_you",
+   "voice": "wallit",
+   "text": "Two. Put me next to you.",
+   "asset": "a_700925f3c809b969"
+  },
+  {
+   "id": "wallit_under_time_charge_extra",
+   "voice": "wallit",
+   "text": "Under time. Charge extra.",
+   "asset": "a_94bbd53933b64005"
+  },
+  {
+   "id": "wallit_void_i_don_t_take_bills_i_didn_t_order",
+   "voice": "wallit",
+   "text": "Void. I don't take bills I didn't order.",
+   "asset": "a_6016085233054421"
+  },
+  {
+   "id": "wallit_void_your_own_stamp",
+   "voice": "wallit",
+   "text": "Void your own stamp.",
+   "asset": "a_2565d7701e549707"
+  },
+  {
+   "id": "wallit_waiting_s_billable",
+   "voice": "wallit",
+   "text": "Waiting's billable.",
+   "asset": "a_e272f7a2fa57a2f5"
+  },
+  {
+   "id": "wallit_wallit_one_wallet_one_bat_no_refunds_they_stamped_me_return_to_sender_and_threw_me_in_here",
+   "voice": "wallit",
+   "text": "Wallit. One wallet, one bat, no refunds. They stamped me \"Return to sender\" and threw me in here.",
+   "asset": "a_4ffc70bf6cc0ff20"
+  },
+  {
+   "id": "wallit_wasn_t_going_to_not_for_free",
+   "voice": "wallit",
+   "text": "Wasn't going to. Not for free.",
+   "asset": "a_e4c143f8de1b3c6e"
+  },
+  {
+   "id": "wallit_where_do_i_sign_for_this_bat",
+   "voice": "wallit",
+   "text": "Where do I sign for this bat?",
+   "asset": "a_5d2a955a5fd61637"
   }
  ],
  "note": "Made through Hawkes Gen audio.voice (project theplacedepartment). Ids match WallitVoice.LineId. Slice's slice_<line>.mp3 files are not made yet and stay optional."

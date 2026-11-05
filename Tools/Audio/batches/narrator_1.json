@@ -1,0 +1,122 @@
+{
+"cast": "narrator",
+"voice": "hv_narrator_warm",
+"ids": [
+"narrator_a_bare_round_hall_the_circle_is_drawn_on_its_floor_at_the_hollow_s_scale_and_every_wall_is_lined_with_identical_forms",
+"narrator_a_causeway_of_pale_slabs_runs_out_over_a_pit_of_mist_six_lamps_stand_along_it_paired_like_folded_legs",
+"narrator_at_the_foot_of_the_gate_a_postmark_is_torn_into_the_stone_half_of_it_is_his",
+"narrator_extra_never_asked",
+"narrator_filed_the_ring_around_the_circle_becomes_a_line_of_writing_then_a_door_number_slice_writes_it_with_her_scalpel_one_stroke_at_a_time",
+"narrator_found",
+"narrator_it_lands_on_leather_a_wallet_hits_the_grass_and_rolls_and_the_circle_s_ring_lights_around_him",
+"narrator_no_fixed_address_past_the_last_lantern_the_hollow_runs_out_far_off_a_gate_stands_in_the_dark_with_nothing_written_on_it",
+"narrator_nothing_answers_a_polite_knock",
+"narrator_one_number_one_door_for_the_circle",
+"narrator_out_of_the_dark_comes_a_stamp_return_to_sender_its_ink_is_the_only_bright_thing_in_the_hollow",
+"narrator_past_the_broken_gate_the_ground_drops_away_into_a_yard_lit_by_lamps_rows_of_yo_bot_chassis_hang_on_hooks",
+"narrator_past_the_last_lantern_the_hollow_runs_out_far_off_a_gate_stands_in_the_dark_with_nothing_written_on_it",
+"narrator_served_out_on_the_slabs_a_spider_bot_stops_a_step_short_of_the_lamps_folds_one_leg_and_offers_a_paper_on_the_tip_of_its_claw_politely_the_way_a_courier_would_slice_does_not_take_it_it_waits",
+"narrator_served_the_server_comes_down_the_last_slabs_and_stops_a_step_short_of_the_lamps_it_folds_one_leg_and_offers_a_paper_on_the_tip_of_its_claw",
+"narrator_six_deliveries_worth_of_bolts_lie_in_the_grass_warm_as_coins",
+"narrator_six_lost_things_a_postcard_a_key_a_hat_a_paper_a_page_a_stamp_wallit_sets_them_down_in_the_ring_one_at_a_time",
+"narrator_slice_guards_the_circle_clean",
+"narrator_slice_takes_her_scalpel_and_begins_on_the_door_number_one_stroke_at_a_time"
+],
+"lines": [
+{
+"who": "narrator",
+"text": "A bare round hall. The circle is drawn on its floor at the Hollow's scale, and every wall is lined with identical forms.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "A causeway of pale slabs runs out over a pit of mist. Six lamps stand along it, paired like folded legs.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "At the foot of the gate, a postmark is torn into the stone. Half of it is his.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "Extra, never asked:",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "FILED\nThe ring around the circle becomes a line of writing, then a door number. Slice writes it with her scalpel, one stroke at a time.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "Found:",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "It lands on leather. A wallet hits the grass and rolls, and the circle's ring lights around him.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "NO FIXED ADDRESS\nPast the last lantern the Hollow runs out. Far off, a gate stands in the dark with nothing written on it.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "Nothing answers a polite knock.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "One number. One door, for the circle.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "Out of the dark comes a stamp: RETURN TO SENDER. Its ink is the only bright thing in the Hollow.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "Past the broken gate the ground drops away into a yard lit by lamps. Rows of Yo Bot chassis hang on hooks.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "Past the last lantern the Hollow runs out. Far off, a gate stands in the dark with nothing written on it.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "SERVED\nOut on the slabs a Spider Bot stops a step short of the lamps, folds one leg, and offers a paper on the tip of its claw, politely, the way a courier would. Slice does not take it. It waits.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "SERVED\nThe Server comes down the last slabs and stops a step short of the lamps. It folds one leg and offers a paper on the tip of its claw.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "Six deliveries' worth of bolts lie in the grass, warm as coins.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "SIX LOST THINGS\nA postcard. A key. A hat. A paper. A page. A stamp. Wallit sets them down in the ring, one at a time.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "SLICE: guards the circle. Clean.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "Slice takes her scalpel and begins on the door number, one stroke at a time.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+}
+]
+}

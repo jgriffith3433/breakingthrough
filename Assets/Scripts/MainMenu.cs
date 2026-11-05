@@ -145,6 +145,7 @@ public class MainMenu : MonoBehaviour {
         }
         Build();
         Refresh();
+        MusicDirector.Play("theme_wallit");
         RunAnalytics.Menu();
     }
 

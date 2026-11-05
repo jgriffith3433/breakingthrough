@@ -39,6 +39,7 @@ public static class Playtest {
         new PlaytestScenario("cast", "The new cast, in 90 s: the main menu with the key art up (MenuArt, its size and that the menu shows it), What's new opened from the site over the game with the release note naming Wallit, Slice and the bots (read from releases.json), then a run where the player is Wallit with his bat, the bar says Slice, and wave 1's Yo Bots close in and are batted. The AGENTS.md and README cast text lives in the repo, not the build: the review reads it from the diff", 120, "content"),
         new PlaytestScenario("modes", "The mode select: the main menu shows Campaign and Arcade; Campaign opens the three case files (save slots, setup: the sandbox keeps them off the real save), opening an empty file loads the placeholder Chapter 1 scene with Wallit and Slice's lines, Menu returns and the file now reads Chapter 1 with its time on the books, Erase (asked twice) empties it; then Arcade starts today's wave defense and the bot plays 40 s of it with the bat. Events mode-select, campaign-files, chapter-open, chapter-lines, campaign-saved, campaign-erased, arcade-start", 200, "content"),
         new PlaytestScenario("pause-nav", "Pause and menus by keyboard and gamepad, in every chapter (setup: the sandbox case file stands on each chapter in turn). From the main menu with keys only: C opens the case files, Enter opens file 1, Enter begins the chapter, Enter skips the opening scene. Then P pauses (time stops) and P resumes, the pad's Start pauses, Down and Enter open Settings (first chapter): Left turns the music and effects sliders (the gold ring follows), Enter on Voices cycles how often the voices speak, the pad's B closes Settings and the pause stays, the settings are read back from their saved JSON; Resume with Enter; pause again, and Down, Down, Enter, Enter on Quit to menu returns to the main menu. Events nav-menu, nav-case-files, nav-chapter-card, chapter-paused, chapter-resumed, pad-paused, nav-settings, volume-changed, voices-changed, settings-persisted, nav-quit; metrics chaptersPaused, menuMoves, menuSubmits, sliderTurns", 900, "content"),
+        new PlaytestScenario("score", "The score and the cast voices. Setup shortcuts: the music director is asked for every track by name (theme_wallit, theme_slice, theme_department, ch1_score..ch6_score, the six boss themes, hub, ending, credits) and each is heard for 2 s (events music-track: track, loaded or missing, volume); then nine shot reels (ch1_open, boss_courier, ch2_close, boss_foreman, boss_server, ch5_open, ch6_close, ending_received, credits) play to the end by name. Per reel: its bed (event reel-bed), every spoken shot's voice file found or missing (voice-file, with the cast voice), the set-piece sounds fired (sfx), and the voice events. Checked: no two voice lines overlap (Wallit's floor, the scene and the cast voice all count), the music ducks under speech (lowest duck below 0.9), every line of every reel has a voice file, every track exists. Metrics scoreTracks, scoreTracksLoaded, scoreVoiceLines, scoreVoiceMissing, scoreOverlaps, scoreLowestDuck, scoreSfx", 900, "content"),
         new PlaytestScenario("cinematic", "The shot-based cinematic player (Cutscene.PlayShots, data in Resources/Cinematics/sample.json): a seven-shot sample plays over the game with placeholder stills, Ken Burns moves, parallax, crossfades, letterbox bars, voice lines through the voice director, a music bed that ducks under them, and typed subtitles. Pass 1 presses Space for the next shot and then Enter to skip mid-scene: play resumes (time scale 1, the director free, the bed fades out). Pass 2 runs to the end untouched. Setup: the scene is started by name (the shot list is the data). Events cinematic-open, cinematic-shot (id, zoom, pan, subtitle, bed volume, duck), cinematic-next, cinematic-skip, cinematic-resume, cinematic-done, cinematic-memory; metrics cinematicShots, cinematicSkipped, cinematicOverlaps, cinematicVoiceLines, cinematicSubtitles, cinematicDuckLow, cinematicMemoryMB", 200, "content"),
         new PlaytestScenario("chapter-cinematics", "Every campaign cinematic: the openings and closings of Chapters 1-6, the four boss intros (Courier, Foreman, Server, Order), ADDRESS FILED (ch6_close, played before the ending card), the RECEIVED ending and the credits reel (Resources/Cinematics, wired in ChapterRun.Start, Complete, PlayBossIntro, CompleteFinal). Each reel is played by name over the game, the way the chapters play them. The bot lets all but two run to their end (Space on shot 2 of the first) and presses Enter to skip the Server intro and the credits mid-scene. Per reel it logs the shots, the voice lines (Wallit and Slice through the director, the Courier, Foreman, Plated Alpha, Half-Built, Server, Registrar, Order-Bearer, Mega Yo Bot and Yo Bots from Resources/Voice/cinema), the subtitles, the music bed ducking and any generated still still missing (missing-art: the placeholder shows). Checked: play resumes (time scale 1, director free, bed fades), no overlapping voices. Events cinematics-reel (id, shots, voice, subtitles, missing art), cinematics-skip, cinematics-resume, cinematics-done; metrics cinematicsReels, cinematicsShots, cinematicsVoiceLines, cinematicsMissingArt, cinematicsSkipped", 900, "content"),
         new PlaytestScenario("cutscene", "The chapter cutscene: Campaign, case file 1, Begin on the Chapter 1 card, and the opening scene (The Stamp) plays over the map with letterbox bars, a speaker name and portrait slot, typed lines and the camera on whoever talks. The bot reads the first pages with real key presses (a first press finishes the typing, the next turns the page), skipping a page's voice by pressing on, then presses Enter to skip the rest: play starts with the objective line up and Wallit moving on the stick, and the chapter is cleared. Checked: every Wallit, Slice and Yo Bot page has a name, two voice lines never overlap (Wallit's floor and the scene both count them), the director allows no other line during the scene. Events cutscene-open, cutscene-page (speaker, text, camera focus, letterbox, voice), cutscene-skip, cutscene-play, cutscene-voice; metrics cutscenePages, cutsceneVoiceLines, cutsceneOverlaps, cutsceneSkipped", 420, "content"),
@@ -374,6 +375,8 @@ public static class Playtest {
                 yield return BibleRun(options);
             } else if (id == "cinematic") {
                 yield return CinematicRun(options);
+            } else if (id == "score") {
+                yield return ScoreRun(options);
             } else if (id == "chapter-cinematics") {
                 yield return ChapterCinematicsRun(options);
             } else if (id == "wallit") {
@@ -7104,6 +7107,80 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
 
     // Plays the sample reel twice over the running game: pass 1 is nudged to the next shot with Space and skipped with Enter,
     // pass 2 runs to its end. Logs what each shot shows and checks that play resumes cleanly both times.
+    // The score and the cast voices (scenario "score").
+    static IEnumerator ScoreRun(PlaytestOptions options) {
+        yield return new WaitForSecondsRealtime(2f);
+        string[] tracks = { "theme_wallit", "theme_slice", "theme_department", "ch1_score", "ch2_score", "ch3_score", "ch4_score", "ch5_score", "ch6_score",
+            "boss_courier", "boss_platedalpha", "boss_foreman", "boss_server", "boss_registrar", "boss_orderbearer", "hub", "ending", "credits" };
+        int loaded = 0;
+        foreach (string t in tracks) {
+            if (run.Done) {
+                yield break;
+            }
+            MusicDirector.Play(t);
+            yield return new WaitForSecondsRealtime(2f);
+            bool ok = Resources.Load<AudioClip>("Music/" + t) != null;
+            loaded += ok ? 1 : 0;
+            run.Event("music-track", t + ": " + (ok ? "playing" : "MISSING") + ", volume " + MusicDirector.Volume.ToString("0.00") + ", changes " + MusicDirector.Changes);
+            if (!ok) {
+                run.Problem(PlaytestSeverity.Bug, "score: Resources/Music/" + t + " is missing");
+            }
+        }
+        string[] reels = { "ch1_open", "boss_courier", "ch2_close", "boss_foreman", "boss_server", "ch5_open", "ch6_close", "ending_received", "credits" };
+        int lines = 0;
+        int missing = 0;
+        foreach (string id in reels) {
+            if (run.Done) {
+                yield break;
+            }
+            Cutscene.Reel reel = Cutscene.LoadReel(id);
+            if (reel == null) {
+                run.Problem(PlaytestSeverity.Bug, "score: reel " + id + " did not load");
+                continue;
+            }
+            foreach (Cutscene.Shot shot in reel.shots) {
+                if (string.IsNullOrEmpty(shot.line)) {
+                    continue;
+                }
+                string file = shot.speaker == "W" ? WallitVoice.LineId(shot.line) : shot.speaker == "S" ? SliceVoice.LineId(shot.line) : CastVoice.FileOf(shot.speaker, shot.line);
+                bool has = Resources.Load<AudioClip>("Voice/" + file) != null;
+                lines++;
+                if (!has) {
+                    missing++;
+                    run.Problem(PlaytestSeverity.Bug, "score: no voice file Voice/" + file + " for " + id + " " + shot.id);
+                }
+            }
+            run.Event("reel-bed", id + ": bed " + reel.bed + ", music " + (Resources.Load<AudioClip>("Music/" + reel.bed) != null ? "found" : "MISSING"));
+            Cutscene.PlayShots(reel, null);
+            yield return run.Until(() => Cutscene.IsOpen, 5f, "the reel " + id);
+            float limit = Time.realtimeSinceStartup + 120f;
+            while (Cutscene.IsOpen && !run.Done && Time.realtimeSinceStartup < limit) {
+                yield return new WaitForSecondsRealtime(0.5f);
+            }
+            run.Event("reel-done", id + ": duck low " + MusicDirector.LowestDuck.ToString("0.00") + ", cast lines said " + CastVoice.Played + ", overlaps " + (Cutscene.Overlaps + WallitVoice.Overlaps));
+        }
+        int overlaps = Cutscene.Overlaps + WallitVoice.Overlaps;
+        foreach (string e in new System.Collections.Generic.List<string>(Cutscene.Events)) {
+            if (e.StartsWith("sfx|")) {
+                run.Event("sfx", e.Substring(4));
+            }
+        }
+        run.Metric("scoreTracks", tracks.Length);
+        run.Metric("scoreTracksLoaded", loaded);
+        run.Metric("scoreVoiceLines", lines);
+        run.Metric("scoreVoiceMissing", missing);
+        run.Metric("scoreOverlaps", overlaps);
+        run.Metric("scoreLowestDuck", MusicDirector.LowestDuck);
+        run.Metric("scoreSfx", Cutscene.SfxPlayed);
+        if (overlaps > 0) {
+            run.Problem(PlaytestSeverity.Bug, "score: " + overlaps + " voice line(s) overlapped");
+        }
+        if (MusicDirector.LowestDuck > 0.9f) {
+            run.Problem(PlaytestSeverity.Bug, "score: the music never ducked under a voice line");
+        }
+        yield return Play(options, 5f, false);
+    }
+
     static IEnumerator CinematicRun(PlaytestOptions options) {
         yield return new WaitForSecondsRealtime(2f);
         Cutscene.Reel reel = Cutscene.LoadReel("sample");

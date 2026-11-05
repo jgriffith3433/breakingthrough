@@ -1,6 +1,6 @@
 {
   "id": "boss_order",
-  "bed": "ch6_score",
+  "bed": "boss_orderbearer",
   "shots": [
     {
       "id": "s1",

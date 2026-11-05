@@ -1,0 +1,104 @@
+{
+"cast": "narrator",
+"voice": "hv_narrator_warm",
+"ids": [
+"narrator_the_order_read_aloud_the_foreman_steps_off_its_plinth_the_order_held_flat_on_its_chest_it_holds_the_sheet_out_to_be_read_in_the_cleared_pile_by_wallit_s_boot_lies_a_hat_tag_from_the_belt",
+"narrator_the_paper_reads_strike_this_address_no_signature_the_server_s_leg_unfolds",
+"narrator_the_place_department_where_things_that_should_not_exist_are_given_an_address",
+"narrator_the_reading_room_a_bare_round_hall_the_circle_is_drawn_on_its_floor_at_the_size_of_the_hollow_s_the_walls_are_lined_with_forms_all_identical_all_this_order_in_the_middle_a_desk_empty",
+"narrator_the_registrar_a_gold_spider_bot_with_a_ledger_on_its_back_takes_the_desk_it_opens_the_first_page_and_begins_to_read",
+"narrator_the_rise_a_plate_catches_the_lantern_light_on_the_far_rise_invalid_it_says_in_red_it_is_coming_down_the_hill",
+"narrator_the_server_s_last_paper_slides_along_the_slab_addressed_to_the_circle_slice_looks_at_it",
+"narrator_the_spider_bot_comes_apart_the_order_drops",
+"narrator_the_stamp_comes_down_for_the_first_time_it_says_address_and_nothing_strikes_it_every_lost_thing_in_the_hollow_gets_a_door",
+"narrator_the_stamp_out_of_the_dark_comes_a_stamp_return_to_sender_its_ink_is_the_only_bright_thing_in_the_hollow",
+"narrator_the_stamp_prints_address_nothing_strikes_it_every_lost_thing_in_the_hollow_gets_a_door",
+"narrator_the_stamp_reversed_he_presses_the_department_s_own_stamp_to_the_first_page_the_ink_shows_nothing_then_denied_every_form_on_the_walls_turns_over_at_once_blank",
+"narrator_the_wall_answers_from_the_other_side_pressed_through_the_dark_the_same_stamp_return_to_sender",
+"narrator_two_numbers_side_by_side_two_doors_one_beside_the_other",
+"narrator_wallit_holds_up_the_return_to_sender_stamp_he_picked_up_at_the_gate",
+"narrator_wallit_one_wallet_one_bat_pay_up"
+],
+"lines": [
+{
+"who": "narrator",
+"text": "THE ORDER, READ ALOUD\nThe Foreman steps off its plinth, the order held flat on its chest. It holds the sheet out to be read. In the cleared pile by Wallit's boot lies a hat-tag from the belt.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "The paper reads: STRIKE THIS ADDRESS. No signature. The Server's leg unfolds.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "THE PLACE DEPARTMENT\nWhere things that should not exist are given an address.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "THE READING ROOM\nA bare round hall. The circle is drawn on its floor at the size of the Hollow's. The walls are lined with forms, all identical, all this order. In the middle, a desk. Empty.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "THE REGISTRAR\nA gold Spider Bot with a ledger on its back takes the desk. It opens the first page and begins to read.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "THE RISE\nA plate catches the lantern light on the far rise. INVALID, it says, in red. It is coming down the hill.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "The Server's last paper slides along the slab, addressed to the circle. Slice looks at it.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "The Spider Bot comes apart. The order drops.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "The stamp comes down. For the first time it says ADDRESS, and nothing strikes it. Every lost thing in the Hollow gets a door.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "THE STAMP\nOut of the dark comes a stamp: RETURN TO SENDER. Its ink is the only bright thing in the Hollow.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "The stamp prints ADDRESS. Nothing strikes it. Every lost thing in the Hollow gets a door.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "THE STAMP, REVERSED\nHe presses the Department's own stamp to the first page. The ink shows nothing, then DENIED. Every form on the walls turns over at once, blank.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "The wall answers. From the other side, pressed through the dark, the same stamp: RETURN TO SENDER.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "Two numbers, side by side. Two doors, one beside the other.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "Wallit holds up the RETURN TO SENDER stamp he picked up at the gate.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "WALLIT: one wallet, one bat. Pay up.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+}
+]
+}

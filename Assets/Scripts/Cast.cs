@@ -16,6 +16,10 @@ public static class Cast {
         public string glyph;
         public string voice;      // wallit, slice, bark or none
         public string bible;
+        public string voiceId;    // the Hawkes Gen voice (hv_* house voice, or Wallit's ElevenLabs id)
+        public string voiceName;
+        public string direction;  // how the voice delivers a line
+        public string provider;   // open or elevenlabs
     }
 
     [Serializable]

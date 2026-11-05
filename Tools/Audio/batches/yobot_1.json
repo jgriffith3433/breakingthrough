@@ -1,0 +1,236 @@
+{
+"cast": "yobot",
+"voice": "hv_kid",
+"ids": [
+"yobot_address_still_unknown_deleting_twice",
+"yobot_address_unknown_deleting",
+"yobot_batch_interrupted_uploading_victory",
+"yobot_delivery_delivery_oh_it_s_for_us",
+"yobot_delivery_oh_it_s_for_us",
+"yobot_delivery_undelivered_chirp",
+"yobot_hello_i_am_not_finished_uploading_victory",
+"yobot_hello_uploading_victory",
+"yobot_hello_uploading_victory_striking_this_address_now",
+"yobot_i_am_not_finished_finish_me",
+"yobot_notice_this_plate_is_stamped_invalid",
+"yobot_notice_undelivered_uploading_defeat",
+"yobot_order_delivery_signature_required",
+"yobot_order_read_aloud_strike_this_address",
+"yobot_order_received_strike_the_address",
+"yobot_order_unread_uploading_nothing",
+"yobot_page_five_by_order_of_nobody_filed",
+"yobot_page_one_strike",
+"yobot_page_ten_filing_in_progress",
+"yobot_page_three_address_chirp",
+"yobot_page_turned_turning_again",
+"yobot_page_two_this",
+"yobot_plate_voided_uploading_nothing",
+"yobot_register_closed_uploading_nothing",
+"yobot_registrar_on_the_floor_please_remain_seated",
+"yobot_reissued_heavier_uploading_victory",
+"yobot_return_to_sender_return_to_sender",
+"yobot_rush_delivery_rush_delivery",
+"yobot_sealed_and_stamped_delivering",
+"yobot_second_notice_this_address_is_still_unknown",
+"yobot_signature_required_uploading_nothing",
+"yobot_skipping_the_queue_chirp",
+"yobot_special_delivery_notice_of_striking",
+"yobot_spiders_en_route_chirp",
+"yobot_strike_the_address_strike_the_address",
+"yobot_upgraded_now_with_plates",
+"yobot_uploading_victory_almost",
+"yobot_victory_loading_94"
+],
+"lines": [
+{
+"who": "yobot",
+"text": "Address still unknown! Deleting twice!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Address unknown! Deleting!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Batch... interrupted? Uploading... victory?",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Delivery! Delivery! ... Oh. It's for us?",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Delivery! ... Oh. It's for us?",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Delivery... undelivered... chirp?",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Hello! I am... not finished! Uploading victory?",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Hello! Uploading victory!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Hello! Uploading victory! Striking this address now!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "I am... not finished! Finish me?",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Notice! This plate is stamped: INVALID!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Notice... undelivered... uploading... defeat?",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Order delivery! Signature required!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Order, read aloud: STRIKE. THIS. ADDRESS.",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Order received! Strike the address!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Order... unread... uploading... nothing?",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Page five! BY ORDER OF NOBODY. Filed!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Page one! STRIKE.",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Page ten! Filing in progress!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Page three! ADDRESS. Chirp!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Page turned! Turning again!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Page two! THIS.",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Plate... voided... uploading... nothing?",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Register... closed... uploading... nothing?",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Registrar on the floor! Please remain seated!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Reissued! Heavier! Uploading victory!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Return to sender! Return to sender!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Rush delivery! Rush delivery!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Sealed and stamped! Delivering!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Second notice! This address is still unknown!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Signature... required... uploading... nothing?",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Skipping the queue! Chirp!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Special delivery! Notice of striking!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Spiders en route! Chirp!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Strike the address. Strike the address.",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Upgraded! Now with plates!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Uploading victory! Almost!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "Victory loading... 94%!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+}
+]
+}
