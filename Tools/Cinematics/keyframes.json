@@ -72,7 +72,7 @@
   },
   "shots": [
     {"file": "ch1_open_1", "place": "hollow", "cast": [], "scene": "black night sky over the Hollow, a large hand-cut rubber stamp reading \"RETURN TO SENDER\" turning high above, its red ink glowing softly, the hollow tiny below", "job": "j_c29bdf4cb068", "asset": "a_d29891afec07b863"},
-    {"file": "ch1_open_2", "place": "hollow", "cast": ["wallit"], "scene": "low ground-level shot in moonlit grass: Wallit lying on his back where he has just landed, startled, a small smudge of red stamp ink on his leather, his bat in the grass beside him"},
+    {"file": "ch1_open_2", "place": "hollow", "cast": ["wallit"], "scene": "low ground-level shot in moonlit grass: Wallit lying on his back where he has just landed, startled, a small smudge of red stamp ink on his leather, his bat in the grass beside him", "job": "j_204005c060dd", "asset": "a_839a9736ba6abead"},
     {"file": "ch1_open_3", "place": "hollow", "cast": [], "scene": "top-down view of nine standing stones in the grass lighting a pale gold ring one by one", "job": "j_747dfc34f99b", "asset": "a_98ceee2944506bd8"},
     {"file": "ch1_open_4", "place": "hollow", "cast": ["slice"], "scene": "low angle on Slice standing guard inside the gold circle, knife held down, shadow over her face, her eyes cool and level", "job": "j_101121f5ff83", "asset": "a_0fab9d69f5d6c74a"},
     {"file": "ch1_open_5", "place": "hollow", "cast": ["wallit", "slice"], "scene": "Slice standing tall at the edge of the gold circle, leaning to look down at Wallit inside it; he looks up at her, a few banknotes falling from his top", "job": "j_9d70734b2eed", "asset": "a_4a70902f8a87c4d2"},
