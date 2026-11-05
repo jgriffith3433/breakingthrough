@@ -124,6 +124,7 @@ public class LevelYard : MonoBehaviour {
     float lateAt = -1f;
     bool lateWoken;
     bool nearRingSaid;
+    bool benchSaid;
     bool wallitWordSaid;
     float completedAt = -1f;
     Vector3 sliceLook;
@@ -379,7 +380,7 @@ public class LevelYard : MonoBehaviour {
         Vector3 d = DropPos;
         GameObject drop = LevelDress.Put(root, "yd_drop_box", On(d.x, d.z), -90f, 1.4f);
         drop.name = "Drop Box";
-        LevelDress.Proxy(root, "Drop collider", On(d.x, d.z) + Vector3.up * 1.1f, new Vector3(3.4f, 2.2f, 3.4f), -90f);
+        // No collider on the drop box: the crew marches west past it in straight lines.
         TextMesh t = LevelKit.Text(root, "DROP", On(d.x, d.z) + new Vector3(-2.2f, 1.3f, 0f), 0.06f, new Color(0.95f, 0.8f, 0.45f), false);
         t.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
         for (float z = -3f; z < 3.1f; z += 3f) {
@@ -1000,6 +1001,13 @@ public class LevelYard : MonoBehaviour {
         float toRing = Vector3.Distance(LevelKit.Flat(scene.Player.position), RingCenter);
         if (!nearRingSaid && toRing < 12f && sliceFigure != null) {
             nearRingSaid = LevelBarks.Say('S', "No sender. No refund. Stay in the circle.", "ring-near");
+        }
+        // The dead-letter bench at the Return Hall's west wing: a word for the walk past it.
+        if (!benchSaid && !Talking && !CrewWoken && Vector3.Distance(LevelKit.Flat(scene.Player.position), new Vector3(-24f, 0f, -53f)) < 4f) {
+            benchSaid = LevelBarks.Say('W', "Dead letters. Nobody's coming for these.", "bench");
+            if (benchSaid) {
+                Note("bench", "the dead-letter bench at the Return Hall");
+            }
         }
         // Slice has had enough of him talking: three Wallit lines running, once.
         int n = LevelBarks.Log.Count;

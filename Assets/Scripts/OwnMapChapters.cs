@@ -252,8 +252,8 @@ public class EdgeMap : OwnMap {
                 float b = bearing + s * (8f + i * 5.1f);
                 Vector3 p = Polar(b, wallR);
                 p.y = GroundY(p.x, p.z);
-                bool tower = i == 3 || i == 8;
-                LevelDress.Put(walls, tower ? "gt_wall_tower" : "gt_wall_bay", p, b + 180f, tower ? 1.2f : 1f);
+                bool isTower = i == 3 || i == 8;
+                LevelDress.Put(walls, isTower ? "gt_wall_tower" : "gt_wall_bay", p, b + 180f, isTower ? 1.2f : 1f);
             }
         }
         Features.Add("landmark:the Department wall running off either side of the gate in bays and towers");

@@ -250,38 +250,34 @@ public class BackRoom : MonoBehaviour {
         Vector3 toCircle = Musician.Instance != null ? Musician.Instance.transform.position - At : -At;
         toCircle.y = 0f;
         room.transform.rotation = Quaternion.LookRotation(toCircle.sqrMagnitude > 0.01f ? toCircle.normalized : Vector3.forward, Vector3.up);
-        Color wall = new Color(0.2f, 0.17f, 0.22f);
-        Color paper = new Color(0.74f, 0.68f, 0.52f);
         Color lamp = new Color(1f, 0.78f, 0.35f);
-        Block("Floor", new Vector3(0f, 0.05f, 0f), new Vector3(10f, 0.1f, 10f), paper);
-        Block("Wall Back", new Vector3(0f, 1.4f, -5f), new Vector3(10f, 2.8f, 0.4f), wall);
-        Block("Wall Left", new Vector3(-5f, 1.4f, 0f), new Vector3(0.4f, 2.8f, 10f), wall);
-        Block("Wall Right", new Vector3(5f, 1.4f, 0f), new Vector3(0.4f, 2.8f, 10f), wall);
-        Block("Front Left", new Vector3(-3.5f, 1.4f, 5f), new Vector3(3f, 2.8f, 0.4f), wall);
-        Block("Front Right", new Vector3(3.5f, 1.4f, 5f), new Vector3(3f, 2.8f, 0.4f), wall);
-        Block("Lintel", new Vector3(0f, 2.6f, 5f), new Vector3(4f, 0.4f, 0.4f), wall);
-        Block("Desk", new Vector3(0f, 0.55f, -3.4f), new Vector3(3f, 1.1f, 1.2f), new Color(0.35f, 0.26f, 0.2f));
-        for (int i = 0; i < 4; i++) {
-            Block("Pigeonhole " + i, new Vector3(-4.7f, 0.8f + i * 0.5f, -2f + (i % 2) * 2f), new Vector3(0.2f, 0.4f, 1.6f), new Color(0.3f, 0.26f, 0.3f));
+        // Built from the Model Kit (Docs/Levels1to3.md): mail-slot walls round three sides, the wainscot door on the fourth with
+        // its gap, a desk with a lamp and pigeonholes; the paper floor is a textured decal. No colliders.
+        GameObject floor = LevelKit.Decal(room.transform, "Paper Floor", new Vector3(0f, 0.06f, 0f), new Vector2(10f, 10f), Color.white);
+        floor.GetComponent<MeshRenderer>().sharedMaterial = LevelDress.GroundMaterial("office", "wood", new Color(0.9f, 0.8f, 0.62f));
+        for (int i = -1; i <= 1; i++) {
+            KitAt("of_mail_slot_wall", new Vector3(i * 3f, 0f, -5f), 0f);
+            KitAt("of_mail_slot_wall", new Vector3(-5f, 0f, i * 3f), 90f);
+            KitAt("of_mail_slot_wall", new Vector3(5f, 0f, i * 3f), -90f);
         }
-        Block("Lamp", new Vector3(0f, 1.35f, -3.4f), new Vector3(0.4f, 0.5f, 0.4f), lamp);
-        Block("Door Number", new Vector3(0f, 2.1f, 5.25f), new Vector3(0.9f, 0.5f, 0.1f), lamp);
+        KitAt("of_wainscot_door", new Vector3(-3f, 0f, 5f), 180f);
+        KitAt("of_wainscot_door", new Vector3(3f, 0f, 5f), 180f);
+        KitAt("of_desk", new Vector3(0f, 0f, -3.4f), 0f);
+        KitAt("of_desk_lamp", new Vector3(0.6f, 0.78f, -3.5f), 0f);
+        KitAt("of_pigeonholes", new Vector3(-4.3f, 0f, -1f), 90f);
+        KitAt("of_filing_cabinet", new Vector3(4.2f, 0f, -2f), -90f);
+        KitAt("of_rug", new Vector3(0f, 0.07f, 0f), 0f);
+        Light glow = LevelDress.PointLight(room.transform, room.transform.position + room.transform.rotation * new Vector3(0f, 1.8f, -3.2f), lamp, 12f, 1.3f);
+        glow.name = "Back Room Lamp";
         ChapterRun.Events.Add("secret|built " + BackRooms.All[Chapter].Name);
     }
 
-    void Block(string name, Vector3 local, Vector3 size, Color color) {
-        var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        cube.name = name;
-        Destroy(cube.GetComponent<Collider>());
-        cube.transform.SetParent(room.transform, false);
-        cube.transform.localPosition = local;
-        cube.transform.localScale = size;
-        var shader = SafeShader.Find("Sprites/Default");
-        if (shader != null) {
-            cube.GetComponent<Renderer>().material = new Material(shader) { color = color };
-        } else {
-            UpgradeLook.Paint(cube, color);
+    void KitAt(string id, Vector3 local, float yaw) {
+        GameObject go = KitCatalog.Make(id, room.transform);
+        if (go == null) {
+            return;
         }
-        cube.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        go.transform.localPosition = local;
+        go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
     }
 }
