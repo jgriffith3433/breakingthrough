@@ -1201,6 +1201,8 @@ public static class Playtest {
         int[] chapters = mapChapters;
         int withRoute = 0, withLandmark = 0, withHazard = 0, withArena = 0;
         var looks = new HashSet<string>();
+        var skyNames = new HashSet<string>();
+        int setPieces = 0;
         int loaded = 0;
         int unloaded = 0;
         System.GC.Collect();
@@ -1252,6 +1254,12 @@ public static class Playtest {
             yield return new WaitForSecondsRealtime(1.5f);
             ReportChapterLoad(index, cardSeconds, mapSeconds);
             ChapterMap map = ChapterMap.Current;
+            if (map != null && map.OwnScene && map.Own == null) {
+                yield return run.Until(() => map.Own != null, 20f, "the chapter's own scene to fill in");
+                if (run.Done) {
+                    yield break;
+                }
+            }
             if (map == null || map.MapName != data.Map || !map.MapScene.isLoaded) {
                 run.Problem(PlaytestSeverity.Bug, "chapter-maps: chapter " + (index + 1) + " names map '" + data.Map + "' but loaded '" + (map != null ? map.MapName : "none") + "'");
                 run.Finish(PlaytestOutcome.Stuck);
@@ -1271,8 +1279,9 @@ public static class Playtest {
             if (!match) {
                 run.Problem(PlaytestSeverity.Bug, "chapter-maps: chapter " + (index + 1) + "'s lighting is not on after the map loaded");
             }
-            bool hasRoute = false, hasLandmark = false, hasHazard = false;
+            bool hasRoute = false, hasLandmark = false, hasHazard = false, hasSet = false;
             foreach (string f in map.Features) {
+                hasSet |= f.StartsWith("setpiece:");
                 hasRoute |= f.StartsWith("route:");
                 hasLandmark |= f.StartsWith("landmark:");
                 hasHazard |= f.StartsWith("hazard:");
@@ -1281,8 +1290,24 @@ public static class Playtest {
             withRoute += hasRoute ? 1 : 0;
             withLandmark += hasLandmark ? 1 : 0;
             withHazard += hasHazard ? 1 : 0;
-            if (mapChapters.Length == 3 && mapChapters[1] == 1 && !(hasRoute && hasLandmark && hasHazard)) {
-                run.Problem(PlaytestSeverity.Bug, "maps-123: chapter " + (index + 1) + "'s map lacks a route, a landmark or a hazard (" + map.Features.Count + " features)");
+            if (mapChapters.Length == 3 && mapChapters[1] == 1 && !(hasRoute && hasLandmark && hasHazard && hasSet)) {
+                run.Problem(PlaytestSeverity.Bug, "maps-123: chapter " + (index + 1) + "'s map lacks a route, a landmark, a hazard or a set piece (" + map.Features.Count + " features)");
+            }
+            if (mapChapters.Length == 3 && mapChapters[1] == 1) {
+                // Chapters 1 to 3 are scenes of their own (Assets/Maps), built by OwnMap: report the scene and what is in it.
+                if (!map.OwnScene || map.Own == null) {
+                    run.Problem(PlaytestSeverity.Bug, "maps-123: chapter " + (index + 1) + " did not load its own scene (map '" + data.Map + "')");
+                } else {
+                    Camera cam0 = Camera.main;
+                    run.Event("map-own-scene", "chapter " + (index + 1) + " scene " + map.MapScene.name + " (" + map.MapScene.rootCount + " roots, " + map.Own.Pieces + " pieces, sky " + (RenderSettings.skybox != null ? RenderSettings.skybox.name : "none") + ", camera " + (cam0 != null ? cam0.clearFlags.ToString() : "?") + ", music " + (map.Own.Music != null && map.Own.Music.isPlaying ? "playing" : "silent") + ", " + SceneManager.sceneCount + " scenes open)");
+                    if (RenderSettings.skybox == null) {
+                        run.Problem(PlaytestSeverity.Bug, "maps-123: chapter " + (index + 1) + " has no sky of its own");
+                    }
+                    if (map.Own.Music == null) {
+                        run.Problem(PlaytestSeverity.Bug, "maps-123: chapter " + (index + 1) + " has no music bed");
+                    }
+                    skyNames.Add(RenderSettings.skybox != null ? RenderSettings.skybox.name : "none");
+                }
             }
             if (mapChapters.Length == 3 && mapChapters[0] == 3) {
                 bool hasArena = false;
@@ -1321,6 +1346,18 @@ public static class Playtest {
             if (run.Done) {
                 yield break;
             }
+            if (mapChapters.Length == 3 && mapChapters[1] == 1 && map.Own != null) {
+                // The scripted set piece, made to happen by a named setup shortcut (the real triggers are played by the campaign,
+                // chapter2 and chapter3 scenarios: the Courier's notice, Wallit near the press, the lever).
+                run.Event("setup", "set piece of chapter " + (index + 1) + " triggered by the bot (OwnMap.Trigger): " + map.Own.Key);
+                map.Own.Trigger();
+                yield return new WaitForSecondsRealtime(index == 1 ? 5f : 1.5f);
+                run.Event("set-piece", "chapter " + (index + 1) + " " + map.Own.Beats + " beat(s): " + string.Join(" ; ", map.Own.Log.ToArray()));
+                if (map.Own.Beats == 0) {
+                    run.Problem(PlaytestSeverity.Bug, "maps-123: chapter " + (index + 1) + "'s set piece did not play");
+                }
+                setPieces += map.Own.Beats > 0 ? 1 : 0;
+            }
             var player = Object.FindAnyObjectByType<CharacterMovement>();
             Vector3 start = player != null ? player.transform.position : Vector3.zero;
             PlayInput.Hold(KeyCode.W, true);
@@ -1351,6 +1388,11 @@ public static class Playtest {
         System.GC.Collect();
         long end = ChapterMap.Memory();
         float growth = (end - baseline) / 1048576f;
+        run.Metric("mapSetPieces", setPieces);
+        run.Metric("mapSkies", skyNames.Count);
+        if (mapChapters.Length == 3 && mapChapters[1] == 1 && skyNames.Count < 3) {
+            run.Problem(PlaytestSeverity.Bug, "maps-123: the three chapters do not each have their own sky (" + skyNames.Count + " distinct)");
+        }
         run.Metric("mapsLoaded", loaded);
         run.Metric("mapsUnloaded", unloaded);
         run.Metric("distinctLooks", looks.Count);

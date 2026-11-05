@@ -630,7 +630,10 @@ public static class WebGlBuild
             {
                 "Assets/MainMenu.unity",
                 "Assets/scene2.unity",
-                "Assets/Campaign.unity"
+                "Assets/Campaign.unity",
+                "Assets/Maps/Map_Hollow.unity",
+                "Assets/Maps/Map_Edge.unity",
+                "Assets/Maps/Map_Floor.unity"
             },
             locationPathName = buildPath,
             target = BuildTarget.WebGL
