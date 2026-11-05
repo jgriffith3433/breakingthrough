@@ -8,6 +8,10 @@ using UnityEngine.SceneManagement;
 // the chapter's lighting (sun, ambient, fog, sky colour) and leaving unloads it again: the lighting goes back to what the
 // game scene had, the map's objects, meshes and materials are destroyed with the scene, and unused assets are released.
 //
+// Chapters 1 to 3 (hollow, hollow-edge, clearing-floor) are real scenes of their own: Assets/Maps/Map_Hollow.unity, Map_Edge.unity
+// and Map_Floor.unity, loaded additively; OwnMap.cs and OwnMapChapters.cs build each place inside its scene (terrain, sky, props,
+// route, landmark, hazard, set piece, music). Their layout is no longer drawn here.
+//
 // The six places follow Docs/CampaignBible.md. Until the bible's own models are made (GPU work, not started) each map is a
 // stand-in dressed from the arena's existing art (the Lantern model and plain blocks). Dressing sits outside 150 m of the
 // circle and has no colliders: bots walk straight lines, and the playfield stays free of anything solid.
@@ -15,6 +19,7 @@ public class ChapterMap : MonoBehaviour {
     public struct Look {
         public string Name;          // the map's scene is "Map_<Name>"
         public string Place;
+        public string Scene;         // a map with its own Unity scene (Assets/Maps/<Scene>.unity); empty: dressed in code (Dress)
         public Color Sun;            // the directional light
         public float SunIntensity;
         public Vector3 SunAngles;
@@ -32,13 +37,13 @@ public class ChapterMap : MonoBehaviour {
 
     // One row per place in the bible. Map names are what Story.Chapters[i].Map holds.
     public static readonly Look[] Defs = {
-        new Look { Name = "hollow", Place = "The Moonlit Hollow", Sun = C(0.62f, 0.72f, 1f), SunIntensity = 0.9f, SunAngles = new Vector3(48f, 35f, 0f),
+        new Look { Name = "hollow", Scene = "Map_Hollow", Place = "The Moonlit Hollow", Sun = C(0.62f, 0.72f, 1f), SunIntensity = 0.9f, SunAngles = new Vector3(48f, 35f, 0f),
             Sky = C(0.05f, 0.07f, 0.14f), Equator = C(0.16f, 0.2f, 0.3f), Ground = C(0.07f, 0.08f, 0.11f), Fog = C(0.1f, 0.13f, 0.22f), FogDensity = 0.0062f,
             Dressing = C(0.16f, 0.2f, 0.3f), Posts = 6, Lamp = C(0.7f, 0.8f, 1f) },
-        new Look { Name = "hollow-edge", Place = "The edge of the Hollow", Sun = C(0.5f, 0.55f, 0.8f), SunIntensity = 0.7f, SunAngles = new Vector3(40f, 200f, 0f),
-            Sky = C(0.04f, 0.05f, 0.1f), Equator = C(0.12f, 0.15f, 0.25f), Ground = C(0.05f, 0.06f, 0.09f), Fog = C(0.08f, 0.1f, 0.18f), FogDensity = 0.0085f,
-            Dressing = C(0.2f, 0.21f, 0.28f), Posts = 1, Lamp = C(0.6f, 0.7f, 1f) },
-        new Look { Name = "clearing-floor", Place = "The Clearing Floor", Sun = C(1f, 0.62f, 0.32f), SunIntensity = 0.55f, SunAngles = new Vector3(70f, 100f, 0f),
+        new Look { Name = "hollow-edge", Scene = "Map_Edge", Place = "The edge of the Hollow", Sun = C(0.95f, 0.68f, 0.52f), SunIntensity = 0.75f, SunAngles = new Vector3(26f, 200f, 0f),
+            Sky = C(0.1f, 0.07f, 0.13f), Equator = C(0.27f, 0.22f, 0.27f), Ground = C(0.1f, 0.07f, 0.08f), Fog = C(0.22f, 0.17f, 0.21f), FogDensity = 0.0085f,
+            Dressing = C(0.2f, 0.21f, 0.28f), Posts = 1, Lamp = C(1f, 0.78f, 0.4f) },
+        new Look { Name = "clearing-floor", Scene = "Map_Floor", Place = "The Clearing Floor", Sun = C(1f, 0.62f, 0.32f), SunIntensity = 0.55f, SunAngles = new Vector3(70f, 100f, 0f),
             Sky = C(0.09f, 0.05f, 0.04f), Equator = C(0.3f, 0.17f, 0.1f), Ground = C(0.1f, 0.06f, 0.04f), Fog = C(0.17f, 0.09f, 0.06f), FogDensity = 0.0075f,
             Dressing = C(0.28f, 0.16f, 0.1f), Posts = 10, Lamp = C(1f, 0.6f, 0.28f) },
         new Look { Name = "long-walk", Place = "The Long Walk", Sun = C(0.75f, 0.85f, 1f), SunIntensity = 0.6f, SunAngles = new Vector3(35f, 320f, 0f),
@@ -71,6 +76,10 @@ public class ChapterMap : MonoBehaviour {
     public long BaselineBytes { get; private set; }
     public long LoadedBytes { get; private set; }
     public Look Applied { get; private set; }
+    public OwnMap Own { get; private set; }          // the chapter's own scene content (null for maps still dressed in code)
+    public bool OwnScene { get { return !string.IsNullOrEmpty(Applied.Scene); } }
+    AsyncOperation loading;
+    Material oldSkybox;
 
     // What the game scene had, put back on unload.
     Color sunColor, ambientSky, ambientEquator, ambientGround, fogColor, camColor;
@@ -117,9 +126,17 @@ public class ChapterMap : MonoBehaviour {
         BaselineBytes = Profiler.GetTotalAllocatedMemoryLong() + Profiler.GetMonoUsedSizeLong();
         MapName = def.Name;
         Applied = def;
-        MapScene = SceneManager.CreateScene("Map_" + def.Name);
         stamp = Loads;
         Remember();
+        if (!string.IsNullOrEmpty(def.Scene)) {
+            // The chapter's own scene, from the build's scene list. It fills in on the next frames (see Update).
+            loading = SceneManager.LoadSceneAsync(def.Scene, LoadSceneMode.Additive);
+            MapScene = SceneManager.GetSceneByName(def.Scene);
+            Apply();
+            Debug.Log("[ChapterMap] loading " + def.Scene + " (" + def.Place + ")");
+            return;
+        }
+        MapScene = SceneManager.CreateScene("Map_" + def.Name);
         root = new GameObject("Map " + def.Name);
         Dress(def);
         SceneManager.MoveGameObjectToScene(root, MapScene);
@@ -140,6 +157,7 @@ public class ChapterMap : MonoBehaviour {
             sunIntensity = sun.intensity;
             sunRotation = sun.transform.rotation;
         }
+        oldSkybox = RenderSettings.skybox;
         ambientMode = RenderSettings.ambientMode;
         ambientSky = RenderSettings.ambientSkyColor;
         ambientEquator = RenderSettings.ambientEquatorColor;
@@ -158,10 +176,40 @@ public class ChapterMap : MonoBehaviour {
     // NightAtmosphere sets the Hollow's moonlight on its own first frame; the chapter's look goes on after it (and again
     // for a moment, in case the game scene's own setup runs late).
     void Update() {
+        if (OwnScene && Own == null && MapScene.isLoaded) {
+            Fill();
+        }
         if (!applied && Time.frameCount > 2) {
             applied = true;
             Apply();
         }
+    }
+
+    // The scene is loaded: its "Map Root" object gets the chapter's map component, which builds the place inside the scene.
+    void Fill() {
+        MapScene = SceneManager.GetSceneByName(Applied.Scene);
+        GameObject host = null;
+        foreach (GameObject go in MapScene.GetRootGameObjects()) {
+            if (go.name == "Map Root") {
+                host = go;
+                break;
+            }
+        }
+        if (host == null) {
+            Debug.LogWarning("ChapterMap: " + Applied.Scene + " has no Map Root");
+            host = new GameObject("Map Root");
+            SceneManager.MoveGameObjectToScene(host, MapScene);
+        }
+        ChapterOf(Applied.Name, out Story.Chapter chapter);
+        Own = OwnMap.Attach(Applied.Name, host);
+        if (Own == null) {
+            return;
+        }
+        Own.Boot(chapter);
+        Features.AddRange(Own.Features);
+        Apply();
+        LoadedBytes = Profiler.GetTotalAllocatedMemoryLong() + Profiler.GetMonoUsedSizeLong();
+        Debug.Log("[ChapterMap] loaded " + Applied.Scene + " (" + Applied.Place + ")");
     }
 
     void Apply() {
@@ -180,7 +228,12 @@ public class ChapterMap : MonoBehaviour {
         RenderSettings.fogColor = def.Fog;
         RenderSettings.fogDensity = def.FogDensity;
         if (cam != null) {
-            cam.clearFlags = CameraClearFlags.SolidColor;
+            if (Own != null && Own.Sky != null) {
+                RenderSettings.skybox = Own.Sky;
+                cam.clearFlags = CameraClearFlags.Skybox;
+            } else {
+                cam.clearFlags = CameraClearFlags.SolidColor;
+            }
             cam.backgroundColor = def.Sky;
         }
     }
@@ -192,6 +245,7 @@ public class ChapterMap : MonoBehaviour {
                 sun.intensity = sunIntensity;
                 sun.transform.rotation = sunRotation;
             }
+            RenderSettings.skybox = oldSkybox;
             RenderSettings.ambientMode = ambientMode;
             RenderSettings.ambientSkyColor = ambientSky;
             RenderSettings.ambientEquatorColor = ambientEquator;
@@ -211,7 +265,21 @@ public class ChapterMap : MonoBehaviour {
             }
         }
         made.Clear();
-        if (MapScene.isLoaded) {
+        if (OwnScene) {
+            Scene own = SceneManager.GetSceneByName(Applied.Scene);
+            if (own.isLoaded) {
+                SceneManager.UnloadSceneAsync(own);
+            } else if (loading != null && !loading.isDone) {
+                // Left before the scene finished loading: close it the moment it has.
+                string leftover = Applied.Scene;
+                loading.completed += _ => {
+                    Scene late = SceneManager.GetSceneByName(leftover);
+                    if (late.isLoaded) {
+                        SceneManager.UnloadSceneAsync(late);
+                    }
+                };
+            }
+        } else if (MapScene.isLoaded) {
             SceneManager.UnloadSceneAsync(MapScene);
         }
         Unloads++;
@@ -342,13 +410,7 @@ public class ChapterMap : MonoBehaviour {
     void Layout(Look def) {
         center = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
         ChapterOf(def.Name, out Story.Chapter chapter);
-        if (def.Name == "hollow") {
-            LayoutHollow();
-        } else if (def.Name == "hollow-edge") {
-            LayoutEdge(chapter);
-        } else if (def.Name == "clearing-floor") {
-            LayoutFloor(chapter);
-        } else if (def.Name == "long-walk") {
+        if (def.Name == "long-walk") {
             LayoutWalk(chapter);
         } else if (def.Name == "reading-room") {
             LayoutReading(chapter);
@@ -487,141 +549,6 @@ public class ChapterMap : MonoBehaviour {
         Piece(null, "Door Post R", at + Quaternion.Euler(0f, 20f, 0f) * new Vector3(3f, 5f, 0f), new Vector3(1f, 10f, 1f), white, 20f);
         Piece(null, "Door Lintel", at + Vector3.up * 10.4f, new Vector3(7f, 1f, 1f), white, 20f);
         Features.Add("arena:the Threshold, a ringed dais at 80 m on bearing 20 with a bare white doorframe, away from the path, where the Spider Bot that carries the order walks out");
-    }
-
-    // Chapter 1, the Moonlit Hollow: a pale stepping-stone trail (the way the bots and the Courier come in), a ring of
-    // standing stones, the Fallen Mailbox with its stamp (landmark) and a mist bog with dead trunks (the set piece).
-    void LayoutHollow() {
-        Color stone = C(0.3f, 0.34f, 0.46f), pale = C(0.62f, 0.68f, 0.82f), dark = C(0.07f, 0.09f, 0.14f), bog = C(0.1f, 0.2f, 0.22f), ink = C(0.85f, 0.18f, 0.2f), wood = C(0.12f, 0.1f, 0.12f), steel = C(0.45f, 0.5f, 0.62f);
-        const float trail = 20f;
-        Transform route = Group("Stepping-stone Trail").transform;
-        Path(route, trail, 45f, 150f, 3.2f, 5f, pale, pale * 0.8f);
-        Features.Add("route:stepping-stone trail from the circle out to the mailbox, bearing 20");
-        Transform ring = Group("Standing Stones").transform;
-        for (int i = 0; i < 9; i++) {
-            float b = i * 40f + 10f;
-            Piece(ring, "Standing Stone " + i, Polar(b, 62f, 3.5f), new Vector3(2.2f, 7f + (i % 3) * 1.5f, 1.6f), stone, b, (i % 2 == 0 ? 4f : -3f));
-        }
-        Features.Add("landmark:ring of nine standing stones round the circle");
-        Transform box = Group("Fallen Mailbox").transform;
-        Vector3 at = Polar(trail, 125f);
-        Piece(box, "Mailbox Post", at + Vector3.up * 5f, new Vector3(1.2f, 10f, 1.2f), wood, trail, 12f);
-        Piece(box, "Mailbox Body", at + new Vector3(0f, 10.4f, 0f) + Quaternion.Euler(0f, trail, 0f) * new Vector3(1.8f, 0f, 0f), new Vector3(6f, 3.6f, 3.6f), steel, trail, 12f);
-        Piece(box, "Mailbox Flag", at + new Vector3(0f, 12.6f, 0f), new Vector3(0.4f, 3f, 1.8f), ink, trail, 12f);
-        Piece(box, "Stamp Slab", at + Quaternion.Euler(0f, trail, 0f) * new Vector3(0f, 0.3f, -9f), new Vector3(9f, 0.12f, 4f), ink, trail);
-        Features.Add("landmark:the Fallen Mailbox with its red RETURN TO SENDER stamp, 125 m out on the trail");
-        Transform mire = Group("Mist Bog").transform;
-        Vector3 bogAt = Polar(285f, 95f);
-        Piece(mire, "Bog", bogAt + Vector3.up * 0.07f, new Vector3(46f, 0.03f, 46f), bog, 0f, 0f, PrimitiveType.Cylinder);
-        Piece(mire, "Bog Rim", bogAt + Vector3.up * 0.05f, new Vector3(52f, 0.03f, 52f), dark, 0f, 0f, PrimitiveType.Cylinder);
-        for (int i = 0; i < 5; i++) {
-            float a = i * 72f * Mathf.Deg2Rad;
-            Piece(mire, "Dead Trunk " + i, bogAt + new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * 12f + Vector3.up * (4f + i % 2), new Vector3(1f, 8f + i % 2 * 2f, 1f), wood, 0f, (i - 2) * 5f);
-        }
-        Features.Add("hazard:the Mist Bog, a dark sink of dead trunks 95 m out to the west (set piece: the bots do not cross it)");
-    }
-
-    // Chapter 2, the edge of the Hollow: a chalk-lined road with lanterns out to the gate (the route is the chapter's own
-    // gate bearing and distance), the Department wall running off either side, Slice's radius painted on the ground
-    // (landmark) and a stamp press that falls beside the road (the hazard).
-    void LayoutEdge(Story.Chapter chapter) {
-        float bearing = chapter.Bearing;
-        float gate = chapter.Target;
-        Color chalk = C(0.8f, 0.78f, 0.7f), iron = C(0.16f, 0.17f, 0.22f), wall = C(0.1f, 0.11f, 0.15f), red = C(0.85f, 0.14f, 0.12f), lamp = C(1f, 0.82f, 0.45f), stone = C(0.2f, 0.21f, 0.27f);
-        Transform road = Group("Chalk Road").transform;
-        Path(road, bearing, 14f, gate - 6f, 1.6f, 4f, chalk, chalk * 0.85f);
-        for (int i = 0; i < 6; i++) {
-            float d = 18f + i * ((gate - 24f) / 5f);
-            foreach (float side in new[] { -4f, 4f }) {
-                Vector3 p = Polar(bearing, d) + Quaternion.Euler(0f, bearing, 0f) * new Vector3(side, 0f, 0f);
-                Piece(road, "Lamp Post", p + Vector3.up * 1.8f, new Vector3(0.3f, 3.6f, 0.3f), iron);
-                Piece(road, "Lamp", p + Vector3.up * 3.9f, new Vector3(0.9f, 0.9f, 0.9f), lamp);
-            }
-        }
-        Features.Add("route:chalk road with paired lamps from the circle to the gate, " + gate + " m on bearing " + bearing);
-        Transform walls = Group("Department Wall").transform;
-        for (int i = -5; i <= 5; i++) {
-            if (Mathf.Abs(i) <= 1) {
-                continue;
-            }
-            float b = bearing + i * 7f;
-            Piece(walls, "Wall Section " + i, Polar(b, gate + 6f, 3.5f), new Vector3(2f * Mathf.PI * (gate + 6f) * 7f / 360f, 7f, 1.2f), wall, b);
-        }
-        Features.Add("landmark:the Department wall running off either side of the gate");
-        Transform ringGroup = Group("Slice's Radius").transform;
-        for (int i = 0; i < 48; i++) {
-            float b = i * 7.5f;
-            Piece(ringGroup, "Radius Mark " + i, Polar(b, 24f, 0.09f), new Vector3(0.6f, 0.05f, 3.6f), red, b + 90f);
-        }
-        Features.Add("landmark:Slice's radius, a red painted ring 24 m out that she tells Wallit not to leave");
-        Transform press = Group("Stamp Press").transform;
-        Vector3 baseAt = Polar(bearing + 9f, 46f);
-        Piece(press, "Press Post L", baseAt + Quaternion.Euler(0f, bearing, 0f) * new Vector3(-4f, 5f, 0f), new Vector3(1f, 10f, 1f), iron, bearing);
-        Piece(press, "Press Post R", baseAt + Quaternion.Euler(0f, bearing, 0f) * new Vector3(4f, 5f, 0f), new Vector3(1f, 10f, 1f), iron, bearing);
-        Piece(press, "Press Beam", baseAt + Vector3.up * 10.4f, new Vector3(10f, 1f, 1f), iron, bearing);
-        Piece(press, "Press Mark", baseAt + Vector3.up * 0.1f, new Vector3(7f, 0.06f, 5f), red * 0.7f, bearing);
-        GameObject plate = Piece(press, "Press Plate", baseAt + Vector3.up * 8f, new Vector3(7f, 1.2f, 5f), red, bearing);
-        plate.AddComponent<MapMover>().Set(MapMover.Mode.Press, 8f, 1.2f, 3.4f, 0f);
-        Features.Add("hazard:the stamp press beside the road at 46 m, its plate falling every few seconds on a red INVALID mark");
-    }
-
-    // Chapter 3, the Clearing Floor: a belt-lined yard. The route is the Floor's own stops; a hook gantry arches over it
-    // every few metres (landmark), a moving belt of cleared things runs on each side, and crushers cycle by the way
-    // (the hazard). A red lamp lights the lever's chute.
-    void LayoutFloor(Story.Chapter chapter) {
-        Color iron = C(0.16f, 0.17f, 0.22f), steel = C(0.55f, 0.58f, 0.66f), belt = C(0.12f, 0.12f, 0.16f), lamp = C(1f, 0.74f, 0.35f), red = C(0.9f, 0.14f, 0.1f);
-        Color[] thing = { C(0.35f, 0.3f, 0.4f), C(1f, 0.74f, 0.35f), C(0.8f, 0.65f, 0.3f) };
-        Story.Stop[] stops = chapter.Stops;
-        if (stops == null || stops.Length == 0) {
-            return;
-        }
-        float bearing = stops[stops.Length - 1].Bearing;
-        float length = stops[stops.Length - 1].Dist + 20f;
-        Transform route = Group("Yard Floor Route").transform;
-        Path(route, bearing, 16f, length, 6f, 6f, belt * 1.7f, belt * 1.35f);
-        for (int i = 0; i < stops.Length; i++) {
-            Vector3 p = Polar(stops[i].Bearing, stops[i].Dist, 0.14f);
-            Piece(route, "Stop Plate " + (i + 1), p, new Vector3(9f, 0.06f, 9f), lamp * 0.8f, stops[i].Bearing);
-        }
-        Features.Add("route:the yard floor path through " + stops.Length + " lit stops, " + stops[0].Name + " to " + stops[stops.Length - 1].Name);
-        Transform gantry = Group("Hook Gantries").transform;
-        Quaternion face = Quaternion.Euler(0f, bearing, 0f);
-        for (int i = 0; i < 6; i++) {
-            Vector3 at = Polar(bearing, 24f + i * 15f);
-            Piece(gantry, "Gantry Leg L", at + face * new Vector3(-9f, 6f, 0f), new Vector3(0.9f, 12f, 0.9f), iron, bearing);
-            Piece(gantry, "Gantry Leg R", at + face * new Vector3(9f, 6f, 0f), new Vector3(0.9f, 12f, 0.9f), iron, bearing);
-            Piece(gantry, "Gantry Rail", at + Vector3.up * 12.2f, new Vector3(19f, 0.8f, 0.8f), iron, bearing);
-            for (int k = -1; k <= 1; k += 2) {
-                Piece(gantry, "Hook", at + face * new Vector3(k * 4f, 10.4f, 0f), new Vector3(0.2f, 3.4f, 0.2f), iron, bearing);
-                Piece(gantry, "Chassis", at + face * new Vector3(k * 4f, 8f, 0f), new Vector3(1.6f, 1.9f, 1.2f), steel, bearing);
-            }
-        }
-        Features.Add("landmark:six hook gantries arching the route, hung with un-built Yo Bot chassis");
-        for (int side = -1; side <= 1; side += 2) {
-            Transform b = Group("Belt " + (side < 0 ? "West" : "East")).transform;
-            Vector3 mid = Polar(bearing, length * 0.5f) + face * new Vector3(side * 17f, 0f, 0f);
-            Piece(b, "Belt Bed", mid + Vector3.up * 0.5f, new Vector3(3.4f, 1f, length - 10f), belt, bearing);
-            for (int k = 0; k < 6; k++) {
-                GameObject item = Piece(b, "Cleared Thing " + k, mid + face * new Vector3(0f, 1.4f, 0f), new Vector3(1.4f, 1.1f, 1.4f), thing[k % 3], bearing);
-                MapMover mover = item.AddComponent<MapMover>();
-                mover.Set(MapMover.Mode.Belt, 0f, 0f, side < 0 ? 3f : -3f, (k / 6f) * (length - 10f));
-                mover.SetLine(mid + face * new Vector3(0f, 1.4f, 0f), face * Vector3.forward, length - 10f);
-            }
-        }
-        Features.Add("landmark:two belts of cleared things (a hat, a clock, a bell) sliding along the route");
-        Transform crush = Group("Crushers").transform;
-        for (int i = 0; i < 3; i++) {
-            float d = 38f + i * 24f;
-            int side = i % 2 == 0 ? 1 : -1;
-            Vector3 at = Polar(bearing, d) + face * new Vector3(side * 9f, 0f, 0f);
-            Piece(crush, "Crusher Frame", at + Vector3.up * 5.5f, new Vector3(0.8f, 11f, 0.8f), iron, bearing);
-            Piece(crush, "Crusher Mark", at + Vector3.up * 0.1f, new Vector3(5f, 0.06f, 5f), red * 0.7f, bearing);
-            GameObject head = Piece(crush, "Crusher Head", at + Vector3.up * 7f, new Vector3(5f, 1.6f, 5f), red, bearing);
-            head.AddComponent<MapMover>().Set(MapMover.Mode.Press, 7f, 1.0f, 2.6f, i * 0.9f);
-        }
-        Features.Add("hazard:three crushers beside the route (at 38, 62 and 86 m) that slam down on red marks in turn");
-        Vector3 chute = Polar(stops[stops.Length - 1].Bearing, stops[stops.Length - 1].Dist);
-        Piece(null, "Chute Lamp", chute + new Vector3(0f, 12f, 0f), new Vector3(3f, 3f, 0.6f), red, bearing);
     }
 
     // Moves a dressing piece with no collider: a press (drops from high to low on a cycle) or a belt item (slides along a line).

@@ -630,7 +630,10 @@ public static class WebGlBuild
             {
                 "Assets/MainMenu.unity",
                 "Assets/scene2.unity",
-                "Assets/Campaign.unity"
+                "Assets/Campaign.unity",
+                "Assets/Maps/Map_Hollow.unity",
+                "Assets/Maps/Map_Edge.unity",
+                "Assets/Maps/Map_Floor.unity"
             },
             locationPathName = buildPath,
             target = BuildTarget.WebGL
@@ -661,11 +664,14 @@ public static class WebGlBuild
     public static void UpdateGamePageVersion(string gamePage, int version)
     {
         string html = File.ReadAllText(gamePage);
+        string q = "\"";
+        string pattern = "window\\.(PLACE_BUILD|GAME_BUILD)\\s*=\\s*" + q + "v\\d+" + q;
         string updated = Regex.Replace(
             html,
-            @"window\.(PLACE_BUILD|GAME_BUILD)\s*=\s*""v\d+""",
-            match => "window." + match.Groups[1].Value + " = \"v" + version + "\"");
-        if (updated == html && !Regex.IsMatch(html, @"window\.(PLACE_BUILD|GAME_BUILD)\s*=\s*""v" + version + @""""))
+            pattern,
+            match => "window." + match.Groups[1].Value + " = " + q + "v" + version + q);
+        string current = "window\\.(PLACE_BUILD|GAME_BUILD)\\s*=\\s*" + q + "v" + version + q;
+        if (updated == html && !Regex.IsMatch(html, current))
         {
             throw new Exception("Could not find window.PLACE_BUILD or window.GAME_BUILD in " + gamePage);
         }
@@ -752,7 +758,7 @@ public static class WebGlBuild
         string releases = Path.Combine(SiteRoot, "releases.json");
         if (!File.Exists(releases))
         {
-            var empty = new Regex(@"""build""\s*:\s*""""");
+            var empty = new Regex("\"build\"\\s*:\\s*\"\"");
             File.WriteAllText(releases, empty.Replace(WebTemplate("releases.json"), "\"build\": \"" + version + "\"", 1));
             Debug.Log("[WebGlBuild] What's new: wrote the first releases.json (build " + version + ")");
         }

@@ -172,7 +172,7 @@ Status: built; text extended here as proposed. Emotion: Alone, then not alone. A
 > **SLICE:** Clean.  
 > **NARRATION:** The notice drifts down. Nobody has signed it.  
 
-### Scripted set piece: The Courier's Notice [built (Courier.cs)]
+### Scripted set piece: The Courier's Notice [built (Courier.cs; the mailbox flag answers it in HollowMap)]
 
 The Courier lifts the notice; a red mark fills on the circle's ground over two seconds. Break the wind-up with a tenth of its health, or stand in the mark and take the stamp yourself. Wallit takes the stamp: Slice is spared.
 
@@ -269,7 +269,7 @@ Status: built; text extended here as proposed. Emotion: Hope against a wall. A t
 > **WALLIT:** Nothing's free.  
 > **SLICE:** Then pay with swings.  
 
-### Scripted set piece: The Stamp Press [proposed (map hazard exists as a stand-in)]
+### Scripted set piece: The Stamp Press [built (EdgeMap in OwnMapChapters.cs: wakes as Wallit nears, lights its mark, slams, leaves a print)]
 
 Beside the chalk road a Department stamp press drops its plate on a red INVALID mark every four seconds, flat and telegraphed. Wallit can lure bots under it. Slice calls the timing: 'Now.' One press, one Yo Bot.
 
@@ -354,7 +354,7 @@ Status: built; text extended here as proposed. Emotion: Recognition. The enemy i
 > **WALLIT:** Paid in full.  
 > **SLICE:** Clean.  
 
-### Scripted set piece: The Belt Stops [proposed (belt props exist as stand-ins)]
+### Scripted set piece: The Belt Stops [built (FloorMap in OwnMapChapters.cs: the lever halts belts and crushers, dims the lamps)]
 
 At the lever the whole yard's sound cuts at once: conveyors, lamps, chirps. For three seconds only the cleared clock ticks. Then the Half-Built, hanging by one hook, asks: 'Finish me?' Slice: 'Don't.' Wallit: 'Wasn't going to. Not for free.'
 

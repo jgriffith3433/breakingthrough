@@ -64,10 +64,14 @@ static class SetupMainMenu {
     }
 
     static void EnsureBuild() {
-        var scenes = new EditorBuildSettingsScene[3];
+        var scenes = new EditorBuildSettingsScene[6];
         scenes[0] = new EditorBuildSettingsScene(ScenePath, true);
         scenes[1] = new EditorBuildSettingsScene("Assets/scene2.unity", true);
         scenes[2] = new EditorBuildSettingsScene("Assets/Campaign.unity", true);
+        // Chapters 1 to 3 have their own scenes (ChapterMap loads them additively; OwnMap builds each place).
+        scenes[3] = new EditorBuildSettingsScene("Assets/Maps/Map_Hollow.unity", true);
+        scenes[4] = new EditorBuildSettingsScene("Assets/Maps/Map_Edge.unity", true);
+        scenes[5] = new EditorBuildSettingsScene("Assets/Maps/Map_Floor.unity", true);
         EditorBuildSettings.scenes = scenes;
         AssetDatabase.SaveAssets();
     }
