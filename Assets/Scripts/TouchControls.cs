@@ -5,7 +5,9 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 // On-screen controls for phones and tablets: a stick on the left, Swing (hold it to wind up a home run), Lock and
-// Jump on the right, Shake once birds climb, Next wave in breaks, and Turn in the build window. They press PlayInput's keys, so gameplay reads
+// Jump on the right, Shake once birds climb, Next wave in breaks, and Turn in the build window. The campaign adds Interact (the
+// context button: it appears while something can be talked to, picked up or opened, and presses E), Dodge and the ability
+// slots in a chapter, Journal, and Menu in the hub and the levels; the hub (walk, talk, doors, board) has them without the bat. They press PlayInput's keys, so gameplay reads
 // them exactly like the keyboard and mouse. A drag that starts off the buttons turns the camera (a finger on a button never does); in the build
 // window a drag shows the piece and letting go drops it. Hidden unless the device has touch.
 public class TouchControls : MonoBehaviour {
@@ -28,7 +30,15 @@ public class TouchControls : MonoBehaviour {
         Next,
         TurnLeft,
         TurnRight,
-        Revive
+        Revive,
+        Interact,
+        Dodge,
+        Ability1,
+        Ability2,
+        Ability3,
+        Ability4,
+        Journal,
+        Menu
     }
 
     class Spots : Dictionary<int, Vector2> { }
@@ -69,6 +79,11 @@ public class TouchControls : MonoBehaviour {
     Pad turnLeft;
     Pad turnRight;
     Pad revive;
+    Pad interact;
+    Pad dodge;
+    readonly Pad[] abilities = new Pad[4];
+    Pad journal;
+    Pad menu;
     bool locked;
     bool shown;
     UiMode laidOut;
@@ -88,7 +103,9 @@ public class TouchControls : MonoBehaviour {
 
     static void Ensure() {
         botFingers.Clear();
-        if ((SceneManager.GetActiveScene().name != MetaProgress.GameScene && !SceneManager.GetActiveScene().name.StartsWith("Level_"))) {
+        string active = SceneManager.GetActiveScene().name;
+        // The Campaign scene holds the hub (walk, talk, doors); its case files and cards are buttons and keep them off the screen.
+        if (active != MetaProgress.GameScene && active != CampaignSave.Scene && !active.StartsWith("Level_")) {
             return;
         }
         if (FindAnyObjectByType<TouchControls>() != null) {
@@ -181,7 +198,10 @@ public class TouchControls : MonoBehaviour {
         Gather();
 
         bool lost = WaveDirector.IsLost;
-        bool show = touch && (WaveDirector.Instance != null || LevelScene.Instance != null) && !lost && !LevelUpScreen.IsOpen && !PauseMenu.IsOpen && !Cutscene.IsOpen;
+        ChapterHub hubNow = ChapterHub.Instance;
+        bool hub = hubNow != null && hubNow.Shown && !hubNow.BoardOpen && !(ChapterScene.Instance != null && ChapterScene.Instance.CardUp);
+        bool level = LevelScene.Instance != null;
+        bool show = touch && (WaveDirector.Instance != null || level || hub) && !lost && !LevelUpScreen.IsOpen && !PauseMenu.IsOpen && !Cutscene.IsOpen && !JournalPanel.IsOpen && !LorePanel.IsOpen;
         if (show != shown) {
             shown = show;
             root.SetActive(show);
@@ -220,14 +240,34 @@ public class TouchControls : MonoBehaviour {
                 }
             }
         }
-        SetShown(fire, !building);
-        SetShown(lockOn, !building);
-        SetShown(jump, !building);
-        SetShown(shake, !building && WaveDirector.Wave >= Tuning.ClimbWave);
-        SetShown(next, WaveDirector.Waiting);
+        bool combat = !building && !hub;
+        SetShown(fire, combat);
+        SetShown(lockOn, combat);
+        SetShown(jump, combat);
+        SetShown(revive, combat && Companion.Instance != null && Companion.Instance.ReviveReady);
+        // Interact is there only while something can be used; a downed companion's Revive takes its place.
+        bool useful = Interact.Offered && !revive.Go.activeSelf;
+        SetShown(interact, useful);
+        SetShown(shake, combat && !useful && WaveDirector.Wave >= Tuning.ClimbWave);
+        SetShown(next, WaveDirector.Waiting && !hub);
         SetShown(turnLeft, building);
         SetShown(turnRight, building);
-        SetShown(revive, !building && Companion.Instance != null && Companion.Instance.ReviveReady);
+        // The campaign's moves: Dodge from the first step of a chapter, each ability once its level is reached.
+        SetShown(dodge, combat && CampaignMoves.Active);
+        for (int a = 0; a < abilities.Length; a++) {
+            int slot = a + 1;
+            int fill = CampaignProgress.SlotFill[slot];
+            bool has = combat && CampaignProgress.Active && fill >= 0 && CampaignProgress.Has(fill);
+            SetShown(abilities[a], has);
+            if (has) {
+                float wait = CampaignProgress.Wait(fill);
+                string name = fill == 1 ? CampaignProgress.RefundName : CampaignProgress.Abilities[fill].Name;
+                abilities[a].Label.text = Short(name) + (wait > 0f ? "\n" + Mathf.CeilToInt(wait) : "");
+            }
+        }
+        SetShown(journal, (hub || (combat && ChapterRun.Instance != null && CampaignSave.Active >= 0)));
+        SetShown(menu, hub || level);
+        menu.Label.text = hub ? "Menu" : "Hub";
         if (building && locked) {
             locked = false;
         }
@@ -353,6 +393,24 @@ public class TouchControls : MonoBehaviour {
             case Role.Revive:
                 PlayInput.PadHold(KeyCode.E, true);   // held, like E: she comes up while the finger stays
                 break;
+            case Role.Interact:
+                PlayInput.PadTap(KeyCode.E);
+                break;
+            case Role.Dodge:
+                PlayInput.PadTap(CampaignMoves.DodgeKey);
+                break;
+            case Role.Ability1:
+            case Role.Ability2:
+            case Role.Ability3:
+            case Role.Ability4:
+                PlayInput.PadTap(CampaignProgress.SlotKeys[finger.Role - Role.Ability1 + 1]);
+                break;
+            case Role.Journal:
+                PlayInput.PadTap(KeyCode.J);
+                break;
+            case Role.Menu:
+                PlayInput.PadTap(KeyCode.Escape);
+                break;
         }
     }
 
@@ -435,6 +493,12 @@ public class TouchControls : MonoBehaviour {
         }
     }
 
+    // Ability names are long for a thumb-sized disc: the first word, or "Refund" for Refund in Full.
+    static string Short(string name) {
+        int space = name.IndexOf(' ');
+        return name.StartsWith("Refund") ? "Refund" : name.StartsWith("Coin") ? "Coin\nToss" : name.StartsWith("Stamp") ? "Stamp" : space > 0 ? name.Substring(0, space) : name;
+    }
+
     Vector2 ScreenOf(RectTransform rect) {
         return RectTransformUtility.WorldToScreenPoint(null, rect.TransformPoint(rect.rect.center));
     }
@@ -478,6 +542,13 @@ public class TouchControls : MonoBehaviour {
         turnRight = MakePad(Role.TurnRight, "Turn\nright", 130f, 24, new Color(0.28f, 0.22f, 0.12f, 0.7f));
 
         revive = MakePad(Role.Revive, "Revive", 170f, 30, new Color(0.14f, 0.34f, 0.3f, 0.7f));
+        interact = MakePad(Role.Interact, "Interact", 160f, 28, new Color(0.62f, 0.44f, 0.08f, 0.78f));
+        dodge = MakePad(Role.Dodge, "Dodge", 120f, 24, new Color(0.1f, 0.3f, 0.34f, 0.6f));
+        for (int a = 0; a < abilities.Length; a++) {
+            abilities[a] = MakePad(Role.Ability1 + a, "", 104f, 20, new Color(0.3f, 0.2f, 0.4f, 0.62f));
+        }
+        journal = MakePad(Role.Journal, "Journal", 104f, 20, new Color(0.26f, 0.22f, 0.12f, 0.7f));
+        menu = MakePad(Role.Menu, "Menu", 104f, 22, new Color(0.14f, 0.14f, 0.2f, 0.72f));
         next = MakePad(Role.Next, "Next wave", 0f, 30, new Color(0.22f, 0.38f, 0.22f, 0.9f));
         UiSkin.Round(next.Image, 0.6f);
         next.Rect.SetParent(root.transform, false);
@@ -506,7 +577,7 @@ public class TouchControls : MonoBehaviour {
         stickHome = new Vector2(StickSize * 0.5f + 12f, StickSize * 0.5f + 12f);
         stickBase.anchoredPosition = stickHome;
         Corner(fire, new Vector2(-105f, 105f));
-        Corner(revive, laidOut == UiMode.Tall ? new Vector2(-105f, 440f) : new Vector2(-440f, 120f));
+        Corner(revive, laidOut == UiMode.Tall ? new Vector2(-105f, 440f) : new Vector2(-440f, 250f));
         Corner(turnLeft, new Vector2(-260f, 90f));
         Corner(turnRight, new Vector2(-90f, 90f));
         bool tall = laidOut == UiMode.Tall;
@@ -520,12 +591,28 @@ public class TouchControls : MonoBehaviour {
             Corner(lockOn, new Vector2(-255f, 235f));
             Corner(shake, new Vector2(-75f, 290f));
         }
+        // Interact: by the Swing thumb, where the shake pad would sit (the two never show together); portrait keeps Revive's spot.
+        Corner(interact, tall ? new Vector2(-105f, 440f) : new Vector2(-105f, 290f));
+        Corner(dodge, tall ? new Vector2(-260f, 75f) : new Vector2(-430f, 95f));
+        for (int a = 0; a < abilities.Length; a++) {
+            Corner(abilities[a], tall ? new Vector2(-75f - 110f * a, 600f) : new Vector2(-190f - 110f * a, 430f));
+        }
+        // Journal and Menu hang under the top-right corner, below the health line.
+        Anchored(journal, new Vector2(-62f, -200f));
+        Anchored(menu, new Vector2(-62f, -88f));
         // Next wave: above the controls in portrait, under the wave line otherwise.
         float edge = tall ? 0f : 1f;
         next.Rect.anchorMin = new Vector2(0.5f, edge);
         next.Rect.anchorMax = new Vector2(0.5f, edge);
         next.Rect.pivot = new Vector2(0.5f, edge);
         next.Rect.anchoredPosition = new Vector2(0f, tall ? 510f : laidOut == UiMode.Wide ? -200f : -250f);
+    }
+
+    static void Anchored(Pad pad, Vector2 center) {
+        pad.Rect.anchorMin = new Vector2(1f, 1f);
+        pad.Rect.anchorMax = new Vector2(1f, 1f);
+        pad.Rect.pivot = new Vector2(0.5f, 0.5f);
+        pad.Rect.anchoredPosition = center;
     }
 
     static void Corner(Pad pad, Vector2 center) {

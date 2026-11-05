@@ -302,7 +302,7 @@ public class LevelScene : MonoBehaviour {
                 LeaveToHub();
             } else {
                 escAt = Time.time;
-                Hud.ShowReceipt("Esc again to go back to the hub.", 2.5f);
+                Hud.ShowReceipt((UiFit.Touch ? "Tap Hub again to go back to the hub." : "Esc again to go back to the hub."), 2.5f);
             }
         }
     }

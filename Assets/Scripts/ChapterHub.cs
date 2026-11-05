@@ -621,11 +621,26 @@ public class ChapterHub : MonoBehaviour {
         }
         // Through an open door: that chapter's card. A shut one is a wall.
         if (NearDoor >= 0 && DoorOpen[NearDoor] && Player.position.z >= RoomBack - 0.05f && EnteredDoor < 0) {
-            EnteredDoor = NearDoor;
-            GameAudio.Play("stamp", 0.5f);
-            RunAnalytics.Screen("hub_door_" + (NearDoor + 1));
-            scene.ShowCard(NearDoor);
+            EnterDoor(NearDoor);
         }
+    }
+
+    // An open door within reach of a hand: Interact (E, or the button on a phone) opens it, so a thumb on the stick need not
+    // walk into the frame.
+    public bool DoorUsable {
+        get {
+            if (NearDoor < 0 || !DoorOpen[NearDoor] || EnteredDoor >= 0 || BoardOpen || !Shown) {
+                return false;
+            }
+            return Player.position.z > DoorPosition(NearDoor).z - 2.6f;
+        }
+    }
+
+    void EnterDoor(int door) {
+        EnteredDoor = door;
+        GameAudio.Play("stamp", 0.5f);
+        RunAnalytics.Screen("hub_door_" + (door + 1));
+        scene.ShowCard(door);
     }
 
     void Block(Transform parent, string name, Vector3 local, Vector3 size, Color color) {
@@ -794,7 +809,17 @@ public class ChapterHub : MonoBehaviour {
         NearBoard = (Player.position - BoardPosition).magnitude <= BoardReach;
         TickLodgers();
         if (!BoardOpen) {
-            prompt.text = NearDoor >= 0 && !DoorOpen[NearDoor] ? "Chapter " + (NearDoor + 1) + ": the door is shut" : NearDoor >= 0 ? "Chapter " + (NearDoor + 1) + ": " + Story.Chapters[NearDoor].Title : NearBoard ? "E: read the chapter board" : NearLodger >= 0 ? "E: talk to " + Story.Lodgers[NearLodger].Name : ErrandCarried ? "Carrying the " + Story.Errands[ErrandActive].Thing + ". Take it to Chime." : FavourCarried ? "Carrying the " + HubLife.Sides[FavourActive].Thing + ". Take it to " + Story.Lodgers[HubLife.Sides[FavourActive].Giver].Name + "." : "WASD: walk. Doors along the back wall. Board on the left, lodgers about the room. J: journal.";
+            prompt.text = NearDoor >= 0 && !DoorOpen[NearDoor] ? "Chapter " + (NearDoor + 1) + ": the door is shut" : NearDoor >= 0 ? "Chapter " + (NearDoor + 1) + ": " + Story.Chapters[NearDoor].Title + (DoorUsable ? ". " + Interact.Prompt("open the door") : "") : NearBoard ? Interact.Prompt("read the chapter board") : NearLodger >= 0 ? Interact.Prompt("talk to " + Story.Lodgers[NearLodger].Name) : ErrandCarried ? "Carrying the " + Story.Errands[ErrandActive].Thing + ". Take it to Chime." : FavourCarried ? "Carrying the " + HubLife.Sides[FavourActive].Thing + ". Take it to " + Story.Lodgers[HubLife.Sides[FavourActive].Giver].Name + "." : (UiFit.Touch ? "Stick: walk. " : "WASD: walk. ") + "Doors along the back wall. Board on the left, lodgers about the room. " + (UiFit.Touch ? "Journal button: journal." : "J: journal.");
+            if (NearBoard) {
+                Interact.Offer("read the chapter board");
+            } else if (NearLodger >= 0) {
+                Interact.Offer("talk to " + Story.Lodgers[NearLodger].Name);
+            } else if (DoorUsable) {
+                Interact.Offer("open the door");
+            }
+            if (DoorUsable && !NearBoard && NearLodger < 0 && Interact.Pressed) {
+                EnterDoor(NearDoor);
+            }
             if (NearBoard && (PlayInput.GetKeyDown(KeyCode.E) || PlayInput.GetKeyDown(KeyCode.JoystickButton0) || PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter))) {
                 OpenBoard();
             }
@@ -875,7 +900,7 @@ public class ChapterHub : MonoBehaviour {
         sb.Append(level >= CampaignProgress.MaxLevel ? slot.xp + " (max)" : slot.xp + "/" + CampaignProgress.XpAt(level + 1));
         for (int i = 0; i < CampaignProgress.Abilities.Length; i++) {
             CampaignProgress.Ability a = CampaignProgress.Abilities[i];
-            sb.Append("\n").Append(level >= a.Level ? a.Name + ": " + a.Blurb : "LV " + a.Level + ": ???");
+            sb.Append("\n").Append(level >= a.Level ? a.Name + ": " + CampaignProgress.BlurbOf(a) : "LV " + a.Level + ": ???");
         }
         sb.Append("\nTALKS ").Append(HubLife.HeardCount(slot)).Append("/").Append(HubLife.Chats.Length).Append(" (").Append(HubLife.PendingCount(slot)).Append(" waiting)   ERRANDS ").Append(HubLife.SideCount(slot)).Append("/").Append(HubLife.Sides.Length);
         sb.Append("\nLOST THINGS ").Append(CountBits(slot.errands)).Append("/").Append(Story.Errands.Length).Append(":");

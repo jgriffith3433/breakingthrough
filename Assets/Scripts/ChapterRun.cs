@@ -1180,7 +1180,7 @@ public class ChapterRun : MonoBehaviour {
             }
         }
         if (extraText != null) {
-            extraText.text = GoalMet ? "Extra met: " + Journal.Goals[Chapter].Name : "Extra: " + Journal.Goals[Chapter].Name + " (" + Journal.Goals[Chapter].Ask + ")  J: journal";
+            extraText.text = GoalMet ? "Extra met: " + Journal.Goals[Chapter].Name : "Extra: " + Journal.Goals[Chapter].Name + " (" + Journal.Goals[Chapter].Ask + ")  " + (UiFit.Touch ? "Journal button" : "J: journal");
         }
         if (PlayInput.GetKeyDown(KeyCode.J)) {
             PauseMenu.Open();

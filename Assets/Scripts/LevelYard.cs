@@ -384,12 +384,12 @@ public class LevelYard : MonoBehaviour {
     }
 
     void BuildSpots() {
-        spots.Add(new Spot { At = SlicePos, Prompt = "E: talk to Slice", On = () => !Talked && !Talking && Stage != Beat.Done, Use = () => StartCoroutine(Talk()) });
+        spots.Add(new Spot { At = SlicePos, Prompt = "talk to Slice", On = () => !Talked && !Talking && Stage != Beat.Done, Use = () => StartCoroutine(Talk()) });
         for (int i = 0; i < 3; i++) {
             int n = i;
-            spots.Add(new Spot { At = NoticePos[i], Prompt = "E: read the notice", On = () => !noticeRead[n], Use = () => ReadNotice(n) });
+            spots.Add(new Spot { At = NoticePos[i], Prompt = "read the notice", On = () => !noticeRead[n], Use = () => ReadNotice(n) });
         }
-        spots.Add(new Spot { At = FlagPos, Prompt = "E: pick up the Mailbox Flag", On = () => !FlagTaken, Use = TakeFlag });
+        spots.Add(new Spot { At = FlagPos, Prompt = "pick up the Mailbox Flag", On = () => !FlagTaken, Use = TakeFlag });
     }
 
     float Rand(float a, float b) {
@@ -624,7 +624,7 @@ public class LevelYard : MonoBehaviour {
         scene.Finish();
         Note("level-complete", "exit reached after " + Mathf.RoundToInt(scene.Seconds) + " s, " + scene.Defeats + " defeats");
         scene.Hud.Objective.text = Objective();
-        scene.Hud.Prompt.text = "CHAPTER 1: RETURN TO SENDER\nThe Sorting Yard is filed. The Courier waits past the slot.\nE or tap: back to the hub";
+        scene.Hud.Prompt.text = "CHAPTER 1: RETURN TO SENDER\nThe Sorting Yard is filed. The Courier waits past the slot.\n" + Interact.Key + ": back to the hub";
     }
 
     // ---------------------------------------------------------------- stamps
@@ -780,7 +780,8 @@ public class LevelYard : MonoBehaviour {
         if (Time.time - completedAt < 1f) {
             return;
         }
-        if (PlayInput.GetKeyDown(KeyCode.E) || PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter) || PlayInput.GetKeyDown(KeyCode.JoystickButton0) || scene.Hud.TakeTap()) {
+        Interact.Offer("back to the hub");
+        if (Interact.Pressed || scene.Hud.TakeTap()) {
             scene.LeaveToHub();
         }
     }
@@ -803,7 +804,10 @@ public class LevelYard : MonoBehaviour {
             }
         }
         bool reviving = Companion.Instance != null && Companion.Instance.ReviveReady;
-        scene.Hud.Prompt.text = best != null && !reviving ? best.Prompt : "";
+        scene.Hud.Prompt.text = best != null && !reviving ? Interact.Prompt(best.Prompt) : "";
+        if (best != null && !reviving) {
+            Interact.Offer(best.Prompt);
+        }
         bool tapped = scene.Hud.TakeTap();
         if (best != null && !reviving && (PlayInput.GetKeyDown(KeyCode.E) || PlayInput.GetKeyDown(KeyCode.JoystickButton0) || tapped)) {
             best.Use();
