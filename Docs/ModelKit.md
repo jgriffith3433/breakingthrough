@@ -42,7 +42,7 @@ Memory: 12 sets, albedo + normal each, RGBA32 with mipmaps: 7 sets at 256 px (0.
 |---|---|---|
 | Visible triangles in a WebGL level | **under 150,000** | `KitValidation.VisibleTriangles(camera)`: sums the triangles of every renderer inside the camera's frustum. KitPreview logs it for the gallery and each vignette |
 | Textures, whole kit | **under 64 MB** | sum of unique textures: width x height x 4 bytes x 4/3 (mips) |
-| One piece | **under 800 triangles** | the table below (largest planned: the bookshelf, 720) |
+| One piece | **under 1,500 triangles** | the validator; planned sizes are in the tables below (estimates: the validator prints the real counts) |
 | Materials per piece | 1 or 2 submeshes | `Renderer.sharedMaterials.Length` |
 | Draw calls | shared materials, GPU instancing on | `material.enableInstancing` checked by the validator |
 
@@ -50,10 +50,14 @@ Planned total for all 82 pieces once each: about 27490 triangles. A dressed leve
 
 ## 5. Measuring and validating
 
-- **Tools > Kit > Validate Kit** (editor) and the PlayMode test `KitValidationTests` call `KitValidation.Run()`. It builds every piece from `KitCatalog` and fails if a mesh is named Cube/Sphere/Capsule/Cylinder/Plane/Quad, has under 24 vertices, has no texture on its material, is not instanced, or if the totals exceed section 4.
+- **Tools > Kit > Validate Kit** (editor) and the PlayMode test `KitValidationTests` call `KitValidation.Run()`. It builds every piece from `KitCatalog` and fails if a mesh is named Cube/Sphere/Capsule/Cylinder/Plane/Quad, is a plain box (12 triangles or fewer), has under 24 vertices, has no texture on its material, is not instanced, has the same vertex/triangle/size signature as another piece (a recoloured copy), has fewer than 8 pieces in a chapter palette or 60 overall, or if the totals exceed section 4.
 - It prints one line per piece (`vertices`, `triangles`, `textureMB`, materials) and the totals.
 - The playtest scenario `kit-preview` logs the same report as events and metrics (`kitPieces`, `kitTriangles`, `kitTextureMB`, `kitPrimitives`).
 - Tools > Kit > Build Kit Assets bakes meshes, materials, textures and prefabs into `Assets/Kit/<palette>/`. The runtime builds from the same code, so the game and the playtest never depend on the baked files.
+
+- Bevels smaller than 1.1 cm are dropped by `KitMesh.Box` (a chamfered box costs 44 triangles against 12), so only visible chamfers are paid for.
+- Editor auto-bake: on editor load `KitBuilder` bakes `Assets/Kit` if the prefabs are missing; **Tools > Kit > Build Kit Assets** does it by hand (batch: `-executeMethod KitBuilder.BuildAll`; validation: `KitBuilder.ValidateBatch`).
+- Playtest: scenario `kit-preview` loads `Assets/Maps/KitPreview.unity` (an empty scene `KitPreview.cs` fills: the street corner at the origin, the interior room at x = 100, the gallery at z = 100 and up) and photographs each stop.
 
 ## 6. Pieces per palette
 
