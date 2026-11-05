@@ -38,5 +38,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Maps/Level_1_Yard.unity
     guid: f7d5bae68a0c4f4ebcb95b60ad4fce88
+  - enabled: 1
+    path: Assets/Maps/KitPreview.unity
+    guid: 08e6cbf79b1d4a5fcdc06c71be5ad099
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0
