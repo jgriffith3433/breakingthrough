@@ -16,6 +16,7 @@ public class ChapterRun : MonoBehaviour {
 
     public static void Begin(int chapter) {
         armed = chapter;
+        LoadScreen.Show(chapter);   // the chapter's art and name until its map is up
         SceneManager.LoadScene(MetaProgress.GameScene);
     }
 
@@ -915,6 +916,15 @@ public class ChapterRun : MonoBehaviour {
         ChapterScene.HubNext = true;
         RunAnalytics.Screen("hub");
         SceneManager.LoadScene(CampaignSave.Scene);
+    }
+
+    // The pause menu's Restart chapter: the same chapter from its opening. The file stays open (toNext) for the new run.
+    public void Restart() {
+        int again = Chapter;
+        ChapterMap.Unload();
+        Time.timeScale = 1f;
+        toNext = true;
+        Begin(again);
     }
 
     // Playtest setup shortcut: leave the chapter for the menu without finishing it.

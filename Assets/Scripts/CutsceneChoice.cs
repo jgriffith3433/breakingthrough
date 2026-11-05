@@ -86,7 +86,7 @@ public partial class Cutscene {
             choiceButtons[i].gameObject.SetActive(true);
         }
         PaintChoice();
-        hintText.text = UiFit.Touch ? "Tap a choice" : "1 / 2, or click      Left / Right + Space      Enter: skip the scene";
+        hintText.text = UiFit.Touch ? "Tap a choice" : ComfortOptions.PadConnected ? "X / Y, or stick + A      Start: pause" : "1 / 2, or click      Left / Right + Space      Enter: skip the scene";
         Events.Add("choice-open|" + row.Id + "|" + row.Labels[0] + "|" + row.Labels[1]);
     }
 
@@ -97,17 +97,18 @@ public partial class Cutscene {
     }
 
     void TickChoice() {
-        if (PlayInput.GetKeyDown(KeyCode.Alpha1) || PlayInput.GetKeyDown(KeyCode.Keypad1)) {
+        int step = PadChoiceMove();
+        if (PlayInput.GetKeyDown(KeyCode.Alpha1) || PlayInput.GetKeyDown(KeyCode.Keypad1) || PlayInput.GetKeyDown(KeyCode.JoystickButton2)) {
             Choose(0);
-        } else if (PlayInput.GetKeyDown(KeyCode.Alpha2) || PlayInput.GetKeyDown(KeyCode.Keypad2)) {
+        } else if (PlayInput.GetKeyDown(KeyCode.Alpha2) || PlayInput.GetKeyDown(KeyCode.Keypad2) || PlayInput.GetKeyDown(KeyCode.JoystickButton3)) {
             Choose(1);
-        } else if (PlayInput.GetKeyDown(KeyCode.LeftArrow) || PlayInput.GetKeyDown(KeyCode.A)) {
+        } else if (PlayInput.GetKeyDown(KeyCode.LeftArrow) || PlayInput.GetKeyDown(KeyCode.A) || step < 0) {
             choiceFocus = 0;
             PaintChoice();
-        } else if (PlayInput.GetKeyDown(KeyCode.RightArrow) || PlayInput.GetKeyDown(KeyCode.D)) {
+        } else if (PlayInput.GetKeyDown(KeyCode.RightArrow) || PlayInput.GetKeyDown(KeyCode.D) || step > 0) {
             choiceFocus = 1;
             PaintChoice();
-        } else if (PlayInput.GetKeyDown(KeyCode.Space) || PlayInput.GetKeyDown(KeyCode.E)) {
+        } else if (PlayInput.GetKeyDown(KeyCode.Space) || PlayInput.GetKeyDown(KeyCode.E) || PlayInput.GetKeyDown(KeyCode.JoystickButton0)) {
             Choose(choiceFocus);
         }
     }
