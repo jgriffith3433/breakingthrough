@@ -4,7 +4,7 @@
   "shots": [
     {
       "id": "s1",
-      "back": "ch6_close_1_back",
+      "back": "ch6_close_1",
       "speaker": "N",
       "seconds": 4.0,
       "fade": 0.0,
@@ -19,13 +19,14 @@
         0.4,
         1.2
       ],
-      "alt": "hollow_back",
-      "front": "ch6_close_1_front",
+      "cast": [
+        "orderbearer"
+      ],
       "line": "The Spider Bot comes apart. The order drops."
     },
     {
       "id": "s2",
-      "back": "ch6_close_2_back",
+      "back": "ch6_close_2",
       "speaker": "W",
       "seconds": 4.0,
       "fade": 0.7,
@@ -40,13 +41,14 @@
         0,
         1.4
       ],
-      "alt": "stamp_back",
-      "front": "ch6_close_2_front",
+      "cast": [
+        "wallit"
+      ],
       "line": "'Strike this address.' Stamped DENIED. Ha."
     },
     {
       "id": "s3",
-      "back": "ch6_close_3_back",
+      "back": "ch6_close_3",
       "speaker": "S",
       "seconds": 3.4,
       "fade": 0.7,
@@ -61,13 +63,14 @@
         0,
         1.05
       ],
-      "alt": "ring_back",
-      "front": "ch6_close_3_front",
+      "cast": [
+        "slice"
+      ],
       "line": "Filed. Properly, this time."
     },
     {
       "id": "s4",
-      "back": "ch6_close_4_back",
+      "back": "ch6_close_4",
       "speaker": "W",
       "seconds": 2.6,
       "fade": 0.7,
@@ -82,13 +85,14 @@
         0,
         1.2
       ],
-      "alt": "ring_back",
-      "front": "ch6_close_4_front",
+      "cast": [
+        "wallit"
+      ],
       "line": "So we exist."
     },
     {
       "id": "s5",
-      "back": "ch6_close_5_back",
+      "back": "ch6_close_5",
       "speaker": "S",
       "seconds": 3.4,
       "fade": 0.7,
@@ -103,12 +107,15 @@
         0,
         1.0
       ],
-      "alt": "ring_back",
+      "cast": [
+        "wallit",
+        "slice"
+      ],
       "line": "Clean. Good swing, Wallit."
     },
     {
       "id": "s6",
-      "back": "ch6_close_6_back",
+      "back": "ch6_close_6",
       "speaker": "W",
       "seconds": 2.4,
       "fade": 0.7,
@@ -123,7 +130,7 @@
         0,
         1.0
       ],
-      "alt": "stamp_back",
+      "cast": [],
       "line": "Pay up."
     }
   ]

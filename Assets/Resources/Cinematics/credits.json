@@ -4,7 +4,7 @@
   "shots": [
     {
       "id": "s1",
-      "back": "credits_1_back",
+      "back": "credits_1",
       "speaker": "N",
       "seconds": 3.4,
       "fade": 0.0,
@@ -19,12 +19,12 @@
         0,
         1.15
       ],
-      "alt": "ring_back",
+      "cast": [],
       "line": "WALLIT: one wallet, one bat. Pay up."
     },
     {
       "id": "s2",
-      "back": "credits_2_back",
+      "back": "credits_2",
       "speaker": "N",
       "seconds": 3.2,
       "fade": 0.7,
@@ -39,12 +39,12 @@
         0,
         1.2
       ],
-      "alt": "slice_back",
+      "cast": [],
       "line": "SLICE: guards the circle. Clean."
     },
     {
       "id": "s3",
-      "back": "credits_3_back",
+      "back": "credits_3",
       "speaker": "N",
       "seconds": 4.0,
       "fade": 0.7,
@@ -59,12 +59,15 @@
         0,
         1.2
       ],
-      "alt": "crest_back",
+      "cast": [
+        "yobot",
+        "spiderbot"
+      ],
       "line": "YO BOTS: uploading victory. SPIDER BOTS: by order of nobody."
     },
     {
       "id": "s4",
-      "back": "credits_4_back",
+      "back": "credits_4",
       "speaker": "N",
       "seconds": 4.6,
       "fade": 0.7,
@@ -78,6 +81,10 @@
         0,
         0,
         1.0
+      ],
+      "cast": [
+        "wallit",
+        "slice"
       ],
       "alt": "hollow_back",
       "line": "The circle stands. Slice and Wallit are on the books. Thanks for playing."

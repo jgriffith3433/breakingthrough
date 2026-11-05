@@ -4,7 +4,7 @@
   "shots": [
     {
       "id": "s1",
-      "back": "boss_courier_1_back",
+      "back": "boss_courier_1",
       "speaker": "Y",
       "seconds": 3.4,
       "fade": 0.0,
@@ -19,13 +19,14 @@
         0,
         1.35
       ],
-      "alt": "hollow_back",
-      "front": "boss_courier_1_front",
+      "cast": [
+        "courier"
+      ],
       "line": "Special delivery! Notice of striking!"
     },
     {
       "id": "s2",
-      "back": "boss_courier_2_back",
+      "back": "boss_courier_2",
       "speaker": "S",
       "seconds": 4.2,
       "fade": 0.7,
@@ -40,13 +41,15 @@
         0,
         1.1
       ],
+      "cast": [
+        "slice"
+      ],
       "alt": "slice_back",
-      "front": "boss_courier_2_front",
       "line": "The Courier. It reads the order out, then it lands."
     },
     {
       "id": "s3",
-      "back": "boss_courier_3_back",
+      "back": "boss_courier_3",
       "speaker": "W",
       "seconds": 3.0,
       "fade": 0.7,
@@ -61,8 +64,10 @@
         0,
         1.35
       ],
+      "cast": [
+        "wallit"
+      ],
       "alt": "wallet_front",
-      "front": "boss_courier_3_front",
       "line": "Then it can read me the bill."
     }
   ]

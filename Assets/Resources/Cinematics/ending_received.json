@@ -4,7 +4,7 @@
   "shots": [
     {
       "id": "s1",
-      "back": "ending_received_1_back",
+      "back": "ending_received_1",
       "speaker": "N",
       "seconds": 5.6,
       "fade": 0.0,
@@ -19,12 +19,12 @@
         0,
         1.05
       ],
-      "alt": "ring_back",
+      "cast": [],
       "line": "Wallit sets six things down in the ring: a postcard, a key, a hat, a paper, a leaf, a stamp."
     },
     {
       "id": "s2",
-      "back": "ending_received_2_back",
+      "back": "ending_received_2",
       "speaker": "S",
       "seconds": 2.4,
       "fade": 0.7,
@@ -39,13 +39,15 @@
         0,
         1.15
       ],
-      "alt": "slice_back",
-      "front": "ending_received_2_front",
+      "cast": [
+        "slice",
+        "wallit"
+      ],
       "line": "No address."
     },
     {
       "id": "s3",
-      "back": "ending_received_3_back",
+      "back": "ending_received_3",
       "speaker": "W",
       "seconds": 3.6,
       "fade": 0.7,
@@ -60,13 +62,14 @@
         0,
         1.2
       ],
-      "alt": "stamp_back",
-      "front": "ending_received_3_front",
+      "cast": [
+        "wallit"
+      ],
       "line": "Then give it one. You've got the stamp."
     },
     {
       "id": "s4",
-      "back": "ending_received_4_back",
+      "back": "ending_received_4",
       "speaker": "N",
       "seconds": 5.6,
       "fade": 0.7,
@@ -81,12 +84,12 @@
         0,
         1.0
       ],
-      "alt": "ring_back",
+      "cast": [],
       "line": "The stamp prints ADDRESS. Nothing strikes it. Every lost thing in the Hollow gets a door."
     },
     {
       "id": "s5",
-      "back": "ending_received_5_back",
+      "back": "ending_received_5",
       "speaker": "Y",
       "seconds": 3.4,
       "fade": 0.7,
@@ -101,13 +104,14 @@
         0,
         1.1
       ],
-      "alt": "crest_back",
-      "front": "ending_received_5_front",
+      "cast": [
+        "yobot"
+      ],
       "line": "Delivery! ... Oh. It's for us?"
     },
     {
       "id": "s6",
-      "back": "ending_received_6_back",
+      "back": "ending_received_6",
       "speaker": "S",
       "seconds": 3.0,
       "fade": 0.7,
@@ -122,13 +126,15 @@
         0,
         1.3
       ],
-      "alt": "slice_back",
-      "front": "ending_received_6_front",
+      "cast": [
+        "wallit",
+        "slice"
+      ],
       "line": "Not this time. Received."
     },
     {
       "id": "s7",
-      "back": "ending_received_7_back",
+      "back": "ending_received_7",
       "speaker": "W",
       "seconds": 3.4,
       "fade": 0.7,
@@ -143,8 +149,9 @@
         0,
         1.1
       ],
-      "alt": "wallet_front",
-      "front": "ending_received_7_front",
+      "cast": [
+        "wallit"
+      ],
       "line": "Received. In full. Pay up."
     }
   ]

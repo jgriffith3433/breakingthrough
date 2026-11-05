@@ -4,7 +4,7 @@
   "shots": [
     {
       "id": "s1",
-      "back": "ch3_close_1_back",
+      "back": "ch3_close_1",
       "speaker": "F",
       "seconds": 3.4,
       "fade": 0.0,
@@ -19,13 +19,14 @@
         0,
         1.1
       ],
-      "alt": "crest_back",
-      "front": "ch3_close_1_front",
+      "cast": [
+        "foreman"
+      ],
       "line": "Order... unread..."
     },
     {
       "id": "s2",
-      "back": "ch3_close_2_back",
+      "back": "ch3_close_2",
       "speaker": "W",
       "seconds": 3.0,
       "fade": 0.7,
@@ -40,13 +41,14 @@
         0,
         1.2
       ],
-      "alt": "wallet_front",
-      "front": "ch3_close_2_front",
+      "cast": [
+        "wallit"
+      ],
       "line": "Paid in full."
     },
     {
       "id": "s3",
-      "back": "ch3_close_3_back",
+      "back": "ch3_close_3",
       "speaker": "S",
       "seconds": 2.8,
       "fade": 0.7,
@@ -61,13 +63,14 @@
         0,
         1.1
       ],
-      "alt": "slice_back",
-      "front": "ch3_close_3_front",
+      "cast": [
+        "slice"
+      ],
       "line": "Clean."
     },
     {
       "id": "s4",
-      "back": "ch3_close_4_back",
+      "back": "ch3_close_4",
       "speaker": "N",
       "seconds": 3.5,
       "fade": 0.7,
@@ -82,7 +85,7 @@
         0,
         1.08
       ],
-      "alt": "hollow_back"
+      "cast": []
     }
   ]
 }

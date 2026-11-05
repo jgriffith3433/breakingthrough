@@ -4,7 +4,7 @@
   "shots": [
     {
       "id": "s1",
-      "back": "boss_server_1_back",
+      "back": "boss_server_1",
       "speaker": "Y",
       "seconds": 3.2,
       "fade": 0.0,
@@ -19,13 +19,14 @@
         0,
         1.4
       ],
-      "alt": "crest_back",
-      "front": "boss_server_1_front",
+      "cast": [
+        "server"
+      ],
       "line": "Order delivery! Signature required!"
     },
     {
       "id": "s2",
-      "back": "boss_server_2_back",
+      "back": "boss_server_2",
       "speaker": "S",
       "seconds": 6.0,
       "fade": 0.7,
@@ -40,13 +41,14 @@
         0,
         1.1
       ],
-      "alt": "slice_back",
-      "front": "boss_server_2_front",
+      "cast": [
+        "slice"
+      ],
       "line": "The Server. It will not strike until it has offered the paper three times and been refused three times."
     },
     {
       "id": "s3",
-      "back": "boss_server_3_back",
+      "back": "boss_server_3",
       "speaker": "W",
       "seconds": 3.6,
       "fade": 0.7,
@@ -61,8 +63,9 @@
         0,
         1.4
       ],
-      "alt": "wallet_front",
-      "front": "boss_server_3_front",
+      "cast": [
+        "wallit"
+      ],
       "line": "Refused. I can do refused. Free of charge."
     }
   ]

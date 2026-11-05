@@ -29,6 +29,7 @@ public partial class Cutscene {
         public string speaker = "N";
         public string line;
         public string alt;     // stand-in still in Art, shown while the generated one is not in the build
+        public string[] cast;  // who is in the keyframe (sheet ids in Tools/Cinematics/keyframes.json), for the playtest
         public float seconds = 4f;
         public float fade = 0.6f;
         public float level = 1f;
@@ -62,6 +63,13 @@ public partial class Cutscene {
     public float Duck { get { return duck; } }
     public bool BedPlaying { get { return bed != null && bed.isPlaying; } }
     public bool VideoStreaming { get; private set; }
+    // What the current shot shows: the still's name and size, whether it is a stand-in (alt or nothing), who is in it,
+    // and how long Resources.Load took for it. PlaceholderShots counts every shot that showed a stand-in.
+    public string ShotArt { get; private set; } = "";
+    public bool ShotPlaceholder { get; private set; }
+    public string ShotCast { get; private set; } = "";
+    public float ShotArtLoadMs { get; private set; }
+    public static int PlaceholderShots { get; private set; }
 
     class ShotSlot {
         public GameObject go;
@@ -264,9 +272,17 @@ public partial class Cutscene {
     }
 
     void FillSlot(ShotSlot slot, Shot s) {
+        float loadStart = Time.realtimeSinceStartup;
         slot.back.texture = LoadArt(s.back);
+        ShotPlaceholder = slot.back.texture == null;
+        ShotArtLoadMs = (Time.realtimeSinceStartup - loadStart) * 1000f;
         if (slot.back.texture == null && !string.IsNullOrEmpty(s.alt)) {
             slot.back.texture = LoadArt(s.alt);
+        }
+        ShotArt = slot.back.texture != null ? slot.back.texture.name + " " + slot.back.texture.width + "x" + slot.back.texture.height : "none";
+        ShotCast = s.cast != null ? string.Join(",", s.cast) : "";
+        if (ShotPlaceholder) {
+            PlaceholderShots++;
         }
         slot.back.enabled = slot.back.texture != null;
         slot.front.texture = LoadArt(s.front);
