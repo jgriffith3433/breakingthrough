@@ -195,6 +195,28 @@ Code: `BossPhases.cs` (all but the Courier and the Server's paper), `Courier.cs`
 the notch in `RunHud`. The campaign playtests log `boss-phase`, `boss-tell`, `boss-land`, `boss-dodged`, `boss-interrupt` and fail a
 boss that never changes phase or never shows a tell.
 
+### Dialogue choices
+
+Eleven choices from the screenplay (`Docs/CampaignBible.md`, "Choice flags") are asked in the dialogue box: a page with the question
+and two buttons (keys 1 and 2, a click or a tap; Enter still skips the scene and nothing is saved for a skipped choice). The pick is
+saved in the open case file (two bits a choice, `CampaignSave.Slot.choices`, save version 7), the pick's own reply plays at once, and
+a choice is asked once per file (New Game+ asks again). Scenes are data (`Story.Chapter`): `Cutscene`/`GateScene`/stop scenes,
+`Crossroads` (played as the boss is called, before its intro reel), `After` (played when the boss falls, before the closing reel and
+the card). `Q|<id>` asks a choice; `?|<id>:<key>|<speaker>|<text>` is a line that plays only if that option was taken (Done card,
+`PhaseTwo` lines the companion says when the boss changes phase, the ending's notes after ADDRESS FILED). `Choices.cs` holds the rows.
+
+| Chapter | Asked | Read later |
+|---|---|---|
+| 1 | Keep or tear the notice; tip Slice or keep the bolts (After) | Ch1 Done card; Ch5 Reading Room opening (the notice, the page off the wall); Ch3 belt (Slice on the tip); Ch6 last stamp |
+| 2 | Knock once or hard at the gate (Gate scene); hold at the ring or go out to meet the Alpha (Crossroads) | Gate scene and Done card; Slice's phase-two line; Ch4 Done card ("Three knocks on record") |
+| 3 | The true order or the hat-tag for the Foreman to read (Crossroads); leave or unhook the Half-Built (After) | Slice's phase-two line; Done card |
+| 4 | Refuse or take the Server's paper (Crossroads); who answers for Slice (After) | **Outcome:** a taken paper means the Server strikes after two refusals, not three; phase-two line; Ch5 opening |
+| 5 | Read the first page aloud or silent (Crossroads) | Slice's phase-two line ("It knows you.") |
+| 6 | Who presses the last stamp; one door number or two (After) | The ending notes after ADDRESS FILED |
+
+Slice's replies are the companion reacting. Playtest `choices` plays Chapter 1 and its choice pages, reads the card, reloads the file,
+puts up the later pages and reads every reader under both options.
+
 ### Chapter 4: The Process Servers
 
 Where the Spider Bots come from. The opening scene at the circle: the **Long Walk** is a causeway of stone slabs over a pit of mist,

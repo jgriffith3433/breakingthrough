@@ -154,6 +154,9 @@ public static class Story {
         public string[] MiniLines;    // said as it arrives
         public string Companion;      // a Companion.Defs id that walks with Wallit this chapter (null: none)
         public string[] Cutscene;     // played by Cutscene.cs over the chapter's map when Begin is pressed (null: none)
+        public string[] Crossroads;   // played when the boss is called, before its intro: dialogue choices that shape the fight (Q| and K| lines, Choices.cs)
+        public string[] PhaseTwo;     // K| lines the companion says when the boss enters its second phase, by choice (null: none)
+        public string[] After;        // played when the boss falls, before the closing reel and the card: choices that carry to later chapters
     }
 
     public static readonly Chapter[] Chapters = {
@@ -201,9 +204,22 @@ public static class Story {
                 "C|wallit",
                 "W|Pay up, bots.",
             },
+            // The boss is down. The notice and the bolts are left on the grass; two choices (Docs/Story.md, "Dialogue choices").
+            After = new[] {
+                "B|on",
+                "C|wide",
+                "N|THE NOTICE\nThe Courier comes apart. Its notice drifts down onto the grass. Nobody has signed it.",
+                "Q|1.c1",
+                "C|wallit",
+                "N|Six deliveries' worth of bolts lie in the grass, warm as coins.",
+                "Q|1.c2",
+            },
             Done = new[] {
                 "W|Bolts. Somebody's paying me.",
                 "S|Not somebody. Something.",
+                "?|1.c1:keep|W|The notice is in my pocket. Evidence.",
+                "?|1.c1:tear|S|You tore it. It will send another.",
+                "?|1.c2:tip|S|You tipped. I noticed.",
             },
         },
         new Chapter {
@@ -268,8 +284,22 @@ public static class Story {
                 "W|Nothing. Not even a doormat. I'd say that's rude, but I'm the one with no address.",
                 "N|At the foot of the gate, a postmark is torn into the stone. Half of it is his.",
                 "W|That's my stamp. Torn.",
+                "Q|2.c1",
                 "C|slice",
                 "S|Wallit. Come back.",
+                "?|2.c1:twice|S|You knock like you're owed.",
+                "?|2.c1:twice|W|I am.",
+            },
+            // As the Plated Alpha is called: where Wallit stands decides what Slice says when it changes phase.
+            Crossroads = new[] {
+                "B|on",
+                "C|wide",
+                "N|THE RISE\nA plate catches the lantern light on the far rise. INVALID, it says, in red. It is coming down the hill.",
+                "Q|2.c2",
+            },
+            PhaseTwo = new[] {
+                "?|2.c2:wait|S|Still here. Plate's cracked.",
+                "?|2.c2:ahead|S|Noted. You went out alone.",
             },
             Done = new[] {
                 "S|You have an address. The circle.",
@@ -277,6 +307,7 @@ public static class Story {
                 "S|Free.",
                 "W|Nothing's free.",
                 "S|Then pay with swings.",
+                "?|2.c1:twice|S|Three knocks on record. They will remember.",
             },
         },
         new Chapter {
@@ -312,6 +343,7 @@ public static class Story {
                         "W|Cleared things. Somebody's hat. Somebody's clock. That could be me.",
                         "C|slice",
                         "S|It isn't.",
+                        "?|1.c2:tip|S|You tipped. Cleared things don't tip.",
                         "C|wide",
                         "N|The belt runs on into a chute lit by a single red lamp. The lamp is a lens. It turns toward the Hollow, and the circle blinks once.",
                         "C|wallit",
@@ -374,10 +406,29 @@ public static class Story {
                 "C|slice",
                 "S|I'll hold a second ring here, staked in the floor. Go out, break the belt, and come back.",
             },
+            // As the Foreman is called: Wallit has a second sheet from the belt. What it reads decides how phase two begins.
+            Crossroads = new[] {
+                "B|on",
+                "C|wide",
+                "N|THE ORDER, READ ALOUD\nThe Foreman steps off its plinth, the order held flat on its chest. It holds the sheet out to be read. In the cleared pile by Wallit's boot lies a hat-tag from the belt.",
+                "Q|3.c1",
+            },
+            PhaseTwo = new[] {
+                "?|3.c1:true|S|Overtime. March and page together. Watch the feet.",
+                "?|3.c1:wrong|S|It reads what it is handed. It has not stopped to think.",
+            },
+            // The Foreman is down. The Half-Built is still on its hook.
+            After = new[] {
+                "B|on",
+                "C|wide",
+                "N|THE HALF-BUILT\nThe belt has stopped. In the chute, the Half-Built Yo Bot still hangs by one hook, one claw out, wanting finishing.",
+                "Q|3.c2",
+            },
             Done = new[] {
                 "W|They were only ever stamped out. Nobody asked them.",
                 "S|Nobody asks. Come inside the ring.",
                 "W|Next time I'm billing the Floor.",
+                "?|3.c2:unhook|S|You cut it down. Noted.",
             },
         },
         new Chapter {
@@ -460,7 +511,26 @@ public static class Story {
                 "C|slice",
                 "S|Walk the lamps. Hold each. I'll keep the ring.",
             },
+            // As the Server is called: it holds out the paper before it holds out anything else.
+            Crossroads = new[] {
+                "B|on",
+                "C|wide",
+                "N|SERVED\nThe Server comes down the last slabs and stops a step short of the lamps. It folds one leg and offers a paper on the tip of its claw.",
+                "Q|4.c1",
+            },
+            PhaseTwo = new[] {
+                "?|4.c1:take|W|Signed by nobody. Told you.",
+                "?|4.c1:refuse|S|Three refusals on the record. It has nothing left but force.",
+            },
+            // The Server is down. It had a paper for Slice.
+            After = new[] {
+                "B|on",
+                "C|slice",
+                "N|The Server's last paper slides along the slab, addressed to the circle. Slice looks at it.",
+                "Q|4.c2",
+            },
             Done = new[] {
+                "?|2.c1:twice|V|Three knocks on record.",
                 "W|It waited for me to take it. Three times. Refused all three.",
                 "S|That is how it's done. Refuse the paper, and it has to strike.",
                 "W|And then?",
@@ -532,6 +602,21 @@ public static class Story {
                 "C|slice",
                 "S|Five pages. The room reads them all, and the Crew comes with each. Hold the circle at the desk.",
             },
+            // As the Registrar is called: the order is read aloud once more, and Wallit can read with it.
+            Crossroads = new[] {
+                "B|on",
+                "C|wide",
+                "N|THE REGISTRAR\nA gold Spider Bot with a ledger on its back takes the desk. It opens the first page and begins to read.",
+                "?|1.c1:keep|W|It's got my notice in there somewhere. I keep receipts.",
+                "?|1.c1:keep|S|You kept it.",
+                "?|1.c1:tear|S|You tore the first one. We take another.",
+                "?|4.c1:take|W|I've seen it. I don't need to be told.",
+                "Q|5.c2",
+            },
+            PhaseTwo = new[] {
+                "?|5.c2:aloud|S|It knows you. Reader recognized.",
+                "?|5.c2:silent|S|Page and stamp together. Keep moving.",
+            },
             Done = new[] {
                 "W|Every page turned over. DENIED.",
                 "S|The room is blank. Nothing left to read.",
@@ -583,12 +668,27 @@ public static class Story {
                 "B|on",
                 "C|wide",
                 "N|FILED\nThe ring around the circle becomes a line of writing, then a door number. Slice writes it with her scalpel, one stroke at a time.",
+                "?|6.c2:one|N|One number. One door, for the circle.",
+                "?|6.c2:two|N|Two numbers, side by side. Two doors, one beside the other.",
+                "?|6.c1:share|S|I pressed the stamp myself.",
+                "?|6.c1:keep|W|My stamp. My door.",
                 "C|slice",
                 "S|Numbered.",
                 "C|wallit",
                 "W|A door number. Does it come with a door?",
                 "C|wide",
                 "N|The camera pulls back. The Hollow is quiet.",
+            },
+            // The order is down. The ring needs one more stamp and a door number; both are Wallit's to ask (read by the Ending).
+            After = new[] {
+                "B|on",
+                "C|wide",
+                "N|THE LAST STAMP\nThe order drops, unsigned. The ring on the grass waits for one more stamp.",
+                "?|1.c2:tip|S|You tipped me the first bolt. I filed it.",
+                "Q|6.c1",
+                "C|slice",
+                "N|Slice takes her scalpel and begins on the door number, one stroke at a time.",
+                "Q|6.c2",
             },
             Done = new[] {
                 "N|The Spider Bot comes apart. The order drops.",

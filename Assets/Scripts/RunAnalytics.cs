@@ -106,6 +106,11 @@ public static class RunAnalytics {
         HawkesAnalytics.Screen(name);
     }
 
+    // A campaign dialogue choice taken (Choices.cs): the row id and the option's key, no text.
+    public static void Choice(string id, string key) {
+        HawkesAnalytics.Choice("dialogue_" + id.Replace('.', '_'), key);
+    }
+
     // A shop upgrade bought between runs.
     public static void ShopBuy(UpgradeInfo info, int cost) {
         HawkesAnalytics.Feature("shop_buy", new Dictionary<string, object> {

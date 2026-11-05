@@ -89,6 +89,7 @@ public class ChapterRun : MonoBehaviour {
     float spawnIn = 2.5f;
     Enemy boss;
     bool bossSpawned;
+    bool reacted;         // the boss's phase-two line for a past choice has been told
     bool bossCalled;      // HoldThenBoss: the bots are down and the boss is on its way
     float defeatIn = -1f; // HoldThenBoss: the defeat beat before the card
     readonly List<string> queue = new List<string>();
@@ -228,6 +229,7 @@ public class ChapterRun : MonoBehaviour {
             player = PlayerGrowth.Instance.transform;
         }
         Tick();
+        TickReaction();
         TickJournal();
         ObjectiveLine = Line();
         if (objective != null) {
@@ -354,6 +356,7 @@ public class ChapterRun : MonoBehaviour {
                 if (introId == null || Cutscene.LoadReel(introId) == null) {
                     Tell(data.BossLines);   // a boss with an intro reel says these lines in it instead
                 }
+                PlayScene(data.Crossroads, "crossroads");   // the choice that shapes this fight, before the boss's intro
             }
         } else if (!bossSpawned) {
             if (spawnIn <= 0f) {
@@ -682,24 +685,54 @@ public class ChapterRun : MonoBehaviour {
             beacon.SetActive(false);
         }
         if (data.Final) {
-            CompleteFinal();
+            PlayScene(data.After, "after", CompleteFinal);
             return;
         }
-        Cutscene.Reel closeReel = Cutscene.LoadReel("ch" + (Chapter + 1) + "_close");
-        if (closeReel != null) {
-            // Chapters 1-5 close with a reel before the Chapter Complete card.
-            Events.Add("cinematic|" + data.Id + "|close");
-            Cutscene.PlayShots(closeReel, () => ShowCompleteCard(extra, best));
-        } else {
-            ShowCompleteCard(extra, best);
+        // The aftermath scene (choices that carry to later chapters), then the closing reel, then the card.
+        PlayScene(data.After, "after", () => {
+            Cutscene.Reel closeReel = Cutscene.LoadReel("ch" + (Chapter + 1) + "_close");
+            if (closeReel != null) {
+                // Chapters 1-5 close with a reel before the Chapter Complete card.
+                Events.Add("cinematic|" + data.Id + "|close");
+                Cutscene.PlayShots(closeReel, () => ShowCompleteCard(extra, best));
+            } else {
+                ShowCompleteCard(extra, best);
+            }
+        });
+    }
+
+    // A chapter scene made of data that may hold dialogue choices (Q| lines) and lines that read them (?| lines). Nothing to
+    // play when it has none: next runs at once.
+    void PlayScene(string[] scene, string kind, System.Action next = null) {
+        if (scene == null || scene.Length == 0) {
+            next?.Invoke();
+            return;
         }
+        Events.Add(kind + "|" + data.Id);
+        Cutscene.Play(scene, () => {
+            Events.Add(kind + "-done|" + data.Id);
+            next?.Invoke();
+        });
+    }
+
+    // The boss's phase two: the companion answers a choice made earlier (Story.Chapter.PhaseTwo), once.
+    void TickReaction() {
+        if (reacted || boss == null || boss.Phase < 2 || data.PhaseTwo == null) {
+            return;
+        }
+        reacted = true;
+        string[] lines = Choices.Resolve(data.PhaseTwo);
+        if (lines.Length > 0) {
+            Events.Add("choice-reaction|" + data.Id + "|" + lines.Length);
+        }
+        Tell(lines);
     }
 
     void ShowCompleteCard(string extra, int best) {
         bool more = Chapter + 1 < CampaignSave.ChapterCount;
         cardTitle.text = "CHAPTER COMPLETE";
         var body = new System.Text.StringBuilder(data.Title);
-        foreach (string raw in data.Done) {
+        foreach (string raw in Choices.Resolve(data.Done)) {
             body.Append("\n").Append(Spoken(raw));
         }
         body.Append("\n\n").Append(CampaignGrade.Line(Chapter, Rank, PlaySeconds, DamageTaken, Hard));
@@ -740,7 +773,11 @@ public class ChapterRun : MonoBehaviour {
             Events.Add("cinematic|" + data.Id + "|close");
             Cutscene.PlayShots(filed, () => {
                 Events.Add("finale|reel");
-                StoryScreen.Ensure().ShowEndCard(stats, keepGoing => AfterFiled(keepGoing));
+                // The reel is fixed; the choices Wallit made are read after it, in the ending's own lines (the ? lines).
+                string[] notes = Choices.Resolve(System.Array.FindAll(data.Ending, l => l.StartsWith("?|")));
+                var scene = new List<string> { "B|on", "C|wide" };
+                scene.AddRange(notes);
+                PlayScene(notes.Length > 0 ? scene.ToArray() : null, "ending-notes", () => StoryScreen.Ensure().ShowEndCard(stats, keepGoing => AfterFiled(keepGoing)));
             });
             return;
         }
@@ -862,7 +899,7 @@ public class ChapterRun : MonoBehaviour {
         if (lines == null) {
             return;
         }
-        queue.AddRange(lines);
+        queue.AddRange(Choices.Resolve(lines));   // lines that depend on a dialogue choice (Choices.cs) are settled here
         if (queueIn <= 0f) {
             queueIn = 0.01f;
         }
