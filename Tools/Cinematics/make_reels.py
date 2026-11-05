@@ -120,7 +120,7 @@ def keyframe_prompt(k):
     scene = k["scene"][0].upper() + k["scene"][1:]
     text = scene + ". Setting: " + K["places"][k["place"]] + ". "
     if k["cast"]:
-        refs = ["image %d is %s's character sheet (%s)" % (n + 1, K["sheets"][c]["name"], K["sheets"][c]["look"]) for n, c in enumerate(k["cast"])]
+        refs = ["image %d is %s's reference picture (%s)" % (n + 1, K["sheets"][c]["name"], K["sheets"][c]["look"]) for n, c in enumerate(k["cast"])]
         text += "; ".join(refs) + ". " + K["castClause"] + " "
     return text + K["style"]
 manifest = {"sheets": {}, "keyframes": [], "clips": [], "voices": [], "beds": {}, "sfx": ["stamp_land", "lantern_gutter", "belt_stop", "red_lamp_blink", "paper_slide", "ledger_close", "seal_crack", "door_open"]}
@@ -147,6 +147,6 @@ for rid, (bed, shots) in R.items():
             manifest["clips"].append({"from": "Art/" + key["file"] + ".jpg", "seconds": 5, "file": "StreamingAssets/Cinematics/%s_%d.mp4" % (rid, i)})
     json.dump(out, open(os.path.join(root, "Assets/Resources/Cinematics", rid + ".json"), "w"), indent=2)
 for sid, sheet in K["sheets"].items():
-    manifest["sheets"][sid] = dict((f, sheet[f]) for f in ("name", "look", "job", "asset") if sheet.get(f))
+    manifest["sheets"][sid] = dict((f, sheet[f]) for f in ("name", "look", "job", "asset", "front") if sheet.get(f))
 json.dump(manifest, open(os.path.join(root, "Tools/Cinematics/gen_manifest.json"), "w"), indent=2)
 print(len(manifest["keyframes"]), "keyframes", len(manifest["sheets"]), "sheets", len(manifest["clips"]), "clips", len(manifest["voices"]), "voices")
