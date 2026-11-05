@@ -1,0 +1,14 @@
+{
+"cast": "orderbearer",
+"voice": "hv_villain",
+"ids": [
+"orderbearer_order_in_force_strike_this_address"
+],
+"lines": [
+{
+"who": "orderbearer",
+"text": "Order, in force: STRIKE. THIS. ADDRESS.",
+"direction": "low, formal, never angry, only final"
+}
+]
+}

@@ -277,6 +277,22 @@ Received." Wallit: "Received. In full. Pay up." The credits gain a RECEIVED bloc
 (`Slot.secret`, `RECEIVED` on the journal's counter). Without every find it never plays. A New Game+ loop clears the finds, so it is earned
 again each loop. `newgameplus` and `secret-ending` playtests.
 
+## Endings and New Game+
+
+**Three ADDRESS FILED endings.** When Chapter 6 is filed, the case file's choices and hub errands pick one closing reel, played after
+the `ch6_close` reel and before the ending notes and the ADDRESS FILED card (the card's line changes too). `Endings.cs` decides:
+- **Two Doors** (`ending_doors`): 3 or more company points from tipping Slice (1.c2), reading the page aloud (5.c2), handing her the
+  stamp (6.c1) and asking for two numbers (6.c2). Slice writes the number twice; the second door sits beside the first.
+- **The Open Door** (`ending_open`): otherwise, 6 or more of the hub's side slips and favours done (`HubLife.SideCount`). Every lodger is on the books.
+- **The Ledger** (`ending_ledger`): everything else. Wallit's stamp, his door, one name. Slice keeps the ring.
+Voices stay as ever: Wallit money, Slice clipped ("Clean.", "Numbered."), Yo Bots chirpy. The reels are data (`Tools/Cinematics/make_endings.py`) on stand-in stills; real keyframes named `ending_<variant>_<n>_back` replace them when they exist.
+
+**Ratings and the chapter select.** The hub's chapter board lists each filed chapter with its best rank (and Hard rank); the case files list shows all six ranks per file.
+
+**New Game+ from the case files.** A filed file has a New Game+ button on its row. Each loop sends bots with +25% health and +20% more bots (to
+four loops, `CampaignGrade.PlusCount`/`PlusHealthMult`), and every chapter opens with one line that remembers the ending of the loop before
+(`Endings.EchoFor`, saved as `Slot.ending`, save version 9; older files derive it from their choices and errands).
+
 ## New bots and mini-bosses in the chapters
 
 Each chapter brings one new bot into its crew: every few bots in, one of the Yo Bots arrives as the chapter's own variant (named on

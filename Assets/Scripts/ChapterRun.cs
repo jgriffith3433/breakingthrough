@@ -16,6 +16,7 @@ public class ChapterRun : MonoBehaviour {
 
     public static void Begin(int chapter) {
         armed = chapter;
+        LoadScreen.Show(chapter);   // the chapter's art and name until its map is up
         SceneManager.LoadScene(MetaProgress.GameScene);
     }
 
@@ -42,6 +43,9 @@ public class ChapterRun : MonoBehaviour {
     public int Power { get; private set; } = 1;
     public string ObjectiveLine { get; private set; } = "";
     public bool Completed { get; private set; }
+    public int Plus { get; private set; }            // the file's New Game+ loop (0 the first time): more bots, tougher bots (CampaignGrade.PlusCount, PlusHealthMult)
+    public int EndingVariant { get; private set; }  // Chapter 6: which ADDRESS FILED the case file got (Endings), 0 before the finale
+    public string EndingReel { get; private set; } = "";
     public bool Hard { get; private set; }          // the file is filed and set to Hard: bots carry more health, blows on Slice land harder (CampaignGrade)
     public int Rank { get; private set; }           // CampaignGrade rank of this run, set when Chapter Complete shows
     public int DamageTaken { get { return Musician.Instance != null ? Musician.Instance.DamageTaken : 0; } }
@@ -137,6 +141,12 @@ public class ChapterRun : MonoBehaviour {
         Power = data.Power;
         CampaignSave.Slot file = CampaignSave.Get(CampaignSave.Active);
         Hard = file.hard && CampaignGrade.Filed(file);
+        Plus = file.plus;
+    }
+
+    // Bots a chapter asks for, more on a New Game+ loop.
+    int Scaled(int n) {
+        return CampaignGrade.PlusCount(n, Plus);
     }
 
     void Start() {
@@ -144,6 +154,7 @@ public class ChapterRun : MonoBehaviour {
         Events.Clear();
         Events.Add("start|" + data.Id + "|" + data.Objective + "|" + data.Target + (Hard ? "|hard" : ""));
         CampaignProgress.BeginChapter();
+        MusicDirector.Play(MusicDirector.ChapterTrack(Chapter));
         gameObject.AddComponent<CampaignAbilities>();
         if (!string.IsNullOrEmpty(data.Companion)) {
             // A companion walks with Wallit in the chapters that name one (Arcade has no ChapterRun, so never there).
@@ -168,13 +179,26 @@ public class ChapterRun : MonoBehaviour {
         if (openReel != null) {
             // Every chapter opens with a shot reel (Resources/Cinematics/ch<n>_open.json, Tools/Cinematics/make_reels.py).
             Events.Add("cinematic|" + data.Id + "|open");
-            Cutscene.PlayShots(openReel, () => Events.Add("play|" + data.Id));
+            Cutscene.PlayShots(openReel, OpenDone);
         } else if (data.Cutscene != null && data.Cutscene.Length > 0) {
             // The chapter's opening scene plays over the frozen map; reading it or skipping it hands over to play.
             Events.Add("cutscene|" + data.Id);
-            Cutscene.Play(data.Cutscene, () => Events.Add("play|" + data.Id));
+            Cutscene.Play(data.Cutscene, OpenDone);
         } else {
             Say(data.Lines.Length > 0 ? data.Lines[0] : "", 3.2f);
+            OpenDone();
+        }
+    }
+
+    // The opening scene is over and play begins. On a New Game+ loop the chapter says one line about the playthrough before it.
+    void OpenDone() {
+        Events.Add("play|" + data.Id);
+        if (Plus > 0) {
+            string echo = Endings.EchoFor(Chapter, CampaignSave.Get(CampaignSave.Active).ending);
+            if (echo != null) {
+                Events.Add("ngplus-echo|" + data.Id + "|" + echo);
+                Tell(new[] { echo });
+            }
         }
     }
 
@@ -258,10 +282,10 @@ public class ChapterRun : MonoBehaviour {
         switch (data.Objective) {
             case Story.ChapterObjective.ClearCount:
                 Progress = RunLog.RunKills;
-                if (spawnIn <= 0f && alive < data.Cap && RunLog.RunKills + alive < data.Target) {
+                if (spawnIn <= 0f && alive < data.Cap && RunLog.RunKills + alive < Scaled(data.Target)) {
                     SpawnCrew(director);
                 }
-                if (RunLog.RunKills >= data.Target) {
+                if (RunLog.RunKills >= Scaled(data.Target)) {
                     Complete();
                 }
                 break;
@@ -335,7 +359,7 @@ public class ChapterRun : MonoBehaviour {
             if (data.Waves > 0 && data.Objective != Story.ChapterObjective.FloorRun) {
                 if (IsReading && waveNow == 0) {
                     StartWave(1);
-                } else if (waveNow < data.Waves && Kills() >= waveNow * data.WaveSize) {
+                } else if (waveNow < data.Waves && Kills() >= waveNow * Scaled(data.WaveSize)) {
                     if (IsReading) {
                         PageRead(waveNow);
                     }
@@ -363,6 +387,7 @@ public class ChapterRun : MonoBehaviour {
                 bossSpawned = true;
                 boss = director.SpawnForChapter(data.Boss, true, RingRadius, data.BossName, data.BossHits, data.PlainBoss);
                 Events.Add("boss|" + boss.Title + "|" + boss.HitsToDrop);
+                MusicDirector.Play(MusicDirector.BossTrack(data.BossName));
                 PlayBossIntro();
             }
         } else if (defeatIn > 0f) {
@@ -375,7 +400,9 @@ public class ChapterRun : MonoBehaviour {
             Progress = 1;
             defeatIn = (data.DefeatLines != null ? data.DefeatLines.Length : 0) * 2.8f + 1f;
             Events.Add("defeat|" + data.BossName);
+            MusicDirector.Play(MusicDirector.ChapterTrack(Chapter));
             GameAudio.Play("stamp", 0.8f, 0.8f);
+            GameAudio.Play(data.BossName == "The Registrar" ? "ledger_close" : data.BossName == "The Courier" ? "courier_clip" : "seal_crack", 0.8f);
             Tell(data.DefeatLines);
         }
     }
@@ -387,12 +414,12 @@ public class ChapterRun : MonoBehaviour {
     // Bots to bring down before the boss: Chapter 1 sets it, Chapter 2 holds Waves waves of WaveSize.
     int Target() {
         if (data.Objective == Story.ChapterObjective.FloorRun) {
-            return data.WaveSize;
+            return Scaled(data.WaveSize);
         }
         if (IsReading) {
-            return data.Waves * data.WaveSize;
+            return data.Waves * Scaled(data.WaveSize);
         }
-        return data.Objective == Story.ChapterObjective.GateAndBack ? data.Waves * data.WaveSize : data.Target;
+        return data.Objective == Story.ChapterObjective.GateAndBack ? data.Waves * Scaled(data.WaveSize) : Scaled(data.Target);
     }
 
     // Chapter 2, out and back: Wallit walks Target metres to the gate (the scene plays there), then back to the circle,
@@ -600,7 +627,7 @@ public class ChapterRun : MonoBehaviour {
     string Line() {
         switch (data.Objective) {
             case Story.ChapterObjective.ClearCount:
-                return "Down " + data.Target + " " + data.Goal + ":  " + Mathf.Min(Progress, data.Target) + " / " + data.Target;
+                return "Down " + Scaled(data.Target) + " " + data.Goal + ":  " + Mathf.Min(Progress, Scaled(data.Target)) + " / " + Scaled(data.Target);
             case Story.ChapterObjective.SurviveTime:
                 return "Hold the circle against " + data.Goal + ":  " + (Progress / 60) + ":" + (Progress % 60).ToString("00");
             case Story.ChapterObjective.ReachPlace:
@@ -648,7 +675,7 @@ public class ChapterRun : MonoBehaviour {
                     return "Bring down " + data.BossName + (bossSpawned ? "" : "  (it's coming)");
                 }
                 if (!bossCalled) {
-                    return "Hold the circle:  " + Mathf.Min(Progress, data.Target) + " / " + data.Target + " " + data.Goal + " down";
+                    return "Hold the circle:  " + Mathf.Min(Progress, Target()) + " / " + Target() + " " + data.Goal + " down";
                 }
                 if (defeatIn > 0f) {
                     return data.BossName + " is down";
@@ -729,6 +756,8 @@ public class ChapterRun : MonoBehaviour {
     }
 
     void ShowCompleteCard(string extra, int best) {
+        MusicDirector.Play("theme_slice");
+        GameAudio.Play("stamp_heavy", 0.9f);   // the case is stamped
         bool more = Chapter + 1 < CampaignSave.ChapterCount;
         cardTitle.text = "CHAPTER COMPLETE";
         var body = new System.Text.StringBuilder(data.Title);
@@ -764,6 +793,8 @@ public class ChapterRun : MonoBehaviour {
         if (extraText != null) {
             extraText.text = "";
         }
+        MusicDirector.Play("ending");
+        GameAudio.Play("received", 0.9f);   // RECEIVED
         Events.Add("finale|start");
         RunAnalytics.Screen("chapter_complete_" + (Chapter + 1));
         string stats = "Case file " + (CampaignSave.Active + 1) + ": filed\n" + CampaignSave.Played(CampaignSave.Get(CampaignSave.Active)) + "\n" + CampaignGrade.Line(Chapter, Rank, PlaySeconds, DamageTaken, Hard);
@@ -773,11 +804,24 @@ public class ChapterRun : MonoBehaviour {
             Events.Add("cinematic|" + data.Id + "|close");
             Cutscene.PlayShots(filed, () => {
                 Events.Add("finale|reel");
-                // The reel is fixed; the choices Wallit made are read after it, in the ending's own lines (the ? lines).
-                string[] notes = Choices.Resolve(System.Array.FindAll(data.Ending, l => l.StartsWith("?|")));
-                var scene = new List<string> { "B|on", "C|wide" };
-                scene.AddRange(notes);
-                PlayScene(notes.Length > 0 ? scene.ToArray() : null, "ending-notes", () => StoryScreen.Ensure().ShowEndCard(stats, keepGoing => AfterFiled(keepGoing)));
+                // The choices and errands settle which ADDRESS FILED this is (Endings): its own closing reel, then the notes.
+                EndingVariant = Endings.Current;
+                CampaignSave.MarkEnding(EndingVariant);
+                Events.Add("ending|" + EndingVariant + "|" + Endings.Name(EndingVariant) + "|company " + Endings.Company(CampaignSave.Get(CampaignSave.Active)) + "|sides " + HubLife.SideCount(CampaignSave.Get(CampaignSave.Active)));
+                Cutscene.Reel variant = EndingVariant > 0 ? Cutscene.LoadReel(Endings.Reels[EndingVariant]) : null;
+                System.Action notesThenCard = () => {
+                    string[] notes = Choices.Resolve(System.Array.FindAll(data.Ending, l => l.StartsWith("?|")));
+                    var scene = new List<string> { "B|on", "C|wide" };
+                    scene.AddRange(notes);
+                    PlayScene(notes.Length > 0 ? scene.ToArray() : null, "ending-notes", () => StoryScreen.Ensure().ShowEndCard(stats, keepGoing => AfterFiled(keepGoing), Endings.CardLine(EndingVariant)));
+                };
+                if (variant != null) {
+                    EndingReel = variant.id;
+                    Events.Add("cinematic|" + data.Id + "|" + variant.id);
+                    Cutscene.PlayShots(variant, notesThenCard);
+                } else {
+                    notesThenCard();
+                }
             });
             return;
         }
@@ -816,6 +860,7 @@ public class ChapterRun : MonoBehaviour {
     }
 
     void PlayCreditsReel() {
+        MusicDirector.Play("credits");
         Cutscene.Reel credits = Cutscene.LoadReel("credits");
         if (credits == null) {
             ShowCredits();
@@ -847,6 +892,7 @@ public class ChapterRun : MonoBehaviour {
     }
 
     void ShowCredits() {
+        MusicDirector.Play("credits");
         CreditsUp = true;
         creditsAt = Time.unscaledTime + 0.7f;
         cardTitle.text = Story.CreditsTitle;
@@ -880,6 +926,15 @@ public class ChapterRun : MonoBehaviour {
         ChapterScene.HubNext = true;
         RunAnalytics.Screen("hub");
         SceneManager.LoadScene(CampaignSave.Scene);
+    }
+
+    // The pause menu's Restart chapter: the same chapter from its opening. The file stays open (toNext) for the new run.
+    public void Restart() {
+        int again = Chapter;
+        ChapterMap.Unload();
+        Time.timeScale = 1f;
+        toNext = true;
+        Begin(again);
     }
 
     // Playtest setup shortcut: leave the chapter for the menu without finishing it.
@@ -929,6 +984,9 @@ public class ChapterRun : MonoBehaviour {
     public static void Say(string raw, float seconds) {
         if (!string.IsNullOrEmpty(raw)) {
             UpgradeLook.Say(Spoken(raw), seconds, 230f);
+            if (raw.Length > 2 && raw[1] == '|') {
+                CastVoice.SayLater(raw.Substring(0, 1), raw.Substring(2), "beat");   // in its speaker's voice, when the floor is free
+            }
         }
     }
 

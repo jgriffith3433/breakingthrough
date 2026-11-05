@@ -1,0 +1,356 @@
+{
+"cast": "slice",
+"voice": "hv_heroine",
+"ids": [
+"slice_a_form_can_be_answered",
+"slice_a_scratch",
+"slice_again_behind_me_wallit",
+"slice_and_then_you_are_standing_in_front_of_it",
+"slice_before_you",
+"slice_big_one_next_be_ready",
+"slice_board_next_case",
+"slice_clean",
+"slice_clean_good_swing_wallit",
+"slice_clean_replays_are_on_the_board",
+"slice_crew_they_chirp_because_every_job_closes_with_a_report_uploading_victory_means_filed_as_cleared",
+"slice_denied_by_whom",
+"slice_don_t",
+"slice_don_t_look_at_the_order_look_at_them",
+"slice_doors_have_locks_come_back",
+"slice_every_find_kept_every_extra_filed_paid_in_full",
+"slice_every_spider_bot_walks_out_of_this_room_with_one",
+"slice_filed_properly_this_time",
+"slice_five_pages_the_room_reads_them_all_and_the_crew_comes_with_each_hold_the_circle_at_the_desk",
+"slice_free",
+"slice_good",
+"slice_good_swing",
+"slice_hold_the_circle_nobody_signs_it",
+"slice_holding",
+"slice_i_am",
+"slice_i_ll_hold_a_second_ring_here_staked_in_the_floor_go_out_break_the_belt_and_come_back",
+"slice_i_pressed_the_stamp_myself",
+"slice_it_files_what_it_cannot_read",
+"slice_it_isn_t",
+"slice_it_knows_you_reader_recognized",
+"slice_it_prints_true_backwards_filed",
+"slice_it_reads_what_it_is_handed_it_has_not_stopped_to_think",
+"slice_it_repeats_it_does_not_give_up",
+"slice_it_s_reading_it_out",
+"slice_it_s_reading_it_out_each_reading_calls_the_crew",
+"slice_it_stands_and_waits_it_will_keep_waiting_back_to_the_circle_wallit",
+"slice_last_wave_something_heavier_follows",
+"slice_louder_now",
+"slice_mind_the_legs",
+"slice_my_address_struck",
+"slice_no",
+"slice_no_address",
+"slice_no_new_units_back_to_the_circle_the_ring_won_t_hold_itself",
+"slice_no_sender_no_refund_stay_in_the_circle",
+"slice_nobody_asks_come_inside_the_ring",
+"slice_nobody_signs_it_that_s_how_it_works",
+"slice_not_mine",
+"slice_not_somebody_something",
+"slice_not_this_time_received",
+"slice_noted",
+"slice_noted_board",
+"slice_noted_you_went_out_alone",
+"slice_numbered",
+"slice_one",
+"slice_one_more_then_the_big_one",
+"slice_outside_they_re_cleared_if_i_fall_the_circle_goes_and_everything_in_it_don_t_let_me_fall",
+"slice_overtime",
+"slice_overtime_march_and_page_together_watch_the_feet"
+],
+"lines": [
+{
+"who": "slice",
+"text": "A form can be answered.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "A scratch.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Again. Behind me, Wallit.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "And then you are standing in front of it.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Before you.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Big one next. Be ready.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Board. Next case.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Clean.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Clean. Good swing, Wallit.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Clean. Replays are on the board.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Crew. They chirp because every job closes with a report. \"Uploading victory\" means \"filed as cleared.\"",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Denied by whom?",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Don't.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Don't look at the order. Look at them.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Doors have locks. Come back.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Every find kept. Every extra filed. Paid in full.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Every Spider Bot walks out of this room with one.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Filed. Properly, this time.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Five pages. The room reads them all, and the Crew comes with each. Hold the circle at the desk.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Free.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Good.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Good swing.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Hold the circle. Nobody signs it.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Holding.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "I am.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "I'll hold a second ring here, staked in the floor. Go out, break the belt, and come back.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "I pressed the stamp myself.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "It files what it cannot read.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "It isn't.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "It knows you. Reader recognized.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "It prints true. Backwards, filed.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "It reads what it is handed. It has not stopped to think.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "It repeats. It does not give up.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "It's reading it out.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "It's reading it out. Each reading calls the Crew.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "It stands and waits. It will keep waiting. Back to the circle, Wallit.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Last wave. Something heavier follows.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Louder now.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Mind the legs.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "My address. Struck.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "No.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "No address.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "No new units. Back to the circle. The ring won't hold itself.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "No sender. No refund. Stay in the circle.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Nobody asks. Come inside the ring.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Nobody signs it. That's how it works.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Not mine.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Not somebody. Something.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Not this time. Received.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Noted.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Noted. Board.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Noted. You went out alone.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Numbered.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "One.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "One more. Then the big one.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Outside, they're cleared. If I fall, the circle goes, and everything in it. Don't let me fall.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Overtime.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+},
+{
+"who": "slice",
+"text": "Overtime. March and page together. Watch the feet.",
+"direction": "cool, flat and clipped, almost no emotion; short words"
+}
+]
+}

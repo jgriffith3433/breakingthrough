@@ -1,6 +1,6 @@
 {
   "id": "boss_foreman",
-  "bed": "ch3_score",
+  "bed": "boss_foreman",
   "shots": [
     {
       "id": "s1",

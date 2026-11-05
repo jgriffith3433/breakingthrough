@@ -1,0 +1,20 @@
+{
+"cast": "narrator",
+"voice": "hv_narrator_warm",
+"ids": [
+"narrator_wallit_sets_six_things_down_in_the_ring_a_postcard_a_key_a_hat_a_paper_a_leaf_a_stamp",
+"narrator_yo_bots_uploading_victory_spider_bots_by_order_of_nobody"
+],
+"lines": [
+{
+"who": "narrator",
+"text": "Wallit sets six things down in the ring: a postcard, a key, a hat, a paper, a leaf, a stamp.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "YO BOTS: uploading victory. SPIDER BOTS: by order of nobody.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+}
+]
+}

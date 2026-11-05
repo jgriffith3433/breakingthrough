@@ -39,10 +39,12 @@ public static class Playtest {
         new PlaytestScenario("cast", "The new cast, in 90 s: the main menu with the key art up (MenuArt, its size and that the menu shows it), What's new opened from the site over the game with the release note naming Wallit, Slice and the bots (read from releases.json), then a run where the player is Wallit with his bat, the bar says Slice, and wave 1's Yo Bots close in and are batted. The AGENTS.md and README cast text lives in the repo, not the build: the review reads it from the diff", 120, "content"),
         new PlaytestScenario("modes", "The mode select: the main menu shows Campaign and Arcade; Campaign opens the three case files (save slots, setup: the sandbox keeps them off the real save), opening an empty file loads the placeholder Chapter 1 scene with Wallit and Slice's lines, Menu returns and the file now reads Chapter 1 with its time on the books, Erase (asked twice) empties it; then Arcade starts today's wave defense and the bot plays 40 s of it with the bat. Events mode-select, campaign-files, chapter-open, chapter-lines, campaign-saved, campaign-erased, arcade-start", 200, "content"),
         new PlaytestScenario("pause-nav", "Pause and menus by keyboard and gamepad, in every chapter (setup: the sandbox case file stands on each chapter in turn). From the main menu with keys only: C opens the case files, Enter opens file 1, Enter begins the chapter, Enter skips the opening scene. Then P pauses (time stops) and P resumes, the pad's Start pauses, Down and Enter open Settings (first chapter): Left turns the music and effects sliders (the gold ring follows), Enter on Voices cycles how often the voices speak, the pad's B closes Settings and the pause stays, the settings are read back from their saved JSON; Resume with Enter; pause again, and Down, Down, Enter, Enter on Quit to menu returns to the main menu. Events nav-menu, nav-case-files, nav-chapter-card, chapter-paused, chapter-resumed, pad-paused, nav-settings, volume-changed, voices-changed, settings-persisted, nav-quit; metrics chaptersPaused, menuMoves, menuSubmits, sliderTurns", 900, "content"),
+        new PlaytestScenario("score", "The score and the cast voices. Setup shortcuts: the music director is asked for every track by name (theme_wallit, theme_slice, theme_department, ch1_score..ch6_score, the six boss themes, hub, ending, credits) and each is heard for 2 s (events music-track: track, loaded or missing, volume); then nine shot reels (ch1_open, boss_courier, ch2_close, boss_foreman, boss_server, ch5_open, ch6_close, ending_received, credits) play to the end by name. Per reel: its bed (event reel-bed), every spoken shot's voice file found or missing (voice-file, with the cast voice), the set-piece sounds fired (sfx), and the voice events. Checked: no two voice lines overlap (Wallit's floor, the scene and the cast voice all count), the music ducks under speech (lowest duck below 0.9), every line of every reel has a voice file, every track exists. Metrics scoreTracks, scoreTracksLoaded, scoreVoiceLines, scoreVoiceMissing, scoreOverlaps, scoreLowestDuck, scoreSfx", 900, "content"),
         new PlaytestScenario("cinematic", "The shot-based cinematic player (Cutscene.PlayShots, data in Resources/Cinematics/sample.json): a seven-shot sample plays over the game with placeholder stills, Ken Burns moves, parallax, crossfades, letterbox bars, voice lines through the voice director, a music bed that ducks under them, and typed subtitles. Pass 1 presses Space for the next shot and then Enter to skip mid-scene: play resumes (time scale 1, the director free, the bed fades out). Pass 2 runs to the end untouched. Setup: the scene is started by name (the shot list is the data). Events cinematic-open, cinematic-shot (id, zoom, pan, subtitle, bed volume, duck), cinematic-next, cinematic-skip, cinematic-resume, cinematic-done, cinematic-memory; metrics cinematicShots, cinematicSkipped, cinematicOverlaps, cinematicVoiceLines, cinematicSubtitles, cinematicDuckLow, cinematicMemoryMB", 200, "content"),
         new PlaytestScenario("chapter-cinematics", "Every campaign cinematic: the openings and closings of Chapters 1-6, the four boss intros (Courier, Foreman, Server, Order), ADDRESS FILED (ch6_close, played before the ending card), the RECEIVED ending and the credits reel (Resources/Cinematics, wired in ChapterRun.Start, Complete, PlayBossIntro, CompleteFinal). Each reel is played by name over the game, the way the chapters play them. The bot lets all but two run to their end (Space on shot 2 of the first) and presses Enter to skip the Server intro and the credits mid-scene. Per reel it logs the shots, the voice lines (Wallit and Slice through the director, the Courier, Foreman, Plated Alpha, Half-Built, Server, Registrar, Order-Bearer, Mega Yo Bot and Yo Bots from Resources/Voice/cinema), the subtitles, the music bed ducking, and per shot the still on screen (cinematics-art: the generated keyframe from Resources/Cinematics/Art, its size, load time and cast, one Hawkes Gen character sheet per character so Wallit, Slice, the Courier, the Foreman, the Server and the Order-Bearer stay on-model; a placeholder or missing still is a bug). Checked: play resumes (time scale 1, director free, bed fades), no overlapping voices. Events cinematics-reel (id, shots, voice, subtitles, missing art, placeholder shots), cinematics-art, cinematics-cast, cinematics-skip, cinematics-resume, cinematics-done; metrics cinematicsReels, cinematicsShots, cinematicsVoiceLines, cinematicsMissingArt, cinematicsPlaceholderShots, cinematicsKeyframeShots, cinematicsArtLoadMsMax, cinematicsSkipped", 900, "content"),
         new PlaytestScenario("cutscene", "The chapter cutscene: Campaign, case file 1, Begin on the Chapter 1 card, and the opening scene (The Stamp) plays over the map with letterbox bars, a speaker name and portrait slot, typed lines and the camera on whoever talks. The bot reads the first pages with real key presses (a first press finishes the typing, the next turns the page), skipping a page's voice by pressing on, then presses Enter to skip the rest: play starts with the objective line up and Wallit moving on the stick, and the chapter is cleared. Checked: every Wallit, Slice and Yo Bot page has a name, two voice lines never overlap (Wallit's floor and the scene both count them), the director allows no other line during the scene. Events cutscene-open, cutscene-page (speaker, text, camera focus, letterbox, voice), cutscene-skip, cutscene-play, cutscene-voice; metrics cutscenePages, cutsceneVoiceLines, cutsceneOverlaps, cutsceneSkipped", 420, "content"),
         new PlaytestScenario("choices", "Dialogue choices that change later lines and outcomes, saved per case file, with real input. Campaign, case file 1 (the sandbox), Begin: chapter 1 is played to the Courier's fall. The Courier's aftermath scene (events after, choice-open, choice-made) stops on two choice pages with two buttons; the bot presses 1 (keep the notice) and 1 (tip Slice), the reply plays at once and the Chapter Complete card carries the lines that read them (event choice-card: 'notice is in my pocket', 'You tipped. I noticed.'). The files are written out and read back as after a quit (choice-saved, metric choiceSaved). Setup shortcut: each later chapter's choice pages (Choices.All, chapters 2 to 6) are put up over the game, one at a time, and the bot answers them with the key presses 1 or 2 (choice-made); then for every chapter that reads a choice in its boss fight, the card or the ending, the lines are read under option 1 and under option 2 (choice-lines, and a problem if they do not differ; choice-outcome gives the Server's refusals needed, 3 or 2 if the paper was taken, and the Foreman's phase-two line). Metrics choicesMade, choicesSaved, choiceLinesDiffer, choiceOutcomes", 900, "content"),
+        new PlaytestScenario("comfort", "Campaign comfort with real input: Chapter 1's opening scene plays; P opens the pause menu over it (Skip scene and Restart chapter, the scene does not turn); Settings is pressed like a mouse to set subtitles to Largest, high contrast on and the camera to Calm; the pad's Start resumes and the text is larger, the reel subtitle has a solid plate and the camera/zoom no longer moves; the pad's A turns the page, Y skips; a dialogue choice is made with the stick and A (setup: the choice page is put up); the Skip button is tapped; Skip scene from the pause menu; Restart chapter (asked twice) shows the load screen with the chapter name and the chapter comes up again with scenes and memory in budget. Events comfort-baseline, comfort-pause, comfort-settings, comfort-options, comfort-pad-advance, comfort-pad-skip, comfort-pad-choice, comfort-touch-skip, comfort-pause-skip, comfort-restart-ask, comfort-load-screen, comfort-restart; metrics comfortTextBase, comfortTextLarge, comfortPadChoice, comfortTouchSkip, comfortPauseSkip, comfortRestartSeconds, comfortRestartMemoryGrowthMB", 400, "content"),
         new PlaytestScenario("campaign", "Campaign loads and plays a chapter: from the main menu press Campaign, open case file 1 (setup: the sandbox keeps the files off the real save) and wait for the Campaign scene to load. Reports run_start with mode=campaign and the loaded scene name (event run_start, metrics campaignLoaded, campaignLoadSeconds); if the scene fails to load (not in the build's scene list, or the chapter never builds) the run stops stuck with a bug saying so. Then Begin on the chapter card: Wallit and Slice in the chapter map, Wallit walks on the stick, the objective line shows, the bot fights with real input until it is met, Chapter 1 holds the circle against Yo Bots, then the Courier arrives (health bar on screen), winds up telegraphed notices on the circle and the bot breaks them or stands in them until it falls and the defeat beat plays; the Chapter Complete card shows, the case file advances to chapter 2, Menu, and reopening the file resumes at chapter 2 (events chapter-card, chapter-start, chapter-move, objective, boss-arrives, boss-bar, boss-attack, boss-defeated, defeat-beat, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics chapterAdvanced, chapterResumed, bossBar, courierWinds, courierInterrupted). Smoke is unchanged: it still presses Arcade", 750, "content"),
         new PlaytestScenario("hub", "The hub and Campaign progression, played with real input (setup: the sandbox case file 1 starts on chapter 1 with 85 XP, 5 short of level 3; the real save and Arcade are never touched): Campaign, case file 1, Begin on Chapter 1; the first kills give XP (HUD line LV/XP) and level 3 unlocks Refund (events xp-gain, level-up); the bot presses C near the bots and the ring shoves and stings them (event refund-used); the Courier falls, the Chapter Complete card offers To the hub; the bot presses it and lands in the hub (Wallit, Slice in the ring, the chapter board; events hub-open, hub-arrival), walks to the board on the stick and presses E (hub-walk, board-open: Chapter 1 filed and replayable, Chapter 2 next, Chapter 3 locked); picking Chapter 1 shows its card and Begin replays it (hub-replay-card, replay-started) without taking the file back a chapter. Checks per case file and Arcade: the XP stays on case file 1 (case file 2 has none) and Arcade's numbers read as no effect outside a chapter (events progress-saved, arcade-clean; metrics hubXp, hubLevel, refundHits, hubWalked)", 900, "content"),
         new PlaytestScenario("moves", "Campaign's combat moves, played with real input in Chapter 1 (the sandbox case file; the real save and Arcade are never touched): the bot swings the bat three times in a row and each hit of the combo is its own (Deposit, Withdrawal, Overdraft: damage, knockback and crack differ; events combo-hit, combo-distinct); it then fights on pressing X (the dodge) whenever a bot is close, and a blow that lands inside the dodge's 0.4 s window is avoided (events dodge, dodge-avoided, ability-slots with X Dodge, C Refund and the empty V slot). The Courier fight then runs as in the campaign scenario. Arcade is checked unchanged: outside a chapter the dodge, the per-hit combo and the slots read as no effect (event arcade-moves-clean; metrics comboHits, dodges, dodgesAvoided)", 600, "content"),
@@ -63,6 +65,7 @@ public static class Playtest {
         new PlaytestScenario("chapter4", "Chapter 4, The Process Servers, played start to finish with real input (setup: the sandbox case file starts on chapter 4): Campaign, case file 1, Begin on the Chapter 4 card; the opening dialogue says where Spider Bots come from (process servers, deliveries from the Department with one paper to hand over; the bot reads pages then skips with Enter); the objective reads Reach the first lamp (1 of 3) with metres counting down; Wallit walks the three lamps along the causeway under fire, batting what is in reach; at the last lamp the way turns round to the circle; Wallit walks home and holds off the servers; then The Server (a Spider Bot with a paper, boss bar up) arrives and offers the paper, and does NOT strike: Wallit refuses it by hitting it (objective reads Refuse the paper n / 3, events server-offer and server-refused 1, 2, 3); only after the third refusal it winds up and strikes Slice (server-strike), then falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 5, Menu, and reopening the file shows Chapter 5's card (events chapter4-setup, cutscene-open, cutscene-page, origin-dialogue, objective, floor-stop, last-lamp, home-leg, boss-arrives, boss-bar, server-offer, server-refused, server-strike, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics floorStops, serverOffers, serverRefusals, serverStruckEarly, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("chapter3", "Chapter 3, The Clearing Floor, played start to finish with real input (setup: the sandbox case file starts on chapter 3): Campaign, case file 1, Begin on the Chapter 3 card; the opening dialogue plays over the map and says where Yo Bots come from (the Clearing Crew, stamped out on the Floor; the bot reads pages then skips with Enter); the objective line reads Reach the broken gate (1 of 3) with metres counting down; Wallit walks the three stops (the broken gate, the belt with The Belt scene read and skipped, the lever) under fire from Yo Bots, batting those in reach; at the lever the belt feed breaks and the objective turns to Back to the circle; Wallit walks home, holds off the last batch, then The Foreman (order sheet on its chest, with a boss bar) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 4, Menu, and reopening the file shows Chapter 4's card (events chapter3-setup, cutscene-open, cutscene-page, origin-dialogue, objective, floor-stop, floor-scene-skip, feed-broken, home-leg, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics floorStops, feedBroken, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("companion", "The AI companion (Slice), played in Chapter 2 with real input (setup: the sandbox case file starts on chapter 2; the real save and Arcade are never touched): Slice walks with Wallit as he walks out (event companion-follows: her distance stays within a few metres over 25 m of walking), stabs the Yo Bots that come near (event companion-fights: stabs and kills while Wallit only walks), is knocked down (named setup shortcut, event companion-down: she lies down, the label reads hold E to revive), Wallit walks to her and holds E (real input) and she is back on her feet with half her health (event companion-revived; metrics companionStabs, companionDowns, companionRevives). The chapter then plays on as in chapter2. Arcade has no companion (event companion-off in the modes scenario)", 900, "content"),
+        new PlaytestScenario("endings", "The campaign's three endings, chapter select ratings and New Game+ (setup shortcuts: the sandbox case files only, the real save is never touched). Part 1: case file 1 is marked filed with a rank on every chapter; the case files list shows the ranks and a New Game+ button (events rating-list, ngplus-menu); the hub's chapter board lists each cleared chapter with its rank (event rating-board); New Game+ is pressed on the case files list, Chapter 1 begins on the loop and shows tougher, more numerous bots and an echo line about the earlier playthrough (events ngplus-run, ngplus-echo; metrics ngPlusHarder, ngPlusEcho). Part 2: Chapter 6 is played with the bat three times from a sandbox file set for each ending (setup: earlier choices and hub errands; the Chapter 6 choices answered with keys): The Ledger (Wallit's stamp, one door), Two Doors (stamp shared, two numbers) and The Open Door (six errands done). Each plays its own closing reel, watched shot by shot, and its own ADDRESS FILED line (events ending-setup, ending-reel, ending-shot, ending-variant; metrics endingVariant1, endingVariant2, endingVariant3 each 1).", 2700, "content"),
         new PlaytestScenario("newgameplus", "New Game+ and the secret ending, with real input (setup shortcuts: the sandbox case file 1 is marked filed with Wallit at level 4 and his unlocks and Refund in Full earned; the real save is never touched). Campaign, case file 1: the filed file's chapter card shows a New Game+ button (event ngplus-button); the bot presses it and the card turns to Chapter 1 with the file reset to chapter 1, 0 cleared, xp, unlocks and Refund in Full kept (ngplus-started, metrics ngPlusChapter1, ngPlusXpKept, ngPlusAbilitiesKept), Begin plays Chapter 1 with Wallit's level and abilities (ngplus-run, ngplus-abilities). Then a setup shortcut stands the file on Chapter 6 with every lost thing in the journal, and Chapter 6 is played with the bat to the ADDRESS FILED card; Keep going plays the secret ending (secret-scene, secret-page lines, credits-card with RECEIVED; metrics secretEnding 1). The secret-ending scenario plays only that second part.", 1300, "content"),
         new PlaytestScenario("secret-ending", "The secret ending's condition (setup shortcut: the sandbox case file stands on Chapter 6 with all six lost things in the journal). Chapter 6 is played with the bat to ADDRESS FILED; Keep going plays the secret ending before the credits (events secret-scene, secret-page, credits-card; metric secretEnding 1). Chapter 6 with the finds missing (chapter6) must show no secret ending (event secret-absent, metric secretEnding 0)", 1000, "content"),
         new PlaytestScenario("grade", "Chapter grades and Hard, with real input (setup: the sandbox case file starts on chapter 1, and later is marked filed; the real save is never touched). Campaign, case file 1, Begin; chapter 1 is played to the Courier's fall. The Chapter Complete card shows a RANK (S, A, B or C from time against par and the damage Slice took) and the best (event rank-shown, metric rankShown). The files are written out and read back as after a quit and the best rank is still there (rank-saved, metric rankSaved). Setup: the file is marked filed. Its chapter card shows the best rank and a Difficulty button; the bot presses it to Hard (hard-on, metric hardOn, saved with the file). Begin; a plain Yo Bot's health is read against Standard (hard-health, metric hardHealthRatio about 1.75) and the bot holds still until a bot lands a blow on Slice, read as meant against as landed (hard-damage, metric hardDamageRatio 2)", 900, "content"),
@@ -256,6 +259,13 @@ public static class Playtest {
                 }
                 yield break;
             }
+            if (id == "endings") {
+                yield return EndingsRun();
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
             if (id == "newgameplus") {
                 yield return NewGamePlusRun();
                 if (!run.Done) {
@@ -263,8 +273,9 @@ public static class Playtest {
                 }
                 yield break;
             }
-            if (id == "campaign" || id == "lore" || id == "secret-ending" || id == "journal" || id == "grade" || id == "campaign-full" || id == "hub" || id == "moves" || id == "abilities" || id == "hub-doors" || id == "hub-npcs" || id == "hub-life" || id == "cutscene" || id == "chapter2" || id == "companion" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6" || id == "choices") {
+            if (id == "campaign" || id == "comfort" || id == "lore" || id == "secret-ending" || id == "journal" || id == "grade" || id == "campaign-full" || id == "hub" || id == "moves" || id == "abilities" || id == "hub-doors" || id == "hub-npcs" || id == "hub-life" || id == "cutscene" || id == "chapter2" || id == "companion" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6" || id == "choices") {
                 choicesTest = id == "choices";
+                comfortTest = id == "comfort";
                 secretTest = id == "secret-ending";
                 companionTest = id == "companion";
                 watchCutscene = id == "cutscene" || id == "chapter2" || id == "chapter3" || id == "chapter4" || id == "chapter5";
@@ -364,6 +375,8 @@ public static class Playtest {
                 yield return BibleRun(options);
             } else if (id == "cinematic") {
                 yield return CinematicRun(options);
+            } else if (id == "score") {
+                yield return ScoreRun(options);
             } else if (id == "chapter-cinematics") {
                 yield return ChapterCinematicsRun(options);
             } else if (id == "wallit") {
@@ -611,6 +624,7 @@ public static class Playtest {
     static bool journalTest;
     static bool gradeTest;
     static bool choicesTest;
+    static bool comfortTest;   // PlaytestComfort.cs
     static int choicePick;   // which option the bot presses on a dialogue choice page: 0 is key 1, 1 is key 2
     static bool movesTest;
     static bool abilitiesTest;
@@ -620,6 +634,7 @@ public static class Playtest {
     static bool fullRun;
     static bool quitDone;
     static bool secretTest;
+    static int endingTest;   // endings scenario: the variant (Endings.Ledger/Doors/Open) this pass sets up and expects
 
     static IEnumerator CampaignRun() {
         CampaignSave.EnterSandbox();
@@ -631,6 +646,17 @@ public static class Playtest {
             setup.reached = startChapter;
             setup.cleared = startChapter;
             run.Event("chapter2-setup", "sandbox case file 1 starts on chapter " + (startChapter + 1));
+            if (endingTest > 0) {
+                // Setup shortcut: the sandbox file's earlier choices and hub errands, as the variant needs them (the Chapter 6 choices are made with keys below).
+                choicePick = endingTest == Endings.Doors ? 1 : 0;
+                if (endingTest == Endings.Doors) {
+                    setup.choices = Choices.With(Choices.With(0, Choices.Index("1.c2"), 1), Choices.Index("5.c2"), 1);   // tipped Slice, read the page aloud
+                }
+                if (endingTest == Endings.Open) {
+                    setup.side = (1 << Endings.OpenSides) - 1;   // six favours and notices done
+                }
+                run.Event("ending-setup", "sandbox case file 1 on Chapter 6 for " + Endings.Name(endingTest) + ": earlier choices " + setup.choices + ", errands done " + HubLife.SideCount(setup) + ", Chapter 6 answered with key " + (choicePick + 1));
+            }
             if (secretTest) {
                 setup.finds = (1 << Journal.Count) - 1;
                 run.Event("secret-setup", "sandbox case file 1 holds all " + Journal.Count + " lost things");
@@ -2962,33 +2988,40 @@ run.Event("boss-defeated", "The Registrar fell after " + Mathf.RoundToInt(chapte
         }
         BossPhaseCheck("The Order");
 run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s");
-        // The Filed scene.
-        yield return run.Until(() => Cutscene.IsOpen, 10f, "the Filed scene");
-        if (run.Done) {
-            yield break;
+        if (endingTest > 0) {
+            yield return EndingWatch(chapter);
+        } else {
+            // The Filed scene.
+            yield return run.Until(() => Cutscene.IsOpen, 10f, "the Filed scene");
+            if (run.Done) {
+                yield break;
+            }
+            run.Scene("Filed");
+            run.Event("filed-scene", Cutscene.Instance.PageCount + " pages; the ring becomes writing, then a door number");
+            float limit = Time.realtimeSinceStartup + 40f;
+            while (Cutscene.IsOpen && Time.realtimeSinceStartup < limit) {
+                yield return new WaitForSecondsRealtime(0.8f);
+                PlayInput.Tap(KeyCode.Space);
+                yield return new WaitForSecondsRealtime(0.3f);
+            }
+            // The finale pages, then ADDRESS FILED.
+            yield return run.Until(() => StoryScreen.IsOpen, 10f, "the finale pages");
+            if (run.Done) {
+                yield break;
+            }
+            StoryScreen screen = StoryScreen.Instance;
+            for (int i = 0; i < Story.Finale.Length && !StoryScreen.EndingOpen && !run.Done; i++) {
+                yield return new WaitForSecondsRealtime(1.2f);
+                run.Event("finale-page", (i + 1) + " of " + Story.Finale.Length + ": " + screen.PageText.Replace('\n', ' '));
+                PlayInput.Tap(KeyCode.Space);
+                yield return null;
+                yield return null;
+            }
+            yield return run.Until(() => StoryScreen.EndingOpen, 8f, "the ADDRESS FILED ending card");
+            if (run.Done) {
+                yield break;
+            }
         }
-        run.Scene("Filed");
-        run.Event("filed-scene", Cutscene.Instance.PageCount + " pages; the ring becomes writing, then a door number");
-        float limit = Time.realtimeSinceStartup + 40f;
-        while (Cutscene.IsOpen && Time.realtimeSinceStartup < limit) {
-            yield return new WaitForSecondsRealtime(0.8f);
-            PlayInput.Tap(KeyCode.Space);
-            yield return new WaitForSecondsRealtime(0.3f);
-        }
-        // The finale pages, then ADDRESS FILED.
-        yield return run.Until(() => StoryScreen.IsOpen, 10f, "the finale pages");
-        if (run.Done) {
-            yield break;
-        }
-        StoryScreen screen = StoryScreen.Instance;
-        for (int i = 0; i < Story.Finale.Length && !StoryScreen.EndingOpen && !run.Done; i++) {
-            yield return new WaitForSecondsRealtime(1.2f);
-            run.Event("finale-page", (i + 1) + " of " + Story.Finale.Length + ": " + screen.PageText.Replace('\n', ' '));
-            PlayInput.Tap(KeyCode.Space);
-            yield return null;
-            yield return null;
-        }
-        yield return run.Until(() => StoryScreen.EndingOpen, 8f, "the ADDRESS FILED ending card");
         if (run.Done) {
             yield break;
         }
@@ -3077,6 +3110,139 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
     }
 
     // New Game+: a filed file begins again at Chapter 1 with Wallit's level and abilities kept. Then the secret ending's chapter.
+    // Chapter select ratings, New Game+ from the case files, and the three endings.
+    static IEnumerator EndingsRun() {
+        CampaignSave.EnterSandbox();
+        // Setup shortcut: the sandbox case file is filed, every chapter graded (C B A S A B, Hard on two), its earlier ending the Ledger.
+        CampaignSave.Slot file = CampaignSave.Get(0);
+        file.used = true;
+        file.cleared = CampaignSave.ChapterCount;
+        file.chapter = CampaignSave.ChapterCount - 1;
+        file.reached = CampaignSave.ChapterCount - 1;
+        file.xp = CampaignProgress.XpAt(4);
+        file.ranks = 1 | (2 << 3) | (3 << 6) | (4 << 9) | (3 << 12) | (2 << 15);
+        file.hardRanks = (4 << 3) | (3 << 9);
+        file.ending = Endings.Ledger;
+        run.Event("endings-setup", "sandbox case file 1 filed with ranks " + CampaignSave.RankLine(file));
+        ChapterScene.HubNext = true;
+        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(menu.CampaignButton.gameObject);
+        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        CampaignPanel panel = CampaignPanel.Instance;
+        string ranks = panel.RanksShown(0);
+        bool plusShown = panel.PlusButtons[0].gameObject.activeInHierarchy;
+        run.Event("rating-list", "case file 1: " + ranks + "; New Game+ button " + (plusShown ? "shown" : "MISSING") + " (file 2, no file: " + (panel.PlusButtons[1].gameObject.activeInHierarchy ? "shown" : "hidden") + ")");
+        run.Metric("ratingList", ranks.Contains("1 C") && ranks.Contains("4 S") ? 1 : 0);
+        if (!plusShown || !ranks.Contains("4 S")) {
+            run.Problem(PlaytestSeverity.Bug, "endings: the case files list does not show the ranks or the New Game+ button of a filed file");
+        }
+        // The hub's chapter board (the chapter select): open the file, walk in, read the board.
+        Tap(panel.SlotButtons[0].gameObject);
+        yield return run.Until(() => ChapterHub.Instance != null && SceneManager.GetActiveScene().name == CampaignSave.Scene, 45f, "the hub");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Hub");
+        yield return new WaitForSecondsRealtime(2f);
+        ChapterHub.Instance.OpenBoard();   // setup shortcut: the board opens without the walk to it
+        yield return new WaitForSecondsRealtime(1.5f);
+        string board = ChapterHub.Instance.BoardText;
+        run.Event("rating-board", board);
+        int rated = 0;
+        foreach (string part in board.Split('|')) {
+            rated += part.Contains("RANK ") ? 1 : 0;
+        }
+        run.Metric("ratingBoardRows", rated);
+        if (rated < CampaignSave.ChapterCount) {
+            run.Problem(PlaytestSeverity.Bug, "endings: the chapter board rates " + rated + " of " + CampaignSave.ChapterCount + " filed chapters");
+        }
+        yield return new WaitForSecondsRealtime(1.5f);
+        ChapterScene.HubNext = false;
+        ChapterHub.Instance.CloseBoard();
+        ChapterScene.Instance.LeaveToMenu();
+        yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu");
+        if (run.Done) {
+            yield break;
+        }
+        // New Game+ straight from the case files.
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(Object.FindAnyObjectByType<MainMenu>().CampaignButton.gameObject);
+        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        Tap(CampaignPanel.Instance.PlusButtons[0].gameObject);
+        run.Event("ngplus-menu", "New Game+ pressed on case file 1 in the case files list");
+        yield return run.Until(() => ChapterScene.Instance != null && SceneManager.GetActiveScene().name == CampaignSave.Scene && ChapterScene.Instance.BeginButton != null && ChapterScene.Instance.BeginButton.isActiveAndEnabled, 45f, "Chapter 1 of New Game+");
+        if (run.Done) {
+            yield break;
+        }
+        file = CampaignSave.Get(0);
+        run.Event("ngplus-started", "loop " + file.plus + ", chapter " + (file.chapter + 1) + ", " + file.cleared + " cleared, last ending " + Endings.Name(file.ending));
+        yield return new WaitForSecondsRealtime(1.5f);
+        Tap(ChapterScene.Instance.BeginButton.gameObject);
+        yield return run.Until(() => ChapterRun.Instance != null && WaveDirector.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "Chapter 1 on the loop");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("New Game+ Chapter 1");
+        ChapterRun loop = ChapterRun.Instance;
+        float echoLimit = Time.realtimeSinceStartup + 90f;
+        string echo = "";
+        while (Time.realtimeSinceStartup < echoLimit && echo.Length == 0 && !run.Done) {
+            if (Cutscene.IsOpen) {
+                PlayInput.Tap(KeyCode.Space);
+            }
+            foreach (string ev in ChapterRun.Events) {
+                if (ev.StartsWith("ngplus-echo|")) {
+                    echo = ev;
+                }
+            }
+            yield return new WaitForSecondsRealtime(0.8f);
+        }
+        yield return new WaitForSecondsRealtime(3f);
+        int baseCount = Story.Chapters[0].Target;
+        string objective = loop.ObjectiveLine;
+        bool harder = loop.Plus == 1 && CampaignGrade.PlusHealthMult(loop.Plus) > 1f && CampaignGrade.PlusCount(baseCount, loop.Plus) > baseCount && objective.Contains(CampaignGrade.PlusCount(baseCount, loop.Plus).ToString());
+        run.Event("ngplus-run", "loop " + loop.Plus + ": bots carry x" + CampaignGrade.PlusHealthMult(loop.Plus).ToString("0.00") + " health, " + CampaignGrade.PlusCount(baseCount, loop.Plus) + " to down instead of " + baseCount + "; objective \"" + objective + "\"");
+        run.Event("ngplus-echo", echo.Length > 0 ? echo : "no echo line");
+        run.Metric("ngPlusHarder", harder ? 1 : 0);
+        run.Metric("ngPlusEcho", echo.Length > 0 ? 1 : 0);
+        if (!harder) {
+            run.Problem(PlaytestSeverity.Bug, "endings: New Game+ Chapter 1 is not harder (" + objective + ")");
+        }
+        if (echo.Length == 0) {
+            run.Problem(PlaytestSeverity.Bug, "endings: New Game+ Chapter 1 said nothing about the earlier playthrough");
+        }
+        loop.Abandon();
+        yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu");
+        if (run.Done) {
+            yield break;
+        }
+        // Part 2: the three endings, each from a sandbox file standing on Chapter 6.
+        for (int variant = Endings.Ledger; variant <= Endings.Open && !run.Done; variant++) {
+            endingTest = variant;
+            secretTest = false;
+            startChapter = 5;
+            run.Event("ending-pass", "pass " + variant + " of " + Endings.Count + ": " + Endings.Name(variant));
+            yield return CampaignRun();
+            if (run.Done) {
+                yield break;
+            }
+            if (CampaignPanel.IsOpen) {
+                Tap(CampaignPanel.Instance.BackButton.gameObject);
+                yield return new WaitForSecondsRealtime(1f);
+            }
+        }
+        endingTest = 0;
+    }
+
     static IEnumerator NewGamePlusRun() {
         CampaignSave.EnterSandbox();
         // Setup shortcut: the sandbox case file is filed, level 4 and Refund in Full earned. Never the real save.
@@ -3269,6 +3435,10 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             if (watchCutscene) {
                 run.Problem(PlaytestSeverity.Bug, "cutscene: Chapter 1 began without its opening dialogue scene");
             }
+            yield break;
+        }
+        if (comfortTest) {
+            yield return PlaytestComfort.Run(run);
             yield break;
         }
         Cutscene scene = Cutscene.Instance;
@@ -4197,6 +4367,59 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
 
     // A chapter's dialogue scene opened over the fight (Crossroads, After): pages turned with Space, choice pages answered with
     // key 1 or 2 (choicePick). Events dialogue-page, choice-open, choice-made.
+    // The endings scenario, from the boss falling to the ADDRESS FILED card: the aftermath scene's choices are answered with
+    // choicePick, the closing reel goes by, and the ending's own reel (Endings.Reels) is watched shot by shot, not skipped.
+    static IEnumerator EndingWatch(ChapterRun chapter) {
+        float limit = Time.realtimeSinceStartup + 240f;
+        string lastReel = "";
+        string lastLine = "";
+        int variantShots = 0;
+        string wantReel = Endings.Reels[endingTest];
+        while (!StoryScreen.EndingOpen && !run.Done && Time.realtimeSinceStartup < limit) {
+            Cutscene scene = Cutscene.Instance;
+            if (scene == null || !Cutscene.IsOpen) {
+                yield return new WaitForSecondsRealtime(0.4f);
+                continue;
+            }
+            if (!scene.IsReel) {
+                run.Scene("Ending scene");
+                yield return ReadDialogue();
+                continue;
+            }
+            if (scene.ReelId != lastReel) {
+                lastReel = scene.ReelId;
+                run.Scene("Reel " + lastReel);
+                run.Event("ending-reel", lastReel + " (" + scene.ShotCount + " shots)" + (lastReel == wantReel ? " - the " + Endings.Name(endingTest) + " ending" : ""));
+            }
+            if (scene.Subtitle != lastLine && scene.Subtitle.Length > 0) {
+                lastLine = scene.Subtitle;
+                if (lastReel == wantReel) {
+                    variantShots++;
+                    run.Event("ending-shot", Endings.Name(endingTest) + " " + variantShots + ": " + scene.Speaker + ": \"" + lastLine.Replace('\n', ' ') + "\"");
+                }
+            }
+            if (lastReel != wantReel && !lastReel.StartsWith("ending_")) {
+                PlayInput.Tap(KeyCode.Space);   // the chapter's own closing reel is read through; the ending's reel plays out
+                yield return new WaitForSecondsRealtime(1.0f);
+            } else {
+                yield return new WaitForSecondsRealtime(0.5f);
+            }
+        }
+        yield return new WaitForSecondsRealtime(1.0f);
+        int got = chapter.EndingVariant;
+        CampaignSave.Slot file = CampaignSave.Get(CampaignSave.Active);
+        run.Event("ending-variant", Endings.Name(got) + " (expected " + Endings.Name(endingTest) + "): company points " + Endings.Company(file) + ", errands " + HubLife.SideCount(file) + ", reel " + chapter.EndingReel + ", " + variantShots + " shots, card line \"" + Endings.CardLine(got) + "\"");
+        run.Metric("endingVariant" + endingTest, got == endingTest && chapter.EndingReel == wantReel && variantShots >= 4 ? 1 : 0);
+        if (got != endingTest || chapter.EndingReel != wantReel) {
+            run.Problem(PlaytestSeverity.Bug, "endings: the " + Endings.Name(endingTest) + " choices played " + Endings.Name(got) + " (reel \"" + chapter.EndingReel + "\")");
+        } else if (variantShots < 4) {
+            run.Problem(PlaytestSeverity.Bug, "endings: the " + Endings.Name(endingTest) + " reel showed only " + variantShots + " lines");
+        }
+        if (file.ending != endingTest) {
+            run.Problem(PlaytestSeverity.Bug, "endings: the case file did not keep the ending (" + file.ending + ")");
+        }
+    }
+
     static IEnumerator ReadDialogue() {
         Cutscene scene = Cutscene.Instance;
         float limit = Time.realtimeSinceStartup + 90f;
@@ -6884,6 +7107,80 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
 
     // Plays the sample reel twice over the running game: pass 1 is nudged to the next shot with Space and skipped with Enter,
     // pass 2 runs to its end. Logs what each shot shows and checks that play resumes cleanly both times.
+    // The score and the cast voices (scenario "score").
+    static IEnumerator ScoreRun(PlaytestOptions options) {
+        yield return new WaitForSecondsRealtime(2f);
+        string[] tracks = { "theme_wallit", "theme_slice", "theme_department", "ch1_score", "ch2_score", "ch3_score", "ch4_score", "ch5_score", "ch6_score",
+            "boss_courier", "boss_platedalpha", "boss_foreman", "boss_server", "boss_registrar", "boss_orderbearer", "hub", "ending", "credits" };
+        int loaded = 0;
+        foreach (string t in tracks) {
+            if (run.Done) {
+                yield break;
+            }
+            MusicDirector.Play(t);
+            yield return new WaitForSecondsRealtime(2f);
+            bool ok = Resources.Load<AudioClip>("Music/" + t) != null;
+            loaded += ok ? 1 : 0;
+            run.Event("music-track", t + ": " + (ok ? "playing" : "MISSING") + ", volume " + MusicDirector.Volume.ToString("0.00") + ", changes " + MusicDirector.Changes);
+            if (!ok) {
+                run.Problem(PlaytestSeverity.Bug, "score: Resources/Music/" + t + " is missing");
+            }
+        }
+        string[] reels = { "ch1_open", "boss_courier", "ch2_close", "boss_foreman", "boss_server", "ch5_open", "ch6_close", "ending_received", "credits" };
+        int lines = 0;
+        int missing = 0;
+        foreach (string id in reels) {
+            if (run.Done) {
+                yield break;
+            }
+            Cutscene.Reel reel = Cutscene.LoadReel(id);
+            if (reel == null) {
+                run.Problem(PlaytestSeverity.Bug, "score: reel " + id + " did not load");
+                continue;
+            }
+            foreach (Cutscene.Shot shot in reel.shots) {
+                if (string.IsNullOrEmpty(shot.line)) {
+                    continue;
+                }
+                string file = shot.speaker == "W" ? WallitVoice.LineId(shot.line) : shot.speaker == "S" ? SliceVoice.LineId(shot.line) : CastVoice.FileOf(shot.speaker, shot.line);
+                bool has = Resources.Load<AudioClip>("Voice/" + file) != null;
+                lines++;
+                if (!has) {
+                    missing++;
+                    run.Problem(PlaytestSeverity.Bug, "score: no voice file Voice/" + file + " for " + id + " " + shot.id);
+                }
+            }
+            run.Event("reel-bed", id + ": bed " + reel.bed + ", music " + (Resources.Load<AudioClip>("Music/" + reel.bed) != null ? "found" : "MISSING"));
+            Cutscene.PlayShots(reel, null);
+            yield return run.Until(() => Cutscene.IsOpen, 5f, "the reel " + id);
+            float limit = Time.realtimeSinceStartup + 120f;
+            while (Cutscene.IsOpen && !run.Done && Time.realtimeSinceStartup < limit) {
+                yield return new WaitForSecondsRealtime(0.5f);
+            }
+            run.Event("reel-done", id + ": duck low " + MusicDirector.LowestDuck.ToString("0.00") + ", cast lines said " + CastVoice.Played + ", overlaps " + (Cutscene.Overlaps + WallitVoice.Overlaps));
+        }
+        int overlaps = Cutscene.Overlaps + WallitVoice.Overlaps;
+        foreach (string e in new System.Collections.Generic.List<string>(Cutscene.Events)) {
+            if (e.StartsWith("sfx|")) {
+                run.Event("sfx", e.Substring(4));
+            }
+        }
+        run.Metric("scoreTracks", tracks.Length);
+        run.Metric("scoreTracksLoaded", loaded);
+        run.Metric("scoreVoiceLines", lines);
+        run.Metric("scoreVoiceMissing", missing);
+        run.Metric("scoreOverlaps", overlaps);
+        run.Metric("scoreLowestDuck", MusicDirector.LowestDuck);
+        run.Metric("scoreSfx", Cutscene.SfxPlayed);
+        if (overlaps > 0) {
+            run.Problem(PlaytestSeverity.Bug, "score: " + overlaps + " voice line(s) overlapped");
+        }
+        if (MusicDirector.LowestDuck > 0.9f) {
+            run.Problem(PlaytestSeverity.Bug, "score: the music never ducked under a voice line");
+        }
+        yield return Play(options, 5f, false);
+    }
+
     static IEnumerator CinematicRun(PlaytestOptions options) {
         yield return new WaitForSecondsRealtime(2f);
         Cutscene.Reel reel = Cutscene.LoadReel("sample");

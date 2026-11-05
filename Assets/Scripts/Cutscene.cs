@@ -220,8 +220,14 @@ public partial class Cutscene : MonoBehaviour {
     void Speak(string who, string text) {
         WallitVoice.Silence();
         SliceVoice.Silence();
+        CastVoice.Silence();
         if (who != "W" && who != "S") {
-            Cast.Spoke(who, text);
+            // Everyone else speaks in their own cast voice (CastVoice: one at a time, on the shared floor).
+            float said = CastVoice.SayNow(who, text, "cutscene");
+            if (said > 0f) {
+                VoiceLines++;
+                Events.Add("voice|" + who + "|" + said.ToString("0.00"));
+            }
             return;
         }
         if (!WallitVoice.FloorFree) {
@@ -242,9 +248,11 @@ public partial class Cutscene : MonoBehaviour {
             return;
         }
         open = false;
+        ClosedFrame = Time.frameCount;
         HideChoice();
         WallitVoice.Silence();
         SliceVoice.Silence();
+        CastVoice.Silence();
         VoiceDirector.Scene = false;
         barsOn = false;
         Time.timeScale = savedScale;
@@ -284,6 +292,9 @@ public partial class Cutscene : MonoBehaviour {
             return;
         }
         Time.timeScale = 0f;
+        if (ComfortTick()) {
+            return;
+        }
         if (shotMode) {
             LayoutSubtitle();
             TickShots(dt);
@@ -296,7 +307,7 @@ public partial class Cutscene : MonoBehaviour {
         if (Time.unscaledTime < readyAt) {
             return;
         }
-        if (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter)) {
+        if (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter) || PadSkip()) {
             Close(true);
             return;
         }
@@ -352,6 +363,9 @@ public partial class Cutscene : MonoBehaviour {
     void Shoot() {
         float target = open ? 1f : 0f;
         weight = Mathf.MoveTowards(weight, target, Time.unscaledDeltaTime * (open ? 1.8f : 1.5f));
+        if (ComfortOptions.ReducedMotion) {
+            weight = 0f;   // the camera stays where the game left it: no sweep to the speaker
+        }
         if (weight <= 0.001f) {
             focusSet = false;
             return;
@@ -457,7 +471,7 @@ public partial class Cutscene : MonoBehaviour {
         if (UiFit.Touch) {
             hintText.text = count + (UiFit.Mode == UiMode.Tall ? "\n" : "     ") + "Tap to continue   ·   Tap Skip to skip";
         } else {
-            hintText.text = count + "     Any key: next   ·   Enter: skip";
+            hintText.text = count + (ComfortOptions.PadConnected ? "     A: next   ·   Y: skip   ·   Start: pause" : "     Any key: next   ·   Enter: skip   ·   P: pause");
         }
     }
 
@@ -588,6 +602,12 @@ public partial class Cutscene : MonoBehaviour {
             skipRect.sizeDelta = new Vector2(240f, 88f);
             skipLabel.fontSize = 34;
         }
+        float grow = ComfortOptions.SubtitleScale;
+        if (grow > 1f) {
+            nameSize = Mathf.Round(nameSize * grow);
+            lineSize = Mathf.Round(lineSize * grow);
+            height = Mathf.Min(size.y * 0.6f, height * (1f + (grow - 1f) * 1.1f));
+        }
         panel.sizeDelta = new Vector2(width, height);
         portraitRect.anchorMin = portraitRect.anchorMax = new Vector2(0f, 1f);
         portraitRect.pivot = new Vector2(0f, 1f);
@@ -604,6 +624,7 @@ public partial class Cutscene : MonoBehaviour {
         SetHint();
         SetBars();
         LayoutChoice();
+        ApplyComfort();
     }
 
     // Top-left anchored text box inside the panel.

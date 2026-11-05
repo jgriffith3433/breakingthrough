@@ -174,6 +174,7 @@ public partial class Cutscene {
         VoiceDirector.Scene = true;
         WallitVoice.Silence();
         SliceVoice.Silence();
+        CastVoice.Silence();
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         root.SetActive(true);
@@ -199,13 +200,41 @@ public partial class Cutscene {
     void NextShot() {
         WallitVoice.Silence();
         SliceVoice.Silence();
+        CastVoice.Silence();
         shotIndex++;
         if (shotIndex >= reel.shots.Length) {
             Close(false);
             return;
         }
         StartShot(reel.shots[shotIndex]);
+        PlayShotSfx(reel.shots[shotIndex].id);
     }
+
+    // Set-piece sounds (the stamp, RECEIVED, the Courier's clipboard...): Resources/Cinematics/sfx.json rows "<reel>:<shot>=<sfx>".
+    static Dictionary<string, string> shotSfx;
+    public static int SfxPlayed { get; private set; }
+    void PlayShotSfx(string shotId) {
+        if (shotSfx == null) {
+            shotSfx = new Dictionary<string, string>();
+            TextAsset t = Resources.Load<TextAsset>("Cinematics/sfx");
+            SfxRows rows = t != null ? JsonUtility.FromJson<SfxRows>(t.text) : null;
+            if (rows != null && rows.rows != null) {
+                foreach (string row in rows.rows) {
+                    int eq = row.IndexOf('=');
+                    if (eq > 0) {
+                        shotSfx[row.Substring(0, eq)] = row.Substring(eq + 1);
+                    }
+                }
+            }
+        }
+        string name;
+        if (reel != null && shotSfx.TryGetValue(reel.id + ":" + shotId, out name)) {
+            GameAudio.Play(name, 0.9f);
+            SfxPlayed++;
+            Events.Add("sfx|" + name);
+        }
+    }
+    [System.Serializable] class SfxRows { public string[] rows; }
 
     void StartShot(Shot s) {
         shotStart = Time.unscaledTime;
@@ -369,14 +398,14 @@ public partial class Cutscene {
             SayShotLine();
         }
         TickSubtitle(t);
-        if (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter) || PlayInput.GetKeyDown(KeyCode.Escape)) {
+        if (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter) || PlayInput.GetKeyDown(KeyCode.Escape) || PadSkip()) {
             Close(true);
             return;
         }
         if (now < readyAt) {
             return;
         }
-        if (PlayInput.GetKeyDown(KeyCode.Space) || PlayInput.GetMouseButtonDown(0) || TouchBegan()) {
+        if (PlayInput.GetKeyDown(KeyCode.Space) || PlayInput.GetKeyDown(KeyCode.JoystickButton0) || PlayInput.GetMouseButtonDown(0) || TouchBegan()) {
             if (UiFit.Touch && TapOnSkip()) {
                 return;
             }
@@ -394,10 +423,10 @@ public partial class Cutscene {
             return;
         }
         ShotSlot slot = slots[current];
-        float k = Mathf.SmoothStep(0f, 1f, u);
-        float z = Mathf.Max(1f, Mathf.Lerp(s.from[2], s.to[2], k));
-        float x = Mathf.Clamp(Mathf.Lerp(s.from[0], s.to[0], k), -1f, 1f);
-        float y = Mathf.Clamp(Mathf.Lerp(s.from[1], s.to[1], k), -1f, 1f);
+        float k = ComfortOptions.ReducedMotion ? 0f : Mathf.SmoothStep(0f, 1f, u);
+        float z = ComfortOptions.ReducedMotion ? 1f : Mathf.Max(1f, Mathf.Lerp(s.from[2], s.to[2], k));
+        float x = ComfortOptions.ReducedMotion ? 0f : Mathf.Clamp(Mathf.Lerp(s.from[0], s.to[0], k), -1f, 1f);
+        float y = ComfortOptions.ReducedMotion ? 0f : Mathf.Clamp(Mathf.Lerp(s.from[1], s.to[1], k), -1f, 1f);
         Vector2 size = ((RectTransform)root.transform).rect.size;
         slot.backRt.localScale = new Vector3(z, z, 1f);
         slot.backRt.anchoredPosition = new Vector2(-x * (z - 1f) * size.x * 0.5f, -y * (z - 1f) * size.y * 0.5f);
@@ -418,6 +447,7 @@ public partial class Cutscene {
         if (shotSpeaker == "W" || shotSpeaker == "S") {
             WallitVoice.Silence();
             SliceVoice.Silence();
+            CastVoice.Silence();
             if (!WallitVoice.FloorFree) {
                 Overlaps++;
                 Events.Add("overlap|" + shotSpeaker + "|" + shotLine);
@@ -427,8 +457,17 @@ public partial class Cutscene {
                 Events.Add("voice|" + shotSpeaker + "|" + seconds.ToString("0.00"));
             }
         } else {
-            Cast.Spoke(shotSpeaker, shotLine);
+            CastVoice.Silence();
             seconds = PlayCastVoice();
+            if (seconds <= 0f) {
+                seconds = CastVoice.SayNow(shotSpeaker, shotLine, "cutscene");
+                if (seconds > 0f) {
+                    VoiceLines++;
+                    Events.Add("voice|" + shotSpeaker + "|" + seconds.ToString("0.00"));
+                }
+            } else {
+                Cast.Spoke(shotSpeaker, shotLine);
+            }
         }
         float reading = Mathf.Max(seconds, shotLine.Length / 16f + 0.8f);
         typeSeconds = Mathf.Max(0.8f, Mathf.Min(reading, seconds > 0f ? seconds * 0.85f : reading * 0.8f));
@@ -488,7 +527,7 @@ public partial class Cutscene {
             bed.spatialBlend = 0f;
             bed.ignoreListenerPause = true;
         }
-        AudioClip clip = string.IsNullOrEmpty(name) ? null : Resources.Load<AudioClip>("Cinematics/" + name);
+        AudioClip clip = string.IsNullOrEmpty(name) ? null : Resources.Load<AudioClip>("Music/" + name) ?? Resources.Load<AudioClip>("Cinematics/" + name);
         if (clip == null && !string.IsNullOrEmpty(name)) {
             clip = Pad();
         }
@@ -528,7 +567,7 @@ public partial class Cutscene {
         if (bed == null || !bed.isPlaying) {
             return;
         }
-        bool voice = !WallitVoice.FloorFree || (castVoice != null && castVoice.isPlaying);
+        bool voice = !WallitVoice.FloorFree || CastVoice.Speaking || (castVoice != null && castVoice.isPlaying);
         duck = Mathf.MoveTowards(duck, voice ? 0.3f : 1f, dt * 3f);
         if (open && shotMode) {
             DuckedLowest = Mathf.Min(DuckedLowest, duck);
@@ -645,9 +684,10 @@ public partial class Cutscene {
         }
         UiMode ui = UiFit.Mode;
         Vector2 size = UiFit.Size;
-        subtitle.fontSize = ui == UiMode.Desktop ? 44 : ui == UiMode.Tall ? 30 : 34;
+        subtitle.fontSize = Mathf.RoundToInt((ui == UiMode.Desktop ? 44 : ui == UiMode.Tall ? 30 : 34) * ComfortOptions.SubtitleScale);
         float bar = size.y * BarFraction * Mathf.SmoothStep(0f, 1f, barsNow);
         subtitleRect.sizeDelta = new Vector2(Mathf.Min(1500f, size.x - 40f), ui == UiMode.Desktop ? 150f : 120f);
         subtitleRect.anchoredPosition = new Vector2(0f, bar + 24f);
+        UpdateSubtitleBack();
     }
 }

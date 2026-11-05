@@ -37,6 +37,10 @@ public class Companion : MonoBehaviour {
     public int MaxHealth { get; private set; }
     public int Health { get; private set; }
     public bool Downed { get { return Health <= 0; } }
+    // Downed and Wallit is within reach: the touch controls show their Revive pad, and E, or the pad's X, held revives her.
+    public bool ReviveReady {
+        get { return Downed && Player != null && Flat(Player.position - transform.position).magnitude <= ReviveReach + 1.5f; }
+    }
     public bool Alive { get { return Health > 0; } }
     public float ReviveProgress { get; private set; }
     public int Stabs { get; private set; }
@@ -392,7 +396,7 @@ public class Companion : MonoBehaviour {
     void TickDowned(float dt) {
         downTilt = Mathf.MoveTowards(downTilt, 82f, dt * 220f);
         bool near = Flat(Player.position - transform.position).magnitude <= ReviveReach;
-        if (near && PlayInput.GetKey(KeyCode.E)) {
+        if (near && (PlayInput.GetKey(KeyCode.E) || PlayInput.GetKey(KeyCode.JoystickButton2))) {
             ReviveProgress += dt / ReviveSeconds;
             if (ReviveProgress >= 1f) {
                 Revive();

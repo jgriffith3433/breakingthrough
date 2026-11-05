@@ -1,0 +1,14 @@
+{
+ "note": "Set-piece sounds for the shot reels: '<reel>:<shot>' plays Resources/Sfx/<name> when the shot starts (CutsceneShots.PlayShotSfx, through GameAudio). Names: stamp_heavy, received, courier_clip, paper_slide, belt_stop, red_lamp, ledger_close, seal_crack, door_open, lantern_gutter, knock_three, page_turn.",
+ "rows": [
+  "ch1_open:s1=stamp_heavy", "ch1_open:s6=courier_clip",
+  "ch1_close:s1=courier_clip", "ch1_close:s2=stamp_heavy",
+  "ch2_open:s2=knock_three", "ch2_close:s1=stamp_heavy", "ch2_close:s4=seal_crack",
+  "ch3_open:s2=red_lamp", "ch3_close:s1=belt_stop",
+  "ch4_open:s1=lantern_gutter", "ch4_close:s1=paper_slide",
+  "ch5_open:s2=page_turn", "ch5_close:s1=ledger_close",
+  "ch6_open:s4=stamp_heavy", "ch6_close:s1=seal_crack", "ch6_close:s2=stamp_heavy", "ch6_close:s6=door_open",
+  "boss_courier:s1=courier_clip", "boss_foreman:s1=red_lamp", "boss_server:s1=knock_three", "boss_order:s3=stamp_heavy",
+  "ending_received:s4=stamp_heavy", "ending_received:s5=door_open", "ending_received:s7=received"
+ ]
+}

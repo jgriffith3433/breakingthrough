@@ -1,0 +1,14 @@
+{
+"cast": "megayobot",
+"voice": "hv_announcer",
+"ids": [
+"megayobot_order_read_aloud_strike_this_address"
+],
+"lines": [
+{
+"who": "megayobot",
+"text": "Order, read aloud: STRIKE. THIS. ADDRESS.",
+"direction": "loud, official, reading an order aloud"
+}
+]
+}
