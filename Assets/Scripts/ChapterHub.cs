@@ -984,7 +984,10 @@ public class ChapterHub : MonoBehaviour {
             Story.Chapter chapter = Story.Chapters[i];
             bool filed = i < slot.cleared;
             bool next = !filed && i < open;
-            string tag = filed ? "filed (replay)" : next ? "next" : "locked";
+            int rank = CampaignSave.BestRank(slot, i, false);
+            int hardRank = CampaignSave.BestRank(slot, i, true);
+            string rating = rank == 0 && hardRank == 0 ? "" : "   RANK " + CampaignGrade.Letter(rank) + (hardRank > 0 ? "  HARD " + CampaignGrade.Letter(hardRank) : "");
+            string tag = filed ? "filed" + rating + " (replay)" : next ? "next" : "locked";
             string label = i < open ? chapter.Title + "   " + tag : "Chapter " + (i + 1) + ": locked";
             BoardButtons[i].GetComponentInChildren<Text>().text = label;
             BoardButtons[i].interactable = i < open;

@@ -1,0 +1,130 @@
+{
+  "id": "ending_doors",
+  "bed": "ch6_score",
+  "shots": [
+    {
+      "id": "s1",
+      "back": "ending_doors_1_back",
+      "speaker": "N",
+      "seconds": 5.6,
+      "fade": 0.0,
+      "level": 0.6,
+      "from": [
+        0,
+        0,
+        1.3
+      ],
+      "to": [
+        0,
+        0,
+        1.05
+      ],
+      "alt": "ring_back",
+      "line": "TWO DOORS. Slice writes the number twice, one stroke at a time. The second door sits beside the first."
+    },
+    {
+      "id": "s2",
+      "back": "ending_doors_2_back",
+      "speaker": "S",
+      "seconds": 2.8,
+      "fade": 0.7,
+      "level": 0.7,
+      "from": [
+        0,
+        0,
+        1.3
+      ],
+      "to": [
+        0,
+        0,
+        1.05
+      ],
+      "alt": "slice_back",
+      "line": "Yours. Next to mine.",
+      "front": "slice_front"
+    },
+    {
+      "id": "s3",
+      "back": "ending_doors_3_back",
+      "speaker": "W",
+      "seconds": 3.2,
+      "fade": 0.7,
+      "level": 0.8,
+      "from": [
+        0,
+        0,
+        1.3
+      ],
+      "to": [
+        0,
+        0,
+        1.05
+      ],
+      "alt": "stamp_back",
+      "line": "Two numbers. One bill. Pay up.",
+      "front": "stamp_front"
+    },
+    {
+      "id": "s4",
+      "back": "ending_doors_4_back",
+      "speaker": "N",
+      "seconds": 5.0,
+      "fade": 0.7,
+      "level": 0.9,
+      "from": [
+        0,
+        0,
+        1.3
+      ],
+      "to": [
+        0,
+        0,
+        1.05
+      ],
+      "alt": "hollow_back",
+      "line": "Two lamps come on in the Hollow, side by side. The circle has a neighbour."
+    },
+    {
+      "id": "s5",
+      "back": "ending_doors_5_back",
+      "speaker": "Y",
+      "seconds": 3.4,
+      "fade": 0.7,
+      "level": 1.0,
+      "from": [
+        0,
+        0,
+        1.3
+      ],
+      "to": [
+        0,
+        0,
+        1.05
+      ],
+      "alt": "crest_back",
+      "line": "Two doors! Two deliveries! Uploading... neighbours!",
+      "front": "crest_front"
+    },
+    {
+      "id": "s6",
+      "back": "ending_doors_6_back",
+      "speaker": "S",
+      "seconds": 3.0,
+      "fade": 0.7,
+      "level": 1.0,
+      "from": [
+        0,
+        0,
+        1.3
+      ],
+      "to": [
+        0,
+        0,
+        1.05
+      ],
+      "alt": "slice_back",
+      "line": "Keep up, Wallit.",
+      "front": "slice_front"
+    }
+  ]
+}

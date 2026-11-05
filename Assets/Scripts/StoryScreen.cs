@@ -102,9 +102,9 @@ public class StoryScreen : MonoBehaviour {
     }
 
     // The ADDRESS FILED card alone, for a Campaign ending whose Finale lines were already played as a cinematic reel.
-    public void ShowEndCard(string stats, Action<bool> closed) {
+    public void ShowEndCard(string stats, Action<bool> closed, string line = null) {
         FinaleShown++;
-        endBody.text = Story.EndingLine + "\n\n" + stats;
+        endBody.text = (string.IsNullOrEmpty(line) ? Story.EndingLine : line) + "\n\n" + stats;
         savedScale = Time.timeScale > 0f ? Time.timeScale : 1f;
         Time.timeScale = 0f;
         root.SetActive(true);

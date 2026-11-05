@@ -70,9 +70,28 @@ public static class CampaignGrade {
         return amount;
     }
 
-    // A bot's health (hits to drop) on Hard.
+    // New Game+: every loop after the first sends bots with this much more health and this many more of them, up to PlusLoops.
+    public const float PlusHealthStep = 0.25f, PlusCountStep = 0.2f;
+    public const int PlusLoops = 4;
+
+    // The loop of the file being played (0 on the first time through, and always in Arcade).
+    public static int Plus {
+        get { return ChapterRun.Instance != null ? ChapterRun.Instance.Plus : 0; }
+    }
+
+    public static float PlusHealthMult(int plus) {
+        return 1f + PlusHealthStep * Mathf.Clamp(plus, 0, PlusLoops);
+    }
+
+    // Bots a chapter asks for (a wave's size, a count to down), in a New Game+ loop.
+    public static int PlusCount(int n, int plus) {
+        return plus <= 0 ? n : Mathf.CeilToInt(n * (1f + PlusCountStep * Mathf.Clamp(plus, 0, PlusLoops)));
+    }
+
+    // A bot's health (hits to drop) on Hard and in a New Game+ loop.
     public static int Health(int hits) {
-        return Hard ? Mathf.Max(1, Mathf.RoundToInt(hits * HardHealth)) : hits;
+        float mult = (Hard ? HardHealth : 1f) * PlusHealthMult(Plus);
+        return mult <= 1f ? hits : Mathf.Max(1, Mathf.RoundToInt(hits * mult));
     }
 
     // Is the file open now filed (every chapter cleared), so that Hard may be chosen?
