@@ -1,0 +1,109 @@
+{
+  "id": "ch2_close",
+  "bed": "ch2_score",
+  "shots": [
+    {
+      "id": "s1",
+      "back": "ch2_close_1_back",
+      "speaker": "P",
+      "seconds": 4.0,
+      "fade": 0.0,
+      "level": 0.7,
+      "from": [
+        0,
+        0,
+        1.05
+      ],
+      "to": [
+        0,
+        0,
+        1.2
+      ],
+      "alt": "stamp_back",
+      "front": "ch2_close_1_front",
+      "line": "Plate... voided... uploading... nothing?"
+    },
+    {
+      "id": "s2",
+      "back": "ch2_close_2_back",
+      "speaker": "W",
+      "seconds": 2.8,
+      "fade": 0.7,
+      "level": 0.5,
+      "from": [
+        0.2,
+        0,
+        1.2
+      ],
+      "to": [
+        0,
+        0,
+        1.2
+      ],
+      "alt": "stamp_back",
+      "front": "ch2_close_2_front",
+      "line": "Void your own stamp."
+    },
+    {
+      "id": "s3",
+      "back": "ch2_close_3_back",
+      "speaker": "S",
+      "seconds": 3.8,
+      "fade": 0.7,
+      "level": 0.8,
+      "from": [
+        0,
+        0,
+        1.15
+      ],
+      "to": [
+        0,
+        0,
+        1.05
+      ],
+      "alt": "ring_back",
+      "line": "You have an address. The circle."
+    },
+    {
+      "id": "s4",
+      "back": "ch2_close_4_back",
+      "speaker": "W",
+      "seconds": 3.0,
+      "fade": 0.7,
+      "level": 0.6,
+      "from": [
+        0,
+        0,
+        1.4
+      ],
+      "to": [
+        0,
+        0,
+        1.2
+      ],
+      "alt": "stamp_back",
+      "front": "ch2_close_4_front",
+      "line": "Leased. By you."
+    },
+    {
+      "id": "s5",
+      "back": "ch2_close_5_back",
+      "speaker": "S",
+      "seconds": 4.0,
+      "fade": 0.7,
+      "level": 0.9,
+      "from": [
+        0,
+        0,
+        1.1
+      ],
+      "to": [
+        0,
+        0,
+        1.3
+      ],
+      "alt": "hollow_back",
+      "line": "Then pay with swings."
+    }
+  ]
+}

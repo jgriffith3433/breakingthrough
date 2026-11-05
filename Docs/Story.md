@@ -428,5 +428,8 @@ the cast: Wallit money, Slice clipped, Yo Bots chirpy; Slice and Wallit lines go
 Reels live in `Assets/Resources/Cinematics/<id>.json` and play with `Cutscene.PlayShots(id, done)` (`CutsceneShots.cs`);
 `sample` is the Chapter 1 opening (the stamp, "Ow! That's extra!", the ring, "You're inside. Inside, you exist.") on placeholder art
 from `Tools/Cinematics/make_placeholders.py`. Space or a click goes to the next shot; Enter, Escape or Skip leaves at any point.
-The chapters still use their page scenes; moving each chapter's `opening` and `closing` shot lists from the screenplay into reels
-is the next part, once the art is made.
+Chapters 1-3 now open and close with reels (`ch1_open` .. `ch3_close`, written by `Tools/Cinematics/make_reels.py` from the shot lists
+in `CampaignBible.md`; `ChapterRun.Start` and `Complete` play them before the page scenes, which remain for chapters 4-6). Each shot names its final
+art (`Art/<reel>_<n>_back|front`) and an `alt` placeholder shown until Hawkes Gen's stills are in. Courier (K), Plated Alpha (P), Half-Built (H),
+Foreman (F) and Yo Bot (Y) lines play from `Resources/Voice/cinema/<reel>_<shot>.mp3` when present. `Tools/Cinematics/gen_manifest.json` lists
+every sheet, still, clip, voice and sound still to make. Wallit and Slice keep their voice systems.

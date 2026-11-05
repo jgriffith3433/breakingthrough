@@ -1,0 +1,382 @@
+{
+  "sheets": [
+    "Wallit",
+    "Slice",
+    "The Courier",
+    "The Foreman",
+    "The Plated Alpha",
+    "Yo Bot",
+    "The Half-Built"
+  ],
+  "stills": [
+    {
+      "file": "ch1_open_1_front",
+      "prompt": "stamp",
+      "from_sheet": true
+    },
+    {
+      "file": "ch1_open_1_back",
+      "prompt": "black sky over the Moonlit Hollow, a hand-cut RETURN TO SENDER rubber stamp turning high above, red ink glowing",
+      "music": "Low cello pedal, one cold bell"
+    },
+    {
+      "file": "ch1_open_2_front",
+      "prompt": "Wallit the wallet, just landed, startled",
+      "from_sheet": true
+    },
+    {
+      "file": "ch1_open_2_back",
+      "prompt": "moonlit grass at ground level, ink flash on brown leather",
+      "music": "Pedal breaks into a short run of strings"
+    },
+    {
+      "file": "ch1_open_3_back",
+      "prompt": "top-down view of nine standing stones lighting a pale gold ring one by one",
+      "music": "Held chord, bell on each stone"
+    },
+    {
+      "file": "ch1_open_4_front",
+      "prompt": "Slice the goth guard, knife down, low angle on her eyes",
+      "from_sheet": true
+    },
+    {
+      "file": "ch1_open_4_back",
+      "prompt": "the circle at dusk, shadow over her face",
+      "music": "Strings drop out; room tone"
+    },
+    {
+      "file": "ch1_open_5_front",
+      "prompt": "Wallit looking up, bills falling from his pocket",
+      "from_sheet": true
+    },
+    {
+      "file": "ch1_open_5_back",
+      "prompt": "over Slice's shoulder, the circle",
+      "music": "Silence, one dry plucked note"
+    },
+    {
+      "file": "ch1_open_6_front",
+      "prompt": "Yo Bot, chirpy, claws up",
+      "from_sheet": true
+    },
+    {
+      "file": "ch1_open_6_back",
+      "prompt": "wide Hollow, a Yo Bot crests the hill, Wallit and Slice small in the ring",
+      "music": "Pulse enters: bright, thin, unfriendly"
+    },
+    {
+      "file": "ch1_close_1_front",
+      "prompt": "the Courier split and on one knee",
+      "from_sheet": true
+    },
+    {
+      "file": "ch1_close_1_back",
+      "prompt": "the circle, locked wide, a clipboard flat on the grass",
+      "music": "Pulse cuts, a single dying chirp"
+    },
+    {
+      "file": "ch1_close_2_front",
+      "prompt": "Wallit, bat on his shoulder, over the clipboard",
+      "from_sheet": true
+    },
+    {
+      "file": "ch1_close_2_back",
+      "prompt": "the notice drifting down beside him",
+      "music": "Cello pedal returns, warmer"
+    },
+    {
+      "file": "ch1_close_3_front",
+      "prompt": "Slice's hand and knife",
+      "from_sheet": true
+    },
+    {
+      "file": "ch1_close_3_back",
+      "prompt": "a lowered then re-raised knife blade",
+      "music": "Bell, one note"
+    },
+    {
+      "file": "ch1_close_4_front",
+      "prompt": "Wallit gathering three bolts",
+      "from_sheet": true
+    },
+    {
+      "file": "ch1_close_4_back",
+      "prompt": "close on his hands and a coin slot",
+      "music": "Held string, rising a half step"
+    },
+    {
+      "file": "ch1_close_5_front",
+      "prompt": "Slice in profile",
+      "from_sheet": true
+    },
+    {
+      "file": "ch1_close_5_back",
+      "prompt": "the far dark past the Hollow's wall",
+      "music": "Pedal falls to a low drone"
+    },
+    {
+      "file": "ch2_open_1_back",
+      "prompt": "a guttering lantern, blue dark beyond, a thin blank gate",
+      "music": "Low drone, distant wind chime"
+    },
+    {
+      "file": "ch2_open_2_front",
+      "prompt": "Wallit, hands on hips, bat on shoulder",
+      "from_sheet": true
+    },
+    {
+      "file": "ch2_open_2_back",
+      "prompt": "the Hollow's edge toward the gate",
+      "music": "Drone holds, hopeful two-note figure"
+    },
+    {
+      "file": "ch2_open_3_front",
+      "prompt": "Slice in profile, one hand on the stone",
+      "from_sheet": true
+    },
+    {
+      "file": "ch2_open_3_back",
+      "prompt": "the ring's last standing stone",
+      "music": "Figure ends, held low note"
+    },
+    {
+      "file": "ch2_open_4_back",
+      "prompt": "low chalk road, boots stepping over the ring's edge",
+      "music": "Soft low drum, 70 bpm"
+    },
+    {
+      "file": "ch2_open_5_front",
+      "prompt": "Slice's blade",
+      "from_sheet": true
+    },
+    {
+      "file": "ch2_open_5_back",
+      "prompt": "a knife driven into the ground, the ring's light jumping to a second ring",
+      "music": "Drum doubles, strings on the beat"
+    },
+    {
+      "file": "ch2_close_1_front",
+      "prompt": "the Plated Alpha",
+      "from_sheet": true
+    },
+    {
+      "file": "ch2_close_1_back",
+      "prompt": "cracked plate, INVALID split into IN and VALID",
+      "music": "Drum stops, clipped metallic ring"
+    },
+    {
+      "file": "ch2_close_2_front",
+      "prompt": "Wallit over the shoulder",
+      "from_sheet": true
+    },
+    {
+      "file": "ch2_close_2_back",
+      "prompt": "a boot kicking a plate flat",
+      "music": "Silence"
+    },
+    {
+      "file": "ch2_close_3_back",
+      "prompt": "the staked knife pulled, two rings folding into one",
+      "music": "Warm bell, one note"
+    },
+    {
+      "file": "ch2_close_4_front",
+      "prompt": "Wallit's hand holding it",
+      "from_sheet": true
+    },
+    {
+      "file": "ch2_close_4_back",
+      "prompt": "close on the stone chip of the torn half-postmark",
+      "music": "Strings reply under him"
+    },
+    {
+      "file": "ch2_close_5_back",
+      "prompt": "Wallit and Slice shoulder to shoulder at the ring, the dark gate behind",
+      "music": "Resolving chord, fade on the drone"
+    },
+    {
+      "file": "ch3_open_1_back",
+      "prompt": "the lip of a sunken amber yard, hooks in rows like a ribcage",
+      "music": "Slow industrial pulse, steam breath"
+    },
+    {
+      "file": "ch3_open_2_front",
+      "prompt": "the Half-Built Yo Bot twitching on a hook",
+      "from_sheet": true
+    },
+    {
+      "file": "ch3_open_2_back",
+      "prompt": "hooks and chassis, one eye lit",
+      "music": "Pulse skips a beat, thin chirp"
+    },
+    {
+      "file": "ch3_open_3_front",
+      "prompt": "Wallit studying them",
+      "from_sheet": true
+    },
+    {
+      "file": "ch3_open_3_back",
+      "prompt": "a pan across matching rows of chassis",
+      "music": "Pulse steadies"
+    },
+    {
+      "file": "ch3_open_4_front",
+      "prompt": "Slice at his shoulder reading the lamps",
+      "from_sheet": true
+    },
+    {
+      "file": "ch3_open_4_back",
+      "prompt": "two-shot, still, lamps behind",
+      "music": "Low drone under the pulse"
+    },
+    {
+      "file": "ch3_open_5_back",
+      "prompt": "wide of the yard, the belt glowing far off",
+      "music": "Brass swell, then cut"
+    },
+    {
+      "file": "ch3_close_1_front",
+      "prompt": "the Foreman on its knees",
+      "from_sheet": true
+    },
+    {
+      "file": "ch3_close_1_back",
+      "prompt": "the order sheet fluttering off its chest",
+      "music": "Pulse stops, a last factory sigh"
+    },
+    {
+      "file": "ch3_close_2_front",
+      "prompt": "Wallit, bat on shoulder",
+      "from_sheet": true
+    },
+    {
+      "file": "ch3_close_2_back",
+      "prompt": "a bolt tumbling into his palm",
+      "music": "Quiet bell"
+    },
+    {
+      "file": "ch3_close_3_front",
+      "prompt": "Slice's eyes",
+      "from_sheet": true
+    },
+    {
+      "file": "ch3_close_3_back",
+      "prompt": "the dead belt, red lamp dark, its last glow",
+      "music": "Drone only"
+    },
+    {
+      "file": "ch3_close_4_back",
+      "prompt": "the red lamp lens turning a degree toward the Hollow, blinking",
+      "music": "One cold bell, cut to silence"
+    }
+  ],
+  "clips": [
+    {
+      "from": "ch1_open_1_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch1_open_1.mp4"
+    },
+    {
+      "from": "ch1_open_6_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch1_open_6.mp4"
+    },
+    {
+      "from": "ch1_close_1_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch1_close_1.mp4"
+    },
+    {
+      "from": "ch1_close_5_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch1_close_5.mp4"
+    },
+    {
+      "from": "ch2_open_1_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch2_open_1.mp4"
+    },
+    {
+      "from": "ch2_open_5_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch2_open_5.mp4"
+    },
+    {
+      "from": "ch2_close_1_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch2_close_1.mp4"
+    },
+    {
+      "from": "ch2_close_5_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch2_close_5.mp4"
+    },
+    {
+      "from": "ch3_open_1_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch3_open_1.mp4"
+    },
+    {
+      "from": "ch3_open_5_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch3_open_5.mp4"
+    },
+    {
+      "from": "ch3_close_1_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch3_close_1.mp4"
+    },
+    {
+      "from": "ch3_close_4_back",
+      "seconds": 5,
+      "file": "StreamingAssets/Cinematics/ch3_close_4.mp4"
+    }
+  ],
+  "voices": [
+    {
+      "file": "Voice/cinema/ch1_open_s6.mp3",
+      "speaker": "Y",
+      "line": "Hello! Uploading victory! Striking this address now!"
+    },
+    {
+      "file": "Voice/cinema/ch1_close_s1.mp3",
+      "speaker": "K",
+      "line": "Notice... undelivered... uploading... defeat?"
+    },
+    {
+      "file": "Voice/cinema/ch2_close_s1.mp3",
+      "speaker": "P",
+      "line": "Plate... voided... uploading... nothing?"
+    },
+    {
+      "file": "Voice/cinema/ch3_open_s2.mp3",
+      "speaker": "H",
+      "line": "Hello! I am... not finished! Uploading victory?"
+    },
+    {
+      "file": "Voice/cinema/ch3_close_s1.mp3",
+      "speaker": "F",
+      "line": "Order... unread..."
+    }
+  ],
+  "beds": {
+    "ch1_score": [
+      "ch1_open",
+      "ch1_close"
+    ],
+    "ch2_score": [
+      "ch2_open",
+      "ch2_close"
+    ],
+    "ch3_score": [
+      "ch3_open",
+      "ch3_close"
+    ]
+  },
+  "sfx": [
+    "stamp_land",
+    "lantern_gutter",
+    "belt_stop",
+    "red_lamp_blink"
+  ]
+}

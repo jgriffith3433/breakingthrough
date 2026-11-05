@@ -1,0 +1,130 @@
+{
+  "id": "ch1_open",
+  "bed": "ch1_score",
+  "shots": [
+    {
+      "id": "s1",
+      "back": "ch1_open_1_back",
+      "speaker": "N",
+      "seconds": 5.5,
+      "fade": 0.7,
+      "level": 0.6,
+      "from": [
+        0,
+        -0.6,
+        1.1
+      ],
+      "to": [
+        0,
+        0.5,
+        1.25
+      ],
+      "alt": "stamp_back",
+      "front": "ch1_open_1_front",
+      "line": "Out of the dark comes a stamp: RETURN TO SENDER. Its ink is the only bright thing in the Hollow."
+    },
+    {
+      "id": "s2",
+      "back": "ch1_open_2_back",
+      "speaker": "W",
+      "seconds": 3.5,
+      "fade": 0.7,
+      "level": 0.9,
+      "from": [
+        0.8,
+        0.2,
+        1.3
+      ],
+      "to": [
+        -0.4,
+        0,
+        1.1
+      ],
+      "alt": "hollow_back",
+      "front": "ch1_open_2_front",
+      "line": "Ow! That's extra!"
+    },
+    {
+      "id": "s3",
+      "back": "ch1_open_3_back",
+      "speaker": "N",
+      "seconds": 3.5,
+      "fade": 0.7,
+      "level": 1.0,
+      "from": [
+        0,
+        0,
+        1.4
+      ],
+      "to": [
+        0,
+        0,
+        1.08
+      ],
+      "alt": "ring_back"
+    },
+    {
+      "id": "s4",
+      "back": "ch1_open_4_back",
+      "speaker": "S",
+      "seconds": 3.8,
+      "fade": 0.7,
+      "level": 0.5,
+      "from": [
+        -0.5,
+        0.6,
+        1.08
+      ],
+      "to": [
+        0.2,
+        -0.2,
+        1.3
+      ],
+      "alt": "slice_back",
+      "front": "ch1_open_4_front",
+      "line": "You're inside. Inside, you exist."
+    },
+    {
+      "id": "s5",
+      "back": "ch1_open_5_back",
+      "speaker": "W",
+      "seconds": 3.2,
+      "fade": 0.7,
+      "level": 0.4,
+      "from": [
+        0.2,
+        -0.2,
+        1.3
+      ],
+      "to": [
+        0.6,
+        0,
+        1.2
+      ],
+      "alt": "slice_back",
+      "front": "ch1_open_5_front",
+      "line": "Does existing come with a receipt?"
+    },
+    {
+      "id": "s6",
+      "back": "ch1_open_6_back",
+      "speaker": "Y",
+      "seconds": 4.2,
+      "fade": 0.7,
+      "level": 1.0,
+      "from": [
+        0.6,
+        0,
+        1.3
+      ],
+      "to": [
+        -0.2,
+        0,
+        1.08
+      ],
+      "alt": "hollow_back",
+      "front": "ch1_open_6_front",
+      "line": "Hello! Uploading victory! Striking this address now!"
+    }
+  ]
+}
