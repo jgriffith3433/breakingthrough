@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-"""Writes the chapter 1-3 reels (Assets/Resources/Cinematics/ch{1,2,3}_{open,close}.json) and Tools/Cinematics/gen_manifest.json
-from the shot lists in Docs/CampaignBible.md. Art names are final (Art/<reel>_<n>_back|front.png): until Hawkes Gen makes them
-each shot shows its `alt` placeholder. Voices for non-Wallit/Slice speakers: Resources/Voice/cinema/<reel>_<shot>.mp3."""
+"""Writes every campaign reel (Assets/Resources/Cinematics: ch1-6 open/close, boss intros, ending, credits) and Tools/Cinematics/gen_manifest.json
+from the shot lists in Docs/CampaignBible.md, and every shot's keyframe (Art/<reel>_<n>.jpg) from Tools/Cinematics/keyframes.json. Voices for non-Wallit/Slice speakers: Resources/Voice/cinema/<reel>_<shot>.mp3."""
 import json, os
 root = os.path.join(os.path.dirname(__file__), "..", "..")
 # (speaker, line, seconds, from, to, level, back prompt, front prompt or None, music cue, alt)
@@ -112,26 +111,40 @@ R.update({
  ("N","The circle stands. Slice and Wallit are on the books. Thanks for playing.",4.6,[0,0,1.2],[0,0,1.0],0.8,"wide dawn Hollow, a gold ring, two small figures",None,"Resolve, last bell","hollow_back")]),
 })
 SPEAKS = "KPHFYVROM"
-manifest = {"sheets": [], "stills": [], "clips": [], "voices": [], "beds": {}, "sfx": ["stamp_land", "lantern_gutter", "belt_stop", "red_lamp_blink", "paper_slide", "ledger_close", "seal_crack", "door_open"]}
+# One generated keyframe per shot (Tools/Cinematics/keyframes.json: scene, place, cast; Resources/Cinematics/Art/<reel>_<n>.jpg).
+# The keyframe is the whole picture, characters painted in from their Hawkes Gen sheets, so a shot has no front layer and
+# no stand-in alt: the placeholders in Art are only for sample.json.
+K = json.load(open(os.path.join(root, "Tools/Cinematics/keyframes.json")))
+KEYS = dict((k["file"], k) for k in K["shots"])
+def keyframe_prompt(k):
+    scene = k["scene"][0].upper() + k["scene"][1:]
+    text = scene + ". Setting: " + K["places"][k["place"]] + ". "
+    if k["cast"]:
+        refs = ["image %d is %s's character sheet (%s)" % (n + 1, K["sheets"][c]["name"], K["sheets"][c]["look"]) for n, c in enumerate(k["cast"])]
+        text += "; ".join(refs) + ". " + K["castClause"] + " "
+    return text + K["style"]
+manifest = {"sheets": {}, "keyframes": [], "clips": [], "voices": [], "beds": {}, "sfx": ["stamp_land", "lantern_gutter", "belt_stop", "red_lamp_blink", "paper_slide", "ledger_close", "seal_crack", "door_open"]}
 for rid, (bed, shots) in R.items():
     out = {"id": rid, "bed": bed, "shots": []}
     manifest["beds"].setdefault(bed, []).append(rid)
     for i, (sp, line, sec, fr, to, lv, bp, fp, cue, alt) in enumerate(shots, 1):
         sid = "s%d" % i
-        sh = {"id": sid, "back": "%s_%d_back" % (rid, i), "speaker": sp, "seconds": sec, "fade": 0.0 if i == 1 and rid.endswith("open") is False else 0.7, "level": lv, "from": fr, "to": to, "alt": alt}
-        if fp:
-            sh["front"] = "%s_%d_front" % (rid, i)
-            manifest["stills"].append({"file": sh["front"], "prompt": fp, "from_sheet": True})
+        key = KEYS["%s_%d" % (rid, i)]
+        sh = {"id": sid, "back": key["file"], "speaker": sp, "seconds": sec, "fade": 0.0 if i == 1 and rid.endswith("open") is False else 0.7, "level": lv, "from": fr, "to": to, "cast": key["cast"]}
         if line:
             sh["line"] = line
         if sp in SPEAKS:
             manifest["voices"].append({"file": "Voice/cinema/%s_%s.mp3" % (rid, sid), "speaker": sp, "line": line})
         out["shots"].append(sh)
-        manifest["stills"].append({"file": sh["back"], "prompt": bp, "music": cue})
+        entry = {"file": "Art/" + key["file"] + ".jpg", "tool": "image.paint" if key["cast"] else "image.generate", "cast": key["cast"], "prompt": keyframe_prompt(key), "music": cue}
+        for field in ("job", "asset"):
+            if key.get(field):
+                entry[field] = key[field]
+        manifest["keyframes"].append(entry)
         if i in (1, len(shots)):
-            manifest["clips"].append({"from": sh["back"], "seconds": 5, "file": "StreamingAssets/Cinematics/%s_%d.mp4" % (rid, i)})
+            manifest["clips"].append({"from": "Art/" + key["file"] + ".jpg", "seconds": 5, "file": "StreamingAssets/Cinematics/%s_%d.mp4" % (rid, i)})
     json.dump(out, open(os.path.join(root, "Assets/Resources/Cinematics", rid + ".json"), "w"), indent=2)
-manifest["sheets"] = ["Wallit", "Slice", "The Courier", "The Foreman", "The Plated Alpha", "Yo Bot", "The Half-Built"]   # reused from the chapters 1-3 production
-manifest["new_sheets"] = ["The Server", "The Registrar", "The Order-Bearer", "Mega Yo Bot"]
+for sid, sheet in K["sheets"].items():
+    manifest["sheets"][sid] = dict((f, sheet[f]) for f in ("name", "look", "job", "asset") if sheet.get(f))
 json.dump(manifest, open(os.path.join(root, "Tools/Cinematics/gen_manifest.json"), "w"), indent=2)
-print(len(manifest["stills"]), "stills", len(manifest["clips"]), "clips", len(manifest["voices"]), "voices")
+print(len(manifest["keyframes"]), "keyframes", len(manifest["sheets"]), "sheets", len(manifest["clips"]), "clips", len(manifest["voices"]), "voices")

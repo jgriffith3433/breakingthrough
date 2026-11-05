@@ -40,7 +40,7 @@ public static class Playtest {
         new PlaytestScenario("modes", "The mode select: the main menu shows Campaign and Arcade; Campaign opens the three case files (save slots, setup: the sandbox keeps them off the real save), opening an empty file loads the placeholder Chapter 1 scene with Wallit and Slice's lines, Menu returns and the file now reads Chapter 1 with its time on the books, Erase (asked twice) empties it; then Arcade starts today's wave defense and the bot plays 40 s of it with the bat. Events mode-select, campaign-files, chapter-open, chapter-lines, campaign-saved, campaign-erased, arcade-start", 200, "content"),
         new PlaytestScenario("pause-nav", "Pause and menus by keyboard and gamepad, in every chapter (setup: the sandbox case file stands on each chapter in turn). From the main menu with keys only: C opens the case files, Enter opens file 1, Enter begins the chapter, Enter skips the opening scene. Then P pauses (time stops) and P resumes, the pad's Start pauses, Down and Enter open Settings (first chapter): Left turns the music and effects sliders (the gold ring follows), Enter on Voices cycles how often the voices speak, the pad's B closes Settings and the pause stays, the settings are read back from their saved JSON; Resume with Enter; pause again, and Down, Down, Enter, Enter on Quit to menu returns to the main menu. Events nav-menu, nav-case-files, nav-chapter-card, chapter-paused, chapter-resumed, pad-paused, nav-settings, volume-changed, voices-changed, settings-persisted, nav-quit; metrics chaptersPaused, menuMoves, menuSubmits, sliderTurns", 900, "content"),
         new PlaytestScenario("cinematic", "The shot-based cinematic player (Cutscene.PlayShots, data in Resources/Cinematics/sample.json): a seven-shot sample plays over the game with placeholder stills, Ken Burns moves, parallax, crossfades, letterbox bars, voice lines through the voice director, a music bed that ducks under them, and typed subtitles. Pass 1 presses Space for the next shot and then Enter to skip mid-scene: play resumes (time scale 1, the director free, the bed fades out). Pass 2 runs to the end untouched. Setup: the scene is started by name (the shot list is the data). Events cinematic-open, cinematic-shot (id, zoom, pan, subtitle, bed volume, duck), cinematic-next, cinematic-skip, cinematic-resume, cinematic-done, cinematic-memory; metrics cinematicShots, cinematicSkipped, cinematicOverlaps, cinematicVoiceLines, cinematicSubtitles, cinematicDuckLow, cinematicMemoryMB", 200, "content"),
-        new PlaytestScenario("chapter-cinematics", "Every campaign cinematic: the openings and closings of Chapters 1-6, the four boss intros (Courier, Foreman, Server, Order), ADDRESS FILED (ch6_close, played before the ending card), the RECEIVED ending and the credits reel (Resources/Cinematics, wired in ChapterRun.Start, Complete, PlayBossIntro, CompleteFinal). Each reel is played by name over the game, the way the chapters play them. The bot lets all but two run to their end (Space on shot 2 of the first) and presses Enter to skip the Server intro and the credits mid-scene. Per reel it logs the shots, the voice lines (Wallit and Slice through the director, the Courier, Foreman, Plated Alpha, Half-Built, Server, Registrar, Order-Bearer, Mega Yo Bot and Yo Bots from Resources/Voice/cinema), the subtitles, the music bed ducking and any generated still still missing (missing-art: the placeholder shows). Checked: play resumes (time scale 1, director free, bed fades), no overlapping voices. Events cinematics-reel (id, shots, voice, subtitles, missing art), cinematics-skip, cinematics-resume, cinematics-done; metrics cinematicsReels, cinematicsShots, cinematicsVoiceLines, cinematicsMissingArt, cinematicsSkipped", 900, "content"),
+        new PlaytestScenario("chapter-cinematics", "Every campaign cinematic: the openings and closings of Chapters 1-6, the four boss intros (Courier, Foreman, Server, Order), ADDRESS FILED (ch6_close, played before the ending card), the RECEIVED ending and the credits reel (Resources/Cinematics, wired in ChapterRun.Start, Complete, PlayBossIntro, CompleteFinal). Each reel is played by name over the game, the way the chapters play them. The bot lets all but two run to their end (Space on shot 2 of the first) and presses Enter to skip the Server intro and the credits mid-scene. Per reel it logs the shots, the voice lines (Wallit and Slice through the director, the Courier, Foreman, Plated Alpha, Half-Built, Server, Registrar, Order-Bearer, Mega Yo Bot and Yo Bots from Resources/Voice/cinema), the subtitles, the music bed ducking, and per shot the still on screen (cinematics-art: the generated keyframe from Resources/Cinematics/Art, its size, load time and cast, one Hawkes Gen character sheet per character so Wallit, Slice, the Courier, the Foreman, the Server and the Order-Bearer stay on-model; a placeholder or missing still is a bug). Checked: play resumes (time scale 1, director free, bed fades), no overlapping voices. Events cinematics-reel (id, shots, voice, subtitles, missing art, placeholder shots), cinematics-art, cinematics-cast, cinematics-skip, cinematics-resume, cinematics-done; metrics cinematicsReels, cinematicsShots, cinematicsVoiceLines, cinematicsMissingArt, cinematicsPlaceholderShots, cinematicsKeyframeShots, cinematicsArtLoadMsMax, cinematicsSkipped", 900, "content"),
         new PlaytestScenario("cutscene", "The chapter cutscene: Campaign, case file 1, Begin on the Chapter 1 card, and the opening scene (The Stamp) plays over the map with letterbox bars, a speaker name and portrait slot, typed lines and the camera on whoever talks. The bot reads the first pages with real key presses (a first press finishes the typing, the next turns the page), skipping a page's voice by pressing on, then presses Enter to skip the rest: play starts with the objective line up and Wallit moving on the stick, and the chapter is cleared. Checked: every Wallit, Slice and Yo Bot page has a name, two voice lines never overlap (Wallit's floor and the scene both count them), the director allows no other line during the scene. Events cutscene-open, cutscene-page (speaker, text, camera focus, letterbox, voice), cutscene-skip, cutscene-play, cutscene-voice; metrics cutscenePages, cutsceneVoiceLines, cutsceneOverlaps, cutsceneSkipped", 420, "content"),
         new PlaytestScenario("choices", "Dialogue choices that change later lines and outcomes, saved per case file, with real input. Campaign, case file 1 (the sandbox), Begin: chapter 1 is played to the Courier's fall. The Courier's aftermath scene (events after, choice-open, choice-made) stops on two choice pages with two buttons; the bot presses 1 (keep the notice) and 1 (tip Slice), the reply plays at once and the Chapter Complete card carries the lines that read them (event choice-card: 'notice is in my pocket', 'You tipped. I noticed.'). The files are written out and read back as after a quit (choice-saved, metric choiceSaved). Setup shortcut: each later chapter's choice pages (Choices.All, chapters 2 to 6) are put up over the game, one at a time, and the bot answers them with the key presses 1 or 2 (choice-made); then for every chapter that reads a choice in its boss fight, the card or the ending, the lines are read under option 1 and under option 2 (choice-lines, and a problem if they do not differ; choice-outcome gives the Server's refusals needed, 3 or 2 if the paper was taken, and the Foreman's phase-two line). Metrics choicesMade, choicesSaved, choiceLinesDiffer, choiceOutcomes", 900, "content"),
         new PlaytestScenario("campaign", "Campaign loads and plays a chapter: from the main menu press Campaign, open case file 1 (setup: the sandbox keeps the files off the real save) and wait for the Campaign scene to load. Reports run_start with mode=campaign and the loaded scene name (event run_start, metrics campaignLoaded, campaignLoadSeconds); if the scene fails to load (not in the build's scene list, or the chapter never builds) the run stops stuck with a bug saying so. Then Begin on the chapter card: Wallit and Slice in the chapter map, Wallit walks on the stick, the objective line shows, the bot fights with real input until it is met, Chapter 1 holds the circle against Yo Bots, then the Courier arrives (health bar on screen), winds up telegraphed notices on the circle and the bot breaks them or stands in them until it falls and the defeat beat plays; the Chapter Complete card shows, the case file advances to chapter 2, Menu, and reopening the file resumes at chapter 2 (events chapter-card, chapter-start, chapter-move, objective, boss-arrives, boss-bar, boss-attack, boss-defeated, defeat-beat, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics chapterAdvanced, chapterResumed, bossBar, courierWinds, courierInterrupted). Smoke is unchanged: it still presses Arcade", 750, "content"),
@@ -6990,6 +6990,10 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         string[] ids = { "ch1_open", "ch1_close", "ch2_open", "ch2_close", "ch3_open", "ch3_close", "ch4_open", "ch4_close", "ch5_open", "ch5_close", "ch6_open", "boss_courier", "boss_foreman", "boss_server", "boss_order", "ch6_close", "ending_received", "credits" };
         int reels = 0;
         int missing = 0;
+        int placeholderStart = Cutscene.PlaceholderShots;
+        int artShots = 0;
+        float slowestLoad = 0f;
+        var castShots = new System.Collections.Generic.Dictionary<string, int>();
         for (int r = 0; r < ids.Length && !run.Done; r++) {
             Cutscene.Reel reel = Cutscene.LoadReel(ids[r]);
             if (reel == null) {
@@ -6998,6 +7002,8 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             }
             bool skipThis = ids[r] == "boss_server" || ids[r] == "credits";   // two reels are left with Enter mid-scene
             run.Event("setup", ids[r] + " (" + reel.shots.Length + " shots) is played by name" + (skipThis ? ", Enter to skip" : ids[r] == "ch1_open" ? ", Space on shot 2" : ""));
+            int eventsBefore = Cutscene.Events.Count;
+            int placeholdersBefore = Cutscene.PlaceholderShots;
             Cutscene.PlayShots(reel, null);
             yield return run.Until(() => Cutscene.IsOpen, 5f, "the cinematic " + ids[r]);
             if (run.Done) {
@@ -7018,6 +7024,19 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                     seen = scene.ShotIndex;
                     since = Time.realtimeSinceStartup;
                     run.Event("cinematics-shot", ids[r] + " " + (seen + 1) + "/" + scene.ShotCount + " " + scene.ShotId + " bed " + scene.BedVolume.ToString("0.00") + " duck " + scene.Duck.ToString("0.00") + " \"" + scene.Subtitle.Replace('\n', ' ') + "\"");
+                    // The still on screen: generated keyframe or stand-in, its size, who is in it (one character sheet each).
+                    run.Event("cinematics-art", ids[r] + " " + scene.ShotId + ": " + (scene.ShotPlaceholder ? "PLACEHOLDER " : "keyframe ") + scene.ShotArt + ", cast " + (scene.ShotCast.Length > 0 ? scene.ShotCast : "none") + ", loaded in " + scene.ShotArtLoadMs.ToString("0") + " ms");
+                    if (scene.ShotPlaceholder) {
+                        run.Problem(PlaytestSeverity.Bug, "chapter-cinematics: " + ids[r] + " shot " + scene.ShotId + " shows placeholder art (" + scene.ShotArt + ")");
+                    } else {
+                        artShots++;
+                    }
+                    slowestLoad = Mathf.Max(slowestLoad, scene.ShotArtLoadMs);
+                    foreach (string who in scene.ShotCast.Split(',')) {
+                        if (who.Length > 0) {
+                            castShots[who] = castShots.ContainsKey(who) ? castShots[who] + 1 : 1;
+                        }
+                    }
                 }
                 float held = Time.realtimeSinceStartup - since;
                 if (ids[r] == "ch1_open" && !nudged && seen == 1 && held > 1f) {
@@ -7035,15 +7054,16 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                 yield break;
             }
             int miss = 0;
-            foreach (string e in new System.Collections.Generic.List<string>(Cutscene.Events)) {
-                if (e.StartsWith("missing-art|")) {
+            var reelEvents = new System.Collections.Generic.List<string>(Cutscene.Events);
+            for (int e = Mathf.Min(eventsBefore, reelEvents.Count); e < reelEvents.Count; e++) {
+                if (reelEvents[e].StartsWith("missing-art|")) {
                     miss++;
                 }
             }
             missing += miss;
             reels++;
             yield return new WaitForSecondsRealtime(1f);
-            run.Event("cinematics-reel", ids[r] + ": " + reel.shots.Length + " shots, voice lines so far " + Cutscene.VoiceLines + ", subtitles so far " + Cutscene.SubtitleLines + ", art entries missing " + miss);
+            run.Event("cinematics-reel", ids[r] + ": " + reel.shots.Length + " shots, voice lines so far " + Cutscene.VoiceLines + ", subtitles so far " + Cutscene.SubtitleLines + ", art entries missing " + miss + ", placeholder shots " + (Cutscene.PlaceholderShots - placeholdersBefore));
             run.Event("cinematics-resume", ids[r] + " closed: time scale " + Time.timeScale.ToString("0.00") + ", scene lock " + VoiceDirector.Scene + ", bed " + scene.BedVolume.ToString("0.00"));
             if (Time.timeScale < 0.99f) {
                 run.Problem(PlaytestSeverity.Bug, "chapter-cinematics: " + ids[r] + " left the game frozen");
@@ -7057,6 +7077,14 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         run.Metric("cinematicsShots", Cutscene.ShotsShown);
         run.Metric("cinematicsVoiceLines", Cutscene.VoiceLines);
         run.Metric("cinematicsMissingArt", missing);
+        run.Metric("cinematicsPlaceholderShots", Cutscene.PlaceholderShots - placeholderStart);
+        run.Metric("cinematicsKeyframeShots", artShots);
+        run.Metric("cinematicsArtLoadMsMax", slowestLoad);
+        var castLine = new System.Collections.Generic.List<string>();
+        foreach (var kv in castShots) {
+            castLine.Add(kv.Key + " " + kv.Value);
+        }
+        run.Event("cinematics-cast", "shots per character sheet: " + (castLine.Count > 0 ? string.Join(", ", castLine.ToArray()) : "none"));
         run.Metric("cinematicsSkipped", Cutscene.ShotsSkipped);
         run.Event("cinematics-done", reels + " reels, " + Cutscene.ShotsShown + " shots, " + Cutscene.VoiceLines + " voice lines, " + missing + " missing art entries, " + overlaps + " overlaps");
         if (reels < ids.Length) {
