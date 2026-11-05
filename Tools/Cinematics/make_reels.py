@@ -138,7 +138,7 @@ for rid, (bed, shots) in R.items():
         out["shots"].append(sh)
         entry = {"file": "Art/" + key["file"] + ".jpg", "tool": "image.paint" if key["cast"] else "image.generate", "cast": key["cast"], "prompt": keyframe_prompt(key), "music": cue}
         if key["cast"]:
-            entry["negative"] = K["negative"]
+            entry["negative"] = K["negative"] + (", " + key["avoid"] if key.get("avoid") else "")
         for field in ("job", "asset"):
             if key.get(field):
                 entry[field] = key[field]
