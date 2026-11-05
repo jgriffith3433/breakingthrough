@@ -452,7 +452,7 @@ public class Companion : MonoBehaviour {
         }
         if (Downed) {
             int pips = Mathf.RoundToInt(ReviveProgress * 10f);
-            label.text = Data.Name + " is down\nhold E to revive\n[" + new string('#', pips) + new string('-', 10 - pips) + "]";
+            label.text = Data.Name + " is down\n" + (UiFit.Touch ? "hold Revive" : "hold E") + " to revive\n[" + new string('#', pips) + new string('-', 10 - pips) + "]";
             label.color = new Color(1f, 0.55f, 0.45f);
         } else {
             int pips = Mathf.Clamp(Mathf.CeilToInt(10f * Health / MaxHealth), 1, 10);

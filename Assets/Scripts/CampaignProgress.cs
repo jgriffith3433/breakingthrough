@@ -38,6 +38,12 @@ public static class CampaignProgress {
         get { return Active && BackRooms.HasReward(CampaignSave.Get(CampaignSave.Active)); }
     }
     public static float RefundReach { get { return RefundFull ? FullRange : RefundRange; } }
+    // An ability's blurb for the screen: "Press C: ..." says "Tap its button: ..." on a phone.
+    public static string BlurbOf(Ability a) {
+        int colon = a.Blurb.IndexOf(':');
+        return UiFit.Touch && a.Blurb.StartsWith("Press ") && colon > 0 ? "Tap its button:" + a.Blurb.Substring(colon + 1) : a.Blurb;
+    }
+
     public static string RefundName { get { return RefundFull ? "Refund in Full" : "Refund"; } }
 
     public struct Ability {
@@ -167,7 +173,7 @@ public static class CampaignProgress {
 
     // "X: Dodge", "C: Refund ready", "V: empty": what a slot shows on the HUD line.
     public static string SlotLabel(int slot) {
-        string key = SlotKeys[slot].ToString() + ": ";
+        string key = UiFit.Touch ? "" : SlotKeys[slot].ToString() + ": ";
         int fill = SlotFill[slot];
         if (fill == SlotDodge) {
             return key + "Dodge" + (CampaignMoves.DodgeWait > 0f ? " " + Mathf.CeilToInt(CampaignMoves.DodgeWait) + " s" : "");
