@@ -29,6 +29,8 @@ public static class CampaignSave {
         public bool hard;        // Hard is chosen: only ever true on a filed file (every chapter cleared)
         public int plus;         // New Game+ loops begun on this file (NewGamePlus): xp, unlocks and Refund in Full carry over, the chapters start again
         public bool secret;      // the secret ending (Story.SecretEnding) has been seen on this file
+        public int chats;        // bit per HubLife.Chats row: the optional hub conversation was heard (version 8)
+        public int side;         // bit per HubLife.Sides row: the favour was returned or the notice pinned (version 8)
         public int choices;      // 2 bits per Choices.All row: 0 not made, 1 first option, 2 second (the file's dialogue choices)
     }
 
@@ -38,8 +40,9 @@ public static class CampaignSave {
     // start with none). 5: the chapter ranks, Standard and Hard, and the Hard choice (older files start with none, Standard).
     // 6: New Game+ loops and the secret ending seen (older files start at none: nothing to derive).
     // 7: the dialogue choices (Choices.cs), 2 bits a choice (older files start with none: nothing to derive).
+    // 8: the hub's conversations and side errands (HubLife), a bit a row (older files start with none: nothing to derive).
     // Bump it with a step in Migrate.
-    public const int Version = 7;
+    public const int Version = 8;
     const string BadKey = "hawkes.campaign.bad";
 
     [Serializable]
@@ -112,6 +115,8 @@ public static class CampaignSave {
             s.reached = Mathf.Clamp(Mathf.Max(s.reached, s.chapter), 0, ChapterCount - 1);
             s.xp = Mathf.Max(0, s.xp);
             s.plus = Mathf.Clamp(s.plus, 0, 99);   // v6
+            s.chats &= (1 << HubLife.Chats.Length) - 1;   // v8
+            s.side &= (1 << HubLife.Sides.Length) - 1;
             s.choices = Choices.Clean(s.choices);   // v7: only choices that exist, never the unused pattern 3
             s.seconds = float.IsNaN(s.seconds) || float.IsInfinity(s.seconds) ? 0f : Mathf.Max(0f, s.seconds);
         }
@@ -347,6 +352,8 @@ public static class CampaignSave {
         s.goals = 0;
         s.choices = 0;   // the loop is a fresh case: the choices are made again
         s.errands = 0;
+        s.chats = 0;   // the loop's hub starts quiet again: every conversation and side errand can be had once more
+        s.side = 0;
         s.rooms &= 1 << ChapterCount;   // only the Dead Letter's reward is kept
         s.hard = false;
         Touch(s);
