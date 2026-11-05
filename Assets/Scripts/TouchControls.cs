@@ -31,6 +31,8 @@ public class TouchControls : MonoBehaviour {
         Revive
     }
 
+    class Spots : Dictionary<int, Vector2> { }
+
     class Finger {
         public Role Role;
         public Vector2 Start;
@@ -46,10 +48,10 @@ public class TouchControls : MonoBehaviour {
         public Color Rest;
     }
 
-    static readonly Dictionary<int, Vector2> botFingers = new Dictionary<int, Vector2>();
+    static readonly Spots botFingers = new Spots();
 
     readonly Dictionary<int, Finger> fingers = new Dictionary<int, Finger>();
-    readonly Dictionary<int, Vector2> seen = new Dictionary<int, Vector2>();
+    readonly Spots seen = new Spots();
     readonly List<int> gone = new List<int>();
     readonly List<Pad> pads = new List<Pad>();
     Font font;
