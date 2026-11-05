@@ -4,7 +4,7 @@
   "shots": [
     {
       "id": "s1",
-      "back": "boss_order_1_back",
+      "back": "boss_order_1",
       "speaker": "Y",
       "seconds": 3.2,
       "fade": 0.0,
@@ -19,13 +19,14 @@
         0,
         1.4
       ],
-      "alt": "crest_back",
-      "front": "boss_order_1_front",
+      "cast": [
+        "orderbearer"
+      ],
       "line": "Order delivery! Signature required!"
     },
     {
       "id": "s2",
-      "back": "boss_order_2_back",
+      "back": "boss_order_2",
       "speaker": "S",
       "seconds": 2.8,
       "fade": 0.7,
@@ -40,13 +41,14 @@
         0,
         1.1
       ],
-      "alt": "slice_back",
-      "front": "boss_order_2_front",
+      "cast": [
+        "slice"
+      ],
       "line": "Spider. It carries the order."
     },
     {
       "id": "s3",
-      "back": "boss_order_3_back",
+      "back": "boss_order_3",
       "speaker": "O",
       "seconds": 4.0,
       "fade": 0.7,
@@ -61,13 +63,14 @@
         0,
         1.4
       ],
-      "alt": "stamp_back",
-      "front": "boss_order_3_front",
+      "cast": [
+        "orderbearer"
+      ],
       "line": "Order, in force: STRIKE. THIS. ADDRESS."
     },
     {
       "id": "s4",
-      "back": "boss_order_4_back",
+      "back": "boss_order_4",
       "speaker": "W",
       "seconds": 2.8,
       "fade": 0.7,
@@ -82,8 +85,9 @@
         0,
         1.4
       ],
-      "alt": "wallet_front",
-      "front": "boss_order_4_front",
+      "cast": [
+        "wallit"
+      ],
       "line": "Then it carries my bill."
     }
   ]

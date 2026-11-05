@@ -4,7 +4,7 @@
   "shots": [
     {
       "id": "s1",
-      "back": "ch4_close_1_back",
+      "back": "ch4_close_1",
       "speaker": "V",
       "seconds": 3.6,
       "fade": 0.0,
@@ -19,13 +19,14 @@
         0.4,
         1.1
       ],
-      "alt": "crest_back",
-      "front": "ch4_close_1_front",
+      "cast": [
+        "server"
+      ],
       "line": "Delivery... undelivered... chirp?"
     },
     {
       "id": "s2",
-      "back": "ch4_close_2_back",
+      "back": "ch4_close_2",
       "speaker": "W",
       "seconds": 2.6,
       "fade": 0.7,
@@ -40,13 +41,14 @@
         0,
         1.2
       ],
-      "alt": "hollow_back",
-      "front": "ch4_close_2_front",
+      "cast": [
+        "wallit"
+      ],
       "line": "Return to sender."
     },
     {
       "id": "s3",
-      "back": "ch4_close_3_back",
+      "back": "ch4_close_3",
       "speaker": "S",
       "seconds": 2.2,
       "fade": 0.7,
@@ -61,13 +63,14 @@
         0,
         1.4
       ],
-      "alt": "slice_back",
-      "front": "ch4_close_3_front",
+      "cast": [
+        "slice"
+      ],
       "line": "Clean."
     },
     {
       "id": "s4",
-      "back": "ch4_close_4_back",
+      "back": "ch4_close_4",
       "speaker": "N",
       "seconds": 3.2,
       "fade": 0.7,
@@ -82,7 +85,7 @@
         0,
         1.05
       ],
-      "alt": "hollow_back"
+      "cast": []
     }
   ]
 }

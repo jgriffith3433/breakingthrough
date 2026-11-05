@@ -113,7 +113,8 @@ R.update({
 SPEAKS = "KPHFYVROM"
 # One generated keyframe per shot (Tools/Cinematics/keyframes.json: scene, place, cast; Resources/Cinematics/Art/<reel>_<n>.jpg).
 # The keyframe is the whole picture, characters painted in from their Hawkes Gen sheets, so a shot has no front layer and
-# no stand-in alt: the placeholders in Art are only for sample.json.
+# no stand-in alt once it is made. A shot whose keyframe has no Gen asset yet keeps its old stand-in as "alt" (CutsceneShots
+# shows it while Art/<file>.jpg is missing), so a reel never goes blank; the playtest reports it as a stand-in.
 K = json.load(open(os.path.join(root, "Tools/Cinematics/keyframes.json")))
 KEYS = dict((k["file"], k) for k in K["shots"])
 def keyframe_prompt(k):
@@ -131,6 +132,8 @@ for rid, (bed, shots) in R.items():
         sid = "s%d" % i
         key = KEYS["%s_%d" % (rid, i)]
         sh = {"id": sid, "back": key["file"], "speaker": sp, "seconds": sec, "fade": 0.0 if i == 1 and rid.endswith("open") is False else 0.7, "level": lv, "from": fr, "to": to, "cast": key["cast"]}
+        if not key.get("asset"):
+            sh["alt"] = alt
         if line:
             sh["line"] = line
         if sp in SPEAKS:
