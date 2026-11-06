@@ -11,6 +11,7 @@ Shader "Knoll/KitLit"
         _Glossiness ("Smoothness", Range(0,1)) = 0.15
         _Metallic ("Metallic", Range(0,1)) = 0
         _EmissionColor ("Emission", Color) = (0,0,0,1)
+        _Flash ("Hit flash (rgb, a = amount)", Color) = (1,1,1,0)
     }
     SubShader
     {
@@ -29,6 +30,7 @@ Shader "Knoll/KitLit"
         half _Metallic;
         fixed4 _Color;
         fixed4 _EmissionColor;
+        fixed4 _Flash;
 
         struct Input
         {
@@ -45,7 +47,8 @@ Shader "Knoll/KitLit"
             o.Normal = normalize(n);
             o.Smoothness = _Glossiness;
             o.Metallic = _Metallic;
-            o.Emission = _EmissionColor.rgb;
+            o.Albedo = lerp(o.Albedo, _Flash.rgb, _Flash.a * 0.6);
+            o.Emission = _EmissionColor.rgb + _Flash.rgb * _Flash.a * 0.7;
             o.Alpha = 1;
         }
         ENDCG
