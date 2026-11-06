@@ -8283,6 +8283,17 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         if (!titled) {
             run.Problem(PlaytestSeverity.Polish, "the game-over panel does not read \"Address struck off\"");
         }
+        // The tutorial hint and Wallit's caption must not draw over the panel.
+        int stray = 0;
+        foreach (Text text in Object.FindObjectsByType<Text>(FindObjectsSortMode.None)) {
+            if (text.isActiveAndEnabled && (text.text == "Walk over bolts to level up." || text.text.StartsWith("Click to swing") || text.text.StartsWith("Tap Swing"))) {
+                stray++;
+            }
+        }
+        run.Event("game-over-hint", stray == 0 ? "hidden" : "still showing");
+        if (stray > 0) {
+            run.Problem(PlaytestSeverity.Polish, "a tutorial hint still draws over the game-over panel");
+        }
         PolishScreen("gameover", 0, false);
         run.Progress(0.9f);
         yield return GameOver();
