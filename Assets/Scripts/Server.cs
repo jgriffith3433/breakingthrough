@@ -49,7 +49,7 @@ public class Server : MonoBehaviour {
 
     // The paper: a pale sheet with two ruled lines, held on a thin arm in front of the body. Built in code, no collider.
     void BuildPaper() {
-        var shader = SafeShader.Find("Sprites/Default");
+        var shader = SafeShader.Solid();
         var holder = new GameObject("Paper");
         holder.transform.SetParent(transform, false);
         paperRest = new Vector3(0.3f, 0.5f, 0.7f);

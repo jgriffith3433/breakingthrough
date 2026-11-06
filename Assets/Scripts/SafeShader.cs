@@ -18,4 +18,18 @@ public static class SafeShader
         return null;
     }
 
+    // Opaque flat colour that writes depth. Sprites/Default is transparent with ZWrite off, so solid meshes drawn
+    // with it sort by distance and paint over each other. Falls back to Sprites/Default only if the shader is missing.
+    public static Shader Solid()
+    {
+        Shader shader = Shader.Find("Knoll/FlatSolid");
+        if (shader == null) shader = Resources.Load<Shader>("Shaders/FlatSolid");
+        return shader != null ? shader : Find("Sprites/Default");
+    }
+
+    // Solid when the colour is opaque, the sprite shader when it has alpha.
+    public static Shader For(Color color)
+    {
+        return color.a >= 0.99f ? Solid() : Find("Sprites/Default");
+    }
 }

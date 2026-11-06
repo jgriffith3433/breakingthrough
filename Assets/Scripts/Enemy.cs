@@ -493,7 +493,7 @@ public class Enemy : MonoBehaviour
         HitsToDrop = Mathf.Max(1, hits);
         modelTint = new Color(1.2f, 1f, 0.62f);
         modelTintAmount = 0.3f;
-        var shader = SafeShader.Find("Sprites/Default");
+        var shader = SafeShader.Solid();
         var holder = new GameObject("Order Sheet");
         holder.transform.SetParent(transform, false);
         holder.transform.localPosition = new Vector3(0f, 0.5f, 0.62f);
@@ -527,7 +527,7 @@ public class Enemy : MonoBehaviour
         Title = name;
         gameObject.name = name;
         HitsToDrop = Mathf.Max(1, hits);
-        var shader = SafeShader.Find("Sprites/Default");
+        var shader = SafeShader.Solid();
         var holder = new GameObject("Ledger");
         holder.transform.SetParent(transform, false);
         holder.transform.localPosition = new Vector3(0f, 0.55f, 0.66f);
@@ -562,7 +562,7 @@ public class Enemy : MonoBehaviour
         Title = name;
         gameObject.name = name;
         HitsToDrop = Mathf.Max(1, hits);
-        var shader = SafeShader.Find("Sprites/Default");
+        var shader = SafeShader.Solid();
         var holder = new GameObject("Order");
         holder.transform.SetParent(transform, false);
         holder.transform.localPosition = new Vector3(0f, 0.7f, -0.1f);
@@ -598,7 +598,7 @@ public class Enemy : MonoBehaviour
         HitsToDrop = Mathf.Max(1, hits);
         modelTint = new Color(1.15f, 0.8f, 0.78f);
         modelTintAmount = 0.3f;
-        var shader = SafeShader.Find("Sprites/Default");
+        var shader = SafeShader.Solid();
         var holder = new GameObject("Invalid Plate");
         holder.transform.SetParent(transform, false);
         holder.transform.localPosition = new Vector3(0f, 0.5f, 0.62f);

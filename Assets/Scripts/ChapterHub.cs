@@ -234,7 +234,7 @@ public class ChapterHub : MonoBehaviour {
     static void Paint(GameObject go, Color color) {
         Renderer r = go.GetComponent<Renderer>();
         r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        Shader shader = SafeShader.Find("Sprites/Default");
+        Shader shader = SafeShader.For(color);
         if (shader != null) {
             r.material = new Material(shader) { color = color };
         } else {

@@ -157,7 +157,7 @@ public class Companion : MonoBehaviour {
             torso.transform.localScale = new Vector3(0.6f, 0.9f, 0.6f);
             Destroy(torso.GetComponent<Collider>());
             Renderer r = torso.GetComponent<Renderer>();
-            r.material = new Material(SafeShader.Find("Sprites/Default")) { color = new Color(0.22f, 0.14f, 0.3f) };
+            r.material = new Material(SafeShader.Solid()) { color = new Color(0.22f, 0.14f, 0.3f) };
         }
         model = body.transform;
         bodyRenderers = body.GetComponentsInChildren<Renderer>();
