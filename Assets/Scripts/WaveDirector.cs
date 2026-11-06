@@ -212,7 +212,7 @@ public class WaveDirector : MonoBehaviour {
 
     void BeginIntro() {
         phase = Phase.Intro;
-        phaseLeft = Wave == 1 ? 1.8f : 1.35f;
+        phaseLeft = Wave == 1 ? 1.0f : 1.35f;
         pending.Clear();
         IsBuilding = false;
         spawnAngle = Random.Range(0f, 360f);
@@ -613,6 +613,11 @@ public class WaveDirector : MonoBehaviour {
         float inner = (small ? 30f : 24f) + reach + Mathf.Max(0f, def.Scale - 1f) * 0.35f;
         float outer = Mathf.Min(inner + band, 150f);
         inner = Mathf.Min(inner, outer - 10f);
+        if (Wave == 1) {
+            // Opening: the first bot is almost at the bench, the rest a short walk out, so the first swing comes in seconds.
+            inner = spawnSerial <= 1 ? 6f : 12f + spawnSerial * 1.5f;
+            outer = inner + (spawnSerial <= 1 ? 1.5f : 8f);
+        }
         float jitter = small ? 110f : 80f;
         float gap = small ? 8f + waveT * 0.08f : Mathf.Max(7f, def.Scale * 0.85f);
         Vector3 spot = origin;

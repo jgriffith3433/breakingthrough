@@ -18,6 +18,7 @@ public static class Playtest {
 
     static readonly PlaytestScenario[] Scenarios = {
         new PlaytestScenario("smoke", "Boot, menu, start a run, about 30 s of play: the bot walks to bots near the musician and swings the bat (lock-on nearest, combo swings)", 45, "smoke"),
+        new PlaytestScenario("onboarding", "Arcade's first seconds: the bot waits without swinging until the first bot is in reach (event first-bot-near, must be by 6 s), the swing hint is read on screen and then hidden by its first swing (hint-hidden, by 8 s at the latest); then it walks away from every bot until the off-screen arrow shows (arrow-shown, pointing at the nearest bot) and clears wave 1", 90, "smoke"),
         new PlaytestScenario("run", "A full run until the musician falls, picking level-ups: the bot guards the musician with the bat (walks to the nearest bot near the piano, locks on, swings, walks back). Should pass wave 5 without 'no kills for 45 s'", 600, "full"),
         new PlaytestScenario("bat", "The bat: a 3-hit combo on wave 1's Yo Bots (hits and knockback, the third further), a ground smash on small Yo Bots dropped in front of the player (setup), then a charged home run into a line of Yo Bots (setup) that bowls them over; lock-on picks the nearest bot throughout. Then a minute of play", 200, "full"),
         new PlaytestScenario("menus", "Shop menu, start a run, a level-up card, reroll and pick", 120, "menus"),
@@ -383,6 +384,8 @@ public static class Playtest {
                 }
             } else if (id == "smoke") {
                 yield return Play(options, 30f, false);
+            } else if (id == "onboarding") {
+                yield return OnboardingRun(options);
             } else if (id == "bots") {
                 yield return BotsRun(options);
             } else if (id == "musician") {
@@ -3807,6 +3810,78 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         if (!isWallit || hasWarrok) {
             run.Problem(PlaytestSeverity.Bug, "the active player is not Wallit (found " + (anim != null ? anim.gameObject.name : "none") + ")");
         }
+    }
+
+    // Onboarding: the first bot must be in reach by 6 s, the swing hint must be up until the first swing (or 8 s) and then
+    // gone, and the arrow must point at the nearest bot while none is on screen. The bat is held back until the bot has
+    // been seen in reach, then plays normally (real input).
+    static IEnumerator OnboardingRun(PlaytestOptions options) {
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+        float start = Time.realtimeSinceStartup;
+        bool hintSeen = false;
+        while (!run.Done && FirstNearNotYet() && Time.realtimeSinceStartup - start < 12f) {
+            Batter(player, true, null, true);
+            hintSeen |= HintUp();
+            yield return null;
+        }
+        bool near = ControlsHelp.FirstNearAt >= 0f;
+        run.Event("first-bot-near", near
+            ? "a bot was within " + ControlsHelp.NearReach.ToString("0") + " m of Wallit at " + ControlsHelp.FirstNearAt.ToString("0.0") + " s of play (" + ControlsHelp.FirstNearDistance.ToString("0.0") + " m)"
+            : "no bot came within " + ControlsHelp.NearReach.ToString("0") + " m in 12 s");
+        if (!near || ControlsHelp.FirstNearAt > 6f) {
+            run.Problem(PlaytestSeverity.Bug, "the first Arcade bot was not within reach by 6 s (" + (near ? ControlsHelp.FirstNearAt.ToString("0.0") + " s" : "never") + ")");
+        }
+        run.Event("hint-shown", "swing hint on screen before the first swing: " + hintSeen + " (" + Object.FindAnyObjectByType<ControlsHelp>().GetComponentInChildren<UnityEngine.UI.Text>().text + ")");
+
+        // Now swing for real: the hint must go with the first swing.
+        float swingStart = Time.realtimeSinceStartup;
+        bool arrowSeen = false;
+        bool hintLogged = false;
+        while (!run.Done && Time.realtimeSinceStartup - swingStart < 75f && WaveDirector.Wave <= 2) {
+            if (WaveDirector.IsLost) {
+                yield return GameOver();
+                yield break;
+            }
+            if (LevelUpScreen.IsOpen) {
+                PlayInput.Tap(KeyCode.Alpha1);
+            } else {
+                Batter(player, WaveDirector.IsBuilding, null, true);
+                CheckLock(player);
+            }
+            if (Enemy.Roster.Count == 0) {
+                PlayInput.Tap(KeyCode.Return);
+            }
+            if (!hintLogged && ControlsHelp.HintHiddenAt >= 0f) {
+                hintLogged = true;
+                run.Event("hint-hidden", "swing hint gone after " + ControlsHelp.HintHiddenAt.ToString("0.0") + " s of play (" + ControlsHelp.HintHiddenWhy + "), swings " + BatEquipment.Swings);
+                if (ControlsHelp.HintHiddenAt > ControlsHelp.HintSeconds + 0.5f) {
+                    run.Problem(PlaytestSeverity.Bug, "the swing hint stayed past 8 s");
+                }
+            }
+            if (!arrowSeen && ControlsHelp.ArrowShown) {
+                arrowSeen = true;
+                run.Event("arrow-shown", "no bot on screen: the arrow points at the nearest bot, " + ControlsHelp.ArrowDistance.ToString("0") + " m away (" + Enemy.Roster.Count + " alive)");
+            }
+            yield return null;
+        }
+        if (!hintLogged) {
+            run.Problem(PlaytestSeverity.Bug, "the swing hint was never hidden");
+        }
+        if (!arrowSeen) {
+            run.Problem(PlaytestSeverity.Warning, "the off-screen arrow never showed in 75 s of wave 1 and 2 (every bot stayed on screen?)");
+        }
+        PlayInput.Hold(KeyCode.Mouse0, false);
+        PlayInput.Hold(KeyCode.LeftShift, false);
+    }
+
+    static bool FirstNearNotYet() {
+        return ControlsHelp.FirstNearAt < 0f;
+    }
+
+    static bool HintUp() {
+        var help = Object.FindAnyObjectByType<ControlsHelp>();
+        var text = help != null ? help.GetComponentInChildren<UnityEngine.UI.Text>() : null;
+        return text != null && text.enabled && text.color.a > 0.5f && text.text.Length > 0;
     }
 
     static IEnumerator Play(PlaytestOptions options, float seconds, bool menusOnly) {
