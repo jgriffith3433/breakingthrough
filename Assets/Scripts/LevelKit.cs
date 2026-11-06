@@ -14,7 +14,7 @@ public static class LevelKit {
         if (materials.TryGetValue(key, out m) && m != null) {
             return m;
         }
-        Shader shader = SafeShader.Find("Sprites/Default");
+        Shader shader = SafeShader.For(c);
         m = new Material(shader) { color = c };
         materials[key] = m;
         return m;

@@ -61,7 +61,7 @@ public class Courier : MonoBehaviour {
 
     // The notice: a pale board on a dark clip held in front of the chest. Built in code, no collider.
     void BuildClipboard() {
-        var shader = SafeShader.Find("Sprites/Default");
+        var shader = SafeShader.Solid();
         var holder = new GameObject("Clipboard");
         holder.transform.SetParent(transform, false);
         clipRest = new Vector3(0.42f, 0.55f, 0.55f);

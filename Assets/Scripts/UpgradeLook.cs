@@ -180,7 +180,7 @@ public class UpgradeLook : MonoBehaviour {
 
     static void Tint(GameObject go, Color color) {
         Renderer renderer = go.GetComponent<Renderer>();
-        Shader shader = SafeShader.Find("Sprites/Default");
+        Shader shader = SafeShader.For(color);
         if (renderer == null || shader == null) {
             Paint(go, color);
             return;
