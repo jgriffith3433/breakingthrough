@@ -49,29 +49,12 @@ public class Server : MonoBehaviour {
 
     // The paper: a pale sheet with two ruled lines, held on a thin arm in front of the body. Built in code, no collider.
     void BuildPaper() {
-        var shader = SafeShader.Solid();
-        var holder = new GameObject("Paper");
+        GameObject holder = CharacterKit.Prop("paper");
+        holder.name = "Paper";
         holder.transform.SetParent(transform, false);
-        paperRest = new Vector3(0.3f, 0.5f, 0.7f);
+        paperRest = new Vector3(0.25f, 0.55f, 0.5f);
         holder.transform.localPosition = paperRest;
         holder.transform.localRotation = Quaternion.Euler(-30f, 0f, 8f);
-        Color pale = new Color(0.96f, 0.93f, 0.82f, 1f);
-        Color ink = new Color(0.12f, 0.1f, 0.12f, 1f);
-        for (int i = 0; i < 3; i++) {
-            var part = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            part.name = i == 0 ? "Sheet" : "Line " + i;
-            Destroy(part.GetComponent<Collider>());
-            part.transform.SetParent(holder.transform, false);
-            part.transform.localPosition = i == 0 ? Vector3.zero : new Vector3(0f, 0.12f - i * 0.12f, 0.02f);
-            part.transform.localScale = i == 0 ? new Vector3(0.5f, 0.66f, 0.03f) : new Vector3(0.38f, 0.03f, 0.02f);
-            Color c = i == 0 ? pale : ink;
-            if (shader != null) {
-                part.GetComponent<Renderer>().material = new Material(shader) { color = c };
-            } else {
-                UpgradeLook.Paint(part, c);
-            }
-            part.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        }
         paper = holder.transform;
     }
 
