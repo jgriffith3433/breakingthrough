@@ -25,6 +25,8 @@ public class ChapterHub : MonoBehaviour {
     // For the playtest bot.
     public Transform Player { get; private set; }
     public bool BoardOpen { get; private set; }
+    // Idle actions of the lodgers and the ring banter with Slice (HubAmbience).
+    public HubAmbience Ambience { get; private set; }
     public bool NearBoard { get; private set; }
     public float Walked { get; private set; }
     public Button[] BoardButtons { get; private set; }
@@ -227,6 +229,7 @@ public class ChapterHub : MonoBehaviour {
         PlaceLodgers();
         BuildDoors();
         BuildPeople();
+        Ambience = HubAmbience.Attach(this, lodgerRoots, slice);
         BuildUi();
         PlaceCamera(true);
     }
@@ -736,6 +739,10 @@ public class ChapterHub : MonoBehaviour {
             return;
         }
         TickSpeech();
+        if (speech.text.Length == 0 && Ambience != null && Ambience.Line.Length > 0) {
+            speech.text = Ambience.Line;
+            speech.color = Ambience.LineColor;
+        }
         NearBoard = (Player.position - BoardPosition).magnitude <= BoardReach;
         TickLodgers();
         if (!BoardOpen) {

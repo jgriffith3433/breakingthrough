@@ -27,6 +27,17 @@ public static class Story {
         new[] { "W|It's filed. All of it.", "S|Clean. Replays are on the board." },
     };
 
+    // What Slice and Wallit say whenever he stands in her ring (HubAmbience), by chapters cleared (index 0 is one cleared). Each stage has
+    // two exchanges that take turns, "<speaker>|<text>": Wallit money, Slice clipped.
+    public static readonly string[][][] HubRing = {
+        new[] { new[] { "W|Standing in your ring. Rent's due.", "S|Paid. In kind. Stay." }, new[] { "W|One notice down. Billing it.", "S|Sender unknown. Billing void." } },
+        new[] { new[] { "W|The gate stamped me back. Interest owed.", "S|Door's yours. Stay clear of the lamp." }, new[] { "W|You held the ring while I was out.", "S|Always. Don't thank me." } },
+        new[] { new[] { "W|Belt's quiet. I miss the noise. Cheap.", "S|Quiet is rent. Take it." }, new[] { "W|Foreman said \"not finished.\" Neither am I.", "S|Good. Keep swinging." } },
+        new[] { new[] { "W|Three refusals. Clean ones.", "S|Counted. Four would be rude." }, new[] { "W|The Server still holds out its paper.", "S|Let it. Ring is full." } },
+        new[] { new[] { "W|All those forms. Blank now.", "S|Blank is a fresh account." }, new[] { "W|Registrar read slow. I read faster.", "S|You did. Don't boast." } },
+        new[] { new[] { "W|It's filed. I can stand here free.", "S|Clean. Stand as long as you like." }, new[] { "W|Number on the wall. Mine?", "S|Yours. Keep the receipt." } },
+    };
+
     // The hub's four lodgers (Docs/Story.md, "The lodgers"): things that should not exist and found the circle. What each says
     // changes with the chapters the file has cleared (Lines[cleared - 1], so six per lodger). Chime also gives the errands:
     // one per chapter, "<ask>", fetched from the hub's floor, paid in XP and a lost thing kept in the case file.
