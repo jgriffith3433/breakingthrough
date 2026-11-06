@@ -8,6 +8,7 @@ using UnityEngine.SceneManagement;
 // the hub. The level's own places and beats are in its content class (LevelYard for Chapter 1).
 public class LevelScene : MonoBehaviour {
     public static LevelScene Instance { get; private set; }
+    public AudioSource Bed { get; private set; }
 
     // Chapters that are levels, by index. Chapter 1 is the Sorting Yard; the others still play the old way until their slice.
     public static readonly string[] Scenes = { "Level_1_Yard" };
@@ -92,6 +93,7 @@ public class LevelScene : MonoBehaviour {
         Checkpoint = Yard.PlayerStart;
         Yard.Begin();
         MusicDirector.Play(MusicDirector.ChapterTrack(Chapter));
+        Bed = SceneMood.Bed(transform, SceneMood.Kind.Yard);
         RunAnalytics.Screen("level_" + (Chapter + 1));
     }
 
@@ -140,7 +142,7 @@ public class LevelScene : MonoBehaviour {
         go.AddComponent<AudioListener>();
         go.transform.position = Yard.PlayerStart + new Vector3(0f, 4f, -6f);
         go.transform.rotation = Quaternion.Euler(18f, 0f, 0f);
-        go.AddComponent<NightGrade>();
+        SceneMood.Apply(Cam, SceneMood.Yard(), false);
         go.AddComponent<ZeldaStyleCamera>();
     }
 
