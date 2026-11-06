@@ -36,3 +36,9 @@ Not recorded. There is no editor or browser here. Beta's playtest is the first r
 ## Left for the next part
 
 Phone landscape photos at two aspect ratios, desktop photos, footage of every chapter and the hub, the touch-only full chapter plus Slice by tapping, the Arcade scenarios, and the checks for #6, #7, #8, #10, #11 and #12. Compile once. No GPU work was needed, so there is no estimate to give.
+
+## Second attempt (beta build repair)
+
+Beta's red build (run r_866907a2325c) was `playtest.run needs 9 and 1 is left`: the studio was out of credits. It was not a compile error. I re-read the C# from #132 (`Musician.BuildKnife`, `ZeldaStyleCamera.CompensateForWalls`) against `BotMesh` (`Box`, `Rod`, `ToMesh(string)`) and `using System.Collections.Generic`: every call exists and resolves. Unity compile not run here.
+
+No browser or editor in this sandbox either, so there are still no new photos or footage and no before/after numbers. Findings 6, 7, 8, 10, 11 and 12 stay **Open** until beta's `campaign-touch` run (touch-only Chapter 1 to the hub, Slice by tapping, phone landscape, `touch-layout`, `photos-fps`) is read. Criteria 2 and 4 remain unmet from this checkout; say so rather than claim it.
