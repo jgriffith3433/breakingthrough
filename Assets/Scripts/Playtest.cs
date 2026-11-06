@@ -7363,6 +7363,18 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
 
     // Plays the sample reel twice over the running game: pass 1 is nudged to the next shot with Space and skipped with Enter,
     // pass 2 runs to its end. Logs what each shot shows and checks that play resumes cleanly both times.
+    // Waits (up to 10 s) for a score track fetched from StreamingAssets to arrive or be known missing.
+    static IEnumerator AwaitTrack(string track) {
+        if (string.IsNullOrEmpty(track)) {
+            yield break;
+        }
+        MusicDirector.Prefetch(track);
+        float until = Time.realtimeSinceStartup + 10f;
+        while (MusicDirector.Cached(track) == null && !MusicDirector.Missing(track) && Time.realtimeSinceStartup < until) {
+            yield return null;
+        }
+    }
+
     // The score and the cast voices (scenario "score").
     static IEnumerator ScoreRun(PlaytestOptions options) {
         yield return new WaitForSecondsRealtime(2f);
@@ -7374,12 +7386,13 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                 yield break;
             }
             MusicDirector.Play(t);
+            yield return AwaitTrack(t);
             yield return new WaitForSecondsRealtime(2f);
-            bool ok = Resources.Load<AudioClip>("Music/" + t) != null;
+            bool ok = MusicDirector.Cached(t) != null;
             loaded += ok ? 1 : 0;
             run.Event("music-track", t + ": " + (ok ? "playing" : "MISSING") + ", volume " + MusicDirector.Volume.ToString("0.00") + ", changes " + MusicDirector.Changes);
             if (!ok) {
-                run.Problem(PlaytestSeverity.Bug, "score: Resources/Music/" + t + " is missing");
+                run.Problem(PlaytestSeverity.Bug, "score: StreamingAssets/Music/" + t + ".mp3 did not load");
             }
         }
         string[] reels = { "ch1_open", "boss_courier", "ch2_close", "boss_foreman", "boss_server", "ch5_open", "ch6_close", "ending_received", "credits" };
@@ -7406,7 +7419,8 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                     run.Problem(PlaytestSeverity.Bug, "score: no voice file Voice/" + file + " for " + id + " " + shot.id);
                 }
             }
-            run.Event("reel-bed", id + ": bed " + reel.bed + ", music " + (Resources.Load<AudioClip>("Music/" + reel.bed) != null ? "found" : "MISSING"));
+            yield return AwaitTrack(reel.bed);
+            run.Event("reel-bed", id + ": bed " + reel.bed + ", music " + (MusicDirector.Cached(reel.bed) != null ? "found" : "MISSING"));
             Cutscene.PlayShots(reel, null);
             yield return run.Until(() => Cutscene.IsOpen, 5f, "the reel " + id);
             float limit = Time.realtimeSinceStartup + 120f;

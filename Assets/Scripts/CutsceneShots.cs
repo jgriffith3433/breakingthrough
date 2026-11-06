@@ -15,7 +15,8 @@ using UnityEngine.Video;
 //          game instead (wallit, slice or wide: the same camera shots the page scenes use) after the crossfade out.
 // Voice:   W and S lines go through VoiceDirector ("cutscene", Key) and the shot lasts until the line has been said, so
 //          lines never overlap; N and Y lines are held for reading time. Each shot cuts the last shot's voice first.
-// Music:   one looping bed per reel (Resources/Cinematics/<bed> if the clip exists, else a quiet synthesised pad) that ducks
+// Music:   one looping bed per reel (the score's StreamingAssets/Music/<bed>, fetched by MusicDirector, or Resources/Cinematics/<bed>,
+//          else a quiet synthesised pad) that ducks
 //          under any voice and fades out when the scene ends.
 // Keys:    Space, click or tap: next shot. Enter, Escape or the Skip button: leave the scene at any point.
 public partial class Cutscene {
@@ -101,6 +102,7 @@ public partial class Cutscene {
     float duck = 1f;
     float bedLevel = 1f;
     bool bedWanted;
+    int bedRequest;
     VideoPlayer video;
     RenderTexture videoTexture;
     readonly List<Texture2D> loadedArt = new List<Texture2D>();
@@ -527,20 +529,43 @@ public partial class Cutscene {
             bed.spatialBlend = 0f;
             bed.ignoreListenerPause = true;
         }
-        AudioClip clip = string.IsNullOrEmpty(name) ? null : Resources.Load<AudioClip>("Music/" + name) ?? Resources.Load<AudioClip>("Cinematics/" + name);
-        if (clip == null && !string.IsNullOrEmpty(name)) {
-            clip = Pad();
-        }
-        bedWanted = clip != null;
+        bedRequest++;
+        bed.Stop();   // the last reel's bed, if it is still fading
         duck = 1f;
         DuckedLowest = 1f;
-        if (clip != null) {
-            bed.clip = clip;
-            bed.volume = 0f;
-            bed.Play();
-            Events.Add("bed|" + clip.name);
+        bedWanted = false;
+        if (string.IsNullOrEmpty(name)) {
+            return;
         }
+        // The score is fetched from StreamingAssets (MusicDirector.Fetch); a clip in Resources/Cinematics also counts.
+        AudioClip clip = MusicDirector.Cached(name) ?? Resources.Load<AudioClip>("Cinematics/" + name);
+        if (clip != null || MusicDirector.Missing(name)) {
+            BedReady(clip);
+            return;
+        }
+        // Not in yet: the bed is wanted (so the main music still gives way once it plays) and starts when it arrives.
+        bedWanted = true;
+        int request = bedRequest;
+        MusicDirector.Fetch(name, fetched => {
+            if (this == null || request != bedRequest || !open) {
+                return;
+            }
+            BedReady(fetched);
+        });
     }
+
+    void BedReady(AudioClip clip) {
+        if (clip == null) {
+            clip = Pad();
+        }
+        bedWanted = true;
+        bed.clip = clip;
+        bed.volume = 0f;
+        bed.Play();
+        Events.Add("bed|" + clip.name);
+    }
+
+    public AudioClip BedClip { get { return bed != null ? bed.clip : null; } }
 
     // Placeholder music: a quiet low pad (A1, E2, A2 with a slow swell), an exact loop of 8 seconds. Real music replaces it
     // by dropping a clip named in the reel's "bed" into Resources/Cinematics.
