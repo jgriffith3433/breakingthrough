@@ -114,6 +114,25 @@ public static class UiFit {
         }
     }
 
+    // A caption line (Wallit's and Slice's subtitles). Desktop keeps its bottom-centre spot, desktopY units up. Phones
+    // and tablets draw the corners' touch pads there (stick left, Swing/Lock/Jump right), so the line moves to a band
+    // under the wave counter and the Next wave button at the top, clear of every pad; slot 0 is the first line.
+    public static void PlaceCaption(RectTransform rect, float desktopY, int slot) {
+        if (Mode == UiMode.Desktop) {
+            rect.anchorMin = new Vector2(0.5f, 0f);
+            rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.anchoredPosition = new Vector2(0f, desktopY);
+            rect.sizeDelta = new Vector2(1000f, 44f);
+            return;
+        }
+        rect.anchorMin = new Vector2(0.5f, 1f);
+        rect.anchorMax = new Vector2(0.5f, 1f);
+        rect.pivot = new Vector2(0.5f, 1f);
+        rect.anchoredPosition = new Vector2(0f, -300f - 70f * slot);
+        rect.sizeDelta = new Vector2(Mathf.Min(1000f, Size.x - 40f), 64f);
+    }
+
     // desktopMatch is the canvas's own matchWidthOrHeight, kept as it was on desktop.
     public static void Apply(CanvasScaler scaler, float desktopMatch = 0f) {
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;

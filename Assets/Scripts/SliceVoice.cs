@@ -181,6 +181,12 @@ public class SliceVoice : MonoBehaviour {
         if (stamp != UiFit.Stamp && scaler != null) {
             stamp = UiFit.Stamp;
             UiFit.Apply(scaler);
+            if (wallitText != null) {
+                UiFit.PlaceCaption(wallitText.rectTransform, 190f, 0);
+            }
+            if (sliceText != null) {
+                UiFit.PlaceCaption(sliceText.rectTransform, 140f, 1);
+            }
         }
         sliceShown -= dt;
         wallitShown -= dt;
@@ -504,12 +510,8 @@ public class SliceVoice : MonoBehaviour {
         var outline = go.AddComponent<Outline>();
         outline.effectColor = new Color(0f, 0f, 0f, 0.85f);
         outline.effectDistance = new Vector2(1.5f, -1.5f);
-        var rect = text.rectTransform;
-        rect.anchorMin = new Vector2(0.5f, 0f);
-        rect.anchorMax = new Vector2(0.5f, 0f);
-        rect.pivot = new Vector2(0.5f, 0f);
-        rect.anchoredPosition = new Vector2(0f, y);
-        rect.sizeDelta = new Vector2(1000f, 44f);
+        text.verticalOverflow = VerticalWrapMode.Overflow;
+        UiFit.PlaceCaption(text.rectTransform, y, y > 150f ? 0 : 1);
         return text;
     }
 }
