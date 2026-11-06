@@ -415,7 +415,7 @@ public class WallitVoice : MonoBehaviour {
             UiFit.Apply(scaler);
         }
         shown -= Time.unscaledDeltaTime;
-        if (text != null && shown <= 0f) {
+        if (text != null && (shown <= 0f || WaveDirector.IsLost)) {
             text.enabled = false;
         }
         if (Speaking && now >= lineStart + lineLength) {

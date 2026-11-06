@@ -90,6 +90,7 @@ public class WaveDirector : MonoBehaviour {
     Text coinText;
     Image purseFill;
     GameObject lostPanel;
+    RectTransform lostRect;
     Text lostBody;
     CanvasScaler hudScaler;
     RectTransform hudPurse;
@@ -1034,13 +1035,14 @@ public class WaveDirector : MonoBehaviour {
         lostPanel.transform.SetParent(canvasGo.transform, false);
         var panel = lostPanel.AddComponent<Image>();
         UiSkin.Round(panel);
-        panel.color = new Color(0.05f, 0.04f, 0.04f, 0.82f);
+        panel.color = new Color(0.05f, 0.04f, 0.04f, 0.97f);
         panel.raycastTarget = false;
         var panelRect = lostPanel.GetComponent<RectTransform>();
         panelRect.anchorMin = new Vector2(0.5f, 0.5f);
         panelRect.anchorMax = new Vector2(0.5f, 0.5f);
         panelRect.pivot = new Vector2(0.5f, 0.5f);
         panelRect.sizeDelta = new Vector2(900f, 700f);
+        lostRect = panelRect;
 
         var title = MakeText(lostPanel.transform, font, "Address struck off", 58, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -36f), new Vector2(680f, 90f));
         title.color = new Color(1f, 0.45f, 0.35f);
@@ -1067,6 +1069,7 @@ public class WaveDirector : MonoBehaviour {
             Fit(coinText, 26, new Vector2(36f, -24f), new Vector2(860f, 40f));
             hudPurse.anchoredPosition = new Vector2(36f, -68f);
             lostPanel.transform.localScale = Vector3.one;
+            lostRect.anchoredPosition = Vector2.zero;
             return;
         }
         // Under the musician's bar, which keeps the top middle.
@@ -1078,6 +1081,8 @@ public class WaveDirector : MonoBehaviour {
         Fit(detailText, 22, new Vector2(0f, tall ? -196f : -136f), new Vector2(middle, 56f));
         float fit = Mathf.Min(1f, (size.x - 40f) / 900f, (size.y - 40f) / 700f);
         lostPanel.transform.localScale = new Vector3(fit, fit, 1f);
+        // Portrait: sit the panel in the upper half, so the page's "How was that run?" card has the bottom to itself.
+        lostRect.anchoredPosition = new Vector2(0f, tall ? Mathf.Max(0f, (size.y - 700f * fit) * 0.5f - 40f) : 0f);
     }
 
     static void Fit(Text text, int fontSize, Vector2 position, Vector2 box) {

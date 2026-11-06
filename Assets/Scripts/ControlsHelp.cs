@@ -230,7 +230,8 @@ public class ControlsHelp : MonoBehaviour {
         // Wave 1's swing hint fades once taught; later lessons show as before.
         bool fading = !building && wave == 1 && hintDone && ChapterRun.Instance == null;
         hintAlpha = Mathf.MoveTowards(hintAlpha, fading ? 0f : 1f, Time.unscaledDeltaTime / 0.6f);
-        line.enabled = hintAlpha > 0.01f;
+        // Never over the game-over panel.
+        line.enabled = hintAlpha > 0.01f && !WaveDirector.IsLost;
         if (next != shown) {
             shown = next;
             line.text = next;
