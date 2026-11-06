@@ -409,7 +409,21 @@ and cabinets. The ending reads what was kept: `?|side:<id>|`, `?|sides:12|` and 
 (Spare's lid on straight, Brim's own name on its label, Tick wound, twelve slips pinned, Chime's quiet bell). New Game+ clears them.
 Code: `HubLife.cs`, `ChapterHub.cs`, `OfficeMap.Dress`; the `hub-life` playtest plays all of it.
 
+## The hub, alive
+
+The office is never still. Each lodger has two idle actions it swaps between every few seconds (`HubAmbience.Actions`): Tick swings like
+his own pendulum and strikes the hour; Brim hovers and tips, then turns to look about; Spare fidgets with its claw and stretches up,
+unfinished; Chime sways on her cord and rings herself. The room moves too: plants lean in the draught from the doors, a waiting bench
+sits at the front, and a warm lamp over Slice's ring breathes (soft, no sparks).
+
+Stand beside the ring and Wallit and Slice talk (`HubAmbience.Banter`, three to five lines for each count of chapters filed, after the
+arrival lines are done): Wallit sells it, Slice refuses the discount. Slice always says "no" a little differently; at six, she says
+"Ours. Say it." and he does. Walk off and it stops; come back and it starts over. The hub is a room, not an arena: no wave director,
+no bots. `hub-alive` playtest.
+
 ## Canon established here
+
+- The hub banter: Wallit tries to take a tip, a toll or the circle itself; Slice says no, until all six are filed and the circle is "ours".
 
 - The lodgers: Tick (clock), Brim (hat), Spare (half-built Yo Bot) and Chime (bell) live in the hub; their lines change after each chapter. Chime's errands pay XP and a kept lost thing.
 - The lodgers' arcs: Tick keeps his own hour (a Winding Key), Brim wants an address (a Hatband, then an Address Label), Spare is a spare kept in case somebody needs it, Chime rings for the right address. Their favours and the loose notices change the ending's lines.

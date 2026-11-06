@@ -57,6 +57,15 @@ public class ChapterHub : MonoBehaviour {
         new Vector3(4.5f, 0f, -6.5f), new Vector3(-5f, 0f, -7f), new Vector3(-10.5f, 0f, 8f),
         new Vector3(9f, 0f, 10f), new Vector3(6f, 0f, 7f), new Vector3(-6f, 0f, 11.5f),
     };
+    // Idle life, for the playtest bot: what each lodger is doing now, how far the model has moved, and the banter beside the ring.
+    public string IdleActionOf(int i) { return HubAmbience.Action(i, Time.unscaledTime); }
+    public float IdleMotion { get; private set; }
+    public string BanterText { get; private set; } = "";
+    public string BanterSpeaker { get; private set; } = "";
+    public int BanterShown { get; private set; }
+    public bool NearSlice { get; private set; }
+    public Vector3 SliceAt { get { return slice != null ? slice.position : Vector3.zero; } }
+    public int PropCount { get { return swayers != null ? swayers.Length : 0; } }
     public int LodgerCount { get { return Story.Lodgers.Length; } }
     public int NearLodger { get; private set; } = -1;
     public int Talks { get; private set; }
@@ -113,6 +122,10 @@ public class ChapterHub : MonoBehaviour {
     Text speech;
     Text talk;
     Transform[] lodgerRoots;
+    Transform[] lodgerModels;
+    Transform[] swayers;
+    Light ringLight;
+    float banterStart = -1f;
     TextMesh[] lodgerMarks;
     TextMesh deskPlate;
     Transform favourItem;
@@ -227,6 +240,7 @@ public class ChapterHub : MonoBehaviour {
         PlaceLodgers();
         BuildDoors();
         BuildPeople();
+        BuildProps();
         BuildUi();
         PlaceCamera(true);
     }
@@ -270,6 +284,7 @@ public class ChapterHub : MonoBehaviour {
     void BuildLodgers() {
         lodgerRoots = new Transform[Story.Lodgers.Length];
         lodgerMarks = new TextMesh[Story.Lodgers.Length];
+        lodgerModels = new Transform[Story.Lodgers.Length];
         for (int i = 0; i < lodgerRoots.Length; i++) {
             Story.Lodger lodger = Story.Lodgers[i];
             var root = new GameObject("Lodger " + lodger.Name).transform;
@@ -280,6 +295,7 @@ public class ChapterHub : MonoBehaviour {
             float top = 2f;
             GameObject body = LevelDress.Put(root, "of_lodger_" + lodger.Id, root.position, 180f);
             body.name = "Lodger Model";
+            lodgerModels[i] = body.transform;
             LevelDress.Tint(body, 0, tint);
             if (lodger.Id == "tick") {
                 top = 2.3f;
@@ -373,10 +389,7 @@ public class ChapterHub : MonoBehaviour {
                 best = d;
                 NearLodger = i;
             }
-            string id = Story.Lodgers[i].Id;
-            if (id == "brim" || id == "chime") {
-                lodgerRoots[i].position = at + Vector3.up * (0.12f + Mathf.Sin(Time.unscaledTime * 1.6f + i) * 0.1f);
-            }
+            HubAmbience.Pose(i, lodgerRoots[i], lodgerModels[i], at, Time.unscaledTime);
         }
         if (ErrandActive >= 0 && !ErrandCarried) {
             errandItem.Rotate(0f, 90f * Time.unscaledDeltaTime, 0f);
@@ -738,6 +751,8 @@ public class ChapterHub : MonoBehaviour {
         TickSpeech();
         NearBoard = (Player.position - BoardPosition).magnitude <= BoardReach;
         TickLodgers();
+        TickAmbience();
+        TickBanter();
         if (!BoardOpen) {
             prompt.text = NearDoor >= 0 && !DoorOpen[NearDoor] ? "Chapter " + (NearDoor + 1) + ": the door is shut" : NearDoor >= 0 ? "Chapter " + (NearDoor + 1) + ": " + Story.Chapters[NearDoor].Title + (DoorUsable ? ". " + Interact.Prompt("open the door") : "") : NearBoard ? Interact.Prompt("read the chapter board") : NearLodger >= 0 ? Interact.Prompt("talk to " + Story.Lodgers[NearLodger].Name) : ErrandCarried ? "Carrying the " + Story.Errands[ErrandActive].Thing + ". Take it to Chime." : FavourCarried ? "Carrying the " + HubLife.Sides[FavourActive].Thing + ". Take it to " + Story.Lodgers[HubLife.Sides[FavourActive].Giver].Name + "." : (UiFit.Touch ? "Stick: walk. " : "WASD: walk. ") + "Doors along the back wall. Board on the left, lodgers about the room. " + (UiFit.Touch ? "Journal button: journal." : "J: journal.");
             if (NearBoard) {
@@ -840,6 +855,80 @@ public class ChapterHub : MonoBehaviour {
             }
         }
         return sb.ToString();
+    }
+
+    // Ambient props: a waiting bench, plants that lean in the draught from the doors, and a warm lamp over the ring that breathes.
+    // Kit pieces only (no primitives), flat and collider-free like the rest of the office.
+    void BuildProps() {
+        var list = new System.Collections.Generic.List<Transform>();
+        LevelDress.Put(world.transform, "of_waiting_bench", new Vector3(-2.6f, 0f, -8.3f), 0f).name = "Waiting Bench";
+        Vector3[] plants = { new Vector3(-6.5f, 0f, 12.6f), new Vector3(6.5f, 0f, 12.6f), new Vector3(-11.2f, 0f, -2.5f) };
+        for (int i = 0; i < plants.Length; i++) {
+            GameObject plant = LevelDress.Put(world.transform, "of_plant", plants[i], i * 70f);
+            plant.name = "Swaying Plant " + (i + 1);
+            list.Add(plant.transform);
+        }
+        swayers = list.ToArray();
+        var lamp = new GameObject("Ring Lamp");
+        lamp.transform.SetParent(world.transform, false);
+        lamp.transform.position = new Vector3(0f, 4.5f, 0f);
+        ringLight = lamp.AddComponent<Light>();
+        ringLight.type = LightType.Point;
+        ringLight.color = new Color(1f, 0.82f, 0.5f);
+        ringLight.range = 9f;
+        ringLight.intensity = 0.8f;
+        ringLight.shadows = LightShadows.None;
+    }
+
+    // Plants lean and the ring lamp breathes (soft, no particles). IdleMotion is how much the lodgers' models have turned or lifted,
+    // so a recording can tell a still room from a living one.
+    void TickAmbience() {
+        float t = Time.unscaledTime;
+        if (swayers != null) {
+            for (int i = 0; i < swayers.Length; i++) {
+                swayers[i].localRotation = Quaternion.Euler(Mathf.Sin(t * 0.9f + i * 2f) * 2.5f, i * 70f, Mathf.Sin(t * 0.7f + i) * 2.5f);
+            }
+        }
+        if (ringLight != null) {
+            ringLight.intensity = 0.8f + Mathf.Sin(t * 1.3f) * 0.12f;
+        }
+        float motion = 0f;
+        for (int i = 0; i < lodgerModels.Length; i++) {
+            Quaternion r = lodgerModels[i].localRotation;
+            motion += Quaternion.Angle(r, Quaternion.Euler(0f, 180f, 0f)) + (lodgerRoots[i].position - LodgerAt(i)).magnitude * 10f + Mathf.Abs(lodgerModels[i].localScale.y - 1f) * 100f;
+        }
+        IdleMotion = motion;
+    }
+
+    // Wallit beside Slice's ring: after the arrival lines, the two talk (HubAmbience.Banter, by chapters cleared). Walk off and it
+    // stops; come back and it starts over, and what they say is different after every chapter.
+    void TickBanter() {
+        NearSlice = slice != null && Player != null && (Player.position - slice.position).magnitude <= HubAmbience.BanterReach;
+        bool free = ArrivalShown >= Story.HubArrival[0].Length && !BoardOpen && NearLodger < 0 && talkUntil <= 0f;
+        if (!NearSlice || !free) {
+            banterStart = -1f;
+            BanterText = "";
+            if (speech != null && ArrivalShown >= Story.HubArrival[0].Length) {
+                speech.text = "";
+            }
+            return;
+        }
+        if (banterStart < 0f) {
+            banterStart = Time.unscaledTime;
+        }
+        int cleared = Mathf.Clamp(CampaignSave.Get(CampaignSave.Active).cleared, 1, HubAmbience.Banter.Length);
+        int step = Mathf.FloorToInt((Time.unscaledTime - banterStart) / HubAmbience.BanterSeconds);
+        string raw = HubAmbience.BanterLine(cleared, step);
+        if (raw == null) {
+            BanterText = "";
+            speech.text = "";
+            return;
+        }
+        BanterSpeaker = raw[0] == 'W' ? "Wallit" : "Slice";
+        BanterText = raw.Substring(2);
+        BanterShown = Mathf.Max(BanterShown, step + 1);
+        speech.text = BanterSpeaker + ": \"" + BanterText + "\"";
+        speech.color = raw[0] == 'W' ? new Color(1f, 0.82f, 0.38f) : new Color(0.62f, 0.95f, 0.86f);
     }
 
     // Slice's and Wallit's arrival lines, one after the other, over the yard.
