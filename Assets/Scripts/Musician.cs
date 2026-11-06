@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -678,22 +679,23 @@ public class Musician : MonoBehaviour {
         holder.localPosition = new Vector3(0f, 0.08f, 0.02f);
         var mat = new Material(SafeShader.Find("Unlit/Color"));
         mat.color = new Color(0.82f, 0.86f, 0.9f);
-        var blade = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        Destroy(blade.GetComponent<Collider>());
-        blade.name = "Blade";
-        blade.transform.SetParent(holder, false);
-        blade.transform.localPosition = new Vector3(0f, 0.11f, 0f);
-        blade.transform.localScale = new Vector3(0.025f, 0.16f, 0.012f);
-        var grip = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        Destroy(grip.GetComponent<Collider>());
-        grip.name = "Grip";
-        grip.transform.SetParent(holder, false);
-        grip.transform.localScale = new Vector3(0.03f, 0.08f, 0.024f);
-        foreach (Renderer part in holder.GetComponentsInChildren<Renderer>()) {
-            part.sharedMaterial = mat;
-            part.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        // A diamond-section blade with a point and a guard, and a round grip: meshes, not scaled cubes.
+        var bladeMesh = new BotMesh();
+        bladeMesh.Rod(new Vector3(0f, 0.03f, 0f), new Vector3(0f, 0.2f, 0f), 0.014f, Color.white, 4);
+        bladeMesh.Rod(new Vector3(0f, 0.2f, 0f), new Vector3(0f, 0.255f, 0f), 0.006f, Color.white, 4);
+        bladeMesh.Box(new Vector3(0f, 0.03f, 0f), new Vector3(0.06f, 0.012f, 0.02f), Color.white);
+        var gripMesh = new BotMesh();
+        gripMesh.Rod(new Vector3(0f, -0.06f, 0f), new Vector3(0f, 0.03f, 0f), 0.014f, Color.white, 6);
+        var gripMat = new Material(SafeShader.Find("Unlit/Color"));
+        gripMat.color = new Color(0.2f, 0.16f, 0.14f);
+        foreach (var pair in new[] { new KeyValuePair<string, Mesh>("Blade", bladeMesh.ToMesh("Slice blade")), new KeyValuePair<string, Mesh>("Grip", gripMesh.ToMesh("Slice grip")) }) {
+            var part = new GameObject(pair.Key);
+            part.transform.SetParent(holder, false);
+            part.AddComponent<MeshFilter>().sharedMesh = pair.Value;
+            var r = part.AddComponent<MeshRenderer>();
+            r.sharedMaterial = pair.Key == "Blade" ? mat : gripMat;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
-        grip.GetComponent<Renderer>().material.color = new Color(0.2f, 0.16f, 0.14f);
         knife = holder;
         knife.gameObject.SetActive(false);
     }
