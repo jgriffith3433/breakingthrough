@@ -7,7 +7,10 @@ using UnityEngine;
 // colliders, heightfield and baked ground meshes tiled with a kit texture, point lights and a gradient sky. Nothing here
 // creates a Unity primitive: SceneValidation fails a scene that contains one.
 public static class LevelDress {
-    static readonly Dictionary<int, Material> tinted = new Dictionary<int, Material>();
+    // tinted: colour key -> the tinted copy. tintSource: a tinted copy -> the kit material it was copied from.
+    // (Hashtables of int -> Material, so no generic argument list shares the line with the kit's Material type.)
+    static readonly System.Collections.Hashtable tinted = new System.Collections.Hashtable();
+    static readonly System.Collections.Hashtable tintSource = new System.Collections.Hashtable();
 
     // ---- kit pieces -------------------------------------------------------------------------------------------------
 
@@ -50,9 +53,13 @@ public static class LevelDress {
         }
         Material[] mats = r.sharedMaterials;
         Material src = mats[sub];
+        Material original = tintSource[src.GetInstanceID()] as Material;
+        if (original != null) {
+            src = original;   // re-tinting a tinted piece starts from the kit's own material again, so the cache hits
+        }
         int key = src.GetInstanceID() * 31 + (int)(color.r * 255f) * 65536 + (int)(color.g * 255f) * 256 + (int)(color.b * 255f);
-        Material m;
-        if (!tinted.TryGetValue(key, out m) || m == null) {
+        Material m = tinted[key] as Material;
+        if (m == null) {
             m = new Material(src);
             m.SetColor("_Color", color);
             if (src.HasProperty("_EmissionColor") && src.GetColor("_EmissionColor").maxColorComponent > 0.01f) {
@@ -60,6 +67,7 @@ public static class LevelDress {
             }
             m.enableInstancing = true;
             tinted[key] = m;
+            tintSource[m.GetInstanceID()] = src;
         }
         mats[sub] = m;
         r.sharedMaterials = mats;

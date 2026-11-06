@@ -63,25 +63,17 @@ public abstract class OwnMap : MonoBehaviour {
     // A page of the Reading Room has been read (ChapterRun.PageRead); the other places ignore it.
     public virtual void PageRead(int page) { }
 
-    // The chapter's boss arena: a raised round dais with a ring of pillars, away from the route. The boss walks out of it
-    // (WaveDirector.SpawnForChapter reads BossSpot). Flat pieces only, no colliders. Returns the group for the caller's own props.
+    // The chapter's boss arena (a kit-built dais with its own props: ar_server_dais, ar_gallery_dais, ar_threshold_dais), away from the
+    // route. The boss walks out of it (WaveDirector.SpawnForChapter reads BossSpot). No colliders. The map builds the pieces; this
+    // names the spot and returns a group for them.
     public bool HasArena { get; private set; }
     public Vector3 BossSpot { get; private set; }
     public float ArenaBearing { get; private set; }
 
-    protected Transform Arena(string name, float bearing, float dist, float radius, Color floor, Color rim, Color mark, int pillars = 12) {
+    protected Transform DeclareArena(string name, float bearing, float dist) {
         Transform g = Group(name);
-        Vector3 at = Polar(bearing, dist);
-        Piece(g, "Arena Floor", at + Vector3.up * 0.16f, new Vector3(radius * 2f, 0.04f, radius * 2f), floor, 0f, 0f, Shape.Cylinder);
-        Piece(g, "Arena Step", at + Vector3.up * 0.1f, new Vector3(radius * 2.15f, 0.04f, radius * 2.15f), rim * 0.8f, 0f, 0f, Shape.Cylinder);
-        Piece(g, "Arena Inner", at + Vector3.up * 0.2f, new Vector3(radius * 1.2f, 0.03f, radius * 1.2f), mark, 0f, 0f, Shape.Cylinder);
-        for (int i = 0; i < pillars; i++) {
-            float a = i * 360f / pillars;
-            Vector3 p = at + Quaternion.Euler(0f, a, 0f) * Vector3.forward * (radius + 1.5f);
-            Piece(g, "Arena Pillar " + i, p + Vector3.up * (3f + (i % 2) * 1.5f), new Vector3(2f, 6f + (i % 2) * 3f, 2f), rim, a);
-        }
         HasArena = true;
-        BossSpot = at;
+        BossSpot = Polar(bearing, dist);
         ArenaBearing = bearing;
         return g;
     }

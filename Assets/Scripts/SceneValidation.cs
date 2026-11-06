@@ -3,7 +3,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// The scene scan for chapters 1 to 3 (Docs/Levels1to3.md, section 6). It walks every renderer under the roots it is given and
+// The scene scan for chapters 1 to 6 and the hub (Docs/Levels1to3.md and Docs/Levels4to6AndHub.md, section 6 and 11). It walks every renderer under the roots it is given and
 // reports built-in primitive meshes (Cube, Sphere, Capsule, Cylinder, Plane, Quad by mesh name, and the old OwnMap boxes), the
 // triangles in the whole scene and in the camera's view, an estimate of the draw calls (one per mesh and material, instanced
 // 500 to a batch where the material allows it), and the lights and colliders. Characters (bots, Slice, Wallit, pickups) are not
@@ -69,7 +69,8 @@ public static class SceneValidation {
         return t;
     }
 
-    // What the chapter now playing is made of: Chapter 1's level scene, or a chapter map's scene plus the props the chapter run adds.
+    // What the chapter now playing is made of: Chapter 1's level scene, or a chapter map's scene plus the props the chapter run adds
+    // (the hub: the office's scene plus ChapterHub's world).
     public static List<GameObject> ChapterRoots() {
         var roots = new List<GameObject>();
         if (LevelScene.Instance != null) {
@@ -82,6 +83,9 @@ public static class SceneValidation {
         }
         if (ChapterRun.Instance != null) {
             roots.AddRange(ChapterRun.Instance.DressingRoots());
+        }
+        if (ChapterHub.Instance != null && ChapterHub.Instance.WorldRoot != null) {
+            roots.Add(ChapterHub.Instance.WorldRoot.gameObject);   // the hub's people, pickups, door leaves and board
         }
         return roots;
     }

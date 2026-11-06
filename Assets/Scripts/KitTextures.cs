@@ -6,7 +6,7 @@ using TexMap = System.Collections.Generic.Dictionary<string, UnityEngine.Texture
 // tileable (periodic noise, wrapped Voronoi). Each set has an albedo and a normal map made from its height field; palettes
 // differ by tint, so twelve texture sets serve every material. No GPU, no imported art.
 public static class KitTextures {
-    public static readonly string[] Sets = { "brick", "plaster", "wood", "metal", "iron", "brass", "stone", "concrete", "slate", "cloth", "paper", "glass" };
+    public static readonly string[] Sets = { "brick", "plaster", "wood", "metal", "iron", "brass", "stone", "concrete", "slate", "cloth", "paper", "glass", "grass" };
 
     static readonly TexMap albedo = new TexMap();
     static readonly TexMap normals = new TexMap();
@@ -238,6 +238,16 @@ public static class KitTextures {
                 col = Mix(col, new Color(0.45f, 0.55f, 0.75f), line * 0.45f);
                 col = Mix(col, new Color(0.7f, 0.3f, 0.3f), margin * 0.5f);
                 h = 0.5f + 0.1f * fibre;
+                col.a = 1f;
+                break;
+            }
+            case "grass": {
+                float blade = Noise(u, v, 120, 120, 121);
+                float tuft = Fbm(u, v, 6, 4, 122);
+                float patch = Fbm(u, v, 2, 4, 123);
+                col = Mix(new Color(0.2f, 0.36f, 0.16f), new Color(0.42f, 0.55f, 0.24f), tuft) * (0.78f + 0.34f * blade) * (0.86f + 0.26f * patch);
+                col = Mix(col, new Color(0.5f, 0.46f, 0.26f), Step(0.7f, patch, 0.2f) * 0.35f);
+                h = 0.4f + 0.45f * blade + 0.15f * tuft;
                 col.a = 1f;
                 break;
             }
