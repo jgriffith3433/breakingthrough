@@ -7,8 +7,8 @@ using UnityEngine;
 // colliders, heightfield and baked ground meshes tiled with a kit texture, point lights and a gradient sky. Nothing here
 // creates a Unity primitive: SceneValidation fails a scene that contains one.
 public static class LevelDress {
-    static readonly Dictionary<int, Material> tinted = new Dictionary<int, Material>();
-    static readonly Dictionary<int, Material> tintSource = new Dictionary<int, Material>();   // a tinted copy -> the kit material it was copied from
+    // tinted: colour key -> the tinted copy. tintSource: a tinted copy -> the kit material it was copied from.
+    static readonly Dictionary<int, Material> tinted = new Dictionary<int, Material>(), tintSource = new Dictionary<int, Material>();
 
     // ---- kit pieces -------------------------------------------------------------------------------------------------
 
