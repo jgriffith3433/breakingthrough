@@ -82,13 +82,155 @@ public class ControlsHelp : MonoBehaviour {
         }
     }
 
+    // Onboarding state, read by the playtest. Seconds are game seconds (paused time does not count).
+    public const float HintSeconds = 8f;
+    public const float NearReach = 6f;
+    public static float PlayedSeconds { get; private set; }
+    public static float HintHiddenAt { get; private set; } = -1f;
+    public static string HintHiddenWhy { get; private set; } = "";
+    public static float FirstNearAt { get; private set; } = -1f;
+    public static float FirstNearDistance { get; private set; }
+    public static bool ArrowShown { get; private set; }
+    public static float ArrowDistance { get; private set; }
+
+    Text arrow;
+    RectTransform arrowRect;
+    float hintAlpha = 1f;
+    bool hintDone;
+
+    void Start() {
+        PlayedSeconds = 0f;
+        HintHiddenAt = -1f;
+        HintHiddenWhy = "";
+        FirstNearAt = -1f;
+        ArrowShown = false;
+        BuildArrow();
+    }
+
+    void BuildArrow() {
+        var go = new GameObject("Bot Arrow");
+        go.transform.SetParent(transform.GetChild(0), false);
+        arrow = go.AddComponent<Text>();
+        arrow.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        arrow.fontSize = 72;
+        arrow.fontStyle = FontStyle.Bold;
+        arrow.text = ">";
+        arrow.alignment = TextAnchor.MiddleCenter;
+        arrow.color = new Color(1f, 0.82f, 0.28f, 0.95f);
+        arrow.raycastTarget = false;
+        var outline = go.AddComponent<Outline>();
+        outline.effectColor = new Color(0f, 0f, 0f, 0.92f);
+        outline.effectDistance = new Vector2(2f, -2f);
+        arrowRect = arrow.rectTransform;
+        arrowRect.sizeDelta = new Vector2(90f, 90f);
+        go.SetActive(false);
+    }
+
+    static bool ArcadePlay() {
+        return ChapterRun.Instance == null && WaveDirector.Instance != null && !WaveDirector.IsLost
+            && !PauseMenu.IsOpen && !StoryScreen.IsOpen && !Cutscene.IsOpen && !LevelUpScreen.IsOpen;
+    }
+
+    // Arcade only: while no live bot is on screen, an arrow at the screen edge points to the nearest one.
+    void TickArrow() {
+        ArrowShown = false;
+        Camera cam = Camera.main;
+        Transform player = Musician.Instance != null ? Musician.Instance.transform : null;
+        GameObject playerGo = GameObject.FindGameObjectWithTag("Player");
+        Vector3 from = playerGo != null ? playerGo.transform.position : (player != null ? player.position : Vector3.zero);
+        Enemy nearest = null;
+        float best = float.MaxValue;
+        bool onScreen = false;
+        if (cam != null && ArcadePlay() && !WaveDirector.Waiting) {
+            foreach (Enemy enemy in Enemy.Roster) {
+                if (enemy == null) {
+                    continue;
+                }
+                Vector3 v = cam.WorldToViewportPoint(enemy.transform.position + Vector3.up);
+                if (v.z > 0f && v.x > 0.03f && v.x < 0.97f && v.y > 0.03f && v.y < 0.97f) {
+                    onScreen = true;
+                    break;
+                }
+                float d = (enemy.transform.position - from).sqrMagnitude;
+                if (d < best) {
+                    best = d;
+                    nearest = enemy;
+                }
+            }
+        }
+        if (nearest == null || onScreen) {
+            arrow.gameObject.SetActive(false);
+            return;
+        }
+        Vector3 vp = cam.WorldToViewportPoint(nearest.transform.position + Vector3.up);
+        Vector2 dir = new Vector2(vp.x - 0.5f, vp.y - 0.5f);
+        if (vp.z < 0f) {
+            dir = -dir;
+        }
+        if (dir.sqrMagnitude < 0.0001f) {
+            dir = Vector2.down;
+        }
+        dir.Normalize();
+        // Out to the edge of a rounded box, kept clear of the touch stick and buttons below.
+        float scale = Mathf.Min(0.40f / Mathf.Max(0.001f, Mathf.Abs(dir.x)), 0.36f / Mathf.Max(0.001f, Mathf.Abs(dir.y)));
+        Vector2 pos = new Vector2(0.5f, 0.5f) + dir * scale;
+        arrowRect.anchorMin = pos;
+        arrowRect.anchorMax = pos;
+        arrowRect.anchoredPosition = Vector2.zero;
+        arrowRect.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
+        float pulse = 0.8f + 0.2f * Mathf.Sin(Time.unscaledTime * 6f);
+        arrow.color = new Color(1f, 0.82f, 0.28f, pulse);
+        arrow.gameObject.SetActive(true);
+        ArrowShown = true;
+        ArrowDistance = Mathf.Sqrt(best);
+    }
+
+    void TickOnboarding() {
+        if (!ArcadePlay()) {
+            return;
+        }
+        PlayedSeconds += Time.deltaTime;
+        if (FirstNearAt < 0f && Enemy.Roster.Count > 0 && !WaveDirector.Waiting) {
+            GameObject playerGo = GameObject.FindGameObjectWithTag("Player");
+            if (playerGo != null) {
+                foreach (Enemy enemy in Enemy.Roster) {
+                    if (enemy == null) {
+                        continue;
+                    }
+                    Vector3 flat = enemy.transform.position - playerGo.transform.position;
+                    flat.y = 0f;
+                    if (flat.magnitude <= NearReach) {
+                        FirstNearAt = PlayedSeconds;
+                        FirstNearDistance = flat.magnitude;
+                        break;
+                    }
+                }
+            }
+        }
+        // The swing hint teaches, then gets out of the way: first swing, or 8 s, whichever comes first.
+        if (!hintDone && WaveDirector.Wave <= 1) {
+            if (BatEquipment.Swings > 0 || PlayedSeconds >= HintSeconds) {
+                hintDone = true;
+                HintHiddenAt = PlayedSeconds;
+                HintHiddenWhy = BatEquipment.Swings > 0 ? "first swing" : "8 s";
+            }
+        }
+    }
+
     void Update() {
         if (laidStamp != UiFit.Stamp) {
             Layout();
         }
+        TickOnboarding();
+        TickArrow();
         bool building = WaveDirector.IsBuilding;
         bool touch = UiFit.Touch;
-        string next = building ? BuildLesson(touch) : CombatLesson(Mathf.Max(1, WaveDirector.Wave), touch);
+        int wave = Mathf.Max(1, WaveDirector.Wave);
+        string next = building ? BuildLesson(touch) : CombatLesson(wave, touch);
+        // Wave 1's swing hint fades once taught; later lessons show as before.
+        bool fading = !building && wave == 1 && hintDone && ChapterRun.Instance == null;
+        hintAlpha = Mathf.MoveTowards(hintAlpha, fading ? 0f : 1f, Time.unscaledDeltaTime / 0.6f);
+        line.enabled = hintAlpha > 0.01f;
         if (next != shown) {
             shown = next;
             line.text = next;
@@ -108,7 +250,12 @@ public class ControlsHelp : MonoBehaviour {
             if (flash <= 0f) {
                 line.color = resting;
             }
+        } else {
+            line.color = resting;
         }
+        Color c = line.color;
+        c.a *= hintAlpha;
+        line.color = c;
     }
 
     static string BuildLesson(bool touch) {
