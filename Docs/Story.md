@@ -352,6 +352,13 @@ same list (*filed (replay)*, *next*, *locked*). On the right wall is Tick's desk
 with chapters behind it also has a **Hub** button on its card, so reopening a file reaches the office too. `ChapterHub.cs` builds it
 (flat, collider-free, in code); `ChapterScene.cs` owns the card it leads to. The `hub-doors` playtest plays it.
 
+**The hub is alive (`HubAmbience.cs`).** No waves, no timer: the office is a place. While Wallit is about, each lodger keeps to its own idle
+action: Tick swings like a pendulum and now and then strikes the hour, Brim looks about and tips a hat it does not have, Spare tinkers with
+its one claw and hops with a chirp, Chime rocks on its loop and rings. Step into Slice's ring and she and Wallit trade a short exchange
+(`Story.HubRing`, two per chapters-cleared stage, taking turns, none repeated from an earlier stage): after one notice, "Standing in your
+ring. Rent's due." / "Paid. In kind. Stay."; after all six, "Number on the wall. Mine?" / "Yours. Keep the receipt." Wallit money, Slice
+clipped. The `hub-ambience` playtest plays it.
+
 Inside the circle Wallit is on the books, and the books keep an **account** for him: every bot he clears adds **XP** (5 for a Yo Bot, twice
 its bolts for the heavier kinds, a boss pays 50 more), shown as `LV 2   XP 34/90` top left. A level is a clause the books accept: Wallit
 earns seven abilities, all money (`CampaignProgress.cs`):

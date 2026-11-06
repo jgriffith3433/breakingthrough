@@ -58,6 +58,7 @@ public static class Playtest {
         new PlaytestScenario("moves", "Campaign's combat moves, played with real input in Chapter 1 (the sandbox case file; the real save and Arcade are never touched): the bot swings the bat three times in a row and each hit of the combo is its own (Deposit, Withdrawal, Overdraft: damage, knockback and crack differ; events combo-hit, combo-distinct); it then fights on pressing X (the dodge) whenever a bot is close, and a blow that lands inside the dodge's 0.4 s window is avoided (events dodge, dodge-avoided, ability-slots with X Dodge, C Refund and the empty V slot). The Courier fight then runs as in the campaign scenario. Arcade is checked unchanged: outside a chapter the dodge, the per-hit combo and the slots read as no effect (event arcade-moves-clean; metrics comboHits, dodges, dodgesAvoided)", 600, "content"),
         new PlaytestScenario("abilities", "Campaign's three new abilities, played with real input in Chapter 1 (setup: the sandbox case file starts 1 XP short of level 4, and again short of 5 and 6 as each unlocks; the real save and Arcade are never touched): the HUD's second line shows each slot with its key and cooldown (V: LV 4 locked, then Coin Toss ready / 4 s, B Stamp Out ready / 14 s, G Escrow ready / 20 s; events slot-line); each unlock is announced as it is earned (level-up, unlock-level); the bot presses V and a thrown coin stings a bot from range (event toss-hit), presses B with bots close and they are stunned and stung (event stamp-hit), presses G and a blow that lands is held (event escrow-held); a cooldown is seen counting down on the HUD (event cooldown-shown); the case file keeps the unlocks after a save round trip and after leaving to the menu (events unlock-saved, unlock-kept; metrics tosses, tossHits, stamps, stampedBots, shields, shieldBlocks, unlockMask). Arcade is unchanged (event arcade-moves-clean)", 900, "content"),
         new PlaytestScenario("hub-life", "The hub as the story advances, with real input (setup: the sandbox case file 1 has chapter 1 filed and opens in the hub; chapters 2 to 6 are filed by setup shortcuts, never the real save). After every chapter the office must look different (hub-look: window light, cabinets, stamps, desk plate, who sits at the desk, slips pinned, lamps lit) and at least one new conversation is open (a gold ! over the lodger); Wallit walks to each and presses E (hub-chat), returns a lodger's favour (favour-offered, favour-pickup, favour-paid), walks over the chapter's loose notice to pin it (notice-pinned) and runs Chime's lost-thing errand, so each chapter shows three errands done (chapter-errands, saved in the case file). At the end the ending's own lines for what was kept are read (ending-lines; metrics hubChats, hubErrands, looksDiffer, endingLines)", 900, "content"),
+        new PlaytestScenario("hub-ambience", "The hub as a place with life, with real input (setup: the sandbox case file 1 has chapter 1 filed and opens in the hub; later chapters are filed by setup shortcuts, never the real save). No WaveDirector exists in the hub (hub-no-waves). While Wallit stands still the four lodgers each do their own idle action, sampled for 20 s: at least three different actions at once and several over time (hub-idle, idle-snapshot; metric idleActionsSeen, idleLodgersMoving). Then he walks on the stick into Slice's ring: she and Wallit trade an exchange (ring-banter with the chapters filed and the text), and after every chapter filed (2 to 6, by setup shortcut) he stands in the ring again and the exchange is different from every earlier one (ring-banter-changed; metrics banters, banterDistinct)", 300, "content"),
         new PlaytestScenario("hub-npcs", "The hub's lodgers, with real input (setup: the sandbox case file 1 has chapter 1 filed and opens in the hub; later chapters are filed by setup shortcuts, never the real save): four lodgers stand in the office, none of them Warrok (hub-lodgers); Wallit walks to each and presses E, and each speaks its line for one chapter cleared (npc-line); Chime sends him for a lost thing (errand-offered), he walks to it (errand-pickup) and back, and Chime pays XP and the lost thing joins the file (errand-paid, with the XP before and after and the thing kept). Then setup files chapters 2 to 6 one by one and Tick is talked to again after each, every lodger's line must differ from the one before (npc-after-chapter; metrics lodgers, linesDiffer, errandXp, lostThings)", 300, "content"),
         new PlaytestScenario("hub-doors", "The hub as a walkable office, with real input (setup: the sandbox case file 1 has chapters 1 and 2 filed and opens in the hub; the real save is never touched): Wallit walks about the room to the chapter board and the vacant desk (hub-walk), doors 1 to 3 stand open and 4 to 6 stay shut (hub-office), pushing on shut door 4 does not get him through (door-locked), walking into open door 3 shows that chapter's card (door-entered) and Begin starts it (chapter-started); event hub-scene (the office is its own scene, Map_Office, dressed for the chapters filed); metrics doorsRight, hubWalked, lockedHeld, hubScene", 300, "content"),
         new PlaytestScenario("maps-123", "Chapters 1, 2 and 3 each load a visibly different map with a route, a landmark and a hazard or set piece (setup: the sandbox case file stands on each chapter in turn; the real save is never touched; leaving a chapter early is a named setup shortcut). Per chapter: Campaign, case file 1, Begin; event map-loaded, map-lighting (fog and sky differ), map-features (one route:, landmark: and hazard: line each from the map's own list, a problem if any is missing), map-objective (the objective marker's distance from the end of the route: it must stand on the route; chapter 1's objective is the circle), then Wallit walks on the stick and the chapter is left. Metrics mapsLoaded, distinctLooks, mapsWithRoute, mapsWithLandmark, mapsWithHazard. Play the whole objective of chapters 2 and 3 with the chapter2 and chapter3 scenarios.", 420, "content"),
@@ -296,7 +297,7 @@ public static class Playtest {
                 }
                 yield break;
             }
-            if (id == "campaign" || id == "comfort" || id == "lore" || id == "secret-ending" || id == "journal" || id == "grade" || id == "campaign-full" || id == "hub" || id == "moves" || id == "abilities" || id == "hub-doors" || id == "hub-npcs" || id == "hub-life" || id == "cutscene" || id == "chapter2" || id == "companion" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6" || id == "choices" || id == "campaign-pacing") {
+            if (id == "campaign" || id == "comfort" || id == "lore" || id == "secret-ending" || id == "journal" || id == "grade" || id == "campaign-full" || id == "hub" || id == "moves" || id == "abilities" || id == "hub-doors" || id == "hub-npcs" || id == "hub-life" || id == "hub-ambience" || id == "cutscene" || id == "chapter2" || id == "companion" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6" || id == "choices" || id == "campaign-pacing") {
                 choicesTest = id == "choices";
                 comfortTest = id == "comfort";
                 secretTest = id == "secret-ending";
@@ -308,13 +309,14 @@ public static class Playtest {
                 hubDoors = id == "hub-doors";
                 hubNpcs = id == "hub-npcs";
                 hubLife = id == "hub-life";
+                hubAmbience = id == "hub-ambience";
                 fullRun = id == "campaign-full";
                 pacingRun = id == "campaign-pacing";
                 loreTest = id == "lore";
                 journalTest = id == "journal";
                 gradeTest = id == "grade";
                 quitDone = false;
-                startChapter = id == "hub-doors" ? 2 : id == "hub-npcs" || id == "hub-life" ? 1 : id == "chapter6" || id == "secret-ending" ? 5 : id == "chapter5" ? 4 : id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" || id == "companion" || id == "campaign-pacing" ? 1 : 0;
+                startChapter = id == "hub-doors" ? 2 : id == "hub-npcs" || id == "hub-life" || id == "hub-ambience" ? 1 : id == "chapter6" || id == "secret-ending" ? 5 : id == "chapter5" ? 4 : id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" || id == "companion" || id == "campaign-pacing" ? 1 : 0;
                 yield return CampaignRun();
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
@@ -686,6 +688,7 @@ public static class Playtest {
     static bool hubDoors;
     static bool hubNpcs;
     static bool hubLife;
+    static bool hubAmbience;
     static bool fullRun;
     static bool pacingRun;   // campaign-pacing: chapters 2 and 3, each one reporting its encounters and combat share
     static bool quitDone;
@@ -734,7 +737,7 @@ public static class Playtest {
             setup.xp = CampaignProgress.XpAt(4) - 1;
             run.Event("abilities-setup", "sandbox case file 1 on chapter 1 with " + setup.xp + " XP (level " + CampaignProgress.LevelFor(setup.xp) + ")");
         }
-        if (hubDoors || hubNpcs || hubLife) {
+        if (hubDoors || hubNpcs || hubLife || hubAmbience) {
             ChapterScene.HubNext = true;
         }
         MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
@@ -778,6 +781,10 @@ public static class Playtest {
         }
         if (hubLife) {
             yield return HubLifePlay();
+            yield break;
+        }
+        if (hubAmbience) {
+            yield return HubAmbiencePlay();
             yield break;
         }
         run.Scene("Chapter " + (ChapterScene.Instance.Chapter + 1));
@@ -2522,6 +2529,80 @@ run.Event("boss-defeated", "The Courier fell after " + Mathf.RoundToInt(chapter.
         if (lines < 8) {
             run.Problem(PlaytestSeverity.Bug, "hub-life: the ending shows " + lines + " lines from the hub's errands and talks (want 8)");
         }
+        yield return new WaitForSecondsRealtime(2f);
+    }
+
+    // The hub's idle life and Slice's ring banter (HubAmbience). Real input for the walking; chapters 2 to 6 are filed by setup shortcut.
+    static IEnumerator HubAmbiencePlay() {
+        yield return run.Until(() => ChapterScene.Instance.Hub != null && ChapterScene.Instance.Hub.Shown, 20f, "the hub");
+        if (run.Done) {
+            yield break;
+        }
+        ChapterHub hub = ChapterScene.Instance.Hub;
+        run.Scene("Hub ambience");
+        run.Metric("campaignLoaded", 1);
+        yield return run.Until(() => hub.Ambience != null && hub.Office != null, 20f, "the hub's ambience");
+        yield return new WaitForSecondsRealtime(1f);
+        bool waves = Object.FindAnyObjectByType<WaveDirector>() != null;
+        run.Event("hub-no-waves", "wave director in the hub: " + (waves ? "YES" : "none") + "; phase of the run: hub (no waves, no timer)");
+        if (waves) {
+            run.Problem(PlaytestSeverity.Bug, "hub-ambience: a WaveDirector exists in the hub");
+        }
+        // 1. Idle: Wallit stands still, the lodgers each do their own thing.
+        var seen = new System.Collections.Generic.HashSet<string>();
+        int mostAtOnce = 0;
+        float until = Time.realtimeSinceStartup + 20f;
+        float nextSnap = 0f;
+        while (!run.Done && Time.realtimeSinceStartup < until) {
+            var now = new System.Collections.Generic.HashSet<string>();
+            for (int i = 0; i < hub.LodgerCount; i++) {
+                string a = hub.Ambience.Actions[i];
+                seen.Add(Story.Lodgers[i].Id + ":" + a);
+                now.Add(a);
+            }
+            mostAtOnce = Mathf.Max(mostAtOnce, now.Count);
+            if (Time.realtimeSinceStartup >= nextSnap) {
+                nextSnap = Time.realtimeSinceStartup + 4f;
+                run.Event("idle-snapshot", string.Join("; ", System.Array.ConvertAll(Story.Lodgers, l => l.Name + " " + hub.Ambience.Actions[System.Array.IndexOf(Story.Lodgers, l)])));
+            }
+            yield return null;
+        }
+        run.Metric("idleActionsSeen", seen.Count);
+        run.Metric("idleLodgersMoving", mostAtOnce);
+        run.Event("hub-idle", mostAtOnce + " different idle actions at once, " + seen.Count + " seen in 20 s: " + string.Join(", ", seen));
+        if (mostAtOnce < 3) {
+            run.Problem(PlaytestSeverity.Bug, "hub-ambience: only " + mostAtOnce + " different lodger idle actions at once (want 3)");
+        }
+        // 2. Slice's ring, once per stage.
+        CampaignSave.Slot file = CampaignSave.Get(0);
+        var heard = new System.Collections.Generic.HashSet<string>();
+        for (int cleared = 1; cleared <= 6 && !run.Done; cleared++) {
+            if (cleared > 1) {
+                file.cleared = cleared;
+                file.chapter = Mathf.Min(cleared, CampaignSave.ChapterCount - 1);
+                file.reached = file.chapter;
+                hub.Refresh();
+                run.Event("hub-setup", "sandbox case file 1 now has " + cleared + " chapters filed");
+            }
+            yield return WalkTo(hub, new Vector3(2f, 0f, -2f), 40f, () => hub.Ambience.NearSlice);
+            int before = hub.Ambience.Banters;
+            yield return run.Until(() => hub.Ambience.Banters > before, 40f, "Slice's ring banter after " + cleared + " chapters");
+            if (run.Done) {
+                yield break;
+            }
+            string text = hub.Ambience.LastBanterText;
+            bool fresh = heard.Add(text);
+            run.Event("ring-banter", "after " + cleared + " cleared (" + hub.Ambience.LastBanterId + "): " + text);
+            run.Event("ring-banter-changed", fresh ? "new line, not heard at an earlier stage" : "SAME as an earlier stage");
+            if (!fresh) {
+                run.Problem(PlaytestSeverity.Bug, "hub-ambience: Slice said the same thing after chapter " + cleared + " as before");
+            }
+            yield return new WaitForSecondsRealtime(hub.Ambience.Line.Length > 0 ? 3.5f : 0.5f);
+            // Out of the ring and back for the next stage.
+            yield return WalkTo(hub, new Vector3(7f, 0f, -3f), 20f, () => !hub.Ambience.NearSlice);
+        }
+        run.Metric("banters", hub.Ambience.Banters);
+        run.Metric("banterDistinct", heard.Count);
         yield return new WaitForSecondsRealtime(2f);
     }
 
