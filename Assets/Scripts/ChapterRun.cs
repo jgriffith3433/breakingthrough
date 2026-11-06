@@ -164,6 +164,7 @@ public class ChapterRun : MonoBehaviour {
         Events.Add("start|" + data.Id + "|" + data.Objective + "|" + data.Target + (Hard ? "|hard" : ""));
         CampaignProgress.BeginChapter();
         MusicDirector.Play(MusicDirector.ChapterTrack(Chapter));
+        MusicDirector.Prefetch(MusicDirector.BossTrack(data.BossName));   // fetched by URL: ready before the boss walks in
         gameObject.AddComponent<CampaignAbilities>();
         if (!string.IsNullOrEmpty(data.Companion)) {
             // A companion walks with Wallit in the chapters that name one (Arcade has no ChapterRun, so never there).

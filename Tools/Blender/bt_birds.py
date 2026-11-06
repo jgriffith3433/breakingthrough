@@ -6,7 +6,7 @@
 import bpy, bmesh, math, random, os
 from mathutils import Vector, Matrix, Euler
 
-OUT = r"C:\Projects\breakingthrough\Assets\Resources\Models\Birds"
+OUT = r"C:\Projects\breakingthrough\Assets\Art\Birds"
 
 
 def scene():
