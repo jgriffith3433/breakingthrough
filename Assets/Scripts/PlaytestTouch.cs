@@ -140,6 +140,7 @@ public static class PlaytestTouch {
     public static IEnumerator Run(PlaytestRun r) {
         run = r;
         stickDown = false;
+        keyWords = 0;
         UiFit.ForceTouch(true);
         LevelBarks.Reset();
         CampaignSave.EnterSandbox();
@@ -221,18 +222,92 @@ public static class PlaytestTouch {
         run.Event("pickup-done", "the Mailbox Flag is in hand (touch only)");
         run.Metric("touchPickup", level.Yard.FlagTaken ? 1 : 0);
 
-        // 3. The hub. Setup shortcut: the sandbox case file has Chapter 1 filed and the level's way back is taken.
-        run.Event("setup", "sandbox case file 1 has Chapter 1 filed; leaving the level for the hub");
-        CampaignSave.Slot slot = CampaignSave.Get(0);
-        slot.used = true;
-        slot.chapter = 1;
-        slot.reached = 1;
-        slot.cleared = 1;
+        KeyWords("level");
+
+        // 3. The fight, fingers only: Lock is tapped once the crew is close, the stick closes in, Swing is tapped in reach.
+        yield return run.Until(() => level.Yard.CrewWoken, 25f, "the Clearing Crew to wake");
+        if (run.Done) {
+            yield break;
+        }
+        CheckLayout("level-fight");
+        float fightStart = Time.realtimeSinceStartup;
+        float nextSwing = 0f;
+        int swings = 0;
+        bool lockTapped = false;
+        while (!run.Done && !level.Yard.CrewCleared && Time.realtimeSinceStartup - fightStart < 240f) {
+            Enemy nearest = null;
+            float nd = 9999f;
+            foreach (Enemy e in Enemy.Roster) {
+                if (e == null || !e.Alive || e.Dormant) {
+                    continue;
+                }
+                float d = Flat(e.transform.position - level.Player.position).magnitude;
+                if (d < nd) {
+                    nd = d;
+                    nearest = e;
+                }
+            }
+            if (nearest == null) {
+                Rest();
+                yield return null;
+                continue;
+            }
+            if (!lockTapped && nd < 14f) {
+                lockTapped = true;
+                yield return TapPad("Lock");
+                run.Event("touch-lock", "finger on Lock with the crew " + Mathf.RoundToInt(nd) + " m off");
+            }
+            if (nd > 2.1f) {
+                SteerLevel(nearest.transform.position);
+            } else {
+                Rest();
+            }
+            if (nd < 2.6f && Time.realtimeSinceStartup >= nextSwing) {
+                nextSwing = Time.realtimeSinceStartup + 0.5f;
+                Rest();
+                yield return TapPad("Swing");
+                swings++;
+                continue;
+            }
+            yield return null;
+        }
         Rest();
-        level.LeaveToHub();
+        run.Metric("touchSwings", swings);
+        run.Metric("touchFightSeconds", Mathf.Round(Time.realtimeSinceStartup - fightStart));
+        run.Event("touch-fight", "the Clearing Crew " + (level.Yard.CrewCleared ? "cleared" : "NOT cleared") + " with " + swings + " Swing taps, " + level.Defeats + " defeats");
+        if (!level.Yard.CrewCleared) {
+            run.Problem(PlaytestSeverity.Bug, "campaign-touch: the Clearing Crew was not cleared by touch in 240 s (" + level.Yard.CrewAlive + " left)");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        KeyWords("level-fight");
+
+        // 4. The way out on the stick, the exit card, one tap on Interact back to the hub: Chapter 1 completed by touch.
+        yield return new WaitForSecondsRealtime(3f);
+        yield return WalkLevel(LevelYard.ExitPos + new Vector3(0f, 0f, -5f), 2f, 60f);
+        yield return WalkLevel(LevelYard.ExitPos, 2.2f, 20f);
+        yield return run.Until(() => level.Yard.Stage == LevelYard.Beat.Done, 12f, "the exit");
+        if (run.Done) {
+            yield break;
+        }
+        yield return run.Until(() => PadShown("Interact"), 6f, "the Interact button on the exit card");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("ch1-exit-card");
+        run.Event("exit-card", level.Yard.Prompt.Replace('\n', ' '));
+        KeyWords("exit-card");
+        run.Event("interact-tap", "finger on Interact on the exit card");
+        yield return TapPad("Interact");
         yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.Hub != null && ChapterScene.Instance.Hub.Shown && PadShown("Stick"), 45f, "the hub with touch controls");
         if (run.Done) {
             yield break;
+        }
+        CampaignSave.Slot file = CampaignSave.Get(0);
+        run.Event("chapter-complete-touch", "Chapter 1 completed by touch only: " + file.cleared + " chapter filed, next is chapter " + (file.chapter + 1));
+        run.Metric("touchChapterComplete", file.cleared >= 1 ? 1 : 0);
+        if (file.cleared < 1) {
+            run.Problem(PlaytestSeverity.Bug, "campaign-touch: back in the hub but Chapter 1 is not filed");
         }
         ChapterHub hub = ChapterScene.Instance.Hub;
         run.Scene("Hub");
@@ -254,6 +329,7 @@ public static class PlaytestTouch {
             yield break;
         }
         run.Event("journal-touch", "the journal opened from its touch button");
+        KeyWords("journal");
         run.Metric("touchJournal", JournalPanel.IsOpen ? 1 : 0);
         yield return new WaitForSecondsRealtime(1f);
         JournalPanel.Close();
@@ -267,6 +343,7 @@ public static class PlaytestTouch {
             yield break;
         }
         run.Event("interact-shown", "prompt \"" + hub.PromptText + "\"");
+        KeyWords("hub-door");
         if (!hub.PromptText.Contains("Tap: open the door") || hub.EnteredDoor >= 0) {
             run.Problem(PlaytestSeverity.Bug, "campaign-touch: at the door the prompt reads \"" + hub.PromptText + "\" (entered " + hub.EnteredDoor + ")");
         }
@@ -279,5 +356,31 @@ public static class PlaytestTouch {
         run.Event("door-opened", "Chapter 2's door opened by touch: the card reads " + ChapterScene.Instance.Title);
         run.Metric("touchDoor", 1);
         yield return new WaitForSecondsRealtime(2f);
+        KeyWords("chapter-card");
+        run.Metric("touchKeyWords", keyWords);
+        run.Event("touch-words-total", keyWords + " lines on screen told a phone to press a key");
+    }
+
+    static int keyWords;
+
+    // Keyboard words a phone can't press, in any text on screen.
+    // Whole words only, so "NOTICE: " or "CHIME: " are not "E: ".
+    static readonly System.Text.RegularExpressions.Regex KeyPhrases = new System.Text.RegularExpressions.Regex(
+        @"\bE: |\b[Pp]ress [A-Z]\b|\b[Hh]old (E|Space)\b|\bWASD\b|\bAny key\b|\bEnter: |\bEsc\b|\(Enter\)|\bShift locks\b|\bright click\b|\bClick to\b");
+
+    // Every active text on screen is read; one that names a key is a bug on touch.
+    static void KeyWords(string where) {
+        int found = 0;
+        foreach (UnityEngine.UI.Text t in Object.FindObjectsByType<UnityEngine.UI.Text>(FindObjectsSortMode.None)) {
+            if (t == null || !t.isActiveAndEnabled || string.IsNullOrEmpty(t.text) || t.color.a < 0.05f) {
+                continue;
+            }
+            if (KeyPhrases.IsMatch(t.text)) {
+                found++;
+                run.Problem(PlaytestSeverity.Bug, "campaign-touch: on touch the " + where + " screen says \"" + t.text.Replace('\n', ' ') + "\" (" + t.name + ")");
+            }
+        }
+        keyWords += found;
+        run.Event("touch-words", where + ": " + found + " texts name a key");
     }
 }
