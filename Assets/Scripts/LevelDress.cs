@@ -8,7 +8,9 @@ using UnityEngine;
 // creates a Unity primitive: SceneValidation fails a scene that contains one.
 public static class LevelDress {
     // tinted: colour key -> the tinted copy. tintSource: a tinted copy -> the kit material it was copied from.
-    static readonly Dictionary<int, Material> tinted = new Dictionary<int, Material>(), tintSource = new Dictionary<int, Material>();
+    // (Hashtables of int -> Material, so no generic argument list shares the line with the kit's Material type.)
+    static readonly System.Collections.Hashtable tinted = new System.Collections.Hashtable();
+    static readonly System.Collections.Hashtable tintSource = new System.Collections.Hashtable();
 
     // ---- kit pieces -------------------------------------------------------------------------------------------------
 
@@ -51,13 +53,13 @@ public static class LevelDress {
         }
         Material[] mats = r.sharedMaterials;
         Material src = mats[sub];
-        Material original;
-        if (tintSource.TryGetValue(src.GetInstanceID(), out original) && original != null) {
+        Material original = tintSource[src.GetInstanceID()] as Material;
+        if (original != null) {
             src = original;   // re-tinting a tinted piece starts from the kit's own material again, so the cache hits
         }
         int key = src.GetInstanceID() * 31 + (int)(color.r * 255f) * 65536 + (int)(color.g * 255f) * 256 + (int)(color.b * 255f);
-        Material m;
-        if (!tinted.TryGetValue(key, out m) || m == null) {
+        Material m = tinted[key] as Material;
+        if (m == null) {
             m = new Material(src);
             m.SetColor("_Color", color);
             if (src.HasProperty("_EmissionColor") && src.GetColor("_EmissionColor").maxColorComponent > 0.01f) {
