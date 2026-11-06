@@ -42,6 +42,7 @@ public static partial class KitCatalog {
         AddFiled();
         AddArena();
         AddLevels();
+        AddLate();
     }
 
     public static KitDef Def(string id) { Init(); KitDef d; return byId.TryGetValue(id, out d) ? d : null; }
