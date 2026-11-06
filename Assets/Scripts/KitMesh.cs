@@ -477,4 +477,22 @@ public class KitMesh {
         mesh.RecalculateTangents();
         return mesh;
     }
+
+    // ---- shared runtime pieces --------------------------------------------------------------------------------------
+
+    static Mesh disc;
+
+    // A flat turned disc the size of Unity's cylinder (radius 0.5, y -1..1), for ground marks scaled flat, so a
+    // telegraph is never a primitive. One shared mesh; the caller gets its own object with a MeshFilter and renderer.
+    public static GameObject Disc(string name) {
+        if (disc == null) {
+            var k = new KitMesh { Name = "Mark Disc" };
+            k.Lathe(new List<Vector2> { new Vector2(0f, -1f), new Vector2(0.5f, -1f), new Vector2(0.5f, 1f), new Vector2(0f, 1f) }, 32);
+            disc = k.ToMesh();
+        }
+        var go = new GameObject(name);
+        go.AddComponent<MeshFilter>().sharedMesh = disc;
+        go.AddComponent<MeshRenderer>();
+        return go;
+    }
 }

@@ -470,18 +470,10 @@ public class CoinShot : MonoBehaviour {
     float life = 2f;
 
     public static void Throw(Vector3 from, Enemy target) {
-        GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        go.name = "Coin Toss";
-        Collider c = go.GetComponent<Collider>();
-        if (c != null) {
-            Destroy(c);
-        }
+        GameObject go = KitMesh.Disc("Coin Toss");   // a turned coin, never a primitive
         go.transform.position = from;
         go.transform.localScale = new Vector3(0.45f, 0.05f, 0.45f);
-        Renderer r = go.GetComponent<Renderer>();
-        if (r != null) {
-            r.material.color = new Color(1f, 0.82f, 0.25f);
-        }
+        UpgradeLook.Paint(go, new Color(1f, 0.82f, 0.25f));
         CoinShot shot = go.AddComponent<CoinShot>();
         shot.target = target;
         shot.last = target.transform.position + Vector3.up * 1f;

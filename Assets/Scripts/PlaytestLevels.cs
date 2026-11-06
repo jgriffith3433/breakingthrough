@@ -45,6 +45,7 @@ public static class PlaytestLevels {
         run = r;
         CampaignSave.EnterSandbox();
         run.Event("setup", "levels-1-3: sandbox case file; the photo camera is a named setup shortcut");
+        ResetFps();
         int photos = 0;
         int bad = 0;
         for (int index = 0; index < 3 && !run.Done; index++) {
@@ -53,6 +54,7 @@ public static class PlaytestLevels {
             bad += lastPrimitives;
         }
         DestroyRig();
+        ReportFps("levels-1-3");
         run.Metric("levelPhotos", photos);
         run.Metric("levelPrimitivesTotal", bad);
         if (!run.Done) {
@@ -65,6 +67,7 @@ public static class PlaytestLevels {
         run = r;
         CampaignSave.EnterSandbox();
         run.Event("setup", "levels-4-6: sandbox case file; the photo camera is a named setup shortcut");
+        ResetFps();
         int photos = 0;
         int bad = 0;
         yield return Hub();
@@ -76,6 +79,7 @@ public static class PlaytestLevels {
             bad += lastPrimitives;
         }
         DestroyRig();
+        ReportFps("levels-4-6");
         run.Metric("levelPhotos", photos);
         run.Metric("levelPrimitivesTotal", bad);
         if (!run.Done) {
@@ -229,10 +233,20 @@ public static class PlaytestLevels {
             yield return Wait(4.5f);
         }
         Shoot(g.Pos, g.Look, g.Fov);
-        yield return Wait(1.2f);
+        yield return Wait(0.4f);   // the first frames after a cut warm up; the fps is the second that follows
+        float fpsFrom = Time.realtimeSinceStartup;
+        int frames = 0;
+        while (Time.realtimeSinceStartup - fpsFrom < 0.8f) {
+            frames++;
+            yield return null;
+        }
+        float fps = Mathf.Round(frames / Mathf.Max(0.01f, Time.realtimeSinceStartup - fpsFrom));
+        photoFpsSum += fps;
+        photoFpsCount++;
+        photoFpsMin = Mathf.Min(photoFpsMin, fps);
         SceneScanReport view = SceneValidation.Scan(SceneValidation.ChapterRoots(), rig);
         run.Scene(g.Name);
-        run.Event("photo", g.Name + " chapter=" + chapter + " landmark=" + g.Landmark + " visibleTriangles=" + view.VisibleTriangles + " drawCalls=" + view.DrawCalls + " materials=" + view.Materials + " lights=" + view.Lights);
+        run.Event("photo", g.Name + " chapter=" + chapter + " landmark=" + g.Landmark + " visibleTriangles=" + view.VisibleTriangles + " drawCalls=" + view.DrawCalls + " materials=" + view.Materials + " lights=" + view.Lights + " fps=" + fps);
         if (view.VisibleTriangles > SceneValidation.MaxVisibleTriangles) {
             run.Problem(PlaytestSeverity.Bug, "levels-4-6: " + g.Name + " shows " + view.VisibleTriangles + " triangles, over " + SceneValidation.MaxVisibleTriangles);
         }
@@ -241,6 +255,26 @@ public static class PlaytestLevels {
 
     static int lastPhotos;
     static int lastPrimitives;
+    static float photoFpsSum;
+    static int photoFpsCount;
+    static float photoFpsMin = 999f;
+
+    static void ResetFps() {
+        photoFpsSum = 0f;
+        photoFpsCount = 0;
+        photoFpsMin = 999f;
+    }
+
+    // photosFps: the mean frame rate over every photo stop; photosFpsMin: the worst stop.
+    static void ReportFps(string scenario) {
+        if (photoFpsCount == 0) {
+            return;
+        }
+        float mean = Mathf.Round(photoFpsSum / photoFpsCount);
+        run.Metric("photosFps", mean);
+        run.Metric("photosFpsMin", photoFpsMin);
+        run.Event("photos-fps", scenario + ": " + mean + " fps on average over " + photoFpsCount + " photo stops, worst " + photoFpsMin);
+    }
 
     static IEnumerator Chapter(int index) {
         lastPhotos = 0;

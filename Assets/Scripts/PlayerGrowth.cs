@@ -164,7 +164,7 @@ public class PlayerGrowth : MonoBehaviour {
         }
         if (!toldJump && wave >= Tuning.JumpWave) {
             toldJump = true;
-            Show("Land a jump on Yo Bots to crush them. Hold Space to keep hopping.", 5f);
+            Show(UiFit.Touch ? "Land a jump on Yo Bots to crush them. Hold Jump to keep hopping." : "Land a jump on Yo Bots to crush them. Hold Space to keep hopping.", 5f);
         }
         if (!toldStomp && wave >= MetaProgress.StompWave()) {
             toldStomp = true;
@@ -176,7 +176,7 @@ public class PlayerGrowth : MonoBehaviour {
         }
         if (!toldClimb && wave >= ClimbWave) {
             toldClimb = true;
-            Show("Older bots climb you now instead of the circle. Press F.", 6f);
+            Show(UiFit.Touch ? "Older bots climb you now instead of the circle. Tap Shake." : "Older bots climb you now instead of the circle. Press F.", 6f);
         }
     }
 
@@ -230,7 +230,7 @@ public class PlayerGrowth : MonoBehaviour {
             stomping = false;
             airTime = 0f;
             leftGround = false;
-            Banner = "They're climbing you. Press F.";
+            Banner = UiFit.Touch ? "They're climbing you. Tap Shake." : "They're climbing you. Press F.";
             bannerLeft = 0.35f;
             if (PlayInput.GetKeyDown(KeyCode.F)) {
                 Shake();
