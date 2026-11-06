@@ -4852,6 +4852,30 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             run.Problem(PlaytestSeverity.Bug, "the home run launched a bot that knocked into no other bot");
         }
         run.Metric("animContacts", BatEquipment.AnimContacts);
+        // Combat feel: every hit flashes and stops the world for 2 to 4 frames; a home run adds a bigger burst and a slow beat.
+        run.Event("hit-feel", "impact flashes " + BatEquipment.Impacts + " (fx " + Fx.Impacts + "), hit-stops " + Juice.Stops
+            + " held " + Juice.ShortestStop + " to " + Juice.LongestStop + " frames, swing trails " + BatEquipment.TrailSwings
+            + ", home run bursts " + Fx.HomeRunBursts + " with " + Juice.HomeRunBeats + " slow beat(s), crack sound once a swing");
+        run.Metric("impactFlashes", BatEquipment.Impacts);
+        run.Metric("hitStops", Juice.Stops);
+        run.Metric("hitStopMinFrames", Juice.ShortestStop);
+        run.Metric("hitStopMaxFrames", Juice.LongestStop);
+        run.Metric("swingTrails", BatEquipment.TrailSwings);
+        run.Metric("homeRunBursts", Fx.HomeRunBursts);
+        if (BatEquipment.Impacts == 0 || Fx.Impacts == 0) {
+            run.Problem(PlaytestSeverity.Bug, "bat hits showed no impact flash");
+        }
+        if (Juice.Stops == 0) {
+            run.Problem(PlaytestSeverity.Bug, "bat hits did no hit-stop");
+        } else if (Juice.ShortestStop < Juice.MinStopFrames || Juice.LongestStop > Juice.MaxStopFrames) {
+            run.Problem(PlaytestSeverity.Bug, "hit-stop held " + Juice.ShortestStop + " to " + Juice.LongestStop + " frames, wanted 2 to 4");
+        }
+        if (BatEquipment.TrailSwings == 0) {
+            run.Problem(PlaytestSeverity.Bug, "no swing trail showed behind the bat");
+        }
+        if (BatEquipment.HomeRuns > 0 && Fx.HomeRunBursts == 0) {
+            run.Problem(PlaytestSeverity.Bug, "the home run had no bigger effect than a normal hit");
+        }
         run.Event("bat-clips",
             "swing1=" + CharacterMovement.ClipCount(CharacterMovement.CLIP_SWING_1)
             + " swing2=" + CharacterMovement.ClipCount(CharacterMovement.CLIP_SWING_2)

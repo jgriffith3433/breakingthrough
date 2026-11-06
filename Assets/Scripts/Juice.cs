@@ -5,7 +5,6 @@ using UnityEngine.SceneManagement;
 // contact jolt (ZeldaStyleCamera.Shake), which J asked for with the bat.
 public class Juice : MonoBehaviour {
     static ZeldaStyleCamera cam;
-    static float stopUntil;
     static bool stopping;
 
     public static ZeldaStyleCamera Cam {
@@ -40,25 +39,76 @@ public class Juice : MonoBehaviour {
         new GameObject("Juice").AddComponent<Juice>();
     }
 
-    // Freeze the world for a blink. Never fights a real pause.
+    // Hit-stop is counted in frames, not seconds, so it reads the same at any frame rate: 2 to 4 frames.
+    public const int MinStopFrames = 2;
+    public const int MaxStopFrames = 4;
+    public static int Stops { get; private set; }
+    public static int ShortestStop { get; private set; }
+    public static int LongestStop { get; private set; }
+    public static int HomeRunBeats { get; private set; }
+    static int stopStartFrame;
+    static int stopEndFrame;
+    static float slowUntil;
+    static float slowScale = 1f;
+    static bool slowing;
+
+    public static void ResetStats() {
+        Stops = 0;
+        ShortestStop = 0;
+        LongestStop = 0;
+        HomeRunBeats = 0;
+    }
+
+    // Freeze the world for a blink. Never fights a real pause. Seconds are turned into 2 to 4 frames at 60 fps.
     public static void HitStop(float seconds) {
+        HitStopFrames(Mathf.RoundToInt(seconds * 60f));
+    }
+
+    public static void HitStopFrames(int frames) {
+        frames = Mathf.Clamp(frames, MinStopFrames, MaxStopFrames);
         if (Time.timeScale < 0.99f && !stopping) {
             return;
         }
+        if (!stopping) {
+            stopStartFrame = Time.frameCount;
+            stopEndFrame = stopStartFrame;
+            Stops++;
+        }
         stopping = true;
-        stopUntil = Mathf.Max(stopUntil, Time.unscaledTime + seconds);
+        stopEndFrame = Mathf.Min(Mathf.Max(stopEndFrame, Time.frameCount + frames), stopStartFrame + MaxStopFrames);
         Time.timeScale = 0.05f;
     }
 
+    // After a home run's hit-stop the world eases through a short slow beat so the launch can be seen.
+    public static void SlowBeat(float seconds, float scale) {
+        HomeRunBeats++;
+        slowUntil = Time.unscaledTime + seconds;
+        slowScale = scale;
+        slowing = true;
+    }
+
     void Update() {
-        if (stopping && Time.unscaledTime >= stopUntil) {
+        if (stopping && Time.frameCount >= stopEndFrame) {
             stopping = false;
+            int held = Time.frameCount - stopStartFrame;
+            ShortestStop = ShortestStop == 0 ? held : Mathf.Min(ShortestStop, held);
+            LongestStop = Mathf.Max(LongestStop, held);
             if (Time.timeScale > 0.01f) {
                 Time.timeScale = 1f;
             }
         }
         if (stopping && Time.timeScale <= 0.01f) {
             stopping = false;
+        }
+        if (slowing && !stopping) {
+            if (Time.timeScale <= 0.01f) {
+                slowing = false;
+            } else if (Time.unscaledTime >= slowUntil) {
+                slowing = false;
+                Time.timeScale = 1f;
+            } else {
+                Time.timeScale = slowScale;
+            }
         }
         Combo.Tick(Time.unscaledDeltaTime);
     }

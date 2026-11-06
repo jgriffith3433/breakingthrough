@@ -235,6 +235,23 @@ public class UpgradeLook : MonoBehaviour {
         if (meshRenderer != null && mesh.font != null && mesh.font.material != null) {
             meshRenderer.material = mesh.font.material;
         }
+        // A dark copy just behind it, so the number reads against the pale Hollow ground and the night sky alike.
+        var shade = new GameObject("Shade");
+        shade.transform.SetParent(go.transform, false);
+        float edge = mesh.characterSize * 0.28f;
+        shade.transform.localPosition = new Vector3(edge, -edge, 0.02f);
+        TextMesh back = shade.AddComponent<TextMesh>();
+        back.text = mesh.text;
+        back.font = mesh.font;
+        back.fontSize = mesh.fontSize;
+        back.fontStyle = mesh.fontStyle;
+        back.characterSize = mesh.characterSize;
+        back.anchor = mesh.anchor;
+        back.color = new Color(0.04f, 0.03f, 0.08f, 0.95f);
+        Renderer backRenderer = back.GetComponent<Renderer>();
+        if (backRenderer != null && mesh.font != null && mesh.font.material != null) {
+            backRenderer.material = mesh.font.material;
+        }
         go.AddComponent<FloatUp>();
     }
 
