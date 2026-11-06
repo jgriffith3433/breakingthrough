@@ -191,6 +191,17 @@ public class ChapterHub : MonoBehaviour {
             CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
             office.Dress(slot.cleared, HubLife.SideCount(slot), HubLife.HeardCount(slot));
         }
+        DressMood();
+    }
+
+    // The lamp-lit grade, warmer with every chapter filed (SceneMood).
+    public AudioSource Bed { get; private set; }
+    public SceneMood.Look Mood { get; private set; }
+
+    void DressMood() {
+        CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
+        Mood = SceneMood.Hub(slot.cleared / (float)CampaignSave.ChapterCount);
+        SceneMood.Apply(cam != null ? cam : Camera.main, Mood);
     }
 
     public bool Shown {
@@ -217,8 +228,8 @@ public class ChapterHub : MonoBehaviour {
         var light = new GameObject("Hub Light").AddComponent<Light>();
         light.transform.SetParent(world.transform, false);
         light.type = LightType.Directional;
-        light.color = new Color(0.65f, 0.72f, 1f);
-        light.intensity = 1f;
+        light.color = SceneMood.Hub(0f).Key;
+        light.intensity = SceneMood.Hub(0f).KeyIntensity;
         light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
 
         // The office is its own scene (Assets/Maps/Map_Office.unity), loaded on top and dressed for how far the file has come.
@@ -230,6 +241,8 @@ public class ChapterHub : MonoBehaviour {
         BuildDoors();
         BuildPeople();
         Ambience = HubAmbience.Attach(this, lodgerRoots, slice);
+        Bed = SceneMood.Bed(transform, SceneMood.Kind.Hub);
+        DressMood();
         BuildUi();
         PlaceCamera(true);
     }

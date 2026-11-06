@@ -57,8 +57,8 @@ public class ChapterMap : MonoBehaviour {
             Sky = C(0.08f, 0.1f, 0.2f), Equator = C(0.24f, 0.28f, 0.42f), Ground = C(0.1f, 0.11f, 0.16f), Fog = C(0.14f, 0.18f, 0.3f), FogDensity = 0.0042f,
             Dressing = C(0.3f, 0.36f, 0.5f), Posts = 4, Lamp = C(1f, 0.95f, 0.8f) },
         // The hub between chapters (ChapterHub): the office, dressed for how far the case file has come (OfficeMap).
-        new Look { Name = "office", Scene = "Map_Office", Place = "The Place Department, the office", Sun = C(0.65f, 0.72f, 1f), SunIntensity = 1f, SunAngles = new Vector3(50f, 330f, 0f),
-            Sky = C(0.03f, 0.05f, 0.1f), Equator = C(0.22f, 0.24f, 0.32f), Ground = C(0.1f, 0.1f, 0.14f), Fog = C(0.05f, 0.07f, 0.12f), FogDensity = 0.0012f,
+        new Look { Name = "office", Scene = "Map_Office", Place = "The Place Department, the office", Sun = C(1f, 0.86f, 0.64f), SunIntensity = 1.1f, SunAngles = new Vector3(50f, 330f, 0f),
+            Sky = C(0.03f, 0.05f, 0.1f), Equator = C(0.36f, 0.29f, 0.24f), Ground = C(0.17f, 0.12f, 0.09f), Fog = C(0.13f, 0.09f, 0.07f), FogDensity = 0.0012f,
             Dressing = C(0.2f, 0.2f, 0.27f), Posts = 0, Lamp = C(1f, 0.85f, 0.55f) },
     };
 

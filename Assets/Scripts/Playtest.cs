@@ -58,6 +58,7 @@ public static class Playtest {
         new PlaytestScenario("moves", "Campaign's combat moves, played with real input in Chapter 1 (the sandbox case file; the real save and Arcade are never touched): the bot swings the bat three times in a row and each hit of the combo is its own (Deposit, Withdrawal, Overdraft: damage, knockback and crack differ; events combo-hit, combo-distinct); it then fights on pressing X (the dodge) whenever a bot is close, and a blow that lands inside the dodge's 0.4 s window is avoided (events dodge, dodge-avoided, ability-slots with X Dodge, C Refund and the empty V slot). The Courier fight then runs as in the campaign scenario. Arcade is checked unchanged: outside a chapter the dodge, the per-hit combo and the slots read as no effect (event arcade-moves-clean; metrics comboHits, dodges, dodgesAvoided)", 600, "content"),
         new PlaytestScenario("abilities", "Campaign's three new abilities, played with real input in Chapter 1 (setup: the sandbox case file starts 1 XP short of level 4, and again short of 5 and 6 as each unlocks; the real save and Arcade are never touched): the HUD's second line shows each slot with its key and cooldown (V: LV 4 locked, then Coin Toss ready / 4 s, B Stamp Out ready / 14 s, G Escrow ready / 20 s; events slot-line); each unlock is announced as it is earned (level-up, unlock-level); the bot presses V and a thrown coin stings a bot from range (event toss-hit), presses B with bots close and they are stunned and stung (event stamp-hit), presses G and a blow that lands is held (event escrow-held); a cooldown is seen counting down on the HUD (event cooldown-shown); the case file keeps the unlocks after a save round trip and after leaving to the menu (events unlock-saved, unlock-kept; metrics tosses, tossHits, stamps, stampedBots, shields, shieldBlocks, unlockMask). Arcade is unchanged (event arcade-moves-clean)", 900, "content"),
         new PlaytestScenario("hub-life", "The hub as the story advances, with real input (setup: the sandbox case file 1 has chapter 1 filed and opens in the hub; chapters 2 to 6 are filed by setup shortcuts, never the real save). After every chapter the office must look different (hub-look: window light, cabinets, stamps, desk plate, who sits at the desk, slips pinned, lamps lit) and at least one new conversation is open (a gold ! over the lodger); Wallit walks to each and presses E (hub-chat), returns a lodger's favour (favour-offered, favour-pickup, favour-paid), walks over the chapter's loose notice to pin it (notice-pinned) and runs Chime's lost-thing errand, so each chapter shows three errands done (chapter-errands, saved in the case file). At the end the ending's own lines for what was kept are read (ending-lines; metrics hubChats, hubErrands, looksDiffer, endingLines)", 900, "content"),
+        new PlaytestScenario("moods", "Lighting, post-processing and audio per scene (SceneMood), with real taps (setup: sandbox case file 1 with chapter 1 filed opens in the hub). In the hub it samples a frame off the camera through the grade (brightness, warmth, colour), logs the grade, the lamp-lit key light, the ambient bed and the score playing, and fps (mood-hub); sets the music slider to half and shows the bed follow it (mood-volume); then Begin on chapter 1 and the same in the Sorting Yard (mood-yard). mood-compare says whether the hub is clearly warmer and brighter than the yard. Fails if either place has no bed, the slider does not move it, the two look alike or fps is under 30. Metrics moodWarmthGap, moodBrightGap, fpsHub, fpsYard", 300, "content"),
         new PlaytestScenario("hub-ambience", "The hub as a place with life, with real input (setup: the sandbox case file 1 has chapter 1 filed and opens in the hub; later chapters are filed by setup shortcuts, never the real save). No WaveDirector exists in the hub (hub-no-waves). While Wallit stands still the four lodgers each do their own idle action, sampled for 20 s: at least three different actions at once and several over time (hub-idle, idle-snapshot; metric idleActionsSeen, idleLodgersMoving). Then he walks on the stick into Slice's ring: she and Wallit trade an exchange (ring-banter with the chapters filed and the text), and after every chapter filed (2 to 6, by setup shortcut) he stands in the ring again and the exchange is different from every earlier one (ring-banter-changed; metrics banters, banterDistinct)", 300, "content"),
         new PlaytestScenario("hub-npcs", "The hub's lodgers, with real input (setup: the sandbox case file 1 has chapter 1 filed and opens in the hub; later chapters are filed by setup shortcuts, never the real save): four lodgers stand in the office, none of them Warrok (hub-lodgers); Wallit walks to each and presses E, and each speaks its line for one chapter cleared (npc-line); Chime sends him for a lost thing (errand-offered), he walks to it (errand-pickup) and back, and Chime pays XP and the lost thing joins the file (errand-paid, with the XP before and after and the thing kept). Then setup files chapters 2 to 6 one by one and Tick is talked to again after each, every lodger's line must differ from the one before (npc-after-chapter; metrics lodgers, linesDiffer, errandXp, lostThings)", 300, "content"),
         new PlaytestScenario("hub-doors", "The hub as a walkable office, with real input (setup: the sandbox case file 1 has chapters 1 and 2 filed and opens in the hub; the real save is never touched): Wallit walks about the room to the chapter board and the vacant desk (hub-walk), doors 1 to 3 stand open and 4 to 6 stay shut (hub-office), pushing on shut door 4 does not get him through (door-locked), walking into open door 3 shows that chapter's card (door-entered) and Begin starts it (chapter-started); event hub-scene (the office is its own scene, Map_Office, dressed for the chapters filed); metrics doorsRight, hubWalked, lockedHeld, hubScene", 300, "content"),
@@ -205,7 +206,7 @@ public static class Playtest {
         lockSwitchesSeen = ZeldaStyleCamera.LockSwitches;
         RunAnalytics.EnableDebug();
         StoryScreen.SuppressIntro = id != "story";
-        LevelScene.ChapterOneIsLevel = id == "campaign-beats" || id == "campaign-touch" || id == "levels-1-3";   // the older chapter playtests press Begin on Chapter 1 and expect the chapter run
+        LevelScene.ChapterOneIsLevel = id == "campaign-beats" || id == "moods" || id == "campaign-touch" || id == "levels-1-3";   // the older chapter playtests press Begin on Chapter 1 and expect the chapter run
         PlayInput.Release();
         MetaProgress.EnterSandbox(true);
         Random.InitState(options.seed);
@@ -297,7 +298,7 @@ public static class Playtest {
                 }
                 yield break;
             }
-            if (id == "campaign" || id == "comfort" || id == "lore" || id == "secret-ending" || id == "journal" || id == "grade" || id == "campaign-full" || id == "hub" || id == "moves" || id == "abilities" || id == "hub-doors" || id == "hub-npcs" || id == "hub-life" || id == "hub-ambience" || id == "cutscene" || id == "chapter2" || id == "companion" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6" || id == "choices" || id == "campaign-pacing") {
+            if (id == "campaign" || id == "comfort" || id == "lore" || id == "secret-ending" || id == "journal" || id == "grade" || id == "campaign-full" || id == "hub" || id == "moves" || id == "abilities" || id == "hub-doors" || id == "hub-npcs" || id == "hub-life" || id == "hub-ambience" || id == "moods" || id == "cutscene" || id == "chapter2" || id == "companion" || id == "chapter3" || id == "chapter4" || id == "chapter5" || id == "chapter6" || id == "choices" || id == "campaign-pacing") {
                 choicesTest = id == "choices";
                 comfortTest = id == "comfort";
                 secretTest = id == "secret-ending";
@@ -310,13 +311,14 @@ public static class Playtest {
                 hubNpcs = id == "hub-npcs";
                 hubLife = id == "hub-life";
                 hubAmbience = id == "hub-ambience";
+                moodsTest = id == "moods";
                 fullRun = id == "campaign-full";
                 pacingRun = id == "campaign-pacing";
                 loreTest = id == "lore";
                 journalTest = id == "journal";
                 gradeTest = id == "grade";
                 quitDone = false;
-                startChapter = id == "hub-doors" ? 2 : id == "hub-npcs" || id == "hub-life" || id == "hub-ambience" ? 1 : id == "chapter6" || id == "secret-ending" ? 5 : id == "chapter5" ? 4 : id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" || id == "companion" || id == "campaign-pacing" ? 1 : 0;
+                startChapter = id == "hub-doors" ? 2 : id == "hub-npcs" || id == "hub-life" || id == "hub-ambience" || id == "moods" ? 1 : id == "chapter6" || id == "secret-ending" ? 5 : id == "chapter5" ? 4 : id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" || id == "companion" || id == "campaign-pacing" ? 1 : 0;
                 yield return CampaignRun();
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
@@ -689,6 +691,7 @@ public static class Playtest {
     static bool hubNpcs;
     static bool hubLife;
     static bool hubAmbience;
+    static bool moodsTest;
     static bool fullRun;
     static bool pacingRun;   // campaign-pacing: chapters 2 and 3, each one reporting its encounters and combat share
     static bool quitDone;
@@ -737,7 +740,7 @@ public static class Playtest {
             setup.xp = CampaignProgress.XpAt(4) - 1;
             run.Event("abilities-setup", "sandbox case file 1 on chapter 1 with " + setup.xp + " XP (level " + CampaignProgress.LevelFor(setup.xp) + ")");
         }
-        if (hubDoors || hubNpcs || hubLife || hubAmbience) {
+        if (hubDoors || hubNpcs || hubLife || hubAmbience || moodsTest) {
             ChapterScene.HubNext = true;
         }
         MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
@@ -781,6 +784,10 @@ public static class Playtest {
         }
         if (hubLife) {
             yield return HubLifePlay();
+            yield break;
+        }
+        if (moodsTest) {
+            yield return PlaytestMood.Run(run);
             yield break;
         }
         if (hubAmbience) {
