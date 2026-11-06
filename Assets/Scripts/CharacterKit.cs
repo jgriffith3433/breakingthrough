@@ -601,21 +601,23 @@ public class CharacterIdle : MonoBehaviour {
 
     // Adds q on top of what the transform's owner set this frame. When nobody rewrote it since our last write (the rotation is
     // still the one we left), the kept base is used, so a frame the owner skipped never stacks the turn.
-    readonly Dictionary<Transform, Quaternion> wrote = new Dictionary<Transform, Quaternion>();
-    readonly Dictionary<Transform, Quaternion> baseOf = new Dictionary<Transform, Quaternion>();
+    class TurnState { public Quaternion Wrote, Base; }
+    readonly Dictionary<Transform, TurnState> turns = new Dictionary<Transform, TurnState>();
 
     void Turn(Transform t, Quaternion q, float weight) {
         if (t == null) {
             return;
         }
         Quaternion b = t.localRotation;
-        Quaternion w;
-        if (wrote.TryGetValue(t, out w) && Quaternion.Angle(w, b) < 0.001f) {
-            b = baseOf[t];
+        TurnState st;
+        if (!turns.TryGetValue(t, out st)) {
+            st = new TurnState();
+            turns[t] = st;
+        } else if (Quaternion.Angle(st.Wrote, b) < 0.001f) {
+            b = st.Base;
         }
-        baseOf[t] = b;
-        Quaternion result = b * Quaternion.Slerp(Quaternion.identity, q, weight);
-        t.localRotation = result;
-        wrote[t] = t.localRotation;
+        st.Base = b;
+        t.localRotation = b * Quaternion.Slerp(Quaternion.identity, q, weight);
+        st.Wrote = t.localRotation;
     }
 }
