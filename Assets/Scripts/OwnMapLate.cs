@@ -213,6 +213,7 @@ public class ReadingMap : OwnMap {
     readonly GameObject[][] racks = new GameObject[Pages][];
     readonly List<ChapterMap.MapMover> pages = new List<ChapterMap.MapMover>();
     Transform gallery;
+    Transform columns;
     float galleryRise = -9f;
     bool open;
     int blanked;
@@ -251,8 +252,8 @@ public class ReadingMap : OwnMap {
         Transform lights = Group("Chandeliers");
         for (int i = 0; i < 6; i++) {
             float b = i * 60f + 30f;
-            LevelDress.Put(lights, "rd_hall_chandelier", Polar(b, 58f, 18f), b);
-            LevelDress.PointLight(lights, Polar(b, 58f, 17f), C(1f, 0.82f, 0.5f), 90f, 1.3f);
+            LevelDress.Put(lights, "rd_hall_chandelier", Polar(b, 58f, 10f), b);
+            LevelDress.PointLight(lights, Polar(b, 58f, 9f), C(1f, 0.82f, 0.5f), 90f, 1.3f);
         }
         LevelDress.PointLight(lights, Polar(0f, 0f, 30f), C(1f, 0.9f, 0.7f), 70f, 0.8f);
 
@@ -326,13 +327,17 @@ public class ReadingMap : OwnMap {
         Vector3 at = Polar(0f, 80f);
         LevelDress.Put(arena, "ar_gallery_dais", at + Vector3.up * 0.02f, 0f);
         LevelDress.Put(arena, "rd_great_ledger", at + Vector3.up * 2f, 0f, 1.8f);
+        var colGo = new GameObject("Gallery Columns");
+        colGo.transform.SetParent(arena, false);
+        columns = colGo.transform;
         for (int i = 0; i < 8; i++) {
             float a = i * 45f + 22.5f;
             if (Mathf.Abs(Mathf.DeltaAngle(a, 180f)) < 30f) {
                 continue;
             }
-            LevelDress.Put(arena, "rd_hall_column", at + Quaternion.Euler(0f, a, 0f) * Vector3.forward * 26.5f, a);
+            LevelDress.Put(columns, "rd_hall_column", at + Quaternion.Euler(0f, a, 0f) * Vector3.forward * 26.5f, a);
         }
+        columns.gameObject.SetActive(false);   // the tall columns stand up with the Gallery, after the fifth page
         Lamp(arena, at + Vector3.up * 14f, C(1f, 0.85f, 0.5f), 60f, 1.1f);
         Features.Add("arena:the Registrar's Gallery, three ringed steps round the Great Ledger with a rail and tall columns at 80 m on bearing 0, opposite the door; it rises out of the floor after the fifth page");
         Features.Add("setpiece:The Forms Turn: as each page's wave falls its section of forms on the wall turns blank, and after the fifth the whole room is bare and the Gallery rises behind the desk");
@@ -379,6 +384,9 @@ public class ReadingMap : OwnMap {
             return;
         }
         galleryRise = Mathf.MoveTowards(galleryRise, open ? 0f : -9f, Time.deltaTime * 3f);
+        if (open && !columns.gameObject.activeSelf) {
+            columns.gameObject.SetActive(true);
+        }
         Vector3 p = gallery.position;
         p.y = galleryRise;
         gallery.position = p;

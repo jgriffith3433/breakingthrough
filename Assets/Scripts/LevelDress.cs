@@ -8,6 +8,7 @@ using UnityEngine;
 // creates a Unity primitive: SceneValidation fails a scene that contains one.
 public static class LevelDress {
     static readonly Dictionary<int, Material> tinted = new Dictionary<int, Material>();
+    static readonly Dictionary<int, Material> tintSource = new Dictionary<int, Material>();   // a tinted copy -> the kit material it was copied from
 
     // ---- kit pieces -------------------------------------------------------------------------------------------------
 
@@ -50,6 +51,10 @@ public static class LevelDress {
         }
         Material[] mats = r.sharedMaterials;
         Material src = mats[sub];
+        Material original;
+        if (tintSource.TryGetValue(src.GetInstanceID(), out original) && original != null) {
+            src = original;   // re-tinting a tinted piece starts from the kit's own material again, so the cache hits
+        }
         int key = src.GetInstanceID() * 31 + (int)(color.r * 255f) * 65536 + (int)(color.g * 255f) * 256 + (int)(color.b * 255f);
         Material m;
         if (!tinted.TryGetValue(key, out m) || m == null) {
@@ -60,6 +65,7 @@ public static class LevelDress {
             }
             m.enableInstancing = true;
             tinted[key] = m;
+            tintSource[m.GetInstanceID()] = src;
         }
         mats[sub] = m;
         r.sharedMaterials = mats;

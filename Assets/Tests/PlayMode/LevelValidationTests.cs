@@ -26,8 +26,8 @@ public class LevelValidationTests {
 
     static void Sandbox() {
         Call(Game("MetaProgress"), "EnterSandbox", true);
-        MethodInfo enter = Game("CampaignSave").GetMethod("EnterSandbox", BindingFlags.Public | BindingFlags.Static);
-        enter.Invoke(null, enter.GetParameters().Length == 0 ? new object[0] : new object[] { null });
+        MethodInfo enter = Game("CampaignSave").GetMethod("EnterSandbox", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(string) }, null);
+        enter.Invoke(null, new object[] { null });
     }
 
     static void Check(string chapter, int minRenderers = 100) {

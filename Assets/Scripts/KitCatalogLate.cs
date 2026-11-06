@@ -112,7 +112,7 @@ public static partial class KitCatalog {
         });
         // The last slabs, broken: a jagged slab fragment with a crack.
         Add("wk_fallen_slab", "walk", "stone", "concrete", m => {
-            m.Orient(V(0, .3f, 0), V(90f, 0, 0));
+            m.Orient(V(0, 0, 0), V(90f, 0, 0));
             m.ExtrudeZ(P(-.9f, -.9f, .9f, -.9f, 1.0f, .2f, .3f, .9f, -.7f, .8f, -1.0f, 0f), -.3f, 0f);
             Rst(m);
             S1(m);
@@ -165,12 +165,12 @@ public static partial class KitCatalog {
         // The vault: a ribbed dome seen from below, with a glowing eye at the top.
         Add("rd_vault", "reading", "stone", "lamp", m => {
             float[] r = { 0f, 30f, 70f, 105f, 125f, 135f };
-            float[] y = { 75f, 74f, 68f, 55f, 44f, 38f };
+            float[] y = { 66f, 65f, 60f, 48f, 35f, 33.5f };
             var prof = new List<Vector2>();
             for (int i = 0; i < r.Length; i++) {
                 prof.Add(new Vector2(r[i], y[i]));
             }
-            prof.Add(new Vector2(135f, 35f));
+            prof.Add(new Vector2(135f, 33f));
             Lk(m, V(0, 0, 0), 0f, prof, 24, true);
             for (int k = 0; k < 12; k++) {
                 float ang = k * 30f;
@@ -185,7 +185,7 @@ public static partial class KitCatalog {
                 }
             }
             S1(m);
-            Lk(m, V(0, 73.2f, 0), 0f, P(9f, 0, 9f, .6f, 6.5f, .6f, 6.5f, 0, 9f, 0), 20, false);
+            Lk(m, V(0, 64.2f, 0), 0f, P(9f, 0, 9f, .6f, 6.5f, .6f, 6.5f, 0, 9f, 0), 20, false);
         });
         // A chandelier, 10 m across: a brass ring with twelve candle cups and four chains running up to the vault.
         Add("rd_hall_chandelier", "reading", "brass", "lamp", m => {
@@ -255,10 +255,10 @@ public static partial class KitCatalog {
         });
         // The circle drawn on the hall's floor in brass, 20 m out: a ring, a lit thin ring inside it and thirty-six ticks.
         Add("rd_circle_inlay", "reading", "brass", "lamp", m => {
-            Lk(m, V(0, 0, 0), 0f, P(20.4f, 0, 20.4f, .08f, 19.6f, .08f, 19.6f, 0, 20.4f, 0), 72, false);
+            Lk(m, V(0, 0, 0), 0f, P(20.4f, 0, 20.4f, .08f, 19.6f, .08f, 19.6f, 0, 20.4f, 0), 56, false);
             Ring(m, V(0, 0, 0), 18.6f, 36, V(.3f, .06f, 1.1f), .004f);
             S1(m);
-            Lk(m, V(0, 0, 0), 0f, P(17.7f, 0, 17.7f, .05f, 17.5f, .05f, 17.5f, 0, 17.7f, 0), 72, false);
+            Lk(m, V(0, 0, 0), 0f, P(17.7f, 0, 17.7f, .05f, 17.5f, .05f, 17.5f, 0, 17.7f, 0), 56, false);
         });
         Add("rd_page", "reading", "paper", "iron", m => {
             B(m, -.7f, -.04f, -.5f, .7f, .04f, .5f, .01f);
