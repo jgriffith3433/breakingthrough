@@ -42,3 +42,14 @@ Phone landscape photos at two aspect ratios, desktop photos, footage of every ch
 Beta's red build (run r_866907a2325c) was `playtest.run needs 9 and 1 is left`: the studio was out of credits. It was not a compile error. I re-read the C# from #132 (`Musician.BuildKnife`, `ZeldaStyleCamera.CompensateForWalls`) against `BotMesh` (`Box`, `Rod`, `ToMesh(string)`) and `using System.Collections.Generic`: every call exists and resolves. Unity compile not run here.
 
 No browser or editor in this sandbox either, so there are still no new photos or footage and no before/after numbers. Findings 6, 7, 8, 10, 11 and 12 stay **Open** until beta's `campaign-touch` run (touch-only Chapter 1 to the hub, Slice by tapping, phone landscape, `touch-layout`, `photos-fps`) is read. Criteria 2 and 4 remain unmet from this checkout; say so rather than claim it.
+
+## Third attempt (beta build repair again)
+
+Beta's red build was again `playtest.run needs 9 and 1 is left` (out of credits), not a compile error; there is no `.hawkes/beta-build.md`. Nothing in the tree is broken by it. Read again, no change needed:
+
+- `ZeldaStyleCamera.CompensateForWalls` (level mode): `wallBuffer` is declared, `RaycastNonAlloc` with `QueryTriggerInteraction.Ignore` skips triggers, and Wallit, bots and the companion are skipped. Rays that start inside a collider are not reported by Unity, so a head inside a doorframe does not snap the camera to 0.8 m. (code)
+- `Musician.BuildKnife`: `BotMesh.Box(Vector3, Vector3, Color)`, `Rod(a, b, radius, color, sides)` and `ToMesh(string)` all exist in `BotArt.cs`; `System.Collections.Generic` is imported. (code)
+- Finding 7 refined: `MusicDirector.Missing(track)` already records a failed fetch, so a silent chapter shows up in the `score` playtest without any new warning. (code)
+- Finding 3 and 4 refined: every `CreatePrimitive` left in `Assets/Scripts` (`ChapterHub` Wallit/Slice capsules, `Companion` torso, `Pickups`, `Fort`, `UpgradeLook`, `NightAtmosphere` bulbs and quads) is a fallback behind a missing model or a particle quad, none sits in a chapter's scenery. (code)
+
+The scenario to judge criteria 3 and 5 is `campaign-touch` (phone landscape: Chapter 1 completed with fingers only, Slice talked to by tapping the Interact pad, hub door tapped, `touch-layout` and `photos-fps` logged). Criteria 2 and 4 still need a run with eyes; this checkout has no editor, browser or GPU, and no GPU work is proposed, so there is no estimate to give.
