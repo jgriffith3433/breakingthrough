@@ -52,6 +52,9 @@ public class ZeldaStyleCamera : MonoBehaviour {
     bool orbitReady;
 
     private bool HitWall;
+    // Set by ConfigureForLevel: levels have real walls, so the camera is held in front of them (Arcade has none).
+    private bool levelMode;
+    static readonly RaycastHit[] wallBuffer = new RaycastHit[12];
     public CamStates CamState = CamStates.Behind;
     [SerializeField]
     private Vector2 FirstPersonXAxisClamp = new Vector2(-85.0f, 85.0f);
@@ -88,6 +91,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
         Target = follow;
         LockedOnCrosshair = crosshair;
         FirstPersonCamPos = firstPerson;
+        levelMode = true;
         MaxDistance = 5f;
         MinDistance = 3f;
         DistanceUp = 2f;
@@ -442,6 +446,29 @@ public class ZeldaStyleCamera : MonoBehaviour {
     }
 
     private void CompensateForWalls(Vector3 fromObject, ref Vector3 toTarget) {
+        if (levelMode && FollowXForm != null) {
+            // Pull the camera in front of any solid between it and Wallit's head (doors, stairs, interior walls).
+            Vector3 camPos = transform.position;
+            Vector3 toCam = camPos - fromObject;
+            float dist = toCam.magnitude;
+            if (dist > 0.1f) {
+                Vector3 dir = toCam / dist;
+                int n = Physics.RaycastNonAlloc(fromObject, dir, wallBuffer, dist + 0.3f, ~0, QueryTriggerInteraction.Ignore);
+                float best = float.MaxValue;
+                for (int i = 0; i < n; i++) {
+                    Collider c = wallBuffer[i].collider;
+                    if (c == null || c.transform.IsChildOf(FollowXForm) || c.GetComponentInParent<Enemy>() != null || c.GetComponentInParent<Companion>() != null) {
+                        continue;
+                    }
+                    best = Mathf.Min(best, wallBuffer[i].distance);
+                }
+                if (best < dist + 0.3f) {
+                    transform.position = fromObject + dir * Mathf.Max(0.8f, best - 0.3f);
+                }
+            }
+            HitWall = false;
+            return;
+        }
         // Compensate for walls between camera
         RaycastHit wallHit = new RaycastHit();
         if (Physics.Linecast(fromObject, toTarget, out wallHit)) {
