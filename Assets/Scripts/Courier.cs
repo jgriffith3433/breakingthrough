@@ -223,15 +223,11 @@ public class Courier : MonoBehaviour {
         }
         mark.transform.position = at;
         fill = null;
-        var rim = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        rim.name = "Mark";
-        Destroy(rim.GetComponent<Collider>());
+        var rim = KitMesh.Disc("Mark");
         rim.transform.SetParent(mark.transform, false);
         rim.transform.localScale = new Vector3(MarkRadius * 2f, 0.02f, MarkRadius * 2f);
         rim.transform.localPosition = new Vector3(0f, 0.07f, 0f);
-        var inner = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        inner.name = "Mark Fill";
-        Destroy(inner.GetComponent<Collider>());
+        var inner = KitMesh.Disc("Mark Fill");
         inner.transform.SetParent(mark.transform, false);
         inner.transform.localScale = new Vector3(0.1f, 0.025f, 0.1f);
         inner.transform.localPosition = new Vector3(0f, 0.09f, 0f);

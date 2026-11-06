@@ -208,16 +208,32 @@ public class Enemy : MonoBehaviour
         BuildCrest();
     }
 
+    static Mesh crestMesh;
+
+    // About a unit tall and wide, like the cube it replaced, so the size maths below is unchanged.
+    static Mesh CrestMesh()
+    {
+        if (crestMesh != null)
+            return crestMesh;
+        var k = new KitMesh { Name = "Crest Gem" };
+        k.Lathe(new List<Vector2> {
+            new Vector2(0f, -0.6f), new Vector2(0.5f, 0.05f), new Vector2(0.5f, 0.12f),
+            new Vector2(0.3f, 0.4f), new Vector2(0f, 0.4f),
+        }, 6, false);
+        crestMesh = k.ToMesh();
+        return crestMesh;
+    }
+
     void BuildCrest()
     {
         if (crestColor.a <= 0f)
             return;
-        GameObject gem = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        Destroy(gem.GetComponent<Collider>());
-        gem.name = "Crest";
+        // A cut gem (pavilion, girdle, crown, table) turned in KitMesh, never a primitive cube.
+        GameObject gem = new GameObject("Crest");
+        gem.AddComponent<MeshFilter>().sharedMesh = CrestMesh();
+        gem.AddComponent<MeshRenderer>();
         gem.transform.SetParent(transform, false);
         gem.transform.localPosition = new Vector3(0f, topY + 0.35f, 0f);
-        gem.transform.localRotation = Quaternion.Euler(45f, 0f, 45f);
         // Keep the gem a readable size in the world no matter how big the bot is.
         float world = (Boss ? 0.55f : Golden ? 0.4f : 0.3f) + bodyScale * 0.04f;
         float size = world / Mathf.Max(0.2f, bodyScale);

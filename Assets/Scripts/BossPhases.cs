@@ -311,15 +311,11 @@ public class BossPhases : MonoBehaviour {
         var m = new Mark { at = at, radius = radius, onSlice = onSlice };
         m.root = new GameObject("Boss Mark");
         m.root.transform.position = at;
-        var rim = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        rim.name = "Mark";
-        Destroy(rim.GetComponent<Collider>());
+        var rim = KitMesh.Disc("Mark");
         rim.transform.SetParent(m.root.transform, false);
         rim.transform.localScale = new Vector3(radius * 2f, 0.02f, radius * 2f);
         rim.transform.localPosition = new Vector3(0f, 0.07f, 0f);
-        m.fill = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        m.fill.name = "Mark Fill";
-        Destroy(m.fill.GetComponent<Collider>());
+        m.fill = KitMesh.Disc("Mark Fill");
         m.fill.transform.SetParent(m.root.transform, false);
         m.fill.transform.localScale = new Vector3(0.1f, 0.025f, 0.1f);
         m.fill.transform.localPosition = new Vector3(0f, 0.09f, 0f);
