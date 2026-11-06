@@ -3606,6 +3606,17 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         CheckScreen("menu");
         run.Event("mode-select", "main menu shows \"" + menu.CampaignButton.GetComponentInChildren<Text>().text + "\" and \"" + menu.ArcadeButton.GetComponentInChildren<Text>().text + "\"");
         run.Metric("modeButtons", 2);
+        run.Event("menu-hint", "hint \"" + menu.HintText + "\" truncated=" + menu.HintTruncated + ", Campaign primary=" + menu.CampaignIsPrimary);
+        run.Event("menu-stepper", "visible=" + menu.StepperVisible + " best wave " + MetaProgress.BestWave + " max start " + MetaProgress.MaxStartWave() + (menu.StepperVisible ? " text \"" + menu.StepperText.Replace("\n", " / ") + "\"" : ""));
+        if (menu.HintTruncated) {
+            run.Problem(PlaytestSeverity.Bug, "menu: the hint is cut off");
+        }
+        if (!menu.CampaignIsPrimary) {
+            run.Problem(PlaytestSeverity.Bug, "menu: Campaign is not the primary button");
+        }
+        if (menu.StepperVisible != (MetaProgress.MaxStartWave() >= 10)) {
+            run.Problem(PlaytestSeverity.Bug, "menu: the start-wave stepper shows before wave 10 is reached, or hides after");
+        }
         run.Progress(0.1f);
         yield return new WaitForSecondsRealtime(2f);
 

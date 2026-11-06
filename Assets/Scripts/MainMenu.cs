@@ -53,6 +53,7 @@ public class MainMenu : MonoBehaviour {
     Button prevButton;
     Button nextButton;
     int startWave = 1;
+    bool laterShown;
     float playReadyAt;
 
     readonly Text[] titles = new Text[MetaProgress.Catalog.Length];
@@ -127,6 +128,13 @@ public class MainMenu : MonoBehaviour {
     // The two modes: Campaign opens the case files, Arcade starts today's wave defense (PlayButton is the same button).
     public Button CampaignButton { get; private set; }
     public Button ArcadeButton { get { return PlayButton; } }
+
+    // What the playtest reads: the hint, the start-wave stepper, and which button is the primary one.
+    public string HintText { get { return statusText != null ? statusText.text : ""; } }
+    public bool HintTruncated { get { return statusText != null && statusText.preferredHeight > statusText.rectTransform.rect.height + 1f && statusText.fontSize <= statusText.resizeTextMinSize; } }
+    public bool StepperVisible { get { return startText != null && startText.gameObject.activeInChildren; } }
+    public string StepperText { get { return startText != null ? startText.text : ""; } }
+    public bool CampaignIsPrimary { get { return CampaignButton != null && PlayButton != null && CampaignButton.GetComponent<RectTransform>().rect.width > PlayButton.GetComponent<RectTransform>().rect.width && CampaignButton.GetComponent<RectTransform>().anchoredPosition.y <= PlayButton.GetComponent<RectTransform>().anchoredPosition.y; } }
 
     void Awake() {
         Time.timeScale = 1f;
@@ -284,7 +292,8 @@ public class MainMenu : MonoBehaviour {
         float w = size.x - inset.x - inset.y - margin * 2f;
         float h = size.y - inset.z - inset.w - margin * 2f;
 
-        hint = UiFit.Touch ? "Campaign tells the story; Arcade is the endless wave defense. Swipe the case file to turn its pages." : "Campaign (C, pad X) is the story; Arcade (Enter, pad A) is the wave defense. Arrow keys, d-pad or the wheel turn the pages; Settings is S or pad Y.";
+        laterShown = MetaProgress.MaxStartWave() >= 10;
+        hint = UiFit.Touch ? "Campaign tells the story. Arcade is the wave defense. Swipe the case file to turn pages." : "Campaign (C) is the story; Arcade (Enter) is the wave defense. Arrows turn the pages; Settings is S.";
         if (builtMode == UiMode.Tall) {
             BuildTall(desk, w, h);
         } else {
@@ -319,14 +328,16 @@ public class MainMenu : MonoBehaviour {
         y += chipHeight;
 
         // From the bottom up: Play and Settings, the later start, the status line.
-        float playHeight = desktop ? 108f : 100f;
+        float playHeight = desktop ? 170f : 150f;
         float laterHeight = desktop ? 72f : 88f;
-        float statusHeight = desktop ? 34f : 30f;
+        float statusHeight = desktop ? 64f : 52f;
         float bottom = h;
         bottom -= playHeight;
         BuildPlayRow(column, 0f, bottom, left, playHeight);
-        bottom -= (desktop ? 18f : 12f) + laterHeight;
-        BuildLater(column, 0f, bottom, left, laterHeight);
+        if (laterShown) {
+            bottom -= (desktop ? 18f : 12f) + laterHeight;
+            BuildLater(column, 0f, bottom, left, laterHeight);
+        }
         bottom -= (desktop ? 14f : 10f) + statusHeight;
         statusText = Label(column, hint, (int)textSmall, FontStyle.Italic, MoonSoft, 0f, bottom, left, statusHeight, TextAnchor.MiddleLeft);
         statusText.horizontalOverflow = HorizontalWrapMode.Wrap;
@@ -368,12 +379,15 @@ public class MainMenu : MonoBehaviour {
         y += 92f + 14f;
 
         float bottom = h;
-        bottom -= 100f;
-        BuildPlayRow(top, 0f, bottom, w, 100f);
-        bottom -= 12f + 88f;
-        BuildLater(top, 0f, bottom, w, 88f);
-        bottom -= 8f + 30f;
-        statusText = Label(top, hint, (int)textSmall, FontStyle.Italic, MoonSoft, 0f, bottom, w, 30f, TextAnchor.MiddleCenter);
+        bottom -= 150f;
+        BuildPlayRow(top, 0f, bottom, w, 150f);
+        if (laterShown) {
+            bottom -= 12f + 88f;
+            BuildLater(top, 0f, bottom, w, 88f);
+        }
+        bottom -= 8f + 52f;
+        statusText = Label(top, hint, (int)textSmall, FontStyle.Italic, MoonSoft, 0f, bottom, w, 52f, TextAnchor.MiddleCenter);
+        statusText.horizontalOverflow = HorizontalWrapMode.Wrap;
         statusText.verticalOverflow = VerticalWrapMode.Truncate;
         statusText.resizeTextForBestFit = true;
         statusText.resizeTextMinSize = (int)textSmall;
@@ -455,14 +469,16 @@ public class MainMenu : MonoBehaviour {
     // The mode select: Campaign (the case files) and Arcade (today's wave defense, the big red stamp), then Settings.
     void BuildPlayRow(RectTransform parent, float x, float y, float w, float h) {
         float gap = compact ? 10f : 14f;
-        float campaignWidth = Mathf.Round((w - gap * 2f) * 0.34f);
-        float arcadeWidth = Mathf.Round((w - gap * 2f) * 0.38f);
-        float settingsWidth = w - campaignWidth - arcadeWidth - gap * 2f;
-        int size = compact ? 28 : 32;
-        CampaignButton = MakeButton(parent, "Campaign", x, y, campaignWidth, h, size, OpenCampaign, false, new Color(Tabs[1].r * 0.5f, Tabs[1].g * 0.5f, Tabs[1].b * 0.5f, 1f));
-        var play = MakeButton(parent, "Arcade", x + campaignWidth + gap, y, arcadeWidth, h, size + 4, Play, true);
+        float bigHeight = Mathf.Round((h - gap) * 0.58f);
+        float smallHeight = h - gap - bigHeight;
+        float smallY = y + bigHeight + gap;
+        float arcadeWidth = Mathf.Round((w - gap) * 0.64f);
+        int size = compact ? 30 : 36;
+        // Campaign is the front door: the big red stamp on its own row. Arcade and Settings sit under it.
+        CampaignButton = MakeButton(parent, "Campaign", x, y, w, bigHeight, size + 4, OpenCampaign, true);
+        var play = MakeButton(parent, "Arcade", x, smallY, arcadeWidth, smallHeight, compact ? 28 : 30, Play, false);
         PlayButton = play;
-        SettingsButton = MakeButton(parent, "Settings", x + campaignWidth + arcadeWidth + gap * 2f, y, settingsWidth, h, compact ? 24 : 26, OpenSettings);
+        SettingsButton = MakeButton(parent, "Settings", x + arcadeWidth + gap, smallY, w - arcadeWidth - gap, smallHeight, compact ? 24 : 26, OpenSettings);
         Enter(CampaignButton.GetComponent<RectTransform>(), new Vector2(0f, -24f), 0.4f);
         Enter(play.GetComponent<RectTransform>(), new Vector2(0f, -24f), 0.45f);
     }
@@ -810,12 +826,14 @@ public class MainMenu : MonoBehaviour {
         while (startWave > 1 && (startWave > maxStart || MetaProgress.Coins < startWave)) {
             startWave -= 10;
         }
-        if (maxStart < 10) {
-            startText.text = "Reach wave 10 to start a run later.";
-        } else if (startWave <= 1) {
-            startText.text = "Starts at wave 1. Later starts cost 10 coins per 10 waves.";
+        bool show = maxStart >= 10;
+        lowerStart.gameObject.SetActive(show);
+        raiseStart.gameObject.SetActive(show);
+        startText.gameObject.SetActive(show);
+        if (startWave <= 1) {
+            startText.text = "Start wave: 1\nFree. Later starts cost 10 coins per 10 waves.";
         } else {
-            startText.text = "Starts at wave " + startWave + ". Arcade spends " + startWave + " coins.";
+            startText.text = "Start wave: " + startWave + "\nArcade spends " + startWave + " coins.";
         }
         lowerStart.interactable = startWave > 1;
         raiseStart.interactable = startWave + 10 <= maxStart && MetaProgress.Coins >= startWave + 10;
