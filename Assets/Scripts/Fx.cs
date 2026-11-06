@@ -212,6 +212,28 @@ public class Fx : MonoBehaviour {
         Emit(FxKind.Flash, at, 1, crit ? new Color(1f, 0.8f, 0.35f, 0.8f) : new Color(1f, 0.9f, 0.75f, 0.45f), (crit ? 1.1f : 0.55f) * s, 0f);
     }
 
+    public static int Impacts { get; private set; }
+    public static int HomeRunBursts { get; private set; }
+
+    // The bat landing: a soft warm flash on the bot and a small flat ring. Big for a finisher or a smash.
+    public static void Impact(Vector3 at, float scale, bool big) {
+        Impacts++;
+        float s = Mathf.Clamp(scale, 0.6f, 4f);
+        Emit(FxKind.Flash, at, 1, big ? new Color(1f, 0.86f, 0.5f, 0.95f) : new Color(1f, 0.95f, 0.8f, 0.8f), (big ? 1.5f : 0.95f) * s, 0f);
+        Ring(at, (big ? 3.2f : 1.8f) * Mathf.Sqrt(s), big ? new Color(1f, 0.85f, 0.45f, 0.8f) : new Color(1f, 0.95f, 0.8f, 0.6f), big ? 0.35f : 0.25f);
+    }
+
+    // A home run: a wide gold flash, two rings, a dust shove and a few chunky plates. Bigger than anything else the bat does.
+    public static void HomeRun(Vector3 at, float scale) {
+        HomeRunBursts++;
+        float s = Mathf.Clamp(scale, 1f, 4f);
+        Emit(FxKind.Flash, at, 2, new Color(1f, 0.82f, 0.35f, 1f), 3.2f * s, 0f);
+        Ring(at, 7f * Mathf.Sqrt(s), new Color(1f, 0.9f, 0.55f, 0.95f), 0.55f);
+        Ring(at, 11f * Mathf.Sqrt(s), new Color(1f, 0.6f, 0.25f, 0.7f), 0.8f);
+        Emit(FxKind.Dust, at, 8, new Color(0.85f, 0.75f, 0.6f, 0.7f), 1.4f * Mathf.Sqrt(s), 3.5f, 1.5f);
+        Emit(FxKind.Debris, at, 5, new Color(0.85f, 0.75f, 0.45f, 1f), 0.5f * Mathf.Sqrt(s), 6f, 1f);
+    }
+
     // A bot coming apart: a soft electric flash, a puff of dark smoke and a few plates in its paint.
     public static void Death(Vector3 at, float scale, Color paint, bool big) {
         float s = Mathf.Clamp(scale, 0.6f, 12f);
