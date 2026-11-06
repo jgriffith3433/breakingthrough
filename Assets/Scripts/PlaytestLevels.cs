@@ -13,6 +13,12 @@ using UnityEngine.SceneManagement;
 // region's vantage point; the player is not moved) with the landmark it shows (event `photo`: region, landmark, visible triangles,
 // draw calls, lights; `photo-region` lists every region). The objectives, set pieces, dialogues and encounters of the three chapters
 // are played end to end by campaign-beats (1), chapter2 and chapter3.
+// The "levels-4-6" scenario (Docs/Levels4to6AndHub.md, section 11) is the same for the hub office and chapters 4, 5 and 6: the hub is
+// opened by the case file's Hub button and walked end to end with real input (the stick), scanned and photographed (doors, board,
+// desk, windows, rug, lodgers, back wall; then the office after all six chapters, a named setup shortcut); each of the three chapters
+// is then begun from the menu, scanned and photographed region by region, boss arena and its approach included (the Reading Room's
+// Gallery is raised by the named set-piece shortcut first). The chapters' objectives, doors, set pieces, dialogues and boss fights are
+// played end to end by chapter4, chapter5, chapter6, hub, hub-doors, hub-npcs and hub-life.
 public static class PlaytestLevels {
     static PlaytestRun run;
     static Camera rig;
@@ -21,6 +27,7 @@ public static class PlaytestLevels {
         public string Name, Landmark;
         public Vector3 Pos, Look;
         public float Fov;
+        public bool Trigger;   // the map's set piece is made to happen first (a named setup shortcut)
     }
 
     static void Tap(GameObject target) {
@@ -51,6 +58,185 @@ public static class PlaytestLevels {
         if (!run.Done) {
             run.Event("levels-done", photos + " photos, " + bad + " primitive renderers over chapters 1 to 3");
         }
+    }
+
+    // The hub office and chapters 4 to 6.
+    public static IEnumerator RunLate(PlaytestRun r) {
+        run = r;
+        CampaignSave.EnterSandbox();
+        run.Event("setup", "levels-4-6: sandbox case file; the photo camera is a named setup shortcut");
+        int photos = 0;
+        int bad = 0;
+        yield return Hub();
+        photos += lastPhotos;
+        bad += lastPrimitives;
+        for (int index = 3; index < 6 && !run.Done; index++) {
+            yield return Chapter(index);
+            photos += lastPhotos;
+            bad += lastPrimitives;
+        }
+        DestroyRig();
+        run.Metric("levelPhotos", photos);
+        run.Metric("levelPrimitivesTotal", bad);
+        if (!run.Done) {
+            run.Event("levels-done", photos + " photos, " + bad + " primitive renderers over the hub and chapters 4 to 6");
+        }
+    }
+
+    static IEnumerator WalkHub(ChapterHub hub, Vector3 target, float seconds) {
+        float start = Time.realtimeSinceStartup;
+        while (!run.Done && Time.realtimeSinceStartup - start < seconds) {
+            Vector3 to = target - hub.Player.position;
+            to.y = 0f;
+            if (to.magnitude < 0.6f) {
+                break;
+            }
+            PlayInput.Axis("Horizontal", Mathf.Clamp(to.x, -1f, 1f));
+            PlayInput.Axis("Vertical", Mathf.Clamp(to.z, -1f, 1f));
+            yield return null;
+        }
+        PlayInput.Release();
+    }
+
+    static IEnumerator Hub() {
+        lastPhotos = 0;
+        lastPrimitives = 0;
+        CampaignSave.Slot slot = CampaignSave.Get(0);
+        slot.used = true;
+        slot.chapter = 3;
+        slot.reached = 3;
+        slot.cleared = 3;
+        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+        if (menu == null || menu.CampaignButton == null) {
+            run.Problem(PlaytestSeverity.Bug, "levels-4-6: no Campaign button on the main menu");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        yield return Wait(1f);
+        Tap(menu.CampaignButton.gameObject);
+        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files");
+        if (run.Done) {
+            yield break;
+        }
+        yield return Wait(1f);
+        Tap(CampaignPanel.Instance.SlotButtons[0].gameObject);
+        yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.BeginButton != null && SceneManager.GetActiveScene().name == CampaignSave.Scene, 45f, "the chapter card");
+        if (run.Done) {
+            yield break;
+        }
+        yield return Wait(1.5f);
+        float hubAt = Time.realtimeSinceStartup;
+        Tap(ChapterScene.Instance.HubButton.gameObject);
+        run.Event("tap", "Hub (from the chapter card of a file with 3 chapters filed)");
+        yield return run.Until(() => ChapterHub.Instance != null && ChapterHub.Instance.Shown && ChapterMap.Current != null && ChapterMap.Current.Own != null, 45f, "the hub office");
+        if (run.Done) {
+            yield break;
+        }
+        ChapterHub hub = ChapterHub.Instance;
+        float loadSeconds = Time.realtimeSinceStartup - hubAt;
+        yield return Wait(2.5f);
+        float mb = Mathf.Round(ChapterMap.Memory() / 1048576f);
+        run.Metric("hubLoadSeconds", Mathf.Round(loadSeconds * 10f) / 10f);
+        run.Metric("hubMemoryMB", mb);
+        run.Event("level-load", "hub: office in " + loadSeconds.ToString("0.0") + " s, memory " + mb + " MB, scene " + ChapterMap.Current.MapName + ", doors " + hub.DoorText);
+        if (loadSeconds > 25f) {
+            run.Problem(PlaytestSeverity.Bug, "levels-4-6: the hub took " + loadSeconds.ToString("0.0") + " s to load (budget 25 s)");
+        }
+        if (mb > 1024f) {
+            run.Problem(PlaytestSeverity.Bug, "levels-4-6: the hub holds " + mb + " MB after loading (budget 1024 MB)");
+        }
+
+        SceneScanReport scan = SceneValidation.ScanChapter();
+        run.Event("scene-scan", "hub " + scan.Summary());
+        run.Metric("hubRenderers", scan.Renderers);
+        run.Metric("hubKitPieces", scan.KitPieces);
+        run.Metric("hubTriangles", scan.Triangles);
+        run.Metric("hubVisibleTriangles", scan.VisibleTriangles);
+        run.Metric("hubDrawCalls", scan.DrawCalls);
+        run.Metric("hubPrimitives", scan.Primitives);
+        run.Metric("hubLights", scan.Lights);
+        run.Metric("hubColliders", scan.Colliders);
+        lastPrimitives = scan.Primitives;
+        foreach (string f in scan.Failures) {
+            run.Problem(PlaytestSeverity.Bug, "scene-scan hub: " + f);
+        }
+
+        // Walk the room end to end on the stick: the left wall, the back wall by the doors, the right wall, back to the ring.
+        float walkedFrom = hub.Walked;
+        Vector3[] route = {
+            new Vector3(-12.5f, 0f, -6f), new Vector3(-12.5f, 0f, 12.5f), new Vector3(0f, 0f, 13.2f),
+            new Vector3(12.5f, 0f, 12.5f), new Vector3(12.5f, 0f, -6f), new Vector3(3f, 0f, -4f),
+        };
+        foreach (Vector3 stop in route) {
+            yield return WalkHub(hub, stop, 14f);
+        }
+        float walked = hub.Walked - walkedFrom;
+        run.Metric("hubWalkedEndToEnd", Mathf.Round(walked * 10f) / 10f);
+        run.Event("hub-walk-end-to-end", "Wallit walked " + walked.ToString("0.0") + " m along both walls and the doors and back to the ring, ending at " + hub.Player.position.ToString("0.0"));
+        if (walked < 70f) {
+            run.Problem(PlaytestSeverity.Bug, "levels-4-6: the hub is not walkable end to end (" + walked.ToString("0.0") + " m walked of about 85)");
+        }
+
+        Region[] regions = HubRegions();
+        foreach (Region g in regions) {
+            run.Event("photo-region", "hub " + g.Name + " shows " + g.Landmark);
+        }
+        foreach (Region g in regions) {
+            yield return Photo(g, "hub");
+        }
+        // The office after all six chapters (a named setup shortcut: dress it as a finished file): dawn in the windows, the door number.
+        hub.Office.Dress(6, 12, 12);
+        run.Event("setup", "hub office dressed as all six filed (OfficeMap.Dress): " + hub.Office.Look);
+        yield return Wait(0.8f);
+        SceneScanReport filed = SceneValidation.ScanChapter();
+        run.Event("scene-scan", "hub-filed " + filed.Summary());
+        run.Metric("hubFiledTriangles", filed.Triangles);
+        run.Metric("hubFiledDrawCalls", filed.DrawCalls);
+        run.Metric("hubFiledPrimitives", filed.Primitives);
+        foreach (string f in filed.Failures) {
+            run.Problem(PlaytestSeverity.Bug, "scene-scan hub filed: " + f);
+        }
+        yield return Photo(R("hub-filed-back-wall", "the back wall with the brass door number, seals beside the doors, sconces and dawn in the windows", new Vector3(0f, 5f, 0f), new Vector3(0f, 3f, 15f), 70f), "hub");
+        yield return Photo(R("hub-filed-windows", "the left windows in dawn light with the skyline and the pinned slips on the notice wall", new Vector3(8f, 3f, 0f), new Vector3(-15f, 2.5f, 2f), 70f), "hub");
+        DestroyRig();
+        run.Event("map-leave", "leaving the hub for the menu (setup shortcut)");
+        PlayInput.Release();
+        SceneManager.LoadScene(MetaProgress.MenuScene);
+        yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the menu after leaving the hub");
+        yield return Wait(1f);
+    }
+
+    static Region[] HubRegions() {
+        return new[] {
+            R("hub-overview", "the whole office from the hub camera: rug, ring, doors, windows, board and desk", new Vector3(0f, 9f, -13f), new Vector3(0f, 1f, 3f), 55f),
+            R("hub-doors", "the six themed doors on the back wall: post-office slot, civic arch, steel hatch, iron lamp frame, paper door, pale round arch", new Vector3(0f, 3f, 4f), new Vector3(0f, 2.4f, 15f), 72f),
+            R("hub-door-left", "the doors of chapters 1 and 2 with their leaves, lamps and seals", new Vector3(-8f, 2.6f, 7f), new Vector3(-9.2f, 2.2f, 15f), 60f),
+            R("hub-door-right", "the doors of chapters 5 and 6, the paper door and the pale round arch", new Vector3(8f, 2.6f, 7f), new Vector3(9.2f, 2.2f, 15f), 60f),
+            R("hub-board", "the chapter board on its posts with six slip frames, shelves and a window behind", new Vector3(-6f, 2.6f, -1f), new Vector3(-12.2f, 2f, 3f), 62f),
+            R("hub-desk", "Tick's two desks with lamp and papers, pigeonholes and the pneumatic tube on the right wall", new Vector3(5f, 3f, -2f), new Vector3(11.8f, 1.2f, 4f), 62f),
+            R("hub-windows", "the window bays in the left wall with the Department's roofs outside", new Vector3(3f, 2.6f, -2f), new Vector3(-15f, 2.4f, 1f), 74f),
+            R("hub-ring-rug", "Slice's brass ring and the runner rug to the doors under the hanging lamps", new Vector3(0f, 7f, -9f), new Vector3(0f, 0f, 7f), 62f),
+            R("hub-lodgers", "the four lodgers (Tick the clock, Brim the hat, Spare the half-built Yo Bot, Chime the bell) at their spots", new Vector3(0f, 5.5f, -10f), new Vector3(0f, 1f, 1f), 64f),
+            R("hub-back-corner", "the filing cabinets, shelves and plant in the back left corner", new Vector3(-4f, 4f, 6f), new Vector3(-14f, 1f, 12f), 66f),
+        };
+    }
+
+    // One photograph: the camera goes to the region, the view is scanned (visible triangles, draw calls, lights).
+    static IEnumerator Photo(Region g, string chapter) {
+        if (g.Trigger && ChapterMap.Current != null && ChapterMap.Current.Own != null) {
+            run.Event("setup", g.Name + ": the map's set piece is made to happen first (OwnMap.Trigger)");
+            ChapterMap.Current.Own.Trigger();
+            yield return Wait(4.5f);
+        }
+        Shoot(g.Pos, g.Look, g.Fov);
+        yield return Wait(1.2f);
+        SceneScanReport view = SceneValidation.Scan(SceneValidation.ChapterRoots(), rig);
+        run.Scene(g.Name);
+        run.Event("photo", g.Name + " chapter=" + chapter + " landmark=" + g.Landmark + " visibleTriangles=" + view.VisibleTriangles + " drawCalls=" + view.DrawCalls + " materials=" + view.Materials + " lights=" + view.Lights);
+        if (view.VisibleTriangles > SceneValidation.MaxVisibleTriangles) {
+            run.Problem(PlaytestSeverity.Bug, "levels-4-6: " + g.Name + " shows " + view.VisibleTriangles + " triangles, over " + SceneValidation.MaxVisibleTriangles);
+        }
+        lastPhotos++;
     }
 
     static int lastPhotos;
@@ -144,15 +330,7 @@ public static class PlaytestLevels {
             run.Event("photo-region", "chapter " + n + " " + g.Name + " shows " + g.Landmark);
         }
         foreach (Region g in regions) {
-            Shoot(g.Pos, g.Look, g.Fov);
-            yield return Wait(1.2f);
-            SceneScanReport view = SceneValidation.Scan(SceneValidation.ChapterRoots(), rig);
-            run.Scene(g.Name);
-            run.Event("photo", g.Name + " chapter=" + n + " landmark=" + g.Landmark + " visibleTriangles=" + view.VisibleTriangles + " drawCalls=" + view.DrawCalls + " materials=" + view.Materials + " lights=" + view.Lights);
-            if (view.VisibleTriangles > SceneValidation.MaxVisibleTriangles) {
-                run.Problem(PlaytestSeverity.Bug, "levels-1-3: " + g.Name + " shows " + view.VisibleTriangles + " triangles, over " + SceneValidation.MaxVisibleTriangles);
-            }
-            lastPhotos++;
+            yield return Photo(g, n);
         }
         DestroyRig();
 
@@ -194,6 +372,55 @@ public static class PlaytestLevels {
         }
     }
 
+    // Chapters 4 to 6: a polar point about the circle, so each region is told as bearing, distance and height.
+    static Region[] LateRegions(int index, Vector3 c, float routeBearing) {
+        System.Func<float, float, float, Vector3> Pol = (bearing, dist, up) => {
+            float a = bearing * Mathf.Deg2Rad;
+            return c + new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * dist + Vector3.up * up;
+        };
+        if (index == 3) {
+            float w = routeBearing;
+            float arena = (w + 180f) % 360f;
+            return new[] {
+                R("ch4-causeway", "the pale slab causeway with its railings, bollards and lamp stilts running out through the mist", Pol(w, 6f, 3.4f), Pol(w, 96f, 5f)),
+                R("ch4-first-lamp", "the first lamp stop: a pair of folded-leg stilts with violet heads", Pol(w, 12f, 3.2f), Pol(w, 32f, 4f), 60f),
+                R("ch4-rest", "the middle lamp's stone bench, arrow sign and urn off the road", Pol(w, 44f, 3.2f), Pol(w, 63f, 1.5f), 66f),
+                R("ch4-broken-end", "the last slabs broken off and fallen into the pit past the last lamp", Pol(w, 86f, 3.6f), Pol(w, 118f, -2f), 64f),
+                R("ch4-spires", "the pale spires (needle, banded tower, obelisk) standing out of the mist", Pol(w, 20f, 4f), Pol(w + 70f, 300f, 20f), 70f),
+                R("ch4-arena-from-route", "the Servers' Dais seen from the circle: the violet ring in the mist, away from the causeway", Pol(w, 4f, 3.6f), Pol(arena, 78f, 4f), 60f),
+                R("ch4-arena", "the Servers' Dais close: the tiered round dais with its violet ring, twelve folded-leg pillars and the paper stand", Pol(arena, 38f, 9f), Pol(arena, 78f, 2.5f), 68f),
+            };
+        }
+        if (index == 4) {
+            return new[] {
+                R("ch5-aisle", "the red carpet aisle between files of shelves and reading desks, running to the white door", Pol(180f, 12f, 3.6f), Pol(180f, 110f, 6f), 60f),
+                R("ch5-door", "the white door at the hall's end, ruled like a form", Pol(180f, 90f, 4f), Pol(180f, 122f, 7f), 64f),
+                R("ch5-forms-wall", "the racks of identical forms on the wall under the tall arched windows", Pol(232f, 40f, 4f), Pol(52f, 123f, 9f), 68f),
+                R("ch5-vault", "the ribbed vault with hanging chandeliers over the colonnade", Pol(180f, 12f, 3f), Pol(0f, 30f, 55f), 76f),
+                R("ch5-desk-lecterns", "the empty desk and the page lecterns round the brass circle", Pol(180f, 14f, 3.6f), Pol(25f, 3f, 1.5f), 64f),
+                R("ch5-arena-sunk", "the floor behind the desk where the Gallery is sunk until the fifth page is read", Pol(180f, 6f, 3.6f), Pol(0f, 80f, 0f), 60f),
+                RT("ch5-arena-risen", "the Registrar's Gallery risen: three ringed steps, the Great Ledger, the rail and tall columns", Pol(180f, 6f, 3.6f), Pol(0f, 80f, 3f), 60f),
+                R("ch5-arena-close", "the Gallery close: ringed steps in brass and stone round the Ledger", Pol(0f, 42f, 8f), Pol(0f, 80f, 2f), 70f),
+            };
+        }
+        return new[] {
+            R("ch6-path", "the pale slab path with its banners and lanterns running to nothing", Pol(180f, 14f, 3.6f), Pol(180f, 150f, 6f), 60f),
+            R("ch6-seal", "the great gold seal hanging past the path's end", Pol(180f, 140f, 4f), Pol(180f, 196f, 15f), 60f),
+            R("ch6-stumps", "the broken stumps of the Department wall and the freestanding doorframes in the grass", Pol(0f, 0f, 4f), Pol(110f, 190f, 3f), 70f),
+            R("ch6-circle", "the circle drawn in white on the dawn grass", Pol(180f, 40f, 12f), Pol(0f, 0f, 0f), 66f),
+            R("ch6-threshold-from-route", "the Threshold seen from the circle: a bare white doorframe on a dais, away from the path", Pol(0f, 4f, 3.6f), Pol(20f, 80f, 6f), 58f),
+            R("ch6-threshold", "the Threshold close: the two-step dais with its gold ring, the doorframe, pillars, lanterns and the red stamp marks", Pol(20f, 42f, 7f), Pol(20f, 80f, 3f), 68f),
+            R("ch6-grass", "the rolling dawn grass with tufts and the low sun", Pol(60f, 10f, 2f), Pol(90f, 120f, 10f), 70f),
+        };
+    }
+
+    // A region whose map set piece is made to happen first (the Reading Room's Gallery rises).
+    static Region RT(string name, string landmark, Vector3 pos, Vector3 look, float fov = 62f) {
+        Region g = R(name, landmark, pos, look, fov);
+        g.Trigger = true;
+        return g;
+    }
+
     static Region R(string name, string landmark, Vector3 pos, Vector3 look, float fov = 62f) {
         return new Region { Name = name, Landmark = landmark, Pos = pos, Look = look, Fov = fov };
     }
@@ -216,8 +443,11 @@ public static class PlaytestLevels {
             };
         }
         float b = Story.Chapters[index].Bearing;
-        if (index == 2) {
+        if (Story.Chapters[index].Stops != null && Story.Chapters[index].Stops.Length > 0) {
             b = Story.Chapters[index].Stops[Story.Chapters[index].Stops.Length - 1].Bearing;
+        }
+        if (index >= 3) {
+            return LateRegions(index, c, b);
         }
         float rad = b * Mathf.Deg2Rad;
         Vector3 a = new Vector3(Mathf.Sin(rad), 0f, Mathf.Cos(rad));

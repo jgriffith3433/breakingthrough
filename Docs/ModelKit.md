@@ -4,7 +4,7 @@ Status: spec, written and committed **before** any kit code (see Docs/CampaignDe
 
 ## 1. What the kit is
 
-A shared set of **102** authored pieces (82 in the first pass, 20 added for Chapters 1 to 3, section 9), grouped into 9 palettes (six chapters, the street/office shared sets, boss arenas). Each piece is a real mesh built from bevelled boxes, lathes, extrusions with ear-clipped caps and wall panels with cut-out openings, framed with trims and sills. No piece is a primitive mesh or a recoloured copy: silhouettes differ, and each is checked by the validator (section 5).
+A shared set of **163** authored pieces (82 in the first pass, 20 added for Chapters 1 to 3, section 9, 61 added for Chapters 4 to 6 and the hub, section 10), grouped into 9 palettes (six chapters, the street/office shared sets, boss arenas). Each piece is a real mesh built from bevelled boxes, lathes, extrusions with ear-clipped caps and wall panels with cut-out openings, framed with trims and sills. No piece is a primitive mesh or a recoloured copy: silhouettes differ, and each is checked by the validator (section 5).
 
 Rules: a piece is **at least 24 vertices** and never a built-in mesh named Cube, Sphere, Capsule, Cylinder, Plane or Quad. A piece below 24 vertices would need a written reason in `KitCatalog` (none are planned: the smallest piece is the pale slab, about 80 triangles).
 
@@ -259,3 +259,18 @@ copy of the kit's material (a red flag, the red mark under a press), `Proxy` add
 heightfield for Chapter 1, a skin baked from the Arcade's ground for Chapters 2 and 3), `Sky` makes the gradient sky and `ArenaHider`
 hides the Arcade's meadow while a chapter map is up. Budgets for a level are Section 4's; `SceneValidation` measures them
 (`ScanChapter`: renderers, primitives, triangles, visible triangles, estimated draw calls) and `LevelValidationTests` fails on a primitive.
+
+## 10. Added for Chapters 4 to 6, the boss arenas and the hub (Docs/Levels4to6AndHub.md)
+
+61 pieces in `KitCatalogLateOffice.cs` (the hub) and `KitCatalogLate.cs` (chapters and arenas), and a thirteenth texture set, `grass` (Chapter 6's ground, 256 px). Same rules as before: authored from `KitMesh`, 24+ vertices, instanced, no copies. Big pieces use no bevels (a 33 m wall does not need one) to stay under 1,500 triangles. The late files use `BRk`, `Lk` and `Rst`, which keep the submesh after a rotated box or a lathe (`BR`, `Lat` and `KitMesh.Reset` put it back on the main one).
+
+| Palette | Pieces |
+|---|---|
+| office (hub), 33 | `of_wall_bay`, `of_wall_window` (lit glass on the accent: the hour tints it), `of_wall_corner`, `of_pilaster`, `of_skyline_view`, `of_ceiling_beam`, `of_door_frame_1..6` (4.6 m door bays, each themed to its chapter), `of_door_leaf_1..6` (hinged at x = 0, trim on -Z, the hub swings them), `of_chapter_board`, `of_lodger_tick/brim/spare/chime`, `of_lost_thing`, `of_notice_slip`, `of_hanging_lamp`, `of_wall_lamp`, `of_waiting_bench`, `of_plant`, `of_ring_inlay`, `of_number_plate`, `of_stamp_seal`, `of_paper_stack` |
+| walk (ch 4), 8 | `wk_spire_a/b/c` (needle, banded tower, obelisk, 45 to 62 m), `wk_mist_bank`, `wk_paper_stand`, `wk_paper_sheet` (it lifts), `wk_pier_post`, `wk_fallen_slab` |
+| reading (ch 5), 9 | `rd_hall_wall` (33 m by 34 m bay with three arched windows), `rd_hall_column` (30 m), `rd_vault` (ribbed dome seen from below), `rd_hall_chandelier`, `rd_form_rack` and `rd_form_rack_blank`, `rd_circle_inlay`, `rd_page`, `rd_white_door` |
+| filed (ch 6), 6 | `fd_wall_stump`, `fd_rubble`, `fd_free_door` (10 m bare doorframe), `fd_circle_mark`, `fd_gold_seal` (14 m), `fd_grass_tuft` |
+| arena, 5 | `ar_server_dais`, `ar_server_pillar`, `ar_gallery_dais` (three steps, brass ring, rail with a gap on -Z), `ar_threshold_dais`, `ar_stamp_mark` |
+
+The scene scan (`SceneValidation.ChapterRoots`) now also covers the hub (the office's scene plus `ChapterHub.WorldRoot`); `LevelValidationTests` has a test for each of chapters 4 to 6 and the hub, and the `levels-4-6` playtest photographs them.
+

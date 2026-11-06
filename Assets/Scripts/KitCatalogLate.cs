@@ -199,6 +199,7 @@ public static partial class KitCatalog {
             BRk(m, V(0, 8.5f, 2.5f), V(-17.2f, 0, 0), V(.2f, 17.8f, .2f), 0f);
             BRk(m, V(0, 8.5f, -2.5f), V(17.2f, 0, 0), V(.2f, 17.8f, .2f), 0f);
             Lk(m, V(0, 16.4f, 0), 0f, P(0, 0, .7f, 0, .5f, .5f, 0, .6f), 8, false);
+            B(m, -.12f, 16.4f, -.12f, .12f, 52.5f, .12f, 0f);
             S1(m);
             for (int i = 0; i < 12; i++) {
                 float a = i * 30f * Mathf.Deg2Rad;
