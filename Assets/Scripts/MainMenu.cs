@@ -130,6 +130,8 @@ public class MainMenu : MonoBehaviour {
     public Button ArcadeButton { get { return PlayButton; } }
 
     // What the playtest reads: the hint, the start-wave stepper, and which button is the primary one.
+    // True once Start ran to its end (menu built, coins and shop filled, menu music asked for): an exception in Start leaves it false.
+    public bool Ready { get; private set; }
     public string HintText { get { return statusText != null ? statusText.text : ""; } }
     public bool HintTruncated { get { return statusText != null && statusText.preferredHeight > statusText.rectTransform.rect.height + 1f && statusText.fontSize <= statusText.resizeTextMinSize; } }
     public bool StepperVisible { get { return startText != null && startText.gameObject.activeInHierarchy; } }
@@ -155,6 +157,7 @@ public class MainMenu : MonoBehaviour {
         Refresh();
         MusicDirector.Play("theme_wallit");
         RunAnalytics.Menu();
+        Ready = true;
     }
 
     void Update() {
@@ -826,17 +829,20 @@ public class MainMenu : MonoBehaviour {
         while (startWave > 1 && (startWave > maxStart || MetaProgress.Coins < startWave)) {
             startWave -= 10;
         }
-        bool show = maxStart >= 10;
-        lowerStart.gameObject.SetActive(show);
-        raiseStart.gameObject.SetActive(show);
-        startText.gameObject.SetActive(show);
-        if (startWave <= 1) {
-            startText.text = "Start wave: 1\nFree. Later starts cost 10 coins per 10 waves.";
-        } else {
-            startText.text = "Start wave: " + startWave + "\nArcade spends " + startWave + " coins.";
+        // The stepper is only built once wave 10 has been reached (Build's laterShown); on a fresh save it does not exist.
+        if (lowerStart != null && raiseStart != null && startText != null) {
+            bool show = maxStart >= 10;
+            lowerStart.gameObject.SetActive(show);
+            raiseStart.gameObject.SetActive(show);
+            startText.gameObject.SetActive(show);
+            if (startWave <= 1) {
+                startText.text = "Start wave: 1\nFree. Later starts cost 10 coins per 10 waves.";
+            } else {
+                startText.text = "Start wave: " + startWave + "\nArcade spends " + startWave + " coins.";
+            }
+            lowerStart.interactable = startWave > 1;
+            raiseStart.interactable = startWave + 10 <= maxStart && MetaProgress.Coins >= startWave + 10;
         }
-        lowerStart.interactable = startWave > 1;
-        raiseStart.interactable = startWave + 10 <= maxStart && MetaProgress.Coins >= startWave + 10;
 
         coinText.text = MetaProgress.Coins.ToString();
         bestText.text = MetaProgress.BestWave > 0 ? MetaProgress.BestWave.ToString() : "None";
