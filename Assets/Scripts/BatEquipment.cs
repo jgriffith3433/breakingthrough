@@ -139,6 +139,10 @@ public class BatEquipment : MonoBehaviour {
             return;
         }
         if (trail == null) {
+            Shader trailShader = SafeShader.Find("Sprites/Default");
+            if (trailShader == null) {
+                return;
+            }
             var tip = new GameObject("SwingTrail").transform;
             tip.SetParent(root, false);
             tip.localPosition = new Vector3(0f, 0.86f, 0f);
@@ -146,7 +150,7 @@ public class BatEquipment : MonoBehaviour {
             trail.time = 0.22f;
             trail.minVertexDistance = 0.04f;
             trail.widthCurve = new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(1f, 0f));
-            trail.material = new Material(SafeShader.Find("Sprites/Default"));
+            trail.material = new Material(trailShader);
             trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             trail.receiveShadows = false;
             trail.emitting = false;
@@ -980,7 +984,11 @@ public class BatEquipment : MonoBehaviour {
             }
         }
         PoseBat();
-        TickTrail();
+        try {
+            TickTrail();
+        } catch (System.Exception e) {
+            ControlsHelp.Guard("BatEquipment.TickTrail", e);
+        }
     }
 
     void BuildBat() {
