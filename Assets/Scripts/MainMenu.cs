@@ -132,7 +132,7 @@ public class MainMenu : MonoBehaviour {
     // What the playtest reads: the hint, the start-wave stepper, and which button is the primary one.
     public string HintText { get { return statusText != null ? statusText.text : ""; } }
     public bool HintTruncated { get { return statusText != null && statusText.preferredHeight > statusText.rectTransform.rect.height + 1f && statusText.fontSize <= statusText.resizeTextMinSize; } }
-    public bool StepperVisible { get { return startText != null && startText.gameObject.activeInChildren; } }
+    public bool StepperVisible { get { return startText != null && startText.gameObject.activeInHierarchy; } }
     public string StepperText { get { return startText != null ? startText.text : ""; } }
     public bool CampaignIsPrimary { get { return CampaignButton != null && PlayButton != null && CampaignButton.GetComponent<RectTransform>().rect.width > PlayButton.GetComponent<RectTransform>().rect.width && CampaignButton.GetComponent<RectTransform>().anchoredPosition.y <= PlayButton.GetComponent<RectTransform>().anchoredPosition.y; } }
 
