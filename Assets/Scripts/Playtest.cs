@@ -674,6 +674,16 @@ public static class Playtest {
             run.Problem(PlaytestSeverity.Polish, "menu key art Resources/UI/MenuArt is missing");
         }
         yield return new WaitForSecondsRealtime(1f);
+        // The menu's Start must run to its end (it threw a NullReferenceException on a fresh save when the start-wave
+        // stepper was hidden and never built, which also left the shop unfilled and the menu music unasked).
+        MainMenu ready = Object.FindAnyObjectByType<MainMenu>();
+        bool menuReady = ready != null && ready.Ready;
+        run.Event("menu-ready", menuReady
+            ? "the main menu finished setting up (stepper " + (ready.StepperVisible ? "shown" : "hidden") + ", best wave " + MetaProgress.BestWave + ", music '" + MusicDirector.Current + "')"
+            : "the main menu's Start did not finish");
+        if (!menuReady) {
+            run.Problem(PlaytestSeverity.Bug, "the main menu's Start did not finish (an exception while building or filling it)");
+        }
     }
 
     // Campaign from the main menu: press Campaign, open case file 1, wait for the Campaign scene. A scene that is not in
