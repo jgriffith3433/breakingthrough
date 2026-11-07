@@ -44,7 +44,6 @@
       "cast": [
         "slice"
       ],
-      "alt": "slice_back",
       "line": "The Courier. It reads the order out, then it lands."
     },
     {
@@ -67,7 +66,6 @@
       "cast": [
         "wallit"
       ],
-      "alt": "wallet_front",
       "line": "Then it can read me the bill."
     }
   ]

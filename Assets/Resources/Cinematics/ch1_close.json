@@ -110,7 +110,6 @@
       "cast": [
         "slice"
       ],
-      "alt": "slice_back",
       "line": "Not somebody. Something."
     }
   ]
