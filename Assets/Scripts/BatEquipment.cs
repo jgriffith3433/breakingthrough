@@ -122,7 +122,49 @@ public class BatEquipment : MonoBehaviour {
         FrostGusts = 0;
         MetalBlasts = 0;
         AnimContacts = 0;
+        Impacts = 0;
+        Juice.ResetStats();
         Events.Clear();
+    }
+
+    public static int Impacts { get; private set; }
+    public static int TrailSwings { get; private set; }
+    TrailRenderer trail;
+    bool trailWasOn;
+
+    // The swing's trail: a soft cream ribbon off the bat's tip while a swing, smash or wind-up is out, gold and wider
+    // for a home run. One trail renderer, no particles.
+    void TickTrail() {
+        if (root == null) {
+            return;
+        }
+        if (trail == null) {
+            var tip = new GameObject("SwingTrail").transform;
+            tip.SetParent(root, false);
+            tip.localPosition = new Vector3(0f, 0.86f, 0f);
+            trail = tip.gameObject.AddComponent<TrailRenderer>();
+            trail.time = 0.22f;
+            trail.minVertexDistance = 0.04f;
+            trail.widthCurve = new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(1f, 0f));
+            trail.material = new Material(SafeShader.Find("Sprites/Default"));
+            trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            trail.receiveShadows = false;
+            trail.emitting = false;
+        }
+        bool big = move == Move.HomeRun || (charging && charge >= Tuning.HomeRunMin);
+        bool on = move != Move.None || charging;
+        if (on && !trailWasOn) {
+            trail.Clear();
+            if (move != Move.None) {
+                TrailSwings++;
+            }
+        }
+        trailWasOn = on;
+        trail.emitting = on;
+        trail.widthMultiplier = big ? 0.75f : move == Move.Swing3 || move == Move.Smash ? 0.5f : 0.34f;
+        Color head = big ? new Color(1f, 0.8f, 0.3f, 0.95f) : new Color(1f, 0.96f, 0.82f, 0.8f);
+        trail.startColor = head;
+        trail.endColor = new Color(head.r, head.g * 0.8f, head.b * 0.5f, 0f);
     }
 
     // Movement slows a little while a swing is out, more while winding up. CharacterMovement multiplies by it.
@@ -640,6 +682,12 @@ public class BatEquipment : MonoBehaviour {
             count++;
             Vector3 away = Flat(enemy.transform.position - transform.position);
             bool tip = away.magnitude - enemy.BodyScale * 0.3f >= sweetFrom;
+            // Every bot the bat lands on gets its own flash; the second and later also get a thud (the crack is once a swing).
+            Fx.Impact(enemy.transform.position + Vector3.up * (0.7f * Mathf.Max(1f, enemy.BodyScale)), Mathf.Sqrt(Mathf.Max(1f, enemy.BodyScale)), scale >= Tuning.BatDamageFinisher || tip);
+            Impacts++;
+            if (count > 1) {
+                GameAudio.Play("hit", 0.5f, Random.Range(0.9f, 1.05f));
+            }
             bool dropped = Combat.BatHit(enemy, scale, power, true, tip);
             if (!dropped && enemy != null) {
                 enemy.Knock(KnockOf(enemy, away, knock, lift));
@@ -674,6 +722,7 @@ public class BatEquipment : MonoBehaviour {
         }
         away.Normalize();
         float heft = Heft(target);
+        Vector3 launchFrom = target.transform.position + Vector3.up;
         // A line drive: low enough to plough through the birds behind.
         Vector3 launch = away * Tuning.HomeRunSpeed * power * heft + Vector3.up * 5.5f * Mathf.Sqrt(heft);
         string kind = target.Title ?? target.name;
@@ -692,7 +741,10 @@ public class BatEquipment : MonoBehaviour {
         Track(target, 2.2f, 8, 0.9f * power, true);
         GameAudio.Play("homerun", 0.95f, Random.Range(0.97f, 1.03f));
         Fx.Ring(target.transform.position, 3f * Mathf.Sqrt(Mathf.Max(1f, target.BodyScale)), new Color(1f, 0.9f, 0.55f, 0.85f), 0.4f);
-        Juice.HitStop(0.12f);
+        Impacts++;
+        Fx.HomeRun(target != null ? target.transform.position + Vector3.up : launchFrom, Mathf.Sqrt(Mathf.Max(1f, target != null ? target.BodyScale : 1f)));
+        Juice.HitStop(0.07f);
+        Juice.SlowBeat(0.35f, 0.4f);
         ZeldaStyleCamera.Shake(0.2f, 0.28f);
         Say("home run (charge " + Mathf.RoundToInt(homeRunCharge * 100f) + "%): " + kind + " launched at " + launch.magnitude.ToString("0") + " m/s" + (dropped ? ", dropped" : ""));
         UpgradeLook.Say("HOME RUN!", 1.2f, -40f);
@@ -928,6 +980,7 @@ public class BatEquipment : MonoBehaviour {
             }
         }
         PoseBat();
+        TickTrail();
     }
 
     void BuildBat() {

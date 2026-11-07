@@ -157,7 +157,7 @@ public class Companion : MonoBehaviour {
             torso.transform.localScale = new Vector3(0.6f, 0.9f, 0.6f);
             Destroy(torso.GetComponent<Collider>());
             Renderer r = torso.GetComponent<Renderer>();
-            r.material = new Material(SafeShader.Find("Sprites/Default")) { color = new Color(0.22f, 0.14f, 0.3f) };
+            r.material = new Material(SafeShader.Solid()) { color = new Color(0.22f, 0.14f, 0.3f) };
         }
         model = body.transform;
         bodyRenderers = body.GetComponentsInChildren<Renderer>();
@@ -452,7 +452,7 @@ public class Companion : MonoBehaviour {
         }
         if (Downed) {
             int pips = Mathf.RoundToInt(ReviveProgress * 10f);
-            label.text = Data.Name + " is down\nhold E to revive\n[" + new string('#', pips) + new string('-', 10 - pips) + "]";
+            label.text = Data.Name + " is down\n" + (UiFit.Touch ? "hold Revive" : "hold E") + " to revive\n[" + new string('#', pips) + new string('-', 10 - pips) + "]";
             label.color = new Color(1f, 0.55f, 0.45f);
         } else {
             int pips = Mathf.Clamp(Mathf.CeilToInt(10f * Health / MaxHealth), 1, 10);

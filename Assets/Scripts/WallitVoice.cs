@@ -413,9 +413,12 @@ public class WallitVoice : MonoBehaviour {
         if (stamp != UiFit.Stamp && scaler != null) {
             stamp = UiFit.Stamp;
             UiFit.Apply(scaler);
+            if (text != null) {
+                UiFit.PlaceCaption(text.rectTransform, 190f, 0);
+            }
         }
         shown -= Time.unscaledDeltaTime;
-        if (text != null && shown <= 0f) {
+        if (text != null && (shown <= 0f || WaveDirector.IsLost)) {
             text.enabled = false;
         }
         if (Speaking && now >= lineStart + lineLength) {
@@ -508,13 +511,9 @@ public class WallitVoice : MonoBehaviour {
         var outline = go.AddComponent<Outline>();
         outline.effectColor = new Color(0f, 0f, 0f, 0.85f);
         outline.effectDistance = new Vector2(1.5f, -1.5f);
-        var rect = text.rectTransform;
-        rect.anchorMin = new Vector2(0.5f, 0f);
-        rect.anchorMax = new Vector2(0.5f, 0f);
-        rect.pivot = new Vector2(0.5f, 0f);
-        rect.anchoredPosition = new Vector2(0f, 190f);
-        rect.sizeDelta = new Vector2(1000f, 44f);
+        text.verticalOverflow = VerticalWrapMode.Overflow;
         stamp = UiFit.Stamp;
         UiFit.Apply(scaler);
+        UiFit.PlaceCaption(text.rectTransform, 190f, 0);
     }
 }

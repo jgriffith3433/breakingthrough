@@ -25,6 +25,8 @@ public class ChapterHub : MonoBehaviour {
     // For the playtest bot.
     public Transform Player { get; private set; }
     public bool BoardOpen { get; private set; }
+    // Idle actions of the lodgers and the ring banter with Slice (HubAmbience).
+    public HubAmbience Ambience { get; private set; }
     public bool NearBoard { get; private set; }
     public float Walked { get; private set; }
     public Button[] BoardButtons { get; private set; }
@@ -189,11 +191,25 @@ public class ChapterHub : MonoBehaviour {
             CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
             office.Dress(slot.cleared, HubLife.SideCount(slot), HubLife.HeardCount(slot));
         }
+        DressMood();
+    }
+
+    // The lamp-lit grade, warmer with every chapter filed (SceneMood).
+    public AudioSource Bed { get; private set; }
+    public SceneMood.Look Mood { get; private set; }
+
+    void DressMood() {
+        CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
+        Mood = SceneMood.Hub(slot.cleared / (float)CampaignSave.ChapterCount);
+        SceneMood.Apply(cam != null ? cam : Camera.main, Mood);
     }
 
     public bool Shown {
         get { return canvasGo != null && canvasGo.activeSelf; }
     }
+
+    // The people, pickups, door leaves and board (what the scene scan reads besides the office's own scene).
+    public Transform WorldRoot { get { return world != null ? world.transform : null; } }
 
     void Build() {
         arrivedAt = Time.unscaledTime;
@@ -212,37 +228,29 @@ public class ChapterHub : MonoBehaviour {
         var light = new GameObject("Hub Light").AddComponent<Light>();
         light.transform.SetParent(world.transform, false);
         light.type = LightType.Directional;
-        light.color = new Color(0.65f, 0.72f, 1f);
-        light.intensity = 1f;
+        light.color = SceneMood.Hub(0f).Key;
+        light.intensity = SceneMood.Hub(0f).KeyIntensity;
         light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
 
         // The office is its own scene (Assets/Maps/Map_Office.unity), loaded on top and dressed for how far the file has come.
         ChapterMap.Load("office");
-        BuildRoom();
         BuildBoard();
         BuildDesk();
         BuildLodgers();
         PlaceLodgers();
         BuildDoors();
         BuildPeople();
+        Ambience = HubAmbience.Attach(this, lodgerRoots, slice);
+        Bed = SceneMood.Bed(transform, SceneMood.Kind.Hub);
+        DressMood();
         BuildUi();
         PlaceCamera(true);
-    }
-
-    void Flat(string name, PrimitiveType type, Vector3 at, Vector3 size, Color color) {
-        var go = GameObject.CreatePrimitive(type);
-        go.name = name;
-        Destroy(go.GetComponent<Collider>());
-        go.transform.SetParent(world.transform, false);
-        go.transform.localPosition = at;
-        go.transform.localScale = size;
-        Paint(go, color);
     }
 
     static void Paint(GameObject go, Color color) {
         Renderer r = go.GetComponent<Renderer>();
         r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        Shader shader = SafeShader.Find("Sprites/Default");
+        Shader shader = SafeShader.For(color);
         if (shader != null) {
             r.material = new Material(shader) { color = color };
         } else {
@@ -250,31 +258,13 @@ public class ChapterHub : MonoBehaviour {
         }
     }
 
-    // Floor, three walls (the front is open to the camera), the baseboard and Slice's ring on the carpet.
-    void BuildRoom() {
-        float w = RoomHalfWidth + 0.8f;
-        Flat("Floor", PrimitiveType.Cube, new Vector3(0f, -0.06f, 2.5f), new Vector3(w * 2f, 0.05f, 27f), new Color(0.12f, 0.13f, 0.16f));
-        Flat("Carpet", PrimitiveType.Cube, new Vector3(0f, -0.04f, 3f), new Vector3(w * 2f - 3f, 0.03f, 17f), new Color(0.1f, 0.15f, 0.17f));
-        Flat("Back Wall", PrimitiveType.Cube, new Vector3(0f, 2.6f, WallZ + 0.3f), new Vector3(w * 2f, 5.4f, 0.6f), new Color(0.2f, 0.2f, 0.27f));
-        Flat("Left Wall", PrimitiveType.Cube, new Vector3(-w - 0.3f, 2.6f, 2.5f), new Vector3(0.6f, 5.4f, 27.6f), new Color(0.17f, 0.17f, 0.23f));
-        Flat("Right Wall", PrimitiveType.Cube, new Vector3(w + 0.3f, 2.6f, 2.5f), new Vector3(0.6f, 5.4f, 27.6f), new Color(0.17f, 0.17f, 0.23f));
-        Flat("Baseboard", PrimitiveType.Cube, new Vector3(0f, 0.2f, WallZ - 0.05f), new Vector3(w * 2f, 0.4f, 0.12f), new Color(0.3f, 0.22f, 0.14f));
-        Flat("Ring Edge", PrimitiveType.Cylinder, new Vector3(0f, -0.02f, 0f), new Vector3(8.6f, 0.03f, 8.6f), new Color(0.85f, 0.66f, 0.34f));
-        Flat("Ring", PrimitiveType.Cylinder, new Vector3(0f, -0.01f, 0f), new Vector3(8f, 0.03f, 8f), new Color(0.11f, 0.15f, 0.16f));
-    }
-
-    // Tick's desk on the right wall: a chair and a plate.
+    // Tick's desk on the right wall is OfficeMap's (two desks, a lamp, papers, a chair); the plate saying who sits there is a label here.
     void BuildDesk() {
-        var desk = new GameObject("Vacant Desk");
-        desk.transform.SetParent(world.transform, false);
-        desk.transform.position = DeskPosition;
-        desk.transform.rotation = Quaternion.Euler(0f, -90f, 0f);
-        Block(desk.transform, "Top", new Vector3(0f, 1f, 0f), new Vector3(3.4f, 0.12f, 1.4f), new Color(0.33f, 0.22f, 0.13f));
-        Block(desk.transform, "Front", new Vector3(0f, 0.5f, -0.55f), new Vector3(3.2f, 1f, 0.1f), new Color(0.26f, 0.17f, 0.1f));
-        Block(desk.transform, "Chair", new Vector3(0f, 0.55f, 1.5f), new Vector3(0.9f, 1.1f, 0.9f), new Color(0.15f, 0.15f, 0.2f));
-        Block(desk.transform, "Plate", new Vector3(0f, 1.15f, -0.4f), new Vector3(1.4f, 0.22f, 0.06f), new Color(0.85f, 0.66f, 0.34f));
-        Label3D(desk.transform, "TICK", new Vector3(0f, 2.2f, 0f), 0.12f, new Color(0.7f, 0.72f, 0.85f));
-        deskPlate = desk.transform.Find("Label").GetComponent<TextMesh>();
+        var plate = new GameObject("Desk Plate").transform;
+        plate.SetParent(world.transform, false);
+        plate.position = DeskPosition + new Vector3(0.4f, 0f, 0f);
+        Label3D(plate, "TICK", new Vector3(0f, 2.3f, 0f), 0.12f, new Color(0.7f, 0.72f, 0.85f));
+        deskPlate = plate.Find("Label").GetComponent<TextMesh>();
     }
 
     static int CountBits(int v) {
@@ -291,8 +281,8 @@ public class ChapterHub : MonoBehaviour {
         return ColorUtility.TryParseHtmlString(hex, out c) ? c : Color.white;
     }
 
-    // Four lodgers, each a few blocks and a name: Tick the clock, Brim the hat, Spare the half-built Yo Bot, Chime the bell.
-    // Built facing the camera, collider-free, like the rest of the office; Brim and Chime hover a little.
+    // Four lodgers, each a modelled character (Tick the wall clock, Brim the bowler, Spare the half-built Yo Bot, Chime the bell) and a
+    // name. They face the camera and are collider-free; Brim and Chime hover a little.
     void BuildLodgers() {
         lodgerRoots = new Transform[Story.Lodgers.Length];
         lodgerMarks = new TextMesh[Story.Lodgers.Length];
@@ -303,34 +293,18 @@ public class ChapterHub : MonoBehaviour {
             root.position = LodgerAt(i);
             lodgerRoots[i] = root;
             Color tint = Hex(lodger.Colour);
-            Color dark = tint * 0.55f;
-            dark.a = 1f;
             float top = 2f;
+            GameObject body = LevelDress.Put(root, "of_lodger_" + lodger.Id, root.position, 180f);
+            body.name = "Lodger Model";
+            LevelDress.Tint(body, 0, tint);
             if (lodger.Id == "tick") {
-                Block(root, "Case", new Vector3(0f, 0.9f, 0f), new Vector3(0.9f, 1.5f, 0.45f), new Color(0.3f, 0.22f, 0.16f));
-                Block(root, "Face", new Vector3(0f, 1.25f, -0.25f), new Vector3(0.7f, 0.7f, 0.05f), tint);
-                Block(root, "Hand", new Vector3(0f, 1.38f, -0.3f), new Vector3(0.06f, 0.36f, 0.04f), dark);
-                Block(root, "Hand2", new Vector3(0.1f, 1.25f, -0.3f), new Vector3(0.24f, 0.06f, 0.04f), dark);
-                Block(root, "Pendulum", new Vector3(0f, 0.45f, -0.25f), new Vector3(0.08f, 0.5f, 0.04f), new Color(0.85f, 0.66f, 0.34f));
-                top = 2.1f;
+                top = 2.3f;
             } else if (lodger.Id == "brim") {
-                Block(root, "Crown", new Vector3(0f, 1.1f, 0f), new Vector3(0.7f, 0.7f, 0.7f), tint);
-                Block(root, "Brim", new Vector3(0f, 0.72f, 0f), new Vector3(1.5f, 0.08f, 1.5f), tint);
-                Block(root, "Band", new Vector3(0f, 0.85f, -0.01f), new Vector3(0.74f, 0.14f, 0.74f), dark);
                 top = 1.9f;
             } else if (lodger.Id == "spare") {
-                Block(root, "Body", new Vector3(0f, 0.75f, 0f), new Vector3(0.8f, 0.8f, 0.6f), tint);
-                Block(root, "Head", new Vector3(0f, 1.4f, 0f), new Vector3(0.7f, 0.5f, 0.55f), tint);
-                Block(root, "Eye", new Vector3(0f, 1.44f, -0.29f), new Vector3(0.5f, 0.14f, 0.04f), new Color(0.05f, 0.1f, 0.08f));
-                Block(root, "ClawR", new Vector3(0.55f, 0.8f, 0f), new Vector3(0.22f, 0.5f, 0.22f), dark);
-                Block(root, "LegL", new Vector3(-0.22f, 0.18f, 0f), new Vector3(0.2f, 0.36f, 0.2f), dark);
-                top = 2f;
+                top = 2.1f;
             } else {
-                Block(root, "Bell", new Vector3(0f, 0.95f, 0f), new Vector3(0.95f, 0.95f, 0.95f), tint);
-                Block(root, "Lip", new Vector3(0f, 0.5f, 0f), new Vector3(1.2f, 0.12f, 1.2f), tint);
-                Block(root, "Handle", new Vector3(0f, 1.55f, 0f), new Vector3(0.22f, 0.25f, 0.22f), dark);
-                Block(root, "Clapper", new Vector3(0f, 0.4f, 0f), new Vector3(0.24f, 0.24f, 0.24f), dark);
-                top = 2.2f;
+                top = 2.0f;
             }
             Label3D(root, lodger.Name, new Vector3(0f, top, -0.1f), 0.1f, tint);
             // A gold "!" over a lodger with a conversation not yet heard.
@@ -340,16 +314,16 @@ public class ChapterHub : MonoBehaviour {
         // Chime's lost thing, lit so it reads from across the room; shown only while an errand is out.
         var item = new GameObject("Errand Item").transform;
         item.SetParent(world.transform, false);
-        Block(item, "Thing", new Vector3(0f, 0.45f, 0f), new Vector3(0.5f, 0.5f, 0.5f), new Color(1f, 0.82f, 0.38f));
-        Label3D(item, "", new Vector3(0f, 1.3f, -0.1f), 0.09f, new Color(1f, 0.9f, 0.55f));
+        LevelDress.Tint(LevelDress.Put(item, "of_lost_thing", Vector3.zero, 0f), 0, new Color(1f, 0.82f, 0.38f));
+        Label3D(item, "", new Vector3(0f, 1.6f, -0.1f), 0.09f, new Color(1f, 0.9f, 0.55f));
         errandLabel = item.Find("Label").GetComponent<TextMesh>();
         errandItem = item;
         errandItem.gameObject.SetActive(false);
         // A lodger's favour: its own item, and the loose notices (one slip per chapter, lit like the errand item).
         var fav = new GameObject("Favour Item").transform;
         fav.SetParent(world.transform, false);
-        Block(fav, "Thing", new Vector3(0f, 0.45f, 0f), new Vector3(0.45f, 0.45f, 0.45f), new Color(0.6f, 0.95f, 0.85f));
-        Label3D(fav, "", new Vector3(0f, 1.3f, -0.1f), 0.09f, new Color(0.7f, 1f, 0.9f));
+        LevelDress.Tint(LevelDress.Put(fav, "of_lost_thing", Vector3.zero, 0f), 0, new Color(0.6f, 0.95f, 0.85f));
+        Label3D(fav, "", new Vector3(0f, 1.6f, -0.1f), 0.09f, new Color(0.7f, 1f, 0.9f));
         favourLabel = fav.Find("Label").GetComponent<TextMesh>();
         favourItem = fav;
         favourItem.gameObject.SetActive(false);
@@ -361,8 +335,7 @@ public class ChapterHub : MonoBehaviour {
             var slip = new GameObject("Notice " + HubLife.Sides[i].Id).transform;
             slip.SetParent(world.transform, false);
             slip.position = HubLife.Sides[i].Spot;
-            Block(slip, "Slip", new Vector3(0f, 0.08f, 0f), new Vector3(0.7f, 0.04f, 0.9f), new Color(0.96f, 0.93f, 0.8f));
-            Block(slip, "Stamp", new Vector3(0.1f, 0.11f, 0.1f), new Vector3(0.3f, 0.02f, 0.2f), new Color(0.8f, 0.14f, 0.14f));
+            LevelDress.PutEuler(slip, "of_notice_slip", HubLife.Sides[i].Spot + Vector3.up * 0.06f, new Vector3(-90f, 0f, 0f));
             Label3D(slip, HubLife.Sides[i].Thing, new Vector3(0f, 1.1f, -0.1f), 0.08f, new Color(1f, 0.95f, 0.7f));
             noticeItems[i] = slip;
             slip.gameObject.SetActive(false);
@@ -558,8 +531,9 @@ public class ChapterHub : MonoBehaviour {
         }
     }
 
-    // A door per chapter along the back wall: frame, a leaf that swings open when the file has reached it, a lamp (amber filed,
-    // green next, dark locked) and the chapter number. Collider-free: the walk clamps Wallit to the room.
+    // A door per chapter along the back wall: the themed frame is OfficeMap's; here the leaf (its own kit piece per chapter, hinged at
+    // the left jamb, swinging into the room when the file has reached it), a lamp beside it (amber filed, green next, dark locked) and
+    // the chapter number. Collider-free: the walk clamps Wallit to the room.
     void BuildDoors() {
         int count = CampaignSave.ChapterCount;
         leaves = new Transform[count];
@@ -569,18 +543,15 @@ public class ChapterHub : MonoBehaviour {
             var door = new GameObject("Door " + (i + 1));
             door.transform.SetParent(world.transform, false);
             door.transform.position = DoorPosition(i);
-            Block(door.transform, "FrameL", new Vector3(-1.05f, 1.6f, 0f), new Vector3(0.2f, 3.2f, 0.4f), new Color(0.35f, 0.25f, 0.15f));
-            Block(door.transform, "FrameR", new Vector3(1.05f, 1.6f, 0f), new Vector3(0.2f, 3.2f, 0.4f), new Color(0.35f, 0.25f, 0.15f));
-            Block(door.transform, "FrameTop", new Vector3(0f, 3.25f, 0f), new Vector3(2.3f, 0.2f, 0.4f), new Color(0.35f, 0.25f, 0.15f));
-            Block(door.transform, "Beyond", new Vector3(0f, 1.6f, 0.2f), new Vector3(1.9f, 3.1f, 0.05f), new Color(0.9f, 0.82f, 0.55f));
             var hinge = new GameObject("Hinge").transform;
             hinge.SetParent(door.transform, false);
-            hinge.localPosition = new Vector3(-0.95f, 0f, -0.05f);
+            hinge.localPosition = new Vector3(-0.95f, 0f, 0.04f);
             leaves[i] = hinge;
-            Block(hinge, "Leaf", new Vector3(0.95f, 1.55f, 0f), new Vector3(1.9f, 3.1f, 0.12f), new Color(0.22f, 0.16f, 0.2f));
-            Block(hinge, "Knob", new Vector3(1.65f, 1.5f, -0.1f), new Vector3(0.14f, 0.14f, 0.1f), new Color(0.85f, 0.66f, 0.34f));
-            Block(door.transform, "Lamp", new Vector3(0f, 3.7f, -0.1f), new Vector3(0.4f, 0.22f, 0.1f), new Color(0.2f, 0.2f, 0.25f));
-            Label3D(door.transform, (i + 1).ToString(), new Vector3(0f, 4.4f, -0.2f), 0.2f, new Color(1f, 0.82f, 0.38f));
+            GameObject leaf = LevelDress.Put(hinge, "of_door_leaf_" + (i + 1), hinge.position, 0f);
+            leaf.name = "Leaf";
+            GameObject lamp = LevelDress.Put(door.transform, "of_wall_lamp", DoorPosition(i) + new Vector3(1.95f, 2.4f, -0.04f), 180f);
+            lamp.name = "Lamp";
+            Label3D(door.transform, (i + 1).ToString(), new Vector3(0f, 4.85f, -0.25f), 0.2f, new Color(1f, 0.82f, 0.38f));
         }
         SetDoors();
     }
@@ -598,7 +569,7 @@ public class ChapterHub : MonoBehaviour {
             Color lamp = i < slot.cleared ? new Color(0.9f, 0.65f, 0.25f) : i < open ? new Color(0.35f, 0.95f, 0.45f) : new Color(0.25f, 0.1f, 0.12f);
             Transform lampPart = leaves[i].parent.Find("Lamp");
             if (lampPart != null) {
-                Paint(lampPart.gameObject, lamp);
+                LevelDress.Tint(lampPart.gameObject, 1, lamp);
             }
             sb.Append(i + 1).Append(DoorOpen[i] ? ":open " : ":shut ");
         }
@@ -617,25 +588,30 @@ public class ChapterHub : MonoBehaviour {
             // Swing wide as Wallit nears an open door, or stay ajar once the file has reached it.
             float want = DoorOpen[i] ? (close ? 105f : 70f) : 0f;
             swing[i] = Mathf.MoveTowards(swing[i], want, 160f * Time.unscaledDeltaTime);
-            leaves[i].localRotation = Quaternion.Euler(0f, -swing[i], 0f);
+            leaves[i].localRotation = Quaternion.Euler(0f, swing[i], 0f);
         }
         // Through an open door: that chapter's card. A shut one is a wall.
         if (NearDoor >= 0 && DoorOpen[NearDoor] && Player.position.z >= RoomBack - 0.05f && EnteredDoor < 0) {
-            EnteredDoor = NearDoor;
-            GameAudio.Play("stamp", 0.5f);
-            RunAnalytics.Screen("hub_door_" + (NearDoor + 1));
-            scene.ShowCard(NearDoor);
+            EnterDoor(NearDoor);
         }
     }
 
-    void Block(Transform parent, string name, Vector3 local, Vector3 size, Color color) {
-        var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        go.name = name;
-        Destroy(go.GetComponent<Collider>());
-        go.transform.SetParent(parent, false);
-        go.transform.localPosition = local;
-        go.transform.localScale = size;
-        Paint(go, color);
+    // An open door within reach of a hand: Interact (E, or the button on a phone) opens it, so a thumb on the stick need not
+    // walk into the frame.
+    public bool DoorUsable {
+        get {
+            if (NearDoor < 0 || !DoorOpen[NearDoor] || EnteredDoor >= 0 || BoardOpen || !Shown) {
+                return false;
+            }
+            return Player.position.z > DoorPosition(NearDoor).z - 2.6f;
+        }
+    }
+
+    void EnterDoor(int door) {
+        EnteredDoor = door;
+        GameAudio.Play("stamp", 0.5f);
+        RunAnalytics.Screen("hub_door_" + (door + 1));
+        scene.ShowCard(door);
     }
 
     void Label3D(Transform parent, string text, Vector3 local, float size, Color color) {
@@ -655,23 +631,18 @@ public class ChapterHub : MonoBehaviour {
         go.GetComponent<MeshRenderer>().sharedMaterial = font.material;
     }
 
-    // Two posts and a pinned board of slips, facing the ring. The paper is lit so it reads from across the yard.
+    // The chapter board: a roofed board on two posts with six slip frames, facing the ring. The paper is lit so it reads from across the room.
     void BuildBoard() {
         board = new GameObject("Chapter Board");
         board.transform.SetParent(world.transform, false);
         board.transform.position = BoardPosition;
         board.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
-        Part("PostL", new Vector3(-2.3f, 1.4f, 0f), new Vector3(0.25f, 2.8f, 0.25f), new Color(0.3f, 0.2f, 0.12f));
-        Part("PostR", new Vector3(2.3f, 1.4f, 0f), new Vector3(0.25f, 2.8f, 0.25f), new Color(0.3f, 0.2f, 0.12f));
-        Part("Backing", new Vector3(0f, 2.0f, 0.05f), new Vector3(4.8f, 2.6f, 0.15f), new Color(0.24f, 0.16f, 0.1f));
-        for (int i = 0; i < CampaignSave.ChapterCount; i++) {
-            float col = i % 3;
-            float row = i / 3;
-            Part("Slip", new Vector3(-1.5f + col * 1.5f, 2.55f - row * 1.15f, -0.06f), new Vector3(1.15f, 0.85f, 0.04f), new Color(0.93f, 0.89f, 0.76f));
-        }
+        GameObject piece = LevelDress.Put(board.transform, "of_chapter_board", BoardPosition, 90f);
+        piece.name = "Board Model";
         var text = new GameObject("Title");
         text.transform.SetParent(board.transform, false);
-        text.transform.localPosition = new Vector3(0f, 3.55f, -0.1f);
+        text.transform.localPosition = new Vector3(0f, 4.15f, 0.2f);
+        text.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
         var mesh = text.AddComponent<TextMesh>();
         Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         mesh.font = font;
@@ -683,16 +654,6 @@ public class ChapterHub : MonoBehaviour {
         mesh.alignment = TextAlignment.Center;
         mesh.color = new Color(1f, 0.82f, 0.38f);
         text.GetComponent<MeshRenderer>().sharedMaterial = font.material;
-    }
-
-    void Part(string name, Vector3 local, Vector3 size, Color color) {
-        var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        go.name = name;
-        Destroy(go.GetComponent<Collider>());
-        go.transform.SetParent(board.transform, false);
-        go.transform.localPosition = local;
-        go.transform.localScale = size;
-        Paint(go, color);
     }
 
     // Wallit (the same painted model as the chapters) and Slice in the ring. Stand-ins when a model is missing.
@@ -791,10 +752,24 @@ public class ChapterHub : MonoBehaviour {
             return;
         }
         TickSpeech();
+        if (speech.text.Length == 0 && Ambience != null && Ambience.Line.Length > 0) {
+            speech.text = Ambience.Line;
+            speech.color = Ambience.LineColor;
+        }
         NearBoard = (Player.position - BoardPosition).magnitude <= BoardReach;
         TickLodgers();
         if (!BoardOpen) {
-            prompt.text = NearDoor >= 0 && !DoorOpen[NearDoor] ? "Chapter " + (NearDoor + 1) + ": the door is shut" : NearDoor >= 0 ? "Chapter " + (NearDoor + 1) + ": " + Story.Chapters[NearDoor].Title : NearBoard ? "E: read the chapter board" : NearLodger >= 0 ? "E: talk to " + Story.Lodgers[NearLodger].Name : ErrandCarried ? "Carrying the " + Story.Errands[ErrandActive].Thing + ". Take it to Chime." : FavourCarried ? "Carrying the " + HubLife.Sides[FavourActive].Thing + ". Take it to " + Story.Lodgers[HubLife.Sides[FavourActive].Giver].Name + "." : "WASD: walk. Doors along the back wall. Board on the left, lodgers about the room. J: journal.";
+            prompt.text = NearDoor >= 0 && !DoorOpen[NearDoor] ? "Chapter " + (NearDoor + 1) + ": the door is shut" : NearDoor >= 0 ? "Chapter " + (NearDoor + 1) + ": " + Story.Chapters[NearDoor].Title + (DoorUsable ? ". " + Interact.Prompt("open the door") : "") : NearBoard ? Interact.Prompt("read the chapter board") : NearLodger >= 0 ? Interact.Prompt("talk to " + Story.Lodgers[NearLodger].Name) : ErrandCarried ? "Carrying the " + Story.Errands[ErrandActive].Thing + ". Take it to Chime." : FavourCarried ? "Carrying the " + HubLife.Sides[FavourActive].Thing + ". Take it to " + Story.Lodgers[HubLife.Sides[FavourActive].Giver].Name + "." : (UiFit.Touch ? "Stick: walk. " : "WASD: walk. ") + "Doors along the back wall. Board on the left, lodgers about the room. " + (UiFit.Touch ? "Journal button: journal." : "J: journal.");
+            if (NearBoard) {
+                Interact.Offer("read the chapter board");
+            } else if (NearLodger >= 0) {
+                Interact.Offer("talk to " + Story.Lodgers[NearLodger].Name);
+            } else if (DoorUsable) {
+                Interact.Offer("open the door");
+            }
+            if (DoorUsable && !NearBoard && NearLodger < 0 && Interact.Pressed) {
+                EnterDoor(NearDoor);
+            }
             if (NearBoard && (PlayInput.GetKeyDown(KeyCode.E) || PlayInput.GetKeyDown(KeyCode.JoystickButton0) || PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter))) {
                 OpenBoard();
             }
@@ -875,7 +850,7 @@ public class ChapterHub : MonoBehaviour {
         sb.Append(level >= CampaignProgress.MaxLevel ? slot.xp + " (max)" : slot.xp + "/" + CampaignProgress.XpAt(level + 1));
         for (int i = 0; i < CampaignProgress.Abilities.Length; i++) {
             CampaignProgress.Ability a = CampaignProgress.Abilities[i];
-            sb.Append("\n").Append(level >= a.Level ? a.Name + ": " + a.Blurb : "LV " + a.Level + ": ???");
+            sb.Append("\n").Append(level >= a.Level ? a.Name + ": " + CampaignProgress.BlurbOf(a) : "LV " + a.Level + ": ???");
         }
         sb.Append("\nTALKS ").Append(HubLife.HeardCount(slot)).Append("/").Append(HubLife.Chats.Length).Append(" (").Append(HubLife.PendingCount(slot)).Append(" waiting)   ERRANDS ").Append(HubLife.SideCount(slot)).Append("/").Append(HubLife.Sides.Length);
         sb.Append("\nLOST THINGS ").Append(CountBits(slot.errands)).Append("/").Append(Story.Errands.Length).Append(":");

@@ -70,6 +70,15 @@ public class ChapterRun : MonoBehaviour {
     int crewSpawned;
     bool variantSeen, miniSpawned;
     Enemy mini;
+    public ChapterPacing Pacing { get; private set; }   // the chapter's placed encounters, its quiet opening and its combat share
+    public bool AtHome {   // the chapter's route is walked: the circle is where the rest happens (Chapter 2 after the gate, 3 and 4 after the last stop)
+        get {
+            return data.Objective == Story.ChapterObjective.GateAndBack ? leg >= 2
+                : data.Objective == Story.ChapterObjective.FloorRun ? leg > StopCount : true;
+        }
+    }
+    public bool BossCalled { get { return bossCalled; } }
+    public bool HasMiniBoss { get { return data.MiniName != null; } }
     public bool BossUp { get { return boss != null && boss.Alive; } }
     public Enemy BossEnemy { get { return boss; } }
     public bool BossDown { get { return bossSpawned && !BossUp; } }
@@ -145,7 +154,7 @@ public class ChapterRun : MonoBehaviour {
     }
 
     // Bots a chapter asks for, more on a New Game+ loop.
-    int Scaled(int n) {
+    public int Scaled(int n) {
         return CampaignGrade.PlusCount(n, Plus);
     }
 
@@ -155,6 +164,7 @@ public class ChapterRun : MonoBehaviour {
         Events.Add("start|" + data.Id + "|" + data.Objective + "|" + data.Target + (Hard ? "|hard" : ""));
         CampaignProgress.BeginChapter();
         MusicDirector.Play(MusicDirector.ChapterTrack(Chapter));
+        MusicDirector.Prefetch(MusicDirector.BossTrack(data.BossName));   // fetched by URL: ready before the boss walks in
         gameObject.AddComponent<CampaignAbilities>();
         if (!string.IsNullOrEmpty(data.Companion)) {
             // A companion walks with Wallit in the chapters that name one (Arcade has no ChapterRun, so never there).
@@ -173,6 +183,7 @@ public class ChapterRun : MonoBehaviour {
         }
         BuildUi();
         StartJournal();
+        Pacing = new ChapterPacing(this, data);
         gameObject.AddComponent<BackRoom>();   // the chapter's secret room, once its clue is held (BackRooms.cs)
         RunAnalytics.Screen("chapter_play_" + (Chapter + 1));
         Cutscene.Reel openReel = Cutscene.LoadReel("ch" + (Chapter + 1) + "_open");
@@ -193,6 +204,9 @@ public class ChapterRun : MonoBehaviour {
     // The opening scene is over and play begins. On a New Game+ loop the chapter says one line about the playthrough before it.
     void OpenDone() {
         Events.Add("play|" + data.Id);
+        if (Pacing != null) {
+            Pacing.Talked("the opening scene");
+        }
         if (Plus > 0) {
             string echo = Endings.EchoFor(Chapter, CampaignSave.Get(CampaignSave.Active).ending);
             if (echo != null) {
@@ -214,6 +228,9 @@ public class ChapterRun : MonoBehaviour {
         }
         if (findItem != null) {
             Destroy(findItem);
+        }
+        if (Pacing != null) {
+            Pacing.Dispose();
         }
         SavePlayTime();
         Companion.Despawn();
@@ -274,6 +291,9 @@ public class ChapterRun : MonoBehaviour {
         }
         int alive = Alive();
         spawnIn -= Time.deltaTime;
+        if (Pacing != null) {
+            Pacing.Tick(Time.deltaTime, player);
+        }
         if (data.Final && Time.time >= nextPulse && Musician.Instance != null) {
             // The circle is brighter than it was: a soft gold ring breathes out from it.
             nextPulse = Time.time + 2.6f;
@@ -282,9 +302,6 @@ public class ChapterRun : MonoBehaviour {
         switch (data.Objective) {
             case Story.ChapterObjective.ClearCount:
                 Progress = RunLog.RunKills;
-                if (spawnIn <= 0f && alive < data.Cap && RunLog.RunKills + alive < Scaled(data.Target)) {
-                    SpawnCrew(director);
-                }
                 if (RunLog.RunKills >= Scaled(data.Target)) {
                     Complete();
                 }
@@ -292,17 +309,11 @@ public class ChapterRun : MonoBehaviour {
             case Story.ChapterObjective.SurviveTime:
                 clock -= Time.deltaTime;
                 Progress = Mathf.Max(0, Mathf.CeilToInt(clock));
-                if (spawnIn <= 0f && alive < data.Cap) {
-                    SpawnCrew(director);
-                }
                 if (clock <= 0f) {
                     Complete();
                 }
                 break;
             case Story.ChapterObjective.ReachPlace:
-                if (spawnIn <= 0f && alive < data.Cap) {
-                    SpawnCrew(director);
-                }
                 if (player != null) {
                     Vector3 d = Marker - player.position;
                     d.y = 0f;
@@ -337,12 +348,9 @@ public class ChapterRun : MonoBehaviour {
                 if (!bossSpawned && spawnIn <= 0f) {
                     bossSpawned = true;
                     boss = director.SpawnForChapter(data.Boss, true, RingRadius);
-                    spawnIn = data.Every;
+                    spawnIn = 0f;
                 } else if (bossSpawned) {
                     Progress = boss == null || !boss.Alive ? 1 : 0;
-                    if (spawnIn <= 0f && alive < data.Cap) {
-                        SpawnCrew(director);
-                    }
                     if (Progress == 1) {
                         Complete();
                     }
@@ -353,7 +361,6 @@ public class ChapterRun : MonoBehaviour {
 
     // Bots down, then the named boss, then the defeat beat and the card (Chapter 1; Chapter 2 once the waves are held).
     void TickHoldBoss(WaveDirector director, int alive) {
-        TickMini(director);
         if (!bossCalled) {
             Progress = Kills();
             if (data.Waves > 0 && data.Objective != Story.ChapterObjective.FloorRun) {
@@ -369,10 +376,7 @@ public class ChapterRun : MonoBehaviour {
                     PageRead(data.Waves);
                 }
             }
-            if (spawnIn <= 0f && alive < data.Cap && Kills() + alive < Target()) {
-                SpawnCrew(director);
-            }
-            if (Kills() >= Target() && (data.MiniName == null || (miniSpawned && !MiniUp))) {
+            if (Kills() >= Target() && (Pacing == null || Pacing.AllDone) && (data.MiniName == null || (miniSpawned && !MiniUp))) {
                 bossCalled = true;
                 spawnIn = 3.5f;
                 Events.Add("boss-called|" + data.BossName);
@@ -412,7 +416,7 @@ public class ChapterRun : MonoBehaviour {
     }
 
     // Bots to bring down before the boss: Chapter 1 sets it, Chapter 2 holds Waves waves of WaveSize.
-    int Target() {
+    public int Target() {
         if (data.Objective == Story.ChapterObjective.FloorRun) {
             return Scaled(data.WaveSize);
         }
@@ -425,9 +429,6 @@ public class ChapterRun : MonoBehaviour {
     // Chapter 2, out and back: Wallit walks Target metres to the gate (the scene plays there), then back to the circle,
     // with bots still coming. Then the waves and the boss are TickHoldBoss.
     void TickGateLegs(WaveDirector director, int alive) {
-        if (spawnIn <= 0f && alive < data.Cap) {
-            SpawnCrew(director);
-        }
         if (player != null) {
             Vector3 d = Marker - player.position;
             d.y = 0f;
@@ -447,10 +448,6 @@ public class ChapterRun : MonoBehaviour {
     // Chapter 3, out along the Floor's stops (the broken gate, the belt, the lever) and back, with bots still coming. The
     // last stop is the lever: pulling it breaks the belt feed. Then the bots and the Foreman are TickHoldBoss.
     void TickFloorLegs(WaveDirector director, int alive) {
-        TickMini(director);
-        if (spawnIn <= 0f && alive < data.Cap) {
-            SpawnCrew(director);
-        }
         if (player != null) {
             Vector3 d = Marker - player.position;
             d.y = 0f;
@@ -473,6 +470,7 @@ public class ChapterRun : MonoBehaviour {
         GameAudio.Play("stamp", 0.7f, 0.9f);
         bool last = leg == StopCount - 1;
         leg++;
+        LegChanged();
         if (last) {
             if (data.Walk) {
                 Events.Add("last-lamp|" + data.Id);
@@ -515,6 +513,7 @@ public class ChapterRun : MonoBehaviour {
 
     void BackFromFloor() {
         leg = StopCount + 1;
+        LegChanged();
         killBase = RunLog.RunKills;
         spawnIn = 2.5f;
         Events.Add("home|" + Mathf.RoundToInt(PlaySeconds));
@@ -522,6 +521,12 @@ public class ChapterRun : MonoBehaviour {
             beacon.SetActive(false);
         }
         HasMarker = false;
+    }
+
+    void LegChanged() {
+        if (Pacing != null) {
+            Pacing.LegChanged(player != null ? player.position : Vector3.zero);
+        }
     }
 
     Vector3 StopPoint(Story.Stop stop) {
@@ -537,6 +542,7 @@ public class ChapterRun : MonoBehaviour {
 
     void ReachGate() {
         leg = 1;
+        LegChanged();
         Events.Add("gate|reached|" + Mathf.RoundToInt(PlaySeconds));
         GameAudio.Play("stamp", 0.7f, 0.9f);
         // The marker turns around to the circle: the way back is the next leg.
@@ -550,6 +556,7 @@ public class ChapterRun : MonoBehaviour {
 
     void BackHome() {
         leg = 2;
+        LegChanged();
         killBase = RunLog.RunKills;
         spawnIn = 2.5f;
         Events.Add("home|" + Mathf.RoundToInt(PlaySeconds));
@@ -580,10 +587,12 @@ public class ChapterRun : MonoBehaviour {
         }
     }
 
-    void SpawnCrew(WaveDirector director) {
-        spawnIn = data.Every;
+    // One bot of an encounter (ChapterPacing): placed at a spot and asleep, a chapter variant now and then. Nothing in a
+    // chapter spawns on a timer any more; the bots here are the whole fight.
+    public Enemy PlaceCrew(Vector3 spot) {
+        WaveDirector director = WaveDirector.Instance;
         BotKind kind = data.Crew[Random.Range(0, data.Crew.Length)];
-        Enemy bot = director.SpawnForChapter(kind, false, RingRadius + Random.Range(0f, 10f));
+        Enemy bot = director.SpawnPlaced(kind, spot);
         crewSpawned++;
         if (data.VariantEvery > 0 && crewSpawned % data.VariantEvery == 0 && bot != null && !BotRoster.IsSpider(kind)) {
             bot.MakeVariant(data.Variant, data.VariantName);
@@ -594,24 +603,24 @@ public class ChapterRun : MonoBehaviour {
                 Tell(new[] { data.VariantLine });
             }
         }
+        return bot;
     }
 
     // The mini-boss midway: Chapter 2 and 5 at half the bots down, Chapter 3 once Wallit has reached the belt. The boss waits for it.
     bool MiniUp { get { return mini != null && mini.Alive; } }
     public Enemy MiniEnemy { get { return mini; } }
 
-    void TickMini(WaveDirector director) {
+    // The mini-boss belongs to one of the chapter's encounters: ChapterPacing wakes it with the bots, nothing spawns it midway.
+    // Called by ChapterPacing when the encounter that carries the mini-boss wakes.
+    public Enemy WakeMini(Vector3 spot) {
         if (data.MiniName == null || miniSpawned) {
-            return;
-        }
-        bool midway = data.Objective == Story.ChapterObjective.FloorRun ? leg >= 2 : Kills() >= Target() / 2 && (data.Objective != Story.ChapterObjective.GateAndBack || leg >= 2);
-        if (!midway) {
-            return;
+            return null;
         }
         miniSpawned = true;
-        mini = director.SpawnMini(data.MiniKind, data.MiniName, data.MiniHits, data.MiniTint, RingRadius);
+        mini = WaveDirector.Instance.SpawnMiniAt(data.MiniKind, data.MiniName, data.MiniHits, data.MiniTint, spot);
         Events.Add("mini-boss|" + data.MiniName + "|" + mini.HitsToDrop);
         Tell(data.MiniLines);
+        return mini;
     }
 
     static int Alive() {
@@ -625,6 +634,10 @@ public class ChapterRun : MonoBehaviour {
     }
 
     string Line() {
+        string pace = Pacing != null ? Pacing.Line() : null;
+        if (pace != null) {
+            return pace;
+        }
         switch (data.Objective) {
             case Story.ChapterObjective.ClearCount:
                 return "Down " + Scaled(data.Target) + " " + data.Goal + ":  " + Mathf.Min(Progress, Scaled(data.Target)) + " / " + Scaled(data.Target);
@@ -694,6 +707,9 @@ public class ChapterRun : MonoBehaviour {
             return;
         }
         Completed = true;
+        if (Pacing != null) {
+            Events.Add(Pacing.Summary());
+        }
         Events.Add("complete|" + data.Id + "|" + Mathf.RoundToInt(PlaySeconds));
         string extra = JudgeGoal();
         GameAudio.Play("stamp", 0.7f);
@@ -1012,132 +1028,47 @@ public class ChapterRun : MonoBehaviour {
         beacon = new GameObject("Chapter Place");
         beacon.transform.position = at;
         var shader = SafeShader.Find("Sprites/Default");
-        var disc = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        disc.name = "Place Disc";
-        Destroy(disc.GetComponent<Collider>());
-        disc.transform.SetParent(beacon.transform, false);
-        disc.transform.localScale = new Vector3(ReachRadius * 2f, 0.04f, ReachRadius * 2f);
-        disc.transform.localPosition = new Vector3(0f, 0.06f, 0f);
-        var pillar = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        pillar.name = "Place Pillar";
-        Destroy(pillar.GetComponent<Collider>());
-        pillar.transform.SetParent(beacon.transform, false);
-        pillar.transform.localScale = new Vector3(2.6f, 14f, 2.6f);
-        pillar.transform.localPosition = new Vector3(0f, 14f, 0f);
+        GameObject disc = LevelKit.Solid(beacon.transform, "Place Disc", LevelKit.DiscMesh("Place Disc", ReachRadius, 0.04f), new Vector3(0f, 0.06f, 0f));
+        GameObject pillar = LevelKit.Solid(beacon.transform, "Place Pillar", LevelKit.DiscMesh("Place Pillar", 1.3f, 28f), new Vector3(0f, 0.2f, 0f));
         if (shader != null) {
             disc.GetComponent<Renderer>().material = new Material(shader) { color = new Color(1f, 0.82f, 0.38f, 0.45f) };
             pillar.GetComponent<Renderer>().material = new Material(shader) { color = new Color(1f, 0.9f, 0.6f, 0.18f) };
         }
     }
 
-    // The gate with no handle, a stretch of the Department's wall either side and a signpost with nothing on it. Flat
-    // blocks with no colliders (the playfield stays free of anything solid), turned to face the circle.
+    // The gate with no handle, the Department's wall, the gate hall and the clearing floor are dressed by the chapter's own map
+    // scene from the Model Kit (EdgeMap, FloorMap in OwnMapChapters.cs; Docs/Levels1to3.md). The run keeps empty holders so the
+    // chapter's props have a root that is cleaned up with it, and the Floor's feed flag (FloorState) the lamps read.
     void BuildGate(Vector3 at, Vector3 origin) {
         gateProps = new GameObject("Chapter Gate");
         gateProps.transform.position = at;
-        Vector3 toCircle = origin - at;
-        toCircle.y = 0f;
-        gateProps.transform.rotation = Quaternion.LookRotation(toCircle.sqrMagnitude > 0.01f ? toCircle.normalized : Vector3.forward, Vector3.up);
-        Color stone = new Color(0.2f, 0.21f, 0.27f, 1f);
-        Color dark = new Color(0.1f, 0.11f, 0.15f, 1f);
-        Color pale = new Color(0.82f, 0.8f, 0.72f, 1f);
-        Block("Post L", new Vector3(-4.6f, 4.5f, 0f), new Vector3(1.4f, 9f, 1.4f), stone);
-        Block("Post R", new Vector3(4.6f, 4.5f, 0f), new Vector3(1.4f, 9f, 1.4f), stone);
-        Block("Lintel", new Vector3(0f, 9.4f, 0f), new Vector3(11.4f, 1.6f, 1.6f), stone);
-        Block("Door", new Vector3(0f, 4.4f, 0.1f), new Vector3(7.8f, 8.8f, 0.5f), dark);
-        Block("Wall L", new Vector3(-13.5f, 3.5f, 0f), new Vector3(16f, 7f, 1.2f), dark);
-        Block("Wall R", new Vector3(13.5f, 3.5f, 0f), new Vector3(16f, 7f, 1.2f), dark);
-        Block("Signpost", new Vector3(8.5f, 2f, 5f), new Vector3(0.35f, 4f, 0.35f), stone);
-        Block("Blank Sign", new Vector3(8.5f, 3.9f, 5.25f), new Vector3(2.4f, 1.2f, 0.12f), pale);
     }
 
-    // The Clearing Floor: at each stop a few flat, collider-free blocks (hooks with chassis, the belt with cleared things,
-    // the lever and its red lamp), so the way out reads as a place. Nothing solid within the playfield.
     void BuildFloor(Vector3 origin) {
         gateProps = new GameObject("Chapter Floor");
         floorProps = gateProps.AddComponent<FloorState>();
-        Color iron = new Color(0.16f, 0.17f, 0.22f, 1f);
-        Color lamp = new Color(1f, 0.74f, 0.35f, 1f);
-        Color chassis = new Color(0.55f, 0.58f, 0.66f, 1f);
-        Color red = new Color(0.9f, 0.14f, 0.1f, 1f);
-        for (int i = 0; i < data.Stops.Length; i++) {
-            Vector3 at = StopPoint(data.Stops[i]);
-            var holder = new GameObject("Stop " + (i + 1) + " " + data.Stops[i].Name);
-            holder.transform.SetParent(gateProps.transform, false);
-            holder.transform.position = at;
-            Vector3 toCircle = origin - at;
-            toCircle.y = 0f;
-            holder.transform.rotation = Quaternion.LookRotation(toCircle.sqrMagnitude > 0.01f ? toCircle.normalized : Vector3.forward, Vector3.up);
-            if (i == 0) {
-                // Broken gate: two leaning posts and a hook row with chassis.
-                Block(holder.transform, "Post L", new Vector3(-6f, 3.5f, 0f), new Vector3(1.2f, 7f, 1.2f), iron, 8f);
-                Block(holder.transform, "Post R", new Vector3(6f, 2.2f, 0f), new Vector3(1.2f, 4.4f, 1.2f), iron, -14f);
-                for (int k = -2; k <= 2; k++) {
-                    Block(holder.transform, "Hook " + k, new Vector3(k * 4f, 6f, -9f), new Vector3(0.2f, 3f, 0.2f), iron, 0f);
-                    Block(holder.transform, "Chassis " + k, new Vector3(k * 4f, 4.3f, -9f), new Vector3(1.6f, 1.8f, 1.2f), chassis, 0f);
-                }
-            } else if (i == data.Stops.Length - 1) {
-                // Lever and a red lamp lens.
-                Block(holder.transform, "Lever Post", new Vector3(0f, 1.6f, 0f), new Vector3(1f, 3.2f, 1f), iron, 0f);
-                Block(holder.transform, "Lever", new Vector3(0f, 3.8f, 0f), new Vector3(0.3f, 3.4f, 0.3f), lamp, 35f);
-                Block(holder.transform, "Red Lamp", new Vector3(0f, 9f, -6f), new Vector3(2.4f, 2.4f, 0.5f), red, 0f);
-                Block(holder.transform, "Chute", new Vector3(0f, 1.5f, -8f), new Vector3(8f, 3f, 6f), iron, 0f);
-            } else {
-                // The belt, with cleared things riding it: a hat, a clock, a bell.
-                Block(holder.transform, "Belt", new Vector3(0f, 0.5f, 0f), new Vector3(30f, 1f, 3.4f), iron, 0f);
-                Block(holder.transform, "Hat", new Vector3(-8f, 1.5f, 0f), new Vector3(1.6f, 1.0f, 1.6f), new Color(0.35f, 0.3f, 0.4f, 1f), 0f);
-                Block(holder.transform, "Clock", new Vector3(0f, 1.8f, 0f), new Vector3(1.6f, 1.6f, 0.4f), lamp, 0f);
-                Block(holder.transform, "Bell", new Vector3(8f, 1.7f, 0f), new Vector3(1.0f, 1.4f, 1.0f), new Color(0.8f, 0.65f, 0.3f, 1f), 0f);
-            }
-        }
     }
 
-    // Marks whether the belt feed still runs (the lamps shown on the props); a plain flag the chapter flips at the lever.
+    // What this run adds to the scene besides the map's own scene (for the scene scan).
+    public List<GameObject> DressingRoots() {
+        var list = new List<GameObject>();
+        if (beacon != null) {
+            list.Add(beacon);
+        }
+        if (gateProps != null) {
+            list.Add(gateProps);
+        }
+        return list;
+    }
+
+    // Marks whether the belt feed still runs; a plain flag the chapter flips at the lever (FloorMap reads ChapterRun.FeedBroken).
     public class FloorState : MonoBehaviour {
-        bool feed = true;
+        public bool Feed { get; private set; } = true;
         public void SetBool(string key, bool value) {
             if (key == "feed") {
-                feed = value;
-                foreach (Renderer r in GetComponentsInChildren<Renderer>()) {
-                    if (r.name == "Red Lamp") {
-                        r.material.color = value ? new Color(0.9f, 0.14f, 0.1f, 1f) : new Color(0.25f, 0.05f, 0.05f, 1f);
-                    }
-                }
+                Feed = value;
             }
         }
-    }
-
-    void Block(Transform parent, string name, Vector3 local, Vector3 size, Color color, float roll) {
-        var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        cube.name = name;
-        Destroy(cube.GetComponent<Collider>());
-        cube.transform.SetParent(parent, false);
-        cube.transform.localPosition = local;
-        cube.transform.localScale = size;
-        cube.transform.localRotation = Quaternion.Euler(0f, 0f, roll);
-        var shader = SafeShader.Find("Sprites/Default");
-        if (shader != null) {
-            cube.GetComponent<Renderer>().material = new Material(shader) { color = color };
-        } else {
-            UpgradeLook.Paint(cube, color);
-        }
-        cube.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-    }
-
-    void Block(string name, Vector3 local, Vector3 size, Color color) {
-        var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        cube.name = name;
-        Destroy(cube.GetComponent<Collider>());
-        cube.transform.SetParent(gateProps.transform, false);
-        cube.transform.localPosition = local;
-        cube.transform.localScale = size;
-        var shader = SafeShader.Find("Sprites/Default");
-        if (shader != null) {
-            cube.GetComponent<Renderer>().material = new Material(shader) { color = color };
-        } else {
-            UpgradeLook.Paint(cube, color);
-        }
-        cube.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
     }
 
     // ---------------------------------------------------------------- Journal
@@ -1180,7 +1111,7 @@ public class ChapterRun : MonoBehaviour {
             }
         }
         if (extraText != null) {
-            extraText.text = GoalMet ? "Extra met: " + Journal.Goals[Chapter].Name : "Extra: " + Journal.Goals[Chapter].Name + " (" + Journal.Goals[Chapter].Ask + ")  J: journal";
+            extraText.text = GoalMet ? "Extra met: " + Journal.Goals[Chapter].Name : "Extra: " + Journal.Goals[Chapter].Name + " (" + Journal.Goals[Chapter].Ask + ")  " + (UiFit.Touch ? "Journal button" : "J: journal");
         }
         if (PlayInput.GetKeyDown(KeyCode.J)) {
             PauseMenu.Open();
@@ -1201,6 +1132,9 @@ public class ChapterRun : MonoBehaviour {
         GameAudio.Play("stamp", 0.5f, 1.3f);
         Fx.Ring(findAt + Vector3.up * 0.2f, 6f, new Color(1f, 0.88f, 0.5f, 0.8f), 0.8f);
         Events.Add("journal|found " + Journal.Finds[Chapter].Name);
+        if (Pacing != null) {
+            Pacing.PickedUp("the hidden find, " + Journal.Finds[Chapter].Name);
+        }
         Say("N|Found: " + Journal.Finds[Chapter].Name + ". Kept in the journal.", 3.4f);
         PaidCheck();
     }

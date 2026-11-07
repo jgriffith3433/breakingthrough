@@ -64,7 +64,7 @@ static class SetupMainMenu {
     }
 
     static void EnsureBuild() {
-        var scenes = new EditorBuildSettingsScene[11];
+        var scenes = new EditorBuildSettingsScene[12];
         scenes[0] = new EditorBuildSettingsScene(ScenePath, true);
         scenes[1] = new EditorBuildSettingsScene("Assets/scene2.unity", true);
         scenes[2] = new EditorBuildSettingsScene("Assets/Campaign.unity", true);
@@ -78,6 +78,8 @@ static class SetupMainMenu {
         scenes[9] = new EditorBuildSettingsScene("Assets/Maps/Map_Office.unity", true);
         // Campaign levels are their own scenes (Level*.cs): Level_1_Yard is Chapter 1.
         scenes[10] = new EditorBuildSettingsScene("Assets/Maps/Level_1_Yard.unity", true);
+        // The Model Kit's preview gallery and vignettes (KitPreview.cs, the kit-preview playtest).
+        scenes[11] = new EditorBuildSettingsScene("Assets/Maps/KitPreview.unity", true);
         EditorBuildSettings.scenes = scenes;
         AssetDatabase.SaveAssets();
     }

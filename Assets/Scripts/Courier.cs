@@ -61,33 +61,13 @@ public class Courier : MonoBehaviour {
 
     // The notice: a pale board on a dark clip held in front of the chest. Built in code, no collider.
     void BuildClipboard() {
-        var shader = SafeShader.Find("Sprites/Default");
-        var holder = new GameObject("Clipboard");
+        GameObject holder = CharacterKit.Prop("clipboard");
+        holder.name = "Clipboard";
         holder.transform.SetParent(transform, false);
-        clipRest = new Vector3(0.42f, 0.55f, 0.55f);
+        clipRest = new Vector3(0.32f, 0.5f, 0.36f);
+        holder.transform.localScale = Vector3.one * 0.8f;
         holder.transform.localPosition = clipRest;
         holder.transform.localRotation = Quaternion.Euler(-18f, 0f, 6f);
-        var board = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        board.name = "Board";
-        Destroy(board.GetComponent<Collider>());
-        board.transform.SetParent(holder.transform, false);
-        board.transform.localScale = new Vector3(0.46f, 0.62f, 0.04f);
-        var paper = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        paper.name = "Notice";
-        Destroy(paper.GetComponent<Collider>());
-        paper.transform.SetParent(holder.transform, false);
-        paper.transform.localPosition = new Vector3(0f, -0.02f, 0.03f);
-        paper.transform.localScale = new Vector3(0.38f, 0.5f, 0.02f);
-        if (shader != null) {
-            board.GetComponent<Renderer>().material = new Material(shader) { color = new Color(0.18f, 0.16f, 0.15f, 1f) };
-            paper.GetComponent<Renderer>().material = new Material(shader) { color = new Color(0.96f, 0.93f, 0.82f, 1f) };
-        } else {
-            UpgradeLook.Paint(board, new Color(0.18f, 0.16f, 0.15f));
-            UpgradeLook.Paint(paper, new Color(0.96f, 0.93f, 0.82f));
-        }
-        foreach (Renderer r in holder.GetComponentsInChildren<Renderer>()) {
-            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        }
         clipboard = holder.transform;
     }
 
@@ -243,15 +223,11 @@ public class Courier : MonoBehaviour {
         }
         mark.transform.position = at;
         fill = null;
-        var rim = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        rim.name = "Mark";
-        Destroy(rim.GetComponent<Collider>());
+        var rim = KitMesh.Disc("Mark");
         rim.transform.SetParent(mark.transform, false);
         rim.transform.localScale = new Vector3(MarkRadius * 2f, 0.02f, MarkRadius * 2f);
         rim.transform.localPosition = new Vector3(0f, 0.07f, 0f);
-        var inner = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        inner.name = "Mark Fill";
-        Destroy(inner.GetComponent<Collider>());
+        var inner = KitMesh.Disc("Mark Fill");
         inner.transform.SetParent(mark.transform, false);
         inner.transform.localScale = new Vector3(0.1f, 0.025f, 0.1f);
         inner.transform.localPosition = new Vector3(0f, 0.09f, 0f);

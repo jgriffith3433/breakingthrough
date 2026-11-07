@@ -180,7 +180,7 @@ public class UpgradeLook : MonoBehaviour {
 
     static void Tint(GameObject go, Color color) {
         Renderer renderer = go.GetComponent<Renderer>();
-        Shader shader = SafeShader.Find("Sprites/Default");
+        Shader shader = SafeShader.For(color);
         if (renderer == null || shader == null) {
             Paint(go, color);
             return;
@@ -234,6 +234,23 @@ public class UpgradeLook : MonoBehaviour {
         Renderer meshRenderer = mesh.GetComponent<Renderer>();
         if (meshRenderer != null && mesh.font != null && mesh.font.material != null) {
             meshRenderer.material = mesh.font.material;
+        }
+        // A dark copy just behind it, so the number reads against the pale Hollow ground and the night sky alike.
+        var shade = new GameObject("Shade");
+        shade.transform.SetParent(go.transform, false);
+        float edge = mesh.characterSize * 0.28f;
+        shade.transform.localPosition = new Vector3(edge, -edge, 0.02f);
+        TextMesh back = shade.AddComponent<TextMesh>();
+        back.text = mesh.text;
+        back.font = mesh.font;
+        back.fontSize = mesh.fontSize;
+        back.fontStyle = mesh.fontStyle;
+        back.characterSize = mesh.characterSize;
+        back.anchor = mesh.anchor;
+        back.color = new Color(0.04f, 0.03f, 0.08f, 0.95f);
+        Renderer backRenderer = back.GetComponent<Renderer>();
+        if (backRenderer != null && mesh.font != null && mesh.font.material != null) {
+            backRenderer.material = mesh.font.material;
         }
         go.AddComponent<FloatUp>();
     }

@@ -279,6 +279,12 @@ public static class PlaytestBeats {
             yield break;
         }
         run.Event("exit-card", level.Yard.Prompt.Replace('\n', ' '));
+        run.Event("pacing", "chapter 1: " + LevelYard.Encounters + " encounter (the Clearing Crew, placed asleep) before the exit, " + Mathf.RoundToInt(level.Yard.CombatSeconds) + " s of combat in " + Mathf.RoundToInt(level.Seconds) + " s = " + Mathf.RoundToInt(level.Yard.CombatShare * 100f) + "%");
+        run.Metric("pacingEncounters1", LevelYard.Encounters);
+        run.Metric("pacingCombatShare1", Mathf.Round(level.Yard.CombatShare * 100f));
+        if (level.Yard.CombatShare >= 0.5f) {
+            run.Problem(PlaytestSeverity.Bug, "campaign-beats: Chapter 1 was " + Mathf.RoundToInt(level.Yard.CombatShare * 100f) + "% combat, the goal is under half");
+        }
         yield return Wait(1.5f);
         PlayInput.Tap(KeyCode.E);
         yield return run.Until(() => SceneManager.GetActiveScene().name == CampaignSave.Scene && ChapterScene.Instance != null, 30f, "the hub after the level");

@@ -100,6 +100,21 @@ it. Once every chapter is filed, the case file may be run again on **Hard**: the
 Hard the bots carry 75% more health and every blow on Slice lands twice as hard, the HUD says HARD, and Hard keeps its own best
 ranks. Code: `CampaignGrade.cs`, `grade` playtest.
 
+## Quiet first: how a chapter is paced
+
+The Hollow is mostly quiet. Yo Bots do not stream in on a timer: they are delivered, and a delivery is a place, not a clock.
+
+- **The opening is always calm.** Wallit walks (the place is shown before it is fought over), the opening scene is the talk,
+  and he picks up the chapter's **Receipt**, a lost slip lying on the route ("Receipt. Proof I was here." Wallit keeps
+  money-minded things). No bot is awake until the three are done.
+- **At most three deliveries, then the boss.** Each delivery is a few bots (and, in Chapters 2, 3 and 5, the mini-boss)
+  asleep with their lids down at a fixed spot: on the route in Chapters 2, 3 and 4, out from the circle in 5 and 6.
+  They wake when Wallit walks up to them. The first one says "Hello! Uploading victory! Striking this address now!" (Yo Bots
+  stay chirpy). A delivery he walks past stays asleep and is put away; the mini-boss moves to the next one.
+- **A breath between.** After a delivery falls, ten quiet seconds pass before the next is even placed. Slice and Wallit use
+  them (Slice: "Clean."; Wallit: money). The boss comes when the deliveries are down, as before.
+- Chapter 1 is its own level (one delivery, the Clearing Crew, then the Courier). Arcade is unchanged: its waves still come.
+
 ## Chapter scenes
 
 A chapter can open with a **cutscene**: Begin on the chapter card, and before the fighting the Hollow freezes under letterbox bars. A
@@ -336,6 +351,13 @@ door and that chapter's card comes up; Begin plays it. On the left wall hangs th
 same list (*filed (replay)*, *next*, *locked*). On the right wall is Tick's desk (see "The lodgers"). A replay never takes the file back: `cleared` and the chapter the file is on only move forward. A file
 with chapters behind it also has a **Hub** button on its card, so reopening a file reaches the office too. `ChapterHub.cs` builds it
 (flat, collider-free, in code); `ChapterScene.cs` owns the card it leads to. The `hub-doors` playtest plays it.
+
+**The hub is alive (`HubAmbience.cs`).** No waves, no timer: the office is a place. While Wallit is about, each lodger keeps to its own idle
+action: Tick swings like a pendulum and now and then strikes the hour, Brim looks about and tips a hat it does not have, Spare tinkers with
+its one claw and hops with a chirp, Chime rocks on its loop and rings. Step into Slice's ring and she and Wallit trade a short exchange
+(`Story.HubRing`, two per chapters-cleared stage, taking turns, none repeated from an earlier stage): after one notice, "Standing in your
+ring. Rent's due." / "Paid. In kind. Stay."; after all six, "Number on the wall. Mine?" / "Yours. Keep the receipt." Wallit money, Slice
+clipped. The `hub-ambience` playtest plays it.
 
 Inside the circle Wallit is on the books, and the books keep an **account** for him: every bot he clears adds **XP** (5 for a Yo Bot, twice
 its bolts for the heavier kinds, a boss pays 50 more), shown as `LV 2   XP 34/90` top left. A level is a clause the books accept: Wallit

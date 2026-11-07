@@ -90,6 +90,7 @@ public class WaveDirector : MonoBehaviour {
     Text coinText;
     Image purseFill;
     GameObject lostPanel;
+    RectTransform lostRect;
     Text lostBody;
     CanvasScaler hudScaler;
     RectTransform hudPurse;
@@ -212,7 +213,7 @@ public class WaveDirector : MonoBehaviour {
 
     void BeginIntro() {
         phase = Phase.Intro;
-        phaseLeft = Wave == 1 ? 1.8f : 1.35f;
+        phaseLeft = Wave == 1 ? 1.0f : 1.35f;
         pending.Clear();
         IsBuilding = false;
         spawnAngle = Random.Range(0f, 360f);
@@ -532,6 +533,16 @@ public class WaveDirector : MonoBehaviour {
         return enemy;
     }
 
+    // A Campaign encounter's bot, placed at a spot and asleep (Enemy.Dormant) until the encounter wakes it (ChapterPacing).
+    public Enemy SpawnPlaced(BotKind kind, Vector3 spot) {
+        Vector3 origin = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
+        BotDef def = BotRoster.ForSpawn(kind, Wave);
+        spot.y = GroundNear(spot, origin.y) + 0.55f + def.Scale * 0.08f;
+        Enemy enemy = Spawn(def, spot, true);
+        enemy.Dormant = true;
+        return enemy;
+    }
+
     // A chapter's mid-way mini-boss, placed on the ring like the chapter's bots.
     public Enemy SpawnMini(BotKind kind, string name, int hits, Color tint, float radius) {
         Vector3 origin = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
@@ -603,6 +614,11 @@ public class WaveDirector : MonoBehaviour {
         float inner = (small ? 30f : 24f) + reach + Mathf.Max(0f, def.Scale - 1f) * 0.35f;
         float outer = Mathf.Min(inner + band, 150f);
         inner = Mathf.Min(inner, outer - 10f);
+        if (Wave == 1) {
+            // Opening: the first bot is almost at the bench, the rest a short walk out, so the first swing comes in seconds.
+            inner = spawnSerial <= 1 ? 6f : 12f + spawnSerial * 1.5f;
+            outer = inner + (spawnSerial <= 1 ? 1.5f : 8f);
+        }
         float jitter = small ? 110f : 80f;
         float gap = small ? 8f + waveT * 0.08f : Mathf.Max(7f, def.Scale * 0.85f);
         Vector3 spot = origin;
@@ -1019,13 +1035,14 @@ public class WaveDirector : MonoBehaviour {
         lostPanel.transform.SetParent(canvasGo.transform, false);
         var panel = lostPanel.AddComponent<Image>();
         UiSkin.Round(panel);
-        panel.color = new Color(0.05f, 0.04f, 0.04f, 0.82f);
+        panel.color = new Color(0.05f, 0.04f, 0.04f, 0.97f);
         panel.raycastTarget = false;
         var panelRect = lostPanel.GetComponent<RectTransform>();
         panelRect.anchorMin = new Vector2(0.5f, 0.5f);
         panelRect.anchorMax = new Vector2(0.5f, 0.5f);
         panelRect.pivot = new Vector2(0.5f, 0.5f);
         panelRect.sizeDelta = new Vector2(900f, 700f);
+        lostRect = panelRect;
 
         var title = MakeText(lostPanel.transform, font, "Address struck off", 58, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -36f), new Vector2(680f, 90f));
         title.color = new Color(1f, 0.45f, 0.35f);
@@ -1052,6 +1069,7 @@ public class WaveDirector : MonoBehaviour {
             Fit(coinText, 26, new Vector2(36f, -24f), new Vector2(860f, 40f));
             hudPurse.anchoredPosition = new Vector2(36f, -68f);
             lostPanel.transform.localScale = Vector3.one;
+            lostRect.anchoredPosition = Vector2.zero;
             return;
         }
         // Under the musician's bar, which keeps the top middle.
@@ -1063,6 +1081,8 @@ public class WaveDirector : MonoBehaviour {
         Fit(detailText, 22, new Vector2(0f, tall ? -196f : -136f), new Vector2(middle, 56f));
         float fit = Mathf.Min(1f, (size.x - 40f) / 900f, (size.y - 40f) / 700f);
         lostPanel.transform.localScale = new Vector3(fit, fit, 1f);
+        // Portrait: sit the panel in the upper half, so the page's "How was that run?" card has the bottom to itself.
+        lostRect.anchoredPosition = new Vector2(0f, tall ? Mathf.Max(0f, (size.y - 700f * fit) * 0.5f - 40f) : 0f);
     }
 
     static void Fit(Text text, int fontSize, Vector2 position, Vector2 box) {
