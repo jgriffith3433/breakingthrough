@@ -5,6 +5,7 @@
     {
       "id": "s1",
       "back": "ch1_open_1",
+      "video": "ch1_open_1.mp4",
       "speaker": "N",
       "seconds": 5.5,
       "fade": 0.7,
