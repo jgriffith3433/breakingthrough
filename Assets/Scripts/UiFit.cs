@@ -129,7 +129,9 @@ public static class UiFit {
         rect.anchorMin = new Vector2(0.5f, 1f);
         rect.anchorMax = new Vector2(0.5f, 1f);
         rect.pivot = new Vector2(0.5f, 1f);
-        rect.anchoredPosition = new Vector2(0f, -300f - 70f * slot);
+        // Portrait: the wave bar's "Yo Bot / n left" row sits at about 390-420 units down, so the band starts below it.
+        float top = Mode == UiMode.Tall ? 450f : 300f;
+        rect.anchoredPosition = new Vector2(0f, -top - 70f * slot);
         rect.sizeDelta = new Vector2(Mathf.Min(1000f, Size.x - 40f), 64f);
     }
 
