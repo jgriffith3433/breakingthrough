@@ -134,6 +134,9 @@ public class ControlsHelp : MonoBehaviour {
     // Arcade only: while no live bot is on screen, an arrow at the screen edge points to the nearest one.
     void TickArrow() {
         ArrowShown = false;
+        if (arrow == null || arrowRect == null) {
+            return;
+        }
         Camera cam = Camera.main;
         Transform player = Musician.Instance != null ? Musician.Instance.transform : null;
         GameObject playerGo = GameObject.FindGameObjectWithTag("Player");
@@ -217,12 +220,36 @@ public class ControlsHelp : MonoBehaviour {
         }
     }
 
+    static int guardsLogged;
+
+    // One warning per failure, at most 5 a session, so a per-frame fault can't flood the console.
+    public static void Guard(string where, System.Exception e) {
+        if (guardsLogged >= 5) {
+            return;
+        }
+        guardsLogged++;
+        Debug.LogWarning("[Guard] " + where + ": " + e.GetType().Name + ": " + e.Message + "\n" + e.StackTrace);
+    }
+
     void Update() {
         if (laidStamp != UiFit.Stamp) {
             Layout();
         }
-        TickOnboarding();
-        TickArrow();
+        // A NullReferenceException at Arcade wave 1 start (smoke@live) had no managed stack in the WebGL build. If it
+        // comes from here, name the tick in a [Guard] warning (the playtest reports it) instead of an uncaught error.
+        try {
+            TickOnboarding();
+        } catch (System.Exception e) {
+            Guard("ControlsHelp.TickOnboarding", e);
+        }
+        try {
+            TickArrow();
+        } catch (System.Exception e) {
+            Guard("ControlsHelp.TickArrow", e);
+            if (arrow != null) {
+                arrow.gameObject.SetActive(false);
+            }
+        }
         bool building = WaveDirector.IsBuilding;
         bool touch = UiFit.Touch;
         int wave = Mathf.Max(1, WaveDirector.Wave);

@@ -201,6 +201,7 @@ public static class Playtest {
         lockChecks = 0;
         lockNearest = 0;
         lockWrong = 0;
+        exceptionsTold = 0;
         batTold = 0;
         batRun = id == "bat";
         lockSwitchesSeen = ZeldaStyleCamera.LockSwitches;
@@ -8650,8 +8651,30 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
     }
 
     // Errors are caught by the package; warnings about missing pieces are worth a line too.
+    static int exceptionsTold;
+
     static void OnLog(string message, string stack, LogType type) {
-        if (run == null || run.Done || type != LogType.Warning) {
+        if (run == null || run.Done) {
+            return;
+        }
+        // Exceptions and errors: write the stack and where the game was into the report, so a WebGL error with no
+        // console trace (smoke@live, NRE at Arcade wave 1 start) can be read from the timeline's `exception` event.
+        if ((type == LogType.Exception || type == LogType.Error) && exceptionsTold < 8) {
+            exceptionsTold++;
+            string trace = string.IsNullOrEmpty(stack) ? "(no stack)" : stack.Trim().Replace("\n", " | ");
+            if (trace.Length > 1500) {
+                trace = trace.Substring(0, 1500);
+            }
+            run.Event("exception", type + ": " + message.Split('\n')[0] + " | at t=" + Time.realtimeSinceStartup.ToString("0.0")
+                + " s, frame " + Time.frameCount + ", scene " + SceneManager.GetActiveScene().name + ", wave " + WaveDirector.Wave
+                + ", waiting " + WaveDirector.Waiting + " | stack: " + trace);
+            return;
+        }
+        if (type != LogType.Warning) {
+            return;
+        }
+        if (message.StartsWith("[Guard]")) {
+            run.Event("guard", message.Replace("\n", " | "));
             return;
         }
         string first = message.Split('\n')[0];
