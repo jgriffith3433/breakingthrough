@@ -7601,6 +7601,8 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         int missing = 0;
         int placeholderStart = Cutscene.PlaceholderShots;
         int artShots = 0;
+        int clipsPlayed = 0;
+        int clipErrors = 0;
         float slowestLoad = 0f;
         var castShots = new System.Collections.Generic.Dictionary<string, int>();
         for (int r = 0; r < ids.Length && !run.Done; r++) {
@@ -7663,11 +7665,23 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                 yield break;
             }
             int miss = 0;
+            int reelClips = 0;
             var reelEvents = new System.Collections.Generic.List<string>(Cutscene.Events);
             for (int e = Mathf.Min(eventsBefore, reelEvents.Count); e < reelEvents.Count; e++) {
                 if (reelEvents[e].StartsWith("missing-art|")) {
                     miss++;
                 }
+                if (reelEvents[e] == "video|playing") {
+                    clipsPlayed++;
+                    reelClips++;
+                } else if (reelEvents[e].StartsWith("video-error|")) {
+                    clipErrors++;
+                    run.Event("cinematics-video-error", ids[r] + ": " + reelEvents[e] + " (the still keeps playing)");
+                }
+            }
+            run.Event("cinematics-video", ids[r] + ": " + reelClips + " animated clip(s) played, skipped mid-scene " + skipped);
+            if (reelClips < 1) {
+                run.Problem(PlaytestSeverity.Bug, "chapter-cinematics: " + ids[r] + " played no animated clip");
             }
             missing += miss;
             reels++;
@@ -7682,6 +7696,8 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             }
         }
         int overlaps = Cutscene.Overlaps + WallitVoice.Overlaps;
+        run.Metric("cinematicsClips", clipsPlayed);
+        run.Metric("cinematicsClipErrors", clipErrors);
         run.Metric("cinematicsReels", reels);
         run.Metric("cinematicsShots", Cutscene.ShotsShown);
         run.Metric("cinematicsVoiceLines", Cutscene.VoiceLines);
