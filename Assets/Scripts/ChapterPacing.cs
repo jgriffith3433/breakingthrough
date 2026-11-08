@@ -307,6 +307,7 @@ public class ChapterPacing {
             FirstAttackAt = Seconds;
             ChapterRun.Events.Add("first-attack|" + Mathf.RoundToInt(Seconds) + " s into the chapter, after the opening (" + Mathf.RoundToInt(OpeningAt) + " s)");
         }
+        GameAudio.Play("yobot_wake", 0.8f, 1f + 0.05f * (index % 3));
         for (int i = 0; i < f.Bots.Count; i++) {
             if (f.Bots[i] != null) {
                 f.Bots[i].Dormant = false;

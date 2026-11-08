@@ -368,6 +368,7 @@ public class ReadingMap : OwnMap {
         Fx.Ring(Polar(0f, 30f, 0.3f), 40f, new Color(0.95f, 0.85f, 0.55f, 0.7f), 0.9f);
         if (page >= Pages) {
             open = true;
+            GameAudio.Play("gallery_rise", 0.9f);
         }
     }
 

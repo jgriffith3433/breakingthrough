@@ -93,6 +93,7 @@ public class LevelScene : MonoBehaviour {
         Checkpoint = Yard.PlayerStart;
         Yard.Begin();
         MusicDirector.Play(MusicDirector.ChapterTrack(Chapter));
+        MusicDirector.Ambience(MusicDirector.AmbienceFor(Chapter));
         Bed = SceneMood.Bed(transform, SceneMood.Kind.Yard);
         RunAnalytics.Screen("level_" + (Chapter + 1));
     }

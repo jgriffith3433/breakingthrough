@@ -146,6 +146,7 @@ public class ChapterHub : MonoBehaviour {
     void Awake() {
         Instance = this;
         MusicDirector.Play("hub");
+        MusicDirector.Ambience("amb_hub");
     }
 
     void OnDestroy() {
@@ -432,6 +433,8 @@ public class ChapterHub : MonoBehaviour {
         TalkText = (l[0] == 'W' ? "Wallit" : l[0] == 'S' ? "Slice" : Story.Lodgers[chatLodger].Name) + ": \"" + l.Substring(2) + "\"";
         if (l[0] == 'W' || l[0] == 'S') {
             CastVoice.SayLater(l.Substring(0, 1), l.Substring(2), "hub");
+        } else if (l[0] == 'L') {
+            CastVoice.SayLater(CastVoice.LodgerCode(chatLodger), l.Substring(2), "hub");
         }
         GameAudio.Play("paper", 0.3f, 1.2f);
         nextChatAt = Time.unscaledTime + Mathf.Clamp(1.2f + l.Length * 0.05f, 2.4f, 5f);
@@ -455,6 +458,7 @@ public class ChapterHub : MonoBehaviour {
             text = null;
             chatLines.AddRange(c.Lines);
             chatLodger = c.Lodger;
+            GameAudio.Play("talk_start", 0.7f);
             NextChatLine();
             RunAnalytics.Screen("hub_chat_" + c.Id);
             PlaceLodgers();
@@ -515,6 +519,11 @@ public class ChapterHub : MonoBehaviour {
         Talks++;
         if (text != null) {
             TalkText = who + ": \"" + text + "\"";
+            // The lodger's own line for the chapters cleared is spoken (an errand's ask after it stays text).
+            string spoken = LodgerLine(i);
+            if (text.StartsWith(spoken)) {
+                CastVoice.SayLater(CastVoice.LodgerCode(i), spoken, "hub");
+            }
         }
         talk.color = Hex(Story.Lodgers[i].Colour);
         if (text != null) {
