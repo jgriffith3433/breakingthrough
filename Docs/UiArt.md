@@ -74,7 +74,7 @@ Shown on the main menu's upgrade forms. Retired slots 2, 3, 5, 7 and 8 have none
 
 ## Ability icons (`CampaignProgress.Abilities`)
 
-Made and loadable (`UiArt.Ability(name)`); the campaign HUD's ability line is text and does not draw them yet (next part: icons in the slot row, 44 px pads on phones).
+Drawn in the campaign HUD as a row of 44 unit icons under the XP line (`ChapterRun`, Desktop only, dimmed while a slot waits or is locked; phones keep the text line and the touch pads).
 
 | Ability | File |
 |---|---|
@@ -88,7 +88,7 @@ Made and loadable (`UiArt.Ability(name)`); the campaign HUD's ability line is te
 
 ## What is left
 
-- Ability icons in the campaign HUD slot row and the hub's level-up list.
+- Ability icons in the hub's level-up list and on phones.
 - Boon icons in the in-run HUD list and on phone cards (a 56 unit icon needs the Wide layout re-measured).
 - Panel frame for the settings panel, chapter cards and the hub board (they use `UiSkin.Round` directly).
 - `polish` logs `ui-art` per screen: which of these pieces are drawing.
