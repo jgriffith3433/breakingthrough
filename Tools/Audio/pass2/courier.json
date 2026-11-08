@@ -1,0 +1,21 @@
+{
+"cast": "courier",
+"voice": "hv_young_hero",
+"provider": "open",
+"ids": [
+"courier_second_notice_this_address_is_still_unknown",
+"courier_special_delivery_notice_of_striking"
+],
+"lines": [
+{
+"who": "courier",
+"text": "Second notice! This address is still unknown.",
+"direction": "cheerful delivery clerk, upbeat and unbothered"
+},
+{
+"who": "courier",
+"text": "Special delivery! Notice of striking!",
+"direction": "cheerful delivery clerk, upbeat and unbothered"
+}
+]
+}
