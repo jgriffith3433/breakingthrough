@@ -731,14 +731,14 @@ public class ChapterHub : MonoBehaviour {
         if (laidStamp != UiFit.Stamp) {
             Layout();
         }
-        if (JournalPanel.IsOpen) {
+        if (JournalPanel.IsOpen || PauseMenu.IsOpen) {
             return;
         }
         if (PlayInput.GetKeyDown(KeyCode.J) && CampaignSave.Active >= 0) {
             JournalPanel.Open(CampaignSave.Active);
             return;
         }
-        if (MenuNav.Back && Time.frameCount != JournalPanel.ClosedFrame) {
+        if (MenuNav.Back && Time.frameCount != JournalPanel.ClosedFrame && Time.frameCount != PauseMenu.ClosedFrame && Time.frameCount != SettingsPanel.ClosedFrame) {
             if (BoardOpen) {
                 CloseBoard();
             } else {

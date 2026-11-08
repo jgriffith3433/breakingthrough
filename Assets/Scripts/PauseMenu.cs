@@ -21,12 +21,15 @@ public class PauseMenu : MonoBehaviour {
         get { return instance; }
     }
     public Button PauseButton { get; private set; }
+    public RectTransform Deck { get { return deck; } }
     public Button ResumeButton { get; private set; }
     public Button SettingsButton { get; private set; }
     public Button JournalButton { get; private set; }
     public Button QuitButton { get; private set; }
     public Button SkipSceneButton { get; private set; }
     public Button RestartButton { get; private set; }
+    // The frame a pause closed, so the Escape that closed it does not also act in the hub or the level under it.
+    public static int ClosedFrame { get; private set; } = -1;
     public static int SceneSkips { get; private set; }
     public static int Restarts { get; private set; }
 
@@ -43,6 +46,7 @@ public class PauseMenu : MonoBehaviour {
     Text restartLabel;
     bool wasLocked;
     int laidStamp = -1;
+    Rect laidSafe;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
     [DllImport("__Internal")]
@@ -67,7 +71,9 @@ public class PauseMenu : MonoBehaviour {
     static void Ensure() {
         IsOpen = false;
         HoldFire = false;
-        if (SceneManager.GetActiveScene().name != MetaProgress.GameScene) {
+        // The game scene (Arcade and the chapter runs), the campaign's own scene (the hub) and the levels.
+        string scene = SceneManager.GetActiveScene().name;
+        if (scene != MetaProgress.GameScene && scene != CampaignSave.Scene && !scene.StartsWith("Level_")) {
             return;
         }
         if (FindAnyObjectByType<PauseMenu>() != null) {
@@ -78,7 +84,20 @@ public class PauseMenu : MonoBehaviour {
 
     // Nothing to pause during a level-up card, after the musician falls, or before the run is set up.
     static bool CanPause {
-        get { return WaveDirector.Instance != null && !WaveDirector.IsLost && !LevelUpScreen.IsOpen && !StoryScreen.IsOpen; }
+        get { return (WaveDirector.Instance != null && !WaveDirector.IsLost && !LevelUpScreen.IsOpen && !StoryScreen.IsOpen) || InHub || InLevel; }
+    }
+
+    // The hub: its yard is up (not the board or a chapter card) and the journal is closed.
+    public static bool InHub {
+        get {
+            ChapterHub hub = ChapterHub.Instance;
+            return hub != null && hub.Shown && !hub.BoardOpen && !(ChapterScene.Instance != null && ChapterScene.Instance.CardUp) && !JournalPanel.IsOpen;
+        }
+    }
+
+    // A level (Chapter 1): until it is finished or on its way out.
+    public static bool InLevel {
+        get { return LevelScene.Instance != null && !LevelScene.Instance.Leaving && !LevelScene.Instance.Completed; }
     }
 
     void Awake() {
@@ -121,6 +140,7 @@ public class PauseMenu : MonoBehaviour {
         }
         SettingsPanel.Close();
         IsOpen = false;
+        ClosedFrame = Time.frameCount;
         HoldFire = true;
         if (instance != null) {
             instance.root.SetActive(false);
@@ -228,6 +248,8 @@ public class PauseMenu : MonoBehaviour {
         RunAnalytics.Screen("menu");
         if (ChapterRun.Instance != null) {
             ChapterRun.Instance.Abandon();
+        } else if (ChapterHub.Instance != null && ChapterScene.Instance != null) {
+            ChapterScene.Instance.LeaveToMenu();
         } else {
             SceneManager.LoadScene(MetaProgress.MenuScene);
         }
@@ -240,7 +262,7 @@ public class PauseMenu : MonoBehaviour {
         if (root == null) {
             return;
         }
-        if (laidStamp != UiFit.Stamp) {
+        if (laidStamp != UiFit.Stamp || Screen.safeArea != laidSafe) {
             Layout();
         }
 
@@ -250,7 +272,8 @@ public class PauseMenu : MonoBehaviour {
         wasLocked = locked == 1;
 
         bool settings = SettingsPanel.IsOpen || SettingsPanel.ClosedFrame == Time.frameCount || JournalPanel.IsOpen || JournalPanel.ClosedFrame == Time.frameCount;
-        bool key = PlayInput.GetKeyDown(KeyCode.P) || MenuNav.Back || MenuNav.PadStart;
+        bool own = ChapterHub.Instance != null || LevelScene.Instance != null;   // Esc leaves the hub and the level, so only P and Start pause there
+        bool key = PlayInput.GetKeyDown(KeyCode.P) || MenuNav.PadStart || (MenuNav.Back && (IsOpen || !own));
 
         if (IsOpen) {
             Time.timeScale = 0f;
@@ -265,7 +288,7 @@ public class PauseMenu : MonoBehaviour {
             Open();
         }
 
-        bool showButton = !IsOpen && CanPause && !Cutscene.IsOpen;
+        bool showButton = !IsOpen && CanPause && !Cutscene.IsOpen && !JournalPanel.IsOpen;
         if (PauseButton.gameObject.activeSelf != showButton) {
             PauseButton.gameObject.SetActive(showButton);
         }
@@ -273,7 +296,7 @@ public class PauseMenu : MonoBehaviour {
 
     // A pause ends by itself if the run under it does (a scene change, a wave skip key from tooling).
     static bool CanPauseWhileOpen() {
-        return WaveDirector.Instance != null && !WaveDirector.IsLost;
+        return (WaveDirector.Instance != null && !WaveDirector.IsLost) || ChapterHub.Instance != null || LevelScene.Instance != null;
     }
 
     void Build() {
@@ -357,6 +380,9 @@ public class PauseMenu : MonoBehaviour {
         UiFit.Apply(hudScaler);
         UiFit.Apply(menuScaler, 0.5f);
         UiMode mode = UiFit.Mode;
+        Vector4 safe = UiFit.SafeInsets();
+        laidSafe = Screen.safeArea;
+        bool own = ChapterHub.Instance != null || LevelScene.Instance != null;
         if (mode == UiMode.Desktop) {
             pauseRect.anchorMin = new Vector2(0.5f, 1f);
             pauseRect.anchorMax = new Vector2(0.5f, 1f);
@@ -366,11 +392,20 @@ public class PauseMenu : MonoBehaviour {
             pauseRect.anchorMin = new Vector2(1f, 1f);
             pauseRect.anchorMax = new Vector2(1f, 1f);
             pauseRect.pivot = new Vector2(1f, 1f);
-            pauseRect.anchoredPosition = mode == UiMode.Wide ? new Vector2(-336f, -12f) : new Vector2(-24f, -256f);
+            Vector2 at = mode == UiMode.Wide ? new Vector2(-336f, -12f) : new Vector2(-24f, -256f);
+            if (own) {
+                // The hub and the levels hang Journal and Menu under the top-right corner: Pause sits left of them.
+                at = new Vector2(-132f, -44f);
+            }
+            pauseRect.anchoredPosition = new Vector2(at.x - safe.y, at.y - safe.z);
         }
         Vector2 size = UiFit.Size;
-        float scale = UiFit.Compact ? Mathf.Min(1f, (size.x - 40f) / 520f, (size.y - 40f) / deck.sizeDelta.y) : 1f;
+        float usableW = size.x - safe.x - safe.y;
+        float usableH = size.y - safe.z - safe.w;
+        float scale = UiFit.Compact ? Mathf.Min(1f, (usableW - 40f) / 520f, (usableH - 40f) / deck.sizeDelta.y) : 1f;
         deck.localScale = new Vector3(scale, scale, 1f);
+        // Off a notch: the panel sits in the middle of the safe area.
+        deck.anchoredPosition = UiFit.Compact ? new Vector2((safe.x - safe.y) * 0.5f, (safe.w - safe.z) * 0.5f) : Vector2.zero;
     }
 
     Button MakeButton(Transform parent, string name, string label, Vector2 size, int fontSize, UnityEngine.Events.UnityAction click) {
