@@ -974,6 +974,11 @@ public class ChapterRun : MonoBehaviour {
         SceneManager.LoadScene(MetaProgress.MenuScene);
     }
 
+    // For the back rooms and other places that hand over a short exchange: said one line at a time, each in its voice.
+    public void TellLines(string[] lines) {
+        Tell(lines);
+    }
+
     // Lines said one after another over the field (the boss's arrival, the defeat beat).
     void Tell(string[] lines) {
         if (lines == null) {

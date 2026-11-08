@@ -18,6 +18,10 @@ public class MovementMotor : MonoBehaviour {
     float jumpReadyAt;
     public float DistanceToGround = 0.1f;
     private bool IsGrounded;
+    // When the feet last touched ground: a short grace (coyote) window keeps a jump pressed just off a ledge, and stops a
+    // one-frame gap on a slope from flashing the jump clip or counting as a landing.
+    float lastGroundedAt = -9f;
+    public const float Coyote = 0.12f;
     private Collider MyCollider;
 
     [SerializeField]
@@ -40,11 +44,17 @@ public class MovementMotor : MonoBehaviour {
 
     void Update() {
         IsGrounded = OnGround();
+        if (IsGrounded) {
+            lastGroundedAt = Time.time;
+        }
         // Rising always falls back down. A stuck ground check used to freeze the jump speed and carry you upward.
         if (FallVelocity > 0.5f || !IsGrounded) {
             FallVelocity -= 90f * GravityMultiplier * Time.deltaTime;
         } else {
-            FallVelocity = -2f;
+            // Hold to the ground hard enough to follow a downhill slope at full speed (a fixed -2 m/s left him hovering
+            // off the yard's slopes above ~6 m/s, then "landing" with a stomp every few steps).
+            float slope = Mathf.Tan(Mathf.Min(charController.slopeLimit, 40f) * Mathf.Deg2Rad);
+            FallVelocity = -Mathf.Max(2f, GroundVelocity.magnitude * slope + 1f);
         }
         if (FallVelocity < -40f) {
             FallVelocity = -40f;
@@ -69,13 +79,22 @@ public class MovementMotor : MonoBehaviour {
             return true;
         }
 
-        float feet = charController.center.y - charController.height * 0.5f;
-        Vector3 origin = transform.position + Vector3.up * (feet + 0.25f);
+        if (FallVelocity > 0.5f) {
+            return false;
+        }
+        // A sphere the width of the capsule's foot, not one centre ray: it finds sloped ground under either edge, and its
+        // reach grows with the capsule (PlayerGrowth scales radius and height).
         int mask = LayerMask.GetMask("Ground");
         if (mask == 0) {
             mask = 1 << 3;
         }
-        return Physics.Raycast(origin, Vector3.down, 0.4f, mask, QueryTriggerInteraction.Ignore);
+        float r = charController.radius;
+        Vector3 origin = transform.position + charController.center + Vector3.down * (charController.height * 0.5f - r) + Vector3.up * 0.05f;
+        RaycastHit hit;
+        if (!Physics.SphereCast(origin, r * 0.9f, Vector3.down, out hit, 0.1f * r + charController.skinWidth + 0.25f, mask, QueryTriggerInteraction.Ignore)) {
+            return false;
+        }
+        return Vector3.Angle(hit.normal, Vector3.up) <= charController.slopeLimit + 5f;
     }
 
     public void Move(Vector3 dir) {
@@ -89,18 +108,19 @@ public class MovementMotor : MonoBehaviour {
     }
 
     public bool Airborne {
-        get { return FallVelocity > 0.5f || !OnGround(); }
+        get { return FallVelocity > 0.5f || (Time.time - lastGroundedAt > Coyote && !OnGround()); }
     }
 
     public bool TryJump(float jumpSpeed) {
         if (Time.time < jumpReadyAt) {
             return false;
         }
-        if (!(OnGround() && FallVelocity <= 0.5f)) {
+        if (FallVelocity > 0.5f || (!OnGround() && Time.time - lastGroundedAt > Coyote)) {
             return false;
         }
         FallVelocity = jumpSpeed;
         IsGrounded = false;
+        lastGroundedAt = -9f;
         jumpReadyAt = Time.time + 1f;
         return true;
     }

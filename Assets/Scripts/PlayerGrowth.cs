@@ -240,7 +240,7 @@ public class PlayerGrowth : MonoBehaviour {
 
         TrackLanding();
 
-        if (wave < MetaProgress.StompWave() || !controller.isGrounded || !TurkeyNear()) {
+        if (wave < MetaProgress.StompWave() || !OnFeet() || !TurkeyNear()) {
             stomping = false;
             return;
         }
@@ -279,8 +279,18 @@ public class PlayerGrowth : MonoBehaviour {
         return false;
     }
 
+    // On the ground by the motor's own check (slope-aware sphere probe with a short grace), not the controller's raw flag,
+    // which drops for a frame on every downhill step. Landing then fires on the grounded transition whatever the fall speed.
+    MovementMotor groundMotor;
+    bool OnFeet() {
+        if (groundMotor == null) {
+            groundMotor = GetComponent<MovementMotor>();
+        }
+        return groundMotor != null ? !groundMotor.Airborne : controller.isGrounded;
+    }
+
     void TrackLanding() {
-        if (controller.isGrounded) {
+        if (OnFeet()) {
             if (leftGround && airTime > 0.18f) {
                 Landings++;
                 if (wave >= Tuning.JumpWave) {
