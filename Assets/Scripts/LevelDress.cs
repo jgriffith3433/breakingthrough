@@ -239,6 +239,22 @@ public static class LevelDress {
 
     // ---- sky --------------------------------------------------------------------------------------------------------
 
+    // A painted panorama (Resources/Skies/<key>.png, 2:1) on Knoll/PanoSky, or null when there is none or no shader:
+    // callers then fall back to the gradient Sky below.
+    public static Material PanoSky(string key, Color tint, float spin) {
+        Shader shader = Shader.Find("Knoll/PanoSky");
+        Texture2D tex = Resources.Load<Texture2D>("Skies/" + key);
+        if (shader == null || tex == null) {
+            return null;
+        }
+        tex.wrapModeU = TextureWrapMode.Repeat;
+        var m = new Material(shader) { name = "Pano " + key };
+        m.SetTexture("_MainTex", tex);
+        m.SetColor("_Tint", tint);
+        m.SetFloat("_Spin", spin);
+        return m;
+    }
+
     public static Material Sky(string name, Color top, Color horizon, Color below, Color disc, Vector3 discDir, float discSize, float haze) {
         Shader shader = Shader.Find("Knoll/ChapterSky");
         if (shader == null) {

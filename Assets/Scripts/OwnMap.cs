@@ -291,6 +291,16 @@ public abstract class OwnMap : MonoBehaviour {
     // ------------------------------------------------------------------ Sky
     protected void SetSky(Color top, Color horizon, Color below, Color disc, Vector3 discDir, float discSize, float haze) {
         Shader shader = Shader.Find("Knoll/ChapterSky");
+        if (shader == null && Shader.Find("Knoll/PanoSky") == null) {
+            return;
+        }
+        // A painted panorama (Resources/Skies/<Key>.png) wins; the gradient below is the fallback when there is none.
+        Material pano = LevelDress.PanoSky(Key, Color.white, 0f);
+        if (pano != null) {
+            Sky = pano;
+            made.Add(Sky);
+            return;
+        }
         if (shader == null) {
             return;
         }

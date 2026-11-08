@@ -116,7 +116,7 @@ public class LevelScene : MonoBehaviour {
         RenderSettings.ambientSkyColor = new Color(0.27f, 0.33f, 0.55f);
         RenderSettings.ambientEquatorColor = new Color(0.16f, 0.2f, 0.3f);
         RenderSettings.ambientGroundColor = new Color(0.07f, 0.08f, 0.11f);
-        Material sky = LevelDress.Sky("Sky Sorting Yard", new Color(0.03f, 0.06f, 0.16f), new Color(0.15f, 0.21f, 0.35f), new Color(0.03f, 0.04f, 0.07f), new Color(0.85f, 0.9f, 1f), new Vector3(-0.35f, 0.5f, 0.8f), 0.016f, 0.5f);
+        Material sky = LevelDress.PanoSky("yard", Color.white, 0f) ?? LevelDress.Sky("Sky Sorting Yard", new Color(0.03f, 0.06f, 0.16f), new Color(0.15f, 0.21f, 0.35f), new Color(0.03f, 0.04f, 0.07f), new Color(0.85f, 0.9f, 1f), new Vector3(-0.35f, 0.5f, 0.8f), 0.016f, 0.5f);
         if (sky != null) {
             RenderSettings.skybox = sky;
         }
