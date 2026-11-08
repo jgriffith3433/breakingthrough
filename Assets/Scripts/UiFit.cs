@@ -114,6 +114,27 @@ public static class UiFit {
         }
     }
 
+    static float reservedTop;
+    static int reserveVersion;
+
+    // Units down from the canvas top that the boss bar (name, bar, golden line) covers while it is shown; 0 when it is
+    // hidden. RunHud sets it, and captions step below it (PlaceCaption), so a line never sits on the boss bar.
+    public static float ReservedTop {
+        get { return reservedTop; }
+    }
+
+    public static void ReserveTop(float units) {
+        if (Mathf.Abs(units - reservedTop) > 0.5f) {
+            reservedTop = units;
+            reserveVersion++;
+        }
+    }
+
+    // Stamp, plus a step whenever the reserved band moves: captions re-place on this one.
+    public static int CaptionStamp {
+        get { return Stamp * 1024 + (reserveVersion & 1023); }
+    }
+
     // The notch, home bar and rounded corners as canvas units: x left, y right, z top, w bottom (Screen.safeArea against Size).
     public static Vector4 SafeInsets() {
         float sw = Screen.width;
@@ -148,6 +169,8 @@ public static class UiFit {
         // Portrait: the wave bar's "Yo Bot / n left" row sits at about 390-420 units down, so the band starts below it.
         float top = Mode == UiMode.Tall ? 450f : 300f;
         Vector4 safe = SafeInsets();
+        // The boss bar's own rectangle, when it is up, pushes the band down below it.
+        top = Mathf.Max(top, reservedTop > 0f ? reservedTop + 14f - safe.z : 0f);
         // Shifted off a notch at the top, and narrowed to the safe width; the band stays between the pads' corners.
         rect.anchoredPosition = new Vector2((safe.x - safe.y) * 0.5f, -top - safe.z - 70f * slot);
         rect.sizeDelta = new Vector2(Mathf.Min(1000f, Size.x - 40f - safe.x - safe.y), 64f);

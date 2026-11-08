@@ -720,6 +720,18 @@ public class MainMenu : MonoBehaviour {
         return list.Count == 0 ? 1 : list[list.Count - 1].page + 1;
     }
 
+    // The Upgrades pages, for the phone playtest's screen audit: how many there are, and a jump to one.
+    public int ShopPages { get { return PagesOf(TabUpgrades); } }
+
+    public void ShowShopPage(int index) {
+        if (body == null) {
+            return;
+        }
+        tab = TabUpgrades;
+        page = Mathf.Clamp(index, 0, PagesOf(TabUpgrades) - 1);
+        ShowPage(0);
+    }
+
     void ShowTab(int next) {
         if (next == tab || tabButtons[next] == null) {
             return;
