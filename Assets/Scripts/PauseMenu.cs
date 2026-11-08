@@ -332,8 +332,9 @@ public class PauseMenu : MonoBehaviour {
         var deckGo = new GameObject("Panel");
         deckGo.transform.SetParent(root.transform, false);
         var deckImage = deckGo.AddComponent<Image>();
-        UiSkin.Round(deckImage);
-        deckImage.color = new Color(0.07f, 0.06f, 0.09f, 0.95f);
+        UiSkin.Framed(deckImage);
+        // With the generated frame the border takes a brass tint and its dark middle carries the text.
+        deckImage.color = UiArt.Frame != null ? new Color(0.85f, 0.7f, 0.45f, 1f) : new Color(0.07f, 0.06f, 0.09f, 0.95f);
         deck = deckImage.rectTransform;
         deck.anchorMin = new Vector2(0.5f, 0.5f);
         deck.anchorMax = new Vector2(0.5f, 0.5f);
