@@ -260,6 +260,11 @@ public class Companion : MonoBehaviour {
         } else if (foe != null && stabIn <= 0f && Flat(foe.transform.position - transform.position).magnitude - foe.BodyScale * 0.22f <= Data.Reach) {
             BeginStrike(foe);
         }
+        // Stab, slash and hurt do not loop: once one is over and she is standing, go back to idle rather than hold the
+        // last frame of the swing.
+        if (strikeLeft <= 0f && to.magnitude <= stop && clip != Musician.CLIP_IDLE && (clip != Musician.CLIP_HURT || hurtLeft <= 0f)) {
+            PlayClip(Musician.CLIP_IDLE);
+        }
         if (hurtLeft > 0f) {
             hurtLeft -= dt;
         }

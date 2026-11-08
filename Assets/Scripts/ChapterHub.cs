@@ -794,6 +794,7 @@ public class ChapterHub : MonoBehaviour {
             }
         }
         bool moving = move.sqrMagnitude > 0.01f;
+        float hubSpeed = 0f;
         if (moving) {
             Vector3 next = Player.position + move * Speed * Time.unscaledDeltaTime;
             Vector3 flat = new Vector3(Mathf.Clamp(next.x, -RoomHalfWidth, RoomHalfWidth), 0f, next.z);
@@ -815,13 +816,20 @@ public class ChapterHub : MonoBehaviour {
             }
             next = new Vector3(flat.x, Player.position.y, flat.z);
             Walked += (next - Player.position).magnitude;
+            hubSpeed = (next - Player.position).magnitude / Mathf.Max(1e-5f, Time.unscaledDeltaTime);
             Player.position = next;
             Player.rotation = Quaternion.Slerp(Player.rotation, Quaternion.LookRotation(move), 12f * Time.unscaledDeltaTime);
         }
-        int clip = moving ? CharacterMovement.CLIP_RUN : CharacterMovement.CLIP_IDLE;
+        // Run only while he really covers ground (not on a nudge of the stick or pressed into a wall), with the clip
+        // played at ground speed over stride so his feet do not skate.
+        int clip = hubSpeed > 0.4f ? CharacterMovement.CLIP_RUN : CharacterMovement.CLIP_IDLE;
         if (wallitAnim != null && clip != lastClip) {
             lastClip = clip;
             CharacterMovement.PlayClip(wallitAnim, clip);
+        }
+        if (wallitAnim != null) {
+            float stride = CharacterMovement.RunStride * Mathf.Max(0.2f, wallitAnim.transform.lossyScale.y);
+            CharacterMovement.DriveSpeed(wallitAnim, clip == CharacterMovement.CLIP_RUN ? Mathf.Clamp(hubSpeed / stride, 0.2f, 3f) : 1f);
         }
         Vector3 toWallit = Player.position - slice.position;
         toWallit.y = 0f;
