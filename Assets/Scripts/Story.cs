@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // The story as data. Docs/Story.md explains it; change a line in both. A line is "<speaker>|<text>" with speaker
-// N narrator, W Wallit (talks money), S Slice (clipped), Y Yo Bot (chirpy), T title card.
+// N narrator, W Wallit (talks money), S Slice (clipped), Y Yo Bot (chirpy), K the Courier, T title card.
 public static class Story {
     // Wave 30 is the first Spider Bot and carries the order. Clearing it plays the finale.
     public const int FinalWave = 30;
@@ -104,6 +104,19 @@ public static class Story {
     public const string ChimeIdle = "Ding. Nothing owed. Clear another chapter and I'll find something lost.";
     public const string ChimeWaiting = "Ding. It's still out there: ";
 
+    // Chapter 1's level (LevelYard, the Sorting Yard): the Courier at the drop, after the Clearing Crew (Docs/Story.md,
+    // "Chapter 1's boss: the Courier"). It arrives with Chapters[0].BossLines and falls with Chapters[0].DefeatLines; these are
+    // the fight's own few words, each one a banked voice clip (Resources/Voice/<cast>_<slug>.mp3), said once.
+    public static readonly string[] CourierBreath = {
+        "S|Big one next. Be ready.",                              // the crew is down and Slice walks with him
+        "W|Something big's coming. I can smell the invoice.",     // the crew is down and he is alone
+    };
+    public const string CourierTip = "S|It's reading it out.";                          // the first notice goes up
+    public const string CourierTaken = "W|Nobody touches her.";                         // he stood in the red for Slice
+    public const string CourierBroken = "W|Not on my tab.";                             // he broke the wind-up
+    public const string CourierSecond = "Y|Second notice! This address is still unknown.";   // half its health gone
+    public const string CourierCall = "Y|Return to sender! Return to sender!";          // the Yo Bots it calls
+
     // Campaign chapters (Docs/CampaignBible.md). A chapter is data: where it is, what the objective is, who the boss is,
     // what is said before (Lines) and after (Done). ChapterRun plays it in the game scene with Wallit's own controls.
     public enum ChapterObjective {
@@ -186,7 +199,7 @@ public static class Story {
                 "W|Then it can read me the bill.",
             },
             DefeatLines = new[] {
-                "Y|Notice... undelivered... uploading... defeat?",
+                "K|Notice... undelivered... uploading... defeat?",
                 "W|Return to sender.",
                 "S|Clean.",
             },

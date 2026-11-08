@@ -10,7 +10,9 @@ using UnityEngine.UI;
 // holds Shift to lock on and clicks to swing. Named setup shortcuts: the sandbox case file (never the real save) and the two
 // stamps dropped under Wallit's feet (one inside the Ring, one outside) so the hazard is seen in one sitting. The level's own
 // timeline (LevelYard.Timeline) is replayed as events: level-start, talk, notice, pickup, encounter-wake, enemy-woke,
-// hazard-hit, verb-stamp-floor, ring-safe, encounter-clear, level-complete; barks come from LevelBarks.
+// hazard-hit, verb-stamp-floor, ring-safe, encounter-clear, boss-arrive, boss-wake, boss-call, boss-down, notice-down,
+// exit-open, choice, level-complete; barks come from LevelBarks. The drop has a boss after the crew: the Courier (Courier.cs),
+// fought with the same lock and swing, its notices logged as boss-tell / boss-land / boss-dodged / boss-interrupt / boss-phase.
 public static class PlaytestBeats {
     static PlaytestRun run;
     static int drained;
@@ -36,6 +38,20 @@ public static class PlaytestBeats {
             string raw = level.Yard.Timeline[drained++];
             int cut = raw.IndexOf('|');
             run.Event(cut > 0 ? raw.Substring(0, cut) : raw, cut > 0 ? raw.Substring(cut + 1) : "");
+        }
+    }
+
+    // The Courier's own log (Courier.Events), as the boss events the other chapter playtests use.
+    static int courierSeen;
+    static void DrainCourier() {
+        if (Courier.Events.Count < courierSeen) {
+            courierSeen = 0;
+        }
+        for (; courierSeen < Courier.Events.Count; courierSeen++) {
+            string ev = Courier.Events[courierSeen];
+            string kind = ev == "phase2" ? "boss-phase" : ev.StartsWith("wind|") ? "boss-tell" : ev.StartsWith("land|") ? "boss-land"
+                : ev.StartsWith("dodged|") ? "boss-dodged" : ev.StartsWith("interrupt|") ? "boss-interrupt" : "boss-attack";
+            run.Event(kind, "The Courier " + ev + (Courier.MarkUp ? " (red mark up)" : ""));
         }
     }
 
@@ -217,7 +233,8 @@ public static class PlaytestBeats {
             run.Problem(PlaytestSeverity.Bug, "campaign-beats: explore/talk/pickup before combat not all met (walked " + Mathf.RoundToInt(level.Walked) + " m, talked " + level.Yard.Talked + ", flag " + level.Yard.FlagTaken + ")");
         }
 
-        // 4. The fight: the crew wakes, walks at him, the bat does its work, stamps fall under the bots.
+        // 4. The fight: the crew wakes, walks at him, the bat does its work, stamps fall under the bots. Then the breath, and the
+        // Courier steps out from behind the drop box: the same lock and swing until it falls and the slot opens (CrewCleared).
         yield return run.Until(() => level.Yard.CrewWoken, 20f, "the crew to wake");
         if (run.Done) {
             yield break;
@@ -227,7 +244,14 @@ public static class PlaytestBeats {
         float fightStart = Time.realtimeSinceStartup;
         float nextSwing = 0f;
         int swings = 0;
-        while (!run.Done && !level.Yard.CrewCleared && Time.realtimeSinceStartup - fightStart < 240f) {
+        float crewSeconds = -1f;
+        courierSeen = Courier.Events.Count;   // anything older is another run's; the Courier clears the list when it arrives
+        while (!run.Done && !level.Yard.CrewCleared && Time.realtimeSinceStartup - fightStart < 330f) {
+            if (crewSeconds < 0f && level.Yard.CrewDown) {
+                crewSeconds = Time.realtimeSinceStartup - fightStart;
+                run.Event("crew-down", "the Clearing Crew is down after " + Mathf.RoundToInt(crewSeconds) + " s; the Courier comes next");
+            }
+            DrainCourier();
             Enemy nearest = null;
             float nd = 9999f;
             foreach (Enemy e in Enemy.Roster) {
@@ -257,15 +281,69 @@ public static class PlaytestBeats {
         PlayInput.Hold(KeyCode.LeftShift, false);
         Stop();
         Drain();
+        DrainCourier();
         run.Metric("fightSwings", swings);
         run.Metric("fightSeconds", Mathf.Round(Time.realtimeSinceStartup - fightStart));
+        run.Metric("crewSeconds", Mathf.Round(Mathf.Max(0f, crewSeconds)));
         run.Metric("fightDefeats", level.Defeats);
         run.Metric("stampsLanded", level.Yard.StampsLanded);
         run.Metric("botsStamped", level.Yard.BotsStamped);
-        if (!level.Yard.CrewCleared) {
-            run.Problem(PlaytestSeverity.Bug, "campaign-beats: the crew was not cleared in 240 s (" + level.Yard.CrewAlive + " left, " + swings + " swings)");
+        if (!level.Yard.CrewDown) {
+            run.Problem(PlaytestSeverity.Bug, "campaign-beats: the crew was not cleared in 330 s (" + level.Yard.CrewAlive + " left, " + swings + " swings)");
             run.Finish(PlaytestOutcome.Stuck);
             yield break;
+        }
+        // The Courier: it came, it read its notices with a tell each time, it changed phase, it fell, and the slot opened.
+        run.Metric("courierCame", level.Yard.CourierCame ? 1 : 0);
+        run.Metric("courierWinds", Courier.Winds);
+        run.Metric("courierInterrupted", Courier.Interrupted);
+        run.Metric("courierBlocked", Courier.Blocked);
+        run.Metric("courierLanded", Courier.Landed);
+        run.Metric("courierDodged", Courier.Dodged);
+        run.Metric("courierSeconds", Mathf.Round(level.Yard.CourierSeconds));
+        run.Metric("bossPhase2", Courier.Angry ? 1 : 0);
+        run.Metric("bossTells", Courier.Winds);
+        if (!level.Yard.CourierCame) {
+            run.Problem(PlaytestSeverity.Bug, "campaign-beats: the crew fell and the Courier never came to the drop");
+        } else if (Courier.Winds == 0) {
+            run.Problem(PlaytestSeverity.Bug, "campaign-beats: the Courier never wound up a notice (no tell, no red mark)");
+        }
+        if (level.Yard.CourierDown && !Courier.Angry) {
+            run.Problem(PlaytestSeverity.Bug, "campaign-beats: the Courier fell without entering phase two");
+        }
+        if (!level.Yard.CrewCleared) {
+            run.Problem(PlaytestSeverity.Bug, "campaign-beats: the Courier was not brought down in 330 s (" + Mathf.RoundToInt((level.Yard.TheCourier != null ? level.Yard.TheCourier.Health01 : 0f) * 100f) + "% health left, " + Courier.Winds + " notices, " + swings + " swings)");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        run.Event("boss-defeated", "The Courier fell after " + Mathf.RoundToInt(level.Yard.CourierSeconds) + " s awake: " + Courier.Winds + " notices, " + Courier.Interrupted + " broken, " + Courier.Blocked + " taken by Wallit, " + Courier.Landed + " landed, " + Courier.Dodged + " missed; the slot is " + (level.Yard.ExitOpen ? "open" : "SHUT"));
+        if (!level.Yard.ExitOpen) {
+            run.Problem(PlaytestSeverity.Bug, "campaign-beats: the Courier is down and the return slot did not open");
+        }
+
+        // 4b. After the fight: Slice back on her feet if a notice put her down (a held E), then the Courier's notice, kept.
+        Companion slice = Companion.Instance;
+        if (slice != null && slice.Downed) {
+            yield return WalkTo(slice.transform.position, 1.6f, 20f, null, v => ok = v);
+            PlayInput.Hold(KeyCode.E, true);
+            yield return run.Until(() => Companion.Instance == null || !Companion.Instance.Downed, 6f, "Slice to be revived with a held E");
+            PlayInput.Hold(KeyCode.E, false);
+            run.Event("revive", "Slice " + (Companion.Instance != null && Companion.Instance.Alive ? "back on her feet" : "still down"));
+            if (run.Done) {
+                yield break;
+            }
+        }
+        if (level.Yard.NoticeDown) {
+            yield return Wait(2.5f);   // it drifts down
+            yield return WalkTo(level.Yard.NoticeAt, 1.4f, 25f, null, v => ok = v);
+            yield return Use("E: keep", 5f);
+            Drain();
+            run.Metric("noticeKept", level.Yard.NoticeKept ? 1 : 0);
+            if (!level.Yard.NoticeKept) {
+                run.Problem(PlaytestSeverity.Polish, "campaign-beats: the Courier's notice lay on the ground and E did not keep it");
+            }
+        } else {
+            run.Problem(PlaytestSeverity.Bug, "campaign-beats: the Courier fell and left no notice");
         }
 
         // 5. The way out.
@@ -279,7 +357,7 @@ public static class PlaytestBeats {
             yield break;
         }
         run.Event("exit-card", level.Yard.Prompt.Replace('\n', ' '));
-        run.Event("pacing", "chapter 1: " + LevelYard.Encounters + " encounter (the Clearing Crew, placed asleep) before the exit, " + Mathf.RoundToInt(level.Yard.CombatSeconds) + " s of combat in " + Mathf.RoundToInt(level.Seconds) + " s = " + Mathf.RoundToInt(level.Yard.CombatShare * 100f) + "%");
+        run.Event("pacing", "chapter 1: " + LevelYard.Encounters + " encounter (the Clearing Crew, placed asleep) and the Courier before the exit, " + Mathf.RoundToInt(level.Yard.CombatSeconds) + " s of combat in " + Mathf.RoundToInt(level.Seconds) + " s = " + Mathf.RoundToInt(level.Yard.CombatShare * 100f) + "%");
         run.Metric("pacingEncounters1", LevelYard.Encounters);
         run.Metric("pacingCombatShare1", Mathf.Round(level.Yard.CombatShare * 100f));
         if (level.Yard.CombatShare >= 0.5f) {

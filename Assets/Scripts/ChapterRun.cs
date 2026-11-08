@@ -1007,7 +1007,7 @@ public class ChapterRun : MonoBehaviour {
     static string Spoken(string raw) {
         char who = raw[0];
         string body = raw.Substring(2);
-        string name = who == 'W' ? "Wallit" : who == 'S' ? "Slice" : who == 'Y' ? "Yo Bot" : "";
+        string name = who == 'W' ? "Wallit" : who == 'S' ? "Slice" : who == 'Y' ? "Yo Bot" : who == 'K' ? "The Courier" : "";
         return name.Length > 0 ? name + ": \"" + body + "\"" : body;
     }
 
