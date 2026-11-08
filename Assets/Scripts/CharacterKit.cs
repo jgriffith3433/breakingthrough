@@ -12,6 +12,7 @@ public static class CharacterKit {
         public string Id, Title;
         public bool Boss, Spider;
         public int Budget;
+        public string Extra;  // a prop part the boss's tell or the playtest reads by name (validation wants it in the rig)
         public float Scale;   // the rig is authored a little tall; Make fits it to the bot it replaces
     }
 
@@ -20,6 +21,8 @@ public static class CharacterKit {
         new Def { Id = "foreman", Title = "The Foreman", Boss = true, Budget = 12000, Scale = 0.66f },
         new Def { Id = "server", Title = "The Server", Boss = true, Spider = true, Budget = 12000, Scale = 0.7f },
         new Def { Id = "order_bearer", Title = "The Order", Boss = true, Spider = true, Budget = 12000, Scale = 0.8f },
+        new Def { Id = "registrar", Title = "The Registrar", Boss = true, Spider = true, Budget = 11500, Scale = 0.85f, Extra = "Ledger" },
+        new Def { Id = "plated_alpha", Title = "The Plated Alpha", Boss = true, Budget = 11500, Scale = 0.72f, Extra = "Invalid Plate" },
     };
 
     public static readonly string[] Props = { "bat", "clipboard", "order_sheet", "paper", "ledger", "scroll", "plate" };
@@ -54,6 +57,8 @@ public static class CharacterKit {
             case "foreman": BuildForeman(root.transform); break;
             case "server": BuildServer(root.transform); break;
             case "order_bearer": BuildOrderBearer(root.transform); break;
+            case "registrar": BuildRegistrar(root.transform); break;
+            case "plated_alpha": BuildPlatedAlpha(root.transform); break;
             default: UnityEngine.Object.Destroy(root); return null;
         }
         foreach (Renderer r in root.GetComponentsInChildren<Renderer>()) {
@@ -499,6 +504,146 @@ public static class CharacterKit {
 
         SpiderLegs(root, "Order ", 0.6f, black, seal, 1.15f, 0.045f, 0.3f);
     }
+
+    // ---- the Registrar -----------------------------------------------------------------------------------------------
+
+    // A Titan Spider Bot in gold and black: a wide body with a lectern-like slope across its back, a spectacled head and an open
+    // ledger held before it, with a loose page ("Page", a child of "Ledger") that turns. Six legs as the spider rig names them.
+    static void BuildRegistrar(Transform root) {
+        Material black = Mat("iron", new Color(0.13f, 0.12f, 0.15f));
+        Material gold = Mat("brass", new Color(0.96f, 0.76f, 0.26f));
+        Material paper = Mat("paper", new Color(0.97f, 0.93f, 0.8f));
+        Material ink = Mat("cloth", new Color(0.2f, 0.16f, 0.2f));
+        Material eye = Mat("lamp", new Color(1f, 0.82f, 0.3f));
+
+        Mesh body = Build("Registrar Body", k => {
+            k.Tex = 0.5f;
+            k.Lathe(new[] { new Vector2(0f, -0.26f), new Vector2(0.24f, -0.25f), new Vector2(0.44f, -0.1f), new Vector2(0.5f, 0.08f), new Vector2(0.4f, 0.24f), new Vector2(0.18f, 0.32f), new Vector2(0f, 0.33f) }, 16);
+            k.Sub = 1;
+            // gilt bands round the belly
+            Turned(k, new Vector3(0f, -0.06f, 0f), Vector3.zero, new[] { new Vector2(0.455f, -0.03f), new Vector2(0.505f, -0.03f), new Vector2(0.505f, 0.03f), new Vector2(0.455f, 0.03f) }, 16);
+            Turned(k, new Vector3(0f, 0.17f, 0f), Vector3.zero, new[] { new Vector2(0.37f, -0.025f), new Vector2(0.415f, -0.025f), new Vector2(0.415f, 0.025f), new Vector2(0.37f, 0.025f) }, 16);
+            // the lectern: a sloped desk on a post across the back, with a lip
+            k.Orient(new Vector3(0f, 0.36f, -0.3f), new Vector3(-28f, 0f, 0f));
+            k.Box(new Vector3(-0.4f, -0.025f, -0.2f), new Vector3(0.4f, 0.025f, 0.2f), 0.012f);
+            k.Box(new Vector3(-0.4f, -0.07f, 0.17f), new Vector3(0.4f, 0.03f, 0.2f), 0.01f);
+            k.Reset();
+            k.Sub = 1;
+            k.Box(new Vector3(-0.06f, 0.1f, -0.34f), new Vector3(0.06f, 0.36f, -0.22f), 0.012f);
+        });
+        GameObject b = Part(root, "Body", new Vector3(0f, 0.8f, -0.06f), body, black, gold);
+
+        Mesh head = Build("Registrar Head", k => {
+            k.Tex = 0.4f;
+            k.Lathe(new[] { new Vector2(0f, 0f), new Vector2(0.12f, 0f), new Vector2(0.18f, 0.07f), new Vector2(0.17f, 0.18f), new Vector2(0.1f, 0.25f), new Vector2(0f, 0.27f) }, 12);
+            k.Sub = 1;
+            // a pair of round gold spectacles over two glass eyes
+            for (int s = -1; s <= 1; s += 2) {
+                Turned(k, new Vector3(s * 0.075f, 0.14f, 0.15f), new Vector3(90f, 0f, 0f), new[] { new Vector2(0.045f, -0.008f), new Vector2(0.062f, -0.008f), new Vector2(0.062f, 0.012f), new Vector2(0.045f, 0.012f) }, 10);
+                Knob(k, new Vector3(s * 0.075f, 0.14f, 0.152f), 0.032f, 8);
+            }
+            k.Box(new Vector3(-0.03f, 0.135f, 0.15f), new Vector3(0.03f, 0.15f, 0.165f), 0.004f);
+        });
+        Part(root, "Head", new Vector3(0f, 1.2f, 0.34f), head, black, eye);
+        // the head's spectacle rims are gold, the lenses lit: sub 1 is the lit lamp set, so the rims share it (a gilt glint)
+
+        // The ledger, held open before the body: a spine, two tilted page blocks and gold-edged covers.
+        Mesh ledger = Build("Registrar Ledger", k => {
+            k.Tex = 0.4f;
+            k.Orient(Vector3.zero, new Vector3(0f, 0f, 12f));
+            k.Box(new Vector3(-0.56f, -0.26f, -0.03f), new Vector3(0.0f, 0.26f, 0.0f), 0.008f);
+            k.Orient(Vector3.zero, new Vector3(0f, 0f, -12f));
+            k.Box(new Vector3(0.0f, -0.26f, -0.03f), new Vector3(0.56f, 0.26f, 0.0f), 0.008f);
+            k.Reset();
+            k.Box(new Vector3(-0.025f, -0.28f, -0.05f), new Vector3(0.025f, 0.28f, 0.03f), 0.008f);
+            k.Sub = 1;
+            k.Orient(Vector3.zero, new Vector3(0f, 0f, 12f));
+            k.Box(new Vector3(-0.53f, -0.23f, 0f), new Vector3(-0.03f, 0.23f, 0.03f), 0.004f);
+            k.Orient(Vector3.zero, new Vector3(0f, 0f, -12f));
+            k.Box(new Vector3(0.03f, -0.23f, 0f), new Vector3(0.53f, 0.23f, 0.03f), 0.004f);
+            k.Reset();
+        });
+        GameObject lg = Part(root, "Ledger", new Vector3(0f, 1.0f, 0.72f), ledger, ink, paper);
+        lg.transform.localRotation = Quaternion.Euler(-14f, 0f, 0f);
+        Mesh page = Build("Registrar Page", k => {
+            k.Tex = 0.3f;
+            k.Box(new Vector3(0f, -0.2f, 0f), new Vector3(0.46f, 0.2f, 0.012f), 0.004f);
+            k.Sub = 1;
+            k.Box(new Vector3(0.06f, 0.12f, 0.012f), new Vector3(0.4f, 0.14f, 0.02f), 0.002f);
+            k.Box(new Vector3(0.06f, 0.04f, 0.012f), new Vector3(0.4f, 0.06f, 0.02f), 0.002f);
+            k.Box(new Vector3(0.06f, -0.04f, 0.012f), new Vector3(0.34f, -0.02f, 0.02f), 0.002f);
+        });
+        Part(lg.transform, "Page", new Vector3(0.0f, 0f, 0.03f), page, paper, ink);
+
+        SpiderLegs(root, "Registrar ", 0.8f, black, gold, 1.25f, 0.06f, 0.62f);
+    }
+
+    // ---- the Plated Alpha --------------------------------------------------------------------------------------------
+
+    // Chapter 2's Alpha: a Plated Yo Bot grown big. A slab of armour with riveted shoulder plates and a visor helm, and a red
+    // INVALID plate bolted to the chest as the part "Invalid Plate".
+    static void BuildPlatedAlpha(Transform root) {
+        Material steel = Mat("metal", new Color(0.62f, 0.64f, 0.7f));
+        Material dark = Mat("iron", new Color(0.24f, 0.24f, 0.28f));
+        Material red = Mat("metal", new Color(0.8f, 0.12f, 0.1f));
+        Material brass = Mat("brass", new Color(1f, 0.82f, 0.4f));
+        Material eye = Mat("lamp", new Color(1f, 0.35f, 0.25f));
+
+        Mesh body = Build("Plated Torso", k => {
+            k.Tex = 0.5f;
+            k.ExtrudeZ(new[] { new Vector2(-0.3f, -0.24f), new Vector2(0.3f, -0.24f), new Vector2(0.42f, 0.2f), new Vector2(0.34f, 0.46f), new Vector2(-0.34f, 0.46f), new Vector2(-0.42f, 0.2f) }, -0.24f, 0.24f);
+            k.Sub = 1;
+            // riveted seams across the chest plating
+            for (int i = -1; i <= 1; i++) {
+                k.Box(new Vector3(i * 0.2f - 0.012f, -0.2f, 0.235f), new Vector3(i * 0.2f + 0.012f, 0.42f, 0.25f), 0.004f);
+            }
+            k.Box(new Vector3(-0.44f, -0.1f, -0.25f), new Vector3(0.44f, -0.03f, 0.25f), 0.015f);
+            for (int s = -1; s <= 1; s += 2) {
+                for (int j = 0; j < 3; j++) {
+                    Knob(k, new Vector3(s * 0.28f, -0.1f + j * 0.18f, 0.26f), 0.022f, 6);
+                }
+            }
+        });
+        GameObject b = Part(root, "Body", new Vector3(0f, 0.5f, 0f), body, steel, dark);
+
+        Mesh pauldrons = Build("Plated Pauldrons", k => {
+            k.Tex = 0.4f;
+            for (int s = -1; s <= 1; s += 2) {
+                // three overlapping curved plates over each shoulder
+                for (int j = 0; j < 3; j++) {
+                    Turned(k, new Vector3(s * (0.46f + j * 0.02f), 0.34f - j * 0.06f, 0f), new Vector3(0f, 0f, s * (20f + j * 14f)), new[] { new Vector2(0f, -0.02f), new Vector2(0.17f - j * 0.02f, -0.02f), new Vector2(0.19f - j * 0.02f, 0.02f), new Vector2(0.1f, 0.06f), new Vector2(0f, 0.07f) }, 10);
+                }
+            }
+            k.Sub = 1;
+            for (int s = -1; s <= 1; s += 2) {
+                Knob(k, new Vector3(s * 0.52f, 0.43f, 0.0f), 0.03f, 6);
+            }
+        });
+        Part(b.transform, "Pauldrons", Vector3.zero, pauldrons, steel, brass);
+
+        // The stamped plate on the chest: a part the playtest and the fight look for by name.
+        GameObject plate = Prop("plate");
+        plate.name = "Invalid Plate";
+        plate.transform.SetParent(b.transform, false);
+        plate.transform.localPosition = new Vector3(0f, 0.1f, 0.3f);
+        plate.transform.localRotation = Quaternion.Euler(-8f, 0f, 4f);
+        plate.transform.localScale = Vector3.one * 0.9f;
+
+        Mesh head = Build("Plated Head", k => {
+            k.Tex = 0.4f;
+            k.Lathe(new[] { new Vector2(0f, 0f), new Vector2(0.17f, 0f), new Vector2(0.22f, 0.08f), new Vector2(0.21f, 0.2f), new Vector2(0.14f, 0.29f), new Vector2(0.05f, 0.33f), new Vector2(0f, 0.34f) }, 14);
+            k.Sub = 1;
+            // a slit visor with a red glow and a brass crest ridge
+            k.Box(new Vector3(-0.15f, 0.12f, 0.17f), new Vector3(0.15f, 0.17f, 0.235f), 0.012f);
+            k.Box(new Vector3(-0.02f, 0.2f, -0.2f), new Vector3(0.02f, 0.36f, 0.16f), 0.008f);
+        });
+        Part(root, "Head", new Vector3(0f, 1.0f, 0.05f), head, steel, eye);
+
+        Part(root, "ClawL", new Vector3(-0.56f, 0.8f, 0.05f), Claw("Plated Claw L", -1f, 0.5f, 0.085f, true), dark, brass);
+        Part(root, "ClawR", new Vector3(0.56f, 0.8f, 0.05f), Claw("Plated Claw R", 1f, 0.5f, 0.085f, true), dark, brass);
+        Part(root, "LegL", new Vector3(-0.2f, 0.3f, 0f), Leg("Plated Leg L", 0.3f, 0.09f, 0.3f), dark, steel);
+        Part(root, "LegR", new Vector3(0.2f, 0.3f, 0f), Leg("Plated Leg R", 0.3f, 0.09f, 0.3f), dark, steel);
+    }
 }
 
 // The idle personality of a character, added to its rig root by CharacterKit.Make. It runs in LateUpdate on top of Enemy's own
@@ -507,7 +652,7 @@ public static class CharacterKit {
 // back and taps his claw, the Server stands politely and bows with the paper, the Order breathes with its seal.
 public class CharacterIdle : MonoBehaviour {
     public string Id;
-    Transform head, body, clawL, clawR, scroll;
+    Transform head, body, clawL, clawR, scroll, page, plate;
     Vector3 lastPos;
     float still;
     float phase;
@@ -518,6 +663,8 @@ public class CharacterIdle : MonoBehaviour {
         clawL = Find("ClawL");
         clawR = Find("ClawR");
         scroll = Find("Scroll");
+        page = Find("Page");
+        plate = Find("Invalid Plate");
         lastPos = transform.parent != null ? transform.parent.position : transform.position;
         phase = UnityEngine.Random.Range(0f, 5f);
     }
@@ -586,6 +733,22 @@ public class CharacterIdle : MonoBehaviour {
                 float bow = Pulse(c, 2f, 0.6f, 0.8f, 0.6f);      // a small polite bow, as if offering
                 Turn(head, Quaternion.Euler(14f * bow, 0f, 0f), still);
                 Turn(body, Quaternion.Euler(6f * bow, 0f, 0f), still);
+                break;
+            }
+            case "registrar": {
+                float c = t % 6f;
+                float turn = Pulse(c, 1.5f, 0.7f, 0.2f, 0.5f);   // turns a page, then settles
+                Turn(page, Quaternion.Euler(0f, -150f * turn, 0f), still);
+                Turn(head, Quaternion.Euler(10f * Pulse(c, 1.2f, 0.4f, 1.2f, 0.4f), 0f, 0f), still);
+                break;
+            }
+            case "plated_alpha": {
+                float c = t % 7f;
+                float roll = Pulse(c, 1f, 0.4f, 0.6f, 0.5f);      // rolls the shoulders, the INVALID plate rocking
+                float knock = Pulse(c, 4f, 0.15f, 1.2f, 0.15f);   // knocks a claw on its own plate
+                Turn(body, Quaternion.Euler(0f, 0f, Mathf.Sin(t * 3f) * 3f * roll), still);
+                Turn(clawL, Quaternion.Euler(-70f * knock + Mathf.Sin(t * 14f) * 5f * knock, 0f, 0f), still);
+                Turn(plate, Quaternion.Euler(0f, 0f, 4f * roll), still);
                 break;
             }
             case "order_bearer": {

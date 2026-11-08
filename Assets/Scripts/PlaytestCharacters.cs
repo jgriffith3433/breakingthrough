@@ -22,8 +22,8 @@ public static class PlaytestCharacters {
         CharacterGallery gallery = CharacterGallery.Open();
         yield return null;
         yield return new WaitForSecondsRealtime(0.6f);
-        if (gallery.Entries.Count < 12) {
-            run.Problem(PlaytestSeverity.Bug, "characters: only " + gallery.Entries.Count + " of 12 characters stand in the gallery");
+        if (gallery.Entries.Count < 14) {
+            run.Problem(PlaytestSeverity.Bug, "characters: only " + gallery.Entries.Count + " of 14 characters stand in the gallery");
         }
         foreach (CharacterGallery.Entry e in gallery.Entries) {
             run.Event("character", e.Id + " group=" + e.Group + " triangles=" + e.Triangles + " idle=" + e.Idle);

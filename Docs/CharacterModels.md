@@ -82,6 +82,11 @@ wood, glass), parented as named parts so the existing procedural animation drive
 ### The Registrar (Chapter 5, boss)
 - Silhouette: Titan Spider Bot with a lectern-like back and a ledger held open before it. Palette: gold and black, paper pages. Idle: turns a page. Budget 11k.
 
+Built (code-authored like the others, `CharacterKit.BuildRegistrar`): spider rig plus a root part `Ledger` (open book, spine, two tilted page blocks) with a child `Page` that the idle turns; a lectern slope and gilt bands on `Body`, spectacles on `Head`. `Enemy.MakeRegistrar` uses it and falls back to the shared bot plus the ledger prop if the rig can't be made.
+
+### The Plated Alpha (Chapter 2, boss)
+- Silhouette: a Plated Yo Bot grown big: slab torso with riveted seams, three overlapping pauldron plates a side, a slit-visor helm with a brass crest, and the red INVALID plate bolted to the chest (part `Invalid Plate`, read by the playtest and the fight). Palette: steel, soot, red plate, brass. Idle: rolls the shoulders, knocks a claw on its plate. Yo Bot rig names. Budget 11.5k. `Enemy.MakePlatedAlpha`, same fallback.
+
 ### The Order (Order-Bearer, Chapter 6, boss)
 - Silhouette: a spider body carrying a huge scroll across its back crossbar; red seal at the centre. No face behind it: the creature behind the order is never seen.
 - Details: 1) sealed scroll with end-knobs; 2) red wax seal with a stamp; 3) ribbon streamers.
@@ -105,4 +110,5 @@ wood, glass), parented as named parts so the existing procedural animation drive
 
 Wallit and Slice idle personality layers on top of the Animator; rebuilding Wallit and Slice bodies is NOT planned (their
 rigs and animation clips are the shipped, accepted ones). Courier, Foreman, Server and Order-Bearer rigs are this part;
-Registrar and Plated Alpha follow when these have been seen in play.
+The Registrar and Plated Alpha are now authored the same way (code-built from `KitMesh`). Still later: a Hawkes Gen
+mesh pass (views3d, Blender decimate to 9-11k triangles, rigid split on the same part names) to replace these code bodies.
