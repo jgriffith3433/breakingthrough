@@ -71,87 +71,938 @@
     "dawn": "the filed circle at dawn: the Moonlit Hollow under a warm gold-blue sunrise sky with no moon, the circle glowing gold on the grass"
   },
   "shots": [
-    {"file": "ch1_open_1", "place": "hollow", "cast": [], "scene": "black night sky over the Hollow, a large hand-cut rubber stamp reading \"RETURN TO SENDER\" turning high above, its red ink glowing softly, the hollow tiny below", "job": "j_c29bdf4cb068", "asset": "a_d29891afec07b863"},
-    {"file": "ch1_open_2", "place": "hollow", "cast": ["wallit"], "scene": "low ground-level shot in moonlit grass: Wallit lying on his back where he has just landed, startled, a small smudge of red stamp ink on his leather, his bat in the grass beside him", "job": "j_204005c060dd", "asset": "a_839a9736ba6abead"},
-    {"file": "ch1_open_3", "place": "hollow", "cast": [], "scene": "top-down view of nine standing stones in the grass lighting a pale gold ring one by one", "job": "j_747dfc34f99b", "asset": "a_98ceee2944506bd8"},
-    {"file": "ch1_open_4", "place": "hollow", "cast": ["slice"], "scene": "low angle on Slice standing guard inside the gold circle, knife held down, shadow over her face, her eyes cool and level", "job": "j_101121f5ff83", "asset": "a_0fab9d69f5d6c74a"},
-    {"file": "ch1_open_5", "place": "hollow", "cast": ["wallit", "slice"], "scene": "Slice standing tall at the edge of the gold circle, leaning to look down at Wallit inside it; he looks up at her, a few banknotes falling from his top", "job": "j_9d70734b2eed", "asset": "a_4a70902f8a87c4d2"},
-    {"file": "ch1_open_6", "place": "hollow", "cast": ["yobot", "wallit"], "scene": "wide shot: a chirpy Yo Bot crests the grassy hill in the foreground with its claws up, far below Wallit and a small dark-gowned woman stand in the gold ring", "job": "j_ed7ced05de4d", "asset": "a_d820a6e6d35f52cb"},
-    {"file": "ch1_close_1", "place": "hollow", "cast": ["courier"], "scene": "the Courier down on one knee in the grass, its shell cracked and split, its clipboard fallen flat on the grass beside it, screen flickering", "job": "j_71856102bbcb", "asset": "a_4d023760a0b0167e"},
-    {"file": "ch1_close_2", "place": "hollow", "cast": ["wallit"], "scene": "Wallit standing with his bat on his shoulder over a fallen clipboard, a paper notice drifting down beside him", "job": "j_d9cc871736be", "asset": "a_085f3a3e1bfde06a"},
-    {"file": "ch1_close_3", "place": "hollow", "cast": ["slice"], "scene": "Slice from the waist up, standing in the gold circle and raising her slim scalpel knife back up, lantern light on the blade", "job": "j_1b63d4b27e49", "asset": "a_552b863265527ce1"},
-    {"file": "ch1_close_4", "place": "hollow", "cast": ["wallit"], "scene": "Wallit, seen whole, crouched in the grass scooping three silver hex bolts into the top of his wallet body with his white gloves", "job": "j_4c1e2c9b5c9b", "asset": "a_060fe89126765616"},
-    {"file": "ch1_close_5", "place": "hollow", "cast": ["slice"], "scene": "Slice standing alone at the far edge of the gold circle, her whole figure seen from head to feet at a distance, half turned away from us, looking into the far dark past the Hollow's wall", "avoid": "close-up face, profile close-up, face at the frame edge, swirling portal", "job": "j_40fe4e1f15c5", "asset": "a_ce2cc175dfc44641"},
-    {"file": "ch2_open_1", "place": "edge", "cast": [], "scene": "a guttering iron lantern in the foreground, blue dark beyond, far off a thin blank gate with nothing written on it", "job": "j_3326fd75bdd9", "asset": "a_4ae86e0a8b7ae4d9"},
-    {"file": "ch2_open_2", "place": "edge", "cast": ["wallit"], "scene": "Wallit with hands on hips and his bat on his shoulder, facing the distant gate at the Hollow's edge", "job": "j_a655eb6b2c36", "asset": "a_14f0bb6272c6a832"},
-    {"file": "ch2_open_3", "place": "edge", "cast": ["slice"], "scene": "Slice standing beside the ring's last standing stone, one hand resting on it, looking down the chalk road", "job": "j_b93412c087ef", "asset": "a_68c8490fac101aaa"},
-    {"file": "ch2_open_4", "place": "edge", "cast": ["wallit"], "scene": "low shot along a chalk road: Wallit stepping over the glowing gold edge of the ring onto the road, his bat on his shoulder", "job": "j_a2f6560d7948", "asset": "a_54cea07490c0f9db"},
-    {"file": "ch2_open_5", "place": "edge", "cast": ["slice"], "scene": "Slice driving her scalpel knife into the ground, the ring's gold light jumping out to form a second ring around her", "job": "j_652b98d0418a", "asset": "a_c92e3c4c1f70fd7c"},
-    {"file": "ch2_close_1", "place": "edge", "cast": ["yobot"], "scene": "the Plated Alpha, one big Yo Bot under heavy grey armour plates, fallen on its side on the chalk road, its chest plate stamped \"INVALID\" and cracked down the middle; no other robots", "job": "j_14be4625b860", "asset": "a_626c6bcca3352317"},
-    {"file": "ch2_close_2", "place": "edge", "cast": ["wallit"], "scene": "Wallit seen from the side, stamping his white sneaker down on a cracked grey armour plate lying flat on the chalk road", "job": "j_e936885a3516", "asset": "a_431d49caa2b1ba2c"},
-    {"file": "ch2_close_3", "place": "edge", "cast": ["slice"], "scene": "Slice bending to pull her small silver scalpel out of the grass (a surgical scalpel no longer than a pen, not a sword), two gold rings of light on the grass folding back into one", "avoid": "sword, long blade, dagger", "job": "j_82890c85c28b", "asset": "a_05463998ad3662d5"},
-    {"file": "ch2_close_4", "place": "edge", "cast": ["wallit"], "scene": "Wallit standing on the chalk road holding up a small stone chip with half a postmark on it, studying it", "job": "j_db93a90fd8e7", "asset": "a_9cd91919effac8c1"},
-    {"file": "ch2_close_5", "place": "edge", "cast": ["wallit", "slice"], "scene": "Wallit and Slice shoulder to shoulder at the gold ring, the dark blank gate behind them", "job": "j_b7098ea3c99c", "asset": "a_5794faa73c293d1d"},
-    {"file": "ch3_open_1", "place": "floor", "cast": [], "scene": "the lip of the sunken amber yard seen from above, hooks in long rows like a ribcage", "job": "j_2963cb3985c9", "asset": "a_21dcb249a7c2708a"},
-    {"file": "ch3_open_2", "place": "floor", "cast": ["yobot"], "scene": "a half-built Yo Bot hanging on a hook, missing a claw and its lid, wires showing, one eye lit, twitching", "job": "j_accf0d7467a0", "asset": "a_9ef8713bd31b6c9a"},
-    {"file": "ch3_open_3", "place": "floor", "cast": ["wallit"], "scene": "Wallit standing in the yard with his bat on his shoulder, studying rows of identical small black robot shells hanging on hooks", "job": "j_f57b2593b2db", "asset": "a_93acd1fce88ec513"},
-    {"file": "ch3_open_4", "place": "floor", "cast": ["wallit", "slice"], "scene": "two-shot: Wallit and Slice side by side, standing still, looking up at the amber lamps", "job": "j_4eb5d3b9b4ca", "asset": "a_4ef29df0d3e0831f"},
-    {"file": "ch3_open_5", "place": "floor", "cast": [], "scene": "wide of the whole yard, the conveyor belt glowing far off", "job": "j_5e28b880ce03", "asset": "a_80a763956ec4c32d"},
-    {"file": "ch3_close_1", "place": "floor", "cast": ["foreman"], "scene": "the Foreman fallen on its knees by the belt, cracked plates, its paper order sheet fluttering off its chest", "job": "j_9df1dcc8d0be", "asset": "a_7c90b43598f5a18b"},
-    {"file": "ch3_close_2", "place": "floor", "cast": ["wallit"], "scene": "Wallit standing by the conveyor belt with his bat on his shoulder, catching a silver hex bolt in his open white glove", "job": "j_063521e542ff", "asset": "a_562351c7df9ba467"},
-    {"file": "ch3_close_3", "place": "floor", "cast": ["slice"], "scene": "Slice in a medium shot, cool eyes, the stopped conveyor belt behind her and the red lamp dark", "job": "j_0eb3e4b08cb3", "asset": "a_5fcc532814d1bc79"},
-    {"file": "ch3_close_4", "place": "floor", "cast": [], "scene": "close on a red signal lamp lens turning toward the distant Hollow, blinking", "job": "j_fd88f8eee6f3", "asset": "a_d80f4fc1ce2573f4"},
-    {"file": "ch4_open_1", "place": "walk", "cast": [], "scene": "a long pale causeway running out over the pit of mist, the lamp stilts in pairs into the distance", "job": "j_1796179e85d6", "asset": "a_823b480f386a173a"},
-    {"file": "ch4_open_2", "place": "walk", "cast": ["yobot", "spiderbot"], "scene": "a chirpy Yo Bot close in the foreground with its claws up; far down the causeway a Spider Bot lifts one foreleg and tilts its glass face toward us", "job": "j_cd408a3d6928", "asset": "a_cce21f8c7fa6e58a"},
-    {"file": "ch4_open_3", "place": "walk", "cast": ["slice", "spiderbot"], "scene": "Slice in profile standing on the causeway, lamp light on her face, watching one Spider Bot standing far off in the mist", "job": "j_de2876e28103", "asset": "a_1fa8da5c45905a02"},
-    {"file": "ch4_open_4", "place": "walk", "cast": ["wallit", "spiderbot"], "scene": "Wallit hefting his bat on the causeway slabs, watching Spider Bot legs walking in the distance", "job": "j_5ee8d71f49ff", "asset": "a_496d675322196c54"},
-    {"file": "ch4_open_5", "place": "walk", "cast": ["spiderbot"], "scene": "a Spider Bot stopped on the causeway, one leg folded, offering a folded white paper on its claw tip", "job": "j_ae67a1c5bae1", "asset": "a_147533e1b549572e"},
-    {"file": "ch4_close_1", "place": "walk", "cast": ["server"], "scene": "the Server, one lilac-screened Spider Bot, broken and slumped against a lamp stand, one leg folded, its white paper fluttering away toward the misty pit; no other robots", "job": "j_8f729e925468", "asset": "a_ae9529f6632d742e"},
-    {"file": "ch4_close_2", "place": "walk", "cast": ["wallit"], "scene": "Wallit seen from the side, standing at the causeway edge, watching a white paper drift away into the mist", "job": "j_cef7a14aa401", "asset": "a_85c43f808b2fb191"},
-    {"file": "ch4_close_3", "place": "walk", "cast": ["slice"], "scene": "Slice with her blade lowered, the next lamp lighting up down the causeway behind her", "job": "j_309c0e49709f", "asset": "a_a8524563fd94807a"},
-    {"file": "ch4_close_4", "place": "walk", "cast": [], "scene": "the next lamp glowing on the far side of the mist, its six stilt legs of light", "job": "j_965a2b99c239", "asset": "a_581a29b66080d3ef"},
-    {"file": "ch5_open_1", "place": "reading", "cast": [], "scene": "the whole bare round hall, the drawn circle on the floor, walls of identical forms", "job": "j_78155c6d6ebb", "asset": "a_f7d0b0181d3fa00b"},
-    {"file": "ch5_open_2", "place": "reading", "cast": ["yobot"], "scene": "a huge Mega Yo Bot, twice the size of a Yo Bot, standing at a lectern reading a paper evenly, forms on the wall behind it", "job": "j_156f2a31f7b6", "asset": "a_64d71821e2c9c901"},
-    {"file": "ch5_open_3", "place": "reading", "cast": ["slice"], "scene": "Slice crouched with one hand on the drawn circle's edge on the floor", "job": "j_a50c412362c8", "asset": "a_445da59e86323c72"},
-    {"file": "ch5_open_4", "place": "reading", "cast": ["wallit"], "scene": "Wallit holding up a rubber stamp reading \"RETURN TO SENDER\" to the lamplight", "job": "j_d3398d267f0a", "asset": "a_6c4a50004519f828"},
-    {"file": "ch5_open_5", "place": "reading", "cast": [], "scene": "close on a single paper form with a blank, unsigned signature line", "job": "j_7057b607acdb", "asset": "a_8fa470b3ea369996"},
-    {"file": "ch5_close_1", "place": "reading", "cast": ["spiderbot"], "scene": "the Registrar, a huge gold-trimmed Titan Spider Bot, its gold trim cracked, sunk on its knees with a big ledger open in front of it, every page blank", "job": "j_765d712a675d", "asset": "a_9a42bbbd8fa40e3c"},
-    {"file": "ch5_close_2", "place": "reading", "cast": [], "scene": "a rubber stamp pressed onto the final page of a ledger, the word \"DENIED\" appearing in red ink", "job": "j_8302d8d22a38", "asset": "a_904cfc0185a43ce2"},
-    {"file": "ch5_close_3", "place": "reading", "cast": ["slice"], "scene": "Slice standing in the round hall reading the bare white walls, the forms gone blank, a door in the wall standing open", "job": "j_bbced243a692", "asset": "a_00fb9cf02b551133"},
-    {"file": "ch5_close_4", "place": "reading", "cast": ["wallit", "slice"], "scene": "Wallit with his bat on his shoulder and Slice side by side at an open white door", "job": "j_79da6d307463", "asset": "a_51db7c7d8820106b"},
-    {"file": "ch6_open_1", "place": "filed", "cast": [], "scene": "wide of the changed Hollow at dawn-blue, the wall stumps, the pale slab path running to nothing", "job": "j_aa48ad99b220", "asset": "a_8faba707bf278422"},
-    {"file": "ch6_open_2", "place": "filed", "cast": ["slice"], "scene": "Slice at the ring glowing white at dawn, looking to where the wall was", "job": "j_c68e70af3b6c", "asset": "a_81ed22e53a398ab7"},
-    {"file": "ch6_open_3", "place": "filed", "cast": ["wallit"], "scene": "low angle against the dawn sky: Wallit swinging his bat once, grinning", "job": "j_c5f4d1d1bbd8", "asset": "a_3fa047b85faa5e58"},
-    {"file": "ch6_open_4", "place": "filed", "cast": [], "scene": "blue dawn light: a great round gold wax seal with a plain blank face, standing upright and rising at the far end of the pale slab path, the white doorframe behind it", "job": "j_21cef10ae16d", "asset": "a_952ad4a16d5696b1"},
-    {"file": "ch6_close_1", "place": "filed", "cast": ["orderbearer"], "scene": "the Order-Bearer, one red-screened Spider Bot, collapsing in pieces at the white doorframe, its paper order floating down in dawn light; no other robots", "job": "j_7f42b6a349bd", "asset": "a_997472bdd05ced2f"},
-    {"file": "ch6_close_2", "place": "filed", "cast": ["wallit"], "scene": "Wallit seen from the front holding the order paper up in his gloves, a red \"DENIED\" stamp mark fresh on it", "job": "j_d8795b065816", "asset": "a_f9d8342e2897ffe1"},
-    {"file": "ch6_close_3", "place": "filed", "cast": ["slice"], "scene": "Slice kneeling at the glowing ring, writing a gold door number across it with the tip of her scalpel", "job": "j_bd3dd26dfb80", "asset": "a_f128bf8797fb71d6"},
-    {"file": "ch6_close_4", "place": "filed", "cast": ["wallit"], "scene": "Wallit looking down at a gold door number and the ring glowing under his sneakers", "job": "j_f007d7400542", "asset": "a_f1a7dfc4c65d159f"},
-    {"file": "ch6_close_5", "place": "dawn", "cast": ["wallit", "slice"], "scene": "very wide: Wallit and Slice as two small figures in the gold ring at dawn, a title in the sky reading \"ADDRESS FILED\"", "job": "j_47da219f8647", "asset": "a_1c299726b6d34ad3"},
-    {"file": "ch6_close_6", "place": "dawn", "cast": [], "scene": "an almost completely black empty frame, nothing in it, only a thin faint line of warm gold light along the very bottom edge; no moon, no sky detail, no objects", "job": "j_77cd479c4908", "asset": "a_b5cb81b9cb705beb"},
-    {"file": "boss_courier_1", "place": "hollow", "cast": ["courier"], "scene": "the Courier on the Hollow's rim against the moon, clipboard raised high, a red seal on the notice", "job": "j_9da1b586c501", "asset": "a_0ffc2c6af5343348"},
-    {"file": "boss_courier_2", "place": "hollow", "cast": ["slice"], "scene": "Slice standing in the circle with her scalpel knife low, the long dark shadow of one round-headed robot holding up a clipboard falling across the grass in front of her", "avoid": "bird, crow, raven, animal shadow, cat", "job": "j_24297710b8e5", "asset": "a_69392ab11dd4ae48"},
-    {"file": "boss_courier_3", "place": "hollow", "cast": ["wallit"], "scene": "Wallit holding his one wooden bat on his shoulder with both gloves, the long shadow of a clipboard crossing the ring at his feet", "avoid": "two bats, second bat, bat in each hand", "job": "j_e4b2338012d7", "asset": "a_51872f5559d0cfa4"},
-    {"file": "boss_foreman_1", "place": "floor", "cast": ["foreman"], "scene": "the Foreman rising over the conveyor belt, red lamps behind it, order sheet on its chest", "job": "j_f4efe4b7ff93", "asset": "a_40077003c718c7eb"},
-    {"file": "boss_foreman_2", "place": "floor", "cast": ["slice"], "scene": "Slice with her eyes on the conveyor belt, rows of small black robot shells on hooks behind her", "job": "j_7ccdd8a8452d", "asset": "a_6559600f68d3f539"},
-    {"file": "boss_foreman_3", "place": "floor", "cast": ["wallit"], "scene": "Wallit hefting his bat under the belt lamps", "job": "j_f760cc67f983", "asset": "a_b3cbfd7da2478e20"},
-    {"file": "boss_server_1", "place": "walk", "cast": ["server"], "scene": "the Server standing very still on a dais at the end of the causeway, holding out its folded paper", "job": "j_6436486c419f", "asset": "a_d41ff1de1fcd5600"},
-    {"file": "boss_server_2", "place": "walk", "cast": ["slice"], "scene": "Slice in profile among the mist and the lamp stilts", "job": "j_1a4a004290e3", "asset": "a_f70244ed3c84961a"},
-    {"file": "boss_server_3", "place": "walk", "cast": ["wallit"], "scene": "Wallit grinning with his bat up, a white paper hanging in the air in front of him", "job": "j_5f36889e9c85", "asset": "a_4eafc57b95cb6263"},
-    {"file": "boss_order_1", "place": "filed", "cast": ["orderbearer"], "scene": "the white doorframe on its dais at dawn, the Order-Bearer walking toward it with its sealed scroll", "job": "j_2625e21f364b", "asset": "a_105eaf14df2ea5a3"},
-    {"file": "boss_order_2", "place": "filed", "cast": ["slice"], "scene": "Slice in the ring at dawn with her knife out", "job": "j_2da358d1c8d5", "asset": "a_8c540f42146302ce"},
-    {"file": "boss_order_3", "place": "filed", "cast": ["orderbearer"], "scene": "close on the Order-Bearer, the red wax seal glowing on the scroll across its back", "job": "j_fedde8ed2b05", "asset": "a_aa1248efe0f01942"},
-    {"file": "boss_order_4", "place": "filed", "cast": ["wallit"], "scene": "Wallit squaring up with his bat on his shoulder", "job": "j_fcdd491439ed", "asset": "a_b7748b7b68e9c43e"},
-    {"file": "ending_received_1", "place": "dawn", "cast": [], "scene": "top-down on the gold circle at dawn, six small things in a row inside it: a postcard, a brass key, a hat, a folded paper, a leaf, a rubber stamp", "job": "j_7cb15eec8248", "asset": "a_ca2c7fd0eb289da3"},
-    {"file": "ending_received_2", "place": "dawn", "cast": ["slice", "wallit"], "scene": "Slice and Wallit standing together in the gold ring, looking down at six small keepsakes set in a row on the grass", "job": "j_0755ac2cdf82", "asset": "a_ae20c8e53c213be8"},
-    {"file": "ending_received_3", "place": "dawn", "cast": ["wallit"], "scene": "Wallit holding up a rubber stamp reading \"RETURN TO SENDER\" in his white gloves", "job": "j_afe1f69bc94a", "asset": "a_ec70a7637da79d6b"},
-    {"file": "ending_received_4", "place": "dawn", "cast": [], "scene": "a rubber stamp coming down on the gold ring printing \"ADDRESS\", simple wooden doors rising from the grass one by one around the Hollow", "job": "j_b968f9b758a6", "asset": "a_f76c1fb63411df6f"},
-    {"file": "ending_received_5", "place": "dawn", "cast": ["yobot"], "scene": "one small Yo Bot holding a paper, puzzled, in front of a new softly glowing door", "job": "j_74244e5a4231", "asset": "a_0c1f4b07d958a615"},
-    {"file": "ending_received_6", "place": "dawn", "cast": ["wallit", "slice"], "scene": "Wallit and Slice in warm gold light, Slice with a small smile only in her eyes, a stamp mark reading \"RECEIVED\" on the ring", "job": "j_70593d652aa7", "asset": "a_6dd90e1449565777"},
-    {"file": "ending_received_7", "place": "dawn", "cast": ["wallit"], "scene": "Wallit grinning with his bat on his shoulder on the stamped gold ring", "job": "j_7cb13fc97bbf", "asset": "a_2d49cdd441d5fd0e"},
-    {"file": "credits_1", "place": "dawn", "cast": [], "scene": "wide of the gold circle in the Hollow at dawn", "job": "j_98e8f65c2edc", "asset": "a_371b6cd51e01fe52"},
-    {"file": "credits_2", "place": "dawn", "cast": [], "scene": "at dawn, a slim silver surgical scalpel with a thin flat steel handle and a small curved blade, standing upright with its tip in the glowing grass of the gold circle, warm gold-blue sky behind, no moon", "job": "j_a707c75f4451", "asset": "a_1dd55bcb70d7b243"},
-    {"file": "credits_3", "place": "dawn", "cast": ["yobot", "spiderbot"], "scene": "one Yo Bot and one Spider Bot standing calmly side by side in a field of simple wooden doors", "job": "j_33d0aed0b0c8", "asset": "a_513b7ae74c6bed4e"},
-    {"file": "credits_4", "place": "dawn", "cast": ["wallit", "slice"], "scene": "very wide dawn Hollow seen from far away: a gold ring on the grass with exactly two figures inside it, Wallit and Slice standing side by side, nobody else", "avoid": "small people, children, dolls, figurines, extra figures, moon", "job": "j_d5131f78eeef", "asset": "a_d8a8729662e9b4cb"}
+    {
+      "file": "ch1_open_1",
+      "place": "hollow",
+      "cast": [],
+      "scene": "black night sky over the Hollow, a large hand-cut rubber stamp reading \"RETURN TO SENDER\" turning high above, its red ink glowing softly, the hollow tiny below",
+      "job": "j_c29bdf4cb068",
+      "asset": "a_d29891afec07b863"
+    },
+    {
+      "file": "ch1_open_2",
+      "place": "hollow",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "low ground-level shot in moonlit grass: Wallit lying on his back where he has just landed, startled, a small smudge of red stamp ink on his leather, his bat in the grass beside him",
+      "job": "j_204005c060dd",
+      "asset": "a_839a9736ba6abead"
+    },
+    {
+      "file": "ch1_open_3",
+      "place": "hollow",
+      "cast": [],
+      "scene": "top-down view of nine standing stones in the grass lighting a pale gold ring one by one",
+      "job": "j_747dfc34f99b",
+      "asset": "a_98ceee2944506bd8"
+    },
+    {
+      "file": "ch1_open_4",
+      "place": "hollow",
+      "cast": [
+        "slice"
+      ],
+      "scene": "low angle on Slice standing guard inside the gold circle, knife held down, shadow over her face, her eyes cool and level",
+      "job": "j_101121f5ff83",
+      "asset": "a_0fab9d69f5d6c74a"
+    },
+    {
+      "file": "ch1_open_5",
+      "place": "hollow",
+      "cast": [
+        "wallit",
+        "slice"
+      ],
+      "scene": "Slice standing tall at the edge of the gold circle, leaning to look down at Wallit inside it; he looks up at her, a few banknotes falling from his top",
+      "job": "j_9d70734b2eed",
+      "asset": "a_4a70902f8a87c4d2"
+    },
+    {
+      "file": "ch1_open_6",
+      "place": "hollow",
+      "cast": [
+        "yobot",
+        "wallit"
+      ],
+      "scene": "wide shot: a chirpy Yo Bot crests the grassy hill in the foreground with its claws up, far below Wallit and a small dark-gowned woman stand in the gold ring",
+      "job": "j_ed7ced05de4d",
+      "asset": "a_d820a6e6d35f52cb"
+    },
+    {
+      "file": "ch1_close_1",
+      "place": "hollow",
+      "cast": [
+        "courier"
+      ],
+      "scene": "the Courier down on one knee in the grass, its shell cracked and split, its clipboard fallen flat on the grass beside it, screen flickering",
+      "job": "j_71856102bbcb",
+      "asset": "a_4d023760a0b0167e"
+    },
+    {
+      "file": "ch1_close_2",
+      "place": "hollow",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit standing with his bat on his shoulder over a fallen clipboard, a paper notice drifting down beside him",
+      "job": "j_d9cc871736be",
+      "asset": "a_085f3a3e1bfde06a"
+    },
+    {
+      "file": "ch1_close_3",
+      "place": "hollow",
+      "cast": [
+        "slice"
+      ],
+      "scene": "Slice from the waist up, standing in the gold circle and raising her slim scalpel knife back up, lantern light on the blade",
+      "job": "j_1b63d4b27e49",
+      "asset": "a_552b863265527ce1"
+    },
+    {
+      "file": "ch1_close_4",
+      "place": "hollow",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit, seen whole, crouched in the grass scooping three silver hex bolts into the top of his wallet body with his white gloves",
+      "job": "j_4c1e2c9b5c9b",
+      "asset": "a_060fe89126765616"
+    },
+    {
+      "file": "ch1_close_5",
+      "place": "hollow",
+      "cast": [
+        "slice"
+      ],
+      "scene": "Slice standing alone at the far edge of the gold circle, her whole figure seen from head to feet at a distance, half turned away from us, looking into the far dark past the Hollow's wall",
+      "avoid": "close-up face, profile close-up, face at the frame edge, swirling portal",
+      "job": "j_40fe4e1f15c5",
+      "asset": "a_ce2cc175dfc44641"
+    },
+    {
+      "file": "ch2_open_1",
+      "place": "edge",
+      "cast": [],
+      "scene": "a guttering iron lantern in the foreground, blue dark beyond, far off a thin blank gate with nothing written on it",
+      "job": "j_3326fd75bdd9",
+      "asset": "a_4ae86e0a8b7ae4d9"
+    },
+    {
+      "file": "ch2_open_2",
+      "place": "edge",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit with hands on hips and his bat on his shoulder, facing the distant gate at the Hollow's edge",
+      "job": "j_a655eb6b2c36",
+      "asset": "a_14f0bb6272c6a832"
+    },
+    {
+      "file": "ch2_open_3",
+      "place": "edge",
+      "cast": [
+        "slice"
+      ],
+      "scene": "Slice standing beside the ring's last standing stone, one hand resting on it, looking down the chalk road",
+      "job": "j_b93412c087ef",
+      "asset": "a_68c8490fac101aaa"
+    },
+    {
+      "file": "ch2_open_4",
+      "place": "edge",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "low shot along a chalk road: Wallit stepping over the glowing gold edge of the ring onto the road, his bat on his shoulder",
+      "job": "j_a2f6560d7948",
+      "asset": "a_54cea07490c0f9db"
+    },
+    {
+      "file": "ch2_open_5",
+      "place": "edge",
+      "cast": [
+        "slice"
+      ],
+      "scene": "Slice driving her scalpel knife into the ground, the ring's gold light jumping out to form a second ring around her",
+      "job": "j_652b98d0418a",
+      "asset": "a_c92e3c4c1f70fd7c"
+    },
+    {
+      "file": "ch2_close_1",
+      "place": "edge",
+      "cast": [
+        "yobot"
+      ],
+      "scene": "the Plated Alpha, one big Yo Bot under heavy grey armour plates, fallen on its side on the chalk road, its chest plate stamped \"INVALID\" and cracked down the middle; no other robots",
+      "job": "j_14be4625b860",
+      "asset": "a_626c6bcca3352317"
+    },
+    {
+      "file": "ch2_close_2",
+      "place": "edge",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit seen from the side, stamping his white sneaker down on a cracked grey armour plate lying flat on the chalk road",
+      "job": "j_e936885a3516",
+      "asset": "a_431d49caa2b1ba2c"
+    },
+    {
+      "file": "ch2_close_3",
+      "place": "edge",
+      "cast": [
+        "slice"
+      ],
+      "scene": "Slice bending to pull her small silver scalpel out of the grass (a surgical scalpel no longer than a pen, not a sword), two gold rings of light on the grass folding back into one",
+      "avoid": "sword, long blade, dagger",
+      "job": "j_82890c85c28b",
+      "asset": "a_05463998ad3662d5"
+    },
+    {
+      "file": "ch2_close_4",
+      "place": "edge",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit standing on the chalk road holding up a small stone chip with half a postmark on it, studying it",
+      "job": "j_db93a90fd8e7",
+      "asset": "a_9cd91919effac8c1"
+    },
+    {
+      "file": "ch2_close_5",
+      "place": "edge",
+      "cast": [
+        "wallit",
+        "slice"
+      ],
+      "scene": "Wallit and Slice shoulder to shoulder at the gold ring, the dark blank gate behind them",
+      "job": "j_b7098ea3c99c",
+      "asset": "a_5794faa73c293d1d"
+    },
+    {
+      "file": "ch3_open_1",
+      "place": "floor",
+      "cast": [],
+      "scene": "the lip of the sunken amber yard seen from above, hooks in long rows like a ribcage",
+      "job": "j_2963cb3985c9",
+      "asset": "a_21dcb249a7c2708a"
+    },
+    {
+      "file": "ch3_open_2",
+      "place": "floor",
+      "cast": [
+        "yobot"
+      ],
+      "scene": "a half-built Yo Bot hanging on a hook, missing a claw and its lid, wires showing, one eye lit, twitching",
+      "job": "j_accf0d7467a0",
+      "asset": "a_9ef8713bd31b6c9a"
+    },
+    {
+      "file": "ch3_open_3",
+      "place": "floor",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit standing in the yard with his bat on his shoulder, studying rows of identical small black robot shells hanging on hooks",
+      "job": "j_f57b2593b2db",
+      "asset": "a_93acd1fce88ec513"
+    },
+    {
+      "file": "ch3_open_4",
+      "place": "floor",
+      "cast": [
+        "wallit",
+        "slice"
+      ],
+      "scene": "two-shot: Wallit and Slice side by side, standing still, looking up at the amber lamps",
+      "job": "j_4eb5d3b9b4ca",
+      "asset": "a_4ef29df0d3e0831f"
+    },
+    {
+      "file": "ch3_open_5",
+      "place": "floor",
+      "cast": [],
+      "scene": "wide of the whole yard, the conveyor belt glowing far off",
+      "job": "j_5e28b880ce03",
+      "asset": "a_80a763956ec4c32d"
+    },
+    {
+      "file": "ch3_close_1",
+      "place": "floor",
+      "cast": [
+        "foreman"
+      ],
+      "scene": "the Foreman fallen on its knees by the belt, cracked plates, its paper order sheet fluttering off its chest",
+      "job": "j_9df1dcc8d0be",
+      "asset": "a_7c90b43598f5a18b"
+    },
+    {
+      "file": "ch3_close_2",
+      "place": "floor",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit standing by the conveyor belt with his bat on his shoulder, catching a silver hex bolt in his open white glove",
+      "job": "j_063521e542ff",
+      "asset": "a_562351c7df9ba467"
+    },
+    {
+      "file": "ch3_close_3",
+      "place": "floor",
+      "cast": [
+        "slice"
+      ],
+      "scene": "Slice in a medium shot, cool eyes, the stopped conveyor belt behind her and the red lamp dark",
+      "job": "j_0eb3e4b08cb3",
+      "asset": "a_5fcc532814d1bc79"
+    },
+    {
+      "file": "ch3_close_4",
+      "place": "floor",
+      "cast": [],
+      "scene": "close on a red signal lamp lens turning toward the distant Hollow, blinking",
+      "job": "j_fd88f8eee6f3",
+      "asset": "a_d80f4fc1ce2573f4"
+    },
+    {
+      "file": "ch4_open_1",
+      "place": "walk",
+      "cast": [],
+      "scene": "a long pale causeway running out over the pit of mist, the lamp stilts in pairs into the distance",
+      "job": "j_1796179e85d6",
+      "asset": "a_823b480f386a173a"
+    },
+    {
+      "file": "ch4_open_2",
+      "place": "walk",
+      "cast": [
+        "yobot",
+        "spiderbot"
+      ],
+      "scene": "a chirpy Yo Bot close in the foreground with its claws up; far down the causeway a Spider Bot lifts one foreleg and tilts its glass face toward us",
+      "job": "j_cd408a3d6928",
+      "asset": "a_cce21f8c7fa6e58a"
+    },
+    {
+      "file": "ch4_open_3",
+      "place": "walk",
+      "cast": [
+        "slice",
+        "spiderbot"
+      ],
+      "scene": "Slice in profile standing on the causeway, lamp light on her face, watching one Spider Bot standing far off in the mist",
+      "job": "j_de2876e28103",
+      "asset": "a_1fa8da5c45905a02"
+    },
+    {
+      "file": "ch4_open_4",
+      "place": "walk",
+      "cast": [
+        "wallit",
+        "spiderbot"
+      ],
+      "scene": "Wallit hefting his bat on the causeway slabs, watching Spider Bot legs walking in the distance",
+      "job": "j_5ee8d71f49ff",
+      "asset": "a_496d675322196c54"
+    },
+    {
+      "file": "ch4_open_5",
+      "place": "walk",
+      "cast": [
+        "spiderbot"
+      ],
+      "scene": "a Spider Bot stopped on the causeway, one leg folded, offering a folded white paper on its claw tip",
+      "job": "j_ae67a1c5bae1",
+      "asset": "a_147533e1b549572e"
+    },
+    {
+      "file": "ch4_close_1",
+      "place": "walk",
+      "cast": [
+        "server"
+      ],
+      "scene": "the Server, one lilac-screened Spider Bot, broken and slumped against a lamp stand, one leg folded, its white paper fluttering away toward the misty pit; no other robots",
+      "job": "j_8f729e925468",
+      "asset": "a_ae9529f6632d742e"
+    },
+    {
+      "file": "ch4_close_2",
+      "place": "walk",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit seen from the side, standing at the causeway edge, watching a white paper drift away into the mist",
+      "job": "j_cef7a14aa401",
+      "asset": "a_85c43f808b2fb191"
+    },
+    {
+      "file": "ch4_close_3",
+      "place": "walk",
+      "cast": [
+        "slice"
+      ],
+      "scene": "Slice with her blade lowered, the next lamp lighting up down the causeway behind her",
+      "job": "j_309c0e49709f",
+      "asset": "a_a8524563fd94807a"
+    },
+    {
+      "file": "ch4_close_4",
+      "place": "walk",
+      "cast": [],
+      "scene": "the next lamp glowing on the far side of the mist, its six stilt legs of light",
+      "job": "j_965a2b99c239",
+      "asset": "a_581a29b66080d3ef"
+    },
+    {
+      "file": "ch5_open_1",
+      "place": "reading",
+      "cast": [],
+      "scene": "the whole bare round hall, the drawn circle on the floor, walls of identical forms",
+      "job": "j_78155c6d6ebb",
+      "asset": "a_f7d0b0181d3fa00b"
+    },
+    {
+      "file": "ch5_open_2",
+      "place": "reading",
+      "cast": [
+        "yobot"
+      ],
+      "scene": "a huge Mega Yo Bot, twice the size of a Yo Bot, standing at a lectern reading a paper evenly, forms on the wall behind it",
+      "job": "j_156f2a31f7b6",
+      "asset": "a_64d71821e2c9c901"
+    },
+    {
+      "file": "ch5_open_3",
+      "place": "reading",
+      "cast": [
+        "slice"
+      ],
+      "scene": "Slice crouched with one hand on the drawn circle's edge on the floor",
+      "job": "j_a50c412362c8",
+      "asset": "a_445da59e86323c72"
+    },
+    {
+      "file": "ch5_open_4",
+      "place": "reading",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit holding up a rubber stamp reading \"RETURN TO SENDER\" to the lamplight",
+      "job": "j_d3398d267f0a",
+      "asset": "a_6c4a50004519f828"
+    },
+    {
+      "file": "ch5_open_5",
+      "place": "reading",
+      "cast": [],
+      "scene": "close on a single paper form with a blank, unsigned signature line",
+      "job": "j_7057b607acdb",
+      "asset": "a_8fa470b3ea369996"
+    },
+    {
+      "file": "ch5_close_1",
+      "place": "reading",
+      "cast": [
+        "spiderbot"
+      ],
+      "scene": "the Registrar, a huge gold-trimmed Titan Spider Bot, its gold trim cracked, sunk on its knees with a big ledger open in front of it, every page blank",
+      "job": "j_765d712a675d",
+      "asset": "a_9a42bbbd8fa40e3c"
+    },
+    {
+      "file": "ch5_close_2",
+      "place": "reading",
+      "cast": [],
+      "scene": "a rubber stamp pressed onto the final page of a ledger, the word \"DENIED\" appearing in red ink",
+      "job": "j_8302d8d22a38",
+      "asset": "a_904cfc0185a43ce2"
+    },
+    {
+      "file": "ch5_close_3",
+      "place": "reading",
+      "cast": [
+        "slice"
+      ],
+      "scene": "Slice standing in the round hall reading the bare white walls, the forms gone blank, a door in the wall standing open",
+      "job": "j_bbced243a692",
+      "asset": "a_00fb9cf02b551133"
+    },
+    {
+      "file": "ch5_close_4",
+      "place": "reading",
+      "cast": [
+        "wallit",
+        "slice"
+      ],
+      "scene": "Wallit with his bat on his shoulder and Slice side by side at an open white door",
+      "job": "j_79da6d307463",
+      "asset": "a_51db7c7d8820106b"
+    },
+    {
+      "file": "ch6_open_1",
+      "place": "filed",
+      "cast": [],
+      "scene": "wide of the changed Hollow at dawn-blue, the wall stumps, the pale slab path running to nothing",
+      "job": "j_aa48ad99b220",
+      "asset": "a_8faba707bf278422"
+    },
+    {
+      "file": "ch6_open_2",
+      "place": "filed",
+      "cast": [
+        "slice"
+      ],
+      "scene": "Slice at the ring glowing white at dawn, looking to where the wall was",
+      "job": "j_c68e70af3b6c",
+      "asset": "a_81ed22e53a398ab7"
+    },
+    {
+      "file": "ch6_open_3",
+      "place": "filed",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "low angle against the dawn sky: Wallit swinging his bat once, grinning",
+      "job": "j_c5f4d1d1bbd8",
+      "asset": "a_3fa047b85faa5e58"
+    },
+    {
+      "file": "ch6_open_4",
+      "place": "filed",
+      "cast": [],
+      "scene": "blue dawn light: a great round gold wax seal with a plain blank face, standing upright and rising at the far end of the pale slab path, the white doorframe behind it",
+      "job": "j_21cef10ae16d",
+      "asset": "a_952ad4a16d5696b1"
+    },
+    {
+      "file": "ch6_close_1",
+      "place": "filed",
+      "cast": [
+        "orderbearer"
+      ],
+      "scene": "the Order-Bearer, one red-screened Spider Bot, collapsing in pieces at the white doorframe, its paper order floating down in dawn light; no other robots",
+      "job": "j_7f42b6a349bd",
+      "asset": "a_997472bdd05ced2f"
+    },
+    {
+      "file": "ch6_close_2",
+      "place": "filed",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit seen from the front holding the order paper up in his gloves, a red \"DENIED\" stamp mark fresh on it",
+      "job": "j_d8795b065816",
+      "asset": "a_f9d8342e2897ffe1"
+    },
+    {
+      "file": "ch6_close_3",
+      "place": "filed",
+      "cast": [
+        "slice"
+      ],
+      "scene": "Slice kneeling at the glowing ring, writing a gold door number across it with the tip of her scalpel",
+      "job": "j_bd3dd26dfb80",
+      "asset": "a_f128bf8797fb71d6"
+    },
+    {
+      "file": "ch6_close_4",
+      "place": "filed",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit looking down at a gold door number and the ring glowing under his sneakers",
+      "job": "j_f007d7400542",
+      "asset": "a_f1a7dfc4c65d159f"
+    },
+    {
+      "file": "ch6_close_5",
+      "place": "dawn",
+      "cast": [
+        "wallit",
+        "slice"
+      ],
+      "scene": "very wide: Wallit and Slice as two small figures in the gold ring at dawn, a title in the sky reading \"ADDRESS FILED\"",
+      "job": "j_47da219f8647",
+      "asset": "a_1c299726b6d34ad3"
+    },
+    {
+      "file": "ch6_close_6",
+      "place": "dawn",
+      "cast": [],
+      "scene": "an almost completely black empty frame, nothing in it, only a thin faint line of warm gold light along the very bottom edge; no moon, no sky detail, no objects",
+      "job": "j_77cd479c4908",
+      "asset": "a_b5cb81b9cb705beb"
+    },
+    {
+      "file": "boss_courier_1",
+      "place": "hollow",
+      "cast": [
+        "courier"
+      ],
+      "scene": "the Courier on the Hollow's rim against the moon, clipboard raised high, a red seal on the notice",
+      "job": "j_9da1b586c501",
+      "asset": "a_0ffc2c6af5343348"
+    },
+    {
+      "file": "boss_courier_2",
+      "place": "hollow",
+      "cast": [
+        "slice"
+      ],
+      "scene": "Slice standing in the circle with her scalpel knife low, the long dark shadow of one round-headed robot holding up a clipboard falling across the grass in front of her",
+      "avoid": "bird, crow, raven, animal shadow, cat",
+      "job": "j_24297710b8e5",
+      "asset": "a_69392ab11dd4ae48"
+    },
+    {
+      "file": "boss_courier_3",
+      "place": "hollow",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit holding his one wooden bat on his shoulder with both gloves, the long shadow of a clipboard crossing the ring at his feet",
+      "avoid": "two bats, second bat, bat in each hand",
+      "job": "j_e4b2338012d7",
+      "asset": "a_51872f5559d0cfa4"
+    },
+    {
+      "file": "boss_foreman_1",
+      "place": "floor",
+      "cast": [
+        "foreman"
+      ],
+      "scene": "the Foreman rising over the conveyor belt, red lamps behind it, order sheet on its chest",
+      "job": "j_f4efe4b7ff93",
+      "asset": "a_40077003c718c7eb"
+    },
+    {
+      "file": "boss_foreman_2",
+      "place": "floor",
+      "cast": [
+        "slice"
+      ],
+      "scene": "Slice with her eyes on the conveyor belt, rows of small black robot shells on hooks behind her",
+      "job": "j_7ccdd8a8452d",
+      "asset": "a_6559600f68d3f539"
+    },
+    {
+      "file": "boss_foreman_3",
+      "place": "floor",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit hefting his bat under the belt lamps",
+      "job": "j_f760cc67f983",
+      "asset": "a_b3cbfd7da2478e20"
+    },
+    {
+      "file": "boss_server_1",
+      "place": "walk",
+      "cast": [
+        "server"
+      ],
+      "scene": "the Server standing very still on a dais at the end of the causeway, holding out its folded paper",
+      "job": "j_6436486c419f",
+      "asset": "a_d41ff1de1fcd5600"
+    },
+    {
+      "file": "boss_server_2",
+      "place": "walk",
+      "cast": [
+        "slice"
+      ],
+      "scene": "Slice in profile among the mist and the lamp stilts",
+      "job": "j_1a4a004290e3",
+      "asset": "a_f70244ed3c84961a"
+    },
+    {
+      "file": "boss_server_3",
+      "place": "walk",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit grinning with his bat up, a white paper hanging in the air in front of him",
+      "job": "j_5f36889e9c85",
+      "asset": "a_4eafc57b95cb6263"
+    },
+    {
+      "file": "boss_order_1",
+      "place": "filed",
+      "cast": [
+        "orderbearer"
+      ],
+      "scene": "the white doorframe on its dais at dawn, the Order-Bearer walking toward it with its sealed scroll",
+      "job": "j_2625e21f364b",
+      "asset": "a_105eaf14df2ea5a3"
+    },
+    {
+      "file": "boss_order_2",
+      "place": "filed",
+      "cast": [
+        "slice"
+      ],
+      "scene": "Slice in the ring at dawn with her knife out",
+      "job": "j_2da358d1c8d5",
+      "asset": "a_8c540f42146302ce"
+    },
+    {
+      "file": "boss_order_3",
+      "place": "filed",
+      "cast": [
+        "orderbearer"
+      ],
+      "scene": "close on the Order-Bearer, the red wax seal glowing on the scroll across its back",
+      "job": "j_fedde8ed2b05",
+      "asset": "a_aa1248efe0f01942"
+    },
+    {
+      "file": "boss_order_4",
+      "place": "filed",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit squaring up with his bat on his shoulder",
+      "job": "j_fcdd491439ed",
+      "asset": "a_b7748b7b68e9c43e"
+    },
+    {
+      "file": "ending_received_1",
+      "place": "dawn",
+      "cast": [],
+      "scene": "top-down on the gold circle at dawn, six small things in a row inside it: a postcard, a brass key, a hat, a folded paper, a leaf, a rubber stamp",
+      "job": "j_7cb15eec8248",
+      "asset": "a_ca2c7fd0eb289da3"
+    },
+    {
+      "file": "ending_received_2",
+      "place": "dawn",
+      "cast": [
+        "slice",
+        "wallit"
+      ],
+      "scene": "Slice and Wallit standing together in the gold ring, looking down at six small keepsakes set in a row on the grass",
+      "job": "j_0755ac2cdf82",
+      "asset": "a_ae20c8e53c213be8"
+    },
+    {
+      "file": "ending_received_3",
+      "place": "dawn",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit holding up a rubber stamp reading \"RETURN TO SENDER\" in his white gloves",
+      "job": "j_afe1f69bc94a",
+      "asset": "a_ec70a7637da79d6b"
+    },
+    {
+      "file": "ending_received_4",
+      "place": "dawn",
+      "cast": [],
+      "scene": "a rubber stamp coming down on the gold ring printing \"ADDRESS\", simple wooden doors rising from the grass one by one around the Hollow",
+      "job": "j_b968f9b758a6",
+      "asset": "a_f76c1fb63411df6f"
+    },
+    {
+      "file": "ending_received_5",
+      "place": "dawn",
+      "cast": [
+        "yobot"
+      ],
+      "scene": "one small Yo Bot holding a paper, puzzled, in front of a new softly glowing door",
+      "job": "j_74244e5a4231",
+      "asset": "a_0c1f4b07d958a615"
+    },
+    {
+      "file": "ending_received_6",
+      "place": "dawn",
+      "cast": [
+        "wallit",
+        "slice"
+      ],
+      "scene": "Wallit and Slice in warm gold light, Slice with a small smile only in her eyes, a stamp mark reading \"RECEIVED\" on the ring",
+      "job": "j_70593d652aa7",
+      "asset": "a_6dd90e1449565777"
+    },
+    {
+      "file": "ending_received_7",
+      "place": "dawn",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit grinning with his bat on his shoulder on the stamped gold ring",
+      "job": "j_7cb13fc97bbf",
+      "asset": "a_2d49cdd441d5fd0e"
+    },
+    {
+      "file": "credits_1",
+      "place": "dawn",
+      "cast": [],
+      "scene": "wide of the gold circle in the Hollow at dawn",
+      "job": "j_98e8f65c2edc",
+      "asset": "a_371b6cd51e01fe52"
+    },
+    {
+      "file": "credits_2",
+      "place": "dawn",
+      "cast": [],
+      "scene": "at dawn, a slim silver surgical scalpel with a thin flat steel handle and a small curved blade, standing upright with its tip in the glowing grass of the gold circle, warm gold-blue sky behind, no moon",
+      "job": "j_a707c75f4451",
+      "asset": "a_1dd55bcb70d7b243"
+    },
+    {
+      "file": "credits_3",
+      "place": "dawn",
+      "cast": [
+        "yobot",
+        "spiderbot"
+      ],
+      "scene": "one Yo Bot and one Spider Bot standing calmly side by side in a field of simple wooden doors",
+      "job": "j_33d0aed0b0c8",
+      "asset": "a_513b7ae74c6bed4e"
+    },
+    {
+      "file": "credits_4",
+      "place": "dawn",
+      "cast": [
+        "wallit",
+        "slice"
+      ],
+      "scene": "very wide dawn Hollow seen from far away: a gold ring on the grass with exactly two figures inside it, Wallit and Slice standing side by side, nobody else",
+      "avoid": "small people, children, dolls, figurines, extra figures, moon",
+      "job": "j_d5131f78eeef",
+      "asset": "a_d8a8729662e9b4cb"
+    },
+    {
+      "file": "ending_ledger_1_back",
+      "place": "dawn",
+      "cast": [],
+      "scene": "top-down on the open ledger lying on the gold circle, one line of handwriting curving around the ring and a single door number written below it"
+    },
+    {
+      "file": "ending_ledger_2_back",
+      "place": "dawn",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit seen from the front pressing his rubber stamp onto a ledger page, white gloves, proud"
+    },
+    {
+      "file": "ending_ledger_3_back",
+      "place": "dawn",
+      "cast": [
+        "slice"
+      ],
+      "scene": "Slice seen from the front, calm, one hand resting on the ledger's edge, scalpel at her side"
+    },
+    {
+      "file": "ending_ledger_4_back",
+      "place": "dawn",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit holding a receipt marked PAID IN FULL up to the dawn light, bat on his shoulder"
+    },
+    {
+      "file": "ending_ledger_5_back",
+      "place": "dawn",
+      "cast": [],
+      "scene": "the ledger closing on the gold circle, one name inked on its cover, dawn light"
+    },
+    {
+      "file": "ending_ledger_6_back",
+      "place": "dawn",
+      "cast": [
+        "slice"
+      ],
+      "scene": "Slice alone standing guard in the gold ring at dawn, a faint nod, scalpel down"
+    },
+    {
+      "file": "ending_doors_1_back",
+      "place": "dawn",
+      "cast": [],
+      "scene": "top-down on the gold circle, two door numbers written side by side in careful strokes of ink"
+    },
+    {
+      "file": "ending_doors_2_back",
+      "place": "dawn",
+      "cast": [
+        "slice"
+      ],
+      "scene": "Slice seen from the front, writing a second number with a pen, faint smile in her eyes"
+    },
+    {
+      "file": "ending_doors_3_back",
+      "place": "dawn",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit seen from the front holding a stamp over two door numbers, grinning, bat on his shoulder"
+    },
+    {
+      "file": "ending_doors_4_back",
+      "place": "hollow",
+      "cast": [],
+      "scene": "two lamps lit side by side in the Moonlit Hollow, two simple wooden doors next to each other on the grass"
+    },
+    {
+      "file": "ending_doors_5_back",
+      "place": "dawn",
+      "cast": [
+        "yobot"
+      ],
+      "scene": "one small Yo Bot with a paper in each claw, delighted, between two glowing doors"
+    },
+    {
+      "file": "ending_doors_6_back",
+      "place": "dawn",
+      "cast": [
+        "slice",
+        "wallit"
+      ],
+      "scene": "Slice walking ahead and glancing back at Wallit, who hurries after her with his bat"
+    },
+    {
+      "file": "ending_open_1_back",
+      "place": "hollow",
+      "cast": [],
+      "scene": "the Department's office wall at dawn covered in pinned slips, every slip pinned; a small Yo Bot with its lid on straight stands in an open doorway"
+    },
+    {
+      "file": "ending_open_2_back",
+      "place": "dawn",
+      "cast": [
+        "yobot"
+      ],
+      "scene": "one small Yo Bot in an open doorway, lid on straight, cheerful"
+    },
+    {
+      "file": "ending_open_3_back",
+      "place": "dawn",
+      "cast": [],
+      "scene": "three small glowing doors in a row on the grass, one with a brim hat hung on it, one with a small clock, one with a bell"
+    },
+    {
+      "file": "ending_open_4_back",
+      "place": "dawn",
+      "cast": [
+        "wallit"
+      ],
+      "scene": "Wallit seen from the front looking over lit lamps, holding out a coin, wry grin"
+    },
+    {
+      "file": "ending_open_5_back",
+      "place": "dawn",
+      "cast": [
+        "slice"
+      ],
+      "scene": "Slice seen from the front reading a long numbered list, one eyebrow lifted"
+    },
+    {
+      "file": "ending_open_6_back",
+      "place": "dawn",
+      "cast": [],
+      "scene": "a wooden door standing open at dawn on the gold-lit grass, nothing striking it, soft light spilling through"
+    }
   ]
 }
