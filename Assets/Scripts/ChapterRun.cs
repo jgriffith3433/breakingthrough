@@ -99,6 +99,7 @@ public class ChapterRun : MonoBehaviour {
     Text cardTitle;
     Text cardBody;
     Text xpText;
+    readonly Image[] slotIcons = new Image[CampaignProgress.SlotCount];
     float spawnIn = 2.5f;
     Enemy boss;
     bool bossSpawned;
@@ -278,6 +279,14 @@ public class ChapterRun : MonoBehaviour {
         }
         if (xpText != null) {
             xpText.text = (Hard ? "HARD  " : "") + CampaignProgress.HudLine();
+        }
+        for (int i = 0; i < slotIcons.Length; i++) {
+            if (slotIcons[i] != null && slotIcons[i].sprite != null) {
+                int fill = CampaignProgress.SlotFill[i];
+                bool ready = fill >= 0 && CampaignProgress.Has(fill) && CampaignProgress.Wait(fill) <= 0f;
+                slotIcons[i].enabled = UiFit.Mode == UiMode.Desktop;
+                slotIcons[i].color = ready ? Color.white : new Color(1f, 1f, 1f, 0.35f);
+            }
         }
         if (stamp != UiFit.Stamp) {
             Layout();
@@ -1222,6 +1231,22 @@ public class ChapterRun : MonoBehaviour {
         xrect.anchoredPosition = new Vector2(24f, -150f);
         xrect.sizeDelta = new Vector2(1250f, 80f);
         xpText.alignment = TextAnchor.MiddleLeft;
+
+        // The ability slots as icons under the XP line (Docs/UiArt.md): Desktop only, dimmed while a slot waits or is locked.
+        for (int i = 0; i < slotIcons.Length; i++) {
+            int fill = CampaignProgress.SlotFill[i];
+            Sprite art = fill >= 0 ? UiArt.Ability(fill == 1 ? "Refund" : CampaignProgress.Abilities[fill].Name) : null;
+            var iconGo = new GameObject("Slot Icon " + i, typeof(RectTransform), typeof(Image));
+            iconGo.transform.SetParent(canvasGo.transform, false);
+            var irect = (RectTransform)iconGo.transform;
+            irect.anchorMin = new Vector2(0f, 1f);
+            irect.anchorMax = new Vector2(0f, 1f);
+            irect.pivot = new Vector2(0f, 1f);
+            irect.anchoredPosition = new Vector2(24f + i * 52f, -234f);
+            irect.sizeDelta = new Vector2(44f, 44f);
+            slotIcons[i] = iconGo.GetComponent<Image>();
+            UiArt.Show(slotIcons[i], art);
+        }
 
         card = new GameObject("Chapter Complete", typeof(RectTransform));
         card.transform.SetParent(canvasGo.transform, false);
