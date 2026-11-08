@@ -543,7 +543,26 @@ public class LevelYard : MonoBehaviour {
         go.transform.SetParent(root, false);
         go.transform.position = SlicePos;
         go.transform.rotation = Quaternion.LookRotation(Vector3.back);
+        // She must be seen: with no model that draws (no prefab in the build, or every renderer off), a dark stand-in stands in.
+        int drawn = 0;
+        foreach (Renderer r in go.GetComponentsInChildren<Renderer>(true)) {
+            if (r != null && r.enabled) {
+                drawn++;
+            }
+        }
+        if (drawn == 0) {
+            GameObject torso = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            torso.name = "Slice stand-in";
+            torso.transform.SetParent(go.transform, false);
+            torso.transform.localPosition = new Vector3(0f, 1f, 0f);
+            torso.transform.localScale = new Vector3(0.6f, 0.9f, 0.6f);
+            Destroy(torso.GetComponent<Collider>());
+            torso.GetComponent<Renderer>().material = new Material(SafeShader.Solid()) { color = new Color(0.22f, 0.14f, 0.3f) };
+            drawn = 1;
+        }
+        go.SetActive(true);
         sliceFigure = go.transform;
+        Note("slice-figure", "Slice stands at " + SlicePos.ToString("0.0") + " on the Ring, " + drawn + " renderers drawn, model " + (prefab != null ? "from Resources/Slice/Slice" : "missing"));
     }
 
     // Five Yo Bots of the Clearing Crew queue at the drop with their lids down: three march first, two more are late.
@@ -707,6 +726,7 @@ public class LevelYard : MonoBehaviour {
             carried = flagItem;
         }
         GameAudio.Play("coin", 0.8f, 1.1f);
+        GameAudio.Play("flag_flutter", 0.7f);
         Fx.Ring(FlagPos + Vector3.up * 0.2f, 4f, new Color(1f, 0.85f, 0.45f, 0.8f), 0.9f);
         scene.Hud.ShowReceipt("RECEIPT: Mailbox Flag. Somebody's. Still waving.", 6f);
         Note("pickup", "Mailbox Flag, carried on Wallit's back");
@@ -737,6 +757,7 @@ public class LevelYard : MonoBehaviour {
             WalkedBeforeCombat = scene.Walked;
         }
         Stage = Beat.Fight;
+        GameAudio.Play("yobot_wake", 0.9f);
         Note("encounter-wake", "crew at the drop (" + cause + "), " + crew.Count + " bots");
         LevelBarks.Say('Y', "Hello! Uploading victory! Striking this address now!", "wake", true);
         scene.Checkpoint = RingCenter + new Vector3(15f, 0f, -6f);
@@ -1038,7 +1059,8 @@ public class LevelYard : MonoBehaviour {
             exitLight.intensity = 2.6f;
             exitLight.range = 20f;
         }
-        GameAudio.Play("door_open", 0.8f);
+        GameAudio.Play("door_open", 0.5f);
+        GameAudio.Play("slot_shutter", 0.9f);
         Fx.Ring(On(ExitPos.x, ExitPos.z) + Vector3.up * 0.2f, 7f, new Color(1f, 0.75f, 0.35f, 0.8f), 1f);
         Note("exit-open", "the return slot's shutter lifts");
         StartCoroutine(AfterClear());
@@ -1247,6 +1269,9 @@ public class LevelYard : MonoBehaviour {
             }
             Vector3 at = s == spots[0] ? LevelKit.Flat(SliceFigureAt) : LevelKit.Flat(s.At);
             float d = Vector3.Distance(p, at);
+            if (s == spots[0] && Vector3.Distance(p, LevelKit.Flat(RingCenter)) <= RingRadius) {
+                d = 0f;   // she holds the Ring: anyone standing inside it can talk to her, wherever on the kerb he stopped
+            }
             if (d < bestD) {
                 bestD = d;
                 best = s;

@@ -435,6 +435,8 @@ and cabinets. The ending reads what was kept: `?|side:<id>|`, `?|sides:12|` and 
 (Spare's lid on straight, Brim's own name on its label, Tick wound, twelve slips pinned, Chime's quiet bell). New Game+ clears them.
 Code: `HubLife.cs`, `ChapterHub.cs`, `OfficeMap.Dress`; the `hub-life` playtest plays all of it.
 
+Voices and sound: the lodgers each have their own voice (Tick a measured wound-clock, Brim a muffled, wistful hat, Spare a small chirpy half-built Yo Bot, Chime a clear, ringing bell), spoken through `CastVoice` for every `Story.Lodgers` line and every `L|` chat line; the hub and each chapter carry a quiet ambience under the score (hub a ticking room, the Hollow wind, the belt yard's rumble, the Long Walk's lamp-buzz, the Reading Room's paper hush).
+
 ## Canon established here
 
 - The lodgers: Tick (clock), Brim (hat), Spare (half-built Yo Bot) and Chime (bell) live in the hub; their lines change after each chapter. Chime's errands pay XP and a kept lost thing.

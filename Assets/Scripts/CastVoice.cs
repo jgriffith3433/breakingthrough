@@ -40,6 +40,12 @@ public class CastVoice : MonoBehaviour {
         return instance;
     }
 
+    // The hub lodgers speak here too (Resources/Cast/cast.json: tick, brim, spare, chime), in Story.Lodgers order.
+    static readonly string[] LodgerCodes = { "I", "J", "X", "G" };
+    public static string LodgerCode(int lodger) {
+        return lodger >= 0 && lodger < LodgerCodes.Length ? LodgerCodes[lodger] : "N";
+    }
+
     // The voice file name for a speaker code and a line.
     public static string FileOf(string code, string text) {
         Cast.Member m = Cast.Find(code);

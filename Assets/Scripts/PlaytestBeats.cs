@@ -122,11 +122,38 @@ public static class PlaytestBeats {
         result(arrived);
     }
 
-    static IEnumerator Use(string promptStart, float seconds = 4f) {
+    // The prompt's verb, whatever key it names: "E: talk to Slice" on a keyboard, "Tap: talk to Slice" where the browser
+    // reports a coarse pointer (UiFit.Touch). E works either way, so the beat only cares about the verb.
+    static bool PromptVerb(string verbStart) {
+        string p = LevelScene.Instance.Yard.Prompt;
+        int c = p.IndexOf(": ");
+        return c >= 0 && p.Substring(c + 2).StartsWith(verbStart);
+    }
+
+    static IEnumerator Use(string verbStart, float seconds = 4f) {
         LevelScene level = LevelScene.Instance;
-        yield return run.Until(() => level.Yard.Prompt.StartsWith(promptStart), seconds, "the prompt \"" + promptStart + "\"");
+        LevelYard y = level.Yard;
+        if (verbStart == "talk" && (y.Talking || y.Talked)) {
+            run.Event("talk-already", "the talk with Slice had started before E (talking " + y.Talking + ", talked " + y.Talked + ")");
+            yield break;
+        }
+        float end = Time.realtimeSinceStartup + seconds;
+        while (!run.Done && !PromptVerb(verbStart) && Time.realtimeSinceStartup < end) {
+            yield return null;
+        }
         if (run.Done) {
             yield break;
+        }
+        if (!PromptVerb(verbStart)) {
+            Vector3 me = level.Player.position;
+            run.Event("use-missed", "wanted \"" + verbStart + "\", prompt \"" + y.Prompt + "\", key " + Interact.Key + ", Wallit at " + me.ToString("0.0")
+                + ", Slice " + Flat(y.SliceFigureAt - me).magnitude.ToString("0.0") + " m away, talking " + y.Talking + ", talked " + y.Talked
+                + ", stage " + y.Stage + ", reach " + LevelYard.UseReach);
+            yield return run.Until(() => PromptVerb(verbStart), 0f, "the prompt \"" + Interact.Key + ": " + verbStart + "\"");
+            yield break;
+        }
+        if (!y.Prompt.StartsWith("E:")) {
+            run.Event("prompt-key", "the prompt reads \"" + y.Prompt + "\" on the desktop run (coarse pointer or a touch seen)");
         }
         PlayInput.Tap(KeyCode.E);
         yield return Wait(0.6f);
@@ -178,9 +205,14 @@ public static class PlaytestBeats {
 
         // 1. Explore and talk: walk the chalk up to the Ring, press E at Slice, hear her out. No bot is awake.
         bool ok = false;
-        yield return WalkTo(LevelYard.SlicePos + new Vector3(0f, 0f, -1.5f), 0.6f, 60f, null, v => ok = v);   // end inside LevelYard.UseReach of her
+        // He stops as soon as her prompt is up (inside the Ring or within LevelYard.UseReach of her), whichever he meets first.
+        yield return WalkTo(LevelYard.SlicePos + new Vector3(0f, 0f, -1.5f), 0.6f, 60f, () => level.Yard.Prompt.Contains("talk to Slice"), v => ok = v);
         run.Event("explore", "walked " + Mathf.RoundToInt(level.Walked) + " m from the doors to the Ring");
-        yield return Use("E: talk");
+        run.Event("ring-position", "Wallit at " + level.Player.position.ToString("0.0") + ", " + Flat(level.Player.position - LevelYard.SlicePos).magnitude.ToString("0.0") + " m from Slice's post, " + Flat(level.Player.position - LevelYard.RingCenter).magnitude.ToString("0.0") + " m from the Ring's centre; prompt \"" + level.Yard.Prompt + "\"");
+        yield return Use("talk");
+        if (!run.Done && !level.Yard.Talking && !level.Yard.Talked) {
+            run.Problem(PlaytestSeverity.Bug, "campaign-beats: no talk prompt for Slice at the Ring (Wallit " + level.Player.position.ToString("0.0") + ", Slice " + level.Yard.SliceFigureAt.ToString("0.0") + ")");
+        }
         yield return run.Until(() => level.Yard.Talked, 70f, "the talk with Slice to end");
         Drain();
         run.Event("talk-done", "Slice joined: " + level.Yard.SliceJoined);
@@ -213,15 +245,15 @@ public static class PlaytestBeats {
         };
         yield return WalkTo(trail[0], 1.5f, 25f, null, v => ok = v);
         yield return WalkTo(LevelYard.NoticePos[0] + new Vector3(2f, 0f, -1.5f), 1.2f, 20f, null, v => ok = v);
-        yield return Use("E: read");
+        yield return Use("read");
         yield return WalkTo(LevelYard.NoticePos[1] + new Vector3(2f, 0f, -1.5f), 1.2f, 25f, null, v => ok = v);
-        yield return Use("E: read");
+        yield return Use("read");
         yield return WalkTo(LevelYard.NoticePos[2] + new Vector3(2f, 0f, -1.5f), 1.2f, 25f, null, v => ok = v);
-        yield return Use("E: read");
+        yield return Use("read");
         yield return Wait(2.5f);
         yield return WalkTo(LevelYard.FlagPos + new Vector3(1.8f, 0f, -1.2f), 1.2f, 25f, null, v => ok = v);
         bool wokeBefore = level.Yard.CrewWoken;
-        yield return Use("E: pick up");
+        yield return Use("pick up");
         Drain();
         run.Event("explore-before-combat", Mathf.RoundToInt(level.Walked) + " m walked, " + Mathf.RoundToInt(level.Seconds) + " s in the level, crew awake: " + wokeBefore);
         run.Metric("metresBeforeCombat", Mathf.Round(level.Walked));
@@ -336,7 +368,7 @@ public static class PlaytestBeats {
         if (level.Yard.NoticeDown) {
             yield return Wait(2.5f);   // it drifts down
             yield return WalkTo(level.Yard.NoticeAt, 1.4f, 25f, null, v => ok = v);
-            yield return Use("E: keep", 5f);
+            yield return Use("keep", 5f);
             Drain();
             run.Metric("noticeKept", level.Yard.NoticeKept ? 1 : 0);
             if (!level.Yard.NoticeKept) {

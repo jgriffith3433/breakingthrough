@@ -165,6 +165,7 @@ public class ChapterRun : MonoBehaviour {
         Events.Add("start|" + data.Id + "|" + data.Objective + "|" + data.Target + (Hard ? "|hard" : ""));
         CampaignProgress.BeginChapter();
         MusicDirector.Play(MusicDirector.ChapterTrack(Chapter));
+        MusicDirector.Ambience(MusicDirector.AmbienceFor(Chapter));
         MusicDirector.Prefetch(MusicDirector.BossTrack(data.BossName));   // fetched by URL: ready before the boss walks in
         gameObject.AddComponent<CampaignAbilities>();
         if (!string.IsNullOrEmpty(data.Companion)) {
