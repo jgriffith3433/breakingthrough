@@ -46,6 +46,22 @@ public static class UiSkin {
         image.pixelsPerUnitMultiplier = 1f / Mathf.Max(0.1f, scale);
     }
 
+    // The generated panel frame when Resources/UiArt/panel_frame.png exists (Docs/UiArt.md), else the code-drawn rounded panel.
+    // `scale` works as in Round: the 256 px frame's 41 px border shows about 16 units wide at 1. The frame is grey, so the Image's colour tints it.
+    public static void Framed(Image image, float scale = 1f) {
+        Sprite art = UiArt.Frame;
+        if (image == null) {
+            return;
+        }
+        if (art == null) {
+            Round(image, scale);
+            return;
+        }
+        image.sprite = art;
+        image.type = Image.Type.Sliced;
+        image.pixelsPerUnitMultiplier = 2.5f / Mathf.Max(0.1f, scale);
+    }
+
     public static void Bar(Image image) {
         if (image == null) {
             return;

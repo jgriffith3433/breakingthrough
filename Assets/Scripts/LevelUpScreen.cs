@@ -34,6 +34,7 @@ public class LevelUpScreen : MonoBehaviour {
         public Image Halo;
         public Image Frame;
         public Image Face;
+        public Image Icon;
         public Text Name;
         public Text Rank;
         public Text About;
@@ -212,6 +213,7 @@ public class LevelUpScreen : MonoBehaviour {
             card.Name.color = Color.Lerp(Color.white, tint, 0.5f);
             card.Rank.text = RunBoons.RankText(info.Id);
             card.About.text = info.About;
+            UiArt.Show(card.Icon, laidOut == UiMode.Desktop ? UiArt.Boon(info.Id) : null);
             card.Tag.text = info.Rarity.ToString().ToUpper();
             card.Tag.color = tint;
             card.Key.text = touch ? "Tap to pick" : "[" + (i + 1) + "]";
@@ -383,10 +385,12 @@ public class LevelUpScreen : MonoBehaviour {
                 Lay(card.About, 24, new Vector2(0f, -160f), new Vector2(inner, cardHeight - 160f - 50f));
                 Lay(card.Key, 24, new Vector2(0f, 10f), new Vector2(inner, 34f));
             } else {
-                Lay(card.Tag, 20, new Vector2(0f, -22f), new Vector2(380f, 30f));
-                Lay(card.Name, 40, new Vector2(0f, -60f), new Vector2(390f, 110f));
-                Lay(card.Rank, 24, new Vector2(0f, -170f), new Vector2(380f, 34f));
-                Lay(card.About, 27, new Vector2(0f, -220f), new Vector2(370f, 200f));
+                // Desktop: the icon sits between the rarity tag and the name (phones show no icon: their cards have no room).
+                Lay(card.Tag, 20, new Vector2(0f, -18f), new Vector2(380f, 30f));
+                Place(card.Icon.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -48f), new Vector2(96f, 96f));
+                Lay(card.Name, 38, new Vector2(0f, -146f), new Vector2(390f, 56f));
+                Lay(card.Rank, 24, new Vector2(0f, -206f), new Vector2(380f, 34f));
+                Lay(card.About, 26, new Vector2(0f, -246f), new Vector2(370f, 150f));
                 Lay(card.Key, 30, new Vector2(0f, 60f), new Vector2(380f, 40f));
             }
         }
@@ -410,7 +414,7 @@ public class LevelUpScreen : MonoBehaviour {
         card.Go = new GameObject("Card " + (index + 1));
         card.Go.transform.SetParent(parent, false);
         card.Frame = card.Go.AddComponent<Image>();
-        UiSkin.Round(card.Frame);
+        UiSkin.Framed(card.Frame);
         Place(card.Frame.rectTransform, new Vector2(0.5f, 0.5f), new Vector2((index - 1) * 470f, 0f), new Vector2(430f, 500f));
         var button = card.Go.AddComponent<Button>();
         button.targetGraphic = card.Frame;
@@ -432,6 +436,13 @@ public class LevelUpScreen : MonoBehaviour {
         faceRect.anchorMax = Vector2.one;
         faceRect.offsetMin = new Vector2(6f, 6f);
         faceRect.offsetMax = new Vector2(-6f, -6f);
+
+        var iconGo = new GameObject("Icon");
+        iconGo.transform.SetParent(faceGo.transform, false);
+        card.Icon = iconGo.AddComponent<Image>();
+        card.Icon.raycastTarget = false;
+        card.Icon.enabled = false;
+        Place(card.Icon.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -48f), new Vector2(96f, 96f));
 
         card.Tag = MakeText(faceGo.transform, "", 20, FontStyle.Bold, TextAnchor.UpperCenter);
         Place(card.Tag.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -22f), new Vector2(380f, 30f));

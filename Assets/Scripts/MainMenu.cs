@@ -75,6 +75,7 @@ public class MainMenu : MonoBehaviour {
     float bodyHeight;
     float rowPad;
     float rowTextWidth;
+    float iconPad;
     float titleHeight;
     int tab;
     int page;
@@ -428,6 +429,18 @@ public class MainMenu : MonoBehaviour {
         var drop = title.gameObject.AddComponent<Shadow>();
         drop.effectColor = new Color(0f, 0f, 0f, 0.65f);
         drop.effectDistance = new Vector2(4f, -6f);
+        Sprite logoArt = UiArt.Logo;
+        if (logoArt != null) {
+            // The generated logo (Docs/UiArt.md) takes the title's box; the text stays (hidden) as the fallback and for readers.
+            title.enabled = false;
+            var logo = Fill(parent, Color.white);
+            UiArt.Show(logo, logoArt);
+            logo.rectTransform.anchorMin = new Vector2(0f, 1f);
+            logo.rectTransform.anchorMax = new Vector2(0f, 1f);
+            logo.rectTransform.pivot = new Vector2(0f, 1f);
+            logo.rectTransform.anchoredPosition = new Vector2(0f, -y);
+            logo.rectTransform.sizeDelta = new Vector2(w, titleBox);
+        }
         y += titleBox;
 
         var tag = Label(parent, "Where things that should not exist are given an address.", desktop ? 26 : 22, FontStyle.Italic, Gold, 0f, y, w, tagHeight, TextAnchor.UpperLeft);
@@ -559,7 +572,10 @@ public class MainMenu : MonoBehaviour {
         float buyWidth = compact ? 170f : 150f;
         float buyHeight = compact ? 88f : 58f;
         titleHeight = compact ? 32f : 34f;
-        rowTextWidth = bodyWidth - 26f - buyWidth - rowPad * 2f;
+        // A shop icon (Resources/UiArt/upgrade_<id>.png) takes 64 units on the left; with no art the text keeps its old place.
+        bool hasIcons = UiArt.Upgrade(MetaProgress.Catalog[0].Id) != null;
+        iconPad = hasIcons ? 64f : 0f;
+        rowTextWidth = bodyWidth - 26f - iconPad - buyWidth - rowPad * 2f;
         for (int i = 0; i < MetaProgress.Catalog.Length; i++) {
             UpgradeInfo info = MetaProgress.Catalog[i];
             var row = Node(body, "Form " + info.Name);
@@ -576,20 +592,29 @@ public class MainMenu : MonoBehaviour {
             edge.rectTransform.anchoredPosition = Vector2.zero;
             edge.rectTransform.sizeDelta = new Vector2(10f, 0f);
 
-            titles[i] = Label(row, info.Name, compact ? 26 : 28, FontStyle.Bold, Paper, 26f, rowPad, rowTextWidth - 70f, titleHeight, TextAnchor.UpperLeft);
+            if (hasIcons) {
+                var icon = Fill(row, Color.white);
+                UiArt.Show(icon, UiArt.Upgrade(info.Id));
+                icon.rectTransform.anchorMin = new Vector2(0f, 0.5f);
+                icon.rectTransform.anchorMax = new Vector2(0f, 0.5f);
+                icon.rectTransform.pivot = new Vector2(0f, 0.5f);
+                icon.rectTransform.anchoredPosition = new Vector2(18f, 0f);
+                icon.rectTransform.sizeDelta = new Vector2(52f, 52f);
+            }
+            titles[i] = Label(row, info.Name, compact ? 26 : 28, FontStyle.Bold, Paper, 26f + iconPad, rowPad, rowTextWidth - 70f, titleHeight, TextAnchor.UpperLeft);
             titles[i].verticalOverflow = VerticalWrapMode.Truncate;
             titles[i].resizeTextForBestFit = true;
             titles[i].resizeTextMinSize = 20;
             titles[i].resizeTextMaxSize = compact ? 26 : 28;
             pipBoxes[i] = Node(row, "Rank");
-            Place(pipBoxes[i], 26f + rowTextWidth - 62f, rowPad + (titleHeight - 16f) * 0.5f, 62f, 16f);
+            Place(pipBoxes[i], 26f + iconPad + rowTextWidth - 62f, rowPad + (titleHeight - 16f) * 0.5f, 62f, 16f);
             for (int p = 0; p < info.MaxRank; p++) {
                 var pip = Fill(pipBoxes[i], new Color(1f, 1f, 1f, 0.15f));
                 UiSkin.Disc(pip, 16f);
                 Place(pip.rectTransform, 62f - (info.MaxRank - p) * 21f + 5f, 0f, 16f, 16f);
             }
-            ranks[i] = Label(row, "", (int)textSmall, FontStyle.Bold, Glass, 26f, 0f, rowTextWidth, 24f, TextAnchor.UpperLeft);
-            abouts[i] = Label(row, info.About, (int)textSmall, FontStyle.Normal, MoonSoft, 26f, 0f, rowTextWidth, 40f, TextAnchor.UpperLeft);
+            ranks[i] = Label(row, "", (int)textSmall, FontStyle.Bold, Glass, 26f + iconPad, 0f, rowTextWidth, 24f, TextAnchor.UpperLeft);
+            abouts[i] = Label(row, info.About, (int)textSmall, FontStyle.Normal, MoonSoft, 26f + iconPad, 0f, rowTextWidth, 40f, TextAnchor.UpperLeft);
 
             int captured = i;
             buttons[i] = MakeButton(row, "Buy", 0f, 0f, buyWidth, buyHeight, compact ? 24 : 22, () => Buy(captured), false, StampRed);
@@ -599,7 +624,7 @@ public class MainMenu : MonoBehaviour {
             buttonRect.pivot = new Vector2(1f, 0.5f);
             buttonRect.anchoredPosition = new Vector2(-rowPad, 0f);
             costs[i] = buttons[i].GetComponentInChildren<Text>();
-            stamps[i] = Stamp(row, "APPROVED", compact ? 26 : 28, StampRed, new Vector2(26f + rowTextWidth * 0.55f, -50f), new Vector2(190f, 46f), -7f, 0f);
+            stamps[i] = Stamp(row, "APPROVED", compact ? 26 : 28, StampRed, new Vector2(26f + iconPad + rowTextWidth * 0.55f, -50f), new Vector2(190f, 46f), -7f, 0f);
             blocks[TabUpgrades].Add(new Block { rect = row, height = 100f });
         }
     }
@@ -681,18 +706,18 @@ public class MainMenu : MonoBehaviour {
             ranks[i].gameObject.SetActive(rankLine.Length > 0);
             if (rankLine.Length > 0) {
                 float rh = Measure(ranks[i], rankLine, rowTextWidth);
-                Place(ranks[i].rectTransform, 26f, y, rowTextWidth, rh);
+                Place(ranks[i].rectTransform, 26f + iconPad, y, rowTextWidth, rh);
                 y += rh + 2f;
             }
             float ah = Measure(abouts[i], abouts[i].text, rowTextWidth);
-            Place(abouts[i].rectTransform, 26f, y, rowTextWidth, ah);
+            Place(abouts[i].rectTransform, 26f + iconPad, y, rowTextWidth, ah);
             y += ah + rowPad;
             float minimum = buttons[i].GetComponent<RectTransform>().sizeDelta.y + rowPad * 2f;
             float height = Mathf.Min(bodyHeight, Mathf.Max(y, minimum));
             Block block = blocks[TabUpgrades][i];
             block.height = height;
             block.rect.sizeDelta = new Vector2(bodyWidth, height);
-            ((RectTransform)stamps[i].transform).anchoredPosition = new Vector2(26f + rowTextWidth * 0.55f, -height * 0.5f);
+            ((RectTransform)stamps[i].transform).anchoredPosition = new Vector2(26f + iconPad + rowTextWidth * 0.55f, -height * 0.5f);
         }
     }
 
@@ -1054,7 +1079,14 @@ public class MainMenu : MonoBehaviour {
     // A panel with a thin edge: the edge color behind, the fill inset over it. Children go on the returned rect.
     RectTransform Framed(Transform parent, Color fill, Color edge, float x, float y, float w, float h, float lift = 0f) {
         var outer = Fill(parent, edge);
-        UiSkin.Round(outer, 0.8f);
+        bool art = UiArt.Frame != null && lift > 0f;
+        if (art) {
+            // The generated frame (Docs/UiArt.md) is the edge: brass-tinted, with the fill inset inside its border.
+            UiSkin.Framed(outer, 1f);
+            outer.color = Color.Lerp(Color.white, edge, 0.55f);
+        } else {
+            UiSkin.Round(outer, 0.8f);
+        }
         Place(outer.rectTransform, x, y, w, h);
         if (lift > 0f) {
             var shadow = outer.gameObject.AddComponent<Shadow>();
@@ -1064,8 +1096,9 @@ public class MainMenu : MonoBehaviour {
         var inner = Fill(outer.transform, fill);
         UiSkin.Round(inner, 0.8f);
         Stretch(inner.rectTransform);
-        inner.rectTransform.offsetMin = new Vector2(2f, 2f);
-        inner.rectTransform.offsetMax = new Vector2(-2f, -2f);
+        float inset = art ? 14f : 2f;
+        inner.rectTransform.offsetMin = new Vector2(inset, inset);
+        inner.rectTransform.offsetMax = new Vector2(-inset, -inset);
         return outer.rectTransform;
     }
 
