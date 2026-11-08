@@ -18,10 +18,11 @@
       "hash": "aa5fc638d623f56178d50329d9ad8c541a57fe66"
     },
     "com.hawkes.analytics": {
-      "version": "file:com.hawkes.analytics",
+      "version": "https://github.com/jgriffith3433/hawkes-analytics.git?path=Packages/com.hawkes.analytics#v1.3.5",
       "depth": 0,
-      "source": "embedded",
-      "dependencies": {}
+      "source": "git",
+      "dependencies": {},
+      "hash": "de0b92511fcbb248edd46d2bfdaa1d49e5bce0ad"
     },
     "com.unity.2d.sprite": {
       "version": "1.0.0",

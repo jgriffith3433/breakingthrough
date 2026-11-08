@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.hawkes.analytics": "https://github.com/jgriffith3433/hawkes-analytics.git?path=Packages/com.hawkes.analytics#v1.3.5",
     "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#main",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
