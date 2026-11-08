@@ -179,6 +179,10 @@ public class OfficeMap : OwnMap {
         StageName = cleared >= 6 ? "filed" : cleared >= 4 ? "late" : cleared >= 2 ? "middle" : "early";
         SetSky(Color.Lerp(C(0.02f, 0.03f, 0.08f), C(0.12f, 0.2f, 0.45f), dawn), Color.Lerp(C(0.1f, 0.14f, 0.3f), C(0.95f, 0.8f, 0.55f), dawn), C(0.06f, 0.07f, 0.12f), Color.Lerp(C(0.8f, 0.85f, 1f), C(1f, 0.9f, 0.6f), dawn), new Vector3(0.1f, 0.3f, 0.9f), 0.02f, 0.4f);
         if (Sky != null) {
+            if (Sky.HasProperty("_Tint")) {
+                // The painted hub sky warms with the file, as the gradient did.
+                Sky.SetColor("_Tint", Color.Lerp(C(0.78f, 0.84f, 1f), C(1f, 0.93f, 0.8f), dawn));
+            }
             RenderSettings.skybox = Sky;
         }
         float hw = ChapterHub.RoomHalfWidth + 0.8f;
