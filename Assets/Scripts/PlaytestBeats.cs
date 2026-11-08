@@ -162,7 +162,7 @@ public static class PlaytestBeats {
 
         // 1. Explore and talk: walk the chalk up to the Ring, press E at Slice, hear her out. No bot is awake.
         bool ok = false;
-        yield return WalkTo(LevelYard.SlicePos + new Vector3(0f, 0f, -2f), 2.2f, 60f, null, v => ok = v);
+        yield return WalkTo(LevelYard.SlicePos + new Vector3(0f, 0f, -1.5f), 0.6f, 60f, null, v => ok = v);   // end inside LevelYard.UseReach of her
         run.Event("explore", "walked " + Mathf.RoundToInt(level.Walked) + " m from the doors to the Ring");
         yield return Use("E: talk");
         yield return run.Until(() => level.Yard.Talked, 70f, "the talk with Slice to end");
