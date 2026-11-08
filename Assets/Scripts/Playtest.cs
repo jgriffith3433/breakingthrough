@@ -129,6 +129,8 @@ public static class Playtest {
     static int fpsFrames;
     static float worstFps = 999f;
     static float fpsNow;
+    static int stallFrames;
+    static float worstFrameMs;
     // The analytics scenario: from this wave on the bot holds fire, so the bots end the run.
     static int holdFireFrom;
     static bool analyticsRun;
@@ -187,6 +189,8 @@ public static class Playtest {
         lastWave = 0;
         fpsSum = 0f;
         fpsFrames = 0;
+        stallFrames = 0;
+        worstFrameMs = 0f;
         worstFps = 999f;
         holdFireFrom = 0;
         analyticsRun = id == "analytics";
@@ -7918,6 +7922,8 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
     // is loaded fresh so it is built for touch.
     static IEnumerator TouchRun() {
         UiFit.ForceTouch(true);
+        MobileQuality.Apply();
+        run.Event("mobile-quality", MobileQuality.Describe());
         run.Log("layout " + UiFit.Mode + " at " + Screen.width + "x" + Screen.height + ", pixel ratio " + UiFit.PixelRatio);
         run.Metric("viewportWidth", Mathf.Round(Screen.width / UiFit.PixelRatio));
         run.Metric("viewportHeight", Mathf.Round(Screen.height / UiFit.PixelRatio));
@@ -7929,6 +7935,8 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         if (run.Done) {
             yield break;
         }
+        run.Metric("menuReadySeconds", Mathf.Round(Time.realtimeSinceStartup * 10f) / 10f);
+        run.Event("menu-load", "main menu up " + Time.realtimeSinceStartup.ToString("F1") + " s after the player started");
         yield return new WaitForSecondsRealtime(1.5f);
         CheckScreen("menu");
         MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
@@ -7957,6 +7965,17 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         yield return null;
         CheckPlayerIsWallit();
         yield return TouchPlay(300f);
+        run.Metric("touchStallFrames", stallFrames);
+        run.Metric("touchWorstFrameMs", Mathf.Round(worstFrameMs));
+        run.Metric("touchAvgFps", fpsFrames > 0 ? Mathf.Round(fpsSum / fpsFrames) : 0f);
+        run.Metric("touchWorstFps", Mathf.Round(worstFps));
+        run.Metric("totalMemoryMB", Mathf.Round(System.GC.GetTotalMemory(false) / 1048576f));
+        if (stallFrames > 3) {
+            run.Problem(PlaytestSeverity.Bug, stallFrames + " frames over 200 ms while playing waves 1-2 on a phone screen");
+        }
+        if (worstFps < 20f && worstFps < 999f) {
+            run.Problem(PlaytestSeverity.Warning, "phone frame rate fell to " + Mathf.Round(worstFps) + " fps in waves 1-2");
+        }
     }
 
     static IEnumerator TouchPlay(float seconds) {
@@ -8644,6 +8663,12 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         fpsNow = Mathf.Lerp(fpsNow <= 0f ? 1f / dt : fpsNow, 1f / dt, 0.1f);
         fpsSum += 1f / dt;
         fpsFrames++;
+        if (fpsFrames > 60) {
+            worstFrameMs = Mathf.Max(worstFrameMs, dt * 1000f);
+            if (dt > 0.2f) {
+                stallFrames++;
+            }
+        }
         if (fpsFrames > 30 && fpsNow < worstFps) {
             worstFps = fpsNow;
         }
