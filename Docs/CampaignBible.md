@@ -172,9 +172,11 @@ Status: built; text extended here as proposed. Emotion: Alone, then not alone. A
 > **SLICE:** Clean.  
 > **NARRATION:** The notice drifts down. Nobody has signed it.  
 
-### Scripted set piece: The Courier's Notice [built (Courier.cs; the mailbox flag answers it in HollowMap)]
+### Scripted set piece: The Courier's Notice [built (Courier.cs; the mailbox flag answers it in HollowMap; the drop's boss in the Sorting Yard, LevelYard.cs)]
 
 The Courier lifts the notice; a red mark fills on the circle's ground over two seconds. Break the wind-up with a tenth of its health, or stand in the mark and take the stamp yourself. Wallit takes the stamp: Slice is spared.
+
+In the Sorting Yard (Chapter 1's level) it comes after the Clearing Crew: the drop box rattles and it steps out from behind it, reads its arrival lines, and walks at Wallit. The mark fills under Slice as she walks with him (the first notice over three seconds); if it lands she goes down until Wallit revives her, and while she is down the mark is under Wallit. Under half health it calls two Yo Bots with each notice. It falls, its notice drifts down unsigned and the return slot opens: E on the notice is choice 1.c1 keep; walking out without it is tear.
 
 ### Choices
 

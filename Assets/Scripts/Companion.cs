@@ -69,6 +69,42 @@ public class Companion : MonoBehaviour {
     float downTilt;
     Vector3 lastPos;
 
+    // Her walk. Slice.fbx has no walk or run take (piano, standUp, stab, slash, sitDown, idle, hurt, defeat), so she
+    // used to glide on idle. Her rig is a Mixamo humanoid with its own avatar, so humanoid clips already in the project
+    // retarget onto her: Resources/Slice/SliceStride.controller lists Walking.fbx (a Mixamo walk, in place) and
+    // ANIM_HERO_JOG.fbx (an in-place jog). They are laid over her controller full body (StrideLayer), crossfaded by
+    // speed between WalkTop and JogFrom, each at her ground speed over the ground it covers, so her feet stay planted.
+    // A clip that did not import as a humanoid motion is skipped: then Wallit's own run stands in for the jog, and with
+    // no usable clip at all she gets a procedural stride (legs swing and a step bob) rather than a silent glide.
+    public const float WalkTop = 1.9f;
+    public const float JogFrom = 2.9f;
+    // Planted-foot speed of each source clip at playback 1, in hip heights a second (measured off the FBX curves:
+    // Walking 1.26 m/s at 0.80 m hips, ANIM_HERO_JOG 3.78 m/s at 0.97 m hips; Wallit's run 4.4 m/s, about 0.95 m hips).
+    const float WalkHips = 1.57f;
+    const float JogHips = 3.9f;
+    const float WallitRunHips = 4.6f;
+    StrideLayer stride;
+    int walkInput = -1;
+    int jogInput = -1;
+    float[] strideSpeed = new float[2];
+    float[] strideGuess = new float[2];
+    float hipHeight = 0.9f;
+    float groundSpeed;
+    float groundSpeedVel;
+    bool walking;
+    float walkStop;
+    public float StrideFade = 0.15f;
+    public string WalkSource { get; private set; } = "none";
+    public float GroundSpeed { get { return groundSpeed; } }
+    public float StrideWeight { get { return stride != null ? stride.Weight : 0f; } }
+    // No clip could be used: a hand-made stride instead.
+    bool procedural;
+    float stepPhase;
+    Transform hips, upperLegL, upperLegR, lowerLegL, lowerLegR, footL, footR;
+    Vector3 footLLocal, footRLocal;
+    float footFloor = 999f;
+    bool haveFeet;
+
     // Called by ChapterRun for a chapter whose data names a companion. Unknown ids do nothing.
     public static void Spawn(string id) {
         if (Instance != null || string.IsNullOrEmpty(id)) {
@@ -116,6 +152,10 @@ public class Companion : MonoBehaviour {
     }
 
     void OnDestroy() {
+        if (stride != null) {
+            stride.Dispose();
+            stride = null;
+        }
         if (Instance == this) {
             Instance = null;
             if (Musician.Instance != null) {
@@ -162,6 +202,90 @@ public class Companion : MonoBehaviour {
         model = body.transform;
         bodyRenderers = body.GetComponentsInChildren<Renderer>();
         PlayClip(Musician.CLIP_IDLE, true);
+        BuildStride();
+    }
+
+    void BuildStride() {
+        if (animator != null && animator.isHuman) {
+            hips = animator.GetBoneTransform(HumanBodyBones.Hips);
+            upperLegL = animator.GetBoneTransform(HumanBodyBones.LeftUpperLeg);
+            upperLegR = animator.GetBoneTransform(HumanBodyBones.RightUpperLeg);
+            lowerLegL = animator.GetBoneTransform(HumanBodyBones.LeftLowerLeg);
+            lowerLegR = animator.GetBoneTransform(HumanBodyBones.RightLowerLeg);
+            footL = animator.GetBoneTransform(HumanBodyBones.LeftFoot);
+            footR = animator.GetBoneTransform(HumanBodyBones.RightFoot);
+            // Her bind pose stands, so the hips' height over her feet scales the clips' strides to her legs.
+            if (hips != null) {
+                float h = hips.position.y - transform.position.y;
+                if (h > 0.4f && h < 2.5f) {
+                    hipHeight = h;
+                }
+            }
+            AnimationClip walk = null;
+            AnimationClip jog = null;
+            RuntimeAnimatorController pack = Resources.Load<RuntimeAnimatorController>("Slice/SliceStride");
+            if (pack != null) {
+                foreach (AnimationClip c in pack.animationClips) {
+                    if (!StrideLayer.Usable(c)) {
+                        continue;
+                    }
+                    // Walking.fbx's take is "mixamo.com" (1.4 s); ANIM_HERO_JOG's is "Unreal Matinee Take" (0.77 s).
+                    bool isWalk = c.name.IndexOf("mixamo", System.StringComparison.OrdinalIgnoreCase) >= 0 || c.length > 1.1f;
+                    if (isWalk && walk == null) {
+                        walk = c;
+                    } else if (!isWalk && jog == null) {
+                        jog = c;
+                    }
+                }
+            }
+            float jogHips = JogHips;
+            string jogName = "ANIM_HERO_JOG";
+            if (jog == null) {
+                jog = WallitRun();
+                jogHips = WallitRunHips;
+                jogName = "Wallit run";
+            }
+            var clips = new System.Collections.Generic.List<AnimationClip>();
+            if (walk != null) {
+                walkInput = clips.Count;
+                strideGuess[clips.Count] = WalkHips * hipHeight;
+                clips.Add(walk);
+            }
+            if (jog != null) {
+                jogInput = clips.Count;
+                strideGuess[clips.Count] = jogHips * hipHeight;
+                clips.Add(jog);
+            }
+            for (int i = 0; i < clips.Count; i++) {
+                strideSpeed[i] = strideGuess[i];
+            }
+            if (clips.Count > 0) {
+                stride = StrideLayer.Create(animator, clips.ToArray(), null, "SliceStride");
+            }
+            if (stride != null) {
+                WalkSource = (walk != null ? "Walking" : "") + (walk != null && jog != null ? " + " : "") + (jog != null ? jogName : "");
+                return;
+            }
+            walkInput = -1;
+            jogInput = -1;
+        }
+        procedural = model != null;
+        WalkSource = procedural ? "procedural" : "none";
+    }
+
+    // Wallit's run off his own controller (a Mixamo humanoid take from Wallit.fbx), for when the jog did not import.
+    static AnimationClip WallitRun() {
+        GameObject w = Resources.Load<GameObject>("Wallit/Wallit");
+        Animator a = w != null ? w.GetComponentInChildren<Animator>(true) : null;
+        if (a == null || a.runtimeAnimatorController == null) {
+            return null;
+        }
+        foreach (AnimationClip c in a.runtimeAnimatorController.animationClips) {
+            if (c != null && (c.name == "run" || c.name.EndsWith("|run") || c.name.EndsWith("_run")) && StrideLayer.Usable(c)) {
+                return c;
+            }
+        }
+        return null;
     }
 
     void BuildLabel() {
@@ -215,7 +339,117 @@ public class Companion : MonoBehaviour {
         float moved = Flat(transform.position - lastPos).magnitude;
         Walked += moved;
         lastPos = transform.position;
+        // A catch-up jump to Wallit is a teleport, not a stride.
+        float speedNow = moved > 3f ? 0f : moved / dt;
+        groundSpeed = Mathf.SmoothDamp(groundSpeed, speedNow, ref groundSpeedVel, 0.08f);
+        TickStride(dt);
         Refresh();
+    }
+
+    // Once a frame, before her Animator runs: walk while she covers ground, idle (the controller) when she stops,
+    // and let a stab, a slash or her fall own the body.
+    void TickStride(float dt) {
+        if (walking) {
+            walkStop = groundSpeed < 0.25f ? walkStop + dt : 0f;
+            if (walkStop >= 0.1f) {
+                walking = false;
+            }
+        } else if (groundSpeed > 0.35f) {
+            walking = true;
+            walkStop = 0f;
+        }
+        float want = 0f;
+        if (Alive && walking && strikeLeft <= 0f) {
+            want = clip == Musician.CLIP_HURT && hurtLeft > 0f ? 0.5f : 1f;
+        }
+        if (procedural) {
+            float step = Mathf.Max(0.3f, hipHeight * 0.85f);
+            stepPhase = want > 0f ? Mathf.Repeat(stepPhase + dt * groundSpeed / (2f * step), 1f) : 0f;
+            return;
+        }
+        if (stride == null) {
+            return;
+        }
+        if (want > 0f && stride.Weight <= 0f) {
+            stride.StartAt(0f);
+        }
+        if (walkInput >= 0 && jogInput >= 0) {
+            float t = Mathf.InverseLerp(WalkTop, JogFrom, groundSpeed);
+            stride.Mix(walkInput, jogInput, t, stride.Weight <= 0f);
+        } else {
+            stride.Lead(0, stride.Weight <= 0f);
+        }
+        for (int i = 0; i < stride.Count && i < strideSpeed.Length; i++) {
+            stride.SetRate(i, Mathf.Clamp(groundSpeed / Mathf.Max(0.3f, strideSpeed[i]), 0.3f, 3f));
+        }
+        stride.Tick(want, StrideFade, dt);
+    }
+
+    // After her Animator: learn each clip's real stride from the planted foot (as Wallit's legs do), and, with no
+    // clip at all, swing her legs and bob her step by hand.
+    void LateUpdate() {
+        if (model == null || Time.deltaTime <= 0f) {
+            return;
+        }
+        if (procedural) {
+            TickProceduralStride();
+            return;
+        }
+        LearnStride(Time.deltaTime);
+    }
+
+    void LearnStride(float dt) {
+        if (stride == null || footL == null || footR == null) {
+            return;
+        }
+        Vector3 wl = footL.position;
+        Vector3 wr = footR.position;
+        Vector3 ll = model.InverseTransformPoint(wl);
+        Vector3 lr = model.InverseTransformPoint(wr);
+        footFloor = Mathf.Min(footFloor + 0.05f * dt, Mathf.Min(wl.y, wr.y));
+        if (haveFeet && stride.Weight > 0.99f && groundSpeed > 0.5f) {
+            // Only while one clip has the legs alone, so the measure belongs to it.
+            int lead = walkInput >= 0 && jogInput >= 0 ? (groundSpeed <= WalkTop ? walkInput : groundSpeed >= JogFrom ? jogInput : -1) : 0;
+            bool leftLower = wl.y <= wr.y;
+            Vector3 now = leftLower ? ll : lr;
+            Vector3 before = leftLower ? footLLocal : footRLocal;
+            float height = (leftLower ? wl.y : wr.y) - footFloor;
+            if (lead >= 0 && height < 0.05f * hipHeight) {
+                // The planted foot's speed against her body is the ground the clip covers at this playback speed.
+                Vector3 body = (now - before) / dt;
+                body.y = 0f;
+                float rate = Mathf.Clamp(groundSpeed / Mathf.Max(0.3f, strideSpeed[lead]), 0.3f, 3f);
+                float implied = body.magnitude * model.lossyScale.y / Mathf.Max(0.3f, rate);
+                float guess = strideGuess[lead];
+                if (implied > guess * 0.5f && implied < guess * 2f) {
+                    strideSpeed[lead] = Mathf.Lerp(strideSpeed[lead], implied, 0.03f);
+                }
+            }
+        }
+        footLLocal = ll;
+        footRLocal = lr;
+        haveFeet = true;
+    }
+
+    // The honest fallback: thighs swing opposite each other, the trailing knee folds, and the body dips at each
+    // footfall, paced so a step covers about 0.85 hip heights. Feet still slip a little; it is not a glide.
+    void TickProceduralStride() {
+        if (stepPhase <= 0f && groundSpeed < 0.35f) {
+            return;
+        }
+        float a = stepPhase * Mathf.PI * 2f;
+        float swing = Mathf.Sin(a);
+        float amount = Mathf.Clamp01(groundSpeed / 1.5f);
+        model.localPosition += Vector3.down * (Mathf.Abs(Mathf.Cos(a)) * 0.04f * hipHeight * amount);
+        Vector3 side = transform.right;
+        if (upperLegL != null && upperLegR != null) {
+            upperLegL.rotation = Quaternion.AngleAxis(-28f * swing * amount, side) * upperLegL.rotation;
+            upperLegR.rotation = Quaternion.AngleAxis(28f * swing * amount, side) * upperLegR.rotation;
+        }
+        if (lowerLegL != null && lowerLegR != null) {
+            lowerLegL.rotation = Quaternion.AngleAxis(40f * Mathf.Max(0f, -swing) * amount, side) * lowerLegL.rotation;
+            lowerLegR.rotation = Quaternion.AngleAxis(40f * Mathf.Max(0f, swing) * amount, side) * lowerLegR.rotation;
+        }
     }
 
     void TickAlive(float dt) {
