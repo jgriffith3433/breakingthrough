@@ -279,6 +279,16 @@ public static class KitTextures {
         if (albedo.ContainsKey(set)) {
             return;
         }
+        // Gen-made art first (Resources/Kit/<set>_a.png and _n.png); the code version below is the fallback for a missing file.
+        var ga = Resources.Load<Texture2D>("Kit/" + set + "_a");
+        var gn = Resources.Load<Texture2D>("Kit/" + set + "_n");
+        if (ga != null && gn != null) {
+            ga.wrapMode = TextureWrapMode.Repeat; ga.filterMode = FilterMode.Trilinear; ga.anisoLevel = 4;
+            gn.wrapMode = TextureWrapMode.Repeat; gn.filterMode = FilterMode.Trilinear; gn.anisoLevel = 4;
+            albedo[set] = ga;
+            normals[set] = gn;
+            return;
+        }
         int size = SizeOf(set);
         var colors = new Color32[size * size];
         var height = new float[size * size];
