@@ -336,7 +336,7 @@ public class ChapterHub : MonoBehaviour {
             var slip = new GameObject("Notice " + HubLife.Sides[i].Id).transform;
             slip.SetParent(world.transform, false);
             slip.position = HubLife.Sides[i].Spot;
-            LevelDress.PutEuler(slip, "of_notice_slip", HubLife.Sides[i].Spot + Vector3.up * 0.06f, new Vector3(-90f, 0f, 0f));
+            LevelDress.PutEuler(slip, "of_notice_slip", HubLife.Sides[i].Spot + Vector3.down * 0.015f, new Vector3(-90f, 180f, 0f));
             Label3D(slip, HubLife.Sides[i].Thing, new Vector3(0f, 1.1f, -0.1f), 0.08f, new Color(1f, 0.95f, 0.7f));
             noticeItems[i] = slip;
             slip.gameObject.SetActive(false);
