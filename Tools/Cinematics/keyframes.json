@@ -152,6 +152,24 @@
     {"file": "credits_1", "place": "dawn", "cast": [], "scene": "wide of the gold circle in the Hollow at dawn", "job": "j_98e8f65c2edc", "asset": "a_371b6cd51e01fe52"},
     {"file": "credits_2", "place": "dawn", "cast": [], "scene": "at dawn, a slim silver surgical scalpel with a thin flat steel handle and a small curved blade, standing upright with its tip in the glowing grass of the gold circle, warm gold-blue sky behind, no moon", "job": "j_a707c75f4451", "asset": "a_1dd55bcb70d7b243"},
     {"file": "credits_3", "place": "dawn", "cast": ["yobot", "spiderbot"], "scene": "one Yo Bot and one Spider Bot standing calmly side by side in a field of simple wooden doors", "job": "j_33d0aed0b0c8", "asset": "a_513b7ae74c6bed4e"},
-    {"file": "credits_4", "place": "dawn", "cast": ["wallit", "slice"], "scene": "very wide dawn Hollow seen from far away: a gold ring on the grass with exactly two figures inside it, Wallit and Slice standing side by side, nobody else", "avoid": "small people, children, dolls, figurines, extra figures, moon", "job": "j_d5131f78eeef", "asset": "a_d8a8729662e9b4cb"}
+    {"file": "credits_4", "place": "dawn", "cast": ["wallit", "slice"], "scene": "very wide dawn Hollow seen from far away: a gold ring on the grass with exactly two figures inside it, Wallit and Slice standing side by side, nobody else", "avoid": "small people, children, dolls, figurines, extra figures, moon", "job": "j_d5131f78eeef", "asset": "a_d8a8729662e9b4cb"},
+    {"file": "ending_ledger_1_back", "place": "dawn", "cast": [], "scene": "top-down on the open ledger lying on the gold circle, one line of handwriting curving around the ring and a single door number written below it"},
+    {"file": "ending_ledger_2_back", "place": "dawn", "cast": ["wallit"], "scene": "Wallit seen from the front pressing his rubber stamp onto a ledger page, white gloves, proud"},
+    {"file": "ending_ledger_3_back", "place": "dawn", "cast": ["slice"], "scene": "Slice seen from the front, calm, one hand resting on the ledger's edge, scalpel at her side"},
+    {"file": "ending_ledger_4_back", "place": "dawn", "cast": ["wallit"], "scene": "Wallit holding a receipt marked PAID IN FULL up to the dawn light, bat on his shoulder"},
+    {"file": "ending_ledger_5_back", "place": "dawn", "cast": [], "scene": "the ledger closing on the gold circle, one name inked on its cover, dawn light"},
+    {"file": "ending_ledger_6_back", "place": "dawn", "cast": ["slice"], "scene": "Slice alone standing guard in the gold ring at dawn, a faint nod, scalpel down"},
+    {"file": "ending_doors_1_back", "place": "dawn", "cast": [], "scene": "top-down on the gold circle, two door numbers written side by side in careful strokes of ink"},
+    {"file": "ending_doors_2_back", "place": "dawn", "cast": ["slice"], "scene": "Slice seen from the front, writing a second number with a pen, faint smile in her eyes"},
+    {"file": "ending_doors_3_back", "place": "dawn", "cast": ["wallit"], "scene": "Wallit seen from the front holding a stamp over two door numbers, grinning, bat on his shoulder"},
+    {"file": "ending_doors_4_back", "place": "hollow", "cast": [], "scene": "two lamps lit side by side in the Moonlit Hollow, two simple wooden doors next to each other on the grass"},
+    {"file": "ending_doors_5_back", "place": "dawn", "cast": ["yobot"], "scene": "one small Yo Bot with a paper in each claw, delighted, between two glowing doors"},
+    {"file": "ending_doors_6_back", "place": "dawn", "cast": ["slice", "wallit"], "scene": "Slice walking ahead and glancing back at Wallit, who hurries after her with his bat"},
+    {"file": "ending_open_1_back", "place": "hollow", "cast": [], "scene": "the Department's office wall at dawn covered in pinned slips, every slip pinned; a small Yo Bot with its lid on straight stands in an open doorway"},
+    {"file": "ending_open_2_back", "place": "dawn", "cast": ["yobot"], "scene": "one small Yo Bot in an open doorway, lid on straight, cheerful"},
+    {"file": "ending_open_3_back", "place": "dawn", "cast": [], "scene": "three small glowing doors in a row on the grass, one with a brim hat hung on it, one with a small clock, one with a bell"},
+    {"file": "ending_open_4_back", "place": "dawn", "cast": ["wallit"], "scene": "Wallit seen from the front looking over lit lamps, holding out a coin, wry grin"},
+    {"file": "ending_open_5_back", "place": "dawn", "cast": ["slice"], "scene": "Slice seen from the front reading a long numbered list, one eyebrow lifted"},
+    {"file": "ending_open_6_back", "place": "dawn", "cast": [], "scene": "a wooden door standing open at dawn on the gold-lit grass, nothing striking it, soft light spilling through"}
   ]
 }
