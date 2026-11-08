@@ -174,6 +174,7 @@ public class ChapterHub : MonoBehaviour {
             PlaceLodgers();
             TalkText = "";
             talkUntil = 0f;
+            chatLines.Clear();
         }
         if (cam != null) {
             cam.cullingMask = shown ? -1 : 0;
@@ -404,6 +405,9 @@ public class ChapterHub : MonoBehaviour {
             }
         }
         TickSide();
+        if (chatLines.Count > 0 && Time.unscaledTime >= nextChatAt) {
+            NextChatLine();
+        }
         if (talkUntil > 0f && Time.unscaledTime >= talkUntil) {
             TalkText = "";
             talkUntil = 0f;
@@ -416,7 +420,26 @@ public class ChapterHub : MonoBehaviour {
 
     // E beside a lodger: their line for the chapters cleared. Chime also sends Wallit out for the next lost thing, or pays him
     // for the one he carries.
+    // An optional chat plays out one line at a time (Wallit's and Slice's lines in their voices), never the whole exchange
+    // on screen at once.
+    readonly System.Collections.Generic.List<string> chatLines = new System.Collections.Generic.List<string>();
+    int chatLodger;
+    float nextChatAt;
+
+    void NextChatLine() {
+        string l = chatLines[0];
+        chatLines.RemoveAt(0);
+        TalkText = (l[0] == 'W' ? "Wallit" : l[0] == 'S' ? "Slice" : Story.Lodgers[chatLodger].Name) + ": \"" + l.Substring(2) + "\"";
+        if (l[0] == 'W' || l[0] == 'S') {
+            CastVoice.SayLater(l.Substring(0, 1), l.Substring(2), "hub");
+        }
+        GameAudio.Play("paper", 0.3f, 1.2f);
+        nextChatAt = Time.unscaledTime + Mathf.Clamp(1.2f + l.Length * 0.05f, 2.4f, 5f);
+        talkUntil = nextChatAt + 1.5f;
+    }
+
     void TalkTo(int i) {
+        chatLines.Clear();
         CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
         int cleared = Mathf.Clamp(slot.cleared, 1, Story.Errands.Length);
         string text = LodgerLine(i);
@@ -430,7 +453,9 @@ public class ChapterHub : MonoBehaviour {
             LastChatId = c.Id;
             CampaignSave.Flush();
             text = null;
-            TalkText = HubLife.Spoken(c);
+            chatLines.AddRange(c.Lines);
+            chatLodger = c.Lodger;
+            NextChatLine();
             RunAnalytics.Screen("hub_chat_" + c.Id);
             PlaceLodgers();
             DressOffice();
@@ -492,7 +517,9 @@ public class ChapterHub : MonoBehaviour {
             TalkText = who + ": \"" + text + "\"";
         }
         talk.color = Hex(Story.Lodgers[i].Colour);
-        talkUntil = Time.unscaledTime + (text == null ? 16f : 9f);
+        if (text != null) {
+            talkUntil = Time.unscaledTime + 9f;
+        }
         GameAudio.Play("paper", 0.5f);
         RunAnalytics.Screen("hub_npc_" + Story.Lodgers[i].Id);
     }
@@ -883,8 +910,11 @@ public class ChapterHub : MonoBehaviour {
             }
             return;
         }
-        ArrivalShown = index + 1;
         string raw = lines[index];
+        if (ArrivalShown != index + 1) {
+            CastVoice.SayLater(raw.Substring(0, 1), raw.Substring(2), "hub");   // every arrival line has a banked clip
+        }
+        ArrivalShown = index + 1;
         speech.text = (raw[0] == 'W' ? "Wallit" : "Slice") + ": \"" + raw.Substring(2) + "\"";
         speech.color = raw[0] == 'W' ? new Color(1f, 0.82f, 0.38f) : new Color(0.62f, 0.95f, 0.86f);
     }

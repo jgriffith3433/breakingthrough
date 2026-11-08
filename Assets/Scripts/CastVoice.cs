@@ -71,10 +71,13 @@ public class CastVoice : MonoBehaviour {
     public static bool Speaking { get { return instance != null && instance.source != null && instance.source.isPlaying; } }
 
     float Speak(string code, string text, string why) {
-        if (code == "W") {
+        // Wallit and Slice speak through their own live voices (mouth and gestures) where those exist. Where they don't (a
+        // chapter level with no Musician, the hub) their banked clips play here like any cast line: before, a Slice line in
+        // Chapter 1 or the hub reserved the floor and played nothing.
+        if (code == "W" && WallitVoice.Instance != null) {
             return WallitVoice.Cutscene(text);
         }
-        if (code == "S") {
+        if (code == "S" && SliceVoice.Instance != null) {
             return SliceVoice.Cutscene(text);
         }
         Cast.Spoke(code, text);

@@ -124,11 +124,13 @@ public class Server : MonoBehaviour {
         Events.Add("offer|" + Offers);
         enemy.Hold(0.5f);
         GameAudio.Play("stamp", 0.5f, 1.3f);
+        GameAudio.Play("paper_slide", 0.6f);
         Fx.Ring(transform.position, 4f, new Color(0.96f, 0.93f, 0.82f, 0.8f), 0.6f);
-        string line = Offers == 1 ? "The Server offers a paper. Refuse it."
-            : Offers == 2 ? "It offers the paper again. Refuse it."
-            : "A third time. Refuse it.";
-        UpgradeLook.Say(line, 2.6f, 160f);
+        // The Server says it; the screen only names the verb.
+        if (Offers == 1) {
+            CastVoice.SayLater("V", "Delivery is to the named address.", "server-offer");
+        }
+        UpgradeLook.Say("Refuse the paper (" + Refusals + "/" + RefusalsNeeded + ")", 2.4f, 160f);
     }
 
     void Refuse() {
@@ -137,7 +139,8 @@ public class Server : MonoBehaviour {
         Events.Add("refuse|" + Refusals);
         GameAudio.Play("batcrack", 0.8f, 0.8f);
         Fx.Ring(transform.position, 6f, new Color(1f, 1f, 1f, 0.8f), 0.5f);
-        UpgradeLook.Say("Refused " + Refusals + " of " + RefusalsNeeded, 2.2f, 160f);
+        UpgradeLook.Say("Refused " + Refusals + "/" + RefusalsNeeded, 1.8f, 160f);
+        CastVoice.SayLater("W", "Refused.", "server-refuse");
         step = Step.BackOff;
         clock = BackOffSeconds;
         enemy.Hold(BackOffSeconds);
@@ -154,7 +157,11 @@ public class Server : MonoBehaviour {
         Events.Add("strike-wind");
         enemy.Hold(StrikeWind + 0.3f);
         GameAudio.Play("stomp", 0.8f, 0.7f);
-        UpgradeLook.Say("Refused three times. The Server strikes!", 2.8f, 160f);
+        UpgradeLook.Say("The Server strikes!", 2.2f, 160f);
+        if (RefusalsNeeded == DefaultRefusals) {
+            CastVoice.SayLater("V", "Three knocks on record.", "server-strike");
+        }
+        GameAudio.Play("knock_three", 0.8f);
     }
 
     void Strike(Musician slice) {

@@ -640,6 +640,7 @@ public class FloorMap : OwnMap {
             lens.SetColor("_EmissionColor", new Color(0.1f, 0.01f, 0.01f, 1f));
         }
         Thud(1f);
+        GameAudio.Play("belt_stop", 0.9f);
         Fx.Ring(leverAt + Vector3.up * 0.3f, 30f, new Color(1f, 0.7f, 0.3f, 0.8f), 0.8f);
         Beat("belt-stopped|belts=" + belts.Count + "|crushers=" + crushers.Count);
     }

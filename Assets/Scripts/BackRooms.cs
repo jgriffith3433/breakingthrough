@@ -16,6 +16,16 @@ public static class BackRooms {
         public int Xp;          // paid the first time
     }
 
+    // A room's Enter exchange ("Slice: \"...\" Wallit: \"...\"") as speaker lines ("S|...", "W|...") for ChapterRun to say
+    // one at a time, each in its own voice.
+    public static string[] Spoken(string enter) {
+        var lines = new System.Collections.Generic.List<string>();
+        foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(enter ?? "", "(Slice|Wallit): \"([^\"]*)\"")) {
+            lines.Add(m.Groups[1].Value.Substring(0, 1) + "|" + m.Groups[2].Value);
+        }
+        return lines.ToArray();
+    }
+
     public const float Dist = 172f;       // beyond the 150 m playfield, inside the 205 m wall
     public const float EnterRadius = 5f;
     public const int EncounterChapter = 3;
@@ -210,7 +220,11 @@ public class BackRoom : MonoBehaviour {
             GameAudio.Play("coin", 0.7f, 1.2f);
         }
         Fx.Ring(At + Vector3.up * 0.2f, 12f, new Color(1f, 0.88f, 0.5f, 0.8f), 0.8f);
-        UpgradeLook.Say((first ? "Found: " + r.Name + (r.Xp > 0 ? "  +" + r.Xp + " XP" : "") : r.Name) + "\n" + r.Enter, 5f, 120f);
+        // The room's name on screen; the exchange inside it is spoken, one voiced line at a time, not printed as a caption.
+        UpgradeLook.Say(first ? "Found: " + r.Name + (r.Xp > 0 ? "  +" + r.Xp + " XP" : "") : r.Name, 2.6f, 120f);
+        if (ChapterRun.Instance != null) {
+            ChapterRun.Instance.TellLines(BackRooms.Spoken(r.Enter));
+        }
         ChapterRun.Events.Add("secret|entered " + r.Name + (first ? " (first time, +" + r.Xp + " XP)" : " (already kept)"));
     }
 
@@ -222,7 +236,10 @@ public class BackRoom : MonoBehaviour {
         EncounterSpawned = true;
         letter = director.SpawnMiniAt(BotKind.SpiderBot, BackRooms.EncounterName, 64, new Color(0.75f, 0.6f, 1.1f), At + new Vector3(0f, 0f, 0f));
         ChapterRun.Events.Add("secret|encounter " + BackRooms.EncounterName + " (" + letter.HitsToDrop + " hits)");
-        UpgradeLook.Say("A paper with no address, and it will not be refused.\nBring it down. Wallit: \"Pay up.\"", 5f, 80f);
+        UpgradeLook.Say("A paper with no address. Bring it down.", 3f, 80f);
+        if (ChapterRun.Instance != null) {
+            ChapterRun.Instance.TellLines(new[] { "W|Pay up." });
+        }
     }
 
     void Reward() {
@@ -234,7 +251,10 @@ public class BackRoom : MonoBehaviour {
             if (PlayerGrowth.Instance != null) {
                 Fx.Ring(PlayerGrowth.Instance.transform.position + Vector3.up * 0.2f, 9f, new Color(1f, 0.82f, 0.38f, 0.9f), 0.8f);
             }
-            UpgradeLook.Say("REFUND IN FULL!\nWallit: \"Returned. In full. Pay up.\" Slice: \"Clean.\"", 6f, 160f);
+            UpgradeLook.Say("REFUND IN FULL!", 2.6f, 160f);
+            if (ChapterRun.Instance != null) {
+                ChapterRun.Instance.TellLines(new[] { "W|Received in full. Pay up.", "S|Clean." });
+            }
         }
     }
 

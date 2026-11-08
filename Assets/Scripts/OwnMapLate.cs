@@ -352,6 +352,7 @@ public class ReadingMap : OwnMap {
         Blank(page - 1);
         blanked = Mathf.Max(blanked, page);
         Beat("forms-blank|" + page);
+        GameAudio.Play("page_turn", 0.7f, 0.95f + page * 0.03f);   // the forms turning over are heard, not just seen
         Fx.Ring(Polar(0f, 30f, 0.3f), 40f, new Color(0.95f, 0.85f, 0.55f, 0.7f), 0.9f);
         if (page >= Pages) {
             open = true;
@@ -590,6 +591,7 @@ public class FiledMap : OwnMap {
             numberText.color = c;
             if (write >= 1f && !numbered) {
                 numbered = true;
+                GameAudio.Play("seal_crack", 0.7f);
                 Beat("door-number|1");
                 Fx.Ring(number.position - Vector3.up * 8f, 30f, new Color(1f, 0.92f, 0.6f, 0.8f), 1.6f);
             }
