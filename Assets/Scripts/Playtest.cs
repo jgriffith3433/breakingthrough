@@ -8383,6 +8383,15 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             run.Problem(PlaytestSeverity.Polish, where + ": the piano is gone but the screen still says \"" + Clip(text.text) + "\"");
         }
         run.Event("stale-words", where + ": " + stale);
+        // The generated UI art (Docs/UiArt.md) on this screen: logo, panel frame and icons that are drawing now.
+        var artSeen = new System.Collections.Generic.List<string>();
+        foreach (Image image in Object.FindObjectsByType<Image>(FindObjectsSortMode.None)) {
+            Canvas holder = image.canvas;
+            if (image.isActiveAndEnabled && image.sprite != null && image.sprite.name.StartsWith("UiArt/") && holder != null && holder.rootCanvas.sortingOrder >= minOrder) {
+                artSeen.Add(image.sprite.name.Substring(6));
+            }
+        }
+        run.Event("ui-art", where + ": " + artSeen.Count + " pieces: " + string.Join(" ", artSeen.ToArray()));
         int buttons = 0;
         int felt = 0;
         foreach (Button button in Object.FindObjectsByType<Button>(FindObjectsSortMode.None)) {
