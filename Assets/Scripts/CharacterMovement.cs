@@ -14,7 +14,9 @@ public class CharacterMovement : MonoBehaviour {
     // Free running turns smoothly instead of snapping; the legs are bent to the real direction of travel meanwhile.
     public float FreeTurnSpeed = 12f;
     // Locomotion: m/s the body must move to start or keep the move clips, and the most the legs are bent to travel.
-    public float StartSpeed = 0.6f;
+    public float StartSpeed = 0.35f;
+    Vector3 lastBodyPos;
+    bool haveBodyPos;
     public float StopSpeed = 0.3f;
     public float StopHold = 0.1f;
     public float MaxWarp = 60f;
@@ -204,9 +206,11 @@ public class CharacterMovement : MonoBehaviour {
 
             FitWallitToPlayer(player, wallit);
 
+            // The old controller script drives Speed and Direction parameters this animator does not have (a warning a
+            // frame) and its turning does nothing now; CharacterMovement drives Wallit.
             CharacterMovementController cmc = player.GetComponent<CharacterMovementController>();
-            if (cmc != null && anim != null) {
-                cmc.Animator = anim;
+            if (cmc != null) {
+                cmc.enabled = false;
             }
             return anim;
         }
@@ -424,6 +428,25 @@ public class CharacterMovement : MonoBehaviour {
         return clip == CLIP_STRAFE_RIGHT ? 90f : clip == CLIP_STRAFE_LEFT ? -90f : clip == CLIP_BACK_PEDAL ? 180f : 0f;
     }
 
+    // Ground covered by one loop of the run clip at scale 1 (before this Wallit learns his own stride).
+    public static float RunStride { get { return DefaultStride[CLIP_RUN]; } }
+
+    // Playback speed for an animator this class does not drive (the hub's Wallit): through MoveSpeed when the
+    // controller has it, else the animator's own speed.
+    public static void DriveSpeed(Animator a, float s) {
+        if (a == null) {
+            return;
+        }
+        foreach (AnimatorControllerParameter parameter in a.parameters) {
+            if (parameter.nameHash == MoveSpeedHash) {
+                a.SetFloat(MoveSpeedHash, s);
+                a.speed = 1f;
+                return;
+            }
+        }
+        a.speed = s;
+    }
+
     void SetMoveSpeed(float s) {
         AnimSpeed = s;
         if (hasMoveSpeed) {
@@ -507,7 +530,7 @@ public class CharacterMovement : MonoBehaviour {
         Vector3 local = transform.InverseTransformDirection(travel);
         float angle = Mathf.Atan2(local.x, local.z) * Mathf.Rad2Deg;
         int clip = CLIP_RUN;
-        if (aiming) {
+        if (aiming || CampaignMoves.Dodging) {
             if (IsLocomotion(moveClip) && Mathf.Abs(Mathf.DeltaAngle(ClipAxis(moveClip), angle)) < 60f) {
                 clip = moveClip;
             } else if (Mathf.Abs(angle) <= 45f) {
@@ -523,7 +546,7 @@ public class CharacterMovement : MonoBehaviour {
         moveClip = clip;
         warpTarget = Mathf.Clamp(Mathf.DeltaAngle(ClipAxis(clip), angle), -MaxWarp, MaxWarp);
 
-        float want = Mathf.Clamp(speed / (Mathf.Max(0.5f, stride[clip]) * scale), 0.45f, 1.8f);
+        float want = Mathf.Clamp(speed / (Mathf.Max(0.5f, stride[clip]) * scale), 0.2f, 3f);
         animSpeed = started ? want : Mathf.SmoothDamp(animSpeed, want, ref animSpeedVel, 0.06f);
         SetMoveSpeed(animSpeed);
         PlayLoco(Anim, clip, 0.14f);
@@ -635,6 +658,14 @@ public class CharacterMovement : MonoBehaviour {
             Anim = EnsureWallitOn(gameObject);
         }
         if (Anim) {
+            // How fast the body really moved since last frame, from its position: a dodge or a shove moves it outside
+            // the motor, so the controller's own velocity (its last Move only) left him idling while he slid 6 m.
+            Vector3 bodyVel = haveBodyPos && Time.deltaTime > 0f ? (transform.position - lastBodyPos) / Time.deltaTime : Vector3.zero;
+            if (bodyVel.sqrMagnitude > 40f * 40f) {
+                bodyVel = Vector3.zero;   // a teleport, not a stride
+            }
+            lastBodyPos = transform.position;
+            haveBodyPos = true;
             if (hasFireSpeed) {
                 Anim.SetFloat(FireSpeedHash, 1.35f * RunBoons.DrawSpeed);
             }
@@ -657,7 +688,7 @@ public class CharacterMovement : MonoBehaviour {
                     FaceToward(Quaternion.LookRotation(toward.normalized), TurnSpeed);
                 }
                 motor.Move(directionToMove);
-                AnimationMove(motor.charController.velocity);
+                AnimationMove(bodyVel);
             } else {
                 Vector2 input = Vector2.ClampMagnitude(new Vector2(PlayInput.GetAxis("Horizontal"), PlayInput.GetAxis("Vertical")), 1f);
                 Vector3 camFwd = ZeldaCam != null ? ZeldaCam.transform.forward : transform.forward;
@@ -671,7 +702,7 @@ public class CharacterMovement : MonoBehaviour {
                     FaceToward(Quaternion.LookRotation(directionToMove.normalized), FreeTurnSpeed);
                 }
                 motor.Move(directionToMove);
-                AnimationMove(motor.charController.velocity);
+                AnimationMove(bodyVel);
             }
 
             if (motor.charController.velocity.sqrMagnitude > 1.2f) {

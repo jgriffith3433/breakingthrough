@@ -1544,6 +1544,9 @@ public class Enemy : MonoBehaviour
         Vector3 moved = transform.position - lastPos;
         lastPos = transform.position;
         moved.y = 0f;
+        if (moved.magnitude > 1.5f) {
+            moved = Vector3.zero;   // a blink, a climb or a frame skipped here: not a stride (it flicked the legs and puffed a footstep)
+        }
         float scale = Mathf.Max(0.2f, transform.lossyScale.y);
         float speed = dt > 0f ? moved.magnitude / dt / scale : 0f;
         float walk = Mathf.Clamp01(speed / 2.5f);

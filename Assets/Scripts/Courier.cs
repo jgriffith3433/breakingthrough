@@ -130,7 +130,7 @@ public class Courier : MonoBehaviour {
         GameAudio.Play("stomp", 0.7f, 1.4f);
         if (!toldTip) {
             toldTip = true;
-            UpgradeLook.Say("Slice: \"Break the wind-up. Or stand in it.\"", 3.4f, 230f);
+            ChapterRun.Say("S|Break the wind-up. Or stand in it.", 3.4f);   // captioned and said in her voice (clip to bank)
         }
         if (Angry && WaveDirector.Instance != null) {
             WaveDirector.Instance.BossCall(transform.position, 2);

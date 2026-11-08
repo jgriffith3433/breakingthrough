@@ -37,15 +37,16 @@ public class LevelYard : MonoBehaviour {
     static readonly string[] NoticeReact = {
         "Item one: wallet, leather. That's me. Where's my cut?",
         "Zero delivered. Six returned. Somebody's cooking the ledger.",
-        "Unsigned? Then it isn't even valid.",
+        "It's not signed.",
     };
     static readonly string[] WallitIdle = {
         "Forty. Forty-one. Somebody short-changed me.",
         "Tap. Tap. Hear that? Hollow. Like a bank at closing.",
         "Nine stones. Looks like padding on the bill.",
         "Is that a mailbox or a bad loan?",
+        "Waiting's billable.",
     };
-    static readonly string[] SliceIdle = { "Left.", "Quiet.", "Closer." };
+    static readonly string[] SliceIdle = { "Holding.", "Noted.", "Closer." };
 
     public enum Beat { Arrive, Talked, Flag, Fight, Clear, Done }
 
@@ -573,23 +574,28 @@ public class LevelYard : MonoBehaviour {
         Note("level-start", "Level_1_Yard at " + PlayerStart);
     }
 
+    // The hook: within the first second a stamp falls beside him (to his right, clear of the chalk walk) and slams RETURN TO
+    // SENDER into the ground, and he answers it. The yard's rule is shown before anyone says it.
     IEnumerator Opening() {
-        yield return new WaitForSeconds(2.2f);
+        yield return new WaitForSeconds(0.8f);
+        DropStampAt(PlayerStart + new Vector3(4.5f, 0f, 6f), "the opening");
+        nextStampAt = Time.time + 9f;
+        yield return new WaitForSeconds(Telegraph + 0.5f);
         LevelBarks.Say('W', "Return to sender. Which sender? I want a refund.", "arrive", true);
     }
 
     string Objective() {
         switch (Stage) {
             case Beat.Arrive:
-                return "Find out why you were stamped. Slice is on guard at the Ring, straight ahead.";
+                return "Talk to Slice at the Ring, straight ahead.";
             case Beat.Talked:
-                return "Read the notices on the west trail (" + NoticesRead + "/3). Find what was lost.";
+                return "Read the notices, west trail (" + NoticesRead + "/3).";
             case Beat.Flag:
-                return "The Clearing Crew has your scent. Return to sender: east, at the drop.";
+                return "Return to sender: the drop, east.";
             case Beat.Fight:
-                return "Clear the Crew (" + CrewAlive + " left). Stay out from under the stamps.";
+                return "Clear the Crew (" + CrewAlive + " left).";
             case Beat.Clear:
-                return "The return slot is open: north-east. Chapter 1 goes on from there.";
+                return "Out: the return slot, north-east.";
             default:
                 return "Filed.";
         }
@@ -601,13 +607,13 @@ public class LevelYard : MonoBehaviour {
         string[] who = { "W", "S", "W", "S", "W", "S", "W", "S" };
         string[] text = {
             "Slice. Straight answer. Who stamped me?",
-            "Nobody signed it.",
-            "Then who pays?",
+            "Nobody signs it. That's how it works.",
+            "Then I'll make it a refund.",
             "Look west. The trail. Lost things, lying where they landed.",
-            "Lost means finders keepers.",
+            "None of this is mine. I'm keeping it anyway.",
             "Wallit.",
             "Finders keepers. Quietly.",
-            "Closer. Stay close.",
+            "Wallit. Stay close.",
         };
         for (int i = 0; i < who.Length; i++) {
             if (i == 3) {
@@ -647,8 +653,8 @@ public class LevelYard : MonoBehaviour {
     void ReadNotice(int i) {
         noticeRead[i] = true;
         NoticesRead++;
-        scene.Hud.ShowReceipt(NoticeRead[i], 6f);
-        GameAudio.Play("coin", 0.35f, 1.4f);
+        scene.Hud.ShowReceipt("NOTICE " + (i + 1) + " OF 3", 2.5f);
+        GameAudio.Play("paper_slide", 0.6f);
         Note("notice", (i + 1) + " of 3: " + NoticeRead[i]);
         LevelBarks.Say('W', NoticeReact[i], "notice", true);
         if (i == 2 && Companion.Instance != null) {
@@ -658,7 +664,7 @@ public class LevelYard : MonoBehaviour {
 
     IEnumerator SliceAnswers() {
         yield return new WaitForSeconds(LevelBarks.LastSeconds + 0.3f);
-        LevelBarks.Say('S', "Valid enough.", "notice", true);
+        LevelBarks.Say('S', "Noted.", "notice", true);
     }
 
     void TakeFlag() {
@@ -684,7 +690,7 @@ public class LevelYard : MonoBehaviour {
         LevelBarks.Say('W', "Finders keepers.", "pickup", true);
         if (Companion.Instance != null) {
             yield return new WaitForSeconds(LevelBarks.LastSeconds + 0.2f);
-            LevelBarks.Say('S', "Keep it.", "pickup", true);
+            LevelBarks.Say('S', "Yours.", "pickup", true);
         }
         yield return new WaitForSeconds(2.6f);
         // Lifting it was the signal: the crew at the drop has its report to close.
@@ -726,7 +732,7 @@ public class LevelYard : MonoBehaviour {
     void WakeLate() {
         lateWoken = true;
         LevelBarks.Quiet = false;
-        LevelBarks.Say('Y', "Late delivery! Late delivery!", "late", true);
+        LevelBarks.Say('Y', "Rush delivery! Rush delivery!", "late", true);
         LevelBarks.Quiet = true;
         for (int i = 0; i < crew.Count; i++) {
             if (lateWave.Contains(i) && crew[i] != null) {
@@ -777,7 +783,7 @@ public class LevelYard : MonoBehaviour {
         yield return new WaitForSeconds(1.2f);
         LevelBarks.Say('S', "Clean.", "clear", true);
         yield return new WaitForSeconds(LevelBarks.LastSeconds + 0.2f);
-        LevelBarks.Say('W', "Return to sender. Paid in full.", "clear", true);
+        LevelBarks.Say('W', "Paid in full.", "clear", true);
         yield return new WaitForSeconds(LevelBarks.LastSeconds + 0.4f);
         if (Companion.Instance != null) {
             LevelBarks.Say('S', "Out. North-east.", "exit", true);
@@ -793,7 +799,7 @@ public class LevelYard : MonoBehaviour {
         Note("pacing", "encounters=" + Encounters + " (the Clearing Crew, placed asleep; nothing spawns on a timer) combatSeconds=" + Mathf.RoundToInt(CombatSeconds) + " playSeconds=" + Mathf.RoundToInt(scene.Seconds) + " combatShare=" + Mathf.RoundToInt(CombatShare * 100f) + "%");
         Note("level-complete", "exit reached after " + Mathf.RoundToInt(scene.Seconds) + " s, " + scene.Defeats + " defeats");
         scene.Hud.Objective.text = Objective();
-        scene.Hud.Prompt.text = "CHAPTER 1: RETURN TO SENDER\nThe Sorting Yard is filed. The Courier waits past the slot.\n" + Interact.Key + ": back to the hub";
+        scene.Hud.Prompt.text = "Chapter 1 filed. " + Interact.Prompt("back to the hub");
     }
 
     // ---------------------------------------------------------------- stamps
@@ -888,14 +894,14 @@ public class LevelYard : MonoBehaviour {
         if (under && inRing) {
             RingSafeShown = true;
             Note("ring-safe", "the stamp lands and Wallit stays: the Ring does not push");
-            LevelBarks.Say('S', "Inside, you exist.", "ring", false);
+            LevelBarks.Say('S', "You're inside. Inside, you exist.", "ring", false);
         } else if (under) {
             StampHits++;
             scene.Shove(flat.sqrMagnitude > 0.05f ? flat : -scene.Player.forward, 3.4f);
             scene.Hud.ShowReceipt("RETURN TO SENDER. -1 fee.", 2f);
             Note("hazard-hit", "stamp floor shoved Wallit back");
             Note("verb-stamp-floor", "shoved off a mark outside the Ring");
-            LevelBarks.Say('W', "That's a fee.", "stamp", false);
+            LevelBarks.Say('W', "That's the fee!", "stamp", false);
         }
         foreach (Enemy e in new List<Enemy>(Enemy.Roster)) {
             if (e == null || !e.Alive || e.Dormant) {
