@@ -305,7 +305,7 @@ public class LevelScene : MonoBehaviour {
         Hud.Health.text = "HP [" + new string('|', Health) + new string('.', MaxHealth - Health) + "]";
 
         // Esc twice leaves for the hub: the level keeps nothing mid-way, so it asks first.
-        if (PlayInput.GetKeyDown(KeyCode.Escape) && !Completed) {
+        if (PlayInput.GetKeyDown(KeyCode.Escape) && !Completed && !PauseMenu.IsOpen && Time.frameCount != PauseMenu.ClosedFrame && Time.frameCount != SettingsPanel.ClosedFrame) {
             if (Time.time - escAt < 2.5f) {
                 LeaveToHub();
             } else {
