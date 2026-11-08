@@ -288,15 +288,38 @@ public static class PlaytestTouch {
         if (small > 0) {
             run.Problem(PlaytestSeverity.Bug, "campaign-touch: " + small + " buttons are under 44 px in " + tag + " (" + firstSmall + ")");
         }
+        run.Metric("auditUnsafe_" + where, unsafeCount);
+        if (unsafeCount > 0) {
+            run.Problem(PlaytestSeverity.Warning, "campaign-touch: " + unsafeCount + " texts reach outside the safe area (notch, home bar) in " + tag);
+        }
         if (textOverlaps > 0) {
             run.Event("text-overlap", tag + ": " + textOverlaps + " text boxes overlap (" + firstOverlap + ")");
+            run.Metric("auditOverlaps_" + where, textOverlaps);
+            run.Problem(PlaytestSeverity.Warning, "campaign-touch: " + textOverlaps + " text boxes overlap in " + tag + " (" + firstOverlap + ")");
         }
+    }
+
+    // The audit on the screen as it stands; with pages, on every Upgrades page of the shop (the menu's case file).
+    static void AuditHere(string where, bool shopPages) {
+        MainMenu menu = shopPages ? Object.FindAnyObjectByType<MainMenu>() : null;
+        if (menu == null) {
+            Audit(where);
+            return;
+        }
+        int pages = menu.ShopPages;
+        for (int p = 0; p < pages; p++) {
+            menu.ShowShopPage(p);
+            Canvas.ForceUpdateCanvases();
+            Audit(where + (pages > 1 ? "-p" + (p + 1) : ""));
+        }
+        menu.ShowShopPage(0);
+        run.Event("shop-pages", where + ": " + pages + " pages of upgrade rows audited, " + MetaProgress.Catalog.Length + " rows in all, " + UiFit.Mode);
     }
 
     // The audit here, then with the phone turned (the other orientation), then back. Only a window that can be resized turns: the
     // editor game view and the browser canvas both follow Screen.SetResolution.
-    static IEnumerator AuditBoth(string where) {
-        Audit(where);
+    static IEnumerator AuditBoth(string where, bool shopPages = false) {
+        AuditHere(where, shopPages);
         int w = Screen.width;
         int h = Screen.height;
         if (w == h || run.Done) {
@@ -307,11 +330,96 @@ public static class PlaytestTouch {
         yield return new WaitForSecondsRealtime(1.5f);
         if (Screen.width == h && Screen.height == w) {
             CheckLayout(where + "-turned");
-            Audit(where + "-turned");
+            AuditHere(where + "-turned", shopPages);
         } else {
             run.Event("screen-turn-skipped", "the screen would not turn (" + Screen.width + "x" + Screen.height + "), the other orientation was not checked at " + where);
         }
         Screen.SetResolution(w, h, false);
+        yield return new WaitForSecondsRealtime(1.5f);
+    }
+
+    static void TapCard() {
+        LevelUpScreen screen = Object.FindAnyObjectByType<LevelUpScreen>();
+        if (screen == null) {
+            return;
+        }
+        foreach (UnityEngine.UI.Button b in screen.GetComponentsInChildren<UnityEngine.UI.Button>()) {
+            if (b.name.StartsWith("Card") && b.isActiveAndEnabled) {
+                Tap(b.gameObject);
+                return;
+            }
+        }
+    }
+
+    // The Arcade screens a phone meets, audited in both orientations: the shop (every Upgrades page), the level-up cards (setup:
+    // a level's worth of bolts) and the boss bar with its label on wave 10 (setup: the testing wave key). Then back to the menu.
+    static IEnumerator ArcadeScreens() {
+        run.Scene("Shop");
+        yield return AuditBoth("shop", true);
+        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+        if (menu == null || menu.PlayButton == null) {
+            yield break;
+        }
+        Tap(menu.PlayButton.gameObject);
+        yield return run.Until(() => WaveDirector.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the Arcade game scene");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(3f);
+        run.Scene("Level-up cards");
+        RunBoons.AddFeathers(RunBoons.Need(RunBoons.Level));
+        run.Event("setup", "a level's worth of bolts granted so the level-up cards open");
+        yield return run.Until(() => LevelUpScreen.IsOpen, 10f, "the level-up cards");
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1f);
+        yield return AuditBoth("cards");
+        TapCard();
+        yield return run.Until(() => !LevelUpScreen.IsOpen, 5f, "the level-up cards to close");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Boss bar");
+        for (int guard = 0; guard < 40 && WaveDirector.Wave < 10 && !run.Done && !WaveDirector.IsLost; guard++) {
+            if (LevelUpScreen.IsOpen) {
+                TapCard();
+            } else {
+                PlayInput.Tap(KeyCode.Equals);
+            }
+            yield return new WaitForSecondsRealtime(0.25f);
+        }
+        run.Event("setup", "the testing wave key to wave " + WaveDirector.Wave + " for the boss bar");
+        float until = Time.realtimeSinceStartup + 60f;
+        Enemy boss = null;
+        while (!run.Done && boss == null && Time.realtimeSinceStartup < until) {
+            foreach (Enemy e in Enemy.Roster) {
+                if (e != null && e.Alive && e.Boss) {
+                    boss = e;
+                    break;
+                }
+            }
+            if (LevelUpScreen.IsOpen) {
+                TapCard();
+            }
+            yield return new WaitForSecondsRealtime(0.25f);
+        }
+        if (run.Done) {
+            yield break;
+        }
+        if (boss == null) {
+            run.Problem(PlaytestSeverity.Bug, "campaign-touch: no boss appeared on wave " + WaveDirector.Wave + " to audit the boss bar");
+        } else {
+            yield return new WaitForSecondsRealtime(2f);
+            run.Event("boss-bar", "\"" + boss.Title + "\" up on wave " + WaveDirector.Wave + ", captions reserved below " + Mathf.Round(UiFit.ReservedTop) + " units");
+            run.Metric("bossBarReservedUnits", Mathf.Round(UiFit.ReservedTop));
+            yield return AuditBoth("boss");
+        }
+        TouchControls.LiftBotFingers();
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(MetaProgress.MenuScene);
+        yield return null;
+        yield return run.Until(() => Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the main menu after the Arcade screens");
         yield return new WaitForSecondsRealtime(1.5f);
     }
 
@@ -325,6 +433,10 @@ public static class PlaytestTouch {
         run.Log("layout " + UiFit.Mode + " at " + Screen.width + "x" + Screen.height);
         yield return new WaitForSecondsRealtime(1f);
         yield return AuditBoth("menu");
+        yield return ArcadeScreens();
+        if (run.Done) {
+            yield break;
+        }
         MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
         if (menu == null || menu.CampaignButton == null) {
             run.Problem(PlaytestSeverity.Bug, "campaign-touch: no Campaign button on the main menu");
