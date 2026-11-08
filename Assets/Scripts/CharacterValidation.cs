@@ -62,6 +62,9 @@ public static class CharacterValidation {
                     r.Failures.Add(d.Id + ": missing part '" + part + "' (the animators bind it by name)");
                 }
             }
+            if (!string.IsNullOrEmpty(d.Extra) && Find(root.transform, d.Extra) == null) {
+                r.Failures.Add(d.Id + ": missing prop part '" + d.Extra + "' (its tell reads it by name)");
+            }
             int budget = d.Boss ? BossBudget : CharacterBudget;
             if (tris > budget || tris > d.Budget) {
                 r.Failures.Add(d.Id + ": " + tris + " triangles is over its budget of " + Mathf.Min(budget, d.Budget));

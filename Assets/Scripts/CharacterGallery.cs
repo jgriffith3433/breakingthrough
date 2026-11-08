@@ -38,7 +38,7 @@ public class CharacterGallery : MonoBehaviour {
     Material black;
     Light sun;
 
-    static readonly string[] Order = { "wallit", "slice", "yo_bot", "spider_bot", "courier", "foreman", "server", "order_bearer", "tick", "brim", "spare", "chime" };
+    static readonly string[] Order = { "wallit", "slice", "yo_bot", "spider_bot", "courier", "plated_alpha", "foreman", "server", "registrar", "order_bearer", "tick", "brim", "spare", "chime" };
     const float Spacing = 2.3f;
 
     public static CharacterGallery Open() {
@@ -160,7 +160,7 @@ public class CharacterGallery : MonoBehaviour {
                 body = CharacterKit.Make(id);
                 e.Label = CharacterKit.DefOf(id).Title.ToUpperInvariant();
                 e.Group = "bosses";
-                e.Idle = id == "courier" ? "checks clipboard, tips cap" : id == "foreman" ? "tilts hat, taps claw" : id == "server" ? "polite bow" : "seal breath, scroll drift";
+                e.Idle = id == "courier" ? "checks clipboard, tips cap" : id == "foreman" ? "tilts hat, taps claw" : id == "server" ? "polite bow" : id == "registrar" ? "turns a page, peers" : id == "plated_alpha" ? "rolls shoulders, knocks plate" : "seal breath, scroll drift";
                 top = 1.7f;
                 AddBossProp(id, body);
                 break;
@@ -307,15 +307,15 @@ public class CharacterGallery : MonoBehaviour {
     void MakeShots() {
         Vector3 o = world.transform.position;
         Vector3 wide = o + new Vector3(0f, 3.4f, -22f), wideT = o + new Vector3(0f, 1.1f, 0f);
-        float hx = (X(0) + X(1)) * 0.5f, bx = (X(2) + X(3)) * 0.5f, lx = (X(8) + X(11)) * 0.5f;
-        string[] heroes = { "wallit", "slice" }, bots = { "yo_bot", "spider_bot" }, bosses = { "courier", "foreman", "server", "order_bearer" }, lodgers = { "tick", "brim", "spare", "chime" };
+        float hx = (X(0) + X(1)) * 0.5f, bx = (X(2) + X(3)) * 0.5f, lx = (X(10) + X(13)) * 0.5f;
+        string[] heroes = { "wallit", "slice" }, bots = { "yo_bot", "spider_bot" }, bosses = { "courier", "plated_alpha", "foreman", "server", "registrar", "order_bearer" }, lodgers = { "tick", "brim", "spare", "chime" };
         Shots.Add(new Shot { Name = "all", Eye = wide, Target = wideT });
         Shots.Add(new Shot { Name = "all-silhouette", Eye = wide, Target = wideT, Silhouette = true });
         Shots.Add(new Shot { Name = "heroes", Eye = o + new Vector3(hx, 1.9f, -7.5f), Target = o + new Vector3(hx, 1.1f, 0f), Who = heroes });
         Shots.Add(new Shot { Name = "heroes-silhouette", Eye = o + new Vector3(hx, 1.9f, -7.5f), Target = o + new Vector3(hx, 1.1f, 0f), Silhouette = true, Who = heroes });
         Shots.Add(new Shot { Name = "bots", Eye = o + new Vector3(bx, 1.9f, -8f), Target = o + new Vector3(bx, 0.9f, 0f), Who = bots });
-        Shots.Add(new Shot { Name = "bosses", Eye = o + new Vector3(0f, 2.4f, -12f), Target = o + new Vector3(0f, 1f, 0f), Who = bosses });
-        Shots.Add(new Shot { Name = "bosses-silhouette", Eye = o + new Vector3(0f, 2.4f, -12f), Target = o + new Vector3(0f, 1f, 0f), Silhouette = true, Who = bosses });
+        Shots.Add(new Shot { Name = "bosses", Eye = o + new Vector3(0f, 2.4f, -15f), Target = o + new Vector3(0f, 1f, 0f), Who = bosses });
+        Shots.Add(new Shot { Name = "bosses-silhouette", Eye = o + new Vector3(0f, 2.4f, -15f), Target = o + new Vector3(0f, 1f, 0f), Silhouette = true, Who = bosses });
         Shots.Add(new Shot { Name = "lodgers", Eye = o + new Vector3(lx, 1.9f, -12f), Target = o + new Vector3(lx, 1f, 0f), Who = lodgers });
     }
 
