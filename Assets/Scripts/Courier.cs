@@ -171,6 +171,7 @@ public class Courier : MonoBehaviour {
         MakeMark(at);
         enemy.Hold(windTime + 0.3f);
         nextRing = 0f;
+        GameAudio.Play("clipboard_raise", 0.8f);
         GameAudio.Play("stomp", 0.7f, 1.4f);
         GameAudio.Play("paper", 0.6f, 1.1f);
         if (!toldTip) {
@@ -234,6 +235,7 @@ public class Courier : MonoBehaviour {
     }
 
     void Land(Musician slice) {
+        GameAudio.Play("paper_flutter", 0.8f);
         Vector3 at = markAt;
         bool wallitIn = false;
         PlayerGrowth player = PlayerGrowth.Instance;

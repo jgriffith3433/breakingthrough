@@ -726,6 +726,7 @@ public class LevelYard : MonoBehaviour {
             carried = flagItem;
         }
         GameAudio.Play("coin", 0.8f, 1.1f);
+        GameAudio.Play("flag_flutter", 0.7f);
         Fx.Ring(FlagPos + Vector3.up * 0.2f, 4f, new Color(1f, 0.85f, 0.45f, 0.8f), 0.9f);
         scene.Hud.ShowReceipt("RECEIPT: Mailbox Flag. Somebody's. Still waving.", 6f);
         Note("pickup", "Mailbox Flag, carried on Wallit's back");
@@ -756,6 +757,7 @@ public class LevelYard : MonoBehaviour {
             WalkedBeforeCombat = scene.Walked;
         }
         Stage = Beat.Fight;
+        GameAudio.Play("yobot_wake", 0.9f);
         Note("encounter-wake", "crew at the drop (" + cause + "), " + crew.Count + " bots");
         LevelBarks.Say('Y', "Hello! Uploading victory! Striking this address now!", "wake", true);
         scene.Checkpoint = RingCenter + new Vector3(15f, 0f, -6f);
@@ -1057,7 +1059,8 @@ public class LevelYard : MonoBehaviour {
             exitLight.intensity = 2.6f;
             exitLight.range = 20f;
         }
-        GameAudio.Play("door_open", 0.8f);
+        GameAudio.Play("door_open", 0.5f);
+        GameAudio.Play("slot_shutter", 0.9f);
         Fx.Ring(On(ExitPos.x, ExitPos.z) + Vector3.up * 0.2f, 7f, new Color(1f, 0.75f, 0.35f, 0.8f), 1f);
         Note("exit-open", "the return slot's shutter lifts");
         StartCoroutine(AfterClear());

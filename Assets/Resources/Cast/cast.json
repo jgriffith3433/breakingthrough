@@ -169,6 +169,62 @@
    "voiceName": "Victor",
    "direction": "low, formal, never angry, only final",
    "provider": "open"
+  },
+  {
+   "id": "tick",
+   "code": "I",
+   "name": "TICK",
+   "colour": "#B9C7E6",
+   "portrait": "",
+   "glyph": "T",
+   "voice": "bark",
+   "bible": "Tick, the clock at the desk: counts hours",
+   "voiceId": "gv_pending",
+   "voiceName": "Tick",
+   "direction": "measured, precise and a little dry; even beats like a clock, weary and courteous",
+   "provider": "open"
+  },
+  {
+   "id": "brim",
+   "code": "J",
+   "name": "BRIM",
+   "colour": "#E6B7A1",
+   "portrait": "",
+   "glyph": "B",
+   "voice": "bark",
+   "bible": "Brim, the hat on the hook: wonders whose head it was",
+   "voiceId": "gv_pending",
+   "voiceName": "Brim",
+   "direction": "slow, wistful and gentle, a little muffled like speaking from under a brim",
+   "provider": "open"
+  },
+  {
+   "id": "spare",
+   "code": "X",
+   "name": "SPARE",
+   "colour": "#8CFFB3",
+   "portrait": "",
+   "glyph": "S",
+   "voice": "bark",
+   "bible": "Spare, the half-built Yo Bot: chirpy and cheerful about everything",
+   "voiceId": "gv_pending",
+   "voiceName": "Spare",
+   "direction": "small, chirpy and bright; eager and unfinished, a happy appliance",
+   "provider": "open"
+  },
+  {
+   "id": "chime",
+   "code": "G",
+   "name": "CHIME",
+   "colour": "#FFD54F",
+   "portrait": "",
+   "glyph": "C",
+   "voice": "bark",
+   "bible": "Chime, the bell who gives errands",
+   "voiceId": "gv_pending",
+   "voiceName": "Chime",
+   "direction": "clear, light and ringing; kind and a little formal, short sweet phrases",
+   "provider": "open"
   }
  ]
 }
