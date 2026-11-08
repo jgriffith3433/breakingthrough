@@ -185,7 +185,7 @@ public static class PlaytestTouch {
         }
 
         // 1. Talk to Slice: the stick to the Ring, the Interact button appears, one tap.
-        yield return WalkLevel(LevelYard.SlicePos + new Vector3(0f, 0f, -2f), 2.0f, 60f);
+        yield return WalkLevel(LevelYard.SlicePos + new Vector3(0f, 0f, -1.5f), 0.5f, 60f);   // Interact reaches 2.7 m: stop within 2 m of her, not 4
         yield return run.Until(() => level.Yard.Prompt.Contains("talk to Slice") && PadShown("Interact"), 6f, "the Interact button beside Slice");
         if (run.Done) {
             yield break;
@@ -207,7 +207,7 @@ public static class PlaytestTouch {
         run.Metric("touchTalk", level.Yard.Talked ? 1 : 0);
 
         // 2. Pick up the Mailbox Flag on the west trail.
-        yield return WalkLevel(LevelYard.FlagPos + new Vector3(1.8f, 0f, -1.2f), 1.2f, 80f);
+        yield return WalkLevel(LevelYard.FlagPos + new Vector3(1.0f, 0f, -0.8f), 0.5f, 80f);   // within 1.8 m of the flag (reach 2.7 m)
         yield return run.Until(() => level.Yard.Prompt.Contains("pick up") && PadShown("Interact"), 6f, "the Interact button at the flag");
         if (run.Done) {
             yield break;
