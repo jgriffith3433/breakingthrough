@@ -704,6 +704,7 @@ public static class Playtest {
     static bool hubAmbience;
     static bool moodsTest;
     static bool fullRun;
+    static string lastFullMap;
     static bool pacingRun;   // campaign-pacing: chapters 2 and 3, each one reporting its encounters and combat share
     static bool quitDone;
     static bool secretTest;
@@ -1640,6 +1641,19 @@ public static class Playtest {
         }
         run.Scene("Chapter play");
         run.Event("chapter-start", chapter.Title + " in " + chapter.Place + ", case file " + (CampaignSave.Active + 1));
+        if (fullRun) {
+            // Per-chapter verdict inputs: which scene is the map (distinct places, no shared arena), and memory.
+            string mapScene = ChapterMap.Current != null ? ChapterMap.Current.MapName : SceneManager.GetActiveScene().name;
+            float memMb = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / 1048576f;
+            run.Event("chapter-verdict", "chapter " + (before + 1) + ": map scene " + mapScene + ", memory " + memMb.ToString("0") + " MB");
+            if (memMb > 1024f) {
+                run.Problem(PlaytestSeverity.Bug, "campaign-full: chapter " + (before + 1) + " uses " + memMb.ToString("0") + " MB");
+            }
+            if (before > 0 && lastFullMap == mapScene) {
+                run.Problem(PlaytestSeverity.Bug, "campaign-full: chapter " + (before + 1) + " reuses the map scene of the chapter before (" + mapScene + ")");
+            }
+            lastFullMap = mapScene;
+        }
         yield return CutsceneStep();
         if (run.Done) {
             yield break;
