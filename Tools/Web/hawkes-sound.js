@@ -230,3 +230,78 @@
     d.addEventListener("DOMContentLoaded", show);
   }
 })();
+
+// The page's "rotate your phone" hint: whatever the page or host shows, it must not sit on the HUD (Slice's bar, the
+// campaign objective). When such a banner appears it becomes a small pill at the bottom edge with a close button, and
+// goes away by itself after six seconds. It watches DOM additions (no polling).
+(function () {
+  var d = document;
+  var HINT = /rotate|landscape|portrait|turn (your )?(phone|device)|sideways/i;
+
+  function tidy(el) {
+    if (!el || el.nodeType !== 1 || el.id === "hawkes-tap" || el.getAttribute("data-hawkes-hint")) {
+      return;
+    }
+    var text = (el.textContent || "").trim();
+    if (!text || text.length > 140 || !HINT.test(text) || /^(script|style|canvas)$/i.test(el.tagName)) {
+      return;
+    }
+    el.setAttribute("data-hawkes-hint", "1");
+    var s = el.style;
+    s.setProperty("position", "fixed", "important");
+    s.setProperty("top", "auto", "important");
+    s.setProperty("bottom", "calc(6px + env(safe-area-inset-bottom, 0px))", "important");
+    s.setProperty("left", "50%", "important");
+    s.setProperty("right", "auto", "important");
+    s.setProperty("transform", "translateX(-50%)", "important");
+    s.setProperty("width", "auto", "important");
+    s.setProperty("max-width", "min(60vw, 320px)", "important");
+    s.setProperty("height", "auto", "important");
+    s.setProperty("padding", "4px 30px 4px 10px", "important");
+    s.setProperty("font-size", "12px", "important");
+    s.setProperty("line-height", "1.3", "important");
+    s.setProperty("border-radius", "14px", "important");
+    s.setProperty("opacity", "0.85", "important");
+    s.setProperty("z-index", "900", "important");
+    var close = d.createElement("button");
+    close.type = "button";
+    close.setAttribute("aria-label", "Dismiss");
+    close.textContent = "×";
+    close.style.cssText = "position:absolute;top:0;right:0;width:28px;height:100%;min-height:24px;border:0;background:transparent;color:inherit;font-size:18px;cursor:pointer";
+    function gone() {
+      if (el.parentNode) {
+        el.parentNode.removeChild(el);
+      }
+    }
+    close.addEventListener("click", gone);
+    el.appendChild(close);
+    setTimeout(gone, 6000);
+  }
+
+  function scan(node) {
+    tidy(node);
+    if (node && node.querySelectorAll) {
+      var all = node.querySelectorAll("div,p,span,aside,section");
+      for (var i = 0; i < all.length; i++) {
+        tidy(all[i]);
+      }
+    }
+  }
+
+  function start() {
+    scan(d.body);
+    new MutationObserver(function (list) {
+      for (var i = 0; i < list.length; i++) {
+        for (var j = 0; j < list[i].addedNodes.length; j++) {
+          scan(list[i].addedNodes[j]);
+        }
+      }
+    }).observe(d.body, { childList: true, subtree: true });
+  }
+
+  if (d.body) {
+    start();
+  } else {
+    d.addEventListener("DOMContentLoaded", start);
+  }
+})();

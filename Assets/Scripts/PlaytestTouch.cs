@@ -137,6 +137,184 @@ public static class PlaytestTouch {
         }
     }
 
+    // The whole screen, as css pixels: every shown text and button must be fully on screen and inside the safe area, no button
+    // under 44 px, and no text may sit under a touch control (stick, Swing, Lock, Interact...). Extents are the text's own
+    // width, not its layout box, so a wide caption box with a short line does not count.
+    static Rect Extent(UnityEngine.UI.Text t) {
+        var c = new Vector3[4];
+        t.rectTransform.GetWorldCorners(c);
+        Rect box = Rect.MinMaxRect(c[0].x, c[0].y, c[2].x, c[2].y);
+        float rw = Mathf.Max(0.01f, t.rectTransform.rect.width);
+        float scale = box.width / rw;
+        float used = Mathf.Min(box.width, t.preferredWidth * scale);
+        float usedH = Mathf.Min(box.height, t.preferredHeight * scale);
+        float x = box.xMin;
+        TextAnchor a = t.alignment;
+        if (a == TextAnchor.UpperCenter || a == TextAnchor.MiddleCenter || a == TextAnchor.LowerCenter) {
+            x = box.center.x - used * 0.5f;
+        } else if (a == TextAnchor.UpperRight || a == TextAnchor.MiddleRight || a == TextAnchor.LowerRight) {
+            x = box.xMax - used;
+        }
+        float y = box.center.y - usedH * 0.5f;
+        if (a == TextAnchor.UpperLeft || a == TextAnchor.UpperCenter || a == TextAnchor.UpperRight) {
+            y = box.yMax - usedH;
+        } else if (a == TextAnchor.LowerLeft || a == TextAnchor.LowerCenter || a == TextAnchor.LowerRight) {
+            y = box.yMin;
+        }
+        return new Rect(x, y, used, usedH);
+    }
+
+    static Rect WorldRect(RectTransform r) {
+        var c = new Vector3[4];
+        r.GetWorldCorners(c);
+        return Rect.MinMaxRect(c[0].x, c[0].y, c[2].x, c[2].y);
+    }
+
+    static bool Overlap(Rect a, Rect b, float slack) {
+        return a.xMin < b.xMax - slack && b.xMin < a.xMax - slack && a.yMin < b.yMax - slack && b.yMin < a.yMax - slack;
+    }
+
+    static void Audit(string where) {
+        float px = UiFit.PixelRatio;
+        Rect screen = new Rect(-1f, -1f, Screen.width + 2f, Screen.height + 2f);
+        Rect safe = Screen.safeArea;
+        safe = new Rect(safe.x - 1f, safe.y - 1f, safe.width + 2f, safe.height + 2f);
+        var pads = new List<RectTransform>();
+        TouchControls.Shown(pads);
+        int texts = 0;
+        int off = 0;
+        int unsafeCount = 0;
+        int underPad = 0;
+        string firstOff = "";
+        string firstPad = "";
+        var seen = new List<KeyValuePair<UnityEngine.UI.Text, Rect>>();
+        foreach (UnityEngine.UI.Text t in Object.FindObjectsByType<UnityEngine.UI.Text>(FindObjectsSortMode.None)) {
+            if (t == null || !t.isActiveAndEnabled || string.IsNullOrWhiteSpace(t.text) || t.color.a < 0.1f || t.canvas == null || t.canvas.renderMode != RenderMode.ScreenSpaceOverlay) {
+                continue;
+            }
+            bool isPad = false;
+            foreach (RectTransform pad in pads) {
+                if (t.transform.IsChildOf(pad)) {
+                    isPad = true;
+                    break;
+                }
+            }
+            Rect e = Extent(t);
+            if (e.width < 2f || e.height < 2f) {
+                continue;
+            }
+            texts++;
+            if (e.xMin < screen.xMin || e.yMin < screen.yMin || e.xMax > screen.xMax || e.yMax > screen.yMax) {
+                off++;
+                if (firstOff == "") {
+                    firstOff = t.name + " \"" + t.text.Replace('\n', ' ') + "\"";
+                }
+            } else if (e.xMin < safe.xMin || e.yMin < safe.yMin || e.xMax > safe.xMax || e.yMax > safe.yMax) {
+                unsafeCount++;
+            }
+            if (!isPad) {
+                foreach (RectTransform pad in pads) {
+                    if (Overlap(e, WorldRect(pad), 4f)) {
+                        underPad++;
+                        if (firstPad == "") {
+                            firstPad = t.name + " \"" + t.text.Replace('\n', ' ') + "\" under " + pad.name;
+                        }
+                        break;
+                    }
+                }
+            }
+            seen.Add(new KeyValuePair<UnityEngine.UI.Text, Rect>(t, e));
+        }
+        int textOverlaps = 0;
+        string firstOverlap = "";
+        for (int i = 0; i < seen.Count; i++) {
+            for (int j = i + 1; j < seen.Count; j++) {
+                if (seen[i].Key.transform.parent == seen[j].Key.transform.parent && seen[i].Key.text == seen[j].Key.text) {
+                    continue;
+                }
+                if (Overlap(seen[i].Value, seen[j].Value, 6f)) {
+                    textOverlaps++;
+                    if (firstOverlap == "") {
+                        firstOverlap = seen[i].Key.name + " over " + seen[j].Key.name;
+                    }
+                }
+            }
+        }
+        int buttons = 0;
+        int small = 0;
+        int buttonsOff = 0;
+        float smallest = 9999f;
+        string firstSmall = "";
+        foreach (UnityEngine.UI.Button b in Object.FindObjectsByType<UnityEngine.UI.Button>(FindObjectsSortMode.None)) {
+            if (b == null || !b.isActiveAndEnabled || !b.interactable || b.targetGraphic == null || b.targetGraphic.canvas == null || b.targetGraphic.color.a < 0.05f) {
+                continue;
+            }
+            var rt = b.transform as RectTransform;
+            bool isPad = false;
+            foreach (RectTransform pad in pads) {
+                if (b.transform.IsChildOf(pad)) {
+                    isPad = true;
+                }
+            }
+            if (rt == null || isPad) {
+                continue;
+            }
+            Rect r = WorldRect(rt);
+            buttons++;
+            float m = Mathf.Min(r.width, r.height) / px;
+            smallest = Mathf.Min(smallest, m);
+            if (r.xMin < screen.xMin || r.yMin < screen.yMin || r.xMax > screen.xMax || r.yMax > screen.yMax) {
+                buttonsOff++;
+            }
+            if (m < 44f) {
+                small++;
+                if (firstSmall == "") {
+                    firstSmall = b.name + " " + Mathf.Round(m) + " px";
+                }
+            }
+        }
+        string tag = where + " " + UiFit.Mode + " " + Screen.width + "x" + Screen.height;
+        run.Event("screen-audit", tag + ": " + texts + " texts (" + off + " off screen, " + unsafeCount + " outside the safe area, " + underPad + " under a touch control, " + textOverlaps + " over other text), "
+            + buttons + " buttons (smallest " + (buttons > 0 ? Mathf.Round(smallest).ToString() : "-") + " px, " + small + " under 44 px, " + buttonsOff + " off screen), " + pads.Count + " touch controls");
+        run.Metric("auditOff_" + where, off + buttonsOff);
+        run.Metric("auditUnderPad_" + where, underPad);
+        run.Metric("auditSmallButtons_" + where, small);
+        if (off > 0 || buttonsOff > 0) {
+            run.Problem(PlaytestSeverity.Bug, "campaign-touch: " + (off + buttonsOff) + " texts or buttons are off screen in " + tag + (firstOff != "" ? " (" + firstOff + ")" : ""));
+        }
+        if (underPad > 0) {
+            run.Problem(PlaytestSeverity.Bug, "campaign-touch: text sits under a touch control in " + tag + " (" + firstPad + ")");
+        }
+        if (small > 0) {
+            run.Problem(PlaytestSeverity.Bug, "campaign-touch: " + small + " buttons are under 44 px in " + tag + " (" + firstSmall + ")");
+        }
+        if (textOverlaps > 0) {
+            run.Event("text-overlap", tag + ": " + textOverlaps + " text boxes overlap (" + firstOverlap + ")");
+        }
+    }
+
+    // The audit here, then with the phone turned (the other orientation), then back. Only a window that can be resized turns: the
+    // editor game view and the browser canvas both follow Screen.SetResolution.
+    static IEnumerator AuditBoth(string where) {
+        Audit(where);
+        int w = Screen.width;
+        int h = Screen.height;
+        if (w == h || run.Done) {
+            yield break;
+        }
+        Rest();
+        Screen.SetResolution(h, w, false);
+        yield return new WaitForSecondsRealtime(1.5f);
+        if (Screen.width == h && Screen.height == w) {
+            CheckLayout(where + "-turned");
+            Audit(where + "-turned");
+        } else {
+            run.Event("screen-turn-skipped", "the screen would not turn (" + Screen.width + "x" + Screen.height + "), the other orientation was not checked at " + where);
+        }
+        Screen.SetResolution(w, h, false);
+        yield return new WaitForSecondsRealtime(1.5f);
+    }
+
     public static IEnumerator Run(PlaytestRun r) {
         run = r;
         stickDown = false;
@@ -146,6 +324,7 @@ public static class PlaytestTouch {
         CampaignSave.EnterSandbox();
         run.Log("layout " + UiFit.Mode + " at " + Screen.width + "x" + Screen.height);
         yield return new WaitForSecondsRealtime(1f);
+        yield return AuditBoth("menu");
         MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
         if (menu == null || menu.CampaignButton == null) {
             run.Problem(PlaytestSeverity.Bug, "campaign-touch: no Campaign button on the main menu");
@@ -178,6 +357,7 @@ public static class PlaytestTouch {
         }
         yield return new WaitForSecondsRealtime(2f);
         CheckLayout("level");
+        yield return AuditBoth("level");
         bool hidden = !PadShown("Interact");
         run.Event("interact-hidden", "nothing in reach at the start: the Interact button is " + (hidden ? "hidden" : "SHOWN"));
         if (!hidden) {
@@ -197,6 +377,7 @@ public static class PlaytestTouch {
             run.Problem(PlaytestSeverity.Bug, "campaign-touch: on touch the prompt reads \"" + prompt + "\" (want Tap: ...)");
         }
         CheckLayout("level-interact");
+        yield return AuditBoth("level-interact");
         run.Event("interact-tap", "finger on Interact beside Slice");
         yield return TapPad("Interact");
         yield return run.Until(() => level.Yard.Talked, 80f, "the talk with Slice to end");
@@ -230,6 +411,7 @@ public static class PlaytestTouch {
             yield break;
         }
         CheckLayout("level-fight");
+        yield return AuditBoth("level-fight");
         float fightStart = Time.realtimeSinceStartup;
         float nextSwing = 0f;
         int swings = 0;
@@ -313,6 +495,7 @@ public static class PlaytestTouch {
         run.Scene("Hub");
         yield return new WaitForSecondsRealtime(2f);
         CheckLayout("hub");
+        yield return AuditBoth("hub");
         bool hubPads = PadShown("Journal") && PadShown("Menu") && !PadShown("Swing");
         run.Event("hub-touch", "stick, Journal and Menu on screen, no bat buttons: " + hubPads + "; prompt \"" + hub.PromptText + "\"");
         if (!hubPads) {
