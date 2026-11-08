@@ -720,6 +720,37 @@ public static class Playtest {
     static bool pacingRun;   // campaign-pacing: chapters 2 and 3, each one reporting its encounters and combat share
     static bool quitDone;
     static bool secretTest;
+    // True when the boss has a part (a prop or a limb) of this name anywhere in its body.
+    static bool HasPart(Enemy boss, string name) {
+        if (boss == null) {
+            return false;
+        }
+        foreach (Transform t in boss.GetComponentsInChildren<Transform>(true)) {
+            if (t.name == name) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // What the boss's body is (an authored CharacterKit rig or the shared bot), its triangles and whether it can flash on a hit.
+    static string BossBodyLine(Enemy boss, string id) {
+        if (boss == null) {
+            return "no boss";
+        }
+        int tris = CharacterKit.Triangles(boss.gameObject);
+        bool flash = false;
+        foreach (Renderer r in boss.GetComponentsInChildren<Renderer>(true)) {
+            if (r.sharedMaterial != null && r.sharedMaterial.HasProperty("_Flash")) {
+                flash = true;
+                break;
+            }
+        }
+        bool authored = HasPart(boss, id == "registrar" ? "Page" : "Pauldrons");
+        KitReport report = CharacterValidation.Run();
+        return boss.Title + ": " + (authored ? "authored " + id + " body" : "shared bot plus prop (fallback)") + ", " + tris + " triangles, hit flash " + (flash ? "ready" : "missing") + ", character validation " + (report.Failures.Count == 0 ? "passed" : report.Failures.Count + " failures");
+    }
+
     static int endingTest;   // endings scenario: the variant (Endings.Ledger/Doors/Open) this pass sets up and expects
 
     static IEnumerator CampaignRun() {
@@ -2936,7 +2967,8 @@ run.Event("boss-defeated", "The Courier fell after " + Mathf.RoundToInt(chapter.
         run.Event("boss-arrives", bossEnemy != null ? bossEnemy.Title + " (" + bossEnemy.HitsToDrop + " hits) after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s; objective \"" + chapter.ObjectiveLine + "\"" : "no boss");
         yield return new WaitForSecondsRealtime(0.6f);
         bool bar = bossEnemy != null && BossBarShows(bossEnemy.Title);
-        run.Event("boss-bar", bossEnemy != null ? bossEnemy.Title + ": health bar " + (bar ? "up" : "missing") + ", stamped plate " + (bossEnemy.transform.Find("Invalid Plate") != null ? "on its chest" : "missing") : "no boss");
+        run.Event("boss-bar", bossEnemy != null ? bossEnemy.Title + ": health bar " + (bar ? "up" : "missing") + ", stamped plate " + (HasPart(bossEnemy, "Invalid Plate") ? "on its chest" : "missing") : "no boss");
+        run.Event("boss-body", BossBodyLine(bossEnemy, "plated_alpha"));
         run.Metric("bossBar", bar ? 1 : 0);
         if (!bar) {
             run.Problem(PlaytestSeverity.Bug, "chapter2: no boss health bar for the Plated Alpha");
@@ -3061,7 +3093,7 @@ run.Event("boss-defeated", "The Plated Alpha fell after " + Mathf.RoundToInt(cha
         run.Event("boss-arrives", bossEnemy != null ? bossEnemy.Title + " (" + bossEnemy.HitsToDrop + " hits) after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s; objective \"" + chapter.ObjectiveLine + "\"" : "no boss");
         yield return new WaitForSecondsRealtime(0.6f);
         bool bar = bossEnemy != null && BossBarShows(bossEnemy.Title);
-        run.Event("boss-bar", bossEnemy != null ? bossEnemy.Title + ": health bar " + (bar ? "up" : "missing") + (walk ? ", paper " + (bossEnemy.transform.Find("Paper") != null ? "in its claw" : "missing") : ", order sheet " + (bossEnemy.transform.Find("Order Sheet") != null ? "on its chest" : "missing")) : "no boss");
+        run.Event("boss-bar", bossEnemy != null ? bossEnemy.Title + ": health bar " + (bar ? "up" : "missing") + (walk ? ", paper " + (HasPart(bossEnemy, "Paper") ? "in its claw" : "missing") : ", order sheet " + (HasPart(bossEnemy, "Order Sheet") ? "on its chest" : "missing")) : "no boss");
         run.Metric("bossBar", bar ? 1 : 0);
         if (!bar) {
             run.Problem(PlaytestSeverity.Bug, "chapter3/4: no boss health bar for " + (walk ? "the Server" : "the Foreman"));
@@ -3146,7 +3178,8 @@ run.Event("boss-defeated", "The Plated Alpha fell after " + Mathf.RoundToInt(cha
         run.Event("boss-arrives", bossEnemy != null ? bossEnemy.Title + " (" + bossEnemy.HitsToDrop + " hits) after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s; objective \"" + chapter.ObjectiveLine + "\"" : "no boss");
         yield return new WaitForSecondsRealtime(0.6f);
         bool bar = bossEnemy != null && BossBarShows(bossEnemy.Title);
-        run.Event("boss-bar", bossEnemy != null ? bossEnemy.Title + ": health bar " + (bar ? "up" : "missing") + ", ledger " + (bossEnemy.transform.Find("Ledger") != null ? "held open" : "missing") : "no boss");
+        run.Event("boss-bar", bossEnemy != null ? bossEnemy.Title + ": health bar " + (bar ? "up" : "missing") + ", ledger " + (HasPart(bossEnemy, "Ledger") ? "held open" : "missing") : "no boss");
+        run.Event("boss-body", BossBodyLine(bossEnemy, "registrar"));
         run.Metric("bossBar", bar ? 1 : 0);
         if (!bar) {
             run.Problem(PlaytestSeverity.Bug, "chapter5: no boss health bar for the Registrar");

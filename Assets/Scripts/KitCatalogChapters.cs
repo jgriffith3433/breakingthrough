@@ -478,7 +478,7 @@ public static partial class KitCatalog {
                 float a = (k * 60f + 30f) * Mathf.Deg2Rad;
                 hex.Add(new Vector2(Mathf.Cos(a) * .9f, Mathf.Sin(a) * .9f));
             }
-            m.Orient(V(0, .14f, 0), V(90f, 0, 0));
+            m.Orient(V(0, 0f, 0), V(90f, 0, 0));   // z -.14..0 turns to y 0...14: on the ground, not 14 cm above it
             m.ExtrudeZ(hex, -.14f, 0f);
             m.Reset();
             S1(m);
@@ -487,7 +487,7 @@ public static partial class KitCatalog {
                 float a = (k * 60f + 30f) * Mathf.Deg2Rad;
                 ring.Add(new Vector2(Mathf.Cos(a) * .6f, Mathf.Sin(a) * .6f));
             }
-            m.Orient(V(0, .16f, 0), V(90f, 0, 0));
+            m.Orient(V(0, .14f, 0), V(90f, 0, 0));   // the brass inset on the slab's top face
             m.ExtrudeZ(ring, -.02f, 0f);
             m.Reset();
         });

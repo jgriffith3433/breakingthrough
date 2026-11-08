@@ -270,6 +270,8 @@ public class BackRoom : MonoBehaviour {
         Vector3 toCircle = Musician.Instance != null ? Musician.Instance.transform.position - At : -At;
         toCircle.y = 0f;
         room.transform.rotation = Quaternion.LookRotation(toCircle.sqrMagnitude > 0.01f ? toCircle.normalized : Vector3.forward, Vector3.up);
+        // At 172 m the bowl slopes: lay the room on it, or one side of its 10 m floor is a metre under and the other in the air.
+        room.transform.rotation = Quaternion.FromToRotation(Vector3.up, LevelDress.GroundNormal(At.x, At.z)) * room.transform.rotation;
         Color lamp = new Color(1f, 0.78f, 0.35f);
         // Built from the Model Kit (Docs/Levels1to3.md): mail-slot walls round three sides, the wainscot door on the fourth with
         // its gap, a desk with a lamp and pigeonholes; the paper floor is a textured decal. No colliders.

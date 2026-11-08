@@ -12,6 +12,40 @@ public static class LevelDress {
     static readonly System.Collections.Hashtable tinted = new System.Collections.Hashtable();
     static readonly System.Collections.Hashtable tintSource = new System.Collections.Hashtable();
 
+    // ---- ground -------------------------------------------------------------------------------------------------------
+
+    // The height of the live ground (the Ground layer) under x, z: place a piece by where the ground really is, not a guessed y.
+    public static float GroundY(float x, float z, float fallback = 0f) {
+        RaycastHit hit;
+        if (Physics.Raycast(new Vector3(x, 80f, z), Vector3.down, out hit, 200f, GroundLayerMask(), QueryTriggerInteraction.Ignore)) {
+            return hit.point.y;
+        }
+        return fallback;
+    }
+
+    public static Vector3 GroundNormal(float x, float z) {
+        RaycastHit hit;
+        if (Physics.Raycast(new Vector3(x, 80f, z), Vector3.down, out hit, 200f, GroundLayerMask(), QueryTriggerInteraction.Ignore)) {
+            return hit.normal;
+        }
+        return Vector3.up;
+    }
+
+    // Lays a flat piece along the ground's slope under it (a slab on a slope is otherwise half buried, half floating).
+    public static void Tilt(GameObject go) {
+        Vector3 p = go.transform.position;
+        go.transform.rotation = Quaternion.FromToRotation(Vector3.up, GroundNormal(p.x, p.z)) * go.transform.rotation;
+    }
+
+    public static int GroundLayer() {
+        int l = LayerMask.NameToLayer("Ground");
+        return l >= 0 ? l : 3;
+    }
+
+    static int GroundLayerMask() {
+        return 1 << GroundLayer();
+    }
+
     // ---- kit pieces -------------------------------------------------------------------------------------------------
 
     public static GameObject Put(Transform parent, string id, Vector3 pos, float yaw = 0f, float scale = 1f) {

@@ -530,11 +530,16 @@ public class Enemy : MonoBehaviour
         Title = name;
         gameObject.name = name;
         HitsToDrop = Mathf.Max(1, hits);
-        GameObject ledger = CharacterKit.Prop("ledger");
-        ledger.name = "Ledger";
-        ledger.transform.SetParent(transform, false);
-        ledger.transform.localPosition = new Vector3(0f, 0.55f, 0.66f);
-        ledger.transform.localRotation = Quaternion.Euler(-10f, 0f, 0f);
+        SetAuthored("registrar");
+        if (model == null || FindPart(model, "Ledger") == null)
+        {
+            // Fallback: the shared Titan Spider Bot with the ledger prop held open in front.
+            GameObject ledger = CharacterKit.Prop("ledger");
+            ledger.name = "Ledger";
+            ledger.transform.SetParent(transform, false);
+            ledger.transform.localPosition = new Vector3(0f, 0.55f, 0.66f);
+            ledger.transform.localRotation = Quaternion.Euler(-10f, 0f, 0f);
+        }
         PhaseAt = 0.5f;
         gameObject.AddComponent<BossPhases>().Setup(BossPhases.Fight.Registrar);
     }
@@ -562,11 +567,16 @@ public class Enemy : MonoBehaviour
         HitsToDrop = Mathf.Max(1, hits);
         modelTint = new Color(1.15f, 0.8f, 0.78f);
         modelTintAmount = 0.3f;
-        GameObject plate = CharacterKit.Prop("plate");
-        plate.name = "Invalid Plate";
-        plate.transform.SetParent(transform, false);
-        plate.transform.localPosition = new Vector3(0f, 0.5f, 0.62f);
-        plate.transform.localRotation = Quaternion.Euler(-8f, 0f, 4f);
+        SetAuthored("plated_alpha");
+        if (model == null || FindPart(model, "Invalid Plate") == null)
+        {
+            // Fallback: the shared Plated Yo Bot with the stamped plate on its chest.
+            GameObject plate = CharacterKit.Prop("plate");
+            plate.name = "Invalid Plate";
+            plate.transform.SetParent(transform, false);
+            plate.transform.localPosition = new Vector3(0f, 0.5f, 0.62f);
+            plate.transform.localRotation = Quaternion.Euler(-8f, 0f, 4f);
+        }
         PhaseAt = 0.5f;
         gameObject.AddComponent<BossPhases>().Setup(BossPhases.Fight.Plated);
     }
@@ -1740,7 +1750,10 @@ public class Enemy : MonoBehaviour
     {
         BotKind look = drone ? BotKind.YoBot : Kind;
         bool authoredBody = !drone && !string.IsNullOrEmpty(authoredId) && CharacterKit.Has(authoredId);
-        GameObject made = authoredBody ? CharacterKit.Make(authoredId) : BotArt.Make(look, modelTint, modelTintAmount);
+        GameObject made = authoredBody ? CharacterKit.Make(authoredId) : null;
+        authoredBody = made != null;   // no authored rig: the shared bot stands in
+        if (made == null)
+            made = BotArt.Make(look, modelTint, modelTintAmount);
         if (made == null)
             return false;
         made.transform.SetParent(transform, false);
