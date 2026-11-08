@@ -235,13 +235,9 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
 Hawkes Analytics (Gen's `docs/analytics.md`) is the game's only analytics. Product id `theplacedepartment`. Never
 add another tracker (`com.unity.analytics` was removed for that reason).
 
-- **Package:** `Packages/com.hawkes.analytics` is an **embedded copy** of Gen's Unity bridge
-  (`hawkesgen/clients/unity/com.hawkes.analytics`, same `.meta` GUIDs) with one fix: Gen's `HawkesAnalytics.cs`
-  has raw U+2028/U+2029 characters in two char literals, which Roslyn reads as line breaks (CS1010), so the
-  `file:` package doesn't compile. Once Gen has `'\u2028'` / `'\u2029'` there, delete the folder and put
-  `"com.hawkes.analytics": "file:C:/Projects/hawkesgen/clients/unity/com.hawkes.analytics"` back in the manifest
-  (and the lock entry's `version`/`source` to that path and `local`). The bridge loads the SDK into the game page
-  itself, so the website repo needs nothing.
+- **Package:** `com.hawkes.analytics` 1.3.5 comes from git in `Packages/manifest.json`
+  (`https://github.com/jgriffith3433/hawkes-analytics.git?path=Packages/com.hawkes.analytics#v1.3.5`; the lock holds
+  the tag's commit). The vendored copy is gone. To upgrade, change the tag and the lock's `hash`.
 - **`RunAnalytics.cs`** decides what is sent; gameplay calls one line of it at the real moment, never per frame.
   `Plugins/WebGL/HawkesAnalyticsPage.jslib` is the page side the bridge lacks: the build stamp, debug mode, the
   themed feedback card and the playtest's view of the SDK's debug log. It starts before the first scene with
