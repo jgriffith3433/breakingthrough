@@ -1444,7 +1444,7 @@ public static class Playtest {
             bool match = Mathf.Abs(fog.r - want.r) + Mathf.Abs(fog.g - want.g) + Mathf.Abs(fog.b - want.b) < 0.02f && Mathf.Abs(RenderSettings.fogDensity - map.Applied.FogDensity) < 0.0005f;
             string look = ColorUtility.ToHtmlStringRGB(fog) + "/" + RenderSettings.fogDensity.ToString("0.0000");
             looks.Add(look);
-            run.Event("map-lighting", "chapter " + (index + 1) + " fog #" + ColorUtility.ToHtmlStringRGB(fog) + " density " + RenderSettings.fogDensity.ToString("0.0000") + ", ambient #" + ColorUtility.ToHtmlStringRGB(RenderSettings.ambientEquatorColor) + ", sky #" + ColorUtility.ToHtmlStringRGB(Camera.main != null ? Camera.main.backgroundColor : Color.black) + (match ? ", the chapter's own" : ", NOT the chapter's"));
+            run.Event("map-lighting", "chapter " + (index + 1) + " fog #" + ColorUtility.ToHtmlStringRGB(fog) + " density " + RenderSettings.fogDensity.ToString("0.0000") + ", ambient #" + ColorUtility.ToHtmlStringRGB(RenderSettings.ambientEquatorColor) + ", sky #" + ColorUtility.ToHtmlStringRGB(Camera.main != null ? Camera.main.backgroundColor : Color.black) + (match ? ", the chapter's own" : ", NOT the chapter's") + ", skybox " + (RenderSettings.skybox != null ? RenderSettings.skybox.name + (RenderSettings.skybox.shader.name == "Knoll/PanoSky" ? " (painted)" : " (gradient)") : "none"));
             if (!match) {
                 run.Problem(PlaytestSeverity.Bug, "chapter-maps: chapter " + (index + 1) + "'s lighting is not on after the map loaded");
             }
