@@ -65,6 +65,11 @@ public static partial class KitCatalog {
             return m;
         }
         KitDef d = byId[id];
+        Mesh baked = BakedMesh.Prop(id);   // a Gen prop baked by Tools/Bake, when there is one; the code piece below is the fallback
+        if (baked != null) {
+            meshes[id] = baked;
+            return baked;
+        }
         var km = new KitMesh { Name = id };
         km.Tex = 1f;
         d.Build(km);
