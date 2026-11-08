@@ -623,6 +623,9 @@ public static class WebGlBuild
         PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
         PlayerSettings.WebGL.decompressionFallback = true;
         PlayerSettings.WebGL.initialMemorySize = 256;
+        // Phones kill a tab that grows past about 1.5 GB: the heap may grow from 256 MB but not to 2 GB.
+        PlayerSettings.WebGL.maximumMemorySize = 1536;
+        PlayerSettings.WebGL.memoryGrowthMode = WebGLMemoryGrowthMode.Geometric;
 
         BuildReport report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
         {
