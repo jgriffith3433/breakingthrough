@@ -1,0 +1,2 @@
+- lesson: studio_gen_import takes asset ids — a brief that gives job ids needs hawkesgen_job to list the a_ ids first; stage imports in .hawkes/raw, re-encode with ffmpeg, delete the staging dir.
+- lesson: sparse checkout — `git add` of new asset folders needs `--sparse`.
