@@ -52,6 +52,9 @@ public static class CharacterKit {
     // The rig root, named "Bot" so Enemy treats it as the model. No colliders.
     public static GameObject Make(string id) {
         var root = new GameObject("Bot");
+        if (BuildBaked(root.transform, id)) {
+            goto finish;
+        }
         switch (id) {
             case "courier": BuildCourier(root.transform); break;
             case "foreman": BuildForeman(root.transform); break;
@@ -61,6 +64,7 @@ public static class CharacterKit {
             case "plated_alpha": BuildPlatedAlpha(root.transform); break;
             default: UnityEngine.Object.Destroy(root); return null;
         }
+    finish:
         foreach (Renderer r in root.GetComponentsInChildren<Renderer>()) {
             r.receiveShadows = true;
         }
@@ -68,6 +72,31 @@ public static class CharacterKit {
         var idle = root.AddComponent<CharacterIdle>();
         idle.Id = id;
         return root;
+    }
+
+    // A Gen body baked by Tools/Bake (Resources/Baked/<id>.mesh.txt): every baked part becomes a child of the rig root at its
+    // pivot, named as the animators expect. False when there is none, it is unreadable or a required part is missing, and
+    // the code-built body is used instead.
+    static bool BuildBaked(Transform root, string id) {
+        List<BakedMesh.Part> parts = BakedMesh.Load(id);
+        if (parts == null) {
+            return false;
+        }
+        Def d = DefOf(id);
+        string[] need = d.Spider
+            ? new[] { "Body", "Head", "LegL1", "LegL2", "LegL3", "LegR1", "LegR2", "LegR3" }
+            : new[] { "Body", "Head", "ClawL", "ClawR", "LegL", "LegR" };
+        foreach (string n in need) {
+            if (!parts.Exists(p => p.Name == n)) {
+                Debug.LogWarning("[Baked] " + id + " has no part " + n + ", using the code body");
+                return false;
+            }
+        }
+        foreach (BakedMesh.Part p in parts) {
+            Material m = Mat(p.Set, p.Tint);
+            Part(root, p.Name, p.Pivot, p.ToMesh(id + " " + p.Name), m, m);
+        }
+        return true;
     }
 
     // A prop mesh with its own materials, no collider, no shadow.

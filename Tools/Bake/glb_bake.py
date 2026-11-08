@@ -9,7 +9,7 @@ quadric edge collapse to --tris -> scale to --height (or --size x,y,z max) and s
 box-projected UVs at 1 m a tile (the kit textures are tileable) -> text file.
 
 Format (Assets/Resources/Baked/<id>.mesh.txt, read by BakedMesh.cs):
-  g <name> <px> <py> <pz>        a part and its pivot (props have one part, pivot 0 0 0)
+  g <name> <px> <py> <pz> <set> <#rrggbb>   a part, its pivot, its kit texture set and tint (spaces in names are _)
   v x y z nx ny nz u v           vertices relative to the pivot
   t a b c                        triangles (indices within the part)
 Prints the triangle count of every part. Never fails silently: exits 1 on a bad file.
@@ -288,9 +288,9 @@ def split_parts(verts, tris, spec, extent):
         groups[chosen].append(t)
     pivots = {p['name']: p['pivot'] for p in spec['parts']}
     pivots.setdefault(spec.get('default', 'Body'), [0, 0, 0])
-    return groups, pivots
+    return groups, pivots, {p['name']: (p.get('set', 'metal'), p.get('color', '#ffffff')) for p in spec['parts']}
 
-def emit(path, groups, pivots, verts, tile):
+def emit(path, groups, pivots, verts, tile, looks=None):
     lines = []
     report = []
     for name, ts in groups.items():
@@ -301,7 +301,8 @@ def emit(path, groups, pivots, verts, tile):
         sub_v = [verts[k] for k in used]
         sub_t = [(m[a], m[b], m[c]) for a, b, c in ts]
         nrm = vertex_normals(sub_v, sub_t)
-        lines.append('g %s %.5f %.5f %.5f' % (name, piv[0], piv[1], piv[2]))
+        look = (looks or {}).get(name, ('metal', '#ffffff'))
+        lines.append('g %s %.5f %.5f %.5f %s %s' % (name.replace(' ', '_'), piv[0], piv[1], piv[2], look[0], look[1]))
         for p, n in zip(sub_v, nrm):
             u, v = box_uv(p, n, tile)
             lines.append('v %.4f %.4f %.4f %.3f %.3f %.3f %.3f %.3f' % (p[0] - piv[0], p[1] - piv[1], p[2] - piv[2], n[0], n[1], n[2], u, v))
@@ -336,10 +337,10 @@ def main():
     ext = (max(abs(v[0]) for v in verts), max(v[1] for v in verts), max(abs(v[2]) for v in verts))
     if a.parts:
         spec = json.load(open(a.parts))
-        groups, pivots = split_parts(verts, tris, spec, ext)
+        groups, pivots, looks = split_parts(verts, tris, spec, ext)
     else:
-        groups, pivots = {'Mesh': tris}, {}
-    rep = emit(a.out, groups, pivots, verts, a.tile)
+        groups, pivots, looks = {'Mesh': tris}, {}, {}
+    rep = emit(a.out, groups, pivots, verts, a.tile, looks)
     total = sum(r[1] for r in rep)
     print('%s: %d tris total (%s) extent x%.2f y%.2f z%.2f' % (a.out, total, ', '.join('%s %d' % (r[0], r[1]) for r in rep), ext[0] * 2, ext[1], ext[2] * 2))
 
