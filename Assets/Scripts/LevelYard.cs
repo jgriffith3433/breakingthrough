@@ -957,9 +957,13 @@ public class LevelYard : MonoBehaviour {
     }
 
     // The nearest thing Wallit can use sets the prompt line; E (or a tap on the line) uses it.
+    // How near Wallit has to be to use something: the hub's lodger reach, so a thumb on the stick does not have to park him
+    // on top of Slice or the flag before the Interact button shows (2.7 m stranded phone players a step short).
+    public const float UseReach = 3.4f;
+
     void TickSpots() {
         Spot best = null;
-        float bestD = 2.7f;
+        float bestD = UseReach;
         Vector3 p = LevelKit.Flat(scene.Player.position);
         for (int i = 0; i < spots.Count; i++) {
             Spot s = spots[i];
