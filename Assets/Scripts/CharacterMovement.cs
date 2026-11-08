@@ -93,6 +93,24 @@ public class CharacterMovement : MonoBehaviour {
     public static float GroundSpeed { get; private set; }
     public static float AnimSpeed { get; private set; }
 
+    // Legs under a swing. A bat swing or a home-run wind-up plays its clip on the whole controller while the body
+    // still moves (BatEquipment.MoveFactor), which slid the planted feet. StrideLayer lays the move clip that fits the
+    // travel (run, strafe or back pedal, at ground speed over its stride, phase-matched to the loop he was running)
+    // over the legs only, so the swing keeps the hips, spine, arms and bat and its contact frame is untouched.
+    StrideLayer swingLegs;
+    Animator swingLegsTried;
+    float swingLegsWant;
+    float swingLegsSpeed;
+    int swingClip = CLIP_RUN;
+    public float SwingLegsFade = 0.12f;
+    // Off: swings play on the whole body again, as before the legs layer.
+    public bool SwingLegsOn = true;
+    // Where the controller's move loop was the last time it played alone, to start the legs in step with it.
+    float locoNorm;
+    float locoNormAt = -99f;
+    float locoCps;
+    public static float SwingLegWeight { get; private set; }
+
     public static void ResetClipCounts() {
         for (int i = 0; i < ClipCounts.Length; i++) {
             ClipCounts[i] = 0;
@@ -395,6 +413,11 @@ public class CharacterMovement : MonoBehaviour {
         if (Instance == this) {
             Instance = null;
         }
+        if (swingLegs != null) {
+            swingLegs.Dispose();
+            swingLegs = null;
+        }
+        SwingLegWeight = 0f;
     }
 
     void Start() {
@@ -417,7 +440,9 @@ public class CharacterMovement : MonoBehaviour {
 
     void Update() {
         warpTarget = 0f;
+        swingLegsWant = 0f;
         MovementAndJumping();
+        TickSwingLegs();
     }
 
     float warpTarget;
@@ -465,6 +490,7 @@ public class CharacterMovement : MonoBehaviour {
             return;
         }
         if (BatEquipment.IsAnimatingAction) {
+            SwingLegs(velocity);
             return;
         }
         if (Time.unscaledTime < actionClipUntil) {
@@ -527,29 +553,159 @@ public class CharacterMovement : MonoBehaviour {
             return;
         }
 
-        Vector3 local = transform.InverseTransformDirection(travel);
-        float angle = Mathf.Atan2(local.x, local.z) * Mathf.Rad2Deg;
-        int clip = CLIP_RUN;
-        if (aiming || CampaignMoves.Dodging) {
-            if (IsLocomotion(moveClip) && Mathf.Abs(Mathf.DeltaAngle(ClipAxis(moveClip), angle)) < 60f) {
-                clip = moveClip;
-            } else if (Mathf.Abs(angle) <= 45f) {
-                clip = CLIP_RUN;
-            } else if (angle > 45f && angle < 135f) {
-                clip = CLIP_STRAFE_RIGHT;
-            } else if (angle < -45f && angle > -135f) {
-                clip = CLIP_STRAFE_LEFT;
-            } else {
-                clip = CLIP_BACK_PEDAL;
-            }
-        }
+        float angle = TravelAngle();
+        int clip = aiming || CampaignMoves.Dodging ? MoveClipFor(angle) : CLIP_RUN;
         moveClip = clip;
         warpTarget = Mathf.Clamp(Mathf.DeltaAngle(ClipAxis(clip), angle), -MaxWarp, MaxWarp);
 
         float want = Mathf.Clamp(speed / (Mathf.Max(0.5f, stride[clip]) * scale), 0.2f, 3f);
         animSpeed = started ? want : Mathf.SmoothDamp(animSpeed, want, ref animSpeedVel, 0.06f);
         SetMoveSpeed(animSpeed);
-        PlayLoco(Anim, clip, 0.14f);
+        if (swingLegs != null && swingLegs.Weight > 0.01f && !IsLocomotion(LastClip)) {
+            // Out of a swing with the legs still running under it: the controller's loop picks up at the legs' phase,
+            // so the feet carry on in step while the legs layer fades out.
+            PlayClip(Anim, clip, false, 0.14f, swingLegs.Phase);
+        } else {
+            PlayLoco(Anim, clip, 0.14f);
+        }
+        AnimatorStateInfo info = Anim.GetCurrentAnimatorStateInfo(0);
+        if (!Anim.IsInTransition(0) && info.IsName(ClipNames[clip])) {
+            float length = ClipLength(Anim, ClipNames[clip]);
+            locoNorm = info.normalizedTime - Mathf.Floor(info.normalizedTime);
+            locoNormAt = Time.time;
+            locoCps = length > 0f ? animSpeed / length : 0f;
+        }
+    }
+
+    // Direction of travel against the body, degrees (0 ahead, 90 right).
+    float TravelAngle() {
+        Vector3 local = transform.InverseTransformDirection(travel);
+        return Mathf.Atan2(local.x, local.z) * Mathf.Rad2Deg;
+    }
+
+    // The move clip whose axis fits the travel, holding the current one until it is 60 degrees off so the diagonals
+    // do not flicker.
+    int MoveClipFor(float angle) {
+        if (IsLocomotion(moveClip) && Mathf.Abs(Mathf.DeltaAngle(ClipAxis(moveClip), angle)) < 60f) {
+            return moveClip;
+        }
+        if (Mathf.Abs(angle) <= 45f) {
+            return CLIP_RUN;
+        }
+        if (angle > 45f && angle < 135f) {
+            return CLIP_STRAFE_RIGHT;
+        }
+        if (angle < -45f && angle > -135f) {
+            return CLIP_STRAFE_LEFT;
+        }
+        return CLIP_BACK_PEDAL;
+    }
+
+    // During a swing or a wind-up: never touches the controller (the swing clip and its OnBatContact frame play as
+    // they are); it only says what the legs layer should run. The body faces the swing's target or the stick, so any
+    // of the four move clips can fit.
+    void SwingLegs(Vector3 velocity) {
+        Vector3 flat = new Vector3(velocity.x, 0f, velocity.z);
+        float speed = flat.magnitude;
+        GroundSpeed = speed;
+        if (speed > 0.05f) {
+            travel = flat / speed;
+        }
+        if (moving) {
+            stopTimer = speed < StopSpeed ? stopTimer + Time.deltaTime : 0f;
+            if (stopTimer >= StopHold) {
+                moving = false;
+            }
+        } else if (speed > StartSpeed) {
+            moving = true;
+            stopTimer = 0f;
+        }
+        if (!SwingLegsOn || !moving || motor != null && motor.Airborne) {
+            return;
+        }
+        int clip = MoveClipFor(TravelAngle());
+        moveClip = clip;
+        swingClip = clip;
+        swingLegsSpeed = speed;
+        float want = Mathf.Clamp(speed / (Mathf.Max(0.5f, stride[clip]) * VisualScale), 0.2f, 3f);
+        animSpeed = Mathf.SmoothDamp(animSpeed, want, ref animSpeedVel, 0.06f);
+        swingLegsWant = 1f;
+    }
+
+    // Once a frame, after movement and before the Animator runs: builds the legs layer the first time it is wanted,
+    // starts it in step with the loop he was running, and fades it in under a moving swing and out after.
+    void TickSwingLegs() {
+        if (Anim == null) {
+            return;
+        }
+        if (swingLegs != null && swingLegs.Target != Anim) {
+            swingLegs.Dispose();
+            swingLegs = null;
+            swingLegsTried = null;
+        }
+        if (swingLegs == null) {
+            if (swingLegsWant <= 0f || swingLegsTried == Anim) {
+                return;
+            }
+            swingLegsTried = Anim;
+            swingLegs = BuildSwingLegs(Anim);
+            if (swingLegs == null) {
+                return;
+            }
+        }
+        int lead = Mathf.Clamp(swingClip - CLIP_RUN, 0, swingLegs.Count - 1);
+        if (swingLegsWant > 0f) {
+            if (swingLegs.Weight <= 0f) {
+                swingLegs.Lead(lead, true);
+                bool fresh = Time.time - locoNormAt < 0.6f;
+                swingLegs.StartAt(fresh ? locoNorm + (Time.time - locoNormAt) * locoCps : 0f);
+            } else {
+                swingLegs.Lead(lead);
+            }
+            float scale = VisualScale;
+            for (int i = 0; i < swingLegs.Count; i++) {
+                float s = stride[CLIP_RUN + i];
+                swingLegs.SetRate(i, Mathf.Clamp(swingLegsSpeed / (Mathf.Max(0.5f, s) * scale), 0.2f, 3f));
+            }
+        }
+        swingLegs.Tick(swingLegsWant, SwingLegsFade, Time.deltaTime);
+        SwingLegWeight = swingLegs.Weight;
+    }
+
+    // The run, strafes and back pedal off Wallit's own controller (humanoid clips from Wallit.fbx), on a legs mask.
+    // A missing strafe or back pedal borrows the run; no run, no layer (the swing then plays as before).
+    static StrideLayer BuildSwingLegs(Animator anim) {
+        if (!anim.isHuman || anim.runtimeAnimatorController == null) {
+            return null;
+        }
+        var clips = new AnimationClip[CLIP_BACK_PEDAL - CLIP_RUN + 1];
+        foreach (AnimationClip c in anim.runtimeAnimatorController.animationClips) {
+            if (!StrideLayer.Usable(c)) {
+                continue;
+            }
+            for (int i = 0; i < clips.Length; i++) {
+                if (clips[i] == null && TakeIs(c.name, ClipNames[CLIP_RUN + i])) {
+                    clips[i] = c;
+                }
+            }
+        }
+        if (clips[0] == null) {
+            return null;
+        }
+        for (int i = 1; i < clips.Length; i++) {
+            if (clips[i] == null) {
+                clips[i] = clips[0];
+            }
+        }
+        return StrideLayer.Create(anim, clips, StrideLayer.LegsMask(anim), "WallitSwingLegs");
+    }
+
+    // A take named for a clip, as the FBX export may prefix it ("Armature|run", "wallit_run").
+    static bool TakeIs(string take, string clip) {
+        if (string.IsNullOrEmpty(take)) {
+            return false;
+        }
+        return take == clip || take.EndsWith("|" + clip) || take.EndsWith("_" + clip) || take.EndsWith(":" + clip);
     }
 
     void LateUpdate() {
@@ -615,6 +771,16 @@ public class CharacterMovement : MonoBehaviour {
                     if (implied > d * 0.5f && implied < d * 2f) {
                         stride[moveClip] = Mathf.Lerp(stride[moveClip], implied, 0.03f);
                     }
+                }
+            } else if (moving && BatEquipment.IsAnimatingAction && GroundSpeed > StartSpeed) {
+                // A swing on the move: the planted foot should stay put now that the legs run under the swing.
+                bool leftLower = wl.y <= wr.y;
+                Vector3 now = leftLower ? wl : wr;
+                Vector3 before = leftLower ? footLWorld : footRWorld;
+                if (now.y - footFloor < WallitStride.PlantHeight * scale) {
+                    Vector3 world = (now - before) / dt;
+                    world.y = 0f;
+                    WallitStride.AddSwing(world.magnitude / scale, SwingLegWeight);
                 }
             }
         }
