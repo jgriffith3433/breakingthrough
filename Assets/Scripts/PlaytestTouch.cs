@@ -500,7 +500,19 @@ public static class PlaytestTouch {
         run.Metric("touchTalk", level.Yard.Talked ? 1 : 0);
 
         // 2. Pick up the Mailbox Flag on the west trail.
-        yield return WalkLevel(LevelYard.FlagPos + new Vector3(1.0f, 0f, -0.8f), 0.5f, 80f);   // within 1.8 m of the flag, inside LevelYard.UseReach
+        // Follow the west trail as a player would (the beats run's waypoints, beside each notice board): a straight line from
+        // the Ring to the flag runs into the middle notice board at (-26, 4.5) and Wallit stalls against it.
+        Vector3[] trail = {
+            new Vector3(-12f, 0f, -6f), new Vector3(-17.5f, 0f, -2f),
+            LevelYard.NoticePos[1] + new Vector3(2f, 0f, -1.5f), LevelYard.NoticePos[2] + new Vector3(2f, 0f, -1.5f),
+        };
+        foreach (Vector3 w in trail) {
+            yield return WalkLevel(w, 1.2f, 25f);
+        }
+        yield return WalkLevel(LevelYard.FlagPos + new Vector3(1.0f, 0f, -0.8f), 0.5f, 40f);   // within 1.8 m of the flag, inside LevelYard.UseReach
+        if (Flat(LevelYard.FlagPos - level.Player.position).magnitude > LevelYard.UseReach) {
+            run.Event("walk-missed", "Wallit stopped at " + level.Player.position.ToString("0.0") + ", " + Flat(LevelYard.FlagPos - level.Player.position).magnitude.ToString("0.0") + " m from the flag; prompt \"" + level.Yard.Prompt + "\"");
+        }
         yield return run.Until(() => level.Yard.Prompt.Contains("pick up") && PadShown("Interact"), 6f, "the Interact button at the flag");
         if (run.Done) {
             yield break;
