@@ -1032,6 +1032,246 @@
    "voice": "wallit",
    "text": "Where do I sign for this bat?",
    "asset": "a_5d2a955a5fd61637"
+  },
+  {
+   "id": "wallit_all_those_forms_blank_now",
+   "voice": "wallit",
+   "text": "All those forms. Blank now.",
+   "asset": "a_3933d5472c5552e2"
+  },
+  {
+   "id": "wallit_and_you",
+   "voice": "wallit",
+   "text": "And you?",
+   "asset": "a_182d65d1f691d138"
+  },
+  {
+   "id": "wallit_anything_yourself",
+   "voice": "wallit",
+   "text": "Anything. Yourself.",
+   "asset": "a_a5aa8635b1393667"
+  },
+  {
+   "id": "wallit_belt_s_quiet_i_miss_the_noise_cheap",
+   "voice": "wallit",
+   "text": "Belt's quiet. I miss the noise. Cheap.",
+   "asset": "a_1a0335520541a6fa"
+  },
+  {
+   "id": "wallit_dead_letters_nobody_s_coming_for_these",
+   "voice": "wallit",
+   "text": "Dead letters. Nobody's coming for these.",
+   "asset": "a_cacf680307706ad5"
+  },
+  {
+   "id": "wallit_finders_keepers_quietly",
+   "voice": "wallit",
+   "text": "Finders keepers. Quietly.",
+   "asset": "a_db6ea907adbe0a4f"
+  },
+  {
+   "id": "wallit_foreman_said_not_finished_neither_am_i",
+   "voice": "wallit",
+   "text": "Foreman said \"not finished.\" Neither am I.",
+   "asset": "a_770ddc3b215f50bb"
+  },
+  {
+   "id": "wallit_forty_forty_one_somebody_short_changed_me",
+   "voice": "wallit",
+   "text": "Forty. Forty-one. Somebody short-changed me.",
+   "asset": "a_66367ce99c45e5ff"
+  },
+  {
+   "id": "wallit_i_m_standing_here_aren_t_i_exact_change_says_yes",
+   "voice": "wallit",
+   "text": "I'm standing here, aren't I. Exact change says yes.",
+   "asset": "a_e566442a8f9b2c15"
+  },
+  {
+   "id": "wallit_in_case_somebody_needed_you",
+   "voice": "wallit",
+   "text": "In case somebody needed you.",
+   "asset": "a_5a0e55603cd1015d"
+  },
+  {
+   "id": "wallit_is_that_a_mailbox_or_a_bad_loan",
+   "voice": "wallit",
+   "text": "Is that a mailbox or a bad loan?",
+   "asset": "a_3b880d479f6b5814"
+  },
+  {
+   "id": "wallit_it_s_filed_i_can_stand_here_free",
+   "voice": "wallit",
+   "text": "It's filed. I can stand here free.",
+   "asset": "a_dba2fcb9135145c8"
+  },
+  {
+   "id": "wallit_item_one_wallet_leather_that_s_me_where_s_my_cut",
+   "voice": "wallit",
+   "text": "Item one: wallet, leather. That's me. Where's my cut?",
+   "asset": "a_21782c1f95fd96bc"
+  },
+  {
+   "id": "wallit_last_time_this_notice_went_in_my_ledger_this_time_i_read_the_whole_thing_first",
+   "voice": "wallit",
+   "text": "Last time this notice went in my ledger. This time I read the whole thing first.",
+   "asset": "a_20d9acc078190ec9"
+  },
+  {
+   "id": "wallit_nine_stones_looks_like_padding_on_the_bill",
+   "voice": "wallit",
+   "text": "Nine stones. Looks like padding on the bill.",
+   "asset": "a_47065cd656d744ce"
+  },
+  {
+   "id": "wallit_number_on_the_wall_mine",
+   "voice": "wallit",
+   "text": "Number on the wall. Mine?",
+   "asset": "a_11dede4be1c2898c"
+  },
+  {
+   "id": "wallit_one_door_in_my_hand_one_stamp_i_ll_try_it_again",
+   "voice": "wallit",
+   "text": "One door, in my hand. One stamp. I'll try it again.",
+   "asset": "a_60a2e5c5ea6f49d0"
+  },
+  {
+   "id": "wallit_one_door_in_my_name_i_still_hear_it_close",
+   "voice": "wallit",
+   "text": "One door in my name. I still hear it close.",
+   "asset": "a_42d580b26ecc598b"
+  },
+  {
+   "id": "wallit_one_notice_down_billing_it",
+   "voice": "wallit",
+   "text": "One notice down. Billing it.",
+   "asset": "a_d35c9382d0365dc6"
+  },
+  {
+   "id": "wallit_pages_read_doors_filed_last_time_i_read_along_louder_this_time",
+   "voice": "wallit",
+   "text": "Pages read, doors filed. Last time I read along. Louder this time.",
+   "asset": "a_f86a00faf73b2fad"
+  },
+  {
+   "id": "wallit_quiet_is_cheap",
+   "voice": "wallit",
+   "text": "Quiet is cheap.",
+   "asset": "a_fe13f548d9c6898e"
+  },
+  {
+   "id": "wallit_receipt_proof_i_was_here",
+   "voice": "wallit",
+   "text": "Receipt. Proof I was here.",
+   "asset": "a_64402d75099af05d"
+  },
+  {
+   "id": "wallit_registrar_read_slow_i_read_faster",
+   "voice": "wallit",
+   "text": "Registrar read slow. I read faster.",
+   "asset": "a_1e322aa7b0e8b9dd"
+  },
+  {
+   "id": "wallit_slice_straight_answer_who_stamped_me",
+   "voice": "wallit",
+   "text": "Slice. Straight answer. Who stamped me?",
+   "asset": "a_9394056e276db182"
+  },
+  {
+   "id": "wallit_slow_is_never_cheaper_ask_my_bill",
+   "voice": "wallit",
+   "text": "Slow is never cheaper. Ask my bill.",
+   "asset": "a_3a3a00be99e2f3e7"
+  },
+  {
+   "id": "wallit_somebody_at_the_server_s_desk_kept_my_name_mine_only",
+   "voice": "wallit",
+   "text": "Somebody at the Server's desk kept my name. Mine only.",
+   "asset": "a_f1cef052f1f38c5c"
+  },
+  {
+   "id": "wallit_sounds_bad_for_business",
+   "voice": "wallit",
+   "text": "Sounds bad for business.",
+   "asset": "a_b11d5bdf4f64bdaa"
+  },
+  {
+   "id": "wallit_standing_in_your_ring_rent_s_due",
+   "voice": "wallit",
+   "text": "Standing in your ring. Rent's due.",
+   "asset": "a_dff0d196102f0825"
+  },
+  {
+   "id": "wallit_take_it_i_ll_bill_the_department",
+   "voice": "wallit",
+   "text": "Take it. I'll bill the Department.",
+   "asset": "a_e91e8808c4a49ffc"
+  },
+  {
+   "id": "wallit_tap_tap_hear_that_hollow_like_a_bank_at_closing",
+   "voice": "wallit",
+   "text": "Tap. Tap. Hear that? Hollow. Like a bank at closing.",
+   "asset": "a_2b16cd6d915464da"
+  },
+  {
+   "id": "wallit_the_gate_stamped_me_back_interest_owed",
+   "voice": "wallit",
+   "text": "The gate stamped me back. Interest owed.",
+   "asset": "a_9db9c0c3162a6eef"
+  },
+  {
+   "id": "wallit_the_server_s_paper_is_already_pinned_in_the_hub_refused_in_full",
+   "voice": "wallit",
+   "text": "The Server's paper is already pinned in the hub. Refused, in full.",
+   "asset": "a_120e6a08d12ac13f"
+  },
+  {
+   "id": "wallit_the_server_still_holds_out_its_paper",
+   "voice": "wallit",
+   "text": "The Server still holds out its paper.",
+   "asset": "a_3d0b78527ab88a8d"
+  },
+  {
+   "id": "wallit_then_i_ll_start_the_tab_pay_up_eventually",
+   "voice": "wallit",
+   "text": "Then I'll start the tab. Pay up, eventually.",
+   "asset": "a_b18592d1b418a31f"
+  },
+  {
+   "id": "wallit_then_you_re_due_a_head",
+   "voice": "wallit",
+   "text": "Then you're due a head.",
+   "asset": "a_c0c911326867db49"
+  },
+  {
+   "id": "wallit_three_refusals_clean_ones",
+   "voice": "wallit",
+   "text": "Three refusals. Clean ones.",
+   "asset": "a_ad8013f1e6197fe1"
+  },
+  {
+   "id": "wallit_two_doors_heavier_bill_bigger_crew_keep_up",
+   "voice": "wallit",
+   "text": "Two doors. Heavier bill, bigger crew. Keep up.",
+   "asset": "a_94d89c228cfb506e"
+  },
+  {
+   "id": "wallit_what_did_it_ring_for",
+   "voice": "wallit",
+   "text": "What did it ring for?",
+   "asset": "a_f641f674c6c71960"
+  },
+  {
+   "id": "wallit_who_pays_you_for_it",
+   "voice": "wallit",
+   "text": "Who pays you for it?",
+   "asset": "a_3b9611bab1abe0f0"
+  },
+  {
+   "id": "wallit_you_held_the_ring_while_i_was_out",
+   "voice": "wallit",
+   "text": "You held the ring while I was out.",
+   "asset": "a_ceb6d16d6fd12e3c"
   }
  ],
  "note": "Made through Hawkes Gen audio.voice (project theplacedepartment). Ids match WallitVoice.LineId. Slice's slice_<line>.mp3 files are not made yet and stay optional."
