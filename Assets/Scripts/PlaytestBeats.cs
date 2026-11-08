@@ -205,9 +205,14 @@ public static class PlaytestBeats {
 
         // 1. Explore and talk: walk the chalk up to the Ring, press E at Slice, hear her out. No bot is awake.
         bool ok = false;
-        yield return WalkTo(LevelYard.SlicePos + new Vector3(0f, 0f, -1.5f), 0.6f, 60f, null, v => ok = v);   // end inside LevelYard.UseReach of her
+        // He stops as soon as her prompt is up (inside the Ring or within LevelYard.UseReach of her), whichever he meets first.
+        yield return WalkTo(LevelYard.SlicePos + new Vector3(0f, 0f, -1.5f), 0.6f, 60f, () => level.Yard.Prompt.Contains("talk to Slice"), v => ok = v);
         run.Event("explore", "walked " + Mathf.RoundToInt(level.Walked) + " m from the doors to the Ring");
+        run.Event("ring-position", "Wallit at " + level.Player.position.ToString("0.0") + ", " + Flat(level.Player.position - LevelYard.SlicePos).magnitude.ToString("0.0") + " m from Slice's post, " + Flat(level.Player.position - LevelYard.RingCenter).magnitude.ToString("0.0") + " m from the Ring's centre; prompt \"" + level.Yard.Prompt + "\"");
         yield return Use("talk");
+        if (!run.Done && !level.Yard.Talking && !level.Yard.Talked) {
+            run.Problem(PlaytestSeverity.Bug, "campaign-beats: no talk prompt for Slice at the Ring (Wallit " + level.Player.position.ToString("0.0") + ", Slice " + level.Yard.SliceFigureAt.ToString("0.0") + ")");
+        }
         yield return run.Until(() => level.Yard.Talked, 70f, "the talk with Slice to end");
         Drain();
         run.Event("talk-done", "Slice joined: " + level.Yard.SliceJoined);
