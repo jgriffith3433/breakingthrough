@@ -70,6 +70,22 @@ public abstract class OwnMap : MonoBehaviour {
     public Vector3 BossSpot { get; private set; }
     public float ArenaBearing { get; private set; }
 
+    // The walking surface of a boss dais: an invisible lathed floor on the Ground layer, flat at the dais's top with a gentle
+    // skirt (under 40 degrees, so Wallit's controller and the bots' ground snap walk straight up it) down to a metre below.
+    // Without it everyone stood on the bowl with their legs inside the stone. A floor, not a wall: nothing blocks a straight line.
+    protected void DaisFloor(Transform parent, Vector3 at, float r, float top) {
+        var km = new KitMesh { Name = "Dais Floor" };
+        float o = r + (top + 1f) / 0.8f;
+        km.Lathe(new List<Vector2> { new Vector2(0f, -1f), new Vector2(o, -1f), new Vector2(r, top), new Vector2(0f, top) }, 32, false);
+        var go = new GameObject("Dais Floor");
+        go.layer = LevelDress.GroundLayer();
+        go.transform.SetParent(parent, false);
+        go.transform.position = at;
+        Mesh m = km.ToMesh();
+        made.Add(m);
+        go.AddComponent<MeshCollider>().sharedMesh = m;
+    }
+
     protected Transform DeclareArena(string name, float bearing, float dist) {
         Transform g = Group(name);
         HasArena = true;

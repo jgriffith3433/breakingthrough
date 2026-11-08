@@ -75,17 +75,17 @@ public class WalkMap : OwnMap {
                 if (d > broken && (rng.Next(0, 3) != 0 || c == 0)) {
                     continue;
                 }
-                GameObject slab = LevelDress.Put(route, "wk_causeway_slab", At(d, c * 2f) + Vector3.up * (0.12f + (float)rng.NextDouble() * 0.03f), rng.Next(0, 2) * 180f);
+                GameObject slab = LevelDress.Put(route, "wk_causeway_slab", At(d, c * 2f) + Vector3.down * (0.31f - (float)rng.NextDouble() * 0.03f), rng.Next(0, 2) * 180f);
                 slab.name = "Slab";
             }
         }
         for (float d = 16f; d < broken; d += 4f) {
             foreach (float side in new[] { -3.4f, 3.4f }) {
-                LevelDress.Put(route, "wk_railing", At(d, side) + Vector3.up * 0.1f, bearing - 90f);
+                LevelDress.Put(route, "wk_railing", At(d, side) + Vector3.up * 0.01f, bearing - 90f);
                 if (((int)(d / 4f) % 3) == 0) {
-                    LevelDress.Put(route, "wk_mist_urn", At(d + 2f, side * 1.08f) + Vector3.up * 0.1f, rng.Next(0, 360));
+                    LevelDress.Put(route, "wk_mist_urn", At(d + 2f, side * 1.08f) + Vector3.up * 0.01f, rng.Next(0, 360));
                 } else {
-                    LevelDress.Put(route, "wk_mooring_bollard", At(d + 2f, side * 1.04f) + Vector3.up * 0.1f, rng.Next(0, 360));
+                    LevelDress.Put(route, "wk_mooring_bollard", At(d + 2f, side * 1.04f) + Vector3.up * 0.01f, rng.Next(0, 360));
                 }
             }
         }
@@ -150,7 +150,9 @@ public class WalkMap : OwnMap {
         float arena = (bearing + 180f) % 360f;
         Transform dais = DeclareArena("Servers' Dais", arena, 78f);
         Vector3 at = Polar(arena, 78f);
+        at.y = LevelDress.GroundY(at.x, at.z, at.y);
         GameObject floor = LevelDress.Put(dais, "ar_server_dais", at + Vector3.up * 0.02f, arena);
+        DaisFloor(dais, at, 23.5f, 0.92f);
         LevelDress.Tint(floor, 0, C(0.6f, 0.62f, 0.78f));
         LevelDress.Tint(floor, 1, violet * 1.4f);
         for (int i = 0; i < 12; i++) {
@@ -226,7 +228,15 @@ public class ReadingMap : OwnMap {
         float a = Door * Mathf.Deg2Rad;
         Vector3 axis = new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a));
         Vector3 right = new Vector3(Mathf.Cos(a), 0f, -Mathf.Sin(a));
-        return center + axis * along + right * side + Vector3.up * 0.01f;
+        Vector3 p = center + axis * along + right * side;
+        p.y = LevelDress.GroundY(p.x, p.z, center.y) + 0.01f;
+        return p;
+    }
+
+    // A point at its ground height (Polar alone is y = 0 over a floor that rises and falls with the bowl).
+    static Vector3 G(Vector3 p, float lift = 0f) {
+        p.y = LevelDress.GroundY(p.x, p.z, p.y) + lift;
+        return p;
     }
 
     protected override void Build() {
@@ -266,7 +276,7 @@ public class ReadingMap : OwnMap {
             racks[s] = new GameObject[2];
             for (int k = 0; k < 2; k++) {
                 float b = s * 72f + 20f + k * 32f;
-                racks[s][k] = LevelDress.Put(wall, "rd_form_rack", Polar(b, HallRadius - 1.8f, 1.5f), b + 180f);
+                racks[s][k] = LevelDress.Put(wall, "rd_form_rack", G(Polar(b, HallRadius - 1.8f), 1.5f), b + 180f);
                 racks[s][k].name = "Form Rack " + (s + 1) + "." + (k + 1);
             }
         }
@@ -276,7 +286,7 @@ public class ReadingMap : OwnMap {
         Transform aisle = Group("Carpet Aisle");
         for (float d = 9f; d < HallRadius - 8f; d += 3f) {
             for (int c = -1; c <= 1; c++) {
-                LevelDress.Put(aisle, "rd_runner", Aisle(d, c * 1.2f), Door);
+                LevelDress.Tilt(LevelDress.Put(aisle, "rd_runner", Aisle(d, c * 1.2f), Door));
             }
         }
         Transform files = Group("Shelves and Desks");
@@ -292,7 +302,7 @@ public class ReadingMap : OwnMap {
                 LevelDress.Put(files, "of_desk_lamp", p + Vector3.up * 0.8f, Door + side * 90f + 40f);
             }
         }
-        Vector3 deskAt = center + new Vector3(6f, 0f, 3f);
+        Vector3 deskAt = G(center + new Vector3(6f, 0f, 3f));
         Transform desk = Group("Empty Desk");
         LevelDress.Put(desk, "of_desk", deskAt + new Vector3(-0.85f, 0f, 0f), Door);
         LevelDress.Put(desk, "of_desk", deskAt + new Vector3(0.85f, 0f, 0f), Door);
@@ -300,7 +310,7 @@ public class ReadingMap : OwnMap {
         LevelDress.Put(desk, "of_desk_lamp", deskAt + new Vector3(-0.85f, 0.77f, 0.1f), 120f);
         LevelDress.PointLight(desk, deskAt + Vector3.up * 2f, C(1f, 0.82f, 0.5f), 14f, 0.9f);
         Transform doorG = Group("White Door");
-        Vector3 doorAt = Polar(Door, HallRadius - 3f);
+        Vector3 doorAt = G(Polar(Door, HallRadius - 3f));
         LevelDress.Put(doorG, "rd_white_door", doorAt, 0f);
         LevelDress.PointLight(doorG, doorAt + new Vector3(0f, 12f, 6f), C(1f, 0.95f, 0.85f), 50f, 1f);
         LevelDress.PointLight(doorG, Aisle(HallRadius - 16f, 0f) + Vector3.up * 3f, C(1f, 0.3f, 0.25f), 24f, 0.5f);
@@ -310,7 +320,7 @@ public class ReadingMap : OwnMap {
         Transform lect = Group("Page Lecterns");
         for (int i = 0; i < Pages; i++) {
             float b = i * 72f + 36f;
-            Vector3 p = Polar(b, 30f);
+            Vector3 p = G(Polar(b, 30f));
             LevelDress.Put(lect, "rd_lectern", p, b + 180f);
             GameObject page = LevelDress.PutEuler(lect, "rd_page", p + Vector3.up * 1.4f, new Vector3(0f, b + 180f, -22f));
             page.name = "Page " + (i + 1);
@@ -325,7 +335,9 @@ public class ReadingMap : OwnMap {
         Transform arena = DeclareArena("Registrar's Gallery", 0f, 80f);
         gallery = arena;
         Vector3 at = Polar(0f, 80f);
+        at.y = LevelDress.GroundY(at.x, at.z, at.y);
         LevelDress.Put(arena, "ar_gallery_dais", at + Vector3.up * 0.02f, 0f);
+        DaisFloor(arena, at, 23.5f, 1.52f);
         LevelDress.Put(arena, "rd_great_ledger", at + Vector3.up * 2f, 0f, 1.8f);
         var colGo = new GameObject("Gallery Columns");
         colGo.transform.SetParent(arena, false);
@@ -538,8 +550,10 @@ public class FiledMap : OwnMap {
         float tb = 20f;
         Transform arena = DeclareArena("The Threshold", tb, 80f);
         Vector3 at = Polar(tb, 80f);
+        at.y = LevelDress.GroundY(at.x, at.z, at.y);
         Quaternion f = Quaternion.Euler(0f, tb, 0f);
         LevelDress.Put(arena, "ar_threshold_dais", at + Vector3.up * 0.02f, tb);
+        DaisFloor(arena, at, 23.5f, 0.82f);
         GameObject frame = LevelDress.Put(arena, "fd_free_door", at + Vector3.up * 0.8f, tb + 180f, 1.15f);
         frame.name = "Threshold Doorframe";
         for (int i = 0; i < 8; i++) {

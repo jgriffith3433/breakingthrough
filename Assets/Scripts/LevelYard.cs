@@ -205,7 +205,7 @@ public class LevelYard : MonoBehaviour {
             if (Vector3.Distance(LevelKit.Flat(p), RingCenter) < RingRadius + 2f) {
                 continue;
             }
-            GameObject scar = LevelKit.Decal(root, "Scar", new Vector3(p.x, 0.04f, p.z), new Vector2(Rand(1.6f, 3.4f), Rand(1.6f, 3.4f)), Color.white);
+            GameObject scar = LevelKit.Decal(root, "Scar", new Vector3(p.x, H(p.x, p.z) + 0.04f + i * 0.004f, p.z), new Vector2(Rand(1.6f, 3.4f), Rand(1.6f, 3.4f)), Color.white);
             scar.GetComponent<MeshRenderer>().sharedMaterial = ink;
             scar.transform.rotation = Quaternion.Euler(0f, Rand(0f, 90f), 0f);
         }
@@ -281,7 +281,7 @@ public class LevelYard : MonoBehaviour {
         // Chalk stepping slabs: the trail from the doors to the Ring.
         for (float z = -54f; z < -17f; z += 2.6f) {
             Vector3 s = new Vector3(Rand(-0.6f, 0.6f), 0f, z);
-            LevelDress.Put(root, "yd_gravel_slab", On(s.x, s.z), Rand(0f, 90f), 1.35f);
+            LevelDress.PutFlat(root, "yd_gravel_slab", On(s.x, s.z), Rand(0f, 90f), 1.35f, 0.3f);
         }
     }
 
@@ -289,13 +289,13 @@ public class LevelYard : MonoBehaviour {
         for (int i = 0; i < Trail.Length - 1; i++) {
             for (float t = 0.2f; t < 1f; t += 0.38f) {
                 Vector3 p = Vector3.Lerp(Trail[i], Trail[i + 1], t);
-                LevelDress.Put(root, "yd_gravel_slab", On(p.x, p.z), Rand(0f, 90f), 1.2f);
+                LevelDress.PutFlat(root, "yd_gravel_slab", On(p.x, p.z), Rand(0f, 90f), 1.2f, 0.3f);
             }
         }
         // The east way, to the drop.
         for (float x = 8f; x < 30f; x += 2.8f) {
             float z = Mathf.Lerp(-8f, 8f, (x - 8f) / 22f);
-            LevelDress.Put(root, "yd_gravel_slab", On(x, z), Rand(0f, 90f), 1.3f);
+            LevelDress.PutFlat(root, "yd_gravel_slab", On(x, z), Rand(0f, 90f), 1.3f, 0.3f);
         }
         // West of the Ring: dead trees and stumps with a clear lane along the chalk (a collider each, thin).
         Transform trees = new GameObject("Dead Trees").transform;
@@ -385,7 +385,7 @@ public class LevelYard : MonoBehaviour {
         TextMesh t = LevelKit.Text(root, "DROP", On(d.x, d.z) + new Vector3(-2.2f, 1.3f, 0f), 0.06f, new Color(0.95f, 0.8f, 0.45f), false);
         t.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
         for (float z = -3f; z < 3.1f; z += 3f) {
-            LevelDress.Put(root, "yd_gravel_slab", On(d.x - 4.5f, d.z + z), 0f, 1.7f);
+            LevelDress.PutFlat(root, "yd_gravel_slab", On(d.x - 4.5f, d.z + z), 0f, 1.7f, 0.35f);
         }
         LevelDress.Put(root, "yd_sorting_trestle", On(27f, 20f), 90f, 1f);
         LevelDress.Put(root, "yd_sorting_trestle", On(27f, 15.5f), 90f, 1f);
@@ -814,6 +814,9 @@ public class LevelYard : MonoBehaviour {
         r.material = new Material(r.sharedMaterial);
         TextMesh t = LevelKit.Text(go.transform, "RETURN\nTO SENDER", new Vector3(0f, 0.06f, 0f), 0.07f, new Color(1f, 0.85f, 0.85f, 0.9f), true);
         t.name = "Words";
+        if (Camera.main != null) {
+            t.transform.rotation = Quaternion.Euler(90f, Camera.main.transform.eulerAngles.y, 0f);   // reads top-up from where the camera looks
+        }
         GameObject head = LevelDress.Put(go.transform, "gt_press_head", at + new Vector3(0f, 9f, 0f), 0f, 0.55f);
         head.name = "StampHead";
         stamps.Add(new Stamp { Go = go, Ink = r, Head = head.transform, At = at, Born = Time.time });
