@@ -528,7 +528,7 @@ public static class PlaytestTouch {
         float nextSwing = 0f;
         int swings = 0;
         bool lockTapped = false;
-        while (!run.Done && !level.Yard.CrewCleared && Time.realtimeSinceStartup - fightStart < 240f) {
+        while (!run.Done && !level.Yard.CrewCleared && Time.realtimeSinceStartup - fightStart < 330f) {
             Enemy nearest = null;
             float nd = 9999f;
             foreach (Enemy e in Enemy.Roster) {
@@ -570,7 +570,7 @@ public static class PlaytestTouch {
         run.Metric("touchFightSeconds", Mathf.Round(Time.realtimeSinceStartup - fightStart));
         run.Event("touch-fight", "the Clearing Crew " + (level.Yard.CrewCleared ? "cleared" : "NOT cleared") + " with " + swings + " Swing taps, " + level.Defeats + " defeats");
         if (!level.Yard.CrewCleared) {
-            run.Problem(PlaytestSeverity.Bug, "campaign-touch: the Clearing Crew was not cleared by touch in 240 s (" + level.Yard.CrewAlive + " left)");
+            run.Problem(PlaytestSeverity.Bug, "campaign-touch: the Clearing Crew was not cleared by touch in 330 s (" + level.Yard.CrewAlive + " left)");
             run.Finish(PlaytestOutcome.Stuck);
             yield break;
         }

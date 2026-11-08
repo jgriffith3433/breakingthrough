@@ -2,35 +2,43 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // The Courier, Chapter 1's Alpha Yo Bot (Docs/CampaignBible.md): a Yo Bot with a clipboard and a notice of striking.
-// It walks to NoticeRange of Slice, stops, and raises the notice. A red mark fills on the circle's ground: that is the
-// telegraph. When it fills the notice lands on Slice for NoticeDamage, with two answers: break the wind-up (hit it for
-// InterruptShare of its health before the mark fills and it drops the notice and stands dazed), or take the notice
-// yourself by standing in the mark (Wallit takes the stamp and Slice is spared). Under half health it winds up
-// faster, and calls two Yo Bots with every notice. Enemy.IsCourier keeps it from swiping and Enemy.Hold keeps it still.
+// It walks to NoticeRange of whoever the notice is for, stops, and raises the notice. A red mark fills on the ground under
+// them: that is the telegraph, with a ring pulsing over it. When it fills the notice lands, with two answers: break the wind-up
+// (hit it for InterruptShare of its health before the mark fills and it drops the notice and stands dazed), or take the notice
+// yourself by standing in the mark (Wallit takes the stamp and Slice is spared). Under half health it winds up faster, and
+// calls two Yo Bots with every notice. Enemy.IsCourier keeps it from swiping and Enemy.Hold keeps it still.
+// Two homes. In the Hollow (ChapterRun) the notice is for Slice at the circle (Musician) and lands for NoticeDamage. In
+// Chapter 1's level (LevelYard, no circle) it is for Slice walking with Wallit (Companion) while she stands, and lands by
+// knocking her down; while she is down or not there it is for Wallit himself, and he steps out of it or breaks it.
 public class Courier : MonoBehaviour {
     public const float NoticeRange = 7.5f;
     public const float MarkRadius = 3.4f;
     public const int NoticeDamage = 12;
     public const float InterruptShare = 0.1f;
     const float WindFirst = 2.2f;
+    const float WindOpening = 3f;    // a level's first notice reads slower, so a thumb on a phone has time to answer it
     const float WindAngry = 1.5f;
     const float RecoverSeconds = 3.2f;
     const float DazeSeconds = 2.6f;
 
-    // What the fight did, for the playtest: "wind|<n>|<seconds>", "land|<n>|slice", "land|<n>|wallit",
-    // "interrupt|<n>", "phase2", "call".
+    // What the fight did, for the playtest: "wind|<n>|<seconds>|<for>", "land|<n>|slice", "land|<n>|wallit",
+    // "dodged|<n>", "interrupt|<n>", "phase2", "call".
     public static readonly List<string> Events = new List<string>();
     public static int Winds;
     public static int Landed;
     public static int Interrupted;
     public static int Blocked;
+    public static int Dodged;
     public static bool MarkUp { get; private set; }
     public static bool Angry { get; private set; }
 
     enum Step { Approach, Wind, Recover }
+    enum Aim { Circle, Slice, Wallit }   // Slice at the circle (Musician); Slice walking with him (Companion); Wallit
 
     Enemy enemy;
     Step step = Step.Approach;
+    Aim aim;
+    Vector3 markAt;
     float clock;
     float windTime;
     float healthAtWind;
@@ -42,6 +50,11 @@ public class Courier : MonoBehaviour {
     Transform clipboard;
     Vector3 clipRest;
     bool toldTip;
+    bool toldTaken;
+    bool toldBroken;
+
+    // A campaign level: no circle, so the notice is for the people walking it.
+    static bool InLevel { get { return Musician.Instance == null && LevelScene.Instance != null; } }
 
     void Awake() {
         enemy = GetComponent<Enemy>();
@@ -50,6 +63,7 @@ public class Courier : MonoBehaviour {
         Landed = 0;
         Interrupted = 0;
         Blocked = 0;
+        Dodged = 0;
         Angry = false;
         MarkUp = false;
         BuildClipboard();
@@ -71,6 +85,13 @@ public class Courier : MonoBehaviour {
         clipboard = holder.transform;
     }
 
+    // The level puts it back at the drop, asleep, after Wallit goes down: no notice up, the next one starts from the walk.
+    public void Rest() {
+        DropMark();
+        step = Step.Approach;
+        clock = 0f;
+    }
+
     void Update() {
         if (enemy == null || !enemy.Alive) {
             DropMark();
@@ -79,17 +100,26 @@ public class Courier : MonoBehaviour {
             }
             return;
         }
-        Musician slice = Musician.Instance;
-        if (slice == null || !slice.Alive || PauseMenu.IsOpen || Cutscene.IsOpen || LevelUpScreen.IsOpen) {
+        if (PauseMenu.IsOpen || Cutscene.IsOpen || LevelUpScreen.IsOpen) {
             return;
         }
         float dt = Time.deltaTime;
+        if (enemy.Dormant) {
+            Lower(dt);
+            return;
+        }
+        Musician slice = Musician.Instance;
+        if (InLevel ? PlayerGrowth.Instance == null : (slice == null || !slice.Alive)) {
+            return;
+        }
         if (!Angry && enemy.Health01 <= 0.5f) {
             Angry = true;
             enemy.EnterPhase2(new Color(1.45f, 0.75f, 0.3f));
             Events.Add("phase2");
-            BossPhases.Announce(enemy, "The Courier speeds up and calls Yo Bots with every notice");
+            BossPhases.Announce(enemy, "faster notices, it calls the crew");
             Fx.Ring(transform.position, 7f, new Color(1f, 0.3f, 0.22f, 0.9f), 0.6f);
+            GameAudio.Play("stamp_heavy", 0.7f, 1.1f);
+            Line(Story.CourierSecond, "courier-second");
         }
         switch (step) {
             case Step.Approach:
@@ -108,40 +138,63 @@ public class Courier : MonoBehaviour {
         }
     }
 
+    // In the Hollow: Slice at the circle once she is in range. In a level: Slice while she stands near enough to be read to
+    // (Wallit is usually reached first, so she counts a few metres further out), else Wallit once he is in range.
     void Approach(Musician slice) {
         Lower(Time.deltaTime);
-        Vector3 to = slice.transform.position - transform.position;
-        to.y = 0f;
-        if (to.magnitude <= NoticeRange) {
-            BeginWind(slice);
+        if (!InLevel) {
+            if (Flat(slice.transform.position - transform.position).magnitude <= NoticeRange) {
+                BeginWind(Aim.Circle, Ground(slice.transform.position));
+            }
+            return;
+        }
+        PlayerGrowth player = PlayerGrowth.Instance;
+        Companion c = Companion.Instance;
+        float toWallit = Flat(player.transform.position - transform.position).magnitude;
+        float toSlice = c != null && c.Alive ? Flat(c.transform.position - transform.position).magnitude : float.MaxValue;
+        if (toSlice <= NoticeRange || (toWallit <= NoticeRange && toSlice <= NoticeRange + 4f)) {
+            BeginWind(Aim.Slice, Ground(c.transform.position));
+        } else if (toWallit <= NoticeRange) {
+            BeginWind(Aim.Wallit, Ground(player.transform.position));
         }
     }
 
-    void BeginWind(Musician slice) {
+    void BeginWind(Aim who, Vector3 at) {
         step = Step.Wind;
+        aim = who;
+        markAt = at;
         clock = 0f;
-        windTime = Angry ? WindAngry : WindFirst;
+        windTime = Angry ? WindAngry : (InLevel && Winds == 0 ? WindOpening : WindFirst);
         healthAtWind = enemy.Health01;
         Winds++;
-        Events.Add("wind|" + Winds + "|" + windTime.ToString("0.0"));
-        MakeMark(slice.transform.position);
+        Events.Add("wind|" + Winds + "|" + windTime.ToString("0.0") + "|" + (who == Aim.Wallit ? "wallit" : "slice"));
+        MakeMark(at);
         enemy.Hold(windTime + 0.3f);
         nextRing = 0f;
         GameAudio.Play("stomp", 0.7f, 1.4f);
+        GameAudio.Play("paper", 0.6f, 1.1f);
         if (!toldTip) {
             toldTip = true;
-            ChapterRun.Say("S|Break the wind-up. Or stand in it.", 3.4f);   // captioned and said in her voice (clip to bank)
+            // Slice names it (a banked clip); the screen only names the verbs.
+            if (!InLevel || (Companion.Instance != null && Companion.Instance.Alive)) {
+                Line(Story.CourierTip, "courier-tip");
+            }
+            UpgradeLook.Say(who == Aim.Wallit ? "Break it, or step out" : "Break it, or stand in it", 3f, 160f);
         }
-        if (Angry && WaveDirector.Instance != null) {
-            WaveDirector.Instance.BossCall(transform.position, 2);
-            Events.Add("call");
+        if (Angry) {
+            if (WaveDirector.Instance != null) {
+                WaveDirector.Instance.BossCall(transform.position, 2);
+                Events.Add("call");
+            } else if (LevelScene.Instance != null && LevelScene.Instance.Yard != null && LevelScene.Instance.Yard.CourierCall(transform.position, 2) > 0) {
+                Events.Add("call");
+            }
         }
     }
 
     void Wind(Musician slice, float dt) {
         clock += dt;
         enemy.Hold(windTime - clock + 0.3f);
-        Vector3 to = slice.transform.position - transform.position;
+        Vector3 to = markAt - transform.position;
         to.y = 0f;
         if (to.sqrMagnitude > 0.01f) {
             transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(to.normalized), dt * 6f);
@@ -151,7 +204,7 @@ public class Courier : MonoBehaviour {
         PaintMark(t);
         if (Time.time >= nextRing) {
             nextRing = Time.time + 0.55f;
-            Fx.Ring(MarkAt(slice), MarkRadius * 2f * (0.5f + 0.5f * t), new Color(1f, 0.25f, 0.18f, 0.55f + 0.4f * t), 0.5f);
+            Fx.Ring(markAt, MarkRadius * 2f * (0.5f + 0.5f * t), new Color(1f, 0.25f, 0.18f, 0.55f + 0.4f * t), 0.5f);
         }
         if (healthAtWind - enemy.Health01 >= InterruptShare) {
             Interrupt();
@@ -173,30 +226,54 @@ public class Courier : MonoBehaviour {
         Fx.Ring(transform.position, 6f, new Color(1f, 1f, 1f, 0.8f), 0.5f);
         Fx.Emit(FxKind.Flash, transform.position + Vector3.up * 1.2f, 1, new Color(1f, 0.95f, 0.8f, 0.7f), 2.2f, 0f);
         GameAudio.Play("batcrack", 0.8f, 0.8f);
+        GameAudio.Play("paper_slide", 0.6f, 0.9f);
         UpgradeLook.Say("Notice dropped!", 1.8f, 160f);
+        if (!toldBroken && InLevel) {
+            toldBroken = Line(Story.CourierBroken, "courier-broken");
+        }
     }
 
     void Land(Musician slice) {
-        Vector3 at = MarkAt(slice);
+        Vector3 at = markAt;
         bool wallitIn = false;
         PlayerGrowth player = PlayerGrowth.Instance;
         if (player != null) {
-            Vector3 d = player.transform.position - at;
-            d.y = 0f;
-            wallitIn = d.magnitude <= MarkRadius;
+            wallitIn = Flat(player.transform.position - at).magnitude <= MarkRadius;
         }
         Fx.Ring(at, MarkRadius * 2.4f, new Color(1f, 0.35f, 0.2f, 0.9f), 0.5f);
         Fx.Emit(FxKind.Dust, at + Vector3.up * 0.3f, 14, new Color(0.6f, 0.55f, 0.48f, 0.6f), 1.4f, 2.4f, 2f);
         GameAudio.Play("stamp", 0.9f, 0.9f);
-        if (wallitIn) {
-            Blocked++;
-            Events.Add("land|" + Winds + "|wallit");
-            player.OnHit(enemy);
-            UpgradeLook.Say("Wallit takes the stamp", 1.8f, 160f);
-        } else {
-            Landed++;
-            Events.Add("land|" + Winds + "|slice");
-            slice.Hurt(NoticeDamage, enemy);
+        switch (aim) {
+            case Aim.Circle:
+                if (wallitIn) {
+                    TakenByWallit(player);
+                } else {
+                    Landed++;
+                    Events.Add("land|" + Winds + "|slice");
+                    slice.Hurt(NoticeDamage, enemy);
+                }
+                break;
+            case Aim.Slice:
+                Companion c = Companion.Instance;
+                if (wallitIn) {
+                    TakenByWallit(player);
+                } else if (c != null && c.Alive && Flat(c.transform.position - at).magnitude <= MarkRadius + 0.5f) {
+                    Landed++;
+                    Events.Add("land|" + Winds + "|slice");
+                    c.KnockDown();   // she goes down with her own line; Wallit revives her with a held E
+                } else {
+                    Missed();
+                }
+                break;
+            default:
+                if (wallitIn) {
+                    Landed++;
+                    Events.Add("land|" + Winds + "|wallit");
+                    player.OnHit(enemy);
+                } else {
+                    Missed();
+                }
+                break;
         }
         DropMark();
         step = Step.Recover;
@@ -204,23 +281,53 @@ public class Courier : MonoBehaviour {
         enemy.Hold(clock);
     }
 
-    // The mark sits on the circle's ground under Slice.
-    static Vector3 MarkAt(Musician slice) {
-        Vector3 p = slice.transform.position;
+    // Wallit stood in the red: the notice lands on him and Slice is spared.
+    void TakenByWallit(PlayerGrowth player) {
+        Blocked++;
+        Events.Add("land|" + Winds + "|wallit");
+        player.OnHit(enemy);
+        UpgradeLook.Say("Wallit takes the stamp", 1.8f, 160f);
+        if (!toldTaken && InLevel) {
+            toldTaken = Line(Story.CourierTaken, "courier-taken");
+        }
+    }
+
+    void Missed() {
+        Dodged++;
+        Events.Add("dodged|" + Winds);
+        UpgradeLook.Say("Missed", 1.4f, 160f);
+    }
+
+    // A line in its speaker's voice. In a level it goes through the bark gate (logged, never over another line, skipped if the
+    // floor is busy); in the Hollow it is captioned and queued for the voice.
+    static bool Line(string raw, string why) {
+        if (string.IsNullOrEmpty(raw) || raw.Length < 3) {
+            return false;
+        }
+        if (LevelScene.Instance != null) {
+            return !LevelBarks.Busy && LevelBarks.Say(raw[0], raw.Substring(2), why, true);
+        }
+        ChapterRun.Say(raw, 3.4f);
+        return true;
+    }
+
+    static Vector3 Flat(Vector3 v) {
+        v.y = 0f;
+        return v;
+    }
+
+    // The ground under a point (the mark lies on it).
+    static Vector3 Ground(Vector3 p) {
         if (Physics.Raycast(new Vector3(p.x, p.y + 6f, p.z), Vector3.down, out RaycastHit hit, 20f, 1 << 3, QueryTriggerInteraction.Ignore)) {
             p.y = hit.point.y;
         }
         return p;
     }
 
-    void MakeMark(Vector3 sliceAt) {
+    void MakeMark(Vector3 at) {
         DropMark();
         var shader = SafeShader.Find("Sprites/Default");
         mark = new GameObject("Notice Mark");
-        Vector3 at = sliceAt;
-        if (Musician.Instance != null) {
-            at = MarkAt(Musician.Instance);
-        }
         mark.transform.position = at;
         fill = null;
         var rim = KitMesh.Disc("Mark");

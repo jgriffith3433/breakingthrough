@@ -420,6 +420,8 @@ public class FiledMap : OwnMap {
     readonly List<Transform> marks = new List<Transform>();
     readonly List<Vector3> ringAt = new List<Vector3>();
     readonly List<Vector3> lineAt = new List<Vector3>();
+    readonly List<Quaternion> ringTurn = new List<Quaternion>();
+    readonly List<Quaternion> lineTurn = new List<Quaternion>();
     readonly List<Vector3> stampAt = new List<Vector3>();
     Transform number;
     TextMesh numberText;
@@ -448,7 +450,7 @@ public class FiledMap : OwnMap {
             (deg, d, h) => Color.Lerp(C(0.22f, 0.36f, 0.38f), C(0.5f, 0.6f, 0.72f), Mathf.Clamp01(h / 16f) * 0.7f + 0.2f * Noise(deg * 7f, d, 23f)));
         SetSky(C(0.07f, 0.12f, 0.3f), C(0.62f, 0.72f, 0.92f), C(0.2f, 0.28f, 0.45f), C(1f, 0.92f, 0.6f), new Vector3(0.1f, 0.12f, -0.99f), 0.03f, 0.55f);
         MakeMusic(14f, new[] { 110f, 164.8f, 220f, 277.2f, 329.6f }, 2f, 0f, 0f, 7f, 659.3f, 0.3f);
-        LevelDress.GroundSkin(Group("Dawn Grass Skin"), "Dawn Grass Skin", center, 205f, 4f, LevelDress.GroundMaterial("filed", "grass", C(1.05f, 1.08f, 1f)), 7f);
+        Skin(Group("Dawn Grass Skin"), "Dawn Grass Skin", 205f, 4f, LevelDress.GroundMaterial("filed", "grass", C(1.05f, 1.08f, 1f)), 7f);
 
         // Tufts of grass scattered about the circle and the path.
         Transform tufts = Group("Grass Tufts");
@@ -467,9 +469,12 @@ public class FiledMap : OwnMap {
         Transform stumps = Group("Wall Stumps");
         for (int i = 0; i < 12; i++) {
             float b = 60f + i * 20f;
+            float yaw = b + (i % 2 == 0 ? 6f : -6f), roll = i % 2 == 0 ? 3f : -2f, scale = 0.85f + (i % 3) * 0.12f;
             Vector3 p = Polar(b, 190f);
-            p.y = GroundY(p.x, p.z);
-            LevelDress.PutEuler(stumps, "fd_wall_stump", p, new Vector3(0f, b + (i % 2 == 0 ? 6f : -6f), i % 2 == 0 ? 3f : -2f), 0.85f + (i % 3) * 0.12f);
+            // The rim climbs about 0.5 m a metre here: set on the ground at its middle, the 1.6 m deep footing hung 0.4 m over the
+            // slope in front. It goes on the lowest of the floor under it, less what its roll lifts one end (10 m long).
+            p.y = Lowest(p, yaw, 5.1f * scale, 0.8f * scale) - 0.03f - 5.1f * scale * Mathf.Sin(Mathf.Abs(roll) * Mathf.Deg2Rad);
+            LevelDress.PutEuler(stumps, "fd_wall_stump", p, new Vector3(0f, yaw, roll), scale);
             if (i % 3 == 0) {
                 Vector3 r = Polar(b + 4f, 186f);
                 r.y = GroundY(r.x, r.z);
@@ -481,19 +486,27 @@ public class FiledMap : OwnMap {
         for (int i = 0; i < 10; i++) {
             float b = 20f + i * 36f + (float)rng.NextDouble() * 14f;
             float d = 215f + (float)rng.NextDouble() * 110f;
-            Vector3 p = Polar(b, d, rise(b, d));
-            LevelDress.PutEuler(doors, "fd_free_door", p, new Vector3(0f, b + 180f + rng.Next(-20, 20), rng.Next(-4, 5)), 0.9f + (float)rng.NextDouble() * 0.3f);
+            float yaw = b + 180f + rng.Next(-20, 20), roll = rng.Next(-4, 5), scale = 0.9f + (float)rng.NextDouble() * 0.3f;
+            // On the skirt as drawn (12 cm under `rise` and flat between rings 15-20 m apart, so `rise` left them floating), on the
+            // lowest of it under the 6 m footing, less what the lean lifts one post.
+            Vector3 p = Polar(b, d);
+            p.y = LowestTerrain(p, 3.1f * scale) - 0.05f - 3.05f * scale * Mathf.Sin(Mathf.Abs(roll) * Mathf.Deg2Rad);
+            LevelDress.PutEuler(doors, "fd_free_door", p, new Vector3(0f, yaw, roll), scale);
         }
 
         // The pale path to nothing, banners and lanterns along it, and the gold seal at its end.
         Transform route = Group("Path to Nothing");
         Quaternion face = Quaternion.Euler(0f, PathBearing, 0f);
+        // The slabs lie along the slope (level, past 150 m where the rim climbs one edge of each was buried and the other stood 30 cm
+        // proud). Neighbours overlap by a hand, so each is 5 mm above the one before and below the one after, in threes: overlapping
+        // tops never share a plane.
+        int slab = 0;
         for (float d = 30f; d <= 178f; d += 1.4f) {
-            for (int c = -1; c <= 0; c++) {
+            for (int c = -1; c <= 0; c++, slab++) {
                 float side = (c + 0.5f) * 1.5f;
                 Vector3 p = Polar(PathBearing, d + (c == 0 ? 0.7f : 0f)) + face * new Vector3(side, 0f, 0f);
-                p.y = GroundY(p.x, p.z) + 0.01f;
-                LevelDress.Put(route, "fd_pale_slab", p, rng.Next(0, 6) * 60f);
+                float yaw = rng.Next(0, 6) * 60f;
+                Lay(LevelDress.Put(route, "fd_pale_slab", p, yaw), yaw, 0.7f, 0.7f, -0.01f + (slab % 3) * 0.005f);
             }
         }
         for (int i = 0; i < 6; i++) {
@@ -519,13 +532,20 @@ public class FiledMap : OwnMap {
 
         // The circle drawn in white, brighter than it has ever been: 36 marks that can unroll into a line of writing.
         Transform ring = Group("Brighter Circle");
+        // Each mark lies on the grass along its slope, its underside 2 cm in (a fixed y left them 10 cm up or down on the bowl), and so
+        // does its place in the line of writing. The line's 3.4 m bars overlap their neighbours 1.5 m apart, so they step up 5 mm in
+        // threes there instead of z-fighting in one plane.
         for (int i = 0; i < 36; i++) {
             float b = i * 10f;
-            Vector3 p = Polar(b, 20f, 0.1f);
-            Transform m = LevelDress.Put(ring, "fd_circle_mark", p, b + 90f).transform;
+            Pose onRing = LayPose(Polar(b, 20f), b + 90f, 0.25f, 1.7f, -0.02f);
+            Transform m = LevelDress.Put(ring, "fd_circle_mark", onRing.position, b + 90f).transform;
+            m.rotation = onRing.rotation;
             marks.Add(m);
-            ringAt.Add(p);
-            lineAt.Add(Polar(0f, 0f, 0.1f) + new Vector3(-26f + i * 1.5f, 0f, 36f));
+            ringAt.Add(onRing.position);
+            ringTurn.Add(onRing.rotation);
+            Pose onLine = LayPose(Polar(0f, 0f) + new Vector3(-26f + i * 1.5f, 0f, 36f), 90f, 0.25f, 1.7f, -0.02f + (i % 3) * 0.005f);
+            lineAt.Add(onLine.position);
+            lineTurn.Add(onLine.rotation);
         }
         GameObject numberGo = new GameObject("Door Number");
         numberGo.transform.SetParent(root, false);
@@ -597,8 +617,9 @@ public class FiledMap : OwnMap {
                 if (marks[i] == null) {
                     continue;
                 }
-                marks[i].position = Vector3.Lerp(ringAt[i], lineAt[i] + Vector3.up * 0.3f, k);
-                marks[i].rotation = Quaternion.Euler(0f, Mathf.LerpAngle(marks[i].eulerAngles.y, 90f, k), 0f);
+                // Up off the ring, over the grass (the straight way passes under the bowl's rises) and down onto the line.
+                marks[i].position = Vector3.Lerp(ringAt[i], lineAt[i], k) + Vector3.up * (Mathf.Sin(Mathf.PI * k) * 1.5f);
+                marks[i].rotation = Quaternion.Slerp(ringTurn[i], lineTurn[i], k);
             }
             Color c = numberText.color;
             c.a = Mathf.Clamp01((write - 0.7f) / 0.3f);

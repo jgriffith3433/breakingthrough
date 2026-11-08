@@ -340,7 +340,34 @@ public class ChapterMap : MonoBehaviour {
             lineLength = length;
         }
 
+        // The belt's surface under the line, measured once when the belt is built (no rays per frame): the line is cut into
+        // `step` m pieces (one per conveyor), piece k running from height from[k] at its start to to[k] at its end. Without it a
+        // belt item keeps the height it was put at.
+        float[] surfaceFrom, surfaceTo;
+        float surfaceStep;
+
+        public void SetSurface(float[] from, float[] to, float step) {
+            surfaceFrom = from;
+            surfaceTo = to;
+            surfaceStep = Mathf.Max(0.01f, step);
+            if (mode == Mode.Belt && lineLength > 0f) {
+                Move();   // on the belt from the first frame, not where it was put
+            }
+        }
+
+        float SurfaceY(float s, float fallback) {
+            if (surfaceFrom == null || surfaceFrom.Length == 0) {
+                return fallback;
+            }
+            int k = Mathf.Clamp(Mathf.FloorToInt(s / surfaceStep), 0, surfaceFrom.Length - 1);
+            return Mathf.Lerp(surfaceFrom[k], surfaceTo[k], Mathf.Clamp01(s / surfaceStep - k));
+        }
+
         void Update() {
+            Move();
+        }
+
+        void Move() {
             Vector3 p = transform.position;
             if (mode == Mode.Press) {
                 float t = Mathf.Repeat(Time.time + offset, period) / period;
@@ -349,8 +376,9 @@ public class ChapterMap : MonoBehaviour {
                 p.y = Mathf.Lerp(low, high, k);
             } else {
                 float s = Mathf.Repeat(offset + Time.time * Mathf.Abs(speed), lineLength);
-                p = origin + along * (speed >= 0f ? s : lineLength - s);
-                p.y = transform.position.y;
+                float at = speed >= 0f ? s : lineLength - s;
+                p = origin + along * at;
+                p.y = SurfaceY(at, transform.position.y);
             }
             transform.position = p;
         }

@@ -195,7 +195,9 @@ public abstract class OwnMap : MonoBehaviour {
             for (int i = 0; i < 4; i++) {
                 n.Add(nrm);
             }
-            t.AddRange(new[] { s, s + 1, s + 2, s, s + 2, s + 3 });
+            // Clockwise seen from outside (Unity's front face): (v1 - v0) x (v2 - v0) points along nrm. The old order pointed in and
+            // only showed because the shared material draws both sides; normals are set above, so lighting does not change.
+            t.AddRange(new[] { s, s + 2, s + 1, s, s + 3, s + 2 });
         }
         var mesh = new Mesh();
         mesh.SetVertices(v);
@@ -220,7 +222,7 @@ public abstract class OwnMap : MonoBehaviour {
         }
         for (int i = 0; i < sides; i++) {
             int b = i * 2;
-            t.AddRange(new[] { b, b + 1, b + 2, b + 1, b + 3, b + 2 });
+            t.AddRange(new[] { b, b + 2, b + 1, b + 1, b + 2, b + 3 });   // outward, like the caps below (was wound inward)
         }
         int cap = v.Count;
         v.Add(Vector3.down * 0.5f);
@@ -256,15 +258,24 @@ public abstract class OwnMap : MonoBehaviour {
     // ------------------------------------------------------------------ Terrain: a skirt round the playfield, shaped for the place
     // Starts just outside the arena's ground (205 m) and runs out to 560 m. `height(angleDeg, dist)` is the lift; `tint`
     // the vertex colour for a height and distance. One mesh, no collider.
+    const int TerrainAround = 120;
+    const int TerrainRings = 14;
+    const float TerrainInner = 203f, TerrainOuter = 560f;
+    System.Func<float, float, float> terrainHeight;
+
+    static float TerrainRing(int r) {
+        float u = r / (float)TerrainRings;
+        return Mathf.Lerp(TerrainInner, TerrainOuter, u * u * 0.6f + u * 0.4f);
+    }
+
     protected void Terrain(string name, System.Func<float, float, float> height, System.Func<float, float, float, Color> tint) {
-        const int around = 120;
-        const int rings = 14;
-        const float inner = 203f, outer = 560f;
+        const int around = TerrainAround;
+        const int rings = TerrainRings;
+        terrainHeight = height;
         var v = new Vector3[(around + 1) * (rings + 1)];
         var c = new Color32[v.Length];
         for (int r = 0; r <= rings; r++) {
-            float u = r / (float)rings;
-            float dist = Mathf.Lerp(inner, outer, u * u * 0.6f + u * 0.4f);
+            float dist = TerrainRing(r);
             for (int a = 0; a <= around; a++) {
                 float deg = a / (float)around * 360f;
                 float rad = deg * Mathf.Deg2Rad;
@@ -297,6 +308,139 @@ public abstract class OwnMap : MonoBehaviour {
         rend.sharedMaterial = flat;
         rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         rend.receiveShadows = false;
+    }
+
+    // The terrain skirt's own surface at x, z (world y), as drawn: its rings are 15-20 m apart, so the mesh between them is flat
+    // triangles, not `height` itself (a piece set on `height` floats or sinks by up to metres on a terraced rim). Inside the
+    // skirt, the live ground.
+    protected float TerrainY(float x, float z) {
+        float dx = x - center.x, dz = z - center.z;
+        float dist = Mathf.Sqrt(dx * dx + dz * dz);
+        if (terrainHeight == null || dist < TerrainInner) {
+            return LevelDress.GroundY(x, z, center.y);
+        }
+        int r = 0;
+        while (r < TerrainRings - 1 && TerrainRing(r + 1) <= dist) {
+            r++;
+        }
+        float d0 = TerrainRing(r), d1 = TerrainRing(r + 1);
+        float fr = Mathf.Clamp01((dist - d0) / (d1 - d0));
+        float deg = Mathf.Repeat(Mathf.Atan2(dx, dz) * Mathf.Rad2Deg, 360f);
+        float fa = deg / 360f * TerrainAround;
+        int a = Mathf.Clamp(Mathf.FloorToInt(fa), 0, TerrainAround - 1);
+        fa = Mathf.Clamp01(fa - a);
+        // The mesh's quad (r, a)-(r + 1, a + 1) is split on the diagonal from (r, a + 1) to (r + 1, a).
+        float yi = TerrainVertex(r, a), yj = TerrainVertex(r + 1, a), yi1 = TerrainVertex(r, a + 1), yj1 = TerrainVertex(r + 1, a + 1);
+        float y = fa + fr <= 1f ? yi + fa * (yi1 - yi) + fr * (yj - yi) : yj1 + (1f - fa) * (yj - yj1) + (1f - fr) * (yi1 - yj1);
+        return center.y + y;
+    }
+
+    float TerrainVertex(int r, int a) {
+        float deg = a / (float)TerrainAround * 360f;
+        return terrainHeight(deg % 360f, TerrainRing(r)) - 0.12f;
+    }
+
+    // The lowest the drawn ground gets under a footprint (`radius` m round `at`): an upright piece set here has no gap under it.
+    protected float LowestTerrain(Vector3 at, float radius) {
+        float y = TerrainY(at.x, at.z);
+        for (int k = 0; k < 8; k++) {
+            float a = k * 45f * Mathf.Deg2Rad;
+            y = Mathf.Min(y, TerrainY(at.x + Mathf.Sin(a) * radius, at.z + Mathf.Cos(a) * radius));
+        }
+        return y;
+    }
+
+    // ------------------------------------------------------------------ Ground skin: what a piece really stands on
+    // LevelDress.GroundSkin bakes the visible floor as a grid of rays a hand's breadth (2 cm) above the live ground, flat between its
+    // points; on the bowl's curves it is a few centimetres off the collider that GroundY reads, which is all a decal has to spare.
+    // Skin() bakes it and keeps the grid, so SkinY reads the surface people see.
+    bool hasSkin;
+    float skinX0, skinZ0, skinSX, skinSZ, skinR2;
+    int skinNX, skinNZ;
+    readonly Dictionary<long, float> skinCorner = new Dictionary<long, float>();
+
+    protected GameObject Skin(Transform parent, string name, float radius, float step, Material mat, float tile) {
+        // The same grid as LevelDress.GridMesh makes from these numbers.
+        float x0 = center.x - radius, z0 = center.z - radius, x1 = center.x + radius, z1 = center.z + radius;
+        skinNX = Mathf.Max(1, Mathf.RoundToInt((x1 - x0) / step));
+        skinNZ = Mathf.Max(1, Mathf.RoundToInt((z1 - z0) / step));
+        skinSX = (x1 - x0) / skinNX;
+        skinSZ = (z1 - z0) / skinNZ;
+        skinX0 = x0;
+        skinZ0 = z0;
+        skinR2 = radius * radius;
+        skinCorner.Clear();
+        hasSkin = true;
+        return LevelDress.GroundSkin(parent, name, center, radius, step, mat, tile);
+    }
+
+    // The drawn floor's height at x, z: the skin where there is one, the live ground elsewhere.
+    protected float SkinY(float x, float z) {
+        float cx = x - center.x, cz = z - center.z;
+        if (!hasSkin || cx * cx + cz * cz > skinR2) {
+            return LevelDress.GroundY(x, z, center.y);
+        }
+        float fx = (x - skinX0) / skinSX, fz = (z - skinZ0) / skinSZ;
+        int i = Mathf.Clamp(Mathf.FloorToInt(fx), 0, skinNX - 1), j = Mathf.Clamp(Mathf.FloorToInt(fz), 0, skinNZ - 1);
+        fx = Mathf.Clamp01(fx - i);
+        fz = Mathf.Clamp01(fz - j);
+        // GridMesh's triangles (a, c, b) and (b, c, d) share the diagonal from b (i + 1, j) to c (i, j + 1).
+        float ya = SkinCorner(i, j), yb = SkinCorner(i + 1, j), yc = SkinCorner(i, j + 1), yd = SkinCorner(i + 1, j + 1);
+        return fx + fz <= 1f ? ya + fx * (yb - ya) + fz * (yc - ya) : yd + (1f - fx) * (yc - yd) + (1f - fz) * (yb - yd);
+    }
+
+    float SkinCorner(int i, int j) {
+        long key = ((long)i << 32) | (uint)j;
+        float y;
+        if (!skinCorner.TryGetValue(key, out y)) {
+            y = LevelDress.GroundY(skinX0 + i * skinSX, skinZ0 + j * skinSZ, center.y) + 0.02f;
+            skinCorner[key] = y;
+        }
+        return y;
+    }
+
+    // How a flat piece lies on the drawn floor at `at` (only x, z are read): tilted to the floor's slope across its footprint
+    // (`halfX` by `halfZ` m in its own frame after `yaw`), and raised until its base clears the floor at nine points over that
+    // footprint, then `lift` more. A slab takes a small negative lift (its underside just in the floor, no gap at its edge); a
+    // decal takes 1 to 4 cm (never in the floor, never z-fighting with it).
+    protected Pose LayPose(Vector3 at, float yaw, float halfX, float halfZ, float lift) {
+        Quaternion turn = Quaternion.Euler(0f, yaw, 0f);
+        Vector3 rx = turn * Vector3.right, rz = turn * Vector3.forward;
+        float y0 = SkinY(at.x, at.z);
+        Vector3 px = at + rx * halfX, nx = at - rx * halfX, pz = at + rz * halfZ, nz = at - rz * halfZ;
+        float sx = (SkinY(px.x, px.z) - SkinY(nx.x, nx.z)) / (2f * halfX);
+        float sz = (SkinY(pz.x, pz.z) - SkinY(nz.x, nz.z)) / (2f * halfZ);
+        float raise = 0f;
+        for (int u = -1; u <= 1; u++) {
+            for (int v = -1; v <= 1; v++) {
+                Vector3 q = at + rx * (u * halfX) + rz * (v * halfZ);
+                raise = Mathf.Max(raise, SkinY(q.x, q.z) - (y0 + sx * u * halfX + sz * v * halfZ));
+            }
+        }
+        Vector3 ax = (rx + Vector3.up * sx).normalized, az = (rz + Vector3.up * sz).normalized;
+        Vector3 up = Vector3.Cross(az, ax).normalized;
+        return new Pose(new Vector3(at.x, y0 + raise + lift, at.z), Quaternion.LookRotation(az, up));
+    }
+
+    protected GameObject Lay(GameObject go, float yaw, float halfX, float halfZ, float lift) {
+        Pose p = LayPose(go.transform.position, yaw, halfX, halfZ, lift);
+        go.transform.SetPositionAndRotation(p.position, p.rotation);
+        return go;
+    }
+
+    // The lowest the drawn floor gets under an upright piece's footprint (`halfX` by `halfZ` m after `yaw`): stand a wall, a
+    // machine or a plinth here and no edge of it floats; the high side goes a little into the ground instead.
+    protected float Lowest(Vector3 at, float yaw, float halfX, float halfZ) {
+        Quaternion turn = Quaternion.Euler(0f, yaw, 0f);
+        Vector3 rx = turn * Vector3.right, rz = turn * Vector3.forward;
+        float y = float.MaxValue;
+        for (int u = -1; u <= 1; u++) {
+            for (int v = -1; v <= 1; v++) {
+                Vector3 q = at + rx * (u * halfX) + rz * (v * halfZ);
+                y = Mathf.Min(y, SkinY(q.x, q.z));
+            }
+        }
+        return y;
     }
 
     // Deterministic smooth noise in [0,1] for hills, so a map looks the same every time it loads.
@@ -451,6 +595,9 @@ public abstract class OwnMap : MonoBehaviour {
         public bool Forced;              // the playtest's setup shortcut: act as if armed
         public Light Warning;
         public System.Action<int> Landed;
+        // A frame laid to the ground's slope: with Guide set the head runs along it from Track (the frame's origin), High and Low
+        // being metres along Guide, so it stays square over the bed. Zero: High and Low are world heights and the head moves on y.
+        public Vector3 Track, Guide;
         public int Slams { get; private set; }
         float clock;
         bool slammed;
@@ -495,6 +642,10 @@ public abstract class OwnMap : MonoBehaviour {
         }
 
         void Place(float k) {
+            if (Guide != Vector3.zero) {
+                transform.position = Track + Guide * Mathf.Lerp(Low, High, k);
+                return;
+            }
             Vector3 p = transform.position;
             p.y = Mathf.Lerp(Low, High, k);
             transform.position = p;
