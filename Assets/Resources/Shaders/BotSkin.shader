@@ -47,8 +47,13 @@ Shader "Knoll/BotSkin"
             float3 albedo = saturate(skin.rgb * _Lift) * _Color.rgb;
             o.Albedo = albedo;
 
-            float3 viewDir = normalize(_WorldSpaceCameraPos - IN.worldPos);
-            float3 normal = normalize(IN.worldNormal);
+            // A zero vector (a mesh normal of 0,0,0, a pixel on the camera) must not become NaN: it would reach the HDR frame
+            // and the bloom would smear it into a black square. Written so NaN fails the test as well.
+            float3 toCam = _WorldSpaceCameraPos - IN.worldPos;
+            float toCamSq = dot(toCam, toCam);
+            float3 viewDir = toCamSq > 1e-8 ? toCam * rsqrt(toCamSq) : float3(0, 0, 1);
+            float nSq = dot(IN.worldNormal, IN.worldNormal);
+            float3 normal = nSq > 1e-8 ? IN.worldNormal * rsqrt(nSq) : float3(0, 1, 0);
             float rim = pow(1.0 - saturate(dot(viewDir, normal)), 4.0);
             float3 rimLight = _RimColor.rgb * rim * _RimStrength;
 

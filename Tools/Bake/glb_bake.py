@@ -315,11 +315,17 @@ def fit(verts, height, size, keep_origin, exact=False):
 
 def vertex_normals(verts, tris):
     n = [[0.0, 0.0, 0.0] for _ in verts]
+    big = [(0.0, (0.0, 1.0, 0.0)) for _ in verts]   # the biggest face at each vertex: (area, unit normal)
     for a, b, c in tris:
         fn = cross(sub(verts[b], verts[a]), sub(verts[c], verts[a]))
+        area = math.sqrt(dot(fn, fn))
         for k in (a, b, c):
             for i in range(3): n[k][i] += fn[i]
-    return [norm(x) for x in n]
+            if area > big[k][0] and area > 1e-12: big[k] = (area, norm(fn))
+    # A vertex whose faces cancel out (thin double-sided geometry, or two faces folded together by the decimation) sums to
+    # zero. A (0,0,0) normal becomes NaN in KitLit's tangent-space transform and a NaN pixel smears into black squares in the
+    # bloom, so it takes its biggest face's normal instead. BakedMesh.cs mends old files the same way on load.
+    return [norm(x) if dot(x, x) > 1e-12 else big[k][1] for k, x in enumerate(n)]
 
 def box_uv(p, n, tile=1.0):
     ax = max(range(3), key=lambda i: abs(n[i]))

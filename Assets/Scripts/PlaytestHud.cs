@@ -310,6 +310,74 @@ public static class PlaytestHud {
         return m != null && m.shader != null ? m.shader.name : "(no material)";
     }
 
+    // The cause of the NaN pixels in the first run was in the data, not in a shader: the Gen-baked meshes (gate arch, booth,
+    // turnstiles, stamp press, bosses, lodgers) listed vertices with a normal of (0,0,0), which KitLit's tangent-space
+    // transform normalises into NaN. BakedMesh now mends them as it loads. This looks at every readable mesh on a live
+    // renderer and counts the vertices whose normal a shader still could not normalise (zero, NaN or Inf), so a guard in a
+    // shader can never hide a bad mesh from this scenario. `first` names the first mesh found.
+    static int BadNormalVertices(out int meshes, out int scanned, out string first) {
+        meshes = 0;
+        scanned = 0;
+        first = "";
+        int bad = 0;
+        var seen = new HashSet<Mesh>();
+        var list = new List<Mesh>();
+        foreach (MeshFilter mf in Object.FindObjectsByType<MeshFilter>(FindObjectsSortMode.None)) {
+            if (mf.sharedMesh != null && mf.gameObject.activeInHierarchy) {
+                list.Add(mf.sharedMesh);
+            }
+        }
+        foreach (SkinnedMeshRenderer sr in Object.FindObjectsByType<SkinnedMeshRenderer>(FindObjectsSortMode.None)) {
+            if (sr.sharedMesh != null && sr.gameObject.activeInHierarchy) {
+                list.Add(sr.sharedMesh);
+            }
+        }
+        foreach (Mesh mesh in list) {
+            if (!seen.Add(mesh) || !mesh.isReadable) {
+                continue;
+            }
+            Vector3[] n = mesh.normals;
+            if (n == null || n.Length == 0) {
+                continue;
+            }
+            scanned++;
+            int here = 0;
+            for (int i = 0; i < n.Length; i++) {
+                if (!(n[i].sqrMagnitude > 0.25f)) {   // a zero vector fails it, and so does NaN
+                    here++;
+                }
+            }
+            if (here > 0) {
+                meshes++;
+                bad += here;
+                if (first.Length == 0) {
+                    first = mesh.name + " (" + here + " of " + n.Length + ")";
+                }
+            }
+        }
+        return bad;
+    }
+
+    static bool normalsSaid;
+
+    // Said once, at the end of the run (the whole chapter is loaded by then): what the baked files held and what is left.
+    static void Normals(PlaytestRun run) {
+        if (normalsSaid) {
+            return;
+        }
+        normalsSaid = true;
+        int meshes, scanned;
+        string first;
+        int bad = BadNormalVertices(out meshes, out scanned, out first);
+        run.Metric("badNormalVertices", bad);
+        run.Metric("bakedNormalsMended", BakedMesh.MendedVertices);
+        run.Event("normals", scanned + " readable meshes on live renderers: " + bad + " vertices with a zero, NaN or Inf normal left" + (bad > 0 ? " in " + meshes + " meshes (first " + first + ")" : "")
+            + "; the baked Gen meshes held " + BakedMesh.MendedVertices + " such normals in " + BakedMesh.MendedMeshes + " meshes, mended as they load");
+        if (bad > 0) {
+            run.Problem(PlaytestSeverity.Warning, "chapter2-hud: " + bad + " vertices still have a zero, NaN or Inf normal (first " + first + "), which a lit shader turns into a NaN pixel");
+        }
+    }
+
     // Which group of renderers makes the NaN pixels: hide each shader's renderers in turn and render again. The groups
     // whose removal clears (or cuts) the count are the cause. The sky is a skybox material, not a renderer, so it is tried by
     // replacing it with a plain colour. Also says how many renderers have a near-zero scale (the zero-scale bots suspect).
@@ -442,6 +510,7 @@ public static class PlaytestHud {
 
     // The end of the scenario: the numbers the review reads, and the verdict.
     public static void Finish(PlaytestRun run) {
+        Normals(run);
         run.Metric("hudShots", Shots);
         run.Metric("blackScans", Scans);
         run.Metric("blackBlocks", BlackFrames);
@@ -472,5 +541,6 @@ public static class PlaytestHud {
         diagnosed = 0;
         nextTick = 0f;
         hdrKnown = false;
+        normalsSaid = false;
     }
 }

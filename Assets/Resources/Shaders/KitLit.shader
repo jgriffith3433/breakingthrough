@@ -19,7 +19,7 @@ Shader "Knoll/KitLit"
         LOD 300
 
         CGPROGRAM
-        #pragma surface surf Standard fullforwardshadows addshadow
+        #pragma surface surf Standard fullforwardshadows addshadow finalcolor:HdrGuard
         #pragma multi_compile_instancing
         #pragma target 3.0
 
@@ -52,6 +52,15 @@ Shader "Knoll/KitLit"
             o.Albedo = lerp(o.Albedo, _Flash.rgb, _Flash.a * 0.6);
             o.Emission = _EmissionColor.rgb + _Flash.rgb * _Flash.a * 0.7;
             o.Alpha = 1;
+        }
+
+        // The last line of defence for the HDR frame: whatever lighting produced (a mesh normal of 0,0,0 is the one we have
+        // met), a NaN or Inf never leaves this shader, because one such pixel is smeared by the bloom into a black square.
+        // Written like BTPost's SafeChannel so NaN fails the test (NaN >= 0 is false) and a negative or huge value is held.
+        void HdrGuard (Input IN, SurfaceOutputStandard o, inout fixed4 color)
+        {
+            half3 c = color.rgb;
+            color.rgb = half3(c.r >= 0.0 ? min(c.r, 64.0) : 0.0, c.g >= 0.0 ? min(c.g, 64.0) : 0.0, c.b >= 0.0 ? min(c.b, 64.0) : 0.0);
         }
         ENDCG
     }

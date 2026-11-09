@@ -227,6 +227,12 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
   main camera through the real grade and fails on a solid black rectangle (`black-block`), and renders it raw (grade off,
   flagged by `Hidden/BT/NanProbe` into 8-bit, never a float readback) to count NaN pixels and name the shader or sky that
   draws them (`hdr-nan`). Touch layouts render without HDR and cannot show it. Keep BTPost's `SafeHDR` on every tap.
+  The NaN source was data: the Gen-baked meshes in `Resources/Baked/` list vertices with a normal of (0,0,0) (259 of them;
+  the gate arch, booth, turnstiles and stamp press at Chapter 2's gate had 7 to 20 each), which `KitLit`'s tangent-space
+  transform normalises into NaN. `BakedMesh.Part.ToMesh` now mends them as it loads (`MendedNormals`: the biggest adjacent
+  face's normal), `Tools/Bake/glb_bake.py` no longer writes them, and the `normals` event / `badNormalVertices` and
+  `bakedNormalsMended` metrics say what the files held and what is left (0), which a shader guard cannot hide. `KitLit`
+  (`finalcolor:HdrGuard`) and `BotSkin` (guarded normalise) also never let a NaN leave the shader.
 - **Report:** wave, kills, damage, swings, hits, hitRate, finishers, smashHits, homeRuns, homeRunKnocks,
   knockedBack, lockNearest, lockWrong, level, levelUps, musician HP, coins, run seconds and fps. `bat` lines from
   `BatEquipment.Events` go to the timeline (all of them in `bat`, the first 15 elsewhere). Problems:
