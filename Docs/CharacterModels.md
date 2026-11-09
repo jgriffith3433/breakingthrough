@@ -112,3 +112,13 @@ Wallit and Slice idle personality layers on top of the Animator; rebuilding Wall
 rigs and animation clips are the shipped, accepted ones). Courier, Foreman, Server and Order-Bearer rigs are this part;
 The Registrar and Plated Alpha are now authored the same way (code-built from `KitMesh`). Still later: a Hawkes Gen
 mesh pass (views3d, Blender decimate to 9-11k triangles, rigid split on the same part names) to replace these code bodies.
+
+
+## Gen bodies (Tools/Bake)
+
+The Courier, Foreman, Server and Order-Bearer, and the lodgers and landmark props listed in `Tools/Bake/README.md`, are Gen
+meshes baked by `Tools/Bake/glb_bake.py` into `Resources/Baked/<id>.mesh.txt` (decimated, split rigidly into the part names above
+by `Tools/Bake/specs/<id>.json`, kit textures tinted per part). `CharacterKit.Make` loads them when every required part exists and
+otherwise builds the code body (kept as the fallback; `BakedMesh.Enabled = false` forces it). Concepts were made from one
+picture each, so the back and sides are the model's guess. Triangles: Courier 7,000, Foreman 8,000, Server 7,900, Order-Bearer 8,000
+(budget 12,000). The `characters` playtest logs `gen-body` / `gen-prop` per piece.

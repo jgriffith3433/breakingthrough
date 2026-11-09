@@ -92,9 +92,31 @@ public static class CharacterKit {
                 return false;
             }
         }
-        foreach (BakedMesh.Part p in parts) {
-            Material m = Mat(p.Set, p.Tint);
-            Part(root, p.Name, p.Pivot, p.ToMesh(id + " " + p.Name), m, m);
+        // A part with a Parent hangs off it (a cap on the head) at its pivot minus the parent's, so the parent's turn carries it.
+        // Parents are made first, whatever order the file lists them in.
+        var made = new Dictionary<string, Transform>();
+        var todo = new List<BakedMesh.Part>(parts);
+        int guard = todo.Count + 1;
+        while (todo.Count > 0 && guard-- > 0) {
+            for (int i = todo.Count - 1; i >= 0; i--) {
+                BakedMesh.Part p = todo[i];
+                Transform at = root;
+                Vector3 pos = p.Pivot;
+                if (!string.IsNullOrEmpty(p.Parent)) {
+                    BakedMesh.Part par = parts.Find(q => q.Name == p.Parent);
+                    if (par != null && !made.TryGetValue(p.Parent, out at)) {
+                        continue;   // its parent is not made yet: next pass
+                    }
+                    if (par == null) {
+                        at = root;
+                    } else {
+                        pos = p.Pivot - par.Pivot;
+                    }
+                }
+                Material m = Mat(p.Set, p.Tint);
+                made[p.Name] = Part(at, p.Name, pos, p.ToMesh(id + " " + p.Name), m, m).transform;
+                todo.RemoveAt(i);
+            }
         }
         return true;
     }
