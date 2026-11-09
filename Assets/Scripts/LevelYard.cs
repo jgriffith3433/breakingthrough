@@ -21,6 +21,10 @@ public class LevelYard : MonoBehaviour {
     public static readonly Vector3 SlicePos = new Vector3(0f, 0f, -9f);
     public static readonly Vector3 FlagPos = new Vector3(-38.6f, 0f, 12.6f);
     public static readonly Vector3 DropPos = new Vector3(34f, 0f, 10f);
+    // Where Wallit stands again after a defeat at the drop: in sight of it and a few steps inside the wake radius of the crew (16 m
+    // from CrewCenter) and of the Courier (14 m from its box), so the fight is one short walk away, not across the yard.
+    public static readonly Vector3 FightCheckpoint = DropPos + new Vector3(-13f, 0f, -6f);
+    const float RewakeAfter = 8f;   // a rested Courier wakes by itself this long after Wallit is back, if he has not walked up
     public static readonly Vector3 ExitPos = new Vector3(30f, 0f, 49f);
     public static readonly Vector3[] NoticePos = {
         new Vector3(-15f, 0f, -3f), new Vector3(-26f, 0f, 4.5f), new Vector3(-34f, 0f, 12f),
@@ -123,6 +127,7 @@ public class LevelYard : MonoBehaviour {
     Vector3 courierHome;
     Vector3 courierLast;
     bool courierArriving;
+    float courierRestedAt = -1f;   // when a defeat put the Courier back to sleep; -1 once it is awake again
     bool callSaid;
     Transform noticeItem;
     float noticeBorn;
@@ -637,6 +642,9 @@ public class LevelYard : MonoBehaviour {
             case Beat.Fight:
                 return "Clear the Crew (" + CrewAlive + " left).";
             case Beat.Courier:
+                if (TheCourier != null && TheCourier.Alive && TheCourier.Dormant && courierRestedAt >= 0f) {
+                    return "Back to the drop, east: the Courier waits " + Bar(TheCourier.Health01);
+                }
                 return TheCourier != null && TheCourier.Alive ? "Break the Courier " + Bar(TheCourier.Health01) : "Hold at the drop.";
             case Beat.Clear:
                 return "Out: the return slot, north-east.";
@@ -760,7 +768,7 @@ public class LevelYard : MonoBehaviour {
         GameAudio.Play("yobot_wake", 0.9f);
         Note("encounter-wake", "crew at the drop (" + cause + "), " + crew.Count + " bots");
         LevelBarks.Say('Y', "Hello! Uploading victory! Striking this address now!", "wake", true);
-        scene.Checkpoint = RingCenter + new Vector3(15f, 0f, -6f);
+        scene.Checkpoint = FightCheckpoint;
         StartCoroutine(MarchOut());
     }
 
@@ -795,6 +803,9 @@ public class LevelYard : MonoBehaviour {
 
     // A defeat puts the bots back where they stood, asleep, so the fight can be tried again from the door.
     public void Resumed() {
+        if (Companion.Instance != null) {
+            Companion.Instance.Recover(scene.Player.position);   // Slice was downed where he fell: she walks back with him
+        }
         if (CrewCleared) {
             return;
         }
@@ -900,8 +911,9 @@ public class LevelYard : MonoBehaviour {
             return;
         }
         TheCourier.Dormant = false;
+        courierRestedAt = -1f;
         LevelBarks.Quiet = true;   // the fight's own few words are forced; nothing idle over it
-        scene.Checkpoint = RingCenter + new Vector3(15f, 0f, -6f);
+        scene.Checkpoint = FightCheckpoint;
         Note("boss-wake", "The Courier (" + cause + ")");
     }
 
@@ -957,6 +969,7 @@ public class LevelYard : MonoBehaviour {
         }
         TheCourier.transform.position = courierHome;
         TheCourier.Dormant = true;
+        courierRestedAt = Time.time;
         if (courierFight != null) {
             courierFight.Rest();
         }
@@ -976,6 +989,8 @@ public class LevelYard : MonoBehaviour {
             CourierSeconds += Time.deltaTime;
         } else if (!courierArriving && Vector3.Distance(LevelKit.Flat(scene.Player.position), LevelKit.Flat(courierHome)) < 14f) {
             WakeCourier("Wallit walked back to the drop");
+        } else if (!courierArriving && courierRestedAt >= 0f && Time.time - courierRestedAt >= RewakeAfter) {
+            WakeCourier("re-woken after the defeat");   // nobody has to find the trigger: it comes for him
         }
     }
 
