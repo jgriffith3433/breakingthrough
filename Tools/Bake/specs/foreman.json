@@ -1,0 +1,10 @@
+{"default":"Body","parts":[
+ {"name":"Hard Hat","parent":"Head","metres":true,"box":[-0.5,1.2,-0.5,0.5,1.6,0.6],"pivot":[0,1.1,0.03],"set":"metal","color":"#e8a23a"},
+ {"name":"Head","metres":true,"box":[-0.5,1.08,-0.5,0.5,1.6,0.6],"pivot":[0,1.1,0.03],"set":"iron","color":"#4a4a50"},
+ {"name":"Order Sheet","parent":"Body","metres":true,"box":[-0.22,0.62,0.1,0.22,1.02,0.6],"pivot":[0,0.85,0.15],"set":"paper","color":"#f2eedd"},
+ {"name":"ClawL","metres":true,"box":[-1.0,0.15,-0.6,-0.33,1.12,0.6],"pivot":[-0.48,1.0,0.0],"set":"iron","color":"#4d4d52"},
+ {"name":"ClawR","metres":true,"box":[0.33,0.15,-0.6,1.0,1.12,0.6],"pivot":[0.48,1.0,0.0],"set":"iron","color":"#4d4d52"},
+ {"name":"LegL","metres":true,"box":[-0.6,-0.1,-0.6,0,0.6,0.6],"pivot":[-0.17,0.6,0],"set":"metal","color":"#d9902f"},
+ {"name":"LegR","metres":true,"box":[0,-0.1,-0.6,0.6,0.6,0.6],"pivot":[0.17,0.6,0],"set":"metal","color":"#d9902f"},
+ {"name":"Body","metres":true,"box":[9,9,9,10,10,10],"pivot":[0,0.85,0],"set":"metal","color":"#d9902f"}
+]}

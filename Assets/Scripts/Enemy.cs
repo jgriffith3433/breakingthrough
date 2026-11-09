@@ -512,12 +512,16 @@ public class Enemy : MonoBehaviour
         modelTint = new Color(1.2f, 1f, 0.62f);
         modelTintAmount = 0.3f;
         SetAuthored("foreman");
-        GameObject sheet = CharacterKit.Prop("order_sheet");
-        sheet.name = "Order Sheet";
-        sheet.transform.SetParent(transform, false);
-        sheet.transform.localPosition = new Vector3(0f, 0.36f, 0.24f);
-        sheet.transform.localScale = Vector3.one * 0.8f;
-        sheet.transform.localRotation = Quaternion.Euler(-6f, 0f, -3f);
+        if (model == null || FindPart(model, "Order Sheet") == null)
+        {
+            // The code body carries no sheet of its own (the Gen body does: a part named Order Sheet on its chest).
+            GameObject sheet = CharacterKit.Prop("order_sheet");
+            sheet.name = "Order Sheet";
+            sheet.transform.SetParent(transform, false);
+            sheet.transform.localPosition = new Vector3(0f, 0.36f, 0.24f);
+            sheet.transform.localScale = Vector3.one * 0.8f;
+            sheet.transform.localRotation = Quaternion.Euler(-6f, 0f, -3f);
+        }
         PhaseAt = 0.5f;
         gameObject.AddComponent<BossPhases>().Setup(BossPhases.Fight.Foreman);
     }
