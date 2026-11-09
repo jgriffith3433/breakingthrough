@@ -9,7 +9,8 @@ quadric edge collapse to --tris -> scale to --height (or --size x,y,z max) and s
 box-projected UVs at 1 m a tile (the kit textures are tileable) -> text file.
 
 Format (Assets/Resources/Baked/<id>.mesh.txt, read by BakedMesh.cs):
-  g <name> <px> <py> <pz> <set> <#rrggbb>   a part, its pivot, its kit texture set and tint (spaces in names are _)
+  g <name> <px> <py> <pz> <set> <#rrggbb> [parent]   a part, its pivot (rig space), its kit texture set and tint (spaces in names are _);
+                                 with a parent the part is a child of it, at its pivot minus the parent's (a cap on a head)
   v x y z nx ny nz u v           vertices relative to the pivot
   t a b c                        triangles (indices within the part)
 Prints the triangle count of every part. Never fails silently: exits 1 on a bad file.
@@ -102,6 +103,56 @@ def weld(verts, tris, eps=1e-5):
         a, b, c = remap[a], remap[b], remap[c]
         if a != b and b != c and a != c: t2.append((a, b, c))
     return out, t2
+
+def drop_small(verts, tris, frac):
+    """Remove floating bits: connected pieces with fewer triangles than frac of the biggest piece."""
+    par = list(range(len(verts)))
+    def find(a):
+        while par[a] != a:
+            par[a] = par[par[a]]; a = par[a]
+        return a
+    for a, b, c in tris:
+        ra, rb, rc = find(a), find(b), find(c)
+        par[rb] = ra; par[find(rc)] = ra
+    cnt = {}
+    for a, b, c in tris:
+        r = find(a); cnt[r] = cnt.get(r, 0) + 1
+    big = max(cnt.values())
+    keep = [t for t in tris if cnt[find(t[0])] >= frac * big]
+    print('dropped %d floating triangles in %d pieces' % (len(tris) - len(keep), sum(1 for v in cnt.values() if v < frac * big)))
+    return verts, keep
+
+def trim_base(verts, tris):
+    """Gen leaves the picture's ground shadow as a flat slab round the foot: cut what lies far outside the shaft near the floor."""
+    ys = [v[1] for v in verts]; mn, mx = min(ys), max(ys); h = mx - mn
+    mid = [v for v in verts if mn + 0.25 * h <= v[1] <= mn + 0.6 * h]
+    xc = (min(v[0] for v in mid) + max(v[0] for v in mid)) / 2; zc = (min(v[2] for v in mid) + max(v[2] for v in mid)) / 2
+    w = max(max(v[0] for v in mid) - min(v[0] for v in mid), max(v[2] for v in mid) - min(v[2] for v in mid)) / 2
+    keep = []
+    for t in tris:
+        cy = sum(verts[k][1] for k in t) / 3
+        far = any(abs(verts[k][0] - xc) > 1.45 * w or abs(verts[k][2] - zc) > 1.45 * w for k in t)   # any corner: the slab is a few big triangles
+        if cy < mn + 0.12 * h and far: continue
+        n = cross(sub(verts[t[1]], verts[t[0]]), sub(verts[t[2]], verts[t[0]])); ln = math.sqrt(dot(n, n)) or 1.0
+        if cy < mn + 0.03 * h and abs(n[1]) / ln > 0.85: continue   # flat bits lying on the floor
+        keep.append(t)
+    print('trimmed %d base triangles (the shadow slab)' % (len(tris) - len(keep)))
+    return verts, keep
+
+def upright(verts):
+    """A tall piece photographed from a little above leans: shear x and z so the centre line of the shaft stands straight (the foot stays put)."""
+    ys = [v[1] for v in verts]; mn, mx = min(ys), max(ys); h = mx - mn
+    pts = []
+    for i in range(10):
+        lo = mn + h * (0.15 + 0.07 * i); hi = lo + h * 0.07
+        b = [v for v in verts if lo <= v[1] < hi]
+        if b:
+            pts.append(((lo + hi) / 2, (min(v[0] for v in b) + max(v[0] for v in b)) / 2, (min(v[2] for v in b) + max(v[2] for v in b)) / 2))
+    n = len(pts); my = sum(p[0] for p in pts) / n
+    den = sum((p[0] - my) ** 2 for p in pts) or 1.0
+    kx = sum((p[0] - my) * p[1] for p in pts) / den; kz = sum((p[0] - my) * p[2] for p in pts) / den
+    print('upright: shaft leaned %.1f / %.1f degrees' % (math.degrees(math.atan(kx)), math.degrees(math.atan(kz))))
+    return [(v[0] - kx * (v[1] - mn), v[1], v[2] - kz * (v[1] - mn)) for v in verts]
 
 def _cluster_once(verts, tris, res):
     xs = [v[0] for v in verts]; ys = [v[1] for v in verts]; zs = [v[2] for v in verts]
@@ -248,15 +299,18 @@ def decimate(verts, tris, target):
     m = {k: i for i, k in enumerate(used)}
     return [tuple(V[k]) for k in used], [(m[t[0]], m[t[1]], m[t[2]]) for t in faces.values()]
 
-def fit(verts, height, size, keep_origin):
+def fit(verts, height, size, keep_origin, exact=False):
     mn = [min(v[i] for v in verts) for i in range(3)]
     mx = [max(v[i] for v in verts) for i in range(3)]
     ext = [mx[i] - mn[i] for i in range(3)]
+    cx, cz = (mn[0] + mx[0]) / 2, (mn[2] + mx[2]) / 2
+    if size and exact:   # stretch each axis to the piece's own box (a mild squash, to keep the footprint)
+        k = [size[i] / ext[i] if size[i] > 0 and ext[i] > 1e-9 else 1.0 for i in range(3)]
+        return [((v[0] - cx) * k[0], (v[1] - mn[1]) * k[1], (v[2] - cz) * k[2]) for v in verts]
     if size:
         s = min(size[i] / ext[i] for i in range(3) if size[i] > 0 and ext[i] > 1e-9)
     else:
         s = height / ext[1]
-    cx, cz = (mn[0] + mx[0]) / 2, (mn[2] + mx[2]) / 2
     return [((v[0] - cx) * s, (v[1] - mn[1]) * s, (v[2] - cz) * s) for v in verts]
 
 def vertex_normals(verts, tris):
@@ -283,12 +337,14 @@ def split_parts(verts, tris, spec, extent):
         chosen = spec.get('default', 'Body')
         for p in spec['parts']:
             b = p['box']
-            if all(b[i] * h[i] <= c[i] <= b[i + 3] * h[i] for i in range(3)):
+            k = [1.0, 1.0, 1.0] if p.get('metres') else h   # "metres": true = the box is in rig-space metres
+            if all(b[i] * k[i] <= c[i] <= b[i + 3] * k[i] for i in range(3)):
                 chosen = p['name']; break
         groups[chosen].append(t)
+    groups = {n: g for n, g in groups.items() if not n.startswith('_')}   # a part named _x only cuts loose bits away
     pivots = {p['name']: p['pivot'] for p in spec['parts']}
     pivots.setdefault(spec.get('default', 'Body'), [0, 0, 0])
-    return groups, pivots, {p['name']: (p.get('set', 'metal'), p.get('color', '#ffffff')) for p in spec['parts']}
+    return groups, pivots, {p['name']: (p.get('set', 'metal'), p.get('color', '#ffffff'), p.get('parent', '')) for p in spec['parts']}
 
 def emit(path, groups, pivots, verts, tile, looks=None):
     lines = []
@@ -301,8 +357,9 @@ def emit(path, groups, pivots, verts, tile, looks=None):
         sub_v = [verts[k] for k in used]
         sub_t = [(m[a], m[b], m[c]) for a, b, c in ts]
         nrm = vertex_normals(sub_v, sub_t)
-        look = (looks or {}).get(name, ('metal', '#ffffff'))
-        lines.append('g %s %.5f %.5f %.5f %s %s' % (name.replace(' ', '_'), piv[0], piv[1], piv[2], look[0], look[1]))
+        look = (looks or {}).get(name, ('metal', '#ffffff', ''))
+        lines.append('g %s %.5f %.5f %.5f %s %s%s' % (name.replace(' ', '_'), piv[0], piv[1], piv[2], look[0], look[1],
+                                                       (' ' + look[2].replace(' ', '_')) if look[2] else ''))
         for p, n in zip(sub_v, nrm):
             u, v = box_uv(p, n, tile)
             lines.append('v %.4f %.4f %.4f %.3f %.3f %.3f %.3f %.3f' % (p[0] - piv[0], p[1] - piv[1], p[2] - piv[2], n[0], n[1], n[2], u, v))
@@ -319,10 +376,19 @@ def main():
     ap.add_argument('--size', help='max x,y,z in metres; the model is scaled to fit')
     ap.add_argument('--parts'); ap.add_argument('--tile', type=float, default=1.0)
     ap.add_argument('--yaw', type=float, default=0.0, help='turn about Y before fitting (degrees)')
+    ap.add_argument('--set', default='metal', help='kit texture set of a one-part prop (iron, brick, cloth, wood, metal...)')
+    ap.add_argument('--trim-base', action='store_true', help='cut the picture\'s ground-shadow slab off the foot')
+    ap.add_argument('--upright', action='store_true', help='shear a leaning tall piece straight')
+    ap.add_argument('--exact', action='store_true', help='with --size: stretch each axis to the box instead of one uniform scale')
+    ap.add_argument('--drop-small', type=float, default=0.0, help='drop floating pieces under this fraction of the biggest piece (0.01 for characters)')
     a = ap.parse_args()
     verts, tris = load_triangles(a.glb)
     print('read %d verts, %d tris' % (len(verts), len(tris)))
     verts, tris = weld(verts, tris)
+    if a.trim_base:
+        verts, tris = trim_base(verts, tris)
+    if a.drop_small > 0:
+        verts, tris = drop_small(verts, tris, a.drop_small)
     if len(tris) > a.tris * 6:
         verts, tris = _cluster_once(verts, tris, int(math.sqrt(a.tris * 6) * 14))
     verts, tris = decimate(verts, tris, a.tris)
@@ -332,14 +398,16 @@ def main():
     if a.yaw:
         c, s = math.cos(math.radians(a.yaw)), math.sin(math.radians(a.yaw))
         verts = [(v[0] * c + v[2] * s, v[1], -v[0] * s + v[2] * c) for v in verts]
+    if a.upright:
+        verts = upright(verts)
     size = [float(x) for x in a.size.split(',')] if a.size else None
-    verts = fit(verts, a.height, size, False)
+    verts = fit(verts, a.height, size, False, a.exact)
     ext = (max(abs(v[0]) for v in verts), max(v[1] for v in verts), max(abs(v[2]) for v in verts))
     if a.parts:
         spec = json.load(open(a.parts))
         groups, pivots, looks = split_parts(verts, tris, spec, ext)
     else:
-        groups, pivots, looks = {'Mesh': tris}, {}, {}
+        groups, pivots, looks = {'Mesh': tris}, {}, {'Mesh': (a.set, '#ffffff', '')}
     rep = emit(a.out, groups, pivots, verts, a.tile, looks)
     total = sum(r[1] for r in rep)
     print('%s: %d tris total (%s) extent x%.2f y%.2f z%.2f' % (a.out, total, ', '.join('%s %d' % (r[0], r[1]) for r in rep), ext[0] * 2, ext[1], ext[2] * 2))

@@ -1,2 +1,1 @@
-- lesson: studio_gen_import takes asset ids — a brief that gives job ids needs hawkesgen_job to list the a_ ids first; stage imports in .hawkes/raw, re-encode with ffmpeg, delete the staging dir.
-- lesson: sparse checkout — `git add` of new asset folders needs `--sparse`.
+- convention: a sleeping (`Enemy.Dormant`) bot is never lock-on material (`ZeldaStyleCamera.AcquireTarget` skips it); playtest bots walk to sleepers to wake them by proximity and release Lock when nothing is awake.
