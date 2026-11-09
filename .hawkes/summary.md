@@ -32,3 +32,6 @@ No merge conflicts.
 
 ## This pass
 No art made, no code edited, no GPU spent (`.hawkes/pending-gpu.txt` does not exist). The earlier branch `task/ce95a565362b-...` was gone from origin, but its tip `1336f88` was still fetchable by sha; I fast-forwarded this branch to it (10 commits over beta `a55847d`, no conflicts). Studio builds it and runs the `characters` playtest (named in `.hawkes/scenario.txt`). Unity compile and the validators were not run here. If the build fails with "no build settings (products.json build)", that is Studio's config, not this change.
+
+## Attempt 2 (rebuild as is)
+The worktree was restored on `task/94c4801cbd0d-using-the-method-proven-on-the-registrar` at `60144c1`. `origin/beta` has not moved (0 commits behind, 11 ahead), so there was nothing to merge and no conflicts. I changed no code, made no art and spent no GPU; `.hawkes/pending-gpu.txt` does not exist. Unity compile and the validators were not run here. Studio builds this branch and runs the `characters` playtest (named in `.hawkes/scenario.txt`). Only a compile error in `BakedMesh.cs`, `CharacterKit.cs`, `Enemy.cs` or `PlaytestCharacters.cs` is this change's to fix; a Gen 5xx, timeout or restart loop is infrastructure.
