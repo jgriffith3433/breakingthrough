@@ -292,12 +292,36 @@ public static class PlaytestBeats {
         int swings = 0;
         float crewSeconds = -1f;
         courierSeen = Courier.Events.Count;   // anything older is another run's; the Courier clears the list when it arrives
+        int defeatsSeen = 0;
+        float resumedAt = -1f;
+        bool rewoke = false;
         while (!run.Done && !level.Yard.CrewCleared && Time.realtimeSinceStartup - fightStart < 330f) {
             if (crewSeconds < 0f && level.Yard.CrewDown) {
                 crewSeconds = Time.realtimeSinceStartup - fightStart;
                 run.Event("crew-down", "the Clearing Crew is down after " + Mathf.RoundToInt(crewSeconds) + " s; the Courier comes next");
             }
             DrainCourier();
+            // A defeat: Wallit is put back at the checkpoint. Slice must stand beside him again (not lie out of sight at the drop) and
+            // whatever was put back to sleep must wake without the bot knowing where it is (see the idle branch below).
+            if (level.Defeats > defeatsSeen && level.Health >= LevelScene.MaxHealth) {
+                defeatsSeen = level.Defeats;
+                resumedAt = Time.realtimeSinceStartup;
+                rewoke = false;
+                Companion c = Companion.Instance;
+                float toSlice = c != null ? Flat(c.transform.position - level.Player.position).magnitude : -1f;
+                Enemy boss = level.Yard.TheCourier;
+                float toBoss = boss != null ? Flat(boss.transform.position - level.Player.position).magnitude : -1f;
+                run.Event("resume-check", "defeat " + defeatsSeen + ": Slice " + (c != null && c.Alive ? "up, " : "NOT up, ") + toSlice.ToString("0.0") + " m away; the Courier " + (boss != null && boss.Dormant ? "asleep " : "awake ") + toBoss.ToString("0.0") + " m away");
+                run.Metric("resumeSliceUp" + defeatsSeen, c != null && c.Alive && toSlice < 6f ? 1 : 0);
+                if (c == null || !c.Alive || toSlice >= 6f) {
+                    run.Problem(PlaytestSeverity.Bug, "campaign-beats: after Wallit was downed Slice did not come back with him (" + (c == null ? "gone" : c.Alive ? "up but " + toSlice.ToString("0") + " m away" : "still down") + ")");
+                }
+            }
+            if (resumedAt >= 0f && !rewoke && level.Yard.TheCourier != null && level.Yard.CourierCame && !level.Yard.TheCourier.Dormant) {
+                rewoke = true;
+                run.Event("boss-rewake", "the Courier is awake again " + Mathf.RoundToInt(Time.realtimeSinceStartup - resumedAt) + " s after the resume; objective: " + level.Hud.Objective.text);
+                run.Metric("courierRewakeSeconds", Mathf.Round(Time.realtimeSinceStartup - resumedAt));
+            }
             Enemy nearest = null;
             float nd = 9999f;
             foreach (Enemy e in Enemy.Roster) {
@@ -318,9 +342,12 @@ public static class PlaytestBeats {
                     PlayInput.Tap(KeyCode.Mouse0);
                     swings++;
                 }
+            } else if (!level.Yard.CrewWoken && !level.Yard.CrewDown && level.Hud.Objective.text.Contains("drop")) {
+                Steer(LevelYard.DropPos);   // a defeat during the crew fight put them back to sleep: the objective points at the drop
             } else if (level.Yard.TheCourier != null && level.Yard.TheCourier.Alive && level.Yard.TheCourier.Dormant && level.Yard.CourierCame
-                && !level.Yard.CourierDown && Flat(level.Yard.TheCourier.transform.position - level.Player.position).magnitude > 6f) {
-                Steer(level.Yard.TheCourier.transform.position);   // after Wallit went down it sleeps at the drop: walk back to wake it
+                && !level.Yard.CourierDown && level.Hud.Objective.text.Contains("drop")
+                && Flat(level.Yard.TheCourier.transform.position - level.Player.position).magnitude > 6f && Time.realtimeSinceStartup - resumedAt > 3f) {
+                Steer(level.Yard.TheCourier.transform.position);   // the objective says "Back to the drop, east": a player walks there
             } else {
                 Stop();
             }
