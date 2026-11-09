@@ -104,6 +104,24 @@ def weld(verts, tris, eps=1e-5):
         if a != b and b != c and a != c: t2.append((a, b, c))
     return out, t2
 
+def drop_small(verts, tris, frac):
+    """Remove floating bits: connected pieces with fewer triangles than frac of the biggest piece."""
+    par = list(range(len(verts)))
+    def find(a):
+        while par[a] != a:
+            par[a] = par[par[a]]; a = par[a]
+        return a
+    for a, b, c in tris:
+        ra, rb, rc = find(a), find(b), find(c)
+        par[rb] = ra; par[find(rc)] = ra
+    cnt = {}
+    for a, b, c in tris:
+        r = find(a); cnt[r] = cnt.get(r, 0) + 1
+    big = max(cnt.values())
+    keep = [t for t in tris if cnt[find(t[0])] >= frac * big]
+    print('dropped %d floating triangles in %d pieces' % (len(tris) - len(keep), sum(1 for v in cnt.values() if v < frac * big)))
+    return verts, keep
+
 def _cluster_once(verts, tris, res):
     xs = [v[0] for v in verts]; ys = [v[1] for v in verts]; zs = [v[2] for v in verts]
     ext = max(max(xs) - min(xs), max(ys) - min(ys), max(zs) - min(zs))
@@ -288,6 +306,7 @@ def split_parts(verts, tris, spec, extent):
             if all(b[i] * k[i] <= c[i] <= b[i + 3] * k[i] for i in range(3)):
                 chosen = p['name']; break
         groups[chosen].append(t)
+    groups = {n: g for n, g in groups.items() if not n.startswith('_')}   # a part named _x only cuts loose bits away
     pivots = {p['name']: p['pivot'] for p in spec['parts']}
     pivots.setdefault(spec.get('default', 'Body'), [0, 0, 0])
     return groups, pivots, {p['name']: (p.get('set', 'metal'), p.get('color', '#ffffff'), p.get('parent', '')) for p in spec['parts']}
@@ -322,10 +341,13 @@ def main():
     ap.add_argument('--size', help='max x,y,z in metres; the model is scaled to fit')
     ap.add_argument('--parts'); ap.add_argument('--tile', type=float, default=1.0)
     ap.add_argument('--yaw', type=float, default=0.0, help='turn about Y before fitting (degrees)')
+    ap.add_argument('--drop-small', type=float, default=0.0, help='drop floating pieces under this fraction of the biggest piece (0.01 for characters)')
     a = ap.parse_args()
     verts, tris = load_triangles(a.glb)
     print('read %d verts, %d tris' % (len(verts), len(tris)))
     verts, tris = weld(verts, tris)
+    if a.drop_small > 0:
+        verts, tris = drop_small(verts, tris, a.drop_small)
     if len(tris) > a.tris * 6:
         verts, tris = _cluster_once(verts, tris, int(math.sqrt(a.tris * 6) * 14))
     verts, tris = decimate(verts, tris, a.tris)
