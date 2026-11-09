@@ -133,6 +133,25 @@ public class Companion : MonoBehaviour {
         }
     }
 
+    // Wallit is back at a checkpoint after a defeat: she gets up where he stands, at full health, no longer downed (her tag and the
+    // revive state go with her), instead of lying where the fight was, out of sight.
+    public void Recover(Vector3 near) {
+        Health = MaxHealth;
+        ReviveProgress = 0f;
+        downTilt = 0f;
+        strikeLeft = 0f;
+        strikeTarget = null;
+        hurtLeft = 0f;
+        hurtIn = 1f;
+        stabIn = 0.5f;
+        Player = PlayerGrowth.Instance != null ? PlayerGrowth.Instance.transform : Player;
+        Vector3 back = Player != null ? -Player.forward * 2.2f + Player.right * 1.4f : Vector3.zero;
+        transform.position = Grounded(near + back);
+        lastPos = transform.position;
+        PlayClip(Musician.CLIP_IDLE, true);
+        Refresh();
+    }
+
     void Begin(Def def) {
         Data = def;
         MaxHealth = def.Health;
