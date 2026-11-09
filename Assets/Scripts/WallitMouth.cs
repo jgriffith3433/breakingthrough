@@ -235,7 +235,14 @@ public class WallitMouth : MonoBehaviour {
         mesh.SetVertices(verts);
         mesh.SetColors(cols);
         mesh.SetTriangles(tris, 0);
-        mesh.RecalculateNormals();
+        // Every face is listed twice (front and back), so RecalculateNormals sums each vertex's two opposite faces to (0,0,0):
+        // 2266 zero normals that KitLit turns into NaN pixels. The mouth is a flat decal facing the viewer (-Z of its transform):
+        // give every vertex that unit normal, the same on both sides.
+        var normals = new Vector3[verts.Count];
+        for (int i = 0; i < normals.Length; i++) {
+            normals[i] = Vector3.back;
+        }
+        mesh.SetNormals(normals);
         mesh.RecalculateBounds();
         return mesh;
     }
