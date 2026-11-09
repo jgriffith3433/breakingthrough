@@ -233,6 +233,10 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
   face's normal), `Tools/Bake/glb_bake.py` no longer writes them, and the `normals` event / `badNormalVertices` and
   `bakedNormalsMended` metrics say what the files held and what is left (0), which a shader guard cannot hide. `KitLit`
   (`finalcolor:HdrGuard`) and `BotSkin` (guarded normalise) also never let a NaN leave the shader.
+  The scenario also reports the frames probed while Yo Bots are on screen (`probesWithYoBots`, `hdrNanFramesWithYoBots`) and
+  measures the graded frame inside each Yo Bot's screen box (`bot-scan`, `yoBotBlackPct`). The Yo Bots' dark gunmetal limbs
+  read as "black triangles" in a small night shot; they are the painted `YoBotSkin.png` on `Knoll/BotSkin` (`YoBot.fbx` has no
+  degenerate triangle and no zero normal: `python3 Tools/Bots/validate.py`), not a NaN smear, which is a block of exact black.
 - **Report:** wave, kills, damage, swings, hits, hitRate, finishers, smashHits, homeRuns, homeRunKnocks,
   knockedBack, lockNearest, lockWrong, level, levelUps, musician HP, coins, run seconds and fps. `bat` lines from
   `BatEquipment.Events` go to the timeline (all of them in `bat`, the first 15 elsewhere). Problems:

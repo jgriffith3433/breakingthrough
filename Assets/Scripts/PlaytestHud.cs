@@ -19,6 +19,12 @@ using UnityEngine.UI;
 //     hides such pixels, so the block is gone, but their source is not: when there are any, Culprits renders again with
 //     each shader's renderers (and the sky) hidden in turn and names the group whose removal makes them vanish, so the
 //     next agent has the real cause and not a guess.
+//   * The same frames are read where the Yo Bots stand: every probe made while a Yo Bot is on screen counts apart
+//     (probesWithYoBots, hdrNanFramesWithYoBots), and the graded frame inside each Yo Bot's screen box is measured (bot-scan:
+//     how many pixels are exactly black, the mean brightness). The review once called the Yo Bots' dark gunmetal limbs "flat
+//     black triangles"; YoBot.fbx has no degenerate triangle and no zero normal (Tools/Bots/validate.py), so what a player
+//     sees there is the painted skin (YoBotSkin.png, Knoll/BotSkin, about a tenth near-black texels), and these numbers let
+//     the next review tell that apart from a NaN smear: a smear is a block of exact black, the skin is not.
 // Everything is read from camera renders; the page's screenshot is the review's own copy of the same moment (hud-shot
 // events hold still for a second and a half so a screenshot lands on each).
 public static class PlaytestHud {
@@ -29,6 +35,10 @@ public static class PlaytestHud {
     public static int MostYoBots;
     public static float TopMiddleBlackMax;     // percent of the top-middle region that was exactly black, worst scan
     public static int NanMax;
+    public static int ProbesWithBots;          // probes made while at least one Yo Bot was on screen
+    public static int NanWithBots;             // ...and how many of those had NaN or Inf pixels in the raw HDR frame
+    public static float BotBlackMax;           // worst percent of exactly black pixels inside the Yo Bots' screen boxes
+    public static float BotLumaMin = 1f;       // darkest mean brightness inside those boxes
     static int diagnosed;
     static float nextTick;
     static bool hdrKnown;
@@ -45,6 +55,10 @@ public static class PlaytestHud {
         public float TopMiddleBlack;   // percent
         public float TopMiddleLuma;
         public float Luma;
+        public int Bots;               // Yo Bots whose box was measured
+        public int BotPixels;          // pixels in those boxes
+        public float BotBlack;         // percent of them exactly black
+        public float BotLuma;          // their mean brightness, 0 to 1
     }
 
     // The desktop camera renders in HDR (NightAtmosphere, SceneMood: allowHDR = !UiFit.Touch); a phone does not, so only
@@ -134,6 +148,60 @@ public static class PlaytestHud {
         return Mathf.Clamp(Mathf.RoundToInt(height * (float)Screen.width / Mathf.Max(1, Screen.height)), 160, 1920);
     }
 
+    // The screen boxes of the Yo Bots in view, in pixels of a w x h frame (rows count from the bottom, like a texture): the
+    // bounds of their meshes (not the health bar quads or effects), kept when the box is in front of the camera and on screen.
+    static List<RectInt> YoBotBoxes(Camera cam, int w, int h) {
+        var boxes = new List<RectInt>();
+        for (int i = 0; i < Enemy.Roster.Count; i++) {
+            Enemy e = Enemy.Roster[i];
+            if (e == null || !e.Alive || BotRoster.IsSpider(e.Kind)) {
+                continue;
+            }
+            bool any = false;
+            var bounds = new Bounds();
+            foreach (Renderer r in e.GetComponentsInChildren<Renderer>()) {
+                if ((!(r is MeshRenderer) && !(r is SkinnedMeshRenderer)) || !r.enabled) {
+                    continue;
+                }
+                if (r.transform.parent != null && r.transform.parent.name == "Health") {
+                    continue;
+                }
+                if (!any) {
+                    bounds = r.bounds;
+                    any = true;
+                } else {
+                    bounds.Encapsulate(r.bounds);
+                }
+            }
+            if (!any) {
+                continue;
+            }
+            float minX = 2f, maxX = -1f, minY = 2f, maxY = -1f;
+            bool behind = false;
+            for (int c = 0; c < 8; c++) {
+                Vector3 corner = bounds.center + Vector3.Scale(bounds.extents, new Vector3((c & 1) == 0 ? -1f : 1f, (c & 2) == 0 ? -1f : 1f, (c & 4) == 0 ? -1f : 1f));
+                Vector3 v = cam.WorldToViewportPoint(corner);
+                if (v.z <= 0.1f) {
+                    behind = true;
+                    break;
+                }
+                minX = Mathf.Min(minX, v.x);
+                maxX = Mathf.Max(maxX, v.x);
+                minY = Mathf.Min(minY, v.y);
+                maxY = Mathf.Max(maxY, v.y);
+            }
+            if (behind || maxX < 0.02f || minX > 0.98f || maxY < 0.02f || minY > 0.98f) {
+                continue;
+            }
+            int x0 = Mathf.Clamp(Mathf.FloorToInt(minX * w), 0, w - 1), x1 = Mathf.Clamp(Mathf.CeilToInt(maxX * w), 1, w);
+            int y0 = Mathf.Clamp(Mathf.FloorToInt(minY * h), 0, h - 1), y1 = Mathf.Clamp(Mathf.CeilToInt(maxY * h), 1, h);
+            if (x1 - x0 >= 3 && y1 - y0 >= 3) {
+                boxes.Add(new RectInt(x0, y0, x1 - x0, y1 - y0));
+            }
+        }
+        return boxes;
+    }
+
     // The camera through the real grade into a small LDR frame, then a look for a solid black rectangle.
     static Frame ScanFrame(Camera cam) {
         var f = new Frame();
@@ -167,6 +235,26 @@ public static class PlaytestHud {
             luma += (0.299f * c.r + 0.587f * c.g + 0.114f * c.b) / 255f;
         }
         f.Luma = (float)(luma / px.Length);
+
+        // Inside each Yo Bot's box: how much of it is exactly black, and how bright it is. The box is mostly the field behind
+        // the bot, so a bot that is only dark gunmetal leaves this small, and a NaN smear on a bot would not.
+        List<RectInt> boxes = YoBotBoxes(cam, w, h);
+        double botBlack = 0, botLuma = 0;
+        foreach (RectInt box in boxes) {
+            for (int y = box.y; y < box.yMax; y++) {
+                for (int x = box.x; x < box.xMax; x++) {
+                    int i = y * w + x;
+                    f.BotPixels++;
+                    if (black[i]) {
+                        botBlack++;
+                    }
+                    botLuma += (0.299f * px[i].r + 0.587f * px[i].g + 0.114f * px[i].b) / 255f;
+                }
+            }
+        }
+        f.Bots = boxes.Count;
+        f.BotBlack = f.BotPixels > 0 ? (float)(100.0 * botBlack / f.BotPixels) : 0f;
+        f.BotLuma = f.BotPixels > 0 ? (float)(botLuma / f.BotPixels) : 0f;
 
         // The top-middle region of J's shot: x 33 to 73 percent, the top 43 percent (texture rows count from the bottom).
         int x0 = Mathf.RoundToInt(w * 0.33f), x1 = Mathf.RoundToInt(w * 0.73f), y0 = Mathf.RoundToInt(h * 0.57f);
@@ -446,6 +534,18 @@ public static class PlaytestHud {
         NanMax = Mathf.Max(NanMax, nan);
         string frame = f.Ok ? "frame " + f.Width + "x" + f.Height + " luma " + f.Luma.ToString("0.00") + ", top middle luma " + f.TopMiddleLuma.ToString("0.00") + " and " + f.TopMiddleBlack.ToString("0.0") + "% exactly black" : "no frame";
         string raw = nan < 0 ? "raw HDR frame not readable here" : "raw HDR frame: " + nan + " NaN or Inf, " + hot + " over 64";
+        if (f.Bots > 0) {
+            ProbesWithBots++;
+            if (nan > 0) {
+                NanWithBots++;
+            }
+            BotBlackMax = Mathf.Max(BotBlackMax, f.BotBlack);
+            BotLumaMin = Mathf.Min(BotLumaMin, f.BotLuma);
+            if (say) {
+                run.Event("bot-scan", at + ": " + f.Bots + " Yo Bot box(es), " + f.BotPixels + " px in them, " + f.BotBlack.ToString("0.0") + "% exactly black, mean brightness " + f.BotLuma.ToString("0.00") + " (frame " + f.Luma.ToString("0.00") + "); " + raw
+                    + (nan > 0 ? "; NaN pixels are drawn with Yo Bots in view" : "; no NaN or Inf pixel with Yo Bots in view"));
+            }
+        }
         if (f.Block) {
             BlackFrames++;
             if (BlackFrames <= 4) {
@@ -518,6 +618,16 @@ public static class PlaytestHud {
         run.Metric("hdrNanFrames", NanFrames);
         run.Metric("hdrNanPixelsMax", NanMax);
         run.Metric("yoBotsOnScreenMax", MostYoBots);
+        run.Metric("probesWithYoBots", ProbesWithBots);
+        run.Metric("hdrNanFramesWithYoBots", NanWithBots);
+        run.Metric("yoBotBlackPct", Mathf.Round(BotBlackMax * 10f) / 10f);
+        run.Metric("yoBotMeanLumaMin", Mathf.Round(BotLumaMin * 100f) / 100f);
+        if (ProbesWithBots == 0) {
+            run.Problem(PlaytestSeverity.Warning, "chapter2-hud: no frame was probed with a Yo Bot on screen, so hdrNanFrames says nothing about the bots");
+        }
+        if (BotBlackMax > 40f) {
+            run.Problem(PlaytestSeverity.Warning, "chapter2-hud: " + BotBlackMax.ToString("0") + "% of the pixels inside a Yo Bot's screen box are exactly black (a dark skin leaves this under 15); look at the bot-scan events");
+        }
         if (!hdrKnown) {
             run.Problem(PlaytestSeverity.Warning, "chapter2-hud: the HDR state was never read");
         }
@@ -525,7 +635,8 @@ public static class PlaytestHud {
             run.Problem(PlaytestSeverity.Warning, "chapter2-hud: no Yo Bot was ever on screen, so the shots do not show the moment J reported");
         }
         run.Event("hud-verdict", Shots + " shots, " + Scans + " scans, black blocks " + BlackFrames + ", frames with NaN or Inf in the raw HDR frame " + NanFrames + " (worst " + NanMax + " px), most Yo Bots on screen " + MostYoBots
-            + ", worst top-middle black " + TopMiddleBlackMax.ToString("0.0") + "%" + (BlackFrames == 0 ? ": no black block showed" : ": THE BLACK BLOCK IS STILL THERE"));
+            + ", worst top-middle black " + TopMiddleBlackMax.ToString("0.0") + "%; with Yo Bots in view: " + ProbesWithBots + " probes, " + NanWithBots + " with NaN or Inf, black inside their boxes up to " + BotBlackMax.ToString("0.0") + "%"
+            + (BlackFrames == 0 ? ": no black block showed" : ": THE BLACK BLOCK IS STILL THERE"));
         run.Finish(PlaytestOutcome.Done);
     }
 
@@ -538,6 +649,10 @@ public static class PlaytestHud {
         MostYoBots = 0;
         TopMiddleBlackMax = 0f;
         NanMax = 0;
+        ProbesWithBots = 0;
+        NanWithBots = 0;
+        BotBlackMax = 0f;
+        BotLumaMin = 1f;
         diagnosed = 0;
         nextTick = 0f;
         hdrKnown = false;
