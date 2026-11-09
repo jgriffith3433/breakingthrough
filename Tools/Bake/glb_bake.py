@@ -122,6 +122,38 @@ def drop_small(verts, tris, frac):
     print('dropped %d floating triangles in %d pieces' % (len(tris) - len(keep), sum(1 for v in cnt.values() if v < frac * big)))
     return verts, keep
 
+def trim_base(verts, tris):
+    """Gen leaves the picture's ground shadow as a flat slab round the foot: cut what lies far outside the shaft near the floor."""
+    ys = [v[1] for v in verts]; mn, mx = min(ys), max(ys); h = mx - mn
+    mid = [v for v in verts if mn + 0.25 * h <= v[1] <= mn + 0.6 * h]
+    xc = (min(v[0] for v in mid) + max(v[0] for v in mid)) / 2; zc = (min(v[2] for v in mid) + max(v[2] for v in mid)) / 2
+    w = max(max(v[0] for v in mid) - min(v[0] for v in mid), max(v[2] for v in mid) - min(v[2] for v in mid)) / 2
+    keep = []
+    for t in tris:
+        cy = sum(verts[k][1] for k in t) / 3
+        far = any(abs(verts[k][0] - xc) > 1.45 * w or abs(verts[k][2] - zc) > 1.45 * w for k in t)   # any corner: the slab is a few big triangles
+        if cy < mn + 0.12 * h and far: continue
+        n = cross(sub(verts[t[1]], verts[t[0]]), sub(verts[t[2]], verts[t[0]])); ln = math.sqrt(dot(n, n)) or 1.0
+        if cy < mn + 0.03 * h and abs(n[1]) / ln > 0.85: continue   # flat bits lying on the floor
+        keep.append(t)
+    print('trimmed %d base triangles (the shadow slab)' % (len(tris) - len(keep)))
+    return verts, keep
+
+def upright(verts):
+    """A tall piece photographed from a little above leans: shear x and z so the centre line of the shaft stands straight (the foot stays put)."""
+    ys = [v[1] for v in verts]; mn, mx = min(ys), max(ys); h = mx - mn
+    pts = []
+    for i in range(10):
+        lo = mn + h * (0.15 + 0.07 * i); hi = lo + h * 0.07
+        b = [v for v in verts if lo <= v[1] < hi]
+        if b:
+            pts.append(((lo + hi) / 2, (min(v[0] for v in b) + max(v[0] for v in b)) / 2, (min(v[2] for v in b) + max(v[2] for v in b)) / 2))
+    n = len(pts); my = sum(p[0] for p in pts) / n
+    den = sum((p[0] - my) ** 2 for p in pts) or 1.0
+    kx = sum((p[0] - my) * p[1] for p in pts) / den; kz = sum((p[0] - my) * p[2] for p in pts) / den
+    print('upright: shaft leaned %.1f / %.1f degrees' % (math.degrees(math.atan(kx)), math.degrees(math.atan(kz))))
+    return [(v[0] - kx * (v[1] - mn), v[1], v[2] - kz * (v[1] - mn)) for v in verts]
+
 def _cluster_once(verts, tris, res):
     xs = [v[0] for v in verts]; ys = [v[1] for v in verts]; zs = [v[2] for v in verts]
     ext = max(max(xs) - min(xs), max(ys) - min(ys), max(zs) - min(zs))
@@ -345,12 +377,16 @@ def main():
     ap.add_argument('--parts'); ap.add_argument('--tile', type=float, default=1.0)
     ap.add_argument('--yaw', type=float, default=0.0, help='turn about Y before fitting (degrees)')
     ap.add_argument('--set', default='metal', help='kit texture set of a one-part prop (iron, brick, cloth, wood, metal...)')
+    ap.add_argument('--trim-base', action='store_true', help='cut the picture\'s ground-shadow slab off the foot')
+    ap.add_argument('--upright', action='store_true', help='shear a leaning tall piece straight')
     ap.add_argument('--exact', action='store_true', help='with --size: stretch each axis to the box instead of one uniform scale')
     ap.add_argument('--drop-small', type=float, default=0.0, help='drop floating pieces under this fraction of the biggest piece (0.01 for characters)')
     a = ap.parse_args()
     verts, tris = load_triangles(a.glb)
     print('read %d verts, %d tris' % (len(verts), len(tris)))
     verts, tris = weld(verts, tris)
+    if a.trim_base:
+        verts, tris = trim_base(verts, tris)
     if a.drop_small > 0:
         verts, tris = drop_small(verts, tris, a.drop_small)
     if len(tris) > a.tris * 6:
@@ -362,6 +398,8 @@ def main():
     if a.yaw:
         c, s = math.cos(math.radians(a.yaw)), math.sin(math.radians(a.yaw))
         verts = [(v[0] * c + v[2] * s, v[1], -v[0] * s + v[2] * c) for v in verts]
+    if a.upright:
+        verts = upright(verts)
     size = [float(x) for x in a.size.split(',')] if a.size else None
     verts = fit(verts, a.height, size, False, a.exact)
     ext = (max(abs(v[0]) for v in verts), max(v[1] for v in verts), max(abs(v[2]) for v in verts))
