@@ -269,7 +269,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
         List<Enemy> roster = Enemy.Roster;
         for (int i = 0; i < roster.Count; i++) {
             Enemy enemy = roster[i];
-            if (enemy == null || !enemy.Alive || enemy.Climbing) {
+            if (enemy == null || !enemy.Alive || enemy.Climbing || enemy.Dormant) {
                 continue;
             }
             if ((enemy.transform.position - origin).sqrMagnitude <= reach * reach) {
