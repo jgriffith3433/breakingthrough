@@ -220,6 +220,13 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
   piano when the bots are gone, presses F for climbers, Enter to skip breaks and 1-3 for cards. Every time the
   lock lands on a bot it checks that it is the nearest (`lock-on` events; a warning if not). It plays in `MetaProgress.EnterSandbox(true)`, so it never
   touches the save.
+- **`chapter2-hud` (J's black block):** Chapter 2 on desktop with HDR on, the HUD at the top middle photographed at four
+  moments (out at the circle, twice on "Back to the circle" with Yo Bots in view, the circle again), then it stops; it is
+  `GatePlay` with `hudProbe` set plus `PlaytestHud.cs`. The bug was a NaN or Inf pixel in the HDR frame smeared into black
+  squares by `Hidden/BT/Post`'s bloom (`BTPost.shader` now passes every tap through `SafeHDR`). `PlaytestHud` renders the
+  main camera through the real grade and fails on a solid black rectangle (`black-block`), and renders it raw (grade off,
+  flagged by `Hidden/BT/NanProbe` into 8-bit, never a float readback) to count NaN pixels and name the shader or sky that
+  draws them (`hdr-nan`). Touch layouts render without HDR and cannot show it. Keep BTPost's `SafeHDR` on every tap.
 - **Report:** wave, kills, damage, swings, hits, hitRate, finishers, smashHits, homeRuns, homeRunKnocks,
   knockedBack, lockNearest, lockWrong, level, levelUps, musician HP, coins, run seconds and fps. `bat` lines from
   `BatEquipment.Events` go to the timeline (all of them in `bat`, the first 15 elsewhere). Problems:
