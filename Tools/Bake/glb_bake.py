@@ -267,15 +267,18 @@ def decimate(verts, tris, target):
     m = {k: i for i, k in enumerate(used)}
     return [tuple(V[k]) for k in used], [(m[t[0]], m[t[1]], m[t[2]]) for t in faces.values()]
 
-def fit(verts, height, size, keep_origin):
+def fit(verts, height, size, keep_origin, exact=False):
     mn = [min(v[i] for v in verts) for i in range(3)]
     mx = [max(v[i] for v in verts) for i in range(3)]
     ext = [mx[i] - mn[i] for i in range(3)]
+    cx, cz = (mn[0] + mx[0]) / 2, (mn[2] + mx[2]) / 2
+    if size and exact:   # stretch each axis to the piece's own box (a mild squash, to keep the footprint)
+        k = [size[i] / ext[i] if size[i] > 0 and ext[i] > 1e-9 else 1.0 for i in range(3)]
+        return [((v[0] - cx) * k[0], (v[1] - mn[1]) * k[1], (v[2] - cz) * k[2]) for v in verts]
     if size:
         s = min(size[i] / ext[i] for i in range(3) if size[i] > 0 and ext[i] > 1e-9)
     else:
         s = height / ext[1]
-    cx, cz = (mn[0] + mx[0]) / 2, (mn[2] + mx[2]) / 2
     return [((v[0] - cx) * s, (v[1] - mn[1]) * s, (v[2] - cz) * s) for v in verts]
 
 def vertex_normals(verts, tris):
@@ -341,6 +344,8 @@ def main():
     ap.add_argument('--size', help='max x,y,z in metres; the model is scaled to fit')
     ap.add_argument('--parts'); ap.add_argument('--tile', type=float, default=1.0)
     ap.add_argument('--yaw', type=float, default=0.0, help='turn about Y before fitting (degrees)')
+    ap.add_argument('--set', default='metal', help='kit texture set of a one-part prop (iron, brick, cloth, wood, metal...)')
+    ap.add_argument('--exact', action='store_true', help='with --size: stretch each axis to the box instead of one uniform scale')
     ap.add_argument('--drop-small', type=float, default=0.0, help='drop floating pieces under this fraction of the biggest piece (0.01 for characters)')
     a = ap.parse_args()
     verts, tris = load_triangles(a.glb)
@@ -358,13 +363,13 @@ def main():
         c, s = math.cos(math.radians(a.yaw)), math.sin(math.radians(a.yaw))
         verts = [(v[0] * c + v[2] * s, v[1], -v[0] * s + v[2] * c) for v in verts]
     size = [float(x) for x in a.size.split(',')] if a.size else None
-    verts = fit(verts, a.height, size, False)
+    verts = fit(verts, a.height, size, False, a.exact)
     ext = (max(abs(v[0]) for v in verts), max(v[1] for v in verts), max(abs(v[2]) for v in verts))
     if a.parts:
         spec = json.load(open(a.parts))
         groups, pivots, looks = split_parts(verts, tris, spec, ext)
     else:
-        groups, pivots, looks = {'Mesh': tris}, {}, {}
+        groups, pivots, looks = {'Mesh': tris}, {}, {'Mesh': (a.set, '#ffffff', '')}
     rep = emit(a.out, groups, pivots, verts, a.tile, looks)
     total = sum(r[1] for r in rep)
     print('%s: %d tris total (%s) extent x%.2f y%.2f z%.2f' % (a.out, total, ', '.join('%s %d' % (r[0], r[1]) for r in rep), ext[0] * 2, ext[1], ext[2] * 2))
