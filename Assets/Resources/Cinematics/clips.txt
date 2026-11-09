@@ -1,0 +1,3 @@
+# Animated clips that really ship in StreamingAssets/Cinematics, one file name a line.
+# A shot's "video" is requested only if it is listed here; otherwise its painted still plays and nothing is fetched.
+# None of the 18 clips (ch1_open_1.mp4 ... credits_1.mp4) were ever committed, so none are listed yet.
