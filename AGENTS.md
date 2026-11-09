@@ -220,6 +220,23 @@ The game implements the Hawkes playtest contract v1 (`C:\Projects\hawkesstudio\d
   piano when the bots are gone, presses F for climbers, Enter to skip breaks and 1-3 for cards. Every time the
   lock lands on a bot it checks that it is the nearest (`lock-on` events; a warning if not). It plays in `MetaProgress.EnterSandbox(true)`, so it never
   touches the save.
+- **`chapter2-hud` (J's black block):** Chapter 2 on desktop with HDR on, the HUD at the top middle photographed at four
+  moments (out at the circle, twice on "Back to the circle" with Yo Bots in view, the circle again), then it stops; it is
+  `GatePlay` with `hudProbe` set plus `PlaytestHud.cs`. The bug was a NaN or Inf pixel in the HDR frame smeared into black
+  squares by `Hidden/BT/Post`'s bloom (`BTPost.shader` now passes every tap through `SafeHDR`). `PlaytestHud` renders the
+  main camera through the real grade and fails on a solid black rectangle (`black-block`), and renders it raw (grade off,
+  flagged by `Hidden/BT/NanProbe` into 8-bit, never a float readback) to count NaN pixels and name the shader or sky that
+  draws them (`hdr-nan`). Touch layouts render without HDR and cannot show it. Keep BTPost's `SafeHDR` on every tap.
+  The NaN source was data: the Gen-baked meshes in `Resources/Baked/` list vertices with a normal of (0,0,0) (259 of them;
+  the gate arch, booth, turnstiles and stamp press at Chapter 2's gate had 7 to 20 each), which `KitLit`'s tangent-space
+  transform normalises into NaN. `BakedMesh.Part.ToMesh` now mends them as it loads (`MendedNormals`: the biggest adjacent
+  face's normal), `Tools/Bake/glb_bake.py` no longer writes them, and the `normals` event / `badNormalVertices` and
+  `bakedNormalsMended` metrics say what the files held and what is left (0), which a shader guard cannot hide. `KitLit`
+  (`finalcolor:HdrGuard`) and `BotSkin` (guarded normalise) also never let a NaN leave the shader.
+  The scenario also reports the frames probed while Yo Bots are on screen (`probesWithYoBots`, `hdrNanFramesWithYoBots`) and
+  measures the graded frame inside each Yo Bot's screen box (`bot-scan`, `yoBotBlackPct`). The Yo Bots' dark gunmetal limbs
+  read as "black triangles" in a small night shot; they are the painted `YoBotSkin.png` on `Knoll/BotSkin` (`YoBot.fbx` has no
+  degenerate triangle and no zero normal: `python3 Tools/Bots/validate.py`), not a NaN smear, which is a block of exact black.
 - **Report:** wave, kills, damage, swings, hits, hitRate, finishers, smashHits, homeRuns, homeRunKnocks,
   knockedBack, lockNearest, lockWrong, level, levelUps, musician HP, coins, run seconds and fps. `bat` lines from
   `BatEquipment.Events` go to the timeline (all of them in `bat`, the first 15 elsewhere). Problems:
