@@ -337,7 +337,30 @@ public partial class Cutscene {
     }
 
     // Streams a clip from StreamingAssets/Cinematics by URL (the WebGL way). The still stays up until it is ready.
+    // Only clips named in Resources/Cinematics/clips.txt (one file name a line) are requested. A clip that was never
+    // made or never shipped would 404 in the browser; without it the painted still simply stays.
+    static HashSet<string> shippedClips;
+
+    public static bool ClipShipped(string file) {
+        if (shippedClips == null) {
+            shippedClips = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var list = Resources.Load<TextAsset>("Cinematics/clips");
+            if (list != null) {
+                foreach (var line in list.text.Split('\n')) {
+                    string name = line.Trim();
+                    if (name.Length > 0 && !name.StartsWith("#")) {
+                        shippedClips.Add(name);
+                    }
+                }
+            }
+        }
+        return !string.IsNullOrEmpty(file) && shippedClips.Contains(file);
+    }
+
     void StartVideo(ShotSlot slot, string file) {
+        if (!ClipShipped(file)) {
+            return;
+        }
         try {
             if (video == null) {
                 video = gameObject.AddComponent<VideoPlayer>();
