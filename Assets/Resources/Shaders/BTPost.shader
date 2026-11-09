@@ -34,11 +34,25 @@ Shader "Hidden/BT/Post"
         return o;
     }
 
+    // One NaN or Inf pixel in the HDR frame (a bad normal, a zero-scale mesh) would spread through every bloom level
+    // as a black square, because NaN survives the box filter and the additive upsample. Every tap goes through this:
+    // a NaN, an Inf or a negative becomes 0 and anything brighter than 64 is held there. The test is written so a
+    // NaN fails it (NaN >= 0 is false) instead of relying on min/max, whose NaN result differs between GPUs.
+    half SafeChannel(half x)
+    {
+        return x >= 0.0 ? min(x, 64.0) : 0.0;
+    }
+
+    half3 SafeHDR(half3 c)
+    {
+        return half3(SafeChannel(c.r), SafeChannel(c.g), SafeChannel(c.b));
+    }
+
     half3 Box(float2 uv, float delta)
     {
         float4 o = _MainTex_TexelSize.xyxy * float2(-delta, delta).xxyy;
-        half3 s = tex2D(_MainTex, uv + o.xy).rgb + tex2D(_MainTex, uv + o.zy).rgb +
-                  tex2D(_MainTex, uv + o.xw).rgb + tex2D(_MainTex, uv + o.zw).rgb;
+        half3 s = SafeHDR(tex2D(_MainTex, uv + o.xy).rgb) + SafeHDR(tex2D(_MainTex, uv + o.zy).rgb) +
+                  SafeHDR(tex2D(_MainTex, uv + o.xw).rgb) + SafeHDR(tex2D(_MainTex, uv + o.zw).rgb);
         return s * 0.25;
     }
 
@@ -94,7 +108,7 @@ Shader "Hidden/BT/Post"
 
             half4 frag(v2f i) : SV_Target
             {
-                half3 c = tex2D(_SourceTex, i.uv).rgb;
+                half3 c = SafeHDR(tex2D(_SourceTex, i.uv).rgb);
                 half3 bloom = Box(i.uv, 0.5) * _Intensity;
                 c += bloom;
 
@@ -114,7 +128,7 @@ Shader "Hidden/BT/Post"
                 float2 d = i.uv - 0.5;
                 half v = 1 - dot(d, d) * _Grade.w;
                 c *= saturate(v);
-                return half4(max(c, 0), 1);
+                return half4(SafeHDR(c), 1);
             }
             ENDCG
         }

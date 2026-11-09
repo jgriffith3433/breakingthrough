@@ -42,9 +42,11 @@ Shader "Knoll/KitLit"
         {
             fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
             o.Albedo = c.rgb * IN.color.rgb;
-            fixed3 n = tex2D(_BumpMap, IN.uv_MainTex).xyz * 2 - 1;
+            float3 n = tex2D(_BumpMap, IN.uv_MainTex).xyz * 2 - 1;
             n.xy *= _BumpScale;
-            o.Normal = normalize(n);
+            // A flat (0,0,0) texel must not turn into a NaN normal: the HDR frame would carry it into the bloom.
+            float nn = dot(n, n);
+            o.Normal = nn > 0.0001 ? n * rsqrt(nn) : float3(0, 0, 1);
             o.Smoothness = _Glossiness;
             o.Metallic = _Metallic;
             o.Albedo = lerp(o.Albedo, _Flash.rgb, _Flash.a * 0.6);
