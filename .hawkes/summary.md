@@ -29,3 +29,6 @@ The `characters` scenario shows the four bosses and four lodgers. Its events rep
 Whether the Courier's bigger mailbox pack reads right in the gallery. I couldn't judge the Registrar and Plated Alpha art direction here; the gallery covers it.
 
 No merge conflicts.
+
+## This pass
+No art made, no code edited, no GPU spent (`.hawkes/pending-gpu.txt` does not exist). The earlier branch `task/ce95a565362b-...` was gone from origin, but its tip `1336f88` was still fetchable by sha; I fast-forwarded this branch to it (10 commits over beta `a55847d`, no conflicts). Studio builds it and runs the `characters` playtest (named in `.hawkes/scenario.txt`). Unity compile and the validators were not run here. If the build fails with "no build settings (products.json build)", that is Studio's config, not this change.
