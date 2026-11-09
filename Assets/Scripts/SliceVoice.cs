@@ -178,8 +178,8 @@ public class SliceVoice : MonoBehaviour {
             return;
         }
         float dt = Time.deltaTime;
-        if (stamp != UiFit.Stamp && scaler != null) {
-            stamp = UiFit.Stamp;
+        if (stamp != UiFit.CaptionStamp && scaler != null) {
+            stamp = UiFit.CaptionStamp;
             UiFit.Apply(scaler);
             if (wallitText != null) {
                 UiFit.PlaceCaption(wallitText.rectTransform, 190f, 0);
@@ -492,7 +492,7 @@ public class SliceVoice : MonoBehaviour {
         Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         wallitText = MakeLine(canvasGo.transform, font, 190f, new Color(0.95f, 0.8f, 0.4f));
         sliceText = MakeLine(canvasGo.transform, font, 140f, new Color(0.86f, 0.9f, 1f));
-        stamp = UiFit.Stamp;
+        stamp = UiFit.CaptionStamp;
         UiFit.Apply(scaler);
     }
 

@@ -6,8 +6,13 @@ using UnityEngine;
 // Chapter 1, "Return to Sender", the Sorting Yard (Docs/CampaignDesign.md, 4.1 and slice 1). A moonlit dead-letter yard,
 // built in code inside Assets/Maps/Level_1_Yard.unity with real colliders (stones, trunks, the walls). The route:
 //   the doors (start) -> the Ring, where Slice stands guard (talk) -> the west trail: three notices and the lost Mailbox
-//   Flag (pick it up) -> the Courier's drop, where the Clearing Crew wakes (the fight) -> the return slot (the exit).
-// No bot is awake until the flag is lifted or Wallit walks up to the crew. The level's hazard is the stamp floor: RETURN TO
+//   Flag (pick it up) -> the Courier's drop, where the Clearing Crew wakes (the fight) -> the Courier (the boss) -> the return
+//   slot (the exit).
+// No bot is awake until the flag is lifted or Wallit walks up to the crew. When the crew is down there is a breath, then the
+// Courier steps out from behind the drop box with its clipboard (Courier.cs): it reads a notice, a red mark fills under Slice
+// (under Wallit while she is down), and he breaks the wind-up with the bat or stands in the red and takes it for her. Under half
+// health it reads faster and calls two Yo Bots with each notice. It falls, its notice drifts down unsigned (E keeps it: choice
+// 1.c1), and the return slot's shutter lifts. The level's hazard is the stamp floor: RETURN TO
 // SENDER falls on the ground outside the Ring (a telegraph, then the slam). It shoves Wallit one step back and hits any bot
 // under it; the Ring is the one place it cannot push. Nothing here reads the Arcade's wave flow: encounters are placed.
 public class LevelYard : MonoBehaviour {
@@ -16,6 +21,10 @@ public class LevelYard : MonoBehaviour {
     public static readonly Vector3 SlicePos = new Vector3(0f, 0f, -9f);
     public static readonly Vector3 FlagPos = new Vector3(-38.6f, 0f, 12.6f);
     public static readonly Vector3 DropPos = new Vector3(34f, 0f, 10f);
+    // Where Wallit stands again after a defeat at the drop: in sight of it and a few steps inside the wake radius of the crew (16 m
+    // from CrewCenter) and of the Courier (14 m from its box), so the fight is one short walk away, not across the yard.
+    public static readonly Vector3 FightCheckpoint = DropPos + new Vector3(-13f, 0f, -6f);
+    const float RewakeAfter = 8f;   // a rested Courier wakes by itself this long after Wallit is back, if he has not walked up
     public static readonly Vector3 ExitPos = new Vector3(30f, 0f, 49f);
     public static readonly Vector3[] NoticePos = {
         new Vector3(-15f, 0f, -3f), new Vector3(-26f, 0f, 4.5f), new Vector3(-34f, 0f, 12f),
@@ -37,17 +46,18 @@ public class LevelYard : MonoBehaviour {
     static readonly string[] NoticeReact = {
         "Item one: wallet, leather. That's me. Where's my cut?",
         "Zero delivered. Six returned. Somebody's cooking the ledger.",
-        "Unsigned? Then it isn't even valid.",
+        "It's not signed.",
     };
     static readonly string[] WallitIdle = {
         "Forty. Forty-one. Somebody short-changed me.",
         "Tap. Tap. Hear that? Hollow. Like a bank at closing.",
         "Nine stones. Looks like padding on the bill.",
         "Is that a mailbox or a bad loan?",
+        "Waiting's billable.",
     };
-    static readonly string[] SliceIdle = { "Left.", "Quiet.", "Closer." };
+    static readonly string[] SliceIdle = { "Holding.", "Noted.", "Closer." };
 
-    public enum Beat { Arrive, Talked, Flag, Fight, Clear, Done }
+    public enum Beat { Arrive, Talked, Flag, Fight, Courier, Clear, Done }
 
     // For the playtest bot and the HUD.
     public Beat Stage { get; private set; }
@@ -59,11 +69,21 @@ public class LevelYard : MonoBehaviour {
     public int NoticesRead { get; private set; }
     public bool FlagTaken { get; private set; }
     public bool CrewWoken { get; private set; }
-    public bool CrewCleared { get; private set; }
+    public bool CrewDown { get; private set; }      // the five Yo Bots of the Clearing Crew are down; the Courier comes next
+    public bool CrewCleared { get; private set; }   // the drop is cleared: the crew and the Courier both. The slot opens
+    public bool CourierCame { get; private set; }
+    public bool CourierDown { get; private set; }
+    public Enemy TheCourier { get; private set; }
+    public float CourierSeconds { get; private set; }   // seconds the Courier was awake
+    public bool NoticeDown { get; private set; }        // its notice lies on the ground where it fell
+    public bool NoticeKept { get; private set; }
+    public Vector3 NoticeAt { get; private set; }
+    public const int CourierHits = 24;                  // short: the first boss, on a phone, with a level-1 bat
+    const int CallCap = 3;                              // the most called Yo Bots up at once
     public bool ExitOpen { get; private set; }
     public bool SliceJoined { get { return Companion.Instance != null; } }
     public float SecondsBeforeFirstCombat { get; private set; } = -1f;
-    public float CombatSeconds { get; private set; }   // seconds the Clearing Crew was awake (the only encounter in this level)
+    public float CombatSeconds { get; private set; }   // seconds a bot was awake at the drop: the Clearing Crew (the only encounter) and the Courier
     public const int Encounters = 1;
     public float CombatShare { get { return scene != null && scene.Seconds > 0f ? CombatSeconds / scene.Seconds : 0f; } }
     public float WalkedBeforeCombat { get; private set; }
@@ -102,6 +122,15 @@ public class LevelYard : MonoBehaviour {
     readonly List<Enemy> crew = new List<Enemy>();
     readonly List<Vector3> crewHome = new List<Vector3>();
     readonly List<int> lateWave = new List<int>();
+    readonly List<Enemy> called = new List<Enemy>();
+    Courier courierFight;
+    Vector3 courierHome;
+    Vector3 courierLast;
+    bool courierArriving;
+    float courierRestedAt = -1f;   // when a defeat put the Courier back to sleep; -1 once it is awake again
+    bool callSaid;
+    Transform noticeItem;
+    float noticeBorn;
     class Stamp {
         public GameObject Go;
         public Renderer Ink;
@@ -204,7 +233,7 @@ public class LevelYard : MonoBehaviour {
             if (Vector3.Distance(LevelKit.Flat(p), RingCenter) < RingRadius + 2f) {
                 continue;
             }
-            GameObject scar = LevelKit.Decal(root, "Scar", new Vector3(p.x, 0.04f, p.z), new Vector2(Rand(1.6f, 3.4f), Rand(1.6f, 3.4f)), Color.white);
+            GameObject scar = LevelKit.Decal(root, "Scar", new Vector3(p.x, H(p.x, p.z) + 0.04f + i * 0.004f, p.z), new Vector2(Rand(1.6f, 3.4f), Rand(1.6f, 3.4f)), Color.white);
             scar.GetComponent<MeshRenderer>().sharedMaterial = ink;
             scar.transform.rotation = Quaternion.Euler(0f, Rand(0f, 90f), 0f);
         }
@@ -280,7 +309,7 @@ public class LevelYard : MonoBehaviour {
         // Chalk stepping slabs: the trail from the doors to the Ring.
         for (float z = -54f; z < -17f; z += 2.6f) {
             Vector3 s = new Vector3(Rand(-0.6f, 0.6f), 0f, z);
-            LevelDress.Put(root, "yd_gravel_slab", On(s.x, s.z), Rand(0f, 90f), 1.35f);
+            LevelDress.PutFlat(root, "yd_gravel_slab", On(s.x, s.z), Rand(0f, 90f), 1.35f, 0.3f);
         }
     }
 
@@ -288,13 +317,13 @@ public class LevelYard : MonoBehaviour {
         for (int i = 0; i < Trail.Length - 1; i++) {
             for (float t = 0.2f; t < 1f; t += 0.38f) {
                 Vector3 p = Vector3.Lerp(Trail[i], Trail[i + 1], t);
-                LevelDress.Put(root, "yd_gravel_slab", On(p.x, p.z), Rand(0f, 90f), 1.2f);
+                LevelDress.PutFlat(root, "yd_gravel_slab", On(p.x, p.z), Rand(0f, 90f), 1.2f, 0.3f);
             }
         }
         // The east way, to the drop.
         for (float x = 8f; x < 30f; x += 2.8f) {
             float z = Mathf.Lerp(-8f, 8f, (x - 8f) / 22f);
-            LevelDress.Put(root, "yd_gravel_slab", On(x, z), Rand(0f, 90f), 1.3f);
+            LevelDress.PutFlat(root, "yd_gravel_slab", On(x, z), Rand(0f, 90f), 1.3f, 0.3f);
         }
         // West of the Ring: dead trees and stumps with a clear lane along the chalk (a collider each, thin).
         Transform trees = new GameObject("Dead Trees").transform;
@@ -384,7 +413,7 @@ public class LevelYard : MonoBehaviour {
         TextMesh t = LevelKit.Text(root, "DROP", On(d.x, d.z) + new Vector3(-2.2f, 1.3f, 0f), 0.06f, new Color(0.95f, 0.8f, 0.45f), false);
         t.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
         for (float z = -3f; z < 3.1f; z += 3f) {
-            LevelDress.Put(root, "yd_gravel_slab", On(d.x - 4.5f, d.z + z), 0f, 1.7f);
+            LevelDress.PutFlat(root, "yd_gravel_slab", On(d.x - 4.5f, d.z + z), 0f, 1.7f, 0.35f);
         }
         LevelDress.Put(root, "yd_sorting_trestle", On(27f, 20f), 90f, 1f);
         LevelDress.Put(root, "yd_sorting_trestle", On(27f, 15.5f), 90f, 1f);
@@ -519,7 +548,26 @@ public class LevelYard : MonoBehaviour {
         go.transform.SetParent(root, false);
         go.transform.position = SlicePos;
         go.transform.rotation = Quaternion.LookRotation(Vector3.back);
+        // She must be seen: with no model that draws (no prefab in the build, or every renderer off), a dark stand-in stands in.
+        int drawn = 0;
+        foreach (Renderer r in go.GetComponentsInChildren<Renderer>(true)) {
+            if (r != null && r.enabled) {
+                drawn++;
+            }
+        }
+        if (drawn == 0) {
+            GameObject torso = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            torso.name = "Slice stand-in";
+            torso.transform.SetParent(go.transform, false);
+            torso.transform.localPosition = new Vector3(0f, 1f, 0f);
+            torso.transform.localScale = new Vector3(0.6f, 0.9f, 0.6f);
+            Destroy(torso.GetComponent<Collider>());
+            torso.GetComponent<Renderer>().material = new Material(SafeShader.Solid()) { color = new Color(0.22f, 0.14f, 0.3f) };
+            drawn = 1;
+        }
+        go.SetActive(true);
         sliceFigure = go.transform;
+        Note("slice-figure", "Slice stands at " + SlicePos.ToString("0.0") + " on the Ring, " + drawn + " renderers drawn, model " + (prefab != null ? "from Resources/Slice/Slice" : "missing"));
     }
 
     // Five Yo Bots of the Clearing Crew queue at the drop with their lids down: three march first, two more are late.
@@ -573,26 +621,41 @@ public class LevelYard : MonoBehaviour {
         Note("level-start", "Level_1_Yard at " + PlayerStart);
     }
 
+    // The hook: within the first second a stamp falls beside him (to his right, clear of the chalk walk) and slams RETURN TO
+    // SENDER into the ground, and he answers it. The yard's rule is shown before anyone says it.
     IEnumerator Opening() {
-        yield return new WaitForSeconds(2.2f);
+        yield return new WaitForSeconds(0.8f);
+        DropStampAt(PlayerStart + new Vector3(4.5f, 0f, 6f), "the opening");
+        nextStampAt = Time.time + 9f;
+        yield return new WaitForSeconds(Telegraph + 0.5f);
         LevelBarks.Say('W', "Return to sender. Which sender? I want a refund.", "arrive", true);
     }
 
     string Objective() {
         switch (Stage) {
             case Beat.Arrive:
-                return "Find out why you were stamped. Slice is on guard at the Ring, straight ahead.";
+                return "Talk to Slice at the Ring, straight ahead.";
             case Beat.Talked:
-                return "Read the notices on the west trail (" + NoticesRead + "/3). Find what was lost.";
+                return "Read the notices, west trail (" + NoticesRead + "/3).";
             case Beat.Flag:
-                return "The Clearing Crew has your scent. Return to sender: east, at the drop.";
+                return "Return to sender: the drop, east.";
             case Beat.Fight:
-                return "Clear the Crew (" + CrewAlive + " left). Stay out from under the stamps.";
+                return "Clear the Crew (" + CrewAlive + " left).";
+            case Beat.Courier:
+                if (TheCourier != null && TheCourier.Alive && TheCourier.Dormant && courierRestedAt >= 0f) {
+                    return "Back to the drop, east: the Courier waits " + Bar(TheCourier.Health01);
+                }
+                return TheCourier != null && TheCourier.Alive ? "Break the Courier " + Bar(TheCourier.Health01) : "Hold at the drop.";
             case Beat.Clear:
-                return "The return slot is open: north-east. Chapter 1 goes on from there.";
+                return "Out: the return slot, north-east.";
             default:
                 return "Filed.";
         }
+    }
+
+    static string Bar(float share) {
+        int n = Mathf.Clamp(Mathf.CeilToInt(share * 12f), 0, 12);
+        return "[" + new string('|', n) + new string('.', 12 - n) + "]";
     }
 
     IEnumerator Talk() {
@@ -601,13 +664,13 @@ public class LevelYard : MonoBehaviour {
         string[] who = { "W", "S", "W", "S", "W", "S", "W", "S" };
         string[] text = {
             "Slice. Straight answer. Who stamped me?",
-            "Nobody signed it.",
-            "Then who pays?",
+            "Nobody signs it. That's how it works.",
+            "Then I'll make it a refund.",
             "Look west. The trail. Lost things, lying where they landed.",
-            "Lost means finders keepers.",
+            "None of this is mine. I'm keeping it anyway.",
             "Wallit.",
             "Finders keepers. Quietly.",
-            "Closer. Stay close.",
+            "Wallit. Stay close.",
         };
         for (int i = 0; i < who.Length; i++) {
             if (i == 3) {
@@ -647,8 +710,8 @@ public class LevelYard : MonoBehaviour {
     void ReadNotice(int i) {
         noticeRead[i] = true;
         NoticesRead++;
-        scene.Hud.ShowReceipt(NoticeRead[i], 6f);
-        GameAudio.Play("coin", 0.35f, 1.4f);
+        scene.Hud.ShowReceipt("NOTICE " + (i + 1) + " OF 3", 2.5f);
+        GameAudio.Play("paper_slide", 0.6f);
         Note("notice", (i + 1) + " of 3: " + NoticeRead[i]);
         LevelBarks.Say('W', NoticeReact[i], "notice", true);
         if (i == 2 && Companion.Instance != null) {
@@ -658,7 +721,7 @@ public class LevelYard : MonoBehaviour {
 
     IEnumerator SliceAnswers() {
         yield return new WaitForSeconds(LevelBarks.LastSeconds + 0.3f);
-        LevelBarks.Say('S', "Valid enough.", "notice", true);
+        LevelBarks.Say('S', "Noted.", "notice", true);
     }
 
     void TakeFlag() {
@@ -671,6 +734,7 @@ public class LevelYard : MonoBehaviour {
             carried = flagItem;
         }
         GameAudio.Play("coin", 0.8f, 1.1f);
+        GameAudio.Play("flag_flutter", 0.7f);
         Fx.Ring(FlagPos + Vector3.up * 0.2f, 4f, new Color(1f, 0.85f, 0.45f, 0.8f), 0.9f);
         scene.Hud.ShowReceipt("RECEIPT: Mailbox Flag. Somebody's. Still waving.", 6f);
         Note("pickup", "Mailbox Flag, carried on Wallit's back");
@@ -684,7 +748,7 @@ public class LevelYard : MonoBehaviour {
         LevelBarks.Say('W', "Finders keepers.", "pickup", true);
         if (Companion.Instance != null) {
             yield return new WaitForSeconds(LevelBarks.LastSeconds + 0.2f);
-            LevelBarks.Say('S', "Keep it.", "pickup", true);
+            LevelBarks.Say('S', "Yours.", "pickup", true);
         }
         yield return new WaitForSeconds(2.6f);
         // Lifting it was the signal: the crew at the drop has its report to close.
@@ -701,9 +765,10 @@ public class LevelYard : MonoBehaviour {
             WalkedBeforeCombat = scene.Walked;
         }
         Stage = Beat.Fight;
+        GameAudio.Play("yobot_wake", 0.9f);
         Note("encounter-wake", "crew at the drop (" + cause + "), " + crew.Count + " bots");
         LevelBarks.Say('Y', "Hello! Uploading victory! Striking this address now!", "wake", true);
-        scene.Checkpoint = RingCenter + new Vector3(15f, 0f, -6f);
+        scene.Checkpoint = FightCheckpoint;
         StartCoroutine(MarchOut());
     }
 
@@ -726,7 +791,7 @@ public class LevelYard : MonoBehaviour {
     void WakeLate() {
         lateWoken = true;
         LevelBarks.Quiet = false;
-        LevelBarks.Say('Y', "Late delivery! Late delivery!", "late", true);
+        LevelBarks.Say('Y', "Rush delivery! Rush delivery!", "late", true);
         LevelBarks.Quiet = true;
         for (int i = 0; i < crew.Count; i++) {
             if (lateWave.Contains(i) && crew[i] != null) {
@@ -738,7 +803,14 @@ public class LevelYard : MonoBehaviour {
 
     // A defeat puts the bots back where they stood, asleep, so the fight can be tried again from the door.
     public void Resumed() {
+        if (Companion.Instance != null) {
+            Companion.Instance.Recover(scene.Player.position);   // Slice was downed where he fell: she walks back with him
+        }
         if (CrewCleared) {
+            return;
+        }
+        if (CrewDown) {
+            RestCourier();
             return;
         }
         for (int i = 0; i < crew.Count; i++) {
@@ -756,6 +828,240 @@ public class LevelYard : MonoBehaviour {
         }
     }
 
+    // The five are down: a breath, then the Courier. CrewCleared waits for the Courier (the drop is one place to clear).
+    void CrewFell() {
+        CrewDown = true;
+        Stage = Beat.Courier;
+        LevelBarks.Quiet = false;
+        GameAudio.Play("stamp", 0.5f, 1.3f);
+        Note("encounter-clear", "the Clearing Crew is down");
+        StartCoroutine(CourierArrives());
+    }
+
+    // One line at a time, each waiting for the last to finish: story beats own the floor but never talk over it.
+    IEnumerator SayInTurn(string raw, string why) {
+        if (string.IsNullOrEmpty(raw) || raw.Length < 3) {
+            yield break;
+        }
+        if (raw[0] == 'S' && (Companion.Instance == null || !Companion.Instance.Alive)) {
+            yield break;   // Slice only speaks where she stands
+        }
+        while (LevelBarks.Busy || Cutscene.IsOpen) {
+            yield return null;
+        }
+        LevelBarks.Say(raw[0], raw.Substring(2), why, true);
+        yield return new WaitForSeconds(LevelBarks.LastSeconds + 0.2f);
+    }
+
+    // The breath, then the arrival: the drop box rattles, a ring opens behind it and the Courier steps out with its clipboard,
+    // asleep until it has read the notice out (Story.Chapters[0].BossLines). A blow wakes it early.
+    IEnumerator CourierArrives() {
+        courierArriving = true;
+        yield return new WaitForSeconds(1.2f);
+        bool slice = Companion.Instance != null && Companion.Instance.Alive;
+        yield return SayInTurn(Story.CourierBreath[slice ? 0 : 1], "breath");
+        yield return new WaitForSeconds(1.5f);
+        SpawnCourier();
+        yield return new WaitForSeconds(1.4f);
+        string[] lines = Story.Chapters[0].BossLines;
+        for (int i = 0; lines != null && i < lines.Length; i++) {
+            if (TheCourier == null || !TheCourier.Alive || !TheCourier.Dormant) {
+                break;   // Wallit did not wait for the reading
+            }
+            yield return SayInTurn(lines[i], "boss");
+        }
+        courierArriving = false;
+        if (TheCourier != null && TheCourier.Alive) {
+            WakeCourier(TheCourier.Dormant ? "the notice read out" : "a blow before the reading");
+        }
+    }
+
+    // The Courier: an Alpha Yo Bot with a clipboard, placed just east of the drop box (behind it from the west way), facing west.
+    void SpawnCourier() {
+        courierHome = DropPos + new Vector3(3f, 0f, 0f);
+        BotDef def = BotRoster.ForSpawn(BotKind.YoBot, 1);
+        var go = new GameObject("The Courier");
+        go.tag = "enemy";
+        Vector3 p = courierHome;
+        p.y = H(p.x, p.z) + 0.55f + def.Scale * 0.08f;
+        courierHome = p;
+        go.transform.position = p;
+        go.transform.rotation = Quaternion.LookRotation(Vector3.left);
+        Enemy e = go.AddComponent<Enemy>();
+        e.ApplyBot(def);
+        e.MakeCourier("The Courier", CourierHits);
+        e.HitsToDrop = CampaignGrade.Health(e.HitsToDrop);
+        e.Dormant = true;
+        TheCourier = e;
+        courierFight = go.GetComponent<Courier>();
+        courierLast = p;
+        CourierCame = true;
+        Vector3 floor = new Vector3(p.x, H(p.x, p.z) + 0.15f, p.z);
+        Fx.Ring(floor, 9f, new Color(1f, 0.8f, 0.4f, 0.9f), 1f);
+        Fx.Ring(DropPos + Vector3.up * 0.2f, 5f, new Color(1f, 0.55f, 0.3f, 0.8f), 0.7f);
+        Fx.Emit(FxKind.Dust, floor + Vector3.up * 0.2f, 10, new Color(0.6f, 0.55f, 0.48f, 0.5f), 1.2f, 2f, 1.6f);
+        GameAudio.Play("courier_clip", 0.9f);
+        GameAudio.Play("stomp", 0.8f, 0.6f);
+        UpgradeLook.Say("The Courier", 2.6f, 160f);
+        Note("boss-arrive", "The Courier at the drop, " + e.HitsToDrop + " hits, phase two at half");
+    }
+
+    void WakeCourier(string cause) {
+        if (TheCourier == null || !TheCourier.Alive) {
+            return;
+        }
+        TheCourier.Dormant = false;
+        courierRestedAt = -1f;
+        LevelBarks.Quiet = true;   // the fight's own few words are forced; nothing idle over it
+        scene.Checkpoint = FightCheckpoint;
+        Note("boss-wake", "The Courier (" + cause + ")");
+    }
+
+    // Phase two: the Courier calls Yo Bots with each notice (Courier.cs). Never more than CallCap up at once. They walk
+    // straight at Wallit like the crew. Returns how many came.
+    public int CourierCall(Vector3 at, int count) {
+        int alive = 0;
+        for (int i = called.Count - 1; i >= 0; i--) {
+            if (called[i] == null || !called[i].Alive) {
+                called.RemoveAt(i);
+            } else {
+                alive++;
+            }
+        }
+        int n = Mathf.Min(count, CallCap - alive);
+        for (int i = 0; i < n; i++) {
+            float a = (i * 137f + Rand(0f, 360f)) * Mathf.Deg2Rad;
+            Vector3 spot = at + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * Rand(3f, 5f);
+            spot.x = Mathf.Clamp(spot.x, -60f, 60f);
+            spot.z = Mathf.Clamp(spot.z, -55f, 60f);
+            BotDef def = BotRoster.ForSpawn(BotKind.YoBot, 1);
+            var go = new GameObject(def.Name);
+            go.tag = "enemy";
+            go.transform.position = new Vector3(spot.x, H(spot.x, spot.z) + 0.55f + def.Scale * 0.08f, spot.z);
+            Vector3 look = LevelKit.Flat(scene.Player.position - spot);
+            go.transform.rotation = Quaternion.LookRotation(look.sqrMagnitude > 0.01f ? look.normalized : Vector3.left);
+            Enemy e = go.AddComponent<Enemy>();
+            e.ApplyBot(def);
+            called.Add(e);
+            Fx.Ring(new Vector3(spot.x, H(spot.x, spot.z) + 0.1f, spot.z), 3f, new Color(1f, 0.6f, 0.3f, 0.75f), 0.6f);
+        }
+        if (n > 0) {
+            Note("boss-call", n + " Yo Bots called with a notice");
+            if (!callSaid && !LevelBarks.Busy) {
+                callSaid = LevelBarks.Say(Story.CourierCall[0], Story.CourierCall.Substring(2), "courier-call", true);
+            }
+        }
+        return n;
+    }
+
+    // Wallit went down mid-fight: the Courier goes back behind the drop box, asleep, with the health it has left (the bat's work
+    // is kept), and its called Yo Bots are put away. Walking back to the drop wakes it again.
+    void RestCourier() {
+        for (int i = 0; i < called.Count; i++) {
+            if (called[i] != null) {
+                Destroy(called[i].gameObject);
+            }
+        }
+        called.Clear();
+        LevelBarks.Quiet = false;
+        if (TheCourier == null || !TheCourier.Alive || courierArriving) {
+            return;
+        }
+        TheCourier.transform.position = courierHome;
+        TheCourier.Dormant = true;
+        courierRestedAt = Time.time;
+        if (courierFight != null) {
+            courierFight.Rest();
+        }
+        Note("boss-reset", "The Courier back at the drop, asleep");
+    }
+
+    void TickCourier() {
+        if (!CourierCame || CourierDown) {
+            return;
+        }
+        if (TheCourier == null || !TheCourier.Alive) {
+            CourierFell();
+            return;
+        }
+        courierLast = TheCourier.transform.position;
+        if (!TheCourier.Dormant) {
+            CourierSeconds += Time.deltaTime;
+        } else if (!courierArriving && Vector3.Distance(LevelKit.Flat(scene.Player.position), LevelKit.Flat(courierHome)) < 14f) {
+            WakeCourier("Wallit walked back to the drop");
+        } else if (!courierArriving && courierRestedAt >= 0f && Time.time - courierRestedAt >= RewakeAfter) {
+            WakeCourier("re-woken after the defeat");   // nobody has to find the trigger: it comes for him
+        }
+    }
+
+    // The Courier is down: the Yo Bots it called come apart with it (their notice is undelivered), its notice drifts down,
+    // and the drop is cleared.
+    void CourierFell() {
+        CourierDown = true;
+        foreach (Enemy e in new List<Enemy>(called)) {
+            if (e != null && e.Alive) {
+                e.Damage(9999f, DamageKind.Plain, false);
+            }
+        }
+        called.Clear();
+        Note("boss-down", "The Courier fell after " + Courier.Winds + " notices: " + Courier.Interrupted + " broken, " + Courier.Blocked + " taken by Wallit, " + Courier.Landed + " landed, " + Courier.Dodged + " missed; " + Mathf.RoundToInt(CourierSeconds) + " s awake");
+        DropNotice(courierLast);
+        ClearedCrew();
+    }
+
+    // The notice: a pale sheet that drifts down from where the clipboard was held and lies flat, unsigned. E keeps it.
+    void DropNotice(Vector3 at) {
+        at.x = Mathf.Clamp(at.x, -60f, 60f);
+        at.z = Mathf.Clamp(at.z, -55f, 60f);
+        at.y = H(at.x, at.z);
+        NoticeAt = at;
+        var item = new GameObject("Courier's Notice");
+        item.transform.SetParent(root, false);
+        item.transform.position = at + Vector3.up * 2.6f;
+        GameObject sheet = CharacterKit.Prop("paper");
+        sheet.transform.SetParent(item.transform, false);
+        sheet.transform.localScale = Vector3.one * 1.5f;
+        noticeItem = item.transform;
+        noticeBorn = Time.time;
+        NoticeDown = true;
+        GameAudio.Play("paper_slide", 0.7f, 0.85f);
+        spots.Add(new Spot { At = at, Prompt = "keep the notice", On = () => NoticeDown && !NoticeKept && Stage != Beat.Done, Use = KeepNotice });
+        Note("notice-down", "the Courier's notice drifts down unsigned at " + at.ToString("0"));
+    }
+
+    // Floats down in a slow sway, then lies flat on the ground with a soft ring now and then so it can be found.
+    void TickNotice() {
+        if (noticeItem == null || NoticeKept) {
+            return;
+        }
+        float age = Time.time - noticeBorn;
+        float k = Mathf.Clamp01(age / 2.2f);
+        float sway = (1f - k) * Mathf.Sin(age * 5f);
+        noticeItem.position = NoticeAt + new Vector3(sway * 0.35f, Mathf.Lerp(2.6f, 0.06f, 1f - (1f - k) * (1f - k)), 0f);
+        noticeItem.rotation = Quaternion.Euler(Mathf.Lerp(-30f, -90f, k), 25f, sway * 25f);
+        if (k >= 1f && Time.frameCount % 160 == 0) {
+            Fx.Ring(NoticeAt + Vector3.up * 0.1f, 2.6f, new Color(0.96f, 0.93f, 0.82f, 0.5f), 1f);
+        }
+    }
+
+    // Choice 1.c1 by doing: E on the notice keeps it ("Evidence."). Walking out of the slot without it leaves it voided (Complete).
+    void KeepNotice() {
+        NoticeKept = true;
+        if (noticeItem != null) {
+            Destroy(noticeItem.gameObject);
+            noticeItem = null;
+        }
+        Choices.Pick("1.c1", 1);
+        GameAudio.Play("paper_slide", 0.7f, 1.1f);
+        Fx.Ring(NoticeAt + Vector3.up * 0.2f, 3.5f, new Color(0.96f, 0.93f, 0.82f, 0.8f), 0.8f);
+        scene.Hud.ShowReceipt("Kept: the notice.", 2.6f);
+        Note("choice", "1.c1 keep: the Courier's notice is in Wallit's pocket");
+        Choices.Row row = Choices.Get("1.c1");
+        if (row != null && row.Now != null && row.Now.Length > 0 && row.Now[0].Length > 0) {
+            StartCoroutine(SayInTurn(row.Now[0][0], "choice"));
+        }
+    }
+
     void ClearedCrew() {
         CrewCleared = true;
         Stage = Beat.Clear;
@@ -768,32 +1074,34 @@ public class LevelYard : MonoBehaviour {
             exitLight.intensity = 2.6f;
             exitLight.range = 20f;
         }
-        GameAudio.Play("stamp", 0.5f, 1.3f);
-        Note("encounter-clear", "the Clearing Crew is down");
+        GameAudio.Play("door_open", 0.5f);
+        GameAudio.Play("slot_shutter", 0.9f);
+        Fx.Ring(On(ExitPos.x, ExitPos.z) + Vector3.up * 0.2f, 7f, new Color(1f, 0.75f, 0.35f, 0.8f), 1f);
+        Note("exit-open", "the return slot's shutter lifts");
         StartCoroutine(AfterClear());
     }
 
+    // The defeat beat (Story.Chapters[0].DefeatLines): the Courier's last question, Wallit's answer, Slice's word.
     IEnumerator AfterClear() {
-        yield return new WaitForSeconds(1.2f);
-        LevelBarks.Say('S', "Clean.", "clear", true);
-        yield return new WaitForSeconds(LevelBarks.LastSeconds + 0.2f);
-        LevelBarks.Say('W', "Return to sender. Paid in full.", "clear", true);
-        yield return new WaitForSeconds(LevelBarks.LastSeconds + 0.4f);
-        if (Companion.Instance != null) {
-            LevelBarks.Say('S', "Out. North-east.", "exit", true);
-        } else {
-            LevelBarks.Say('W', "Slot's open. Collect.", "exit", true);
+        yield return new WaitForSeconds(0.6f);
+        string[] lines = Story.Chapters[0].DefeatLines;
+        for (int i = 0; lines != null && i < lines.Length; i++) {
+            yield return SayInTurn(lines[i], "clear");
         }
     }
 
     void Complete() {
+        if (NoticeDown && !NoticeKept && Choices.Picked("1.c1") == 0) {
+            Choices.Pick("1.c1", 2);   // he walked out and left it lying: void
+            Note("choice", "1.c1 tear: the Courier's notice left in the yard");
+        }
         Stage = Beat.Done;
         completedAt = Time.time;
         scene.Finish();
         Note("pacing", "encounters=" + Encounters + " (the Clearing Crew, placed asleep; nothing spawns on a timer) combatSeconds=" + Mathf.RoundToInt(CombatSeconds) + " playSeconds=" + Mathf.RoundToInt(scene.Seconds) + " combatShare=" + Mathf.RoundToInt(CombatShare * 100f) + "%");
         Note("level-complete", "exit reached after " + Mathf.RoundToInt(scene.Seconds) + " s, " + scene.Defeats + " defeats");
         scene.Hud.Objective.text = Objective();
-        scene.Hud.Prompt.text = "CHAPTER 1: RETURN TO SENDER\nThe Sorting Yard is filed. The Courier waits past the slot.\n" + Interact.Key + ": back to the hub";
+        scene.Hud.Prompt.text = "Chapter 1 filed. " + Interact.Prompt("back to the hub");
     }
 
     // ---------------------------------------------------------------- stamps
@@ -808,6 +1116,9 @@ public class LevelYard : MonoBehaviour {
         r.material = new Material(r.sharedMaterial);
         TextMesh t = LevelKit.Text(go.transform, "RETURN\nTO SENDER", new Vector3(0f, 0.06f, 0f), 0.07f, new Color(1f, 0.85f, 0.85f, 0.9f), true);
         t.name = "Words";
+        if (Camera.main != null) {
+            t.transform.rotation = Quaternion.Euler(90f, Camera.main.transform.eulerAngles.y, 0f);   // reads top-up from where the camera looks
+        }
         GameObject head = LevelDress.Put(go.transform, "gt_press_head", at + new Vector3(0f, 9f, 0f), 0f, 0.55f);
         head.name = "StampHead";
         stamps.Add(new Stamp { Go = go, Ink = r, Head = head.transform, At = at, Born = Time.time });
@@ -888,14 +1199,14 @@ public class LevelYard : MonoBehaviour {
         if (under && inRing) {
             RingSafeShown = true;
             Note("ring-safe", "the stamp lands and Wallit stays: the Ring does not push");
-            LevelBarks.Say('S', "Inside, you exist.", "ring", false);
+            LevelBarks.Say('S', "You're inside. Inside, you exist.", "ring", false);
         } else if (under) {
             StampHits++;
             scene.Shove(flat.sqrMagnitude > 0.05f ? flat : -scene.Player.forward, 3.4f);
             scene.Hud.ShowReceipt("RETURN TO SENDER. -1 fee.", 2f);
             Note("hazard-hit", "stamp floor shoved Wallit back");
             Note("verb-stamp-floor", "shoved off a mark outside the Ring");
-            LevelBarks.Say('W', "That's a fee.", "stamp", false);
+            LevelBarks.Say('W', "That's the fee!", "stamp", false);
         }
         foreach (Enemy e in new List<Enemy>(Enemy.Roster)) {
             if (e == null || !e.Alive || e.Dormant) {
@@ -927,6 +1238,7 @@ public class LevelYard : MonoBehaviour {
         TickBarks();
         TickStamps();
         TickCrew();
+        TickNotice();
         TickSlice();
         if (carried != null) {
             carried.localRotation = Quaternion.Euler(0f, 0f, 12f + Mathf.Sin(Time.time * 3f) * 4f);
@@ -957,9 +1269,13 @@ public class LevelYard : MonoBehaviour {
     }
 
     // The nearest thing Wallit can use sets the prompt line; E (or a tap on the line) uses it.
+    // How near Wallit has to be to use something: the hub's lodger reach, so a thumb on the stick does not have to park him
+    // on top of Slice or the flag before the Interact button shows (2.7 m stranded phone players a step short).
+    public const float UseReach = 3.4f;
+
     void TickSpots() {
         Spot best = null;
-        float bestD = 2.7f;
+        float bestD = UseReach;
         Vector3 p = LevelKit.Flat(scene.Player.position);
         for (int i = 0; i < spots.Count; i++) {
             Spot s = spots[i];
@@ -968,6 +1284,9 @@ public class LevelYard : MonoBehaviour {
             }
             Vector3 at = s == spots[0] ? LevelKit.Flat(SliceFigureAt) : LevelKit.Flat(s.At);
             float d = Vector3.Distance(p, at);
+            if (s == spots[0] && Vector3.Distance(p, LevelKit.Flat(RingCenter)) <= RingRadius) {
+                d = 0f;   // she holds the Ring: anyone standing inside it can talk to her, wherever on the kerb he stopped
+            }
             if (d < bestD) {
                 bestD = d;
                 best = s;
@@ -1028,22 +1347,25 @@ public class LevelYard : MonoBehaviour {
     }
 
     void TickCrew() {
-        if (CrewWoken && !CrewCleared) {
+        if (CrewWoken && !CrewDown) {
+            CombatSeconds += Time.deltaTime;
+        } else if (CourierCame && !CourierDown && TheCourier != null && TheCourier.Alive && !TheCourier.Dormant) {
             CombatSeconds += Time.deltaTime;
         }
-        if (!CrewWoken && !CrewCleared && Vector3.Distance(LevelKit.Flat(scene.Player.position), LevelKit.Flat(CrewCenter)) < 16f) {
+        if (!CrewWoken && !CrewDown && Vector3.Distance(LevelKit.Flat(scene.Player.position), LevelKit.Flat(CrewCenter)) < 16f) {
             WakeCrew("Wallit walked up to the drop");
         }
         if (CrewWoken && !lateWoken && lateAt > 0f && Time.time >= lateAt) {
             WakeLate();
         }
-        if (CrewWoken && lateWoken && !CrewCleared && CrewAlive == 0) {
-            ClearedCrew();
+        if (CrewWoken && lateWoken && !CrewDown && CrewAlive == 0) {
+            CrewFell();
         }
         // Everyone down before the late two woke: wake them anyway so the fight is the whole crew.
         if (CrewWoken && !lateWoken && lateAt > 0f && CrewAlive == lateWave.Count) {
             lateAt = Time.time;
         }
+        TickCourier();
     }
 
     // Slice on the Ring turns her whole body to him (and west when she says so) before she turns anything else.

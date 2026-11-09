@@ -1,0 +1,21 @@
+{
+"cast": "yobot",
+"voice": "hv_kid",
+"provider": "open",
+"ids": [
+"yobot_lids_on_the_door_opens_for_us_this_time",
+"yobot_the_ledger_knows_us_uploading_a_door"
+],
+"lines": [
+{
+"who": "yobot",
+"text": "Lids on! The door opens for us this time!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+},
+{
+"who": "yobot",
+"text": "The ledger knows us! Uploading... a door!",
+"direction": "chirpy, bright, fast, like a cheerful appliance"
+}
+]
+}

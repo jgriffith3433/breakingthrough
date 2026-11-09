@@ -1,0 +1,57 @@
+{
+"cast": "narrator",
+"voice": "hv_narrator_warm",
+"provider": "open",
+"ids": [
+"narrator_a_gummed_label_on_brim_s_hook_reads_brim_in_brim_s_own_slow_hand",
+"narrator_brim_hangs_on_the_wall_by_the_door_number_band_on_left_of_the_desk_it_has_an_address",
+"narrator_chime_rings_once_for_the_right_address_it_is_the_quietest_bell_in_the_hollow",
+"narrator_spare_chirps_once_properly_and_the_hollow_answers",
+"narrator_spare_is_in_the_doorway_of_the_ring_lid_on_straight_cheering_at_nothing_in_particular",
+"narrator_tick_is_wound_nobody_had_to_be_the_department_to_do_it",
+"narrator_tick_keeps_the_hour_every_pin_where_it_should_be",
+"narrator_twelve_slips_on_the_office_wall_every_one_pinned_the_department_files_itself"
+],
+"lines": [
+{
+"who": "narrator",
+"text": "A gummed label on Brim's hook reads BRIM, in Brim's own slow hand.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "Brim hangs on the wall by the door number, band on, left of the desk. It has an address.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "Chime rings once for the right address. It is the quietest bell in the Hollow.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "Spare chirps once, properly, and the Hollow answers.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "Spare is in the doorway of the ring, lid on straight, cheering at nothing in particular.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "Tick is wound. Nobody had to be the Department to do it.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "Tick keeps the hour. Every pin where it should be.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+},
+{
+"who": "narrator",
+"text": "Twelve slips on the office wall, every one pinned. The Department files itself.",
+"direction": "warm, even, storybook narrator; slow and sombre"
+}
+]
+}

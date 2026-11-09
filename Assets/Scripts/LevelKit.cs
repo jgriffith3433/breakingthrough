@@ -213,12 +213,23 @@ public class LevelHud : MonoBehaviour {
         healthRect.anchorMin = healthRect.anchorMax = healthRect.pivot = new Vector2(1f, 1f);
         healthRect.anchoredPosition = new Vector2(-32f, -28f);
         healthRect.sizeDelta = new Vector2(520f, 60f);
+        // The prompt (and the invisible tap behind it) must stay clear of the touch pads, which draw on a higher canvas
+        // (TouchControls, sorting 190): in portrait the pads climb the right side to about 650 units, so the prompt goes
+        // above them; in landscape it stays low but narrow, between the stick and the Dodge/Jump/Lock arc.
+        float promptY = 130f;
+        float promptW = Mathf.Min(w, 1300f);
+        if (UiFit.Mode == UiMode.Tall) {
+            promptY = 700f;
+        } else if (UiFit.Compact) {
+            promptY = 170f;
+            promptW = Mathf.Min(w, 520f);
+        }
         promptRect.anchorMin = promptRect.anchorMax = promptRect.pivot = new Vector2(0.5f, 0f);
-        promptRect.anchoredPosition = new Vector2(0f, UiFit.Compact ? 150f : 130f);
-        promptRect.sizeDelta = new Vector2(Mathf.Min(w, 1300f), 120f);
+        promptRect.anchoredPosition = new Vector2(0f, promptY);
+        promptRect.sizeDelta = new Vector2(promptW, 120f);
         tapRect.anchorMin = tapRect.anchorMax = tapRect.pivot = new Vector2(0.5f, 0f);
-        tapRect.anchoredPosition = new Vector2(0f, UiFit.Compact ? 120f : 100f);
-        tapRect.sizeDelta = new Vector2(900f, 150f);
+        tapRect.anchoredPosition = new Vector2(0f, UiFit.Compact ? promptY - 10f : 100f);
+        tapRect.sizeDelta = UiFit.Compact ? new Vector2(promptW, 140f) : new Vector2(900f, 150f);
         receiptRect.anchorMin = receiptRect.anchorMax = receiptRect.pivot = new Vector2(0.5f, 1f);
         receiptRect.anchoredPosition = new Vector2(0f, -190f);
         receiptRect.sizeDelta = new Vector2(Mathf.Min(w, 1300f), 60f);

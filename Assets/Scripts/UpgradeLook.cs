@@ -211,6 +211,14 @@ public class UpgradeLook : MonoBehaviour {
 
     // Damage numbers. Crits are big and gold, fire is orange, lightning is blue.
     public static void Number(Vector3 point, float amount, bool crit, DamageKind kind) {
+        try {
+            ShowNumber(point, amount, crit, kind);
+        } catch (System.Exception e) {
+            ControlsHelp.Guard("UpgradeLook.Number", e);
+        }
+    }
+
+    static void ShowNumber(Vector3 point, float amount, bool crit, DamageKind kind) {
         if (numberFrame != Time.frameCount) {
             numberFrame = Time.frameCount;
             numbersThisFrame = 0;

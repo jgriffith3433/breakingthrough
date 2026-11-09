@@ -24,6 +24,7 @@ public static class Playtest {
         new PlaytestScenario("menus", "Shop menu, start a run, a level-up card, reroll and pick", 120, "menus"),
         new PlaytestScenario("words", "Reads the menu, the shop, the help line, build tips, pause, level-up cards and the game-over screen for retired cast words. Setup: the testing wave key visits the tip waves, then wave 2 is held until Slice falls", 300, "menus"),
         new PlaytestScenario("touch", "Touch only, for a phone-sized screen (mobile, or 844x390): the menu fits, tap Play, walk to the bots with the on-screen stick and tap Swing, tap a level-up card, play to wave 2", 330, "menus"),
+        new PlaytestScenario("touch-pause", "Pause and Settings by finger only, for a phone-sized screen (mobile, or 844x390): in an Arcade run, then Chapter 1's level, then the hub, the on-screen Pause button is found inside the safe area (pause-button, 44 px or more), tapped (pause-opened), Settings opened from it (settings-opened), sound switched and the music slider set (setting-changed), Done and Resume tapped (resumed; touchPauseCycles counts 3). The pause deck and the Settings panel are checked to sit inside the safe area with every control, in both orientations (pause-fits, settings-fits), so nothing scrolls", 400, "menus"),
         new PlaytestScenario("settings", "Press Tap to play, open Settings from the menu: sound off and on, music and effects sliders, Done; start a run, pause (button, then P), Settings from the pause menu, resume, play a little. Any screen size", 100, "menus"),
         new PlaytestScenario("bots", "The bots: wave 1's Yo Bots (authored Gen model when present) walk at the musician with feet planting; bolts drop; enemy list names them. Setup: drop 60 Yo Bots and log FPS for the WebGL budget, then the testing wave key (=) to wave 30 for the Spider Bot Alpha (glass pod, six legs when authored) and 30 s of fight", 360, "content"),
         new PlaytestScenario("analytics", "Hawkes Analytics: start a run, clear wave 1, then hold fire on wave 2 so the bots take the musician. Every analytics event is logged as it goes out (run_start, level_start and level_end per wave, card picks, the death and the bot kind that landed it, run_end) with the build version and env; on the game-over screen the \"How was that run?\" card must show, and the bot rates it 4 stars", 240, "full"),
@@ -40,10 +41,10 @@ public static class Playtest {
         new PlaytestScenario("cast", "The new cast, in 90 s: the main menu with the key art up (MenuArt, its size and that the menu shows it), What's new opened from the site over the game with the release note naming Wallit, Slice and the bots (read from releases.json), then a run where the player is Wallit with his bat, the bar says Slice, and wave 1's Yo Bots close in and are batted. The AGENTS.md and README cast text lives in the repo, not the build: the review reads it from the diff", 120, "content"),
         new PlaytestScenario("characters", "The character models (Docs/CharacterModels.md): validates every authored character (no built-in primitive bodies, the part names the animators bind, triangles within 6,000 a character and 12,000 a boss) and opens the CharacterGallery (a scene built in code, named setup shortcut) with Wallit and his bat, Slice, the Yo Bot, the Spider Bot, the Courier, the Foreman, the Server, the Order-Bearer and the hub's four lodgers standing idle with their personality behaviours. Photographs the whole row in colour and as black silhouettes, then the heroes, bots, bosses and lodgers. Events character-report, character-summary, character (triangles, idle), photo, silhouette-size, characters-done; metrics characterPrimitives, characterMaxTriangles, characterCount, characterPhotos. The walk, tell, hit and death on these bodies are played by chapter1 (Courier), chapter3 (Foreman), chapter4 (Server) and chapter6 (Order-Bearer)", 120, "content"),
         new PlaytestScenario("kit-preview", "The Model Kit (Docs/ModelKit.md): loads the KitPreview scene (setup shortcut), validates every kit piece (no built-in primitive meshes, 24 vertices or more, textured and instanced materials, triangles and texture memory within budget) and photographs a street corner vignette, an interior room vignette and the gallery of every piece on a labelled grid, one stop for every few pieces. Events kit-report, kit-palette, photo (stop name, palette, visible triangles), vignette-street, vignette-office, kit-done; metrics kitPieces, kitTriangles, kitTextureMB, kitPrimitives, kitPhotos, kitMaxVisibleTriangles", 240, "content"),
-        new PlaytestScenario("campaign-beats", "Chapter 1 as its own scene (Docs/CampaignDesign.md, 8.1), with real input and the sandbox save: Campaign, case file 1, Begin loads Level_1_Yard (event level-scene; the wave director and the chapter run are absent; a bug if the active scene is the arena). Before any bot is awake the bot walks the chalk from the doors to the Ring (explore, 40 m or more), presses E at Slice and hears her out (talk; she joins as a companion), has a stamp dropped under it inside the Ring (setup; ring-safe: no push) and outside it (setup; hazard-hit and verb-stamp-floor: shoved back), reads the three notices on the west trail and lifts the Mailbox Flag (notice, pickup; metrics metresBeforeCombat, noticesRead). The flag wakes the Clearing Crew at the drop (encounter-wake, enemy-woke, secondsBeforeFirstCombat): it locks on and swings the bat until five Yo Bots are down, stamps falling under the bots (stampsLanded, botsStamped), then walks out of the return slot (level-complete) and back to the hub with the file advanced (chapterAdvanced). Every bark is listed with its speaker (barks, barkSpeakers, barkOverlaps: wanted 12, 3 and 0). Other scenarios keep playing Chapter 1 the old way", 700, "content"),
+        new PlaytestScenario("campaign-beats", "Chapter 1 as its own scene (Docs/CampaignDesign.md, 8.1), with real input and the sandbox save: Campaign, case file 1, Begin loads Level_1_Yard (event level-scene; the wave director and the chapter run are absent; a bug if the active scene is the arena). Before any bot is awake the bot walks the chalk from the doors to the Ring (explore, 40 m or more), presses E at Slice and hears her out (talk; she joins as a companion), has a stamp dropped under it inside the Ring (setup; ring-safe: no push) and outside it (setup; hazard-hit and verb-stamp-floor: shoved back), reads the three notices on the west trail and lifts the Mailbox Flag (notice, pickup; metrics metresBeforeCombat, noticesRead). The flag wakes the Clearing Crew at the drop (encounter-wake, enemy-woke, secondsBeforeFirstCombat): it locks on and swings the bat until five Yo Bots are down, stamps falling under the bots (stampsLanded, botsStamped); then the Courier steps out from behind the drop box and is fought to the end (boss-tell, boss-interrupt, boss-phase, boss-defeated; metrics courierWinds, courierSeconds, bossPhase2, noticeKept; a bug if it never comes, never winds up, skips phase two or the slot stays shut), then walks out of the return slot (level-complete) and back to the hub with the file advanced (chapterAdvanced). Every bark is listed with its speaker (barks, barkSpeakers, barkOverlaps: wanted 12, 3 and 0). Other scenarios keep playing Chapter 1 the old way", 700, "content"),
         new PlaytestScenario("levels-1-3", "Chapters 1, 2 and 3 as three different places built from the Model Kit (Docs/Levels1to3.md), with real input on the menus and the sandbox save: for each chapter Campaign, case file 1 on that chapter, Begin; the scene fills in (event level-load: seconds and memory, Chapter 1 its own level scene, 2 and 3 their chapter maps; a bug over 25 s or 1024 MB); the scene scan reports renderers, kit pieces, built-in primitive meshes, triangles, estimated draw calls and lights (event scene-scan, metrics levelTriangles1..3, levelVisibleTriangles1..3, levelDrawCalls1..3, levelPrimitives1..3; a bug for any primitive renderer, over 150,000 visible triangles or over 400 draw calls); then every region of the chapter is photographed from a named setup camera (events photo-region and photo: region, landmark, visible triangles, draw calls, lights; 7 photos in chapter 1, 6 in chapters 2 and 3). Metrics levelPhotos, levelPrimitivesTotal. The objectives, set pieces, dialogues and encounters of the three chapters are played end to end by campaign-beats, chapter2 and chapter3", 600, "content"),
         new PlaytestScenario("campaign-pacing", "How much of the Campaign is fighting (J: too much fighting), with real input and the sandbox save: Chapters 2 and 3 played start to finish the way chapter2 and chapter3 play them (Chapter 1's own level is timed by campaign-beats). Each chapter opens quiet: Wallit walks 30 m (explore), the opening scene plays (talk) and he takes the Receipt (pickup, XP) before any bot is awake; then at most three encounters, each placed asleep at a fixed spot and woken by Wallit walking up to it, with 10 s of quiet between them, then the boss. Nothing spawns on a timer (pacing-plan, encounter-place, encounter-wake, encounter-clear, encounter-skipped events). Each chapter reports pacing: encounters, combat seconds, play seconds and combat share (metrics pacingEncounters2, pacingCombatShare2, pacingFirstAttack2, pacingEncounters3, ...); a bug if there are more than three encounters, a bot is awake before explore, talk and pickup are done, or the combat share is half or more", 1500, "content"),
-        new PlaytestScenario("campaign-touch", "The campaign with touch only, for a phone-sized screen (run it with mobile, or 844x390; touch is forced, the menus are tapped, the sandbox save is used). In Chapter 1's Sorting Yard the bot walks on the on-screen stick: nothing in reach, so the Interact button is hidden (interact-hidden); beside Slice the button appears and the prompt reads Tap: talk to Slice, not E (interact-shown, metric promptSaysTap), one finger on Interact talks (talk-done, touchTalk); it walks to the Mailbox Flag and taps Interact to pick it up (pickup-done, touchPickup). Then Chapter 1 is finished with fingers only: Lock is tapped as the Clearing Crew comes, the stick closes in and Swing is tapped in reach until the crew is down (touch-lock, touch-fight, touchSwings), the stick walks to the Return Slot, the exit card is photographed (ch1-exit-card) and one finger on Interact goes back to the hub with the chapter filed (chapter-complete-touch, touchChapterComplete). Every on-screen text is read for keyboard words (E:, Press F, Hold Space, WASD, Any key, Esc...) at the level, the fight, the exit card, the journal, the door and the chapter card (touch-words; any hit is a bug; metric touchKeyWords). In the hub the stick, Journal and Menu show and the bat buttons do not (hub-touch); Journal opens the journal (journal-touch); the bot walks to Chapter 2's door, the prompt reads Tap: open the door, and a finger on Interact opens it (door-opened, touchDoor). touch-layout lists the smallest touch control in px (wanted 44 or more) and any off screen", 720, "content"),
+        new PlaytestScenario("campaign-touch", "The campaign with touch only, for a phone-sized screen (run it with mobile, or 844x390; touch is forced, the menus are tapped, the sandbox save is used). In Chapter 1's Sorting Yard the bot walks on the on-screen stick: nothing in reach, so the Interact button is hidden (interact-hidden); beside Slice the button appears and the prompt reads Tap: talk to Slice, not E (interact-shown, metric promptSaysTap), one finger on Interact talks (talk-done, touchTalk); it walks to the Mailbox Flag and taps Interact to pick it up (pickup-done, touchPickup). Then Chapter 1 is finished with fingers only: Lock is tapped as the Clearing Crew comes, the stick closes in and Swing is tapped in reach until the crew is down (touch-lock, touch-fight, touchSwings), the stick walks to the Return Slot, the exit card is photographed (ch1-exit-card) and one finger on Interact goes back to the hub with the chapter filed (chapter-complete-touch, touchChapterComplete). Every on-screen text is read for keyboard words (E:, Press F, Hold Space, WASD, Any key, Esc...) at the level, the fight, the exit card, the journal, the door and the chapter card (touch-words; any hit is a bug; metric touchKeyWords). In the hub the stick, Journal and Menu show and the bat buttons do not (hub-touch); Journal opens the journal (journal-touch); the bot walks to Chapter 2's door, the prompt reads Tap: open the door, and a finger on Interact opens it (door-opened, touchDoor). touch-layout lists the smallest touch control in px (wanted 44 or more) and any off screen. At the menu, the level, beside Slice, in the fight and in the hub the screen is audited in both orientations (the window is turned with Screen.SetResolution and back; events screen-audit, text-overlap, screen-turn-skipped): every shown text and button must be on screen, no text under a touch control, no button under 44 px (metrics auditOff_*, auditUnderPad_*, auditSmallButtons_*; a non-zero one is also a reported problem). Right after the menu audit it audits the Arcade screens in both orientations: every Upgrades page of the shop (shop-pages), the level-up cards (setup: a level of bolts) and the boss bar on wave 10 (setup: the testing wave key; boss-bar, metric bossBarReservedUnits: captions step below it)", 900, "content"),
         new PlaytestScenario("modes", "The mode select: the main menu shows Campaign and Arcade; Campaign opens the three case files (save slots, setup: the sandbox keeps them off the real save), opening an empty file loads the placeholder Chapter 1 scene with Wallit and Slice's lines, Menu returns and the file now reads Chapter 1 with its time on the books, Erase (asked twice) empties it; then Arcade starts today's wave defense and the bot plays 40 s of it with the bat. Events mode-select, campaign-files, chapter-open, chapter-lines, campaign-saved, campaign-erased, arcade-start", 200, "content"),
         new PlaytestScenario("pause-nav", "Pause and menus by keyboard and gamepad, in every chapter (setup: the sandbox case file stands on each chapter in turn). From the main menu with keys only: C opens the case files, Enter opens file 1, Enter begins the chapter, Enter skips the opening scene. Then P pauses (time stops) and P resumes, the pad's Start pauses, Down and Enter open Settings (first chapter): Left turns the music and effects sliders (the gold ring follows), Enter on Voices cycles how often the voices speak, the pad's B closes Settings and the pause stays, the settings are read back from their saved JSON; Resume with Enter; pause again, and Down, Down, Enter, Enter on Quit to menu returns to the main menu. Events nav-menu, nav-case-files, nav-chapter-card, chapter-paused, chapter-resumed, pad-paused, nav-settings, volume-changed, voices-changed, settings-persisted, nav-quit; metrics chaptersPaused, menuMoves, menuSubmits, sliderTurns", 900, "content"),
         new PlaytestScenario("score", "The score and the cast voices. Setup shortcuts: the music director is asked for every track by name (theme_wallit, theme_slice, theme_department, ch1_score..ch6_score, the six boss themes, hub, ending, credits) and each is heard for 2 s (events music-track: track, loaded or missing, volume); then nine shot reels (ch1_open, boss_courier, ch2_close, boss_foreman, boss_server, ch5_open, ch6_close, ending_received, credits) play to the end by name. Per reel: its bed (event reel-bed), every spoken shot's voice file found or missing (voice-file, with the cast voice), the set-piece sounds fired (sfx), and the voice events. Checked: no two voice lines overlap (Wallit's floor, the scene and the cast voice all count), the music ducks under speech (lowest duck below 0.9), every line of every reel has a voice file, every track exists. Metrics scoreTracks, scoreTracksLoaded, scoreVoiceLines, scoreVoiceMissing, scoreOverlaps, scoreLowestDuck, scoreSfx", 900, "content"),
@@ -129,6 +130,8 @@ public static class Playtest {
     static int fpsFrames;
     static float worstFps = 999f;
     static float fpsNow;
+    static int stallFrames;
+    static float worstFrameMs;
     // The analytics scenario: from this wave on the bot holds fire, so the bots end the run.
     static int holdFireFrom;
     static bool analyticsRun;
@@ -187,6 +190,8 @@ public static class Playtest {
         lastWave = 0;
         fpsSum = 0f;
         fpsFrames = 0;
+        stallFrames = 0;
+        worstFrameMs = 0f;
         worstFps = 999f;
         holdFireFrom = 0;
         analyticsRun = id == "analytics";
@@ -201,12 +206,13 @@ public static class Playtest {
         lockChecks = 0;
         lockNearest = 0;
         lockWrong = 0;
+        exceptionsTold = 0;
         batTold = 0;
         batRun = id == "bat";
         lockSwitchesSeen = ZeldaStyleCamera.LockSwitches;
         RunAnalytics.EnableDebug();
         StoryScreen.SuppressIntro = id != "story";
-        LevelScene.ChapterOneIsLevel = id == "campaign-beats" || id == "moods" || id == "campaign-touch" || id == "levels-1-3";   // the older chapter playtests press Begin on Chapter 1 and expect the chapter run
+        LevelScene.ChapterOneIsLevel = id == "campaign-beats" || id == "moods" || id == "campaign-touch" || id == "touch-pause" || id == "levels-1-3";   // the older chapter playtests press Begin on Chapter 1 and expect the chapter run
         PlayInput.Release();
         MetaProgress.EnterSandbox(true);
         Random.InitState(options.seed);
@@ -341,6 +347,13 @@ public static class Playtest {
             }
             if (id == "campaign-beats") {
                 yield return PlaytestBeats.Run(run);
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "touch-pause") {
+                yield return PlaytestPause.Run(run);
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
                 }
@@ -673,6 +686,16 @@ public static class Playtest {
             run.Problem(PlaytestSeverity.Polish, "menu key art Resources/UI/MenuArt is missing");
         }
         yield return new WaitForSecondsRealtime(1f);
+        // The menu's Start must run to its end (it threw a NullReferenceException on a fresh save when the start-wave
+        // stepper was hidden and never built, which also left the shop unfilled and the menu music unasked).
+        MainMenu ready = Object.FindAnyObjectByType<MainMenu>();
+        bool menuReady = ready != null && ready.Ready;
+        run.Event("menu-ready", menuReady
+            ? "the main menu finished setting up (stepper " + (ready.StepperVisible ? "shown" : "hidden") + ", best wave " + MetaProgress.BestWave + ", music '" + MusicDirector.Current + "')"
+            : "the main menu's Start did not finish");
+        if (!menuReady) {
+            run.Problem(PlaytestSeverity.Bug, "the main menu's Start did not finish (an exception while building or filling it)");
+        }
     }
 
     // Campaign from the main menu: press Campaign, open case file 1, wait for the Campaign scene. A scene that is not in
@@ -693,9 +716,41 @@ public static class Playtest {
     static bool hubAmbience;
     static bool moodsTest;
     static bool fullRun;
+    static string lastFullMap;
     static bool pacingRun;   // campaign-pacing: chapters 2 and 3, each one reporting its encounters and combat share
     static bool quitDone;
     static bool secretTest;
+    // True when the boss has a part (a prop or a limb) of this name anywhere in its body.
+    static bool HasPart(Enemy boss, string name) {
+        if (boss == null) {
+            return false;
+        }
+        foreach (Transform t in boss.GetComponentsInChildren<Transform>(true)) {
+            if (t.name == name) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // What the boss's body is (an authored CharacterKit rig or the shared bot), its triangles and whether it can flash on a hit.
+    static string BossBodyLine(Enemy boss, string id) {
+        if (boss == null) {
+            return "no boss";
+        }
+        int tris = CharacterKit.Triangles(boss.gameObject);
+        bool flash = false;
+        foreach (Renderer r in boss.GetComponentsInChildren<Renderer>(true)) {
+            if (r.sharedMaterial != null && r.sharedMaterial.HasProperty("_Flash")) {
+                flash = true;
+                break;
+            }
+        }
+        bool authored = HasPart(boss, id == "registrar" ? "Page" : "Pauldrons");
+        KitReport report = CharacterValidation.Run();
+        return boss.Title + ": " + (authored ? "authored " + id + " body" : "shared bot plus prop (fallback)") + ", " + tris + " triangles, hit flash " + (flash ? "ready" : "missing") + ", character validation " + (report.Failures.Count == 0 ? "passed" : report.Failures.Count + " failures");
+    }
+
     static int endingTest;   // endings scenario: the variant (Endings.Ledger/Doors/Open) this pass sets up and expects
 
     static IEnumerator CampaignRun() {
@@ -1389,7 +1444,7 @@ public static class Playtest {
             bool match = Mathf.Abs(fog.r - want.r) + Mathf.Abs(fog.g - want.g) + Mathf.Abs(fog.b - want.b) < 0.02f && Mathf.Abs(RenderSettings.fogDensity - map.Applied.FogDensity) < 0.0005f;
             string look = ColorUtility.ToHtmlStringRGB(fog) + "/" + RenderSettings.fogDensity.ToString("0.0000");
             looks.Add(look);
-            run.Event("map-lighting", "chapter " + (index + 1) + " fog #" + ColorUtility.ToHtmlStringRGB(fog) + " density " + RenderSettings.fogDensity.ToString("0.0000") + ", ambient #" + ColorUtility.ToHtmlStringRGB(RenderSettings.ambientEquatorColor) + ", sky #" + ColorUtility.ToHtmlStringRGB(Camera.main != null ? Camera.main.backgroundColor : Color.black) + (match ? ", the chapter's own" : ", NOT the chapter's"));
+            run.Event("map-lighting", "chapter " + (index + 1) + " fog #" + ColorUtility.ToHtmlStringRGB(fog) + " density " + RenderSettings.fogDensity.ToString("0.0000") + ", ambient #" + ColorUtility.ToHtmlStringRGB(RenderSettings.ambientEquatorColor) + ", sky #" + ColorUtility.ToHtmlStringRGB(Camera.main != null ? Camera.main.backgroundColor : Color.black) + (match ? ", the chapter's own" : ", NOT the chapter's") + ", skybox " + (RenderSettings.skybox != null ? RenderSettings.skybox.name + (RenderSettings.skybox.shader.name == "Knoll/PanoSky" ? " (painted)" : " (gradient)") : "none"));
             if (!match) {
                 run.Problem(PlaytestSeverity.Bug, "chapter-maps: chapter " + (index + 1) + "'s lighting is not on after the map loaded");
             }
@@ -1629,6 +1684,19 @@ public static class Playtest {
         }
         run.Scene("Chapter play");
         run.Event("chapter-start", chapter.Title + " in " + chapter.Place + ", case file " + (CampaignSave.Active + 1));
+        if (fullRun) {
+            // Per-chapter verdict inputs: which scene is the map (distinct places, no shared arena), and memory.
+            string mapScene = ChapterMap.Current != null ? ChapterMap.Current.MapName : SceneManager.GetActiveScene().name;
+            float memMb = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / 1048576f;
+            run.Event("chapter-verdict", "chapter " + (before + 1) + ": map scene " + mapScene + ", memory " + memMb.ToString("0") + " MB");
+            if (memMb > 1024f) {
+                run.Problem(PlaytestSeverity.Bug, "campaign-full: chapter " + (before + 1) + " uses " + memMb.ToString("0") + " MB");
+            }
+            if (before > 0 && lastFullMap == mapScene) {
+                run.Problem(PlaytestSeverity.Bug, "campaign-full: chapter " + (before + 1) + " reuses the map scene of the chapter before (" + mapScene + ")");
+            }
+            lastFullMap = mapScene;
+        }
         yield return CutsceneStep();
         if (run.Done) {
             yield break;
@@ -2899,7 +2967,8 @@ run.Event("boss-defeated", "The Courier fell after " + Mathf.RoundToInt(chapter.
         run.Event("boss-arrives", bossEnemy != null ? bossEnemy.Title + " (" + bossEnemy.HitsToDrop + " hits) after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s; objective \"" + chapter.ObjectiveLine + "\"" : "no boss");
         yield return new WaitForSecondsRealtime(0.6f);
         bool bar = bossEnemy != null && BossBarShows(bossEnemy.Title);
-        run.Event("boss-bar", bossEnemy != null ? bossEnemy.Title + ": health bar " + (bar ? "up" : "missing") + ", stamped plate " + (bossEnemy.transform.Find("Invalid Plate") != null ? "on its chest" : "missing") : "no boss");
+        run.Event("boss-bar", bossEnemy != null ? bossEnemy.Title + ": health bar " + (bar ? "up" : "missing") + ", stamped plate " + (HasPart(bossEnemy, "Invalid Plate") ? "on its chest" : "missing") : "no boss");
+        run.Event("boss-body", BossBodyLine(bossEnemy, "plated_alpha"));
         run.Metric("bossBar", bar ? 1 : 0);
         if (!bar) {
             run.Problem(PlaytestSeverity.Bug, "chapter2: no boss health bar for the Plated Alpha");
@@ -3024,7 +3093,7 @@ run.Event("boss-defeated", "The Plated Alpha fell after " + Mathf.RoundToInt(cha
         run.Event("boss-arrives", bossEnemy != null ? bossEnemy.Title + " (" + bossEnemy.HitsToDrop + " hits) after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s; objective \"" + chapter.ObjectiveLine + "\"" : "no boss");
         yield return new WaitForSecondsRealtime(0.6f);
         bool bar = bossEnemy != null && BossBarShows(bossEnemy.Title);
-        run.Event("boss-bar", bossEnemy != null ? bossEnemy.Title + ": health bar " + (bar ? "up" : "missing") + (walk ? ", paper " + (bossEnemy.transform.Find("Paper") != null ? "in its claw" : "missing") : ", order sheet " + (bossEnemy.transform.Find("Order Sheet") != null ? "on its chest" : "missing")) : "no boss");
+        run.Event("boss-bar", bossEnemy != null ? bossEnemy.Title + ": health bar " + (bar ? "up" : "missing") + (walk ? ", paper " + (HasPart(bossEnemy, "Paper") ? "in its claw" : "missing") : ", order sheet " + (HasPart(bossEnemy, "Order Sheet") ? "on its chest" : "missing")) : "no boss");
         run.Metric("bossBar", bar ? 1 : 0);
         if (!bar) {
             run.Problem(PlaytestSeverity.Bug, "chapter3/4: no boss health bar for " + (walk ? "the Server" : "the Foreman"));
@@ -3109,7 +3178,8 @@ run.Event("boss-defeated", "The Plated Alpha fell after " + Mathf.RoundToInt(cha
         run.Event("boss-arrives", bossEnemy != null ? bossEnemy.Title + " (" + bossEnemy.HitsToDrop + " hits) after " + Mathf.RoundToInt(chapter.PlaySeconds) + " s; objective \"" + chapter.ObjectiveLine + "\"" : "no boss");
         yield return new WaitForSecondsRealtime(0.6f);
         bool bar = bossEnemy != null && BossBarShows(bossEnemy.Title);
-        run.Event("boss-bar", bossEnemy != null ? bossEnemy.Title + ": health bar " + (bar ? "up" : "missing") + ", ledger " + (bossEnemy.transform.Find("Ledger") != null ? "held open" : "missing") : "no boss");
+        run.Event("boss-bar", bossEnemy != null ? bossEnemy.Title + ": health bar " + (bar ? "up" : "missing") + ", ledger " + (HasPart(bossEnemy, "Ledger") ? "held open" : "missing") : "no boss");
+        run.Event("boss-body", BossBodyLine(bossEnemy, "registrar"));
         run.Metric("bossBar", bar ? 1 : 0);
         if (!bar) {
             run.Problem(PlaytestSeverity.Bug, "chapter5: no boss health bar for the Registrar");
@@ -5400,6 +5470,11 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             summary += (summary.Length > 0 ? ", " : "") + CharacterMovement.ClipNames[i] + " slide " + WallitStride.SlideMean(i).ToString("0.00")
                 + " m/s over " + WallitStride.Samples(i) + " frames (stride " + player.Stride(i).ToString("0.00") + ")";
         }
+        run.Metric("swingSlideMean", Mathf.Round(WallitStride.SwingSlideMean * 100f) / 100f);
+        run.Metric("swingSlideMax", Mathf.Round(WallitStride.SwingSlideMax * 100f) / 100f);
+        run.Metric("swingLegsMean", Mathf.Round(WallitStride.SwingLegsMean * 100f) / 100f);
+        summary += "; swings on the move: slide " + WallitStride.SwingSlideMean.ToString("0.00") + " m/s (worst " + WallitStride.SwingSlideMax.ToString("0.00")
+            + ") over " + WallitStride.SwingSamples + " frames, legs layer " + WallitStride.SwingLegsMean.ToString("0.00");
         run.Event("loco-report", summary + "; hips jump max " + WallitStride.PopMax.ToString("0.000"));
         if (WallitStride.PopFrames > 0) {
             run.Problem(PlaytestSeverity.Bug, "Wallit's hips popped on " + WallitStride.PopFrames + " frames (largest jump " + WallitStride.PopMax.ToString("0.00") + " of his height scale)");
@@ -7590,6 +7665,8 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         int missing = 0;
         int placeholderStart = Cutscene.PlaceholderShots;
         int artShots = 0;
+        int clipsPlayed = 0;
+        int clipErrors = 0;
         float slowestLoad = 0f;
         var castShots = new System.Collections.Generic.Dictionary<string, int>();
         for (int r = 0; r < ids.Length && !run.Done; r++) {
@@ -7652,11 +7729,23 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                 yield break;
             }
             int miss = 0;
+            int reelClips = 0;
             var reelEvents = new System.Collections.Generic.List<string>(Cutscene.Events);
             for (int e = Mathf.Min(eventsBefore, reelEvents.Count); e < reelEvents.Count; e++) {
                 if (reelEvents[e].StartsWith("missing-art|")) {
                     miss++;
                 }
+                if (reelEvents[e] == "video|playing") {
+                    clipsPlayed++;
+                    reelClips++;
+                } else if (reelEvents[e].StartsWith("video-error|")) {
+                    clipErrors++;
+                    run.Event("cinematics-video-error", ids[r] + ": " + reelEvents[e] + " (the still keeps playing)");
+                }
+            }
+            run.Event("cinematics-video", ids[r] + ": " + reelClips + " animated clip(s) played, skipped mid-scene " + skipped);
+            if (reelClips < 1) {
+                run.Problem(PlaytestSeverity.Bug, "chapter-cinematics: " + ids[r] + " played no animated clip");
             }
             missing += miss;
             reels++;
@@ -7671,6 +7760,8 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             }
         }
         int overlaps = Cutscene.Overlaps + WallitVoice.Overlaps;
+        run.Metric("cinematicsClips", clipsPlayed);
+        run.Metric("cinematicsClipErrors", clipErrors);
         run.Metric("cinematicsReels", reels);
         run.Metric("cinematicsShots", Cutscene.ShotsShown);
         run.Metric("cinematicsVoiceLines", Cutscene.VoiceLines);
@@ -7877,6 +7968,8 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
     // is loaded fresh so it is built for touch.
     static IEnumerator TouchRun() {
         UiFit.ForceTouch(true);
+        MobileQuality.Apply();
+        run.Event("mobile-quality", MobileQuality.Describe());
         run.Log("layout " + UiFit.Mode + " at " + Screen.width + "x" + Screen.height + ", pixel ratio " + UiFit.PixelRatio);
         run.Metric("viewportWidth", Mathf.Round(Screen.width / UiFit.PixelRatio));
         run.Metric("viewportHeight", Mathf.Round(Screen.height / UiFit.PixelRatio));
@@ -7888,6 +7981,8 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         if (run.Done) {
             yield break;
         }
+        run.Metric("menuReadySeconds", Mathf.Round(Time.realtimeSinceStartup * 10f) / 10f);
+        run.Event("menu-load", "main menu up " + Time.realtimeSinceStartup.ToString("F1") + " s after the player started");
         yield return new WaitForSecondsRealtime(1.5f);
         CheckScreen("menu");
         MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
@@ -7916,6 +8011,17 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         yield return null;
         CheckPlayerIsWallit();
         yield return TouchPlay(300f);
+        run.Metric("touchStallFrames", stallFrames);
+        run.Metric("touchWorstFrameMs", Mathf.Round(worstFrameMs));
+        run.Metric("touchAvgFps", fpsFrames > 0 ? Mathf.Round(fpsSum / fpsFrames) : 0f);
+        run.Metric("touchWorstFps", Mathf.Round(worstFps));
+        run.Metric("totalMemoryMB", Mathf.Round(System.GC.GetTotalMemory(false) / 1048576f));
+        if (stallFrames > 3) {
+            run.Problem(PlaytestSeverity.Bug, stallFrames + " frames over 200 ms while playing waves 1-2 on a phone screen");
+        }
+        if (worstFps < 20f && worstFps < 999f) {
+            run.Problem(PlaytestSeverity.Warning, "phone frame rate fell to " + Mathf.Round(worstFps) + " fps in waves 1-2");
+        }
     }
 
     static IEnumerator TouchPlay(float seconds) {
@@ -8315,6 +8421,15 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             run.Problem(PlaytestSeverity.Polish, where + ": the piano is gone but the screen still says \"" + Clip(text.text) + "\"");
         }
         run.Event("stale-words", where + ": " + stale);
+        // The generated UI art (Docs/UiArt.md) on this screen: logo, panel frame and icons that are drawing now.
+        var artSeen = new System.Collections.Generic.List<string>();
+        foreach (Image image in Object.FindObjectsByType<Image>(FindObjectsSortMode.None)) {
+            Canvas holder = image.canvas;
+            if (image.isActiveAndEnabled && image.sprite != null && image.sprite.name.StartsWith("UiArt/") && holder != null && holder.rootCanvas.sortingOrder >= minOrder) {
+                artSeen.Add(image.sprite.name.Substring(6));
+            }
+        }
+        run.Event("ui-art", where + ": " + artSeen.Count + " pieces: " + string.Join(" ", artSeen.ToArray()));
         int buttons = 0;
         int felt = 0;
         foreach (Button button in Object.FindObjectsByType<Button>(FindObjectsSortMode.None)) {
@@ -8603,6 +8718,12 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         fpsNow = Mathf.Lerp(fpsNow <= 0f ? 1f / dt : fpsNow, 1f / dt, 0.1f);
         fpsSum += 1f / dt;
         fpsFrames++;
+        if (fpsFrames > 60) {
+            worstFrameMs = Mathf.Max(worstFrameMs, dt * 1000f);
+            if (dt > 0.2f) {
+                stallFrames++;
+            }
+        }
         if (fpsFrames > 30 && fpsNow < worstFps) {
             worstFps = fpsNow;
         }
@@ -8640,8 +8761,30 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
     }
 
     // Errors are caught by the package; warnings about missing pieces are worth a line too.
+    static int exceptionsTold;
+
     static void OnLog(string message, string stack, LogType type) {
-        if (run == null || run.Done || type != LogType.Warning) {
+        if (run == null || run.Done) {
+            return;
+        }
+        // Exceptions and errors: write the stack and where the game was into the report, so a WebGL error with no
+        // console trace (smoke@live, NRE at Arcade wave 1 start) can be read from the timeline's `exception` event.
+        if ((type == LogType.Exception || type == LogType.Error) && exceptionsTold < 8) {
+            exceptionsTold++;
+            string trace = string.IsNullOrEmpty(stack) ? "(no stack)" : stack.Trim().Replace("\n", " | ");
+            if (trace.Length > 1500) {
+                trace = trace.Substring(0, 1500);
+            }
+            run.Event("exception", type + ": " + message.Split('\n')[0] + " | at t=" + Time.realtimeSinceStartup.ToString("0.0")
+                + " s, frame " + Time.frameCount + ", scene " + SceneManager.GetActiveScene().name + ", wave " + WaveDirector.Wave
+                + ", waiting " + WaveDirector.Waiting + " | stack: " + trace);
+            return;
+        }
+        if (type != LogType.Warning) {
+            return;
+        }
+        if (message.StartsWith("[Guard]")) {
+            run.Event("guard", message.Replace("\n", " | "));
             return;
         }
         string first = message.Split('\n')[0];

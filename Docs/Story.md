@@ -135,15 +135,33 @@ ink in the Hollow. It lands on a wallet's leather; he hits the grass and rolls, 
 ### Chapter 1's boss: the Courier
 
 After the first Yo Bots the Courier comes: an Alpha Yo Bot (bigger, amber-tinted, red crest) with a clipboard and a "notice of
-striking". Yo Bot: "Special delivery! Notice of striking!" Slice names it ("It reads the order out, then it lands.") and Wallit
-answers with the bill. Its health bar sits at the top of the screen under its name. It never swipes. It walks to 7.5 m of Slice,
-stops and lifts the notice overhead; a **red mark fills on the circle's ground** (the telegraph, about two seconds), and when it
-fills the notice lands on Slice for 12. Two answers, which Slice says aloud the first time ("Break the wind-up. Or stand in it."):
-hit the Courier for a tenth of its health before the mark fills (it drops the notice, "Notice dropped!", and stands dazed), or
-stand in the mark and take the stamp yourself ("Wallit takes the stamp"; Slice is spared). Under half health it winds up faster
-and calls two Yo Bots with every notice. The defeat beat: the Courier, coming apart, "Notice... undelivered... uploading...
-defeat?"; Wallit "Return to sender."; Slice "Clean." Then Chapter Complete, and the file moves to Chapter 2. The fight is
-`Courier.cs`; the chapter flow (`HoldThenBoss`) is in `ChapterRun.cs`, the lines in `Story.Chapters[0]`.
+striking". Yo Bot: "Special delivery! Notice of striking!" Slice names it ("The Courier. It reads the order out, then it lands.") and
+Wallit answers with the bill ("Then it can read me the bill."). It never swipes. It walks to 7.5 m of whoever the notice is for, stops
+and lifts the notice overhead; a **red mark fills on the ground under them** (the telegraph, about two seconds, a ring pulsing over
+it), and when it fills the notice lands. Two answers, which the screen names the first time ("Break it, or stand in it") as Slice
+says "It's reading it out.": hit the Courier for a tenth of its health before the mark fills (it drops the notice, "Notice dropped!",
+and stands dazed; Wallit: "Not on my tab."), or stand in the mark and take the stamp yourself ("Wallit takes the stamp"; Slice is
+spared; Wallit: "Nobody touches her."). Under half health (the PHASE TWO banner) the Yo Bot voice says "Second notice! This address
+is still unknown.", it winds up faster and calls two Yo Bots with every notice ("Return to sender! Return to sender!"). The defeat
+beat: the Courier, coming apart, "Notice... undelivered... uploading... defeat?" (speaker K, its own voice); Wallit "Return to
+sender."; Slice "Clean." The fight is `Courier.cs`; the lines are `Story.Chapters[0]` (`BossLines`, `DefeatLines`) and the
+`Story.Courier*` lines.
+
+**In the Sorting Yard (Chapter 1's level, `LevelYard.cs`).** The Courier is the drop's boss, after the Clearing Crew. When the five
+Yo Bots are down there is a breath (Slice: "Big one next. Be ready."; alone, Wallit: "Something big's coming. I can smell the
+invoice."), then the drop box rattles (`courier_clip`), a ring opens behind it and the Courier steps out with its clipboard. It stands
+asleep while it reads the arrival lines, then walks straight at Wallit (a blow wakes it early). There is no circle here, so the
+notice is for Slice walking with him: the red fills under her (the first notice reads slower, three seconds, for a thumb on a
+phone), and if it lands she goes down ("Slice! Hold on!") until Wallit revives her with a held E. While she is down, the notice is
+for Wallit himself: step out of the red or break it. The objective line shows its health ("Break the Courier [||||....]"). Called
+Yo Bots never number more than three at once and come apart with it when it falls. If Wallit goes down, the Courier goes back
+behind the drop box asleep, keeping the damage done, and wakes when he walks back. When it falls its notice drifts down, unsigned,
+the return slot's shutter lifts (`door_open`, the amber light comes up) and the defeat lines play. E on the notice keeps it
+("Kept: the notice."; Wallit: "Evidence. Every bill has a paper trail.", choice 1.c1 keep); leaving through the slot without it
+voids it (1.c1 tear). The `campaign-beats` playtest plays it end to end (`boss-arrive`, `boss-wake`, `boss-call`, `boss-down`,
+`notice-down`, `exit-open`; metrics `courierWinds`, `courierInterrupted`, `courierBlocked`, `courierLanded`, `courierSeconds`).
+In the Hollow (the old chapter run, `HoldThenBoss`) the same Courier walks to 7.5 m of Slice at the circle and the notice lands on
+her for 12.
 
 ### Chapter 2: No Fixed Address
 
@@ -198,7 +216,8 @@ X) and it misses; hit the boss for 8% of its health during the wind-up and it br
 collider. The marks: a **stamp** on Wallit, a **march** of three marks from the boss toward Slice, a **page** under Slice (as the
 Courier's). Slice is hurt only by a march's last mark or a page.
 
-- **The Courier** (ch. 1): notice on the circle. Phase 2: faster winds and two Yo Bots with every notice.
+- **The Courier** (ch. 1): notice under Slice (the circle's ground in the Hollow; under her as she walks in the Sorting Yard, or
+  under Wallit while she is down). Phase 2: faster winds and two Yo Bots with every notice.
 - **The Plated Alpha** (ch. 2): stamp. Phase 2: two stamps at once, wind-up 1.5 s instead of 2.2 s.
 - **The Foreman** (ch. 3): march. Phase 2: a march and a page together ("overtime").
 - **The Server** (ch. 4): phase 1 is the paper: it offers, is refused three times and only then strikes (unchanged). Phase 2 begins
@@ -415,6 +434,8 @@ wall for every errand finished and a lamp lights on the right wall for every con
 and cabinets. The ending reads what was kept: `?|side:<id>|`, `?|sides:12|` and `?|chat:<id>|` lines in `Story.Chapters[5].Ending`
 (Spare's lid on straight, Brim's own name on its label, Tick wound, twelve slips pinned, Chime's quiet bell). New Game+ clears them.
 Code: `HubLife.cs`, `ChapterHub.cs`, `OfficeMap.Dress`; the `hub-life` playtest plays all of it.
+
+Voices and sound: the lodgers each have their own voice (Tick a measured wound-clock, Brim a muffled, wistful hat, Spare a small chirpy half-built Yo Bot, Chime a clear, ringing bell), spoken through `CastVoice` for every `Story.Lodgers` line and every `L|` chat line; the hub and each chapter carry a quiet ambience under the score (hub a ticking room, the Hollow wind, the belt yard's rumble, the Long Walk's lamp-buzz, the Reading Room's paper hush).
 
 ## Canon established here
 

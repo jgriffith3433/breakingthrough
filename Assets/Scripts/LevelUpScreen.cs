@@ -34,6 +34,7 @@ public class LevelUpScreen : MonoBehaviour {
         public Image Halo;
         public Image Frame;
         public Image Face;
+        public Image Icon;
         public Text Name;
         public Text Rank;
         public Text About;
@@ -212,6 +213,7 @@ public class LevelUpScreen : MonoBehaviour {
             card.Name.color = Color.Lerp(Color.white, tint, 0.5f);
             card.Rank.text = RunBoons.RankText(info.Id);
             card.About.text = info.About;
+            UiArt.Show(card.Icon, laidOut == UiMode.Desktop ? UiArt.Boon(info.Id) : null);
             card.Tag.text = info.Rarity.ToString().ToUpper();
             card.Tag.color = tint;
             card.Key.text = touch ? "Tap to pick" : "[" + (i + 1) + "]";
@@ -325,46 +327,70 @@ public class LevelUpScreen : MonoBehaviour {
         Layout();
     }
 
-    // Desktop: the row of three as drawn. Wide: the same row, scaled to fit a phone held sideways. Tall: the
-    // cards stack, each laid out across instead of down.
+    // Desktop: the row of three as drawn. Wide (a phone held sideways): the row of three at full size, sized to the safe
+    // area's height instead of scaled down, so no text shrinks. Tall: the cards stack, each laid out across. Both phone
+    // layouts sit inside Screen.safeArea (UiFit.SafeInsets); no touch pad is up while the cards are.
     void Layout() {
         laidOut = UiFit.Mode;
         laidStamp = UiFit.Stamp;
         UiFit.Apply(scaler, 0.5f);
         Vector2 size = UiFit.Size;
+        Vector4 safe = laidOut == UiMode.Desktop ? Vector4.zero : UiFit.SafeInsets();
         bool tall = laidOut == UiMode.Tall;
-        float scale = 1f;
-        if (laidOut == UiMode.Wide) {
-            scale = Mathf.Min(1f, (size.x - 40f) / 1400f, (size.y - 20f) / 780f);
-        } else if (tall) {
-            scale = Mathf.Min(1f, (size.y - 40f) / 1290f);
-        }
+        bool wide = laidOut == UiMode.Wide;
+        float width = size.x - safe.x - safe.y - 40f;
+        float height = size.y - safe.z - safe.w - (wide ? 20f : 40f);
+        float scale = tall ? Mathf.Min(1f, height / 1290f) : 1f;
         deck.localScale = new Vector3(scale, scale, 1f);
-        deck.sizeDelta = tall ? new Vector2(size.x, 1290f) : new Vector2(1400f, 760f);
+        // The deck's middle is the safe area's middle.
+        deck.anchoredPosition = laidOut == UiMode.Desktop ? Vector2.zero : new Vector2((safe.x - safe.y) * 0.5f, (safe.w - safe.z) * 0.5f);
+        deck.sizeDelta = tall ? new Vector2(size.x, 1290f) : (wide ? new Vector2(Mathf.Max(width, 600f), height) : new Vector2(1400f, 760f));
 
-        Place(heading.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, tall ? 545f : 330f), new Vector2(tall ? size.x - 40f : 1400f, 90f));
-        heading.fontSize = tall ? 52 : 64;
-        Place(footer.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, tall ? -510f : -330f), new Vector2(tall ? size.x - 40f : 1400f, 40f));
-        Place((RectTransform)reroll.transform, new Vector2(0.5f, 0.5f), tall ? new Vector2(0f, -600f) : new Vector2(540f, -340f), new Vector2(300f, 96f));
+        float top = wide ? height * 0.5f : 0f;
+        Place(heading.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, tall ? 545f : (wide ? top - 32f : 330f)), new Vector2(tall ? width : (wide ? width : 1400f), wide ? 64f : 90f));
+        heading.fontSize = tall ? 52 : (wide ? 48 : 64);
+        // Wide: the footer sits bottom left and Reroll bottom right on one row, 88 units tall.
+        float rowY = wide ? -top + 44f : 0f;
+        Place(footer.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(wide ? -150f : 0f, tall ? -510f : (wide ? rowY : -330f)), new Vector2(tall ? width : (wide ? Mathf.Max(300f, width - 330f) : 1400f), wide ? 80f : 40f));
+        footer.fontSize = wide ? 24 : 26;
+        Vector2 rerollAt = tall ? new Vector2(0f, -592f) : (wide ? new Vector2(Mathf.Max(300f, width) * 0.5f - 150f, rowY) : new Vector2(540f, -340f));
+        Place((RectTransform)reroll.transform, new Vector2(0.5f, 0.5f), rerollAt, new Vector2(300f, wide ? 88f : 96f));
 
+        float cardWidth = wide ? Mathf.Min(430f, (width - 32f) / 3f) : size.x - 40f - safe.x - safe.y;
+        float cardHeight = wide ? Mathf.Clamp(height - 70f - 100f, 380f, 500f) : 300f;
+        float cardTop = wide ? top - 70f : 0f;
         for (int i = 0; i < cards.Length; i++) {
             Card card = cards[i];
-            Vector2 frame = tall ? new Vector2(size.x - 40f, 300f) : new Vector2(430f, 500f);
-            homes[i] = tall ? new Vector2(0f, (1 - i) * 330f) : new Vector2((i - 1) * 470f, 0f);
+            Vector2 frame = tall ? new Vector2(cardWidth, cardHeight) : (wide ? new Vector2(cardWidth, cardHeight) : new Vector2(430f, 500f));
+            if (tall) {
+                homes[i] = new Vector2(0f, (1 - i) * 330f);
+            } else if (wide) {
+                homes[i] = new Vector2((i - 1) * (cardWidth + 16f), cardTop - cardHeight * 0.5f);
+            } else {
+                homes[i] = new Vector2((i - 1) * 470f, 0f);
+            }
             Place(card.Frame.rectTransform, new Vector2(0.5f, 0.5f), homes[i], frame);
             Place(card.Halo.rectTransform, new Vector2(0.5f, 0.5f), homes[i], frame + new Vector2(90f, 90f));
             float inner = frame.x - 40f;
             if (tall) {
-                Lay(card.Tag, 20, new Vector2(0f, -14f), new Vector2(inner, 28f));
-                Lay(card.Name, 36, new Vector2(0f, -40f), new Vector2(inner, 50f));
-                Lay(card.Rank, 22, new Vector2(0f, -92f), new Vector2(inner, 30f));
-                Lay(card.About, 26, new Vector2(0f, -128f), new Vector2(inner, 120f));
+                Lay(card.Tag, 22, new Vector2(0f, -10f), new Vector2(inner, 28f));
+                Lay(card.Name, 36, new Vector2(0f, -38f), new Vector2(inner, 50f));
+                Lay(card.Rank, 24, new Vector2(0f, -90f), new Vector2(inner, 32f));
+                Lay(card.About, 26, new Vector2(0f, -126f), new Vector2(inner, 120f));
                 Lay(card.Key, 24, new Vector2(0f, 12f), new Vector2(inner, 32f));
+            } else if (wide) {
+                Lay(card.Tag, 20, new Vector2(0f, -12f), new Vector2(inner, 26f));
+                Lay(card.Name, 34, new Vector2(0f, -38f), new Vector2(inner, 84f));
+                Lay(card.Rank, 22, new Vector2(0f, -126f), new Vector2(inner, 30f));
+                Lay(card.About, 24, new Vector2(0f, -160f), new Vector2(inner, cardHeight - 160f - 50f));
+                Lay(card.Key, 24, new Vector2(0f, 10f), new Vector2(inner, 34f));
             } else {
-                Lay(card.Tag, 20, new Vector2(0f, -22f), new Vector2(380f, 30f));
-                Lay(card.Name, 40, new Vector2(0f, -60f), new Vector2(390f, 110f));
-                Lay(card.Rank, 24, new Vector2(0f, -170f), new Vector2(380f, 34f));
-                Lay(card.About, 27, new Vector2(0f, -220f), new Vector2(370f, 200f));
+                // Desktop: the icon sits between the rarity tag and the name (phones show no icon: their cards have no room).
+                Lay(card.Tag, 20, new Vector2(0f, -18f), new Vector2(380f, 30f));
+                Place(card.Icon.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -48f), new Vector2(96f, 96f));
+                Lay(card.Name, 38, new Vector2(0f, -146f), new Vector2(390f, 56f));
+                Lay(card.Rank, 24, new Vector2(0f, -206f), new Vector2(380f, 34f));
+                Lay(card.About, 26, new Vector2(0f, -246f), new Vector2(370f, 150f));
                 Lay(card.Key, 30, new Vector2(0f, 60f), new Vector2(380f, 40f));
             }
         }
@@ -388,7 +414,7 @@ public class LevelUpScreen : MonoBehaviour {
         card.Go = new GameObject("Card " + (index + 1));
         card.Go.transform.SetParent(parent, false);
         card.Frame = card.Go.AddComponent<Image>();
-        UiSkin.Round(card.Frame);
+        UiSkin.Framed(card.Frame);
         Place(card.Frame.rectTransform, new Vector2(0.5f, 0.5f), new Vector2((index - 1) * 470f, 0f), new Vector2(430f, 500f));
         var button = card.Go.AddComponent<Button>();
         button.targetGraphic = card.Frame;
@@ -410,6 +436,13 @@ public class LevelUpScreen : MonoBehaviour {
         faceRect.anchorMax = Vector2.one;
         faceRect.offsetMin = new Vector2(6f, 6f);
         faceRect.offsetMax = new Vector2(-6f, -6f);
+
+        var iconGo = new GameObject("Icon");
+        iconGo.transform.SetParent(faceGo.transform, false);
+        card.Icon = iconGo.AddComponent<Image>();
+        card.Icon.raycastTarget = false;
+        card.Icon.enabled = false;
+        Place(card.Icon.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -48f), new Vector2(96f, 96f));
 
         card.Tag = MakeText(faceGo.transform, "", 20, FontStyle.Bold, TextAnchor.UpperCenter);
         Place(card.Tag.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -22f), new Vector2(380f, 30f));

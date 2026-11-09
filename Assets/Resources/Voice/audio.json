@@ -10,6 +10,62 @@
    "model": "eleven_v4",
    "stability": 0.35,
    "style": 0.6
+  },
+  {
+   "name": "slice",
+   "voiceId": "hv_heroine",
+   "provider": "open",
+   "model": "qwen3-tts",
+   "description": "Hawkes Gen audio.dialogue-open, voice hv_heroine"
+  },
+  {
+   "name": "narrator",
+   "voiceId": "hv_narrator_warm",
+   "provider": "open",
+   "model": "qwen3-tts",
+   "description": "Hawkes Gen audio.dialogue-open, voice hv_narrator_warm"
+  },
+  {
+   "name": "yobot",
+   "voiceId": "hv_kid",
+   "provider": "open",
+   "model": "qwen3-tts",
+   "description": "Hawkes Gen audio.dialogue-open, voice hv_kid"
+  },
+  {
+   "name": "courier",
+   "voiceId": "hv_young_hero",
+   "provider": "open",
+   "model": "qwen3-tts",
+   "description": "Hawkes Gen audio.dialogue-open, voice hv_young_hero"
+  },
+  {
+   "name": "tick",
+   "voiceId": "gv_33b72a92792babf7",
+   "provider": "open",
+   "model": "qwen3-tts",
+   "description": "Hawkes Gen audio.dialogue-open, designed voice (job for tick), lodger"
+  },
+  {
+   "name": "brim",
+   "voiceId": "gv_bf68bef62493073f",
+   "provider": "open",
+   "model": "qwen3-tts",
+   "description": "Hawkes Gen audio.dialogue-open, designed voice (job for brim), lodger"
+  },
+  {
+   "name": "spare",
+   "voiceId": "gv_c4fa2e85793eb865",
+   "provider": "open",
+   "model": "qwen3-tts",
+   "description": "Hawkes Gen audio.dialogue-open, designed voice (job for spare), lodger"
+  },
+  {
+   "name": "chime",
+   "voiceId": "gv_632759f0093f7eae",
+   "provider": "open",
+   "model": "qwen3-tts",
+   "description": "Hawkes Gen audio.dialogue-open, designed voice (job for chime), lodger"
   }
  ],
  "lines": [
@@ -1032,7 +1088,811 @@
    "voice": "wallit",
    "text": "Where do I sign for this bat?",
    "asset": "a_5d2a955a5fd61637"
+  },
+  {
+   "id": "wallit_all_those_forms_blank_now",
+   "voice": "wallit",
+   "text": "All those forms. Blank now.",
+   "asset": "a_3933d5472c5552e2"
+  },
+  {
+   "id": "wallit_and_you",
+   "voice": "wallit",
+   "text": "And you?",
+   "asset": "a_182d65d1f691d138"
+  },
+  {
+   "id": "wallit_anything_yourself",
+   "voice": "wallit",
+   "text": "Anything. Yourself.",
+   "asset": "a_a5aa8635b1393667"
+  },
+  {
+   "id": "wallit_belt_s_quiet_i_miss_the_noise_cheap",
+   "voice": "wallit",
+   "text": "Belt's quiet. I miss the noise. Cheap.",
+   "asset": "a_1a0335520541a6fa"
+  },
+  {
+   "id": "wallit_dead_letters_nobody_s_coming_for_these",
+   "voice": "wallit",
+   "text": "Dead letters. Nobody's coming for these.",
+   "asset": "a_cacf680307706ad5"
+  },
+  {
+   "id": "wallit_finders_keepers_quietly",
+   "voice": "wallit",
+   "text": "Finders keepers. Quietly.",
+   "asset": "a_db6ea907adbe0a4f"
+  },
+  {
+   "id": "wallit_foreman_said_not_finished_neither_am_i",
+   "voice": "wallit",
+   "text": "Foreman said \"not finished.\" Neither am I.",
+   "asset": "a_770ddc3b215f50bb"
+  },
+  {
+   "id": "wallit_forty_forty_one_somebody_short_changed_me",
+   "voice": "wallit",
+   "text": "Forty. Forty-one. Somebody short-changed me.",
+   "asset": "a_66367ce99c45e5ff"
+  },
+  {
+   "id": "wallit_i_m_standing_here_aren_t_i_exact_change_says_yes",
+   "voice": "wallit",
+   "text": "I'm standing here, aren't I. Exact change says yes.",
+   "asset": "a_e566442a8f9b2c15"
+  },
+  {
+   "id": "wallit_in_case_somebody_needed_you",
+   "voice": "wallit",
+   "text": "In case somebody needed you.",
+   "asset": "a_5a0e55603cd1015d"
+  },
+  {
+   "id": "wallit_is_that_a_mailbox_or_a_bad_loan",
+   "voice": "wallit",
+   "text": "Is that a mailbox or a bad loan?",
+   "asset": "a_3b880d479f6b5814"
+  },
+  {
+   "id": "wallit_it_s_filed_i_can_stand_here_free",
+   "voice": "wallit",
+   "text": "It's filed. I can stand here free.",
+   "asset": "a_dba2fcb9135145c8"
+  },
+  {
+   "id": "wallit_item_one_wallet_leather_that_s_me_where_s_my_cut",
+   "voice": "wallit",
+   "text": "Item one: wallet, leather. That's me. Where's my cut?",
+   "asset": "a_21782c1f95fd96bc"
+  },
+  {
+   "id": "wallit_last_time_this_notice_went_in_my_ledger_this_time_i_read_the_whole_thing_first",
+   "voice": "wallit",
+   "text": "Last time this notice went in my ledger. This time I read the whole thing first.",
+   "asset": "a_20d9acc078190ec9"
+  },
+  {
+   "id": "wallit_nine_stones_looks_like_padding_on_the_bill",
+   "voice": "wallit",
+   "text": "Nine stones. Looks like padding on the bill.",
+   "asset": "a_47065cd656d744ce"
+  },
+  {
+   "id": "wallit_number_on_the_wall_mine",
+   "voice": "wallit",
+   "text": "Number on the wall. Mine?",
+   "asset": "a_11dede4be1c2898c"
+  },
+  {
+   "id": "wallit_one_door_in_my_hand_one_stamp_i_ll_try_it_again",
+   "voice": "wallit",
+   "text": "One door, in my hand. One stamp. I'll try it again.",
+   "asset": "a_60a2e5c5ea6f49d0"
+  },
+  {
+   "id": "wallit_one_door_in_my_name_i_still_hear_it_close",
+   "voice": "wallit",
+   "text": "One door in my name. I still hear it close.",
+   "asset": "a_42d580b26ecc598b"
+  },
+  {
+   "id": "wallit_one_notice_down_billing_it",
+   "voice": "wallit",
+   "text": "One notice down. Billing it.",
+   "asset": "a_d35c9382d0365dc6"
+  },
+  {
+   "id": "wallit_pages_read_doors_filed_last_time_i_read_along_louder_this_time",
+   "voice": "wallit",
+   "text": "Pages read, doors filed. Last time I read along. Louder this time.",
+   "asset": "a_f86a00faf73b2fad"
+  },
+  {
+   "id": "wallit_quiet_is_cheap",
+   "voice": "wallit",
+   "text": "Quiet is cheap.",
+   "asset": "a_fe13f548d9c6898e"
+  },
+  {
+   "id": "wallit_receipt_proof_i_was_here",
+   "voice": "wallit",
+   "text": "Receipt. Proof I was here.",
+   "asset": "a_64402d75099af05d"
+  },
+  {
+   "id": "wallit_registrar_read_slow_i_read_faster",
+   "voice": "wallit",
+   "text": "Registrar read slow. I read faster.",
+   "asset": "a_1e322aa7b0e8b9dd"
+  },
+  {
+   "id": "wallit_slice_straight_answer_who_stamped_me",
+   "voice": "wallit",
+   "text": "Slice. Straight answer. Who stamped me?",
+   "asset": "a_9394056e276db182"
+  },
+  {
+   "id": "wallit_slow_is_never_cheaper_ask_my_bill",
+   "voice": "wallit",
+   "text": "Slow is never cheaper. Ask my bill.",
+   "asset": "a_3a3a00be99e2f3e7"
+  },
+  {
+   "id": "wallit_somebody_at_the_server_s_desk_kept_my_name_mine_only",
+   "voice": "wallit",
+   "text": "Somebody at the Server's desk kept my name. Mine only.",
+   "asset": "a_f1cef052f1f38c5c"
+  },
+  {
+   "id": "wallit_sounds_bad_for_business",
+   "voice": "wallit",
+   "text": "Sounds bad for business.",
+   "asset": "a_b11d5bdf4f64bdaa"
+  },
+  {
+   "id": "wallit_standing_in_your_ring_rent_s_due",
+   "voice": "wallit",
+   "text": "Standing in your ring. Rent's due.",
+   "asset": "a_dff0d196102f0825"
+  },
+  {
+   "id": "wallit_take_it_i_ll_bill_the_department",
+   "voice": "wallit",
+   "text": "Take it. I'll bill the Department.",
+   "asset": "a_e91e8808c4a49ffc"
+  },
+  {
+   "id": "wallit_tap_tap_hear_that_hollow_like_a_bank_at_closing",
+   "voice": "wallit",
+   "text": "Tap. Tap. Hear that? Hollow. Like a bank at closing.",
+   "asset": "a_2b16cd6d915464da"
+  },
+  {
+   "id": "wallit_the_gate_stamped_me_back_interest_owed",
+   "voice": "wallit",
+   "text": "The gate stamped me back. Interest owed.",
+   "asset": "a_9db9c0c3162a6eef"
+  },
+  {
+   "id": "wallit_the_server_s_paper_is_already_pinned_in_the_hub_refused_in_full",
+   "voice": "wallit",
+   "text": "The Server's paper is already pinned in the hub. Refused, in full.",
+   "asset": "a_120e6a08d12ac13f"
+  },
+  {
+   "id": "wallit_the_server_still_holds_out_its_paper",
+   "voice": "wallit",
+   "text": "The Server still holds out its paper.",
+   "asset": "a_3d0b78527ab88a8d"
+  },
+  {
+   "id": "wallit_then_i_ll_start_the_tab_pay_up_eventually",
+   "voice": "wallit",
+   "text": "Then I'll start the tab. Pay up, eventually.",
+   "asset": "a_b18592d1b418a31f"
+  },
+  {
+   "id": "wallit_then_you_re_due_a_head",
+   "voice": "wallit",
+   "text": "Then you're due a head.",
+   "asset": "a_c0c911326867db49"
+  },
+  {
+   "id": "wallit_three_refusals_clean_ones",
+   "voice": "wallit",
+   "text": "Three refusals. Clean ones.",
+   "asset": "a_ad8013f1e6197fe1"
+  },
+  {
+   "id": "wallit_two_doors_heavier_bill_bigger_crew_keep_up",
+   "voice": "wallit",
+   "text": "Two doors. Heavier bill, bigger crew. Keep up.",
+   "asset": "a_94d89c228cfb506e"
+  },
+  {
+   "id": "wallit_what_did_it_ring_for",
+   "voice": "wallit",
+   "text": "What did it ring for?",
+   "asset": "a_f641f674c6c71960"
+  },
+  {
+   "id": "wallit_who_pays_you_for_it",
+   "voice": "wallit",
+   "text": "Who pays you for it?",
+   "asset": "a_3b9611bab1abe0f0"
+  },
+  {
+   "id": "wallit_you_held_the_ring_while_i_was_out",
+   "voice": "wallit",
+   "text": "You held the ring while I was out.",
+   "asset": "a_ceb6d16d6fd12e3c"
+  },
+  {
+   "id": "wallit_you_re_not_afraid_of_the_circle",
+   "voice": "wallit",
+   "text": "You're not afraid of the circle?",
+   "asset": "a_259c815e97f2cb77"
+  },
+  {
+   "id": "wallit_you_ve_got_no_head_how_do_you_hear",
+   "voice": "wallit",
+   "text": "You've got no head. How do you hear?",
+   "asset": "a_2c60e8890c55f11c"
+  },
+  {
+   "id": "wallit_you_were_in_the_hub",
+   "voice": "wallit",
+   "text": "You were in the hub.",
+   "asset": "a_cbdaa1e8492ab268"
+  },
+  {
+   "id": "wallit_zero_delivered_six_returned_somebody_s_cooking_the_ledger",
+   "voice": "wallit",
+   "text": "Zero delivered. Six returned. Somebody's cooking the ledger.",
+   "asset": "a_eb6c5b8ae92fe419"
+  },
+  {
+   "id": "slice_always_don_t_thank_me",
+   "voice": "slice",
+   "text": "Always. Don't thank me.",
+   "asset": "a_f00cb0eba0b0b172"
+  },
+  {
+   "id": "slice_behind_you",
+   "voice": "slice",
+   "text": "Behind you.",
+   "asset": "a_ff94af54c2c890ed"
+  },
+  {
+   "id": "slice_blank_is_a_fresh_account",
+   "voice": "slice",
+   "text": "Blank is a fresh account.",
+   "asset": "a_dbdd65426ed1deaa"
+  },
+  {
+   "id": "slice_clean_stand_as_long_as_you_like",
+   "voice": "slice",
+   "text": "Clean. Stand as long as you like.",
+   "asset": "a_484fe3bc63ba45bc"
+  },
+  {
+   "id": "slice_closer",
+   "voice": "slice",
+   "text": "Closer.",
+   "asset": "a_fece4aba7734d50d"
+  },
+  {
+   "id": "slice_counted_four_would_be_rude",
+   "voice": "slice",
+   "text": "Counted. Four would be rude.",
+   "asset": "a_515392a80eaba9ae"
+  },
+  {
+   "id": "slice_door_s_yours_stay_clear_of_the_lamp",
+   "voice": "slice",
+   "text": "Door's yours. Stay clear of the lamp.",
+   "asset": "a_90f93eac3f31710b"
+  },
+  {
+   "id": "slice_every_slip_on_the_wall_was_pinned_the_floor_sends_fewer_now",
+   "voice": "slice",
+   "text": "Every slip on the wall was pinned. The Floor sends fewer now.",
+   "asset": "a_3620394bb272c9c2"
+  },
+  {
+   "id": "slice_fine_keep_swinging",
+   "voice": "slice",
+   "text": "Fine. Keep swinging.",
+   "asset": "a_8b6de7f319ff2f01"
+  },
+  {
+   "id": "slice_good_keep_swinging",
+   "voice": "slice",
+   "text": "Good. Keep swinging.",
+   "asset": "a_146b4d852c60bb43"
+  },
+  {
+   "id": "slice_i_m_armed",
+   "voice": "slice",
+   "text": "I'm armed.",
+   "asset": "a_7efe1a324d16fe72"
+  },
+  {
+   "id": "slice_last_time_you_signed_for_the_notice_two_names_one_pen_do_it_again",
+   "voice": "slice",
+   "text": "Last time you signed for the notice. Two names, one pen. Do it again.",
+   "asset": "a_2277359535171131"
+  },
+  {
+   "id": "slice_let_it_ring_is_full",
+   "voice": "slice",
+   "text": "Let it. Ring is full.",
+   "asset": "a_7eb30f90372e890c"
+  },
+  {
+   "id": "slice_look_west_the_trail_lost_things_lying_where_they_landed",
+   "voice": "slice",
+   "text": "Look west. The trail. Lost things, lying where they landed.",
+   "asset": "a_ddffb15b35989657"
+  },
+  {
+   "id": "slice_out_north_east",
+   "voice": "slice",
+   "text": "Out. North-east.",
+   "asset": "a_f8eead547533a1f7"
+  },
+  {
+   "id": "slice_paid_in_kind_stay",
+   "voice": "slice",
+   "text": "Paid. In kind. Stay.",
+   "asset": "a_7f6e9f43bb163fc8"
+  },
+  {
+   "id": "slice_quiet_is_rent_take_it",
+   "voice": "slice",
+   "text": "Quiet is rent. Take it.",
+   "asset": "a_7e7ca9c93564fba8"
+  },
+  {
+   "id": "slice_sender_unknown_billing_void",
+   "voice": "slice",
+   "text": "Sender unknown. Billing void.",
+   "asset": "a_f5846864aa5369d3"
+  },
+  {
+   "id": "slice_take_them",
+   "voice": "slice",
+   "text": "Take them.",
+   "asset": "a_19d05b44dc2416a7"
+  },
+  {
+   "id": "slice_the_door_never_shut_it_will_stay_open",
+   "voice": "slice",
+   "text": "The door never shut. It will stay open.",
+   "asset": "a_49e096f7aaeadb1e"
+  },
+  {
+   "id": "slice_the_hollow_knows_our_door_somebody_will_knock",
+   "voice": "slice",
+   "text": "The Hollow knows our door. Somebody will knock.",
+   "asset": "a_35077918bf964cf8"
+  },
+  {
+   "id": "slice_the_registrar_reads_one_name_aloud_last_time_it_was_yours_alone",
+   "voice": "slice",
+   "text": "The Registrar reads one name aloud. Last time it was yours alone.",
+   "asset": "a_64709d86963434e9"
+  },
+  {
+   "id": "slice_the_server_kept_two_names_last_time_it_will_ask_for_two",
+   "voice": "slice",
+   "text": "The Server kept two names last time. It will ask for two.",
+   "asset": "a_b63898c6301910e1"
+  },
+  {
+   "id": "slice_they_can_t_hear_you",
+   "voice": "slice",
+   "text": "They can't hear you.",
+   "asset": "a_1915c5f3c6efb75c"
+  },
+  {
+   "id": "slice_two_doors_wallit_s_is_next_to_mine_knock_on_it",
+   "voice": "slice",
+   "text": "Two doors. Wallit's is next to mine. Knock on it.",
+   "asset": "a_cfb998d9029246f8"
+  },
+  {
+   "id": "slice_two_numbers_side_by_side_same_pen_same_line",
+   "voice": "slice",
+   "text": "Two numbers, side by side. Same pen. Same line.",
+   "asset": "a_8a5172d149e1e5b4"
+  },
+  {
+   "id": "slice_wallit",
+   "voice": "slice",
+   "text": "Wallit.",
+   "asset": "a_2926c3c645e51151"
+  },
+  {
+   "id": "slice_you_did_don_t_boast",
+   "voice": "slice",
+   "text": "You did. Don't boast.",
+   "asset": "a_804d991d01ea7eb4"
+  },
+  {
+   "id": "slice_you_filed_the_ledger_alone_the_foreman_reads_it_back_differently_now",
+   "voice": "slice",
+   "text": "You filed the ledger alone. The Foreman reads it back differently now.",
+   "asset": "a_e2467ffa866e7c2a"
+  },
+  {
+   "id": "slice_yours_keep_the_receipt",
+   "voice": "slice",
+   "text": "Yours. Keep the receipt.",
+   "asset": "a_2db023f5ce19ddff"
+  },
+  {
+   "id": "narrator_a_gummed_label_on_brim_s_hook_reads_brim_in_brim_s_own_slow_hand",
+   "voice": "narrator",
+   "text": "A gummed label on Brim's hook reads BRIM, in Brim's own slow hand.",
+   "asset": "a_4827050b1d2c8b1b"
+  },
+  {
+   "id": "narrator_brim_hangs_on_the_wall_by_the_door_number_band_on_left_of_the_desk_it_has_an_address",
+   "voice": "narrator",
+   "text": "Brim hangs on the wall by the door number, band on, left of the desk. It has an address.",
+   "asset": "a_e56b9474798c18a4"
+  },
+  {
+   "id": "narrator_chime_rings_once_for_the_right_address_it_is_the_quietest_bell_in_the_hollow",
+   "voice": "narrator",
+   "text": "Chime rings once for the right address. It is the quietest bell in the Hollow.",
+   "asset": "a_e64d19bf39156bab"
+  },
+  {
+   "id": "narrator_spare_chirps_once_properly_and_the_hollow_answers",
+   "voice": "narrator",
+   "text": "Spare chirps once, properly, and the Hollow answers.",
+   "asset": "a_453c5d2e8a9361b1"
+  },
+  {
+   "id": "narrator_spare_is_in_the_doorway_of_the_ring_lid_on_straight_cheering_at_nothing_in_particular",
+   "voice": "narrator",
+   "text": "Spare is in the doorway of the ring, lid on straight, cheering at nothing in particular.",
+   "asset": "a_6efa481e269cde0e"
+  },
+  {
+   "id": "narrator_tick_is_wound_nobody_had_to_be_the_department_to_do_it",
+   "voice": "narrator",
+   "text": "Tick is wound. Nobody had to be the Department to do it.",
+   "asset": "a_58c4d6bc1eb4f873"
+  },
+  {
+   "id": "narrator_tick_keeps_the_hour_every_pin_where_it_should_be",
+   "voice": "narrator",
+   "text": "Tick keeps the hour. Every pin where it should be.",
+   "asset": "a_3762dd96f700be1b"
+  },
+  {
+   "id": "narrator_twelve_slips_on_the_office_wall_every_one_pinned_the_department_files_itself",
+   "voice": "narrator",
+   "text": "Twelve slips on the office wall, every one pinned. The Department files itself.",
+   "asset": "a_704492eabf05ab9a"
+  },
+  {
+   "id": "yobot_lids_on_the_door_opens_for_us_this_time",
+   "voice": "yobot",
+   "text": "Lids on! The door opens for us this time!",
+   "asset": "a_b9932da40964f846"
+  },
+  {
+   "id": "yobot_the_ledger_knows_us_uploading_a_door",
+   "voice": "yobot",
+   "text": "The ledger knows us! Uploading... a door!",
+   "asset": "a_d4f1d7d7cb71fb05"
+  },
+  {
+   "id": "courier_second_notice_this_address_is_still_unknown",
+   "voice": "courier",
+   "text": "Second notice! This address is still unknown.",
+   "asset": "a_551ba3a2a0765c05"
+  },
+  {
+   "id": "courier_special_delivery_notice_of_striking",
+   "voice": "courier",
+   "text": "Special delivery! Notice of striking!",
+   "asset": "a_9bac00c7eaa71c85"
+  },
+  {
+   "id": "tick_tick_notice_delivered_on_the_hour_as_written_slice_stood_good_hour",
+   "voice": "tick",
+   "text": "Tick. Notice delivered on the hour, as written. Slice stood. Good hour.",
+   "asset": "a_b30b2ccdbb3bb91a"
+  },
+  {
+   "id": "tick_tock_the_gate_stamped_you_back_doors_keep_time_too_yours_is_still_open",
+   "voice": "tick",
+   "text": "Tock. The gate stamped you back. Doors keep time too. Yours is still open.",
+   "asset": "a_b4de5d69ea674e76"
+  },
+  {
+   "id": "tick_slow_belt_red_lamp_someone_s_hour_was_stopped_there_mine_nearly_was",
+   "voice": "tick",
+   "text": "Slow belt, red lamp. Someone's hour was stopped there. Mine nearly was.",
+   "asset": "a_46e7b3301b4abcd1"
+  },
+  {
+   "id": "tick_three_refusals_i_counted_each_one_a_paper_refused_thrice_is_still_a_paper_mind_it",
+   "voice": "tick",
+   "text": "Three refusals. I counted each one. A paper refused thrice is still a paper. Mind it.",
+   "asset": "a_bdc0fd08a7f77356"
+  },
+  {
+   "id": "tick_the_order_has_no_signature_nobody_was_ever_keeping_its_time_strange_to_know_that",
+   "voice": "tick",
+   "text": "The order has no signature. Nobody was ever keeping its time. Strange, to know that.",
+   "asset": "a_297a24c624a05ed2"
+  },
+  {
+   "id": "tick_it_s_late_and_it_s_filed_the_hour_s_yours_now_wallit_spend_it",
+   "voice": "tick",
+   "text": "It's late and it's filed. The hour's yours now, Wallit. Spend it.",
+   "asset": "a_e4c3feefb72e483e"
+  },
+  {
+   "id": "tick_nobody_has_wound_me_since_the_department_stopped_i_keep_the_hour_out_of_habit",
+   "voice": "tick",
+   "text": "Nobody has wound me since the Department stopped. I keep the hour out of habit.",
+   "asset": "a_1ad62593edc148b1"
+  },
+  {
+   "id": "tick_nobody_that_is_the_habit",
+   "voice": "tick",
+   "text": "Nobody. That is the habit.",
+   "asset": "a_23cbd46b6dd08c04"
+  },
+  {
+   "id": "tick_the_belt_had_a_clock_too_it_ran_slow_on_purpose_slow_is_cheaper",
+   "voice": "tick",
+   "text": "The belt had a clock too. It ran slow on purpose. Slow is cheaper.",
+   "asset": "a_01dce493e68ff817"
+  },
+  {
+   "id": "tick_then_you_and_the_foreman_disagree_i_side_with_the_bill",
+   "voice": "tick",
+   "text": "Then you and the foreman disagree. I side with the bill.",
+   "asset": "a_f6734f23edc69e15"
+  },
+  {
+   "id": "tick_blank_forms_all_of_them_that_is_a_quiet_kind_of_hour_nobody_owes_anything_in_it",
+   "voice": "tick",
+   "text": "Blank forms, all of them. That is a quiet kind of hour. Nobody owes anything in it.",
+   "asset": "a_3660ac491001c127"
+  },
+  {
+   "id": "tick_it_sounds_like_rest_i_would_like_some_is_that_allowed",
+   "voice": "tick",
+   "text": "It sounds like rest. I would like some. Is that allowed?",
+   "asset": "a_3a0f9abe2e0e5e05"
+  },
+  {
+   "id": "brim_did_you_ever_have_a_head_i_had_one_once_i_miss_the_weight",
+   "voice": "brim",
+   "text": "Did you ever have a head? I had one once. I miss the weight.",
+   "asset": "a_e5369a8c29392592"
+  },
+  {
+   "id": "brim_a_postmark_half_yours_torn_half_a_name_is_a_better_start_than_i_had",
+   "voice": "brim",
+   "text": "A postmark, half yours, torn. Half a name is a better start than I had.",
+   "asset": "a_98c3afe86df86e0f"
+  },
+  {
+   "id": "brim_hats_on_that_belt_dozens_i_looked_for_mine_i_didn_t_look_away",
+   "voice": "brim",
+   "text": "Hats on that belt. Dozens. I looked for mine. I didn't look away.",
+   "asset": "a_41947091465a209f"
+  },
+  {
+   "id": "brim_the_spiders_bow_did_you_see_politely_i_d_tip_my_brim_if_i_could_tip",
+   "voice": "brim",
+   "text": "The spiders bow, did you see? Politely. I'd tip my brim, if I could tip.",
+   "asset": "a_9204bb0712db0f86"
+  },
+  {
+   "id": "brim_denied_good_stamp_the_forms_went_blank_and_blank_is_a_fresh_start",
+   "voice": "brim",
+   "text": "DENIED. Good stamp. The forms went blank, and blank is a fresh start.",
+   "asset": "a_bcf94604f7f37244"
+  },
+  {
+   "id": "brim_filed_i_have_an_address_now_brim_the_circle_left_of_the_desk_grand",
+   "voice": "brim",
+   "text": "Filed. I have an address now: Brim, the circle, left of the desk. Grand.",
+   "asset": "a_be35158c27be7e1d"
+  },
+  {
+   "id": "brim_the_gate_rang_when_you_came_back_a_hat_knows_a_door_when_it_hears_one",
+   "voice": "brim",
+   "text": "The gate rang when you came back. A hat knows a door when it hears one.",
+   "asset": "a_db5228f57210f74c"
+  },
+  {
+   "id": "brim_through_the_brim_wallit_everything_arrives_through_the_brim",
+   "voice": "brim",
+   "text": "Through the brim, Wallit. Everything arrives through the brim.",
+   "asset": "a_47c95562a4fff9c0"
+  },
+  {
+   "id": "brim_three_refusals_on_the_long_walk_i_counted_them_from_here",
+   "voice": "brim",
+   "text": "Three refusals on the Long Walk. I counted them from here.",
+   "asset": "a_b76b5bd29b8ce773"
+  },
+  {
+   "id": "brim_hats_go_where_heads_go_wallit_in_spirit_i_had_your_head_in_mind",
+   "voice": "brim",
+   "text": "Hats go where heads go, Wallit. In spirit. I had your head in mind.",
+   "asset": "a_64a8050a862e7ab5"
+  },
+  {
+   "id": "brim_the_pages_went_blank_and_i_felt_lighter_i_think_i_was_a_form_once_a_form_for_a_head",
+   "voice": "brim",
+   "text": "The pages went blank and I felt lighter. I think I was a form once. A form for a head.",
+   "asset": "a_82a47233a1117dc2"
+  },
+  {
+   "id": "brim_i_would_settle_for_a_wall_a_wall_with_a_hook_an_address_wallit",
+   "voice": "brim",
+   "text": "I would settle for a wall. A wall with a hook. An address, Wallit.",
+   "asset": "a_5c0346b78a1ac2ed"
+  },
+  {
+   "id": "spare_hello_uploading_victory_i_am_mostly_uploading_chirp",
+   "voice": "spare",
+   "text": "Hello! Uploading victory! I am... mostly uploading! Chirp!",
+   "asset": "a_5600f136577c40e3"
+  },
+  {
+   "id": "spare_hello_plated_alpha_stamped_invalid_sorry_i_was_told_to_cheer",
+   "voice": "spare",
+   "text": "Hello! Plated Alpha, stamped INVALID! Sorry! I was told to cheer!",
+   "asset": "a_9cfc74e066879b9c"
+  },
+  {
+   "id": "spare_hello_hooks_i_know_hooks_i_was_on_one_not_finished_now_free",
+   "voice": "spare",
+   "text": "Hello! Hooks! I know hooks! I was on one! Not finished, now free!",
+   "asset": "a_2ef913c12aba9794"
+  },
+  {
+   "id": "spare_chirp_spiders_en_route_en_route_to_i_have_no_route_i_live_here",
+   "voice": "spare",
+   "text": "Chirp! Spiders en route! En route to... I have no route. I live here!",
+   "asset": "a_5879f57152b8a454"
+  },
+  {
+   "id": "spare_hello_every_page_the_same_i_read_them_all_wallit_read_faster_chirp",
+   "voice": "spare",
+   "text": "Hello! Every page the same! I read them all! Wallit read faster! Chirp!",
+   "asset": "a_f72a43104498df12"
+  },
+  {
+   "id": "spare_hello_filed_uploading_nothing_i_m_just_here_chirp_chirp",
+   "voice": "spare",
+   "text": "Hello! Filed! Uploading... nothing! I'm just here! Chirp chirp!",
+   "asset": "a_102b84eb9e7ca17d"
+  },
+  {
+   "id": "spare_chirp_i_was_half_a_yo_bot_on_a_hook_now_i_am_half_a_yo_bot_in_a_nice_room",
+   "voice": "spare",
+   "text": "Chirp! I was half a Yo Bot on a hook. Now I am half a Yo Bot in a nice room!",
+   "asset": "a_e92d14f950cc6cfe"
+  },
+  {
+   "id": "spare_slice_looked_at_me_then_she_looked_away_that_is_a_welcome_chirp",
+   "voice": "spare",
+   "text": "Slice looked at me. Then she looked away. That is a welcome! Chirp!",
+   "asset": "a_c0ce24c13938b2d9"
+  },
+  {
+   "id": "spare_they_called_me_a_spare_kept_in_case_chirp_in_case_of_what",
+   "voice": "spare",
+   "text": "They called me a spare. Kept in case. Chirp... in case of what?",
+   "asset": "a_8122849df2a28f3b"
+  },
+  {
+   "id": "spare_somebody_does",
+   "voice": "spare",
+   "text": "Somebody does?",
+   "asset": "a_f91af91db4b6ce0a"
+  },
+  {
+   "id": "spare_it_s_filed_the_order_is_gone_what_do_i_cheer_for_now",
+   "voice": "spare",
+   "text": "It's filed! The order is gone! What do I cheer for now?",
+   "asset": "a_53209fdd3d5dfea3"
+  },
+  {
+   "id": "spare_uploading_me_chirp_oh_that_one_worked",
+   "voice": "spare",
+   "text": "Uploading... me! Chirp! ...Oh. That one worked.",
+   "asset": "a_b1eac4941006b94a"
+  },
+  {
+   "id": "chime_ding_notice_returned_tip_owed_i_ve_a_thing_that_wants_fetching",
+   "voice": "chime",
+   "text": "Ding. Notice returned, tip owed. I've a thing that wants fetching.",
+   "asset": "a_628695cd2627e0b6"
+  },
+  {
+   "id": "chime_ding_the_gate_i_heard_it_ring_from_here_another_errand_if_you_ll_carry_it",
+   "voice": "chime",
+   "text": "Ding. The gate. I heard it ring from here. Another errand, if you'll carry it.",
+   "asset": "a_b3bd81bb5ef529b2"
+  },
+  {
+   "id": "chime_ding_the_belt_carried_a_bell_like_me_once_fetch_this_and_i_ll_pay",
+   "voice": "chime",
+   "text": "Ding. The belt carried a bell like me once. Fetch this and I'll pay.",
+   "asset": "a_c5cb3b1a2df80319"
+  },
+  {
+   "id": "chime_ding_three_refusals_and_i_rang_for_each_one_more_errand_it_pays",
+   "voice": "chime",
+   "text": "Ding. Three refusals, and I rang for each. One more errand. It pays.",
+   "asset": "a_382ec1a4a0f561c5"
+  },
+  {
+   "id": "chime_ding_blank_forms_everyone_lost_something_in_those_fetch_one_back",
+   "voice": "chime",
+   "text": "Ding. Blank forms. Everyone lost something in those. Fetch one back.",
+   "asset": "a_594eaa4ce3eaa7d9"
+  },
+  {
+   "id": "chime_ding_filed_last_errand_it_pays_in_full_as_the_books_go",
+   "voice": "chime",
+   "text": "Ding. Filed. Last errand. It pays in full, as the books go.",
+   "asset": "a_f5c7c647397ae745"
+  },
+  {
+   "id": "chime_ding_i_ring_when_a_thing_is_lost_it_rang_all_through_your_chapter",
+   "voice": "chime",
+   "text": "Ding. I ring when a thing is lost. It rang all through your chapter.",
+   "asset": "a_070aac7a531a0167"
+  },
+  {
+   "id": "chime_everything_ding_it_is_a_loud_room_the_world",
+   "voice": "chime",
+   "text": "Everything. Ding. It is a loud room, the world.",
+   "asset": "a_14c4b6baa17440b5"
+  },
+  {
+   "id": "chime_ding_the_server_s_bell_was_mine_once_a_cousin_it_rang_for_papers",
+   "voice": "chime",
+   "text": "Ding. The server's bell was mine once. A cousin. It rang for papers.",
+   "asset": "a_4e92de511ea0018a"
+  },
+  {
+   "id": "chime_i_ring_for_what_is_missing_ding_which_is_better_i_think",
+   "voice": "chime",
+   "text": "I ring for what is missing. Ding. Which is better, I think.",
+   "asset": "a_379d8c8625d1a9c3"
+  },
+  {
+   "id": "chime_ding_all_six_chapters_all_six_things_back_the_room_is_quieter_now",
+   "voice": "chime",
+   "text": "Ding. All six chapters, all six things back. The room is quieter now.",
+   "asset": "a_1ec86005166d740f"
+  },
+  {
+   "id": "chime_quiet_is_cheap_and_i_rang_for_it_anyway_ding_thank_you_wallit",
+   "voice": "chime",
+   "text": "Quiet is cheap, and I rang for it anyway. Ding. Thank you, Wallit.",
+   "asset": "a_fdc25f742e93110e"
   }
  ],
- "note": "Made through Hawkes Gen audio.voice (project theplacedepartment). Ids match WallitVoice.LineId. Slice's slice_<line>.mp3 files are not made yet and stay optional."
+ "note": "Made through Hawkes Gen audio.voice (project theplacedepartment). Ids match WallitVoice.LineId. Slice, narrator, Yo Bot and Courier lines (pass 2) are mono 64 kbps re-encodes of Gen audio.dialogue-open stems."
 }

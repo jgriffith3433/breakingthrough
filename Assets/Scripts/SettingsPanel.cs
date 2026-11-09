@@ -47,6 +47,8 @@ public class SettingsPanel : MonoBehaviour {
     bool filling;
     float lastBlip;
     int laidStamp = -1;
+    Rect laidSafe;
+    public RectTransform Panel { get { return panel; } }
 
     public static void Open(System.Action closed) {
         if (instance == null) {
@@ -98,7 +100,7 @@ public class SettingsPanel : MonoBehaviour {
         }
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-        if (laidStamp != UiFit.Stamp) {
+        if (laidStamp != UiFit.Stamp || Screen.safeArea != laidSafe) {
             Layout();
         }
         if (MenuNav.Back) {
@@ -273,11 +275,16 @@ public class SettingsPanel : MonoBehaviour {
     // Every layout uses the same panel; a phone gets it scaled to fit inside a 20-unit margin.
     void Layout() {
         laidStamp = UiFit.Stamp;
+        laidSafe = Screen.safeArea;
         UiFit.Apply(scaler, 0.5f);
         Vector2 size = UiFit.Size;
         float scale = 1f;
         if (UiFit.Compact) {
-            scale = Mathf.Min(1f, (size.x - 40f) / PanelWidth, (size.y - 40f) / PanelHeight);
+            Vector4 safe = UiFit.SafeInsets();
+            scale = Mathf.Min(1f, (size.x - 40f - safe.x - safe.y) / PanelWidth, (size.y - 40f - safe.z - safe.w) / PanelHeight);
+            panel.anchoredPosition = new Vector2((safe.x - safe.y) * 0.5f, (safe.w - safe.z) * 0.5f);
+        } else {
+            panel.anchoredPosition = Vector2.zero;
         }
         panel.localScale = new Vector3(scale, scale, 1f);
     }

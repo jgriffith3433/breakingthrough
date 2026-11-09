@@ -5,6 +5,7 @@
     {
       "id": "s1",
       "back": "ending_received_1",
+      "video": "ending_received_1.mp4",
       "speaker": "N",
       "seconds": 5.6,
       "fade": 0.0,

@@ -93,6 +93,7 @@ public class LevelScene : MonoBehaviour {
         Checkpoint = Yard.PlayerStart;
         Yard.Begin();
         MusicDirector.Play(MusicDirector.ChapterTrack(Chapter));
+        MusicDirector.Ambience(MusicDirector.AmbienceFor(Chapter));
         Bed = SceneMood.Bed(transform, SceneMood.Kind.Yard);
         RunAnalytics.Screen("level_" + (Chapter + 1));
     }
@@ -116,7 +117,7 @@ public class LevelScene : MonoBehaviour {
         RenderSettings.ambientSkyColor = new Color(0.27f, 0.33f, 0.55f);
         RenderSettings.ambientEquatorColor = new Color(0.16f, 0.2f, 0.3f);
         RenderSettings.ambientGroundColor = new Color(0.07f, 0.08f, 0.11f);
-        Material sky = LevelDress.Sky("Sky Sorting Yard", new Color(0.03f, 0.06f, 0.16f), new Color(0.15f, 0.21f, 0.35f), new Color(0.03f, 0.04f, 0.07f), new Color(0.85f, 0.9f, 1f), new Vector3(-0.35f, 0.5f, 0.8f), 0.016f, 0.5f);
+        Material sky = LevelDress.PanoSky("yard", Color.white, 0f) ?? LevelDress.Sky("Sky Sorting Yard", new Color(0.03f, 0.06f, 0.16f), new Color(0.15f, 0.21f, 0.35f), new Color(0.03f, 0.04f, 0.07f), new Color(0.85f, 0.9f, 1f), new Vector3(-0.35f, 0.5f, 0.8f), 0.016f, 0.5f);
         if (sky != null) {
             RenderSettings.skybox = sky;
         }
@@ -237,8 +238,19 @@ public class LevelScene : MonoBehaviour {
     void Resume() {
         respawnAt = -1f;
         body.enabled = false;
-        Player.position = Checkpoint + Vector3.up * 0.2f;
+        Vector3 at = Checkpoint + Vector3.up * 0.2f;
+        // Seat him on the drawn ground: a checkpoint is a flat spot, and the yard is a heightfield.
+        at.y = Mathf.Max(at.y, LevelYard.H(at.x, at.z) + 0.2f);
+        Player.position = at;
         body.enabled = true;
+        MovementMotor motor = Player.GetComponent<MovementMotor>();
+        if (motor != null) {
+            motor.Stop();   // no carried speed or fall from the moment he went down
+        }
+        ZeldaStyleCamera zelda = Cam != null ? Cam.GetComponent<ZeldaStyleCamera>() : null;
+        if (zelda != null) {
+            zelda.LockedOnGameObject = null;   // the lock was on a bot that has been put away
+        }
         lastPos = Player.position;
         Health = MaxHealth;
         invulnUntil = Time.time + 2f;
@@ -305,7 +317,7 @@ public class LevelScene : MonoBehaviour {
         Hud.Health.text = "HP [" + new string('|', Health) + new string('.', MaxHealth - Health) + "]";
 
         // Esc twice leaves for the hub: the level keeps nothing mid-way, so it asks first.
-        if (PlayInput.GetKeyDown(KeyCode.Escape) && !Completed) {
+        if (PlayInput.GetKeyDown(KeyCode.Escape) && !Completed && !PauseMenu.IsOpen && Time.frameCount != PauseMenu.ClosedFrame && Time.frameCount != SettingsPanel.ClosedFrame) {
             if (Time.time - escAt < 2.5f) {
                 LeaveToHub();
             } else {

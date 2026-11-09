@@ -274,3 +274,10 @@ hides the Arcade's meadow while a chapter map is up. Budgets for a level are Sec
 
 The scene scan (`SceneValidation.ChapterRoots`) now also covers the hub (the office's scene plus `ChapterHub.WorldRoot`); `LevelValidationTests` has a test for each of chapters 4 to 6 and the hub, and the `levels-4-6` playtest photographs them.
 
+
+
+## Gen-made texture sets (replacing the code textures)
+
+`KitTextures.Ensure` loads `Resources/Kit/<set>_a.png` (albedo) and `<set>_n.png` (normal) first and falls back to the code version when either is missing. Albedos are Hawkes Gen `image.generate` (seamless, 512 px) downsized to 256 for WebGL; normals come from `texture.maps`. `Assets/Editor/KitTextureImport.cs` imports them (normal linear, repeat). **WebGL size limit:** the 13 sets must stay at or under 256 px, so 26 maps are about 0.33 MB each with mips (about 8.7 MB), well inside the 64 MB `kitTextureMB` limit. Keep palette tints working: albedos stay mid-value, not near black or white.
+
+All 13 sets are in (brick, plaster, wood, metal, iron, brass, stone, concrete, slate, cloth, paper, glass, grass), 26 PNGs at 256 px, about 1.9 MB of PNG on disk. Albedo jobs and `texture.maps` normals cost no GPU beyond the albedo batch. `cap_webgl_textures.py` does not exist in this repo: the downsize was done by the Gen import (width/height 256).

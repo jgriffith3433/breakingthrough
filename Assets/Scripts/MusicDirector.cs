@@ -17,7 +17,7 @@ using UnityEngine.Networking;
 public class MusicDirector : MonoBehaviour {
     const float DuckLevel = 0.3f;
     const float FadeSeconds = 1.6f;
-    const int CacheSize = 4;
+    const int CacheSize = 6;
     const float DecodeSeconds = 15f;
 
     static readonly Dictionary<string, AudioClip> clips = new Dictionary<string, AudioClip>();
@@ -33,6 +33,13 @@ public class MusicDirector : MonoBehaviour {
     // The loudest the bed gets (before the Settings slider); kept low so voices sit on top without a hard cut.
     public static float BedLevel = 0.55f;
 
+    // The place's ambience loop (StreamingAssets/Music/amb_<place>.mp3): one quiet bed under the score, fetched like a track.
+    // Driven by the scene/map start calls (Ambience), never polled.
+    public static string AmbienceCurrent { get; private set; } = "";
+    public static float AmbienceLevel = 0.35f;
+    AudioSource ambience;
+    float ambVolume;
+
     AudioSource[] sources = new AudioSource[2];
     int active;
     float duck = 1f;
@@ -42,6 +49,7 @@ public class MusicDirector : MonoBehaviour {
     static void Reset() {
         instance = null;
         Current = "";
+        AmbienceCurrent = "";
         Changes = 0;
         LowestDuck = 1f;
         Events.Clear();
@@ -65,6 +73,13 @@ public class MusicDirector : MonoBehaviour {
                 s.ignoreListenerPause = true;
                 instance.sources[i] = s;
             }
+            AudioSource a = go.AddComponent<AudioSource>();
+            a.loop = true;
+            a.playOnAwake = false;
+            a.spatialBlend = 0f;
+            a.volume = 0f;
+            a.ignoreListenerPause = true;
+            instance.ambience = a;
         }
         return instance;
     }
@@ -100,6 +115,43 @@ public class MusicDirector : MonoBehaviour {
             next.Play();
         });
     }
+
+    // The ambience of a place: "amb_hub", "amb_ch1".."amb_ch6", or "" for none. The same bed again does nothing; the old one
+    // fades while the new one is fetched.
+    public static void Ambience(string bed) {
+        if (bed == null) {
+            bed = "";
+        }
+        if (bed == AmbienceCurrent) {
+            return;
+        }
+        MusicDirector d = Ensure();
+        AmbienceCurrent = bed;
+        Events.Add("ambience|" + bed);
+        if (bed.Length == 0) {
+            return;
+        }
+        Fetch(bed, clip => {
+            if (clip == null || AmbienceCurrent != bed || instance == null) {
+                return;
+            }
+            AudioSource a = instance.ambience;
+            if (a.clip == clip && a.isPlaying) {
+                return;
+            }
+            a.Stop();
+            a.volume = 0f;
+            a.clip = clip;
+            a.Play();
+        });
+    }
+
+    public static string AmbienceFor(int chapterIndex) {
+        return "amb_ch" + (chapterIndex + 1);
+    }
+
+    public static bool AmbiencePlaying { get { return instance != null && instance.ambience.isPlaying; } }
+    public static float AmbienceVolume { get { return instance != null ? instance.ambVolume : 0f; } }
 
     // ---------------------------------------------------------------- fetching
 
@@ -238,6 +290,9 @@ public class MusicDirector : MonoBehaviour {
                 }
             }
         }
+        if (instance != null && instance.ambience != null && instance.ambience.clip == clip) {
+            return true;
+        }
         return Cutscene.Instance != null && Cutscene.Instance.BedClip == clip;
     }
 
@@ -279,6 +334,16 @@ public class MusicDirector : MonoBehaviour {
             }
         }
         level = sources[active] != null ? sources[active].volume : 0f;
+        if (ambience != null && ambience.isPlaying) {
+            // Under the score, ducked a little harder under a voice, and gone with Sound off; a bed that was replaced fades out.
+            float wantAmb = SoundSettings.On && !reelBed && AmbienceCurrent.Length > 0 && ambience.clip != null && ambience.clip.name == AmbienceCurrent
+                ? SoundSettings.Music * AmbienceLevel * (voice ? 0.5f : 1f) : 0f;
+            ambience.volume = Mathf.MoveTowards(ambience.volume, wantAmb, dt / FadeSeconds);
+            ambVolume = ambience.volume;
+            if (wantAmb <= 0f && ambience.volume <= 0.001f && AmbienceCurrent.Length == 0) {
+                ambience.Stop();
+            }
+        }
     }
 
     public static float Volume { get { return instance != null ? instance.level : 0f; } }

@@ -5,6 +5,7 @@
     {
       "id": "s1",
       "back": "credits_1",
+      "video": "credits_1.mp4",
       "speaker": "N",
       "seconds": 3.4,
       "fade": 0.0,
@@ -86,7 +87,6 @@
         "wallit",
         "slice"
       ],
-      "alt": "hollow_back",
       "line": "The circle stands. Slice and Wallit are on the books. Thanks for playing."
     }
   ]

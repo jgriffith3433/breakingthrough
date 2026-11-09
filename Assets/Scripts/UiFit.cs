@@ -114,6 +114,43 @@ public static class UiFit {
         }
     }
 
+    static float reservedTop;
+    static int reserveVersion;
+
+    // Units down from the canvas top that the boss bar (name, bar, golden line) covers while it is shown; 0 when it is
+    // hidden. RunHud sets it, and captions step below it (PlaceCaption), so a line never sits on the boss bar.
+    public static float ReservedTop {
+        get { return reservedTop; }
+    }
+
+    public static void ReserveTop(float units) {
+        if (Mathf.Abs(units - reservedTop) > 0.5f) {
+            reservedTop = units;
+            reserveVersion++;
+        }
+    }
+
+    // Stamp, plus a step whenever the reserved band moves: captions re-place on this one.
+    public static int CaptionStamp {
+        get { return Stamp * 1024 + (reserveVersion & 1023); }
+    }
+
+    // The notch, home bar and rounded corners as canvas units: x left, y right, z top, w bottom (Screen.safeArea against Size).
+    public static Vector4 SafeInsets() {
+        float sw = Screen.width;
+        float sh = Screen.height;
+        Rect safe = Screen.safeArea;
+        if (sw <= 0f || sh <= 0f || safe.width <= 0f || safe.height <= 0f) {
+            return Vector4.zero;
+        }
+        Vector2 size = Size;
+        return new Vector4(
+            Mathf.Max(0f, safe.xMin) / sw * size.x,
+            Mathf.Max(0f, sw - safe.xMax) / sw * size.x,
+            Mathf.Max(0f, sh - safe.yMax) / sh * size.y,
+            Mathf.Max(0f, safe.yMin) / sh * size.y);
+    }
+
     // A caption line (Wallit's and Slice's subtitles). Desktop keeps its bottom-centre spot, desktopY units up. Phones
     // and tablets draw the corners' touch pads there (stick left, Swing/Lock/Jump right), so the line moves to a band
     // under the wave counter and the Next wave button at the top, clear of every pad; slot 0 is the first line.
@@ -129,8 +166,14 @@ public static class UiFit {
         rect.anchorMin = new Vector2(0.5f, 1f);
         rect.anchorMax = new Vector2(0.5f, 1f);
         rect.pivot = new Vector2(0.5f, 1f);
-        rect.anchoredPosition = new Vector2(0f, -300f - 70f * slot);
-        rect.sizeDelta = new Vector2(Mathf.Min(1000f, Size.x - 40f), 64f);
+        // Portrait: the wave bar's "Yo Bot / n left" row sits at about 390-420 units down, so the band starts below it.
+        float top = Mode == UiMode.Tall ? 450f : 300f;
+        Vector4 safe = SafeInsets();
+        // The boss bar's own rectangle, when it is up, pushes the band down below it.
+        top = Mathf.Max(top, reservedTop > 0f ? reservedTop + 14f - safe.z : 0f);
+        // Shifted off a notch at the top, and narrowed to the safe width; the band stays between the pads' corners.
+        rect.anchoredPosition = new Vector2((safe.x - safe.y) * 0.5f, -top - safe.z - 70f * slot);
+        rect.sizeDelta = new Vector2(Mathf.Min(1000f, Size.x - 40f - safe.x - safe.y), 64f);
     }
 
     // desktopMatch is the canvas's own matchWidthOrHeight, kept as it was on desktop.

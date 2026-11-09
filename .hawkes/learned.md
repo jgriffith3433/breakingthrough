@@ -1,0 +1,1 @@
+- convention: a sleeping (`Enemy.Dormant`) bot is never lock-on material (`ZeldaStyleCamera.AcquireTarget` skips it); playtest bots walk to sleepers to wake them by proximity and release Lock when nothing is awake.

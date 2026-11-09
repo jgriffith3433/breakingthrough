@@ -40,6 +40,12 @@ public class CastVoice : MonoBehaviour {
         return instance;
     }
 
+    // The hub lodgers speak here too (Resources/Cast/cast.json: tick, brim, spare, chime), in Story.Lodgers order.
+    static readonly string[] LodgerCodes = { "I", "J", "X", "G" };
+    public static string LodgerCode(int lodger) {
+        return lodger >= 0 && lodger < LodgerCodes.Length ? LodgerCodes[lodger] : "N";
+    }
+
     // The voice file name for a speaker code and a line.
     public static string FileOf(string code, string text) {
         Cast.Member m = Cast.Find(code);
@@ -71,10 +77,13 @@ public class CastVoice : MonoBehaviour {
     public static bool Speaking { get { return instance != null && instance.source != null && instance.source.isPlaying; } }
 
     float Speak(string code, string text, string why) {
-        if (code == "W") {
+        // Wallit and Slice speak through their own live voices (mouth and gestures) where those exist. Where they don't (a
+        // chapter level with no Musician, the hub) their banked clips play here like any cast line: before, a Slice line in
+        // Chapter 1 or the hub reserved the floor and played nothing.
+        if (code == "W" && WallitVoice.Instance != null) {
             return WallitVoice.Cutscene(text);
         }
-        if (code == "S") {
+        if (code == "S" && SliceVoice.Instance != null) {
             return SliceVoice.Cutscene(text);
         }
         Cast.Spoke(code, text);

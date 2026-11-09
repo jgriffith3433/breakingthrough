@@ -146,6 +146,7 @@ public class ChapterHub : MonoBehaviour {
     void Awake() {
         Instance = this;
         MusicDirector.Play("hub");
+        MusicDirector.Ambience("amb_hub");
     }
 
     void OnDestroy() {
@@ -174,6 +175,7 @@ public class ChapterHub : MonoBehaviour {
             PlaceLodgers();
             TalkText = "";
             talkUntil = 0f;
+            chatLines.Clear();
         }
         if (cam != null) {
             cam.cullingMask = shown ? -1 : 0;
@@ -335,7 +337,7 @@ public class ChapterHub : MonoBehaviour {
             var slip = new GameObject("Notice " + HubLife.Sides[i].Id).transform;
             slip.SetParent(world.transform, false);
             slip.position = HubLife.Sides[i].Spot;
-            LevelDress.PutEuler(slip, "of_notice_slip", HubLife.Sides[i].Spot + Vector3.up * 0.06f, new Vector3(-90f, 0f, 0f));
+            LevelDress.PutEuler(slip, "of_notice_slip", HubLife.Sides[i].Spot + Vector3.down * 0.015f, new Vector3(-90f, 180f, 0f));
             Label3D(slip, HubLife.Sides[i].Thing, new Vector3(0f, 1.1f, -0.1f), 0.08f, new Color(1f, 0.95f, 0.7f));
             noticeItems[i] = slip;
             slip.gameObject.SetActive(false);
@@ -404,6 +406,9 @@ public class ChapterHub : MonoBehaviour {
             }
         }
         TickSide();
+        if (chatLines.Count > 0 && Time.unscaledTime >= nextChatAt) {
+            NextChatLine();
+        }
         if (talkUntil > 0f && Time.unscaledTime >= talkUntil) {
             TalkText = "";
             talkUntil = 0f;
@@ -416,7 +421,28 @@ public class ChapterHub : MonoBehaviour {
 
     // E beside a lodger: their line for the chapters cleared. Chime also sends Wallit out for the next lost thing, or pays him
     // for the one he carries.
+    // An optional chat plays out one line at a time (Wallit's and Slice's lines in their voices), never the whole exchange
+    // on screen at once.
+    readonly System.Collections.Generic.List<string> chatLines = new System.Collections.Generic.List<string>();
+    int chatLodger;
+    float nextChatAt;
+
+    void NextChatLine() {
+        string l = chatLines[0];
+        chatLines.RemoveAt(0);
+        TalkText = (l[0] == 'W' ? "Wallit" : l[0] == 'S' ? "Slice" : Story.Lodgers[chatLodger].Name) + ": \"" + l.Substring(2) + "\"";
+        if (l[0] == 'W' || l[0] == 'S') {
+            CastVoice.SayLater(l.Substring(0, 1), l.Substring(2), "hub");
+        } else if (l[0] == 'L') {
+            CastVoice.SayLater(CastVoice.LodgerCode(chatLodger), l.Substring(2), "hub");
+        }
+        GameAudio.Play("paper", 0.3f, 1.2f);
+        nextChatAt = Time.unscaledTime + Mathf.Clamp(1.2f + l.Length * 0.05f, 2.4f, 5f);
+        talkUntil = nextChatAt + 1.5f;
+    }
+
     void TalkTo(int i) {
+        chatLines.Clear();
         CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
         int cleared = Mathf.Clamp(slot.cleared, 1, Story.Errands.Length);
         string text = LodgerLine(i);
@@ -430,7 +456,10 @@ public class ChapterHub : MonoBehaviour {
             LastChatId = c.Id;
             CampaignSave.Flush();
             text = null;
-            TalkText = HubLife.Spoken(c);
+            chatLines.AddRange(c.Lines);
+            chatLodger = c.Lodger;
+            GameAudio.Play("talk_start", 0.7f);
+            NextChatLine();
             RunAnalytics.Screen("hub_chat_" + c.Id);
             PlaceLodgers();
             DressOffice();
@@ -490,9 +519,16 @@ public class ChapterHub : MonoBehaviour {
         Talks++;
         if (text != null) {
             TalkText = who + ": \"" + text + "\"";
+            // The lodger's own line for the chapters cleared is spoken (an errand's ask after it stays text).
+            string spoken = LodgerLine(i);
+            if (text.StartsWith(spoken)) {
+                CastVoice.SayLater(CastVoice.LodgerCode(i), spoken, "hub");
+            }
         }
         talk.color = Hex(Story.Lodgers[i].Colour);
-        talkUntil = Time.unscaledTime + (text == null ? 16f : 9f);
+        if (text != null) {
+            talkUntil = Time.unscaledTime + 9f;
+        }
         GameAudio.Play("paper", 0.5f);
         RunAnalytics.Screen("hub_npc_" + Story.Lodgers[i].Id);
     }
@@ -731,14 +767,14 @@ public class ChapterHub : MonoBehaviour {
         if (laidStamp != UiFit.Stamp) {
             Layout();
         }
-        if (JournalPanel.IsOpen) {
+        if (JournalPanel.IsOpen || PauseMenu.IsOpen) {
             return;
         }
         if (PlayInput.GetKeyDown(KeyCode.J) && CampaignSave.Active >= 0) {
             JournalPanel.Open(CampaignSave.Active);
             return;
         }
-        if (MenuNav.Back && Time.frameCount != JournalPanel.ClosedFrame) {
+        if (MenuNav.Back && Time.frameCount != JournalPanel.ClosedFrame && Time.frameCount != PauseMenu.ClosedFrame && Time.frameCount != SettingsPanel.ClosedFrame) {
             if (BoardOpen) {
                 CloseBoard();
             } else {
@@ -794,6 +830,7 @@ public class ChapterHub : MonoBehaviour {
             }
         }
         bool moving = move.sqrMagnitude > 0.01f;
+        float hubSpeed = 0f;
         if (moving) {
             Vector3 next = Player.position + move * Speed * Time.unscaledDeltaTime;
             Vector3 flat = new Vector3(Mathf.Clamp(next.x, -RoomHalfWidth, RoomHalfWidth), 0f, next.z);
@@ -815,13 +852,20 @@ public class ChapterHub : MonoBehaviour {
             }
             next = new Vector3(flat.x, Player.position.y, flat.z);
             Walked += (next - Player.position).magnitude;
+            hubSpeed = (next - Player.position).magnitude / Mathf.Max(1e-5f, Time.unscaledDeltaTime);
             Player.position = next;
             Player.rotation = Quaternion.Slerp(Player.rotation, Quaternion.LookRotation(move), 12f * Time.unscaledDeltaTime);
         }
-        int clip = moving ? CharacterMovement.CLIP_RUN : CharacterMovement.CLIP_IDLE;
+        // Run only while he really covers ground (not on a nudge of the stick or pressed into a wall), with the clip
+        // played at ground speed over stride so his feet do not skate.
+        int clip = hubSpeed > 0.4f ? CharacterMovement.CLIP_RUN : CharacterMovement.CLIP_IDLE;
         if (wallitAnim != null && clip != lastClip) {
             lastClip = clip;
             CharacterMovement.PlayClip(wallitAnim, clip);
+        }
+        if (wallitAnim != null) {
+            float stride = CharacterMovement.RunStride * Mathf.Max(0.2f, wallitAnim.transform.lossyScale.y);
+            CharacterMovement.DriveSpeed(wallitAnim, clip == CharacterMovement.CLIP_RUN ? Mathf.Clamp(hubSpeed / stride, 0.2f, 3f) : 1f);
         }
         Vector3 toWallit = Player.position - slice.position;
         toWallit.y = 0f;
@@ -875,8 +919,11 @@ public class ChapterHub : MonoBehaviour {
             }
             return;
         }
-        ArrivalShown = index + 1;
         string raw = lines[index];
+        if (ArrivalShown != index + 1) {
+            CastVoice.SayLater(raw.Substring(0, 1), raw.Substring(2), "hub");   // every arrival line has a banked clip
+        }
+        ArrivalShown = index + 1;
         speech.text = (raw[0] == 'W' ? "Wallit" : "Slice") + ": \"" + raw.Substring(2) + "\"";
         speech.color = raw[0] == 'W' ? new Color(1f, 0.82f, 0.38f) : new Color(0.62f, 0.95f, 0.86f);
     }

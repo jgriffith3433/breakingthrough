@@ -410,8 +410,8 @@ public class WallitVoice : MonoBehaviour {
 
     void Update() {
         float now = Time.unscaledTime;
-        if (stamp != UiFit.Stamp && scaler != null) {
-            stamp = UiFit.Stamp;
+        if (stamp != UiFit.CaptionStamp && scaler != null) {
+            stamp = UiFit.CaptionStamp;
             UiFit.Apply(scaler);
             if (text != null) {
                 UiFit.PlaceCaption(text.rectTransform, 190f, 0);
@@ -512,7 +512,7 @@ public class WallitVoice : MonoBehaviour {
         outline.effectColor = new Color(0f, 0f, 0f, 0.85f);
         outline.effectDistance = new Vector2(1.5f, -1.5f);
         text.verticalOverflow = VerticalWrapMode.Overflow;
-        stamp = UiFit.Stamp;
+        stamp = UiFit.CaptionStamp;
         UiFit.Apply(scaler);
         UiFit.PlaceCaption(text.rectTransform, 190f, 0);
     }

@@ -135,6 +135,7 @@ public class HollowMap : OwnMap {
 public class EdgeMap : OwnMap {
     public override string Key { get { return "hollow-edge"; } }
     Slammer press;
+    Transform pressFrame;
     Transform prints;
     Vector3 markAt;
     float bearing;
@@ -176,18 +177,24 @@ public class EdgeMap : OwnMap {
         MakeMusic(12f, new[] { 73.4f, 110f, 146.8f, 207.7f }, 3f, 2f, 0.5f, 3f, 196f, 0.28f);
         redMat = LevelDress.GroundMaterial("gate", "concrete", new Color(1.1f, 0.2f, 0.18f));
         Transform apron = Group("Apron");
-        LevelDress.GroundSkin(apron, "Paved Apron", center, 205f, 4f, LevelDress.GroundMaterial("gate", "concrete", new Color(0.78f, 0.8f, 0.9f)), 6f);
+        Skin(apron, "Paved Apron", 205f, 4f, LevelDress.GroundMaterial("gate", "concrete", new Color(0.78f, 0.8f, 0.9f)), 6f);
 
-        // The chalk road: three columns of paving slabs laid flat from the circle to the plaza, and the plaza's big flagstones.
+        // The chalk road: three columns of paving slabs laid from the circle to the plaza, and the plaza's big flagstones. Each slab
+        // lies along the apron's slope with its underside 2 cm into it (level, a slab was half buried and half proud on the bowl);
+        // neighbours only meet edge to edge, so no two tops share a plane. None under the stamp press's bed (46 m, 7.6 by 5.2 m).
         Transform road = Group("Chalk Road");
         for (float d = 12f; d < gate - 24f; d += 2.5f) {
             for (int c = -1; c <= 1; c++) {
-                LevelDress.PutFlat(road, "yd_gravel_slab", At(d, c * 1.9f), bearing + (rng.Next(0, 2) * 90f), 1.9f, 0.55f);
+                float yaw = bearing + (rng.Next(0, 2) * 90f);
+                if (Mathf.Abs(d - 46f) < 2.6f + 0.95f && Mathf.Abs(c * 1.9f) < 3.8f) {
+                    continue;
+                }
+                Lay(LevelDress.PutFlat(road, "yd_gravel_slab", At(d, c * 1.9f), yaw, 1.9f, 0.55f), yaw, 0.95f, 0.95f, -0.02f);
             }
         }
         for (int j = 0; j < 5; j++) {
             for (int i = -3; i <= 3; i++) {
-                LevelDress.PutFlat(road, "yd_gravel_slab", At(gate - 22f + j * 3.5f, i * 3.5f), bearing, 3.4f, 0.5f);
+                Lay(LevelDress.PutFlat(road, "yd_gravel_slab", At(gate - 22f + j * 3.5f, i * 3.5f), bearing, 3.4f, 0.5f), bearing, 1.7f, 1.7f, -0.02f);
             }
         }
         Features.Add("route:chalk road of paving slabs with paired lamps from the circle to the gate plaza, " + gate + " m on bearing " + bearing);
@@ -204,7 +211,11 @@ public class EdgeMap : OwnMap {
         for (float t = 0f; t <= 1f; t += 0.055f) {
             float along = Mathf.Lerp(26f, 60f, t);
             float side = 24f * Mathf.Sin(Mathf.PI * t) + 5f;
-            LevelDress.PutFlat(loop, "yd_gravel_slab", At(along, side), bearing + t * 70f, 1.5f, 0.55f);
+            // Where it reaches the plaza it runs onto the flagstones: no slab laid over one (two slab tops a few mm apart z-fought).
+            if (along > gate - 23.7f - 1.1f && Mathf.Abs(side) < 12.2f + 1.1f) {
+                continue;
+            }
+            Lay(LevelDress.PutFlat(loop, "yd_gravel_slab", At(along, side), bearing + t * 70f, 1.5f, 0.55f), bearing + t * 70f, 0.75f, 0.75f, -0.02f);
         }
         GameObject sign = Put(loop, "yd_signpost", 43f, 29f, 20f, 1.4f);
         sign.name = "Blank Signpost";
@@ -251,8 +262,9 @@ public class EdgeMap : OwnMap {
             for (int i = 0; i < 12; i++) {
                 float b = bearing + s * (8f + i * 5.1f);
                 Vector3 p = Polar(b, wallR);
-                p.y = GroundY(p.x, p.z);
                 bool isTower = i == 3 || i == 8;
+                // On the lowest of the floor under its 6 m (or 6 m square) footing: no end of a bay hangs over the slope.
+                p.y = (isTower ? Lowest(p, b + 180f, 3f, 3f) : Lowest(p, b + 180f, 3.1f, 0.8f)) - 0.03f;
                 LevelDress.Put(walls, isTower ? "gt_wall_tower" : "gt_wall_bay", p, b + 180f, isTower ? 1.2f : 1f);
             }
         }
@@ -260,19 +272,22 @@ public class EdgeMap : OwnMap {
 
         // Slice's radius: dashes of red paint on the apron at 24 m.
         Transform ring = Group("Slice's Radius");
+        // Each dash lies along the apron's slope 2 cm over the drawn skin (level, 5 cm over the collider, a 3.6 m dash dipped under the
+        // skin at one end on the bowl's slope and z-fought with it).
         for (int i = 0; i < 48; i++) {
             float b = i * 7.5f;
             Vector3 p = Polar(b, 24f);
-            GameObject dash = LevelKit.Decal(ring, "Radius Mark " + i, new Vector3(p.x, GroundY(p.x, p.z) + 0.05f, p.z), new Vector2(0.6f, 3.6f), Color.white);
+            GameObject dash = LevelKit.Decal(ring, "Radius Mark " + i, p, new Vector2(0.6f, 3.6f), Color.white);
             dash.GetComponent<MeshRenderer>().sharedMaterial = redMat;
-            dash.transform.rotation = Quaternion.Euler(0f, b + 180f, 0f);
+            dash.transform.position = p;
+            Lay(dash, b + 180f, 0.3f, 1.8f, 0.02f);
         }
         Features.Add("landmark:Slice's radius, a red painted ring 24 m out that she tells Wallit not to leave");
 
         // Watchtower with a sweeping searchlight, on the wall.
         Transform tower = Group("Watchtower");
         Vector3 towerAt = Polar(bearing + 38f, wallR - 6f);
-        towerAt.y = GroundY(towerAt.x, towerAt.z);
+        towerAt.y = Lowest(towerAt, bearing + 38f + 180f, 3.5f, 3.5f) - 0.03f;
         LevelDress.Put(tower, "gt_wall_tower", towerAt, bearing + 38f + 180f, 1.4f).name = "Watchtower";
         var pivot = new GameObject("Searchlight");
         pivot.transform.SetParent(tower, false);
@@ -305,15 +320,21 @@ public class EdgeMap : OwnMap {
 
         // The big stamp press across the road: a frame with a print bed, and a head that rises, hangs on a red light and slams.
         Transform pressGroup = Group("Stamp Press");
-        Vector3 baseAt = At(46f, 0f);
+        // The frame lies along the apron's slope (level, the feet of one side of its 8.4 m stood in the air) and the head runs square
+        // to it, so the prints land flat on the bed.
+        GameObject frame = Lay(LevelDress.Put(pressGroup, "gt_press_frame", At(46f, 0f), bearing, 1f), bearing, 4.1f, 2.6f, -0.02f);
+        pressFrame = frame.transform;
+        Vector3 baseAt = pressFrame.position;
         markAt = baseAt;
-        GameObject frame = LevelDress.Put(pressGroup, "gt_press_frame", baseAt, bearing, 1f);
         LevelDress.Tint(frame, 1, red * 0.75f);
-        GameObject head = LevelDress.Put(pressGroup, "gt_press_head", baseAt + Vector3.up * 8f, bearing, 1f);
+        GameObject head = LevelDress.Put(pressGroup, "gt_press_head", baseAt + pressFrame.up * 8f, bearing, 1f);
+        head.transform.rotation = pressFrame.rotation;
         LevelDress.Tint(head, 1, red);
         press = head.AddComponent<Slammer>();
-        press.High = baseAt.y + 8f;
-        press.Low = baseAt.y + 0.26f;
+        press.Track = baseAt;
+        press.Guide = pressFrame.up;
+        press.High = 8f;
+        press.Low = 0.26f;
         press.Period = 3.4f;
         press.ArmRadius = 22f;
         press.Warning = Lamp(pressGroup, baseAt + Vector3.up * 3f, C(1f, 0.15f, 0.1f), 14f, 0f);
@@ -324,17 +345,20 @@ public class EdgeMap : OwnMap {
 
         // The skyline: towers behind the wall, rooftops round the open side. Tall enough to clear the wall from the road.
         Transform far = Group("Skyline");
+        // Each on the lowest floor under its footing, so no corner of a 9-12 m tower or a 12 m row hangs over the slope.
         for (int i = 0; i < 8; i++) {
             float b = bearing - 70f + i * 20f;
+            float scale = 1.8f + (i % 3) * 0.3f;
             Vector3 p = Polar(b, 108f + (i % 3) * 9f);
-            p.y = GroundY(p.x, p.z);
-            LevelDress.Put(far, "gt_wall_tower", p, b + 180f, 1.8f + (i % 3) * 0.3f);
+            p.y = Lowest(p, b + 180f, 2.5f * scale, 2.5f * scale) - 0.05f;
+            LevelDress.Put(far, "gt_wall_tower", p, b + 180f, scale);
         }
         string[] rows = { "st_house_wall", "st_shopfront", "st_house_wall" };
         for (int i = 0; i < 7; i++) {
             float b = bearing + 85f + i * 28f;
             Vector3 p = Polar(b, 125f + (i % 2) * 18f);
-            p.y = GroundY(p.x, p.z);
+            // The row stands on its front line (origin) and runs 2.5 m back; 3 bays of 4 m.
+            p.y = Lowest(p + Quaternion.Euler(0f, b + 180f, 0f) * new Vector3(0f, 0f, -1.25f), b + 180f, 6.2f, 1.3f) - 0.05f;
             LevelDress.Facade(far, "Far Roofs " + i, p, b + 180f, rows, 3 + i % 3, null, i % 3 == 2, false);
         }
     }
@@ -345,9 +369,12 @@ public class EdgeMap : OwnMap {
         Thud(0.9f);
         Fx.Ring(markAt + Vector3.up * 0.3f, 14f, new Color(1f, 0.3f, 0.2f, 0.8f), 0.8f);
         if (printed < 8) {
-            GameObject print = LevelKit.Decal(prints, "Stamp Print " + n, markAt + Vector3.up * (0.26f + printed * 0.004f), new Vector2(5.6f, 3.8f), Color.white);
+            // On the bed's paper (its top is 0.22 m up the frame), 5 mm over it and 4 mm over the print before, each turned a little:
+            // flat on the bed however the frame lies, never in the same plane as another print. They floated 4 cm over the bed.
+            Vector3 printAt = pressFrame.TransformPoint(new Vector3(0f, 0.225f + printed * 0.004f, 0f));
+            GameObject print = LevelKit.Decal(prints, "Stamp Print " + n, printAt, new Vector2(5.6f, 3.8f), Color.white);
             print.GetComponent<MeshRenderer>().sharedMaterial = redMat;
-            print.transform.rotation = Quaternion.Euler(0f, bearing + (n % 3 - 1) * 4f, 0f);
+            print.transform.SetPositionAndRotation(printAt, pressFrame.rotation * Quaternion.Euler(0f, (n % 3 - 1) * 4f, 0f));
             printed++;
         }
         Beat("press-slam|" + n + "|bots=" + bots + (wallit ? "|wallit" : ""));
@@ -439,18 +466,20 @@ public class FloorMap : OwnMap {
         float length = stops[stops.Length - 1].Dist + 20f;
 
         Transform floorG = Group("Yard Ground");
-        LevelDress.GroundSkin(floorG, "Oily Concrete", center, 205f, 4f, LevelDress.GroundMaterial("floor", "concrete", new Color(0.62f, 0.52f, 0.46f)), 5f);
+        Skin(floorG, "Oily Concrete", 205f, 4f, LevelDress.GroundMaterial("floor", "concrete", new Color(0.62f, 0.52f, 0.46f)), 5f);
 
         // The route: girders laid along both edges of the lane as kerbs, and a lit stop plate with two cage lamps on girder posts.
         Transform route = Group("Yard Floor Route");
+        // Kerbs and plates lie along the floor's slope (level, a 3 m girder or a 9 m plate had one end in the floor and the other
+        // in the air), their undersides 2 cm into the drawn floor.
         for (float d = 14f; d < length - 6f; d += 3f) {
-            LevelDress.Put(route, "fl_girder", At(d, -3.6f), bearing + 90f, 1f);
-            LevelDress.Put(route, "fl_girder", At(d, 3.6f), bearing + 90f, 1f);
+            Lay(LevelDress.Put(route, "fl_girder", At(d, -3.6f), bearing + 90f, 1f), bearing + 90f, 1.5f, 0.15f, -0.02f);
+            Lay(LevelDress.Put(route, "fl_girder", At(d, 3.6f), bearing + 90f, 1f), bearing + 90f, 1.5f, 0.15f, -0.02f);
         }
         for (int i = 0; i < stops.Length; i++) {
             Vector3 p = Polar(stops[i].Bearing, stops[i].Dist);
             p.y = GroundY(p.x, p.z);
-            GameObject plate = LevelDress.Put(route, "ar_ring_floor", p + Vector3.up * 0.02f, 0f, 0.78f);
+            GameObject plate = Lay(LevelDress.Put(route, "ar_ring_floor", p, 0f, 0.78f), 0f, 3.3f, 3.3f, -0.02f);
             plate.name = "Stop Plate " + (i + 1);
             for (int s = -1; s <= 1; s += 2) {
                 Vector3 post = p + right * (s * 4.8f);
@@ -471,18 +500,37 @@ public class FloorMap : OwnMap {
         Transform gateG = Group("Broken Gate");
         Vector3 gAt = Polar(stops[0].Bearing, stops[0].Dist);
         gAt.y = GroundY(gAt.x, gAt.z);
-        LevelDress.PutEuler(gateG, "gt_gate_pillar", gAt + right * -5.5f, new Vector3(0f, bearing, -6f), 1.9f);
-        LevelDress.PutEuler(gateG, "gt_gate_pillar", gAt + right * 5.5f + Vector3.up * 0.3f, new Vector3(0f, bearing + 10f, 82f), 1.9f);
-        LevelDress.PutEuler(gateG, "fl_girder", gAt + right * 2.5f + axis * 3f + Vector3.up * 0.5f, new Vector3(0f, bearing + 24f, 8f), 2f);
+        // Each piece on the floor where it lies, not at the stop's height metres away. The leaning pillar's low corner (6 degrees
+        // over its 1.7 m plinth) goes 9 cm further in.
+        Vector3 standing = gAt + right * -5.5f;
+        standing.y = Lowest(standing, bearing, 0.86f, 0.86f) - 0.12f;
+        LevelDress.PutEuler(gateG, "gt_gate_pillar", standing, new Vector3(0f, bearing, -6f), 1.9f);
+        // The fallen pillar lies along the floor from its plinth (rolled 90 degrees less the floor's own rise along its 6.2 m), resting
+        // on its plinth and capital; it was propped 8 degrees up with its head in the air.
+        Vector3 fallen = gAt + right * 5.5f;
+        Vector3 fallenTop = fallen - Quaternion.Euler(0f, bearing + 10f, 0f) * Vector3.right * 6.2f;
+        float fallenRise = SkinY(fallenTop.x, fallenTop.z) - SkinY(fallen.x, fallen.z);
+        fallen.y = SkinY(fallen.x, fallen.z) + 0.8f;
+        LevelDress.PutEuler(gateG, "gt_gate_pillar", fallen, new Vector3(0f, bearing + 10f, 90f - Mathf.Atan2(fallenRise, 6.2f) * Mathf.Rad2Deg), 1.9f);
+        // The lintel (a 6 m girder) on the floor end to end, not one end 0.9 m up on nothing.
+        Vector3 lintel = gAt + right * 2.5f + axis * 3f;
+        Vector3 lintelEnd = Quaternion.Euler(0f, bearing + 24f, 0f) * Vector3.right * 3f;
+        float lintelA = SkinY(lintel.x + lintelEnd.x, lintel.z + lintelEnd.z), lintelB = SkinY(lintel.x - lintelEnd.x, lintel.z - lintelEnd.z);
+        lintel.y = (lintelA + lintelB) * 0.5f - 0.03f;
+        LevelDress.PutEuler(gateG, "fl_girder", lintel, new Vector3(0f, bearing + 24f, Mathf.Atan2(lintelA - lintelB, 6f) * Mathf.Rad2Deg), 2f);
         for (int k = -1; k <= 1; k += 2) {
-            LevelDress.Put(gateG, "fl_chassis_rack", gAt + axis * -8f + right * (k * 4f), Yaw(0f), 1.3f);
+            Vector3 rackAt = gAt + axis * -8f + right * (k * 4f);
+            rackAt.y = Lowest(rackAt, Yaw(0f), 1.16f, 0.57f) - 0.02f;
+            LevelDress.Put(gateG, "fl_chassis_rack", rackAt, Yaw(0f), 1.3f);
         }
 
         // The lever: its stand with the lamp mast and its red lens (the chute's lamp, watching the circle).
         Transform leverG = Group("Lever Stand");
         leverAt = Polar(stops[stops.Length - 1].Bearing, stops[stops.Length - 1].Dist);
         leverAt.y = GroundY(leverAt.x, leverAt.z);
-        GameObject stand = LevelDress.Put(leverG, "fl_lever_stand", leverAt + axis * 4f, Yaw(0f), 1f);
+        Vector3 standAt = leverAt + axis * 4f;
+        standAt.y = Lowest(standAt, Yaw(0f), 1.6f, 1.1f) - 0.02f;   // its own floor, not the lever spot's 4 m off; no corner in the air
+        GameObject stand = LevelDress.Put(leverG, "fl_lever_stand", standAt, Yaw(0f), 1f);
         stand.name = "Lever Stand";
         LevelDress.Tint(stand, 1, red);
         MeshRenderer standRenderer = stand.GetComponent<MeshRenderer>();
@@ -491,7 +539,7 @@ public class FloorMap : OwnMap {
         standMats[1] = lens;
         standRenderer.sharedMaterials = standMats;
         made.Add(lens);
-        Light chute = LevelDress.PointLight(leverG, leverAt + axis * 4f + Vector3.up * 12f, red, 26f, 1.4f);
+        Light chute = LevelDress.PointLight(leverG, standAt + Vector3.up * 12f, red, 26f, 1.4f);
         lamps.Add(chute);
         lampLevel.Add(chute.intensity);
 
@@ -521,7 +569,9 @@ public class FloorMap : OwnMap {
         for (int i = 0; i < 9; i++) {
             float d = 20f + i * 10f;
             float side = (i % 2 == 0 ? 1f : -1f) * 10.5f;
-            LevelDress.Put(lip, "fl_chassis_rack", At(d, side), Yaw(side > 0f ? -90f : 90f), 1.3f);
+            Vector3 rackAt = At(d, side);
+            rackAt.y = Lowest(rackAt, Yaw(side > 0f ? -90f : 90f), 1.16f, 0.57f) - 0.02f;   // all four feet down
+            LevelDress.Put(lip, "fl_chassis_rack", rackAt, Yaw(side > 0f ? -90f : 90f), 1.3f);
         }
         for (int i = 0; i < 10; i++) {
             float d = 18f + i * 9f;
@@ -546,8 +596,16 @@ public class FloorMap : OwnMap {
         for (int side = -1; side <= 1; side += 2) {
             Transform b = Group("Belt " + (side < 0 ? "West" : "East"));
             float from = side < 0 ? 45f : 60f, to = side < 0 ? 95f : 90f;
+            // Each 3 m conveyor lies along the floor's slope; the belt's top (slat tops at 0.7 m) is read off each one at both ends,
+            // so the items ride it up and down instead of one height for 50 m of uneven floor (they hovered or sank into the belt).
+            // Local +x points back toward the circle (yaw bearing + 90): a conveyor starts at x = 1.5 and ends at x = -1.5.
+            var beltFrom = new List<float>();
+            var beltTo = new List<float>();
             for (float d = from; d < to; d += 3f) {
-                LevelDress.Put(b, "fl_conveyor", At(d + 1.5f, side * 17f), bearing + 90f, 1f);
+                GameObject conveyor = Lay(LevelDress.Put(b, "fl_conveyor", At(d + 1.5f, side * 17f), bearing + 90f, 1f), bearing + 90f, 1.5f, 0.5f, -0.02f);
+                // 2 cm over the slats so a hat's wide brim clears a belt that tilts under it.
+                beltFrom.Add(conveyor.transform.TransformPoint(new Vector3(1.5f, 0.7f, 0f)).y + 0.02f);
+                beltTo.Add(conveyor.transform.TransformPoint(new Vector3(-1.5f, 0.7f, 0f)).y + 0.02f);
             }
             float span = to - from;
             Vector3 mid = At(from + span * 0.5f, side * 17f);
@@ -556,18 +614,22 @@ public class FloorMap : OwnMap {
                 var mover = item.AddComponent<ChapterMap.MapMover>();
                 mover.Set(ChapterMap.MapMover.Mode.Belt, 0f, 0f, side < 0 ? 3f : -3f, (k / 6f) * span);
                 mover.SetLine(mid + Vector3.up * 0.78f, axis, span);
+                mover.SetSurface(beltFrom.ToArray(), beltTo.ToArray(), 3f);
                 belts.Add(mover);
             }
         }
         Features.Add("landmark:two belts of cleared things (a hat, a clock, a bell) sliding along the route");
 
-        // The rim: smokestacks with glowing mouths.
+        // The rim: smokestacks with glowing mouths, standing on the yard's terraced walls (the skirt, 255-275 m out). A fixed y = 24
+        // left the 255 m ones 5 m over the terrace and sank the 275 m ones a metre; each 9-11 m plinth now goes on the lowest of the
+        // drawn terrace under it, a little in.
         Transform stacks = Group("Smokestacks");
         for (int i = 0; i < 7; i++) {
             float b = 20f + i * 51f;
+            float scale = 1f + (i % 3) * 0.12f;
             Vector3 p = Polar(b, 255f + (i % 2) * 20f);
-            p.y = 24f;
-            LevelDress.Put(stacks, "fl_stack", p, b, 1f + (i % 3) * 0.12f);
+            p.y = LowestTerrain(p, 5.5f * scale) - 0.1f;
+            LevelDress.Put(stacks, "fl_stack", p, b, scale);
         }
 
         // Three presses beside the lane, slamming on red marks in turn.
@@ -575,13 +637,18 @@ public class FloorMap : OwnMap {
         for (int i = 0; i < 3; i++) {
             float d = 38f + i * 24f;
             int side = i % 2 == 0 ? 1 : -1;
-            Vector3 at = At(d, side * 6.5f);
-            GameObject frame = LevelDress.Put(crush, "fl_press_frame", at, bearing, 1f);
+            // The frame lies along the floor's slope (level, one 8 m side's feet hung in the air), and its head runs square to it.
+            GameObject frame = Lay(LevelDress.Put(crush, "fl_press_frame", At(d, side * 6.5f), bearing, 1f), bearing, 3.9f, 3.1f, -0.02f);
+            Vector3 at = frame.transform.position;
+            Vector3 up = frame.transform.up;
             LevelDress.Tint(frame, 1, red * 0.7f);
-            GameObject head = LevelDress.Put(crush, "fl_press_head", at + Vector3.up * 7f, bearing, 1f);
+            GameObject head = LevelDress.Put(crush, "fl_press_head", at + up * 7f, bearing, 1f);
+            head.transform.rotation = frame.transform.rotation;
             var s = head.AddComponent<Slammer>();
-            s.High = at.y + 7f;
-            s.Low = at.y + 0.2f;
+            s.Track = at;
+            s.Guide = up;
+            s.High = 7f;
+            s.Low = 0.2f;
             s.Period = 2.8f;
             s.Offset = i * 0.9f;
             s.Warning = Lamp(crush, at + Vector3.up * 3f, C(1f, 0.15f, 0.1f), 12f, 0f);
@@ -640,6 +707,7 @@ public class FloorMap : OwnMap {
             lens.SetColor("_EmissionColor", new Color(0.1f, 0.01f, 0.01f, 1f));
         }
         Thud(1f);
+        GameAudio.Play("belt_stop", 0.9f);
         Fx.Ring(leverAt + Vector3.up * 0.3f, 30f, new Color(1f, 0.7f, 0.3f, 0.8f), 0.8f);
         Beat("belt-stopped|belts=" + belts.Count + "|crushers=" + crushers.Count);
     }

@@ -165,6 +165,10 @@ public class RunHud : MonoBehaviour {
         Place(text, fontSize, position, box);
     }
 
+    void OnDestroy() {
+        UiFit.ReserveTop(0f);
+    }
+
     void Update() {
         if (xpFill == null) {
             return;
@@ -234,6 +238,17 @@ public class RunHud : MonoBehaviour {
         goldenText.text = golden != null && !hidden
             ? "Golden Yo Bot!  Catch it:  " + Mathf.CeilToInt(golden.GoldenLeft) + "s"
             : "";
+        // Phones draw captions in a band at the top: tell it where the boss bar (and the golden line under it) ends.
+        float reserve = 0f;
+        if (laidOut != UiMode.Desktop) {
+            if (showBoss) {
+                reserve = -bossBack.rectTransform.anchoredPosition.y + bossBack.rectTransform.sizeDelta.y;
+            }
+            if (golden != null && !hidden) {
+                reserve = Mathf.Max(reserve, -goldenText.rectTransform.anchoredPosition.y + goldenText.rectTransform.sizeDelta.y);
+            }
+        }
+        UiFit.ReserveTop(reserve);
 
         string ev = WaveDirector.EventName;
         eventText.text = string.IsNullOrEmpty(ev) || hidden ? "" : "★ " + ev;
