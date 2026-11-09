@@ -1,2 +1,2 @@
-- lesson: studio_gen_import takes asset ids — a brief that gives job ids needs hawkesgen_job to list the a_ ids first; stage imports in .hawkes/raw, re-encode with ffmpeg, delete the staging dir.
-- lesson: sparse checkout — `git add` of new asset folders needs `--sparse`.
+- lesson: "no build settings" is Studio's config — a failed playtest build with "no build settings (products.json build)" is not caused by the change; don't redo art for it.
+- convention: Gen bodies are baked offline — `Tools/Bake/glb_bake.py` plus `Tools/Bake/specs/<id>.json` writes `Assets/Resources/Baked/<id>.mesh.txt`; `CharacterKit` uses it and falls back to the code body.
