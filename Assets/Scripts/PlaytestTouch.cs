@@ -572,13 +572,37 @@ public static class PlaytestTouch {
                 }
             }
             if (nearest == null) {
-                // After Wallit goes down the Courier sleeps at the drop again (LevelYard.RestCourier): walk back to wake it.
+                // Nothing awake: a held Lock has nothing to hold, so the finger lifts it (it would otherwise read "Locked" with no
+                // crew in view), and Wallit walks to wherever the next bot sleeps. After Wallit goes down the Courier sleeps at
+                // the drop again (LevelYard.RestCourier): walk back to wake it.
+                if (TouchControls.Locked) {
+                    Rest();
+                    yield return TapPad("Lock");
+                    lockTapped = false;
+                    run.Event("touch-unlock", "finger on Lock again: nothing awake to hold");
+                    continue;
+                }
                 Enemy sleeper = level.Yard.TheCourier;
                 if (sleeper != null && sleeper.Alive && sleeper.Dormant && level.Yard.CourierCame && !level.Yard.CourierDown
-                    && Flat(sleeper.transform.position - level.Player.position).magnitude > 6f) {
+                    && Flat(sleeper.transform.position - level.Player.position).magnitude > 3f) {
                     SteerLevel(sleeper.transform.position);
                 } else {
-                    Rest();
+                    Enemy asleep = null;
+                    float ad = 9999f;
+                    foreach (Enemy e in Enemy.Roster) {
+                        if (e != null && e.Alive && e.Dormant) {
+                            float d = Flat(e.transform.position - level.Player.position).magnitude;
+                            if (d < ad) {
+                                ad = d;
+                                asleep = e;
+                            }
+                        }
+                    }
+                    if (asleep != null && ad > 3f) {
+                        SteerLevel(asleep.transform.position);   // the crew sleeps until Wallit is near (ChapterPacing, 14 m)
+                    } else {
+                        Rest();
+                    }
                 }
                 yield return null;
                 continue;

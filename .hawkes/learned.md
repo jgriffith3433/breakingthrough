@@ -1,2 +1,1 @@
-- lesson: "no build settings" is Studio's config — a failed playtest build with "no build settings (products.json build)" is not caused by the change; don't redo art for it.
-- convention: Gen bodies are baked offline — `Tools/Bake/glb_bake.py` plus `Tools/Bake/specs/<id>.json` writes `Assets/Resources/Baked/<id>.mesh.txt`; `CharacterKit` uses it and falls back to the code body.
+- convention: a sleeping (`Enemy.Dormant`) bot is never lock-on material (`ZeldaStyleCamera.AcquireTarget` skips it); playtest bots walk to sleepers to wake them by proximity and release Lock when nothing is awake.

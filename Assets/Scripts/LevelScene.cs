@@ -238,8 +238,19 @@ public class LevelScene : MonoBehaviour {
     void Resume() {
         respawnAt = -1f;
         body.enabled = false;
-        Player.position = Checkpoint + Vector3.up * 0.2f;
+        Vector3 at = Checkpoint + Vector3.up * 0.2f;
+        // Seat him on the drawn ground: a checkpoint is a flat spot, and the yard is a heightfield.
+        at.y = Mathf.Max(at.y, LevelYard.H(at.x, at.z) + 0.2f);
+        Player.position = at;
         body.enabled = true;
+        MovementMotor motor = Player.GetComponent<MovementMotor>();
+        if (motor != null) {
+            motor.Stop();   // no carried speed or fall from the moment he went down
+        }
+        ZeldaStyleCamera zelda = Cam != null ? Cam.GetComponent<ZeldaStyleCamera>() : null;
+        if (zelda != null) {
+            zelda.LockedOnGameObject = null;   // the lock was on a bot that has been put away
+        }
         lastPos = Player.position;
         Health = MaxHealth;
         invulnUntil = Time.time + 2f;

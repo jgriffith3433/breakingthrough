@@ -291,6 +291,8 @@ public static class PlaytestBeats {
         float nextSwing = 0f;
         int swings = 0;
         float crewSeconds = -1f;
+        Vector3 walkBackLast = level.Player.position;
+        float walkBackAt = Time.realtimeSinceStartup;
         courierSeen = Courier.Events.Count;   // anything older is another run's; the Courier clears the list when it arrives
         int defeatsSeen = 0;
         float resumedAt = -1f;
@@ -345,9 +347,30 @@ public static class PlaytestBeats {
             } else if (!level.Yard.CrewWoken && !level.Yard.CrewDown && level.Hud.Objective.text.Contains("drop")) {
                 Steer(LevelYard.DropPos);   // a defeat during the crew fight put them back to sleep: the objective points at the drop
             } else if (level.Yard.TheCourier != null && level.Yard.TheCourier.Alive && level.Yard.TheCourier.Dormant && level.Yard.CourierCame
-                && !level.Yard.CourierDown && level.Hud.Objective.text.Contains("drop")
-                && Flat(level.Yard.TheCourier.transform.position - level.Player.position).magnitude > 6f && Time.realtimeSinceStartup - resumedAt > 3f) {
-                Steer(level.Yard.TheCourier.transform.position);   // the objective says "Back to the drop, east": a player walks there
+                && !level.Yard.CourierDown && level.Hud.Objective.text.Contains("drop") && Time.realtimeSinceStartup - resumedAt > 3f) {
+                // The objective says "Back to the drop, east": a player walks there. After Wallit went down it sleeps at the drop: walk back to wake it (it wakes inside 14 m). Walk the whole way
+                // in, and say what is happening if Wallit does not move, so a stall explains itself.
+                Vector3 home = level.Yard.TheCourier.transform.position;
+                float away = Flat(home - level.Player.position).magnitude;
+                if (away > 3f) {
+                    Steer(home);
+                } else {
+                    Stop();
+                }
+                if (Vector3.Distance(level.Player.position, walkBackLast) > 0.3f) {
+                    walkBackLast = level.Player.position;
+                    walkBackAt = Time.realtimeSinceStartup;
+                } else if (Time.realtimeSinceStartup - walkBackAt > 3f && away > 3f) {
+                    walkBackAt = Time.realtimeSinceStartup;
+                    CharacterMovement cm = level.Player.GetComponent<CharacterMovement>();
+                    run.Event("walk-back-stalled", "Wallit has not moved for 3 s, " + Mathf.RoundToInt(away) + " m from the sleeping Courier: at " + level.Player.position.ToString("0.0")
+                        + ", axes " + PlayInput.GetAxis("Horizontal").ToString("0.0") + "/" + PlayInput.GetAxis("Vertical").ToString("0.0")
+                        + ", controller " + (level.Player.GetComponent<CharacterController>() != null && level.Player.GetComponent<CharacterController>().enabled)
+                        + ", rooted " + (PlayerGrowth.Instance != null && PlayerGrowth.Instance.Rooted) + ", climbers " + Enemy.Climbers
+                        + ", locked " + (cm != null && cm.ZeldaCam != null && cm.ZeldaCam.LockedOnGameObject != null) + ", timeScale " + Time.timeScale.ToString("0.00")
+                        + ", paused " + PauseMenu.IsOpen + ", scene " + Cutscene.IsOpen);
+                    PlayInput.Tap(KeyCode.Space);   // a hop, in case he is wedged on a lip
+                }
             } else {
                 Stop();
             }
