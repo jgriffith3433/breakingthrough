@@ -73,6 +73,21 @@ public static class PlaytestBeats {
         return v;
     }
 
+    // The stick's axes as the motor reads them: locked on, forward is toward the locked target (CharacterMovement), whatever
+    // the camera lags to; otherwise the camera's. Steering by the camera while locked walks Wallit in circles round the lock.
+    static void StickAxes(LevelScene level, out Vector3 fwd, out Vector3 right) {
+        CharacterMovement cm = level.Player.GetComponent<CharacterMovement>();
+        GameObject locked = cm != null && cm.ZeldaCam != null ? cm.ZeldaCam.LockedOnGameObject : null;
+        Vector3 toward = locked != null ? Flat(locked.transform.position - level.Player.position) : Vector3.zero;
+        if (toward.sqrMagnitude > 0.01f) {
+            fwd = toward.normalized;
+            right = new Vector3(fwd.z, 0f, -fwd.x);
+            return;
+        }
+        fwd = Flat(level.Cam.transform.forward).normalized;
+        right = Flat(level.Cam.transform.right).normalized;
+    }
+
     // One frame of walking toward a point: the stick is relative to the camera, so the world direction is turned into it.
     static void Steer(Vector3 target) {
         LevelScene level = LevelScene.Instance;
@@ -82,8 +97,7 @@ public static class PlaytestBeats {
             PlayInput.Axis("Vertical", 0f);
             return;
         }
-        Vector3 fwd = Flat(level.Cam.transform.forward).normalized;
-        Vector3 right = Flat(level.Cam.transform.right).normalized;
+        StickAxes(level, out Vector3 fwd, out Vector3 right);
         Vector3 d = to.normalized;
         PlayInput.Axis("Horizontal", Mathf.Clamp(Vector3.Dot(d, right) * 1.4f, -1f, 1f));
         PlayInput.Axis("Vertical", Mathf.Clamp(Vector3.Dot(d, fwd) * 1.4f, -1f, 1f));
@@ -304,6 +318,9 @@ public static class PlaytestBeats {
                     PlayInput.Tap(KeyCode.Mouse0);
                     swings++;
                 }
+            } else if (level.Yard.TheCourier != null && level.Yard.TheCourier.Alive && level.Yard.TheCourier.Dormant && level.Yard.CourierCame
+                && !level.Yard.CourierDown && Flat(level.Yard.TheCourier.transform.position - level.Player.position).magnitude > 6f) {
+                Steer(level.Yard.TheCourier.transform.position);   // after Wallit went down it sleeps at the drop: walk back to wake it
             } else {
                 Stop();
             }

@@ -50,6 +50,21 @@ public static class PlaytestTouch {
         }
     }
 
+    // The stick's axes as the motor reads them: locked on, forward is toward the locked target (CharacterMovement), whatever
+    // the camera lags to; otherwise the camera's. Steering by the camera while locked walks Wallit in circles round the lock.
+    static void StickAxes(LevelScene level, out Vector3 fwd, out Vector3 right) {
+        CharacterMovement cm = level.Player.GetComponent<CharacterMovement>();
+        GameObject locked = cm != null && cm.ZeldaCam != null ? cm.ZeldaCam.LockedOnGameObject : null;
+        Vector3 toward = locked != null ? Flat(locked.transform.position - level.Player.position) : Vector3.zero;
+        if (toward.sqrMagnitude > 0.01f) {
+            fwd = toward.normalized;
+            right = new Vector3(fwd.z, 0f, -fwd.x);
+            return;
+        }
+        fwd = Flat(level.Cam.transform.forward).normalized;
+        right = Flat(level.Cam.transform.right).normalized;
+    }
+
     // Toward a point in the level, where the stick is relative to the camera.
     static void SteerLevel(Vector3 target) {
         LevelScene level = LevelScene.Instance;
@@ -58,8 +73,7 @@ public static class PlaytestTouch {
             Rest();
             return;
         }
-        Vector3 fwd = Flat(level.Cam.transform.forward).normalized;
-        Vector3 right = Flat(level.Cam.transform.right).normalized;
+        StickAxes(level, out Vector3 fwd, out Vector3 right);
         Vector3 d = to.normalized;
         Drive(new Vector2(Vector3.Dot(d, right), Vector3.Dot(d, fwd)) * 1.4f);
     }
@@ -540,6 +554,10 @@ public static class PlaytestTouch {
         float nextSwing = 0f;
         int swings = 0;
         bool lockTapped = false;
+        Enemy target = null;
+        float closest = 9999f, lastCloser = 0f, detourUntil = 0f;
+        int detours = 0;
+        Vector3 detour = Vector3.zero;
         while (!run.Done && !level.Yard.CrewCleared && Time.realtimeSinceStartup - fightStart < 330f) {
             Enemy nearest = null;
             float nd = 9999f;
@@ -554,16 +572,45 @@ public static class PlaytestTouch {
                 }
             }
             if (nearest == null) {
-                Rest();
+                // After Wallit goes down the Courier sleeps at the drop again (LevelYard.RestCourier): walk back to wake it.
+                Enemy sleeper = level.Yard.TheCourier;
+                if (sleeper != null && sleeper.Alive && sleeper.Dormant && level.Yard.CourierCame && !level.Yard.CourierDown
+                    && Flat(sleeper.transform.position - level.Player.position).magnitude > 6f) {
+                    SteerLevel(sleeper.transform.position);
+                } else {
+                    Rest();
+                }
                 yield return null;
                 continue;
+            }
+            float now = Time.realtimeSinceStartup;
+            if (nearest != target) {
+                target = nearest;
+                closest = nd;
+                lastCloser = now;
+            } else if (nd < closest - 0.5f) {
+                closest = nd;
+                lastCloser = now;
+            }
+            // No headway for 3 s with something solid in the way: step round it, alternating sides, as a player would.
+            if (nd > 2.6f && now >= detourUntil && now - lastCloser > 3f) {
+                Vector3 to = Flat(nearest.transform.position - level.Player.position).normalized;
+                Vector3 side = Vector3.Cross(Vector3.up, to) * (detours % 2 == 0 ? 6f : -6f);
+                detour = level.Player.position + side + to * 2f;
+                detourUntil = now + 1.8f;
+                lastCloser = now + 1.8f;
+                closest = 9999f;
+                detours++;
+                run.Event("touch-detour", "no headway toward " + nearest.name + " " + Mathf.RoundToInt(nd) + " m off; stepping round (" + detours + ")");
             }
             if (!lockTapped && nd < 14f) {
                 lockTapped = true;
                 yield return TapPad("Lock");
                 run.Event("touch-lock", "finger on Lock with the crew " + Mathf.RoundToInt(nd) + " m off");
             }
-            if (nd > 2.1f) {
+            if (Time.realtimeSinceStartup < detourUntil) {
+                SteerLevel(detour);
+            } else if (nd > 2.1f) {
                 SteerLevel(nearest.transform.position);
             } else {
                 Rest();
@@ -579,6 +626,7 @@ public static class PlaytestTouch {
         }
         Rest();
         run.Metric("touchSwings", swings);
+        run.Metric("touchDetours", detours);
         run.Metric("touchFightSeconds", Mathf.Round(Time.realtimeSinceStartup - fightStart));
         run.Event("touch-fight", "the Clearing Crew " + (level.Yard.CrewCleared ? "cleared" : "NOT cleared") + " with " + swings + " Swing taps, " + level.Defeats + " defeats");
         if (!level.Yard.CrewCleared) {
