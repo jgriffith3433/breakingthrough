@@ -9,7 +9,8 @@ quadric edge collapse to --tris -> scale to --height (or --size x,y,z max) and s
 box-projected UVs at 1 m a tile (the kit textures are tileable) -> text file.
 
 Format (Assets/Resources/Baked/<id>.mesh.txt, read by BakedMesh.cs):
-  g <name> <px> <py> <pz> <set> <#rrggbb>   a part, its pivot, its kit texture set and tint (spaces in names are _)
+  g <name> <px> <py> <pz> <set> <#rrggbb> [parent]   a part, its pivot (rig space), its kit texture set and tint (spaces in names are _);
+                                 with a parent the part is a child of it, at its pivot minus the parent's (a cap on a head)
   v x y z nx ny nz u v           vertices relative to the pivot
   t a b c                        triangles (indices within the part)
 Prints the triangle count of every part. Never fails silently: exits 1 on a bad file.
@@ -283,12 +284,13 @@ def split_parts(verts, tris, spec, extent):
         chosen = spec.get('default', 'Body')
         for p in spec['parts']:
             b = p['box']
-            if all(b[i] * h[i] <= c[i] <= b[i + 3] * h[i] for i in range(3)):
+            k = [1.0, 1.0, 1.0] if p.get('metres') else h   # "metres": true = the box is in rig-space metres
+            if all(b[i] * k[i] <= c[i] <= b[i + 3] * k[i] for i in range(3)):
                 chosen = p['name']; break
         groups[chosen].append(t)
     pivots = {p['name']: p['pivot'] for p in spec['parts']}
     pivots.setdefault(spec.get('default', 'Body'), [0, 0, 0])
-    return groups, pivots, {p['name']: (p.get('set', 'metal'), p.get('color', '#ffffff')) for p in spec['parts']}
+    return groups, pivots, {p['name']: (p.get('set', 'metal'), p.get('color', '#ffffff'), p.get('parent', '')) for p in spec['parts']}
 
 def emit(path, groups, pivots, verts, tile, looks=None):
     lines = []
@@ -301,8 +303,9 @@ def emit(path, groups, pivots, verts, tile, looks=None):
         sub_v = [verts[k] for k in used]
         sub_t = [(m[a], m[b], m[c]) for a, b, c in ts]
         nrm = vertex_normals(sub_v, sub_t)
-        look = (looks or {}).get(name, ('metal', '#ffffff'))
-        lines.append('g %s %.5f %.5f %.5f %s %s' % (name.replace(' ', '_'), piv[0], piv[1], piv[2], look[0], look[1]))
+        look = (looks or {}).get(name, ('metal', '#ffffff', ''))
+        lines.append('g %s %.5f %.5f %.5f %s %s%s' % (name.replace(' ', '_'), piv[0], piv[1], piv[2], look[0], look[1],
+                                                       (' ' + look[2].replace(' ', '_')) if look[2] else ''))
         for p, n in zip(sub_v, nrm):
             u, v = box_uv(p, n, tile)
             lines.append('v %.4f %.4f %.4f %.3f %.3f %.3f %.3f %.3f' % (p[0] - piv[0], p[1] - piv[1], p[2] - piv[2], n[0], n[1], n[2], u, v))

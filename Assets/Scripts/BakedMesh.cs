@@ -10,7 +10,7 @@ public static class BakedMesh {
     public static bool Enabled = true;
 
     public class Part {
-        public string Name, Set = "metal";
+        public string Name, Set = "metal", Parent = "";
         public Vector3 Pivot;
         public Color Tint = Color.white;
         public readonly List<Vector3> Pos = new List<Vector3>(), Nrm = new List<Vector3>();
@@ -73,6 +73,7 @@ public static class BakedMesh {
                     if (w.Length > 5) { cur.Set = w[5]; }
                     Color c;
                     if (w.Length > 6 && ColorUtility.TryParseHtmlString(w[6], out c)) { cur.Tint = c; }
+                    if (w.Length > 7) { cur.Parent = w[7].Replace('_', ' '); }
                     parts.Add(cur);
                     break;
                 case "v":
