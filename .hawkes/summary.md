@@ -35,3 +35,6 @@ No art made, no code edited, no GPU spent (`.hawkes/pending-gpu.txt` does not ex
 
 ## Attempt 2 (rebuild as is)
 The worktree was restored on `task/94c4801cbd0d-using-the-method-proven-on-the-registrar` at `60144c1`. `origin/beta` has not moved (0 commits behind, 11 ahead), so there was nothing to merge and no conflicts. I changed no code, made no art and spent no GPU; `.hawkes/pending-gpu.txt` does not exist. Unity compile and the validators were not run here. Studio builds this branch and runs the `characters` playtest (named in `.hawkes/scenario.txt`). Only a compile error in `BakedMesh.cs`, `CharacterKit.cs`, `Enemy.cs` or `PlaytestCharacters.cs` is this change's to fix; a Gen 5xx, timeout or restart loop is infrastructure.
+
+## Attempt 3
+Attempt 3: rebuild as is after Gen 502 on the build output. Merged `origin/beta` (`8ed4f6c`, the Chapter 1 softlock fix: Companion, LevelYard, PlaytestBeats) with no conflicts. No code changed, no art made, no GPU spent; `.hawkes/pending-gpu.txt` does not exist. Unity compile and the validators were not run here. `Tools/Bake/in/*.glb` stays as is.
