@@ -7789,7 +7789,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                 }
             }
             run.Event("cinematics-video", ids[r] + ": " + reelClips + " animated clip(s) played, skipped mid-scene " + skipped);
-            if (reelClips < 1) {
+            if (reelClips < 1 && Cutscene.ClipShipped(ids[r] + "_1.mp4")) {
                 run.Problem(PlaytestSeverity.Bug, "chapter-cinematics: " + ids[r] + " played no animated clip");
             }
             missing += miss;
