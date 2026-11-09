@@ -51,7 +51,7 @@ Shader "Knoll/ChapterSky"
                 float3 d = normalize(i.dir);
                 float h = d.y;
                 float3 c = h >= 0.0
-                    ? lerp(_Horizon.rgb, _Top.rgb, pow(saturate(h / _Haze), 0.6))
+                    ? lerp(_Horizon.rgb, _Top.rgb, pow(saturate(h / max(_Haze, 0.001)), 0.6))
                     : lerp(_Horizon.rgb, _Ground.rgb, saturate(-h * 4.0));
                 float s = saturate(dot(d, normalize(_DiscDir.xyz)));
                 float disc = smoothstep(1.0 - _DiscSize, 1.0 - _DiscSize * 0.55, s);

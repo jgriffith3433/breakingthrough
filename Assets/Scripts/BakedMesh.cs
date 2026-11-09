@@ -9,6 +9,11 @@ using UnityEngine;
 public static class BakedMesh {
     public static bool Enabled = true;
 
+    // Bad normals the baked files held, and the meshes they were in, mended so far this session (chapter2-hud reports them:
+    // that is the NaN source the playtest could not name, proved present and removed).
+    public static int MendedVertices;
+    public static int MendedMeshes;
+
     public class Part {
         public string Name, Set = "metal", Parent = "";
         public Vector3 Pivot;
@@ -20,12 +25,60 @@ public static class BakedMesh {
         public Mesh ToMesh(string meshName) {
             var m = new Mesh { name = meshName };
             m.SetVertices(Pos);
-            m.SetNormals(Nrm);
+            m.SetNormals(MendedNormals());
+            if (Mended > 0) {
+                MendedVertices += Mended;
+                MendedMeshes++;
+            }
             m.SetUVs(0, Uv);
             m.SetTriangles(Tris, 0);
             m.RecalculateBounds();
             return m;
         }
+
+        // Normals the file lists that a shader cannot use: (0,0,0) (the bake tool writes it where a vertex's faces cancel out,
+        // as on thin double-sided Gen geometry or where decimation folded two faces together), not finite, or far from unit.
+        // KitLit carries a normal through the tangent-space transform and normalises it, so a zero one turns into NaN, and
+        // a single NaN pixel in the HDR frame is what bloom smeared into J's black squares on Chapter 2's gate plaza (the
+        // booth, turnstiles and arch had 7 to 20 of them each). Such a vertex gets the normal of the biggest face that uses
+        // it, or up when it has none. A good normal is passed on untouched.
+        public List<Vector3> MendedNormals() {
+            int n = Pos.Count;
+            var faceNormal = new Vector3[n];
+            var faceArea = new float[n];
+            for (int i = 0; i + 2 < Tris.Count; i += 3) {
+                int a = Tris[i], b = Tris[i + 1], c = Tris[i + 2];
+                Vector3 cross = Vector3.Cross(Pos[b] - Pos[a], Pos[c] - Pos[a]);
+                float area = cross.magnitude;
+                if (!(area > 1e-12f)) {   // a flat sliver, or NaN: written so NaN fails it too
+                    continue;
+                }
+                cross /= area;
+                int[] corner = { a, b, c };
+                for (int k = 0; k < 3; k++) {
+                    if (area > faceArea[corner[k]]) {
+                        faceArea[corner[k]] = area;
+                        faceNormal[corner[k]] = cross;
+                    }
+                }
+            }
+            var result = new List<Vector3>(n);
+            Mended = 0;
+            for (int i = 0; i < n; i++) {
+                Vector3 v = i < Nrm.Count ? Nrm[i] : Vector3.zero;
+                float sq = v.sqrMagnitude;
+                if (sq > 0.25f && sq < 4f) {   // roughly unit; NaN and zero fail both tests
+                    result.Add(v);
+                    continue;
+                }
+                Mended++;
+                result.Add(faceArea[i] > 0f ? faceNormal[i] : Vector3.up);
+            }
+            return result;
+        }
+
+        // How many normals the last ToMesh had to replace (the playtests read it).
+        public int Mended;
     }
 
     static readonly Dictionary<string, List<Part>> cache = new Dictionary<string, List<Part>>();
