@@ -214,6 +214,9 @@ public static class Combat {
             Pickups.DropChest(at);
             MetaProgress.AddCoins(foe.Boss ? Tuning.CoinsForBoss : Tuning.CoinsForGolden, at);
             Juice.HitStop(0.12f);
+            if (foe.Boss) {
+                BossSetPiece.Defeated(foe, WaveDirector.Wave);
+            }
             UpgradeLook.Say(foe.Golden ? "Golden Yo Bot down!" : foe.Title + " falls!", 2.4f, 120f);
         } else if (foe.Elite && Random.value < 0.08f) {
             Pickups.DropChest(at);

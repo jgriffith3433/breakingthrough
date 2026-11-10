@@ -30,6 +30,7 @@ public static class Playtest {
         new PlaytestScenario("touch", "Touch only, for a phone-sized screen (mobile, or 844x390): the menu fits, tap Play, walk to the bots with the on-screen stick and tap Swing, tap a level-up card, play to wave 2", 330, "menus"),
         new PlaytestScenario("touch-pause", "Pause and Settings by finger only, for a phone-sized screen (mobile, or 844x390): in an Arcade run, then Chapter 1's level, then the hub, the on-screen Pause button is found inside the safe area (pause-button, 44 px or more), tapped (pause-opened), Settings opened from it (settings-opened), sound switched and the music slider set (setting-changed), Done and Resume tapped (resumed; touchPauseCycles counts 3). The pause deck and the Settings panel are checked to sit inside the safe area with every control, in both orientations (pause-fits, settings-fits), so nothing scrolls", 400, "menus"),
         new PlaytestScenario("settings", "Press Tap to play, open Settings from the menu: sound off and on, music and effects sliders, Done; start a run, pause (button, then P), Settings from the pause menu, resume, play a little. Any screen size", 100, "menus"),
+        new PlaytestScenario("boss-set-pieces", "Arcade boss waves 10, 20, 30: each opens with a skippable intro (events boss-intro, boss-skip; the bot taps a key mid-intro), the boss bar and phase notch show, and defeat gives hit-stop, slow-mo, a burst and Slice's line (boss-payoff). Setup: wave key to 10/20/30, waiting bots trimmed to the boss, Slice topped up. Phone layout checks apply at 390 wide", 420, "content"),
         new PlaytestScenario("bots", "The bots: wave 1's Yo Bots (authored Gen model when present) walk at the musician with feet planting; bolts drop; enemy list names them. Setup: drop 60 Yo Bots and log FPS for the WebGL budget, then the testing wave key (=) to wave 30 for the Spider Bot Alpha (glass pod, six legs when authored) and 30 s of fight", 360, "content"),
         new PlaytestScenario("analytics", "Hawkes Analytics: start a run, clear wave 1, then hold fire on wave 2 so the bots take the musician. Every analytics event is logged as it goes out (run_start, level_start and level_end per wave, card picks, the death and the bot kind that landed it, run_end) with the build version and env; on the game-over screen the \"How was that run?\" card must show, and the bot rates it 4 stars", 240, "full"),
         new PlaytestScenario("musician", "Slice, the musician at the piano: her health bar is titled Slice, and she sits on the bench playing the piano clip with her hands on the keys while the piano music plays. The bot holds fire and frames Slice so wave 1's Yo Bots reach her: she stands (standUp), stabs and slashes the one in reach with her knife (stab / slash with OnSliceKnifeHit blade damage) at most once every 2.5 s, and flinches when hit (hurt); then the bot clears the wave (with Encore pulsing from PianoRecital) and she sits back down (sitDown) to play (piano). Then it holds fire from wave 2 (after 20 s, setup: a ring of Plated Yo Bots dropped around the bench, topped up every 8 s) until the bots empty her bar, she falls (defeat), and the game-over panel appears", 330, "content"),
@@ -428,6 +429,8 @@ public static class Playtest {
                 yield return ActsRun(options);
             } else if (id == "onboarding") {
                 yield return OnboardingRun(options);
+            } else if (id == "boss-set-pieces") {
+                yield return BossSetRun();
             } else if (id == "bots") {
                 yield return BotsRun(options);
             } else if (id == "musician") {
@@ -7146,6 +7149,53 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
     // Wave 1 is Yo Bots walking at the musician; the bot frames their front and side close-ups, checks the Gen library
     // entity/rig/clips/previews and foot planting, fights them and picks up their bolts. Then a 60-bot FPS check (setup),
     // then the testing wave key to wave 30 for the Alpha Spider Bot (front and side close-ups, rig/clips/previews, walk).
+    static IEnumerator BossSetRun() {
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+        yield return run.Until(() => WaveDirector.Instance != null && Enemy.Roster.Count > 0, 20f, "Arcade wave 1 bots");
+        int[] waves = { 10, 20, 30 };
+        for (int i = 0; i < waves.Length && !run.Done && !WaveDirector.IsLost; i++) {
+            run.Event("setup", "testing wave key to wave " + waves[i]);
+            yield return GoWave(waves[i]);
+            run.Scene("Boss wave " + waves[i]);
+            WaveDirector.Instance.TrimForPlaytest();
+            int before = BossSetPiece.Intros;
+            yield return run.Until(() => BossSetPiece.Intros > before, 60f, "wave " + waves[i] + " boss intro");
+            if (run.Done) { yield break; }
+            run.Event("boss-intro", "intro up on wave " + waves[i] + ", " + BossSetPiece.Events[BossSetPiece.Events.Count - 1]);
+            if (i == 1) {
+                yield return new WaitForSecondsRealtime(1f);
+                PlayInput.Tap(KeyCode.Space);
+                yield return new WaitForSecondsRealtime(0.5f);
+                run.Event("boss-skip", "skips " + BossSetPiece.Skips + ", intro active " + BossSetPiece.Active);
+            }
+            yield return run.Until(() => !BossSetPiece.Active, 8f, "intro to end");
+            int payoffs = BossSetPiece.Payoffs;
+            float nextHeal = 0f;
+            float t0 = Time.realtimeSinceStartup;
+            while (!run.Done && !WaveDirector.IsLost && BossSetPiece.Payoffs == payoffs && Time.realtimeSinceStartup - t0 < 90f) {
+                if (Time.realtimeSinceStartup >= nextHeal && Musician.Instance != null && Musician.Instance.Alive) {
+                    nextHeal = Time.realtimeSinceStartup + 4f;
+                    Musician.Instance.Heal(100);
+                }
+                if (LevelUpScreen.IsOpen) {
+                    PlayInput.Tap(KeyCode.Alpha1);
+                } else {
+                    Batter(player, WaveDirector.IsBuilding, null, true);
+                    CheckLock(player);
+                }
+                yield return null;
+            }
+            bool paid = BossSetPiece.Payoffs > payoffs;
+            run.Event("boss-payoff", "wave " + waves[i] + (paid ? " payoff played, slow-mo s " + BossSetPiece.LastSlowSeconds : " boss did not fall in 90 s"));
+            if (!paid) {
+                run.Problem(PlaytestSeverity.Bug, "boss-set-pieces: wave " + waves[i] + " boss never paid off");
+            }
+            yield return new WaitForSecondsRealtime(1.5f);
+        }
+        run.Metric("bossIntros", BossSetPiece.Intros);
+        run.Metric("bossPayoffs", BossSetPiece.Payoffs);
+    }
+
     static IEnumerator BotsRun(PlaytestOptions options) {
         yield return run.Until(() => ReadyBot(false, false) != null, 20f, "wave 1's Yo Bots");
         if (run.Done) {
