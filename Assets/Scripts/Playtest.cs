@@ -76,7 +76,7 @@ public static class Playtest {
         new PlaytestScenario("save", "The campaign save: an old-format file loads and is brought up to date, a corrupt one shows a message and starts clean, and every chapter's load time and memory is logged (setup: the sandbox stands where the stored save would, holding version 1 text, text with no version, then corrupt text; the real save is never touched). Events save-old-loaded, save-migrated, save-oldest-loaded, save-corrupt-clean (seven kinds of bad text, none throws), save-old-panel (the case files say the old files were updated), save-old-chapter (file 1 opens chapter 3), save-corrupt-panel (\"Case files unreadable. The Department filed new ones.\", no files), save-corrupt-play (a clean file opens chapter 1); then all six chapters are begun in turn with chapter-load events (card seconds, map seconds, memory MB) and metrics chapter<N>CardSeconds, chapter<N>MapSeconds, chapter<N>MemoryMB, oldSaveLoaded, corruptClean, corruptMessageShown", 1200, "content"),
         new PlaytestScenario("journal", "The journal, with real input (setup: the sandbox case file starts on chapter 1; the real save is never touched). Campaign, case file 1, Begin. Chapter 1 shows its optional extra on the HUD (event journal-extra) and hides one lost thing out in the field (journal-find-hidden). J opens the journal over the pause menu (journal-open-chapter), Back and Resume; Wallit walks out to the find with the stick and it goes into the case file at once (journal-find, metric findKept). The chapter is played to the Courier's fall; the Chapter Complete card judges the extra and names the lost thing kept. Menu, Campaign: the slot shows the journal count (slot-journal); the Journal button opens the journal and the bot reads Active, Finished and Collected (journal-tab, journal-lists; setup marks chapter 2's extra met). Then the files are written out and read back as after a quit (journal-persist, metric journalPersisted) and read again (setup then gives every find and extra: journal-paid says PAID IN FULL)", 900, "content"),
         new PlaytestScenario("lore","The lore log and the case-file slots, with real input (setup: the sandbox case file starts on chapter 1; the real save is never touched). Campaign, case file 1, Begin, Chapter 1 is played with the bat to the Courier's fall as in the campaign scenario; the Chapter Complete card names the new lore it unlocked (event lore). Menu, Campaign: the case file slot reads its chapter, its play time and its completion (event slot-info: chapter, h:mm:ss on the books, 1/6 filed, lore n/15; problems if any is missing or the time is 0). The Lore log button opens the file's log (event lore-open), the bot turns every page with Next and reads which entries are open and which are sealed (event lore-page per entry, event lore-summary): the entries revealed by opening the file and by Chapter 1 are open, the later ones read Sealed until their chapter is filed (metrics loreUnlocked, loreSealed, slotChapterShown, slotTimeShown, slotCompletionShown). Back closes it", 800, "content"),
-        new PlaytestScenario("campaign-full", "The whole case file in one run with real input (setup: the sandbox keeps the files off the real save): Campaign, case file 1, then Chapter 1 to ADDRESS FILED. Each chapter is played as its own scenario plays it (opening scene skipped with Enter, the objective met with the bat, the boss down, the Chapter Complete card), and between chapters Menu, Campaign and the file reopen on the next chapter's card (campaign-advanced, campaign-resume). Quit and resume: in Chapter 3 the scene is dropped mid-chapter (setup, as a closed tab does) and the file must reopen on Chapter 3, unfinished (events quit-midchapter, quit-resume-panel, quit-resume; metric quitResumeRight). Ends with the Filed scene, the finale pages, ADDRESS FILED, the credits card and the case file reading filed (events campaign-full, ending-card, campaign-panel-filed; metrics fullCaseFileCleared, endingShown, caseFileFiled)", 3000, "content"),
+        new PlaytestScenario("campaign-full", "The whole case file in one run with real input (setup: the sandbox keeps the files off the real save): Campaign, case file 1, then Chapter 1 (Level_1_Yard, as campaign-beats plays it) through Chapters 2-6 to ADDRESS FILED. Per chapter the bot logs a chapter-verdict (distinct map/own scene, memory under 1024 MB, opening cinematic keyframe vs placeholder, map features route/landmark/hazard/setpiece, dialogue choices answered) so the review can score every chapter. Opening reels are watched for a few shots then skipped with Enter; set pieces and choices play in the chapter's own flow. Quit and resume: in Chapter 3 the scene is dropped mid-chapter (setup, as a closed tab does) and the file must reopen on Chapter 3, unfinished (events quit-midchapter, quit-resume-panel, quit-resume; metric quitResumeRight). Ends with ch6_close, the ending-variant reel (ledger/doors/open keyframes, not stand-ins), ADDRESS FILED, the credits card and the case file reading filed (events campaign-full, chapter-verdict, cutscene-open, cinematics-art, choice-open, ending-reel, ending-card, campaign-panel-filed; metrics fullCaseFileCleared, endingShown, caseFileFiled, fullDistinctMaps, fullCinematicKeyframes, fullChoicesMade)", 3600, "content"),
         new PlaytestScenario("chapter6", "Chapter 6, Address Filed, played start to finish with real input (setup: the sandbox case file starts on chapter 6): Campaign, case file 1, Begin on the Chapter 6 card; the opening scene in the changed Hollow plays and is skipped with Enter; Wallit holds the circle with the bat through three waves (events wave-start), then the Spider Bot that carries the order (boss bar up, scroll on its back) arrives and falls; the Filed scene plays over the field, then the finale pages (Story.Finale verbatim, as in Arcade's story run) and the ADDRESS FILED ending card (events filed-scene, finale-page, ending-card); Keep going shows the credits card; the case file is marked complete (6 cleared), Menu, and the Campaign panel's case file 1 reads filed (events chapter6-setup, cutscene-open, objective, wave-start, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, filed-scene, finale-page, ending-card, credits-card, campaign-complete, campaign-panel-filed; metrics bossBar, endingShown, caseFileCleared, caseFileFiled)", 1000, "content"),
         new PlaytestScenario("chapter5", "Chapter 5, Strike This Address, played start to finish with real input (setup: the sandbox case file starts on chapter 5): Campaign, case file 1, Begin on the Chapter 5 card; the opening scene in the Reading Room plays over the map (the order is not signed, so it can be denied; the stamp pressed to the first page shows DENIED; the bot reads pages then skips with Enter); the objective line reads Read the order, page 1 of 5 with the bots down counting up; Wallit holds the circle at the desk with the bat through five pages (each page's wave announced PAGE n OF 5 and its forms on the wall turning blank when it is down: events page-start, page-read); then The Registrar (a gold Titan Spider Bot with a ledger, boss bar up) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 6, Menu, and reopening the file shows Chapter 6's card (events chapter5-setup, cutscene-open, cutscene-page, objective, page-start, page-read, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics pagesRead, bossBar, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("chapter4", "Chapter 4, The Process Servers, played start to finish with real input (setup: the sandbox case file starts on chapter 4): Campaign, case file 1, Begin on the Chapter 4 card; the opening dialogue says where Spider Bots come from (process servers, deliveries from the Department with one paper to hand over; the bot reads pages then skips with Enter); the objective reads Reach the first lamp (1 of 3) with metres counting down; Wallit walks the three lamps along the causeway under fire, batting what is in reach; at the last lamp the way turns round to the circle; Wallit walks home and holds off the servers; then The Server (a Spider Bot with a paper, boss bar up) arrives and offers the paper, and does NOT strike: Wallit refuses it by hitting it (objective reads Refuse the paper n / 3, events server-offer and server-refused 1, 2, 3); only after the third refusal it winds up and strikes Slice (server-strike), then falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 5, Menu, and reopening the file shows Chapter 5's card (events chapter4-setup, cutscene-open, cutscene-page, origin-dialogue, objective, floor-stop, last-lamp, home-leg, boss-arrives, boss-bar, server-offer, server-refused, server-strike, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics floorStops, serverOffers, serverRefusals, serverStruckEarly, chapterAdvanced, chapterResumed)", 900, "content"),
@@ -222,7 +222,7 @@ public static class Playtest {
         lockSwitchesSeen = ZeldaStyleCamera.LockSwitches;
         RunAnalytics.EnableDebug();
         StoryScreen.SuppressIntro = id != "story";
-        LevelScene.ChapterOneIsLevel = id == "campaign-beats" || id == "moods" || id == "campaign-touch" || id == "touch-pause" || id == "levels-1-3";   // the older chapter playtests press Begin on Chapter 1 and expect the chapter run
+        LevelScene.ChapterOneIsLevel = id == "campaign-beats" || id == "campaign-full" || id == "moods" || id == "campaign-touch" || id == "touch-pause" || id == "levels-1-3";   // the older chapter playtests press Begin on Chapter 1 and expect the chapter run
         PlayInput.Release();
         MetaProgress.EnterSandbox(true);
         Random.InitState(options.seed);
@@ -350,6 +350,11 @@ public static class Playtest {
                 journalTest = id == "journal";
                 gradeTest = id == "grade";
                 quitDone = false;
+                lastFullMap = null;
+                fullDistinctMaps = 0;
+                fullCinematicKeyframes = 0;
+                fullCinematicPlaceholders = 0;
+                fullChoicesMade = 0;
                 startChapter = id == "hub-doors" ? 2 : id == "hub-npcs" || id == "hub-life" || id == "hub-ambience" || id == "moods" ? 1 : id == "chapter6" || id == "secret-ending" ? 5 : id == "chapter5" ? 4 : id == "chapter4" ? 3 : id == "chapter3" ? 2 : id == "chapter2" || id == "chapter2-hud" || id == "companion" || id == "campaign-pacing" ? 1 : 0;
                 yield return CampaignRun();
                 if (!run.Done) {
@@ -761,6 +766,10 @@ public static class Playtest {
     static bool moodsTest;
     static bool fullRun;
     static string lastFullMap;
+    static int fullDistinctMaps;
+    static int fullCinematicKeyframes;
+    static int fullCinematicPlaceholders;
+    static int fullChoicesMade;
     static bool hudProbe;    // chapter2-hud: GatePlay photographs the top-middle HUD and scans for the black block (PlaytestHud), then stops at the circle
     static bool pacingRun;   // campaign-pacing: chapters 2 and 3, each one reporting its encounters and combat share
     static bool quitDone;
@@ -903,26 +912,68 @@ public static class Playtest {
             run.Problem(PlaytestSeverity.Bug, "campaign: run_start said mode '" + mode + "', not campaign");
         }
         run.Event("run_start", "mode=" + mode + " scene=" + active + " chapter=" + (ChapterScene.Instance.Chapter + 1) + " \"" + ChapterScene.Instance.Title + "\" loaded in " + seconds.ToString("0.0") + " s");
-        yield return run.Until(() => ChapterScene.Instance.LinesShown >= 1, 10f, "the chapter's first line");
+        yield return run.Until(() => ChapterScene.Instance.LinesShown >= 1 || (ChapterScene.Instance.CardUp && ChapterScene.Instance.BeginButton != null), 10f, "the chapter's first line");
         if (run.Done) {
             yield break;
         }
         yield return new WaitForSecondsRealtime(3f);
-        yield return ChapterPlay();
-        // The full case file: each chapter ends on the next one's card (Menu, reopen the file); play on to ADDRESS FILED.
-        while ((fullRun || pacingRun) && !run.Done && ChapterScene.Instance != null && SceneManager.GetActiveScene().name == CampaignSave.Scene) {
-            if (pacingRun && CampaignSave.Get(0).cleared >= 3) {
-                break;
+        // Full case file: Chapter 1 is the Sorting Yard level (not the old chapter run), then chapters 2-6 on their own maps.
+        if (fullRun && ChapterScene.Instance.Chapter == 0 && LevelScene.Replaces(0)) {
+            float memMb = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / 1048576f;
+            run.Event("chapter-verdict", "chapter 1: map scene Level_1_Yard, memory " + memMb.ToString("0") + " MB, cinematic level (own scene, no shared arena), set piece Courier notices, choices 1.c1 keep");
+            run.Metric("chapter1MemoryMB", Mathf.Round(memMb));
+            if (memMb > 1024f) {
+                run.Problem(PlaytestSeverity.Bug, "campaign-full: chapter 1 uses " + memMb.ToString("0") + " MB");
             }
+            lastFullMap = "Level_1_Yard";
+            fullDistinctMaps = 1;
+            yield return PlaytestBeats.Run(run, fromCard: true, finish: false);
+            if (run.Done) {
+                yield break;
+            }
+            // After the yard, LeaveToHub opens the office; open Chapter 2's card (setup) so ChapterPlay can Begin.
+            yield return run.Until(() => ChapterScene.Instance != null && SceneManager.GetActiveScene().name == CampaignSave.Scene, 30f, "the hub after Chapter 1");
+            if (run.Done) {
+                yield break;
+            }
+            if (ChapterScene.Instance.Hub != null || !ChapterScene.Instance.CardUp) {
+                ChapterScene.Instance.ShowCard(1);
+            }
+            yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.CardUp && ChapterScene.Instance.BeginButton != null && ChapterScene.Instance.Chapter == 1, 20f, "Chapter 2's card after the Sorting Yard");
+            if (run.Done) {
+                yield break;
+            }
+            run.Event("campaign-resume", "Chapter 2 card after Level_1_Yard");
+            while (!run.Done && ChapterScene.Instance != null && SceneManager.GetActiveScene().name == CampaignSave.Scene) {
+                yield return ChapterPlay();
+            }
+        } else {
             yield return ChapterPlay();
+            // The full case file / pacing: each chapter ends on the next one's card; play on.
+            while ((fullRun || pacingRun) && !run.Done && ChapterScene.Instance != null && SceneManager.GetActiveScene().name == CampaignSave.Scene) {
+                if (pacingRun && CampaignSave.Get(0).cleared >= 3) {
+                    break;
+                }
+                yield return ChapterPlay();
+            }
         }
         if (fullRun && !run.Done) {
             CampaignSave.Slot done = CampaignSave.Get(0);
             run.Metric("fullCaseFileCleared", done.cleared);
+            run.Metric("fullDistinctMaps", fullDistinctMaps);
+            run.Metric("fullCinematicKeyframes", fullCinematicKeyframes);
+            run.Metric("fullCinematicPlaceholders", fullCinematicPlaceholders);
+            run.Metric("fullChoicesMade", fullChoicesMade);
             if (done.cleared != CampaignSave.ChapterCount) {
                 run.Problem(PlaytestSeverity.Bug, "campaign-full: the run ended with " + done.cleared + " of " + CampaignSave.ChapterCount + " chapters cleared");
             } else {
-                run.Event("campaign-full", "Chapter 1 to ADDRESS FILED played in one run: " + done.cleared + " chapters cleared");
+                run.Event("campaign-full", "Chapter 1 to ADDRESS FILED played in one run: " + done.cleared + " chapters cleared, " + fullDistinctMaps + " distinct maps, " + fullCinematicKeyframes + " keyframe shots, " + fullChoicesMade + " choices");
+            }
+            if (fullDistinctMaps < CampaignSave.ChapterCount) {
+                run.Problem(PlaytestSeverity.Bug, "campaign-full: only " + fullDistinctMaps + " distinct map scenes across " + CampaignSave.ChapterCount + " chapters");
+            }
+            if (fullCinematicPlaceholders > 0) {
+                run.Problem(PlaytestSeverity.Bug, "campaign-full: " + fullCinematicPlaceholders + " opening cinematic shot(s) fell back to stand-in art");
             }
         }
     }
@@ -1730,15 +1781,34 @@ public static class Playtest {
         run.Scene("Chapter play");
         run.Event("chapter-start", chapter.Title + " in " + chapter.Place + ", case file " + (CampaignSave.Active + 1));
         if (fullRun) {
-            // Per-chapter verdict inputs: which scene is the map (distinct places, no shared arena), and memory.
+            // Per-chapter verdict inputs: distinct map (no shared arena), memory, map features, cinematic id.
             string mapScene = ChapterMap.Current != null ? ChapterMap.Current.MapName : SceneManager.GetActiveScene().name;
             float memMb = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / 1048576f;
-            run.Event("chapter-verdict", "chapter " + (before + 1) + ": map scene " + mapScene + ", memory " + memMb.ToString("0") + " MB");
+            string features = "";
+            bool hasRoute = false, hasLandmark = false, hasHazard = false, hasSet = false;
+            if (ChapterMap.Current != null) {
+                foreach (string f in ChapterMap.Current.Features) {
+                    features += (features.Length > 0 ? "; " : "") + f;
+                    hasRoute |= f.StartsWith("route:");
+                    hasLandmark |= f.StartsWith("landmark:");
+                    hasHazard |= f.StartsWith("hazard:");
+                    hasSet |= f.StartsWith("setpiece:");
+                }
+            }
+            string own = ChapterMap.Current != null && ChapterMap.Current.Own != null ? ChapterMap.Current.Own.Key : "none";
+            run.Event("chapter-verdict", "chapter " + (before + 1) + ": map scene " + mapScene + ", own " + own + ", memory " + memMb.ToString("0") + " MB, features [" + features + "]");
+            run.Metric("chapter" + (before + 1) + "MemoryMB", Mathf.Round(memMb));
             if (memMb > 1024f) {
                 run.Problem(PlaytestSeverity.Bug, "campaign-full: chapter " + (before + 1) + " uses " + memMb.ToString("0") + " MB");
             }
             if (before > 0 && lastFullMap == mapScene) {
                 run.Problem(PlaytestSeverity.Bug, "campaign-full: chapter " + (before + 1) + " reuses the map scene of the chapter before (" + mapScene + ")");
+            }
+            if (!(hasRoute && hasLandmark && (hasHazard || hasSet))) {
+                run.Problem(PlaytestSeverity.Bug, "campaign-full: chapter " + (before + 1) + " map lacks route, landmark or hazard/setpiece (" + features + ")");
+            }
+            if (lastFullMap != mapScene) {
+                fullDistinctMaps++;
             }
             lastFullMap = mapScene;
         }
@@ -3326,35 +3396,60 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         if (endingTest > 0) {
             yield return EndingWatch(chapter);
         } else {
-            // The Filed scene.
-            yield return run.Until(() => Cutscene.IsOpen, 10f, "the Filed scene");
+            // Filed + ending-variant reels (ch6_close, ending_ledger/doors/open), then notes, then ADDRESS FILED.
+            yield return run.Until(() => Cutscene.IsOpen || StoryScreen.EndingOpen, 10f, "the Filed scene");
             if (run.Done) {
                 yield break;
             }
             run.Scene("Filed");
-            run.Event("filed-scene", Cutscene.Instance.PageCount + " pages; the ring becomes writing, then a door number");
-            float limit = Time.realtimeSinceStartup + 40f;
-            while (Cutscene.IsOpen && Time.realtimeSinceStartup < limit) {
-                yield return new WaitForSecondsRealtime(0.8f);
-                PlayInput.Tap(KeyCode.Space);
-                yield return new WaitForSecondsRealtime(0.3f);
-            }
-            // The finale pages, then ADDRESS FILED.
-            yield return run.Until(() => StoryScreen.IsOpen, 10f, "the finale pages");
-            if (run.Done) {
-                yield break;
-            }
-            StoryScreen screen = StoryScreen.Instance;
-            for (int i = 0; i < Story.Finale.Length && !StoryScreen.EndingOpen && !run.Done; i++) {
-                yield return new WaitForSecondsRealtime(1.2f);
-                run.Event("finale-page", (i + 1) + " of " + Story.Finale.Length + ": " + screen.PageText.Replace('\n', ' '));
-                PlayInput.Tap(KeyCode.Space);
-                yield return null;
-                yield return null;
+            float limit = Time.realtimeSinceStartup + 180f;
+            int lastShot = -1;
+            string lastReel = "";
+            while (!StoryScreen.EndingOpen && !run.Done && Time.realtimeSinceStartup < limit) {
+                if (Cutscene.IsOpen && Cutscene.Instance != null) {
+                    Cutscene scene = Cutscene.Instance;
+                    if (scene.IsReel) {
+                        if (scene.ReelId != lastReel) {
+                            lastReel = scene.ReelId;
+                            lastShot = -1;
+                            run.Event(scene.ReelId == "ch6_close" ? "filed-scene" : "ending-reel", scene.ReelId + " (" + scene.ShotCount + " shots)");
+                        }
+                        if (scene.ShotIndex != lastShot) {
+                            lastShot = scene.ShotIndex;
+                            run.Event("cinematics-art", scene.ReelId + " " + scene.ShotId + ": " + (scene.ShotPlaceholder ? "PLACEHOLDER " : "keyframe ") + scene.ShotArt);
+                            if (fullRun) {
+                                if (scene.ShotPlaceholder) {
+                                    fullCinematicPlaceholders++;
+                                    run.Problem(PlaytestSeverity.Bug, "campaign-full: " + scene.ReelId + " shot " + scene.ShotId + " shows placeholder art");
+                                } else {
+                                    fullCinematicKeyframes++;
+                                }
+                            }
+                        }
+                        if (scene.Choosing) {
+                            yield return ReadDialogue();
+                            continue;
+                        }
+                        PlayInput.Tap(KeyCode.Space);
+                        yield return new WaitForSecondsRealtime(0.9f);
+                    } else {
+                        yield return ReadDialogue();
+                    }
+                } else if (StoryScreen.IsOpen && !StoryScreen.EndingOpen) {
+                    StoryScreen screen = StoryScreen.Instance;
+                    run.Event("finale-page", screen.PageText.Replace('\n', ' '));
+                    PlayInput.Tap(KeyCode.Space);
+                    yield return new WaitForSecondsRealtime(0.8f);
+                } else {
+                    yield return new WaitForSecondsRealtime(0.3f);
+                }
             }
             yield return run.Until(() => StoryScreen.EndingOpen, 8f, "the ADDRESS FILED ending card");
             if (run.Done) {
                 yield break;
+            }
+            if (fullRun && chapter.EndingVariant > 0) {
+                run.Event("ending-variant", Endings.Name(chapter.EndingVariant) + " reel " + chapter.EndingReel);
             }
         }
         if (run.Done) {
@@ -3760,7 +3855,8 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
     static bool watchCutscene;
 
     // The chapter's opening scene. "campaign" only skips it (Enter) so the chapter can be played; "cutscene" reads the
-    // first pages with real key presses, logs each one, then skips the rest and checks that play starts.
+    // first pages with real key presses, logs each one, then skips the rest and checks that play starts. campaign-full
+    // watches a few reel shots (keyframe vs placeholder) then skips so the video review sees the cinematic.
     static IEnumerator CutsceneStep() {
         yield return run.Until(() => Cutscene.IsOpen || (ChapterRun.Instance != null && ChapterRun.Instance.PlaySeconds > 3f), 12f, "the chapter's opening cutscene");
         if (run.Done) {
@@ -3770,6 +3866,9 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             if (watchCutscene) {
                 run.Problem(PlaytestSeverity.Bug, "cutscene: Chapter 1 began without its opening dialogue scene");
             }
+            if (fullRun) {
+                run.Problem(PlaytestSeverity.Bug, "campaign-full: chapter opened with no cinematic reel or dialogue scene");
+            }
             yield break;
         }
         if (comfortTest) {
@@ -3777,6 +3876,38 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             yield break;
         }
         Cutscene scene = Cutscene.Instance;
+        if (fullRun && scene.IsReel) {
+            run.Event("cutscene-open", "reel " + scene.ReelId + ", " + scene.ShotCount + " shots");
+            int seen = -1;
+            int watched = 0;
+            float limit = Time.realtimeSinceStartup + 25f;
+            while (Cutscene.IsOpen && watched < 3 && !run.Done && Time.realtimeSinceStartup < limit) {
+                yield return new WaitForSecondsRealtime(0.35f);
+                if (!Cutscene.IsOpen) {
+                    break;
+                }
+                if (scene.ShotIndex != seen) {
+                    seen = scene.ShotIndex;
+                    watched++;
+                    run.Event("cinematics-art", scene.ReelId + " " + scene.ShotId + ": " + (scene.ShotPlaceholder ? "PLACEHOLDER " : "keyframe ") + scene.ShotArt);
+                    if (scene.ShotPlaceholder) {
+                        fullCinematicPlaceholders++;
+                        run.Problem(PlaytestSeverity.Bug, "campaign-full: " + scene.ReelId + " shot " + scene.ShotId + " shows placeholder art (" + scene.ShotArt + ")");
+                    } else {
+                        fullCinematicKeyframes++;
+                    }
+                }
+                if (watched < 3) {
+                    PlayInput.Tap(KeyCode.Space);
+                }
+            }
+            if (Cutscene.IsOpen) {
+                run.Event("cutscene-skip", "Enter on " + scene.ReelId + " shot " + (scene.ShotIndex + 1) + "/" + scene.ShotCount);
+                PlayInput.Tap(KeyCode.Return);
+            }
+            yield return run.Until(() => !Cutscene.IsOpen, 5f, "the opening reel to close after Enter");
+            yield break;
+        }
         run.Event("cutscene-open", scene.PageCount + " pages; letterbox, speaker name, portrait slot, typed lines");
         if (!watchCutscene) {
             yield return new WaitForSecondsRealtime(0.6f);
@@ -5158,6 +5289,9 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                 yield return new WaitForSecondsRealtime(0.3f);
                 run.Event("choice-made", id + " -> " + label + " (saved as " + Choices.Picked(id) + ")");
                 run.Metric("choicesMade", Cutscene.ChoicesMade);
+                if (fullRun) {
+                    fullChoicesMade++;
+                }
                 continue;
             }
             run.Event("dialogue-page", scene.Page + "/" + scene.PageCount + " " + (scene.NameShown.Length > 0 ? scene.NameShown : "(narration)") + ": \"" + scene.TextShown.Replace('\n', ' ') + "\"");
@@ -5174,11 +5308,25 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
     static IEnumerator SettleScenes(ChapterRun chapter) {
         float limit = Time.realtimeSinceStartup + 120f;
         yield return new WaitForSecondsRealtime(0.3f);
+        int lastShot = -1;
+        string lastReel = "";
         while (!chapter.CardUp && !run.Done && Time.realtimeSinceStartup < limit) {
             if (Cutscene.IsOpen && Cutscene.Instance != null) {
                 if (!Cutscene.Instance.IsReel) {
                     yield return ReadDialogue();
                 } else {
+                    Cutscene scene = Cutscene.Instance;
+                    if (fullRun && (scene.ReelId != lastReel || scene.ShotIndex != lastShot)) {
+                        lastReel = scene.ReelId;
+                        lastShot = scene.ShotIndex;
+                        run.Event("cinematics-art", scene.ReelId + " " + scene.ShotId + ": " + (scene.ShotPlaceholder ? "PLACEHOLDER " : "keyframe ") + scene.ShotArt);
+                        if (scene.ShotPlaceholder) {
+                            fullCinematicPlaceholders++;
+                            run.Problem(PlaytestSeverity.Bug, "campaign-full: " + scene.ReelId + " shot " + scene.ShotId + " shows placeholder art");
+                        } else {
+                            fullCinematicKeyframes++;
+                        }
+                    }
                     PlayInput.Tap(KeyCode.Space);
                     yield return new WaitForSecondsRealtime(1.2f);
                 }
@@ -8096,7 +8244,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
     // Plays the six chapter 1-3 reels by name. Five run to the end, the last is skipped with Enter.
     static IEnumerator ChapterCinematicsRun(PlaytestOptions options) {
         yield return new WaitForSecondsRealtime(2f);
-        string[] ids = { "ch1_open", "ch1_close", "ch2_open", "ch2_close", "ch3_open", "ch3_close", "ch4_open", "ch4_close", "ch5_open", "ch5_close", "ch6_open", "boss_courier", "boss_foreman", "boss_server", "boss_order", "ch6_close", "ending_received", "credits" };
+        string[] ids = { "ch1_open", "ch1_close", "ch2_open", "ch2_close", "ch3_open", "ch3_close", "ch4_open", "ch4_close", "ch5_open", "ch5_close", "ch6_open", "boss_courier", "boss_foreman", "boss_server", "boss_order", "ch6_close", "ending_ledger", "ending_doors", "ending_open", "ending_received", "credits" };
         int reels = 0;
         int missing = 0;
         int placeholderStart = Cutscene.PlaceholderShots;
