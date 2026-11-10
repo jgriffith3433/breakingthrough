@@ -2,9 +2,10 @@
 
 Goal: every character reads at a glance from the camera distance (about 9-12 m behind and above Wallit) and shows
 personality while standing still. Sources: `Docs/CampaignBible.md` (arcs, voices), `Docs/CampaignDesign.md`, `Docs/Story.md`,
-`AGENTS.md`. No Warrok, no bow, no birds. No GPU generation: every new body is authored in code (`CharacterKit.cs`) from
-`KitMesh` (lathes, extrusions, tapered limbs, bevelled plates) with `KitTextures` materials (cloth, metal, brass, paper,
-wood, glass), parented as named parts so the existing procedural animation drives them.
+`AGENTS.md`. No Warrok, no bow, no birds. Code bodies are authored in `CharacterKit.cs` from `KitMesh` (lathes, extrusions,
+tapered limbs, bevelled plates) with `KitTextures` materials (cloth, metal, brass, paper, wood, glass), parented as named
+parts so the existing procedural animation drives them. When a Gen bake exists in `Resources/Baked/<id>.mesh.txt`
+(`Tools/Bake/glb_bake.py`), `CharacterKit.Make` and `KitCatalog.MeshOf` load it and keep the code body as the fallback.
 
 ## Rules for all characters
 
@@ -97,7 +98,7 @@ Built (code-authored like the others, `CharacterKit.BuildRegistrar`): spider rig
 - Brim (bowler hat, `#E6B7A1`): a hat with no head, a coat collar floating beneath; idle: tips and hovers. Palette salmon and brass.
 - Spare (half-built Yo Bot): one claw, one missing leg, exposed rib frame; idle: tries a claw, droops. Palette bare metal and lamp.
 - Chime (the bell): a brass bell on a thin stand; idle: sways, a tiny ring. Palette brass and iron.
-- Each under 2k triangles. Existing kit models, authored in `KitCatalogLateOffice.cs`; the gallery shows them with the same idle layer.
+- Each under 2k triangles. Code kit models in `KitCatalogLateOffice.cs`; Gen bakes (`of_lodger_*`) replace them when present. The gallery shows them with the same idle layer.
 
 ## Gallery and checks
 
@@ -109,16 +110,16 @@ Built (code-authored like the others, `CharacterKit.BuildRegistrar`): spider rig
 ## Left for later (not in this part)
 
 Wallit and Slice idle personality layers on top of the Animator; rebuilding Wallit and Slice bodies is NOT planned (their
-rigs and animation clips are the shipped, accepted ones). Courier, Foreman, Server and Order-Bearer rigs are this part;
-The Registrar and Plated Alpha are now authored the same way (code-built from `KitMesh`). Still later: a Hawkes Gen
-mesh pass (views3d, Blender decimate to 9-11k triangles, rigid split on the same part names) to replace these code bodies.
-
+rigs and animation clips are the shipped, accepted ones). The Registrar and Plated Alpha stay code-built from `KitMesh`
+(they were never Gen). Optional later landmarks not baked: `rd_chandelier`, `fl_crusher` (budgets and the ~10-prop set
+are already met without them).
 
 ## Gen bodies (Tools/Bake)
 
-The Courier, Foreman, Server and Order-Bearer, and the lodgers and landmark props listed in `Tools/Bake/README.md`, are Gen
-meshes baked by `Tools/Bake/glb_bake.py` into `Resources/Baked/<id>.mesh.txt` (decimated, split rigidly into the part names above
-by `Tools/Bake/specs/<id>.json`, kit textures tinted per part). `CharacterKit.Make` loads them when every required part exists and
-otherwise builds the code body (kept as the fallback; `BakedMesh.Enabled = false` forces it). Concepts were made from one
-picture each, so the back and sides are the model's guess. Triangles: Courier 7,000, Foreman 8,000, Server 7,900, Order-Bearer 8,000
-(budget 12,000). The `characters` playtest logs `gen-body` / `gen-prop` per piece.
+Shipped on beta (#184 and earlier). The Courier, Foreman, Server and Order-Bearer, the four lodgers, and about ten
+landmark props are Gen meshes baked by `Tools/Bake/glb_bake.py` into `Resources/Baked/<id>.mesh.txt` (decimated, split
+rigidly into the part names above by `Tools/Bake/specs/<id>.json`, kit textures tinted per part). `CharacterKit.Make`
+loads them when every required part exists and otherwise builds the code body (kept as the fallback;
+`BakedMesh.Enabled = false` forces it). Concepts were made from one picture each, so the back and sides are the model's
+guess. Triangle counts from the bake tool: Courier 6,999, Foreman 7,999, Server 7,887, Order-Bearer 7,998 (budget
+12,000); each lodger and landmark prop ≤1,500. The `characters` playtest logs `gen-body` / `gen-prop` per piece.
