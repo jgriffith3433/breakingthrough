@@ -220,7 +220,7 @@ public class ChapterHub : MonoBehaviour {
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.03f, 0.05f, 0.1f, 1f);
             cam.cullingMask = -1;
-            cam.fieldOfView = 55f;
+            cam.fieldOfView = 60f;
             cam.nearClipPlane = 0.3f;
             cam.farClipPlane = 200f;
         }

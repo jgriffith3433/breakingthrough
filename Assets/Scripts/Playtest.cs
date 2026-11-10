@@ -17,7 +17,7 @@ public static class Playtest {
     const float RunCap = 900f;
 
     static readonly PlaytestScenario[] Scenarios = {
-        new PlaytestScenario("explore", "Walks the live map on the stick in eight headings and four rings, hugging what stops it: stuck cells, falls through the world and reachability per map (events stuck-cell, fall, map-explore; metrics explore.stuckCells.<map>, explore.falls.<map>, explore.reachablePct.<map>); state note carries chapter, objective, position, grounded and camera", 300, "content"),
+        new PlaytestScenario("explore", "Walks every live map (Arcade, chapters 1-6, the hub) on the stick: stuck cells, falls, reachability per map (map-explore; explore.stuckCells/falls/reachablePct.<map>), plus a per-frame camera feel detector (camera-feel: inside geometry, within 0.15 m, snaps over 30 deg, jitter; feel.cameraInsideFrames/Near/Snap/Jitter.<map>) and acceptance probes (camera-corner pull-in, camera-idle 2 s recentre, camera-lock ease). State note carries chapter, objective, position, grounded, camera, fov and followDist", 1200, "content"),
         new PlaytestScenario("ch1", "Alias of campaign-beats: Chapter 1 from the case file to its boss and the return slot", 700, "content"),
         new PlaytestScenario("smoke", "Boot, menu, Arcade: shots at t=2, 4 and 10 s of play (events open-shot) so a Yo Bot is approaching or in reach by 4 s, the swing hint is gone by 10 s, and the edge arrow only shows while none is in swing reach; then about 30 s of bat play", 50, "smoke"),
         new PlaytestScenario("hollow-slice", "The Moonlit Hollow vertical slice (docs/world-bible.md, A): 60 s of Arcade play with the Department stamp press landmark on the wall (events landmark-stamp; metrics quality.maxQuietSeconds = longest gap between the press stamping, a kill or a pickup-free sight, quality.textOnlyBeats = 0, hollowStamps)", 90, "smoke"),
@@ -428,8 +428,7 @@ public static class Playtest {
             } else if (id == "smoke") {
                 yield return SmokeOpenRun(options);
             } else if (id == "explore") {
-                yield return run.Until(() => WaveDirector.Instance != null && Enemy.Roster.Count > 0, 20f, "Arcade wave");
-                yield return PlaytestExplore.Run(run);
+                yield return PlaytestExplore.RunAll(run);
             } else if (id == "hollow-slice") {
                 yield return Play(options, 60f, false);
                 if (!run.Done) {

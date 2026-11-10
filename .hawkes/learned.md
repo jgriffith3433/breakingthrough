@@ -1,1 +1,4 @@
-- convention: a sleeping (`Enemy.Dormant`) bot is never lock-on material (`ZeldaStyleCamera.AcquireTarget` skips it); playtest bots walk to sleepers to wake them by proximity and release Lock when nothing is awake.
+- lesson: CamBlock layer for kit walls — chapter maps stay mover-collider-free; walls/buildings get BoxColliders on CamBlock that Physics.IgnoreLayerCollision hides from Default/Enemy so the camera sphere-cast can pull in without solidifying the 150 m field.
+- lesson: MeshCollider ClosestPoint lies — non-convex Ground meshes report the query point as ClosestPoint, which false-triggers “camera inside”; the feel detector only trusts Box/Sphere/Capsule on Default+CamBlock.
+- convention: explore all-maps — `PlaytestExplore.RunAll` walks Arcade, chapters 1–6 and the hub with short rings plus corner/idle/lock probes; metrics keyed `feel.cameraInsideFrames.<map>`.
+- convention: ZeldaStyleCamera lock path — `CamState` is forced to Behind every frame; lock-on ease is `TickLockEase` on `orbitYaw` while Shift holds `LockedOnGameObject`, not `CamStates.LockOn`.
