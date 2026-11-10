@@ -213,7 +213,8 @@ public class WaveDirector : MonoBehaviour {
 
     void BeginIntro() {
         phase = Phase.Intro;
-        phaseLeft = Wave == 1 ? 1.0f : 1.35f;
+        // Wave 1: short beat so the first Yo Bot is rushing in within a few seconds of Arcade start.
+        phaseLeft = Wave == 1 ? 0.35f : 1.35f;
         pending.Clear();
         IsBuilding = false;
         spawnAngle = Random.Range(0f, 360f);
@@ -226,7 +227,7 @@ public class WaveDirector : MonoBehaviour {
         phase = Phase.Combat;
         RollEvent();
         FillPending(Wave);
-        spawnIn = 0.2f;
+        spawnIn = Wave == 1 ? 0f : 0.2f;
         spawnSerial = 0;
         debutAnnounced = false;
         IsBuilding = false;
@@ -588,14 +589,15 @@ public class WaveDirector : MonoBehaviour {
     }
 
     float SpawnOne(int index) {
+        // Wave 1 opens on Wallit so the first Yo Bot rushes into his view; later waves still ring Slice.
         Transform player = null;
-        if (Musician.Instance != null) {
+        GameObject playerGo = GameObject.FindGameObjectWithTag("Player");
+        if (Wave == 1 && playerGo != null) {
+            player = playerGo.transform;
+        } else if (Musician.Instance != null) {
             player = Musician.Instance.transform;
-        } else {
-            GameObject playerGo = GameObject.FindGameObjectWithTag("Player");
-            if (playerGo != null) {
-                player = playerGo.transform;
-            }
+        } else if (playerGo != null) {
+            player = playerGo.transform;
         }
 
         Vector3 origin = player != null ? player.position : Vector3.zero;
@@ -615,18 +617,46 @@ public class WaveDirector : MonoBehaviour {
         float outer = Mathf.Min(inner + band, 150f);
         inner = Mathf.Min(inner, outer - 10f);
         if (Wave == 1) {
-            // Opening: the first bot is almost at the bench, the rest a short walk out, so the first swing comes in seconds.
-            inner = spawnSerial <= 1 ? 6f : 12f + spawnSerial * 1.5f;
-            outer = inner + (spawnSerial <= 1 ? 1.5f : 8f);
+            // Opening: first Yo Bot almost in swing range of Wallit, the next ones a short rush away.
+            inner = spawnSerial <= 1 ? 3.5f : spawnSerial <= 3 ? 7f + spawnSerial : 11f + spawnSerial * 1.2f;
+            outer = inner + (spawnSerial <= 1 ? 1.2f : spawnSerial <= 3 ? 3f : 6f);
         }
-        float jitter = small ? 110f : 80f;
+        float jitter = Wave == 1 && spawnSerial <= 1 ? 35f : (small ? 110f : 80f);
         float gap = small ? 8f + waveT * 0.08f : Mathf.Max(7f, def.Scale * 0.85f);
+        if (Wave == 1) {
+            gap = Mathf.Min(gap, 4f);
+        }
         Vector3 spot = origin;
         float bestClear = -1f;
+        // First wave-1 bot: drop it in front of Wallit / the camera so it is on screen and rushing in.
+        Vector3 face = Vector3.forward;
+        if (Wave == 1 && spawnSerial <= 1) {
+            Camera cam = Camera.main;
+            if (cam != null) {
+                face = cam.transform.forward;
+                face.y = 0f;
+            }
+            if (face.sqrMagnitude < 0.01f && player != null) {
+                face = player.forward;
+                face.y = 0f;
+            }
+            if (face.sqrMagnitude < 0.01f) {
+                face = Vector3.forward;
+            }
+            face.Normalize();
+        }
         for (int attempt = 0; attempt < 18; attempt++) {
-            float spread = (spawnAngle + spawnSerial * 137.5f + Random.Range(-jitter, jitter)) * Mathf.Deg2Rad;
+            float spread;
             float radius = Random.Range(inner, outer);
-            Vector3 trySpot = origin + new Vector3(Mathf.Sin(spread), 0f, Mathf.Cos(spread)) * radius;
+            Vector3 trySpot;
+            if (Wave == 1 && spawnSerial <= 1) {
+                float yaw = attempt == 0 ? 0f : Random.Range(-jitter, jitter);
+                Vector3 dir = Quaternion.Euler(0f, yaw, 0f) * face;
+                trySpot = origin + dir.normalized * radius;
+            } else {
+                spread = (spawnAngle + spawnSerial * 137.5f + Random.Range(-jitter, jitter)) * Mathf.Deg2Rad;
+                trySpot = origin + new Vector3(Mathf.Sin(spread), 0f, Mathf.Cos(spread)) * radius;
+            }
             float clear = FlockClearance(trySpot);
             if (clear > bestClear) {
                 bestClear = clear;
@@ -647,6 +677,9 @@ public class WaveDirector : MonoBehaviour {
         } else if (!debutAnnounced && def.UnlockWave == Wave && Wave % 10 == 0) {
             debutAnnounced = true;
             UpgradeLook.Arrive(def.Name);
+        }
+        if (Wave == 1 && spawnSerial <= 3) {
+            return 0.18f + Random.Range(0f, 0.08f);
         }
         return PaceAfter(kind);
     }
