@@ -1,25 +1,16 @@
-# Camera feel + explore detector
+# Camera feel, attempt 3: capped turn rates + explore on every map
 
-## What was wrong
-Chapter kit maps were dressed without colliders, so `ZeldaStyleCamera.CompensateForWalls` (even the levelMode raycast) had nothing to hit and the camera clipped through walls. Arcade/tag-`wall` path was dead. Idle recentre and lock ease fields existed but did nothing useful. The `explore` scenario only walked Arcade and had no camera-feel numbers.
+## Wrong
+Review ran smoke, so no `feel.cameraInsideFrames.*` numbers existed; motion sheets showed ~0.2 s view swings. Yaw easing used raw frame time, so a slow frame (map load, hitch) could jump the orbit tens of degrees.
 
-## What changed
-- **`CamBlock` layer** (TagManager layer 7) + `CamBlock.cs`: kit walls/buildings get a BoxCollider on that layer via `KitCatalog.Make`; movers ignore it (`Physics.IgnoreLayerCollision`). Proxy boxes on Chapter 1 stay on Default and still block both Wallit and the camera.
-- **`ZeldaStyleCamera`**: sphere-cast pull-in (radius ≥ near clip) with fast pull-in / slow ease-out, follow damping fixed to a real seconds constant, FOV clamped 60–75 (default 65; hub camera 60), near clip ≥ 0.15, idle recentre behind Wallit after 2 s, lock-on and release ease on `orbitYaw`.
-- **`CameraFeel`**: per-frame detector (inside solid, within 0.15 m of walls, snaps > 30°, jitter); metrics `feel.cameraInsideFrames.<map>` etc.
-- **`explore`**: walks Arcade, chapters 1–6 and the hub; reports explore + camera-feel metrics; probes corner pull-in, idle recentre, lock ease. Scenario budget 1200 s.
+## Changed
+- `.hawkes/scenario.txt` = `explore` (Arcade, chapters 1-6, hub: inside/near/snap/jitter per map plus corner, idle-recentre and lock probes).
+- `ZeldaStyleCamera.cs`: every eased yaw (idle recentre, lock-on, release) is clamped to 200 deg/s and uses dt capped at 0.05 s; lock-on SmoothDampAngle gets a max speed; a final `LimitViewTurn` caps the rendered view at 300 deg/s (restarts after a >8 m jump of Wallit, i.e. a cut). A 30-degree one-frame snap is now impossible outside cuts.
+- Earlier work kept: CamBlock colliders on kit walls, sphere-cast pull-in with ease-out, FOV 60-75, 2 s idle recentre.
 
-## Files
-`CamBlock.cs`, `CameraFeel.cs`, `ZeldaStyleCamera.cs`, `PlaytestExplore.cs`, `Playtest.cs`, `KitCatalog.cs`, `LevelDress.cs`, `OwnMap.cs`, `ChapterHub.cs`, `ProjectSettings/TagManager.asset`
+## Checked
+Read the C# for signature/syntax (SmoothDampAngle 6-arg overload). Unity compile and explore not run here (no editor); the build server compiles, beta runs explore.
 
-## Checks
-- Read C# for CS0102/CS0111 duplicates and call sites; Unity compile **not run here** (no editor in this sandbox).
-- Fun-reviewer: **thin** (camera polish helps immersion; does not fill living-world gaps — out of scope for this task).
-- Reviewer first pass: **revise** — fixed idle probe window (4.5 s), explore budget (shorter rings + 1200 s), Ground MeshCollider false positives, lock **release** ease. Re-review: plumbing matches criteria; live `explore` still needed on beta to prove `feel.cameraInsideFrames.* = 0`.
-- Conflicts: none.
-
-## Left for beta
-Run `explore` and confirm every map’s `feel.cameraInsideFrames.<map>` is 0, corner/idle/lock events green, and a lock-on clip shows no snap. GPU budget: none used / none needed.
-
-## Scenario
-`explore` (see `.hawkes/scenario.txt`)
+## Look at
+`feel.cameraInsideFrames.<map>`, `feel.cameraSnapFrames.<map>`, `feel.lockMaxFrameDeg.<map>`, `feel.idleRecentre.<map>`.
+No GPU generation used; GPU estimate: none needed. Conflicts: none.
