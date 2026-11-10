@@ -229,5 +229,5 @@ and a playtest event name.
 ## What is not decided here
 
 - Gen art replacement of stand-ins: priced separately under the approved item (GPU estimate follows in the summary).
-- The Arcade wall press and the light arc need J's yes before anyone builds them.
+- The Arcade wall press and light arc: J asked for the vertical slice (2026-11-10) and they are built as `HollowLandmark.cs`; the stamp sfx is still to be made (cents, `audio.sfx`).
 - Whether Arcade gets the wall stamp press and light arc: proposed here, J's call.

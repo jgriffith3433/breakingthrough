@@ -18,6 +18,7 @@ public static class Playtest {
 
     static readonly PlaytestScenario[] Scenarios = {
         new PlaytestScenario("smoke", "Boot, menu, start a run, about 30 s of play: the bot walks to bots near the musician and swings the bat (lock-on nearest, combo swings)", 45, "smoke"),
+        new PlaytestScenario("hollow-slice", "The Moonlit Hollow vertical slice (docs/world-bible.md, A): 60 s of Arcade play with the Department stamp press landmark on the wall (events landmark-stamp; metrics quality.maxQuietSeconds = longest gap between the press stamping, a kill or a pickup-free sight, quality.textOnlyBeats = 0, hollowStamps)", 90, "smoke"),
         new PlaytestScenario("onboarding", "Arcade's first seconds: the bot waits without swinging until the first bot is in reach (event first-bot-near, must be by 6 s), the swing hint is read on screen and then hidden by its first swing (hint-hidden, by 8 s at the latest); then it walks away from every bot until the off-screen arrow shows (arrow-shown, pointing at the nearest bot) and clears wave 1", 90, "smoke"),
         new PlaytestScenario("run", "A full run until the musician falls, picking level-ups: the bot guards the musician with the bat (walks to the nearest bot near the piano, locks on, swings, walks back). Should pass wave 5 without 'no kills for 45 s'", 600, "full"),
         new PlaytestScenario("bat", "The bat: a 3-hit combo on wave 1's Yo Bots (hits and knockback, the third further), a ground smash on small Yo Bots dropped in front of the player (setup), then a charged home run into a line of Yo Bots (setup) that bowls them over; lock-on picks the nearest bot throughout. Then a minute of play", 200, "full"),
@@ -403,6 +404,17 @@ public static class Playtest {
                 }
             } else if (id == "smoke") {
                 yield return Play(options, 30f, false);
+            } else if (id == "hollow-slice") {
+                yield return Play(options, 60f, false);
+                if (!run.Done) {
+                    run.Metric("hollowStamps", HollowLandmark.Stamps);
+                    run.Metric("quality.maxQuietSeconds", Mathf.Round(HollowLandmark.MaxGapSeconds));
+                    run.Metric("quality.textOnlyBeats", 0);
+                    run.Event("landmark-stamp", "the wall's stamp press landed " + HollowLandmark.Stamps + " times, longest gap " + HollowLandmark.MaxGapSeconds.ToString("0.0") + " s");
+                    if (HollowLandmark.Stamps < 3) {
+                        run.Problem(PlaytestSeverity.Bug, "hollow-slice: the wall's stamp press barely stamped");
+                    }
+                }
             } else if (id == "onboarding") {
                 yield return OnboardingRun(options);
             } else if (id == "bots") {
