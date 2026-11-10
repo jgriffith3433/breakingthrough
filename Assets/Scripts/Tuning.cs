@@ -120,4 +120,31 @@ public static class Tuning {
         float late = Mathf.Max(0, wave - 20);
         return 1f + Mathf.Max(0, wave - 1) * 0.02f + late * late * 0.0015f;
     }
+
+    // Arcade acts (docs/world-bible.md, A): waves 1-10, 11-20, 21-30, then the loop under an overtime tint (wave 31 on).
+    public const float ActFadeSeconds = 2f;
+    public const float ActBannerSeconds = 3.4f;
+    public const float OvertimeTint = 0.5f;
+    public const float ActMusicLevel = 0.4f;
+    public const float ActSpiderHealth = 0.2f;
+    public const float MixEliteChance = 0.4f;
+    public const float MixEliteToughness = 1.3f;
+
+    public static int ActOf(int wave) {
+        return ((Mathf.Max(1, wave) - 1) / 10) % 3;
+    }
+
+    public static bool IsOvertime(int wave) {
+        return wave > 30;
+    }
+
+    // Act 2 brings Spider Bots early (a pair at wave 11, more as it goes); from wave 30 they come by the normal roster.
+    public static int ActSpiders(int wave) {
+        return wave < 11 || wave >= 30 ? 0 : Mathf.Min(6, 2 + (wave - 11) / 3);
+    }
+
+    // Act 3's mixed elite crews: every kind but the Yo Bot rolls a trait too.
+    public static float MixElite(int wave) {
+        return ActOf(wave) == 2 ? MixEliteChance : 0f;
+    }
 }

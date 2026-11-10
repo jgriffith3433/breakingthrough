@@ -306,13 +306,25 @@ public class WaveDirector : MonoBehaviour {
         Enemy enemy = go.AddComponent<Enemy>();
         enemy.ApplyBot(def);
         enemy.HitsToDrop = CampaignGrade.Health(Mathf.Max(1, Mathf.RoundToInt(enemy.HitsToDrop * HealthMult)));
+        if (def.Kind == BotKind.SpiderBot && Wave < 30) {
+            enemy.HitsToDrop = Mathf.Max(1, Mathf.RoundToInt(enemy.HitsToDrop * Tuning.ActSpiderHealth));
+        }
         if (rollElite && def.Kind == BotKind.YoBot) {
             float chance = Tuning.EliteChance(Wave) * (Event == WaveEvent.EliteSurge ? 3f : 1f);
             if (Random.value < chance) {
                 enemy.MakeElite(PickTrait());
             }
+        } else if (rollElite && def.Kind != BotKind.YoBot && Random.value < Tuning.MixElite(Wave)) {
+            enemy.MakeElite(PickMixTrait());
+            enemy.HitsToDrop = Mathf.Max(1, Mathf.RoundToInt(enemy.HitsToDrop * Tuning.MixEliteToughness));
         }
         return enemy;
+    }
+
+    // Act 3's plated, mega and Spider Bot elites keep to traits that only change how they move and hit.
+    BotTrait PickMixTrait() {
+        BotTrait[] traits = { BotTrait.Sprinter, BotTrait.Bruiser, BotTrait.Charger };
+        return traits[Random.Range(0, traits.Length)];
     }
 
     BotTrait PickTrait() {
@@ -764,6 +776,10 @@ public class WaveDirector : MonoBehaviour {
             int ramp = 2 + (wave - tier) * 2;
             counts[(int)kind] = Mathf.Min(Mathf.Max(2, slots * 2), Mathf.Max(2, ramp));
         }
+        int spiders = Tuning.ActSpiders(wave);
+        if (spiders > 0 && caps[(int)BotKind.SpiderBot] > 0) {
+            counts[(int)BotKind.SpiderBot] = spiders;
+        }
         if (counts.Length > (int)BotKind.YoBot) {
             counts[(int)BotKind.YoBot] = YoBotCount(wave) * (Event == WaveEvent.Feast ? 2 : 1);
         }
@@ -781,6 +797,12 @@ public class WaveDirector : MonoBehaviour {
             int count = quota[(int)kind];
             for (int i = 0; i < count; i++) {
                 pending.Add(kind);
+            }
+        }
+        // Act 2's early Spider Bots (the tier loop only reaches them at wave 30).
+        if (Tuning.ActSpiders(wave) > 0) {
+            for (int i = 0; i < quota[(int)BotKind.SpiderBot]; i++) {
+                pending.Add(BotKind.SpiderBot);
             }
         }
         int yoBots = quota[(int)BotKind.YoBot];
@@ -844,6 +866,9 @@ public class WaveDirector : MonoBehaviour {
             given += share;
         }
         maxAlive[(int)BotKind.YoBot] += Mathf.Max(0, left - given);
+        if (Tuning.ActSpiders(wave) > 0) {
+            maxAlive[(int)BotKind.SpiderBot] = Mathf.Min(3, 1 + Tuning.ActSpiders(wave) / 2);
+        }
     }
 
     static void CountAlive(int[] alive) {

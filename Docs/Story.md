@@ -437,7 +437,13 @@ Code: `HubLife.cs`, `ChapterHub.cs`, `OfficeMap.Dress`; the `hub-life` playtest 
 
 Voices and sound: the lodgers each have their own voice (Tick a measured wound-clock, Brim a muffled, wistful hat, Spare a small chirpy half-built Yo Bot, Chime a clear, ringing bell), spoken through `CastVoice` for every `Story.Lodgers` line and every `L|` chat line; the hub and each chapter carry a quiet ambience under the score (hub a ticking room, the Hollow wind, the belt yard's rumble, the Long Walk's lamp-buzz, the Reading Room's paper hush).
 
+## Arcade's three acts
+
+The long night has three hours. **Act I, Night Shift** (waves 1-10): moon-blue, the Yo Bots come chirping up the hill, "Uploading victory." **Act II, Cold Hour** (11-20): the light turns teal and the Spider Bots come down the wall; Slice: "Legs. Count them." **Act III, Last Light** (21-30): a bruised dusk, orange at the rim, and no crew is plain any more: Plated, Mega and Spider Bots wear elite crests. Wallit: "Pay up." After wave 30 the clock will not clock out: **Overtime** is the same three hours in red ink, and the banner says so. Light and sky only: no weather, no sparks, nothing solid in the playfield.
+
 ## Canon established here
+
+- Arcade's acts: Night Shift (1-10), Cold Hour (11-20), Last Light (21-30), then Overtime in red ink; Spider Bots arrive in act II and elites of every kind in act III.
 
 - The lodgers: Tick (clock), Brim (hat), Spare (half-built Yo Bot) and Chime (bell) live in the hub; their lines change after each chapter. Chime's errands pay XP and a kept lost thing.
 - The lodgers' arcs: Tick keeps his own hour (a Winding Key), Brim wants an address (a Hatband, then an Address Label), Spare is a spare kept in case somebody needs it, Chime rings for the right address. Their favours and the loose notices change the ending's lines.
