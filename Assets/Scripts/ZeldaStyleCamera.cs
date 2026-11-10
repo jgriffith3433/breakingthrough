@@ -62,6 +62,12 @@ public class ZeldaStyleCamera : MonoBehaviour {
     const float PullInSmooth = 0.08f;
     const float PullOutSmooth = 0.28f;
     const float IdleRecentreSeconds = 2f;
+    // Capped turn rate for every eased yaw (idle recentre, lock-on, release) and for the final view, so a slow frame never snaps.
+    const float MaxYawRate = 200f;
+    const float MaxViewRate = 300f;
+    Quaternion lastViewRot;
+    Vector3 lastViewTarget;
+    bool viewPrimed;
     const float MinFov = 60f;
     const float MaxFov = 75f;
     const float DefaultFov = 65f;
@@ -306,9 +312,33 @@ public class ZeldaStyleCamera : MonoBehaviour {
 
         CompensateForWalls(characterOffset, ref TargetPosition);
         transform.LookAt(FollowXForm.position + Vector3.up * Mathf.Max(1f, DistanceUp * Mathf.Max(1f, BodyScale)));
+        LimitViewTurn();
         ShowLockMarker();
         ApplyShake();
         FeelFollowDist = followDist > 0f ? followDist : Vector3.Distance(transform.position, characterOffset);
+    }
+
+    float LimitYaw(float from, float to) {
+        float max = MaxYawRate * Mathf.Min(Time.unscaledDeltaTime, 0.05f);
+        return from + Mathf.Clamp(Mathf.DeltaAngle(from, to), -max, max);
+    }
+
+    // Final guard on the view: the turn in one frame never exceeds MaxViewRate (at most 0.05 s of it), unless Wallit was moved
+    // by a cut (teleport, scene start), which restarts the guard.
+    void LimitViewTurn() {
+        Vector3 at = Target != null ? Target.transform.position : Vector3.zero;
+        if (viewPrimed && (at - lastViewTarget).sqrMagnitude > 64f) {
+            viewPrimed = false;
+        }
+        lastViewTarget = at;
+        if (viewPrimed) {
+            float max = MaxViewRate * Mathf.Min(Time.unscaledDeltaTime, 0.05f);
+            if (Quaternion.Angle(lastViewRot, transform.rotation) > max) {
+                transform.rotation = Quaternion.RotateTowards(lastViewRot, transform.rotation, max);
+            }
+        }
+        lastViewRot = transform.rotation;
+        viewPrimed = true;
     }
 
     // After ~2 s with no look input and no lock, ease the orbit back behind Wallit's facing.
@@ -334,7 +364,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
         }
         float wantYaw = FollowXForm.eulerAngles.y;
         float before = orbitYaw;
-        orbitYaw = Mathf.LerpAngle(orbitYaw, wantYaw, 1f - Mathf.Exp(-3.2f * Time.unscaledDeltaTime));
+        orbitYaw = LimitYaw(orbitYaw, Mathf.LerpAngle(orbitYaw, wantYaw, 1f - Mathf.Exp(-3.2f * Mathf.Min(Time.unscaledDeltaTime, 0.05f))));
         orbitPitch = Mathf.Lerp(orbitPitch, 18f, 1f - Mathf.Exp(-2.4f * Time.unscaledDeltaTime));
         if (Mathf.Abs(Mathf.DeltaAngle(orbitYaw, wantYaw)) < 2.5f && Mathf.Abs(orbitPitch - 18f) < 2f) {
             FeelRecentred = true;
@@ -367,7 +397,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
             // Camera sits opposite the target so Wallit stands between camera and lock.
             float wantYaw = Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg + 180f;
             float before = orbitYaw;
-            orbitYaw = Mathf.SmoothDampAngle(orbitYaw, wantYaw, ref lockYawVel, 0.35f);
+            orbitYaw = LimitYaw(orbitYaw, Mathf.SmoothDampAngle(orbitYaw, wantYaw, ref lockYawVel, 0.35f, MaxYawRate, Mathf.Min(Time.unscaledDeltaTime, 0.05f)));
             lastLockSnapDeg = Mathf.Abs(Mathf.DeltaAngle(before, orbitYaw));
             if (lastLockSnapDeg > FeelMaxLockSnapDeg) {
                 FeelMaxLockSnapDeg = lastLockSnapDeg;
@@ -377,11 +407,11 @@ public class ZeldaStyleCamera : MonoBehaviour {
         if (unlockBlend > 0f) {
             float before = orbitYaw;
             float want = FollowXForm.eulerAngles.y;
-            unlockBlend = Mathf.MoveTowards(unlockBlend, 0f, Time.unscaledDeltaTime / 0.35f);
+            unlockBlend = Mathf.MoveTowards(unlockBlend, 0f, Mathf.Min(Time.unscaledDeltaTime, 0.05f) / 0.35f);
             float t = 1f - unlockBlend;
             // Smoothstep from the release yaw toward behind Wallit.
             float k = t * t * (3f - 2f * t);
-            orbitYaw = Mathf.LerpAngle(unlockYaw, want, k);
+            orbitYaw = LimitYaw(orbitYaw, Mathf.LerpAngle(unlockYaw, want, k));
             lastLockSnapDeg = Mathf.Abs(Mathf.DeltaAngle(before, orbitYaw));
             if (lastLockSnapDeg > FeelMaxLockSnapDeg) {
                 FeelMaxLockSnapDeg = lastLockSnapDeg;
