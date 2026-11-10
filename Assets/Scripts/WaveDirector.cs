@@ -686,6 +686,7 @@ public class WaveDirector : MonoBehaviour {
             enemy.MakeBoss();
             UpgradeLook.Say(enemy.Title + " approaches!", 2.8f, 160f);
             GameAudio.Play("stomp", 1f, 0.6f);
+            BossSetPiece.Begin(enemy, Wave);
         } else if (!debutAnnounced && def.UnlockWave == Wave && Wave % 10 == 0) {
             debutAnnounced = true;
             UpgradeLook.Arrive(def.Name);
