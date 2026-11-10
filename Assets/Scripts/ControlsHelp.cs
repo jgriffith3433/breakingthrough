@@ -80,31 +80,57 @@ public class ControlsHelp : MonoBehaviour {
             line.fontSize = 28;
             lineRect.sizeDelta = new Vector2(laidOut == UiMode.Tall ? size.x - 48f : Mathf.Max(300f, size.x - 660f), 72f);
         }
+        if (arrow != null && arrowRect != null) {
+            float arrowPx = laidOut == UiMode.Desktop ? 72f : (laidOut == UiMode.Tall ? 56f : 64f);
+            arrow.fontSize = Mathf.RoundToInt(arrowPx);
+            arrowRect.sizeDelta = new Vector2(arrowPx + 18f, arrowPx + 18f);
+        }
     }
 
     // Onboarding state, read by the playtest. Seconds are game seconds (paused time does not count).
     public const float HintSeconds = 8f;
+    public const float HintIdleSeconds = 12f;
     public const float NearReach = 6f;
     public static float PlayedSeconds { get; private set; }
     public static float HintHiddenAt { get; private set; } = -1f;
     public static string HintHiddenWhy { get; private set; } = "";
+    public static float HintShownAgainAt { get; private set; } = -1f;
     public static float FirstNearAt { get; private set; } = -1f;
     public static float FirstNearDistance { get; private set; }
+    public static float FirstApproachAt { get; private set; } = -1f;
+    public static float FirstApproachDistance { get; private set; }
     public static bool ArrowShown { get; private set; }
     public static float ArrowDistance { get; private set; }
+    public static bool HintVisible { get; private set; }
 
     Text arrow;
     RectTransform arrowRect;
     float hintAlpha = 1f;
     bool hintDone;
+    float hintShownAt;
+    float idleSeconds;
+    int lastConnects;
+    int lastHomeRuns;
+    int lastSwings;
 
     void Start() {
         PlayedSeconds = 0f;
         HintHiddenAt = -1f;
         HintHiddenWhy = "";
+        HintShownAgainAt = -1f;
         FirstNearAt = -1f;
+        FirstApproachAt = -1f;
         ArrowShown = false;
+        HintVisible = true;
+        hintDone = false;
+        hintShownAt = 0f;
+        hintAlpha = 1f;
+        idleSeconds = 0f;
+        lastConnects = 0;
+        lastHomeRuns = 0;
+        lastSwings = 0;
         BuildArrow();
+        Layout();
     }
 
     void BuildArrow() {
@@ -131,37 +157,43 @@ public class ControlsHelp : MonoBehaviour {
             && !PauseMenu.IsOpen && !StoryScreen.IsOpen && !Cutscene.IsOpen && !LevelUpScreen.IsOpen;
     }
 
-    // Arcade only: while no live bot is on screen, an arrow at the screen edge points to the nearest one.
+    static float SwingReach() {
+        return BatEquipment.Reach;
+    }
+
+    // Arcade only: an edge arrow points at the nearest bot while none is within swing range.
     void TickArrow() {
         ArrowShown = false;
         if (arrow == null || arrowRect == null) {
             return;
         }
         Camera cam = Camera.main;
-        Transform player = Musician.Instance != null ? Musician.Instance.transform : null;
         GameObject playerGo = GameObject.FindGameObjectWithTag("Player");
-        Vector3 from = playerGo != null ? playerGo.transform.position : (player != null ? player.position : Vector3.zero);
+        Vector3 from = playerGo != null ? playerGo.transform.position
+            : (Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero);
         Enemy nearest = null;
         float best = float.MaxValue;
-        bool onScreen = false;
+        bool inSwing = false;
+        float swing = SwingReach();
         if (cam != null && ArcadePlay() && !WaveDirector.Waiting) {
             foreach (Enemy enemy in Enemy.Roster) {
                 if (enemy == null) {
                     continue;
                 }
-                Vector3 v = cam.WorldToViewportPoint(enemy.transform.position + Vector3.up);
-                if (v.z > 0f && v.x > 0.03f && v.x < 0.97f && v.y > 0.03f && v.y < 0.97f) {
-                    onScreen = true;
+                Vector3 flat = enemy.transform.position - from;
+                flat.y = 0f;
+                float d = flat.magnitude;
+                if (d <= swing) {
+                    inSwing = true;
                     break;
                 }
-                float d = (enemy.transform.position - from).sqrMagnitude;
                 if (d < best) {
                     best = d;
                     nearest = enemy;
                 }
             }
         }
-        if (nearest == null || onScreen) {
+        if (nearest == null || inSwing) {
             arrow.gameObject.SetActive(false);
             return;
         }
@@ -174,9 +206,17 @@ public class ControlsHelp : MonoBehaviour {
             dir = Vector2.down;
         }
         dir.Normalize();
-        // Out to the edge of a rounded box, kept clear of the touch stick and buttons below.
-        float scale = Mathf.Min(0.40f / Mathf.Max(0.001f, Mathf.Abs(dir.x)), 0.36f / Mathf.Max(0.001f, Mathf.Abs(dir.y)));
+        // Edge of a rounded box, clear of the touch stick (left) and buttons (right) on compact layouts.
+        float edgeX = laidOut == UiMode.Desktop ? 0.42f : (laidOut == UiMode.Tall ? 0.36f : 0.34f);
+        float edgeY = laidOut == UiMode.Tall ? 0.28f : 0.36f;
+        float scale = Mathf.Min(edgeX / Mathf.Max(0.001f, Mathf.Abs(dir.x)), edgeY / Mathf.Max(0.001f, Mathf.Abs(dir.y)));
         Vector2 pos = new Vector2(0.5f, 0.5f) + dir * scale;
+        if (laidOut == UiMode.Tall) {
+            pos.y = Mathf.Clamp(pos.y, 0.22f, 0.78f);
+        } else if (laidOut != UiMode.Desktop) {
+            pos.y = Mathf.Clamp(pos.y, 0.18f, 0.88f);
+            pos.x = Mathf.Clamp(pos.x, 0.18f, 0.82f);
+        }
         arrowRect.anchorMin = pos;
         arrowRect.anchorMax = pos;
         arrowRect.anchoredPosition = Vector2.zero;
@@ -185,7 +225,7 @@ public class ControlsHelp : MonoBehaviour {
         arrow.color = new Color(1f, 0.82f, 0.28f, pulse);
         arrow.gameObject.SetActive(true);
         ArrowShown = true;
-        ArrowDistance = Mathf.Sqrt(best);
+        ArrowDistance = best;
     }
 
     void TickOnboarding() {
@@ -193,29 +233,62 @@ public class ControlsHelp : MonoBehaviour {
             return;
         }
         PlayedSeconds += Time.deltaTime;
-        if (FirstNearAt < 0f && Enemy.Roster.Count > 0 && !WaveDirector.Waiting) {
-            GameObject playerGo = GameObject.FindGameObjectWithTag("Player");
-            if (playerGo != null) {
-                foreach (Enemy enemy in Enemy.Roster) {
-                    if (enemy == null) {
-                        continue;
+        GameObject playerGo = GameObject.FindGameObjectWithTag("Player");
+        if (playerGo != null && Enemy.Roster.Count > 0 && !WaveDirector.Waiting) {
+            Camera cam = Camera.main;
+            foreach (Enemy enemy in Enemy.Roster) {
+                if (enemy == null) {
+                    continue;
+                }
+                Vector3 flat = enemy.transform.position - playerGo.transform.position;
+                flat.y = 0f;
+                float dist = flat.magnitude;
+                if (FirstNearAt < 0f && dist <= NearReach) {
+                    FirstNearAt = PlayedSeconds;
+                    FirstNearDistance = dist;
+                }
+                if (FirstApproachAt < 0f) {
+                    bool onScreen = false;
+                    if (cam != null) {
+                        Vector3 v = cam.WorldToViewportPoint(enemy.transform.position + Vector3.up);
+                        onScreen = v.z > 0f && v.x > 0.02f && v.x < 0.98f && v.y > 0.02f && v.y < 0.98f;
                     }
-                    Vector3 flat = enemy.transform.position - playerGo.transform.position;
-                    flat.y = 0f;
-                    if (flat.magnitude <= NearReach) {
-                        FirstNearAt = PlayedSeconds;
-                        FirstNearDistance = flat.magnitude;
-                        break;
+                    // In swing reach, or clearly closing on screen within a short rush.
+                    if (dist <= SwingReach() || (onScreen && dist <= 14f)) {
+                        FirstApproachAt = PlayedSeconds;
+                        FirstApproachDistance = dist;
                     }
                 }
             }
         }
-        // The swing hint teaches, then gets out of the way: first swing, or 8 s, whichever comes first.
-        if (!hintDone && WaveDirector.Wave <= 1) {
-            if (BatEquipment.Swings > 0 || PlayedSeconds >= HintSeconds) {
-                hintDone = true;
-                HintHiddenAt = PlayedSeconds;
-                HintHiddenWhy = BatEquipment.Swings > 0 ? "first swing" : "8 s";
+
+        bool hit = BatEquipment.Connects > lastConnects;
+        bool home = BatEquipment.HomeRuns > lastHomeRuns;
+        bool swung = BatEquipment.Swings > lastSwings;
+        lastConnects = BatEquipment.Connects;
+        lastHomeRuns = BatEquipment.HomeRuns;
+        lastSwings = BatEquipment.Swings;
+        if (hit || home || swung) {
+            idleSeconds = 0f;
+        } else {
+            idleSeconds += Time.deltaTime;
+        }
+
+        // Wave 1 swing hint: teaches, then clears after the first hit, a home run, or ~8 s; returns after ~12 s idle.
+        if (WaveDirector.Wave <= 1 && ChapterRun.Instance == null) {
+            if (!hintDone) {
+                float shownFor = PlayedSeconds - hintShownAt;
+                if (hit || home || shownFor >= HintSeconds) {
+                    hintDone = true;
+                    HintHiddenAt = PlayedSeconds;
+                    HintHiddenWhy = hit ? "first hit" : home ? "home run" : "8 s";
+                }
+            } else if (hintAlpha < 0.05f && idleSeconds >= HintIdleSeconds) {
+                hintDone = false;
+                hintShownAt = PlayedSeconds;
+                idleSeconds = 0f;
+                HintShownAgainAt = PlayedSeconds;
+                HintHiddenWhy = "idle return";
             }
         }
     }
@@ -257,6 +330,7 @@ public class ControlsHelp : MonoBehaviour {
         // Wave 1's swing hint fades once taught; later lessons show as before.
         bool fading = !building && wave == 1 && hintDone && ChapterRun.Instance == null;
         hintAlpha = Mathf.MoveTowards(hintAlpha, fading ? 0f : 1f, Time.unscaledDeltaTime / 0.6f);
+        HintVisible = hintAlpha > 0.05f && !WaveDirector.IsLost;
         // Never over the game-over panel.
         line.enabled = hintAlpha > 0.01f && !WaveDirector.IsLost;
         if (next != shown) {

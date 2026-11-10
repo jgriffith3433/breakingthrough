@@ -17,9 +17,9 @@ public static class Playtest {
     const float RunCap = 900f;
 
     static readonly PlaytestScenario[] Scenarios = {
-        new PlaytestScenario("smoke", "Boot, menu, start a run, about 30 s of play: the bot walks to bots near the musician and swings the bat (lock-on nearest, combo swings)", 45, "smoke"),
+        new PlaytestScenario("smoke", "Boot, menu, Arcade: shots at t=2, 4 and 10 s of play (events open-shot) so a Yo Bot is approaching or in reach by 4 s, the swing hint is gone by 10 s, and the edge arrow only shows while none is in swing reach; then about 30 s of bat play", 50, "smoke"),
         new PlaytestScenario("hollow-slice", "The Moonlit Hollow vertical slice (docs/world-bible.md, A): 60 s of Arcade play with the Department stamp press landmark on the wall (events landmark-stamp; metrics quality.maxQuietSeconds = longest gap between the press stamping, a kill or a pickup-free sight, quality.textOnlyBeats = 0, hollowStamps)", 90, "smoke"),
-        new PlaytestScenario("onboarding", "Arcade's first seconds: the bot waits without swinging until the first bot is in reach (event first-bot-near, must be by 6 s), the swing hint is read on screen and then hidden by its first swing (hint-hidden, by 8 s at the latest); then it walks away from every bot until the off-screen arrow shows (arrow-shown, pointing at the nearest bot) and clears wave 1", 90, "smoke"),
+        new PlaytestScenario("onboarding", "Arcade's first seconds: the bot waits without swinging until a Yo Bot is approaching or in reach (event first-bot-near / first-bot-approach, by 4 s), the swing hint is read then hidden by the first hit or 8 s (hint-hidden); then it walks away until the edge arrow shows while none is in swing reach (arrow-shown) and clears wave 1", 90, "smoke"),
         new PlaytestScenario("run", "A full run until the musician falls, picking level-ups: the bot guards the musician with the bat (walks to the nearest bot near the piano, locks on, swings, walks back). Should pass wave 5 without 'no kills for 45 s'", 600, "full"),
         new PlaytestScenario("bat", "The bat: a 3-hit combo on wave 1's Yo Bots (hits and knockback, the third further), a ground smash on small Yo Bots dropped in front of the player (setup), then a charged home run into a line of Yo Bots (setup) that bowls them over; lock-on picks the nearest bot throughout. Then a minute of play", 200, "full"),
         new PlaytestScenario("menus", "Shop menu, start a run, a level-up card, reroll and pick", 120, "menus"),
@@ -403,7 +403,7 @@ public static class Playtest {
                     AnalyticsReport();
                 }
             } else if (id == "smoke") {
-                yield return Play(options, 30f, false);
+                yield return SmokeOpenRun(options);
             } else if (id == "hollow-slice") {
                 yield return Play(options, 60f, false);
                 if (!run.Done) {
@@ -4027,32 +4027,18 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         }
     }
 
-    // Onboarding: the first bot must be in reach by 6 s, the swing hint must be up until the first swing (or 8 s) and then
-    // gone, and the arrow must point at the nearest bot while none is on screen. The bat is held back until the bot has
-    // been seen in reach, then plays normally (real input).
-    static IEnumerator OnboardingRun(PlaytestOptions options) {
+    // Smoke: timed open shots at 2 / 4 / 10 s of Arcade play, then normal bat play to 30 s.
+    static IEnumerator SmokeOpenRun(PlaytestOptions options) {
         var player = Object.FindAnyObjectByType<CharacterMovement>();
-        float start = Time.realtimeSinceStartup;
-        bool hintSeen = false;
-        while (!run.Done && FirstNearNotYet() && Time.realtimeSinceStartup - start < 12f) {
-            Batter(player, true, null, true);
-            hintSeen |= HintUp();
-            yield return null;
-        }
-        bool near = ControlsHelp.FirstNearAt >= 0f;
-        run.Event("first-bot-near", near
-            ? "a bot was within " + ControlsHelp.NearReach.ToString("0") + " m of Wallit at " + ControlsHelp.FirstNearAt.ToString("0.0") + " s of play (" + ControlsHelp.FirstNearDistance.ToString("0.0") + " m)"
-            : "no bot came within " + ControlsHelp.NearReach.ToString("0") + " m in 12 s");
-        if (!near || ControlsHelp.FirstNearAt > 6f) {
-            run.Problem(PlaytestSeverity.Bug, "the first Arcade bot was not within reach by 6 s (" + (near ? ControlsHelp.FirstNearAt.ToString("0.0") + " s" : "never") + ")");
-        }
-        run.Event("hint-shown", "swing hint on screen before the first swing: " + hintSeen + " (" + Object.FindAnyObjectByType<ControlsHelp>().GetComponentInChildren<UnityEngine.UI.Text>().text + ")");
-
-        // Now swing for real: the hint must go with the first swing.
-        float swingStart = Time.realtimeSinceStartup;
-        bool arrowSeen = false;
-        bool hintLogged = false;
-        while (!run.Done && Time.realtimeSinceStartup - swingStart < 75f && WaveDirector.Wave <= 2) {
+        // Clock starts when wave 1 combat has spawned (PlayedSeconds ticks only while Arcade is live).
+        yield return run.Until(() => WaveDirector.Instance != null && Enemy.Roster.Count > 0 && ControlsHelp.PlayedSeconds > 0f, 20f, "Arcade wave 1 bots");
+        float startPlayed = ControlsHelp.PlayedSeconds;
+        float wallStart = Time.realtimeSinceStartup;
+        bool shot2 = false;
+        bool shot4 = false;
+        bool shot10 = false;
+        while (!run.Done && Time.realtimeSinceStartup - wallStart < 32f) {
+            float elapsed = Mathf.Max(0f, ControlsHelp.PlayedSeconds - startPlayed);
             if (WaveDirector.IsLost) {
                 yield return GameOver();
                 yield break;
@@ -4066,16 +4052,130 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             if (Enemy.Roster.Count == 0) {
                 PlayInput.Tap(KeyCode.Return);
             }
+            if (!shot2 && elapsed >= 2f) {
+                shot2 = true;
+                LogOpenShot(2f, elapsed);
+            }
+            if (!shot4 && elapsed >= 4f) {
+                shot4 = true;
+                LogOpenShot(4f, elapsed);
+                if (ControlsHelp.FirstApproachAt < 0f && ControlsHelp.FirstNearAt < 0f) {
+                    run.Problem(PlaytestSeverity.Bug, "smoke: no Yo Bot in swing reach or clearly approaching by 4 s");
+                }
+            }
+            if (!shot10 && elapsed >= 10f) {
+                shot10 = true;
+                LogOpenShot(10f, elapsed);
+                if (ControlsHelp.HintVisible && ControlsHelp.HintShownAgainAt < 0f) {
+                    run.Problem(PlaytestSeverity.Bug, "smoke: the swing hint was still up at t=10 s");
+                }
+            }
+            if (shot10 && elapsed >= 30f) {
+                break;
+            }
+            yield return null;
+        }
+        if (!shot2 || !shot4 || !shot10) {
+            run.Problem(PlaytestSeverity.Bug, "smoke: missing open shots at 2/4/10 s (got 2=" + shot2 + " 4=" + shot4 + " 10=" + shot10 + ")");
+        }
+        run.Metric("openApproachAt", ControlsHelp.FirstApproachAt >= 0f ? Mathf.Round(ControlsHelp.FirstApproachAt * 10f) / 10f : -1f);
+        run.Metric("openHintHiddenAt", ControlsHelp.HintHiddenAt >= 0f ? Mathf.Round(ControlsHelp.HintHiddenAt * 10f) / 10f : -1f);
+        PlayInput.Hold(KeyCode.Mouse0, false);
+        PlayInput.Hold(KeyCode.LeftShift, false);
+    }
+
+    static void LogOpenShot(float at, float elapsed) {
+        float nearest = NearestBotDistance();
+        run.Scene("Arcade open t=" + at.ToString("0"));
+        run.Event("open-shot", "t=" + at.ToString("0") + "s (play " + elapsed.ToString("0.0") + "s) nearest="
+            + (nearest < 900f ? nearest.ToString("0.0") + " m" : "none")
+            + " approach=" + (ControlsHelp.FirstApproachAt >= 0f ? ControlsHelp.FirstApproachAt.ToString("0.0") + "s@" + ControlsHelp.FirstApproachDistance.ToString("0.0") + "m" : "no")
+            + " hint=" + (ControlsHelp.HintVisible ? "up" : "gone")
+            + " arrow=" + (ControlsHelp.ArrowShown ? "on@" + ControlsHelp.ArrowDistance.ToString("0") + "m" : "off")
+            + " bots=" + Enemy.Roster.Count
+            + " layout=" + UiFit.Mode);
+        run.Progress(Mathf.Clamp01(at / 30f));
+    }
+
+    static float NearestBotDistance() {
+        GameObject playerGo = GameObject.FindGameObjectWithTag("Player");
+        if (playerGo == null) {
+            return 999f;
+        }
+        float best = 999f;
+        foreach (Enemy enemy in Enemy.Roster) {
+            if (enemy == null) {
+                continue;
+            }
+            Vector3 flat = enemy.transform.position - playerGo.transform.position;
+            flat.y = 0f;
+            if (flat.magnitude < best) {
+                best = flat.magnitude;
+            }
+        }
+        return best;
+    }
+
+    // Onboarding: first bot approaching or in reach by 4 s, swing hint gone by first hit / 8 s, edge arrow while none
+    // is in swing reach. The bat is held back until a bot has been seen approaching, then plays normally.
+    static IEnumerator OnboardingRun(PlaytestOptions options) {
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+        float start = Time.realtimeSinceStartup;
+        bool hintSeen = false;
+        while (!run.Done && FirstApproachNotYet() && Time.realtimeSinceStartup - start < 10f) {
+            Batter(player, true, null, true);
+            hintSeen |= HintUp();
+            yield return null;
+        }
+        bool near = ControlsHelp.FirstNearAt >= 0f;
+        bool approach = ControlsHelp.FirstApproachAt >= 0f;
+        run.Event("first-bot-approach", approach
+            ? "a bot was approaching or in reach at " + ControlsHelp.FirstApproachAt.ToString("0.0") + " s (" + ControlsHelp.FirstApproachDistance.ToString("0.0") + " m)"
+            : "no bot approached in 10 s");
+        run.Event("first-bot-near", near
+            ? "a bot was within " + ControlsHelp.NearReach.ToString("0") + " m of Wallit at " + ControlsHelp.FirstNearAt.ToString("0.0") + " s of play (" + ControlsHelp.FirstNearDistance.ToString("0.0") + " m)"
+            : "no bot came within " + ControlsHelp.NearReach.ToString("0") + " m yet");
+        if (!approach || ControlsHelp.FirstApproachAt > 4f) {
+            run.Problem(PlaytestSeverity.Bug, "the first Arcade bot was not in reach or clearly approaching by 4 s (" + (approach ? ControlsHelp.FirstApproachAt.ToString("0.0") + " s" : "never") + ")");
+        }
+        run.Event("hint-shown", "swing hint on screen before the first swing: " + hintSeen + " (" + Object.FindAnyObjectByType<ControlsHelp>().GetComponentInChildren<UnityEngine.UI.Text>().text + ")");
+
+        // Now swing for real: the hint must go with the first hit (or 8 s). Then walk off so the edge arrow shows.
+        float swingStart = Time.realtimeSinceStartup;
+        bool arrowSeen = false;
+        bool hintLogged = false;
+        bool walkedOff = false;
+        while (!run.Done && Time.realtimeSinceStartup - swingStart < 75f && WaveDirector.Wave <= 2) {
+            if (WaveDirector.IsLost) {
+                yield return GameOver();
+                yield break;
+            }
+            if (LevelUpScreen.IsOpen) {
+                PlayInput.Tap(KeyCode.Alpha1);
+            } else if (!hintLogged) {
+                Batter(player, WaveDirector.IsBuilding, null, true);
+                CheckLock(player);
+            } else if (!arrowSeen) {
+                // Walk away from every bot so none stays in swing reach; the edge arrow should point at the nearest.
+                WalkAwayFromBots(player);
+                walkedOff = true;
+            } else {
+                Batter(player, WaveDirector.IsBuilding, null, true);
+                CheckLock(player);
+            }
+            if (Enemy.Roster.Count == 0) {
+                PlayInput.Tap(KeyCode.Return);
+            }
             if (!hintLogged && ControlsHelp.HintHiddenAt >= 0f) {
                 hintLogged = true;
-                run.Event("hint-hidden", "swing hint gone after " + ControlsHelp.HintHiddenAt.ToString("0.0") + " s of play (" + ControlsHelp.HintHiddenWhy + "), swings " + BatEquipment.Swings);
+                run.Event("hint-hidden", "swing hint gone after " + ControlsHelp.HintHiddenAt.ToString("0.0") + " s of play (" + ControlsHelp.HintHiddenWhy + "), hits " + BatEquipment.Connects + ", swings " + BatEquipment.Swings);
                 if (ControlsHelp.HintHiddenAt > ControlsHelp.HintSeconds + 0.5f) {
                     run.Problem(PlaytestSeverity.Bug, "the swing hint stayed past 8 s");
                 }
             }
             if (!arrowSeen && ControlsHelp.ArrowShown) {
                 arrowSeen = true;
-                run.Event("arrow-shown", "no bot on screen: the arrow points at the nearest bot, " + ControlsHelp.ArrowDistance.ToString("0") + " m away (" + Enemy.Roster.Count + " alive)");
+                run.Event("arrow-shown", "no bot in swing reach: the edge arrow points at the nearest bot, " + ControlsHelp.ArrowDistance.ToString("0") + " m away (" + Enemy.Roster.Count + " alive)");
             }
             yield return null;
         }
@@ -4083,20 +4183,58 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             run.Problem(PlaytestSeverity.Bug, "the swing hint was never hidden");
         }
         if (!arrowSeen) {
-            run.Problem(PlaytestSeverity.Warning, "the off-screen arrow never showed in 75 s of wave 1 and 2 (every bot stayed on screen?)");
+            run.Problem(walkedOff ? PlaytestSeverity.Bug : PlaytestSeverity.Warning,
+                "the edge arrow never showed while no bot was in swing reach");
         }
         PlayInput.Hold(KeyCode.Mouse0, false);
         PlayInput.Hold(KeyCode.LeftShift, false);
+        PlayInput.Axis("Horizontal", 0f);
+        PlayInput.Axis("Vertical", 0f);
     }
 
-    static bool FirstNearNotYet() {
-        return ControlsHelp.FirstNearAt < 0f;
+    static bool FirstApproachNotYet() {
+        return ControlsHelp.FirstApproachAt < 0f && ControlsHelp.FirstNearAt < 0f;
     }
 
     static bool HintUp() {
-        var help = Object.FindAnyObjectByType<ControlsHelp>();
-        var text = help != null ? help.GetComponentInChildren<UnityEngine.UI.Text>() : null;
-        return text != null && text.enabled && text.color.a > 0.5f && text.text.Length > 0;
+        return ControlsHelp.HintVisible;
+    }
+
+    static void WalkAwayFromBots(CharacterMovement player) {
+        if (player == null) {
+            return;
+        }
+        Vector3 away = Vector3.zero;
+        int n = 0;
+        foreach (Enemy enemy in Enemy.Roster) {
+            if (enemy == null) {
+                continue;
+            }
+            Vector3 flat = player.transform.position - enemy.transform.position;
+            flat.y = 0f;
+            if (flat.sqrMagnitude > 0.01f) {
+                away += flat.normalized;
+                n++;
+            }
+        }
+        PlayInput.Hold(KeyCode.Mouse0, false);
+        PlayInput.Hold(KeyCode.LeftShift, false);
+        if (n == 0) {
+            PlayInput.Axis("Horizontal", 0f);
+            PlayInput.Axis("Vertical", 1f);
+            return;
+        }
+        away /= n;
+        // Camera-relative stick: push away from the pack.
+        Camera cam = Camera.main;
+        Vector3 forward = cam != null ? cam.transform.forward : Vector3.forward;
+        Vector3 right = cam != null ? cam.transform.right : Vector3.right;
+        forward.y = 0f;
+        right.y = 0f;
+        forward.Normalize();
+        right.Normalize();
+        PlayInput.Axis("Horizontal", Vector3.Dot(away, right));
+        PlayInput.Axis("Vertical", Vector3.Dot(away, forward));
     }
 
     static IEnumerator Play(PlaytestOptions options, float seconds, bool menusOnly) {
