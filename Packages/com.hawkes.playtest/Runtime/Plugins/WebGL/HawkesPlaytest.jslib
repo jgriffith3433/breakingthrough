@@ -26,7 +26,7 @@ mergeInto(LibraryManager.library, {
         w.__hawkesPlaytestReport = null;
         w.__hawkesPlaytestState = { ready: true, status: 'running', progress: 0 };
         // at: a named start point (docs/playtest.md); options: every option as JSON, for scenario-specific keys.
-        w.__hawkesPlaytestQueue.push({ cmd: 'start', id: String(id), seed: Number(options.seed || 1), speed: Number(options.speed || 1), at: options.at == null ? '' : String(options.at), options: JSON.stringify(options) });
+        w.__hawkesPlaytestQueue.push({ cmd: 'start', id: String(id), seed: Number(options.seed || 1), speed: Number(options.speed || 1), at: options.at == null ? '' : String(options.at), spot: options.spot == null ? '' : String(options.spot), options: JSON.stringify(options) });
       },
       stop: function () { w.__hawkesPlaytestQueue.push({ cmd: 'stop' }); },
       input: function (action, down) { w.__hawkesPlaytestQueue.push({ cmd: 'input', action: String(action), down: !!down }); },
@@ -69,6 +69,15 @@ mergeInto(LibraryManager.library, {
 
   HawkesPlaytest_SetState: function (jsonPtr) {
     try { window.__hawkesPlaytestState = JSON.parse(UTF8ToString(jsonPtr)); } catch (e) {}
+  },
+
+  // The feel sensor (HawkesFeel.cs): a flag, pushed to the runner the moment it happens (a Playwright binding), no polling.
+  HawkesPlaytest_Push: function (jsonPtr) {
+    try {
+      var msg = JSON.parse(UTF8ToString(jsonPtr));
+      if (typeof window.__hawkesPlaytestPush === 'function') window.__hawkesPlaytestPush(msg);
+      window.dispatchEvent(new CustomEvent('hawkes-playtest', { detail: msg }));
+    } catch (e) {}
   },
 
   HawkesPlaytest_SetReport: function (jsonPtr) {

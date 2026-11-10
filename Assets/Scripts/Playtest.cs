@@ -17,6 +17,8 @@ public static class Playtest {
     const float RunCap = 900f;
 
     static readonly PlaytestScenario[] Scenarios = {
+        new PlaytestScenario("explore", "Walks the live map on the stick in eight headings and four rings, hugging what stops it: stuck cells, falls through the world and reachability per map (events stuck-cell, fall, map-explore; metrics explore.stuckCells.<map>, explore.falls.<map>, explore.reachablePct.<map>); state note carries chapter, objective, position, grounded and camera", 300, "content"),
+        new PlaytestScenario("ch1", "Alias of campaign-beats: Chapter 1 from the case file to its boss and the return slot", 700, "content"),
         new PlaytestScenario("smoke", "Boot, menu, Arcade: shots at t=2, 4 and 10 s of play (events open-shot) so a Yo Bot is approaching or in reach by 4 s, the swing hint is gone by 10 s, and the edge arrow only shows while none is in swing reach; then about 30 s of bat play", 50, "smoke"),
         new PlaytestScenario("hollow-slice", "The Moonlit Hollow vertical slice (docs/world-bible.md, A): 60 s of Arcade play with the Department stamp press landmark on the wall (events landmark-stamp; metrics quality.maxQuietSeconds = longest gap between the press stamping, a kill or a pickup-free sight, quality.textOnlyBeats = 0, hollowStamps)", 90, "smoke"),
         new PlaytestScenario("arcade-acts", "Arcade's three acts (docs/world-bible.md, A): play wave 1, then the wave key to 11 and 21 (events act-look with sun, fog and sky horizon, act-shot desktop and phone photos at 390x844; metrics actLookDistance_1_11, actLookDistance_11_21, must be visibly apart); the banner of each act reads and sits on the phone screen clear of the HUD's top bar (act-banner, actBannerOff, actBannerOverlap); the score crossfades over 2 s with the combined layer level never under 1 (actMixFloor, music-crossfade); act 2 has Spider Bots alive (act2-spiders) and act 3's crews hold elites of other kinds than the Yo Bot (act3-mixed-elites)", 240, "smoke"),
@@ -189,6 +191,9 @@ public static class Playtest {
 
     static IEnumerator Bot(string id, PlaytestOptions options, PlaytestRun current) {
         run = current;
+        if (id == "ch1") {
+            id = "campaign-beats";
+        }
         levelUps = 0;
         lastWave = 0;
         fpsSum = 0f;
@@ -405,6 +410,9 @@ public static class Playtest {
                 }
             } else if (id == "smoke") {
                 yield return SmokeOpenRun(options);
+            } else if (id == "explore") {
+                yield return run.Until(() => WaveDirector.Instance != null && Enemy.Roster.Count > 0, 20f, "Arcade wave");
+                yield return PlaytestExplore.Run(run);
             } else if (id == "hollow-slice") {
                 yield return Play(options, 60f, false);
                 if (!run.Done) {
