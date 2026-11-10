@@ -44,8 +44,8 @@ Eight places, each its own scene or map, plus six hidden rooms. Size is the walk
 
 - Has: all eight places as scenes, kit-built, with lighting moods, ambience loops (`amb_hub`, `amb_ch1`..`amb_ch6`), score,
   set pieces per chapter, six back rooms. Arcade is unchanged and collider-free.
-- Gap: **Arcade (A) is one map for 30+ waves** with no change across the run beyond the story beats: the Hollow never changes
-  with the wave. Add a weather and light arc (see What happens).
+- Built: **Arcade (A) has three acts** (Night Shift, Cold Hour, Last Light, then Overtime) with their own light, sky, grade, score
+  layer and enemy mix (see What happens).
 - Gap: the docs record lighting and landmarks but **no per-area "gap clock"**: nothing has measured 10 s between things. Each
   area below carries a minimum density the validator or playtest must check.
 - Gap: the 61 later kit pieces and several lodger/boss bodies are still code-built stand-ins (Gen art replacement approved by J,
@@ -104,7 +104,12 @@ ambient sound, what changes. "Gap clock" is the longest the docs allow between t
 - **On their own:** wave start beats, event waves (`WaveEvent`), golden Yo Bot dash, elite spawns, boss-wave cards, lanterns
   sway, notes drift.
 - **Sound:** wind bed, Yo Bot chirp, bat crack, stamp thump from the wall, Slice and Wallit barks (`VoiceDirector`).
-- **Changes over time:** gap, built: wave-power list grows. **Build to add:** from wave 10 the moon goes down a notch and the
+- **Acts (built, `ArcadeActs.cs`):** waves 1-10 **Act I Night Shift** (moonlit blue, Yo Bots), 11-20 **Act II Cold Hour** (teal
+  storm light, Spider Bots come down the wall), 21-30 **Act III Last Light** (bruised dusk, orange at the rim, every kind can
+  roll an elite trait: the first mixed elite crews). After 30 the loop starts again under an **Overtime** red-ink tint. Each
+  change crossfades light, sky, grade and score over 2 s and shows a banner with a chime sting. Light and sky only: nothing
+  solid in the 150 m, no sparks.
+- **Changes over time:** gap, built: wave-power list grows; the acts above replace the old "colder from wave 10" tint. Earlier plan: from wave 10 the moon goes down a notch and the
   lanterns burn a colder white; from wave 20 the wall's stamp press (landmark) stamps in rhythm and the Yo Bots read the order
   aloud; at wave 30 dawn colour on the rim. No new objects in the 150 m, light and the wall only.
 - **Gap clock:** the lull between waves has a break timer; fill it with a bolt sweep, a Chime-style tip from Wallit, a lantern
@@ -219,7 +224,7 @@ and a playtest event name.
 
 | Area | Gap | Fix | Cost |
 |---|---|---|---|
-| A Hollow | no landmark or arc beyond waves | wall stamp press silhouette, light arc by wave | code + 2 sfx |
+| A Hollow | no landmark or arc beyond waves | wall stamp press silhouette (built); three acts with light, sky, score and mix (built, `arcade-acts`); painted act skies and recorded stems would be GPU extras | code |
 | E Walk | stilts 25 m apart is too thin | skimming papers, far bell, stilt chirps | code + 2 sfx |
 | F Reading | long stretches between lecterns | flying forms, desk stamp tap | code + 1 sfx |
 | G Filed | quiet by design | doorframes open on old chapter sounds | code, reuse sfx |

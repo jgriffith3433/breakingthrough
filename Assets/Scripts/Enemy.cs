@@ -423,7 +423,7 @@ public class Enemy : MonoBehaviour
         HitsToDrop = Mathf.Max(1, Mathf.RoundToInt(baseHealth * toughness));
         IsHeavy = false;
         Elite = true;
-        Title = TraitTitle(trait);
+        Title = Kind == BotKind.YoBot ? TraitTitle(trait) : trait + " " + Title;
         gameObject.name = Title;
         crestColor = EliteColor(trait);
         modelTint = crestColor;

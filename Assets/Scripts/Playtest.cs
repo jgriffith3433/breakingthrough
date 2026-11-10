@@ -19,6 +19,7 @@ public static class Playtest {
     static readonly PlaytestScenario[] Scenarios = {
         new PlaytestScenario("smoke", "Boot, menu, Arcade: shots at t=2, 4 and 10 s of play (events open-shot) so a Yo Bot is approaching or in reach by 4 s, the swing hint is gone by 10 s, and the edge arrow only shows while none is in swing reach; then about 30 s of bat play", 50, "smoke"),
         new PlaytestScenario("hollow-slice", "The Moonlit Hollow vertical slice (docs/world-bible.md, A): 60 s of Arcade play with the Department stamp press landmark on the wall (events landmark-stamp; metrics quality.maxQuietSeconds = longest gap between the press stamping, a kill or a pickup-free sight, quality.textOnlyBeats = 0, hollowStamps)", 90, "smoke"),
+        new PlaytestScenario("arcade-acts", "Arcade's three acts (docs/world-bible.md, A): play wave 1, then the wave key to 11 and 21 (events act-look with sun, fog and sky horizon, act-shot desktop and phone photos at 390x844; metrics actLookDistance_1_11, actLookDistance_11_21, must be visibly apart); the banner of each act reads and sits on the phone screen clear of the HUD's top bar (act-banner, actBannerOff, actBannerOverlap); the score crossfades over 2 s with the combined layer level never under 1 (actMixFloor, music-crossfade); act 2 has Spider Bots alive (act2-spiders) and act 3's crews hold elites of other kinds than the Yo Bot (act3-mixed-elites)", 240, "smoke"),
         new PlaytestScenario("onboarding", "Arcade's first seconds: the bot waits without swinging until a Yo Bot is approaching or in reach (event first-bot-near / first-bot-approach, by 4 s), the swing hint is read then hidden by the first hit or 8 s (hint-hidden); then it walks away until the edge arrow shows while none is in swing reach (arrow-shown) and clears wave 1", 90, "smoke"),
         new PlaytestScenario("run", "A full run until the musician falls, picking level-ups: the bot guards the musician with the bat (walks to the nearest bot near the piano, locks on, swings, walks back). Should pass wave 5 without 'no kills for 45 s'", 600, "full"),
         new PlaytestScenario("bat", "The bat: a 3-hit combo on wave 1's Yo Bots (hits and knockback, the third further), a ground smash on small Yo Bots dropped in front of the player (setup), then a charged home run into a line of Yo Bots (setup) that bowls them over; lock-on picks the nearest bot throughout. Then a minute of play", 200, "full"),
@@ -415,6 +416,8 @@ public static class Playtest {
                         run.Problem(PlaytestSeverity.Bug, "hollow-slice: the wall's stamp press barely stamped");
                     }
                 }
+            } else if (id == "arcade-acts") {
+                yield return ActsRun(options);
             } else if (id == "onboarding") {
                 yield return OnboardingRun(options);
             } else if (id == "bots") {
@@ -4118,6 +4121,170 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
 
     // Onboarding: first bot approaching or in reach by 4 s, swing hint gone by first hit / 8 s, edge arrow while none
     // is in swing reach. The bat is held back until a bot has been seen approaching, then plays normally.
+    static IEnumerator ActsPlay(CharacterMovement player, float seconds, System.Func<bool> until) {
+        float t0 = Time.realtimeSinceStartup;
+        while (!run.Done && !WaveDirector.IsLost && Time.realtimeSinceStartup - t0 < seconds && (until == null || !until())) {
+            if (LevelUpScreen.IsOpen) {
+                PlayInput.Tap(KeyCode.Alpha1);
+            } else {
+                Batter(player, WaveDirector.IsBuilding, null, true);
+                CheckLock(player);
+            }
+            if (Enemy.Roster.Count == 0) {
+                PlayInput.Tap(KeyCode.Return);
+            }
+            yield return null;
+        }
+    }
+
+    static (Color, Color) ActLook(int act) {
+        Color h = ArcadeActs.HorizonNow;
+        Color s = ArcadeActs.SunNow;
+        run.Event("act-look", "wave " + WaveDirector.Wave + " act " + ArcadeActs.Act + ": " + ArcadeActs.Describe());
+        run.Scene("Act " + (act + 1) + " " + (UiFit.Touch ? "phone" : "desktop"));
+        return (h, s);
+    }
+
+    static void ActBanner(string where) {
+        var rects = ArcadeActs.BannerRects();
+        if (!ArcadeActs.BannerUp || rects.Count == 0) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: no act banner at " + where);
+            return;
+        }
+        var screen = new Rect(0f, 0f, Screen.width, Screen.height);
+        int off = 0;
+        int overlap = 0;
+        foreach (Rect r in rects) {
+            if (r.xMin < screen.xMin - 1f || r.xMax > screen.xMax + 1f || r.yMin < screen.yMin - 1f || r.yMax > screen.yMax + 1f) {
+                off++;
+            }
+            foreach (Text t in Object.FindObjectsByType<Text>(FindObjectsSortMode.None)) {
+                if (t == null || !t.isActiveAndEnabled || string.IsNullOrEmpty(t.text) || t.GetComponentInParent<Canvas>() == null) {
+                    continue;
+                }
+                if (t.GetComponentInParent<Canvas>().gameObject.name == "Act Banner") {
+                    continue;
+                }
+                var c = new Vector3[4];
+                t.rectTransform.GetWorldCorners(c);
+                var tr = new Rect(c[0].x, c[0].y, c[2].x - c[0].x, c[2].y - c[0].y);
+                // Only text that is really drawn counts; the layout rect is looser than the glyphs.
+                float w = Mathf.Min(tr.width, t.preferredWidth);
+                float h = Mathf.Min(tr.height, t.preferredHeight);
+                var glyphs = new Rect(tr.center.x - w * 0.5f, tr.center.y - h * 0.5f, w, h);
+                if (t.color.a > 0.1f && glyphs.Overlaps(r)) {
+                    overlap++;
+                    run.Event("act-banner-overlap", where + ": '" + t.text + "' under the banner");
+                }
+            }
+        }
+        run.Event("act-banner", where + ": '" + ArcadeActs.BannerTitle + "' " + rects.Count + " texts, off screen " + off + ", over other text " + overlap + " (screen " + Screen.width + "x" + Screen.height + ")");
+        run.Metric("actBannerOff", off);
+        run.Metric("actBannerOverlap", overlap);
+        if (off > 0) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: the act banner runs off the screen at " + where);
+        }
+        if (overlap > 0) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: the act banner overlaps the HUD at " + where);
+        }
+    }
+
+    static IEnumerator ActsRun(PlaytestOptions options) {
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+        yield return run.Until(() => WaveDirector.Instance != null && Enemy.Roster.Count > 0 && ControlsHelp.PlayedSeconds > 0f, 20f, "Arcade wave 1 bots");
+        yield return run.Until(() => ArcadeActs.Instance != null && ArcadeActs.Act == 0, 5f, "act 1 to start");
+        if (run.Done) {
+            yield break;
+        }
+        yield return ActsPlay(player, 4f, null);
+        ActBanner("wave 1");
+        var (h1, s1) = ActLook(0);
+
+        yield return GoWave(11);
+        yield return ActsPlay(player, 1f, null);
+        ActBanner("wave 11");
+        yield return ActsPlay(player, 2f, null);
+        var (h2, s2) = ActLook(1);
+        yield return ActsPlay(player, 40f, () => HasKind(BotKind.SpiderBot));
+        bool spiders = HasKind(BotKind.SpiderBot);
+        run.Event("act2-spiders", spiders ? "a Spider Bot is on the hill in act 2" : "no Spider Bot in 40 s of act 2");
+        run.Metric("act2Spiders", spiders ? 1 : 0);
+        if (!spiders) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: act 2 brought no Spider Bots");
+        }
+
+        yield return GoWave(21);
+        yield return ActsPlay(player, 1f, null);
+        ActBanner("wave 21");
+        yield return ActsPlay(player, 2f, null);
+        var (h3, s3) = ActLook(2);
+        yield return ActsPlay(player, 40f, () => MixedElites() > 0);
+        int mixed = MixedElites();
+        run.Event("act3-mixed-elites", mixed + " elites that are not Yo Bots alive in act 3");
+        run.Metric("act3MixedElites", mixed);
+        if (mixed == 0) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: act 3 showed no elite beyond the Yo Bots");
+        }
+
+        float d12 = ArcadeActs.SignatureDistance(h1, h2) + ArcadeActs.SignatureDistance(s1, s2);
+        float d23 = ArcadeActs.SignatureDistance(h2, h3) + ArcadeActs.SignatureDistance(s2, s3);
+        run.Metric("actLookDistance_1_11", Mathf.Round(d12 * 100f) / 100f);
+        run.Metric("actLookDistance_11_21", Mathf.Round(d23 * 100f) / 100f);
+        if (d12 < 0.4f || d23 < 0.4f) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: waves 1, 11 and 21 do not look different enough (" + d12.ToString("0.00") + ", " + d23.ToString("0.00") + ")");
+        }
+        run.Metric("actMixFloor", Mathf.Round(ArcadeActs.MixFloor * 100f) / 100f);
+        run.Event("music-crossfade", "changes " + ArcadeActs.Changes + ", stings " + ArcadeActs.Stings + ", lowest combined layer level " + ArcadeActs.MixFloor.ToString("0.00") + " (1.00 = no gap, no cut)");
+        if (ArcadeActs.MixFloor < 0.99f) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: the score dipped during an act change (" + ArcadeActs.MixFloor.ToString("0.00") + ")");
+        }
+
+        // The phone: the same changes at 390x844 with touch forced.
+        int w = Screen.width;
+        int h = Screen.height;
+        UiFit.ForceTouch(true);
+        Screen.SetResolution(390, 844, false);
+        yield return new WaitForSecondsRealtime(1.5f);
+        if (Screen.width == 390) {
+            yield return GoWave(1);
+            yield return ActsPlay(player, 0.8f, null);
+            ActBanner("phone wave 1");
+            ActLook(0);
+            yield return GoWave(11);
+            yield return ActsPlay(player, 0.8f, null);
+            ActBanner("phone wave 11");
+            ActLook(1);
+            yield return GoWave(21);
+            yield return ActsPlay(player, 0.8f, null);
+            ActBanner("phone wave 21");
+            ActLook(2);
+        } else {
+            run.Event("screen-turn-skipped", "the window would not resize to 390x844 (it is " + Screen.width + "x" + Screen.height + ")");
+        }
+        Screen.SetResolution(w, h, false);
+        UiFit.ForceTouch(false);
+        yield return new WaitForSecondsRealtime(1f);
+    }
+
+    static bool HasKind(BotKind kind) {
+        foreach (Enemy e in Enemy.Roster) {
+            if (e != null && e.Kind == kind) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static int MixedElites() {
+        int n = 0;
+        foreach (Enemy e in Enemy.Roster) {
+            if (e != null && e.Elite && e.Kind != BotKind.YoBot && !e.Boss) {
+                n++;
+            }
+        }
+        return n;
+    }
+
     static IEnumerator OnboardingRun(PlaytestOptions options) {
         var player = Object.FindAnyObjectByType<CharacterMovement>();
         float start = Time.realtimeSinceStartup;

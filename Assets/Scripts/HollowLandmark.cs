@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 // Arcade's far landmark: the Department's stamp press on the wall at the rim, 190 m out (no collider). It lifts and falls on a
-// beat that quickens with the wave, and the light turns colder from wave 10 and toward dawn at wave 30 (docs/world-bible.md, A).
+// beat that quickens with the wave, and the light turns colder from wave 10 and toward dawn at wave 30 (docs/world-bible.md, A). ArcadeActs owns the light when it is up.
 public class HollowLandmark : MonoBehaviour {
     public static int Stamps { get; private set; }
     public static float MaxGapSeconds { get; private set; }
@@ -118,7 +118,7 @@ public class HollowLandmark : MonoBehaviour {
             lastStampAt = Time.time;
             GameAudio.Play("stamp", 0.5f, 0.7f);
         }
-        if (sun != null) {
+        if (sun != null && ArcadeActs.Instance == null) {
             float cold = Mathf.Clamp01((wave - 9) / 10f);
             Color col = Color.Lerp(sunBase, new Color(0.55f, 0.68f, 1f), cold);
             float dawn = Mathf.Clamp01((wave - 26) / 4f);
