@@ -1,2 +1,3 @@
 - lesson: Cap yaw per frame — easing with raw unscaled dt snaps after a hitch; clamp dt to 0.05 s and deg/s (ZeldaStyleCamera.LimitYaw/LimitViewTurn).
 - lesson: scenario.txt must say `explore` or review plays smoke and no feel.* metrics exist.
+- lesson: a "playtest build failed, disk full" note is a build-server problem, not a code failure; don't rewrite working code for it.
