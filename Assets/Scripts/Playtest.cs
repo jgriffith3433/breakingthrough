@@ -5919,6 +5919,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         PlayInput.Release();
         run.Scene("Finale");
         run.Event("finale-shown", "wave 30 cleared, the finale plays over the frozen Hollow");
+        StoryScreen screen = StoryScreen.Instance;
         for (int i = 0; i < Story.Finale.Length && !run.Done; i++) {
             yield return new WaitForSecondsRealtime(1.5f);
             run.Event("finale-page", (i + 1) + " of " + Story.Finale.Length + ": " + screen.PageText.Replace('\n', ' '));
