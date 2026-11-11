@@ -7986,6 +7986,95 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         return lines.ToArray();
     }
 
+    // Every spoken line of the campaign script and the reels with no audio the game would load (Tools/Story/check_voice.py is the
+    // same rule). A line is voiced by Voice/<castid>_<slug>, or, for a reel shot from anyone but Wallit and Slice, Voice/cinema/<reel>_<shot>.
+    static int SilentLines(CampaignScript.Doc d, out int total) {
+        int silent = 0, count = 0;
+        System.Action<string, string, string> check = (where, code, text) => {
+            if (string.IsNullOrEmpty(text) || code == "C" || code == "B" || code == "T" || code == "?") {
+                return;
+            }
+            count++;
+            if (Resources.Load<AudioClip>("Voice/" + CastVoice.FileOf(code, text)) == null) {
+                silent++;
+                run.Problem(PlaytestSeverity.Bug, "bible: silent line (" + where + "): " + code + "|" + text);
+            }
+        };
+        if (d != null && d.chapters != null) {
+            var all = new System.Collections.Generic.List<CampaignScript.Chapter>(d.chapters);
+            if (d.ending != null) {
+                all.Add(d.ending);
+            }
+            foreach (CampaignScript.Chapter c in all) {
+                string label = c.n > 0 ? "ch" + c.n : "ending";
+                foreach (CampaignScript.Scene sc in c.scenes) {
+                    foreach (string l in sc.lines) {
+                        int bar = l.IndexOf('|');
+                        check(label + " " + sc.id, bar > 0 ? l.Substring(0, bar) : "N", bar > 0 ? l.Substring(bar + 1) : l);
+                    }
+                }
+                foreach (CampaignScript.Choice ch in c.choices) {
+                    foreach (CampaignScript.Option op in ch.options) {
+                        foreach (string l in (op.now ?? "").Split('\n')) {
+                            int bar = l.IndexOf('|');
+                            check(label + " " + ch.id + "/" + op.key, bar > 0 ? l.Substring(0, bar) : "N", bar > 0 ? l.Substring(bar + 1) : l);
+                        }
+                    }
+                }
+                foreach (CampaignScript.Shot sh in c.opening) {
+                    check(label + " opening", sh.speaker, sh.line);
+                }
+                foreach (CampaignScript.Shot sh in c.closing) {
+                    check(label + " closing", sh.speaker, sh.line);
+                }
+            }
+        }
+        foreach (TextAsset t in Resources.LoadAll<TextAsset>("Cinematics")) {
+            Cutscene.Reel reel = t.text.Contains("\"shots\"") ? JsonUtility.FromJson<Cutscene.Reel>(t.text) : null;
+            if (reel == null || reel.shots == null) {
+                continue;
+            }
+            foreach (Cutscene.Shot sh in reel.shots) {
+                if (string.IsNullOrEmpty(sh.line)) {
+                    continue;
+                }
+                bool own = sh.speaker != "W" && sh.speaker != "S" && Resources.Load<AudioClip>("Voice/cinema/" + reel.id + "_" + sh.id) != null;
+                if (own) {
+                    count++;
+                } else {
+                    check("reel " + reel.id + " " + sh.id, sh.speaker, sh.line);
+                }
+            }
+        }
+        total = count;
+        return silent;
+    }
+
+    // Plays a reel until its first voiced shot is heard, then skips with Enter: the voice must stop at once.
+    static IEnumerator SkipStopsVoice(string reelId) {
+        Cutscene.Reel reel = Cutscene.LoadReel(reelId);
+        if (reel == null) {
+            yield break;
+        }
+        Cutscene.PlayShots(reel, null);
+        yield return run.Until(() => Cutscene.IsOpen, 5f, "the reel " + reelId);
+        float until = Time.realtimeSinceStartup + 20f;
+        while (Cutscene.IsOpen && !run.Done && Time.realtimeSinceStartup < until && !(WallitVoice.Speaking || CastVoice.Speaking || Cutscene.ReelVoiceHeard)) {
+            yield return null;
+        }
+        bool heard = WallitVoice.Speaking || CastVoice.Speaking || Cutscene.ReelVoiceHeard;
+        yield return new WaitForSecondsRealtime(0.6f);
+        PlayInput.Tap(KeyCode.Return);
+        yield return new WaitForSecondsRealtime(0.25f);
+        bool still = WallitVoice.Speaking || CastVoice.Speaking || Cutscene.ReelVoiceHeard;
+        run.Event("reel-skip", reelId + ": voice heard " + heard + ", reel open after skip " + Cutscene.IsOpen + ", voice still playing " + still);
+        run.Metric("skipVoiceStopped_" + reelId, !still && !Cutscene.IsOpen ? 1 : 0);
+        if (heard && (still || Cutscene.IsOpen)) {
+            run.Problem(PlaytestSeverity.Bug, "bible: skipping " + reelId + " did not stop its voice at once");
+        }
+        yield return new WaitForSecondsRealtime(0.5f);
+    }
+
     static IEnumerator BibleRun(PlaytestOptions options) {
         CampaignScript.Doc d = CampaignScript.Load();
         int lines, speakers;
@@ -8023,6 +8112,11 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         foreach (string b in bad) {
             run.Problem(PlaytestSeverity.Bug, "bible: " + b);
         }
+        int spoken;
+        int silentLines = SilentLines(d, out spoken);
+        run.Event("bible-voice", spoken + " spoken lines checked, " + silentLines + " with no audio");
+        run.Metric("bibleSpokenLines", spoken);
+        run.Metric("bibleSilentLines", silentLines);
         yield return new WaitForSecondsRealtime(2f);
         if (d == null || d.chapters == null || d.chapters.Length == 0 || d.ending == null) {
             yield break;
@@ -8048,6 +8142,8 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                 yield return new WaitForSecondsRealtime(0.3f);
             }
         }
+        yield return SkipStopsVoice("ch1_open");
+        yield return SkipStopsVoice("boss_courier");
         yield return Play(options, 5f, false);
     }
 
