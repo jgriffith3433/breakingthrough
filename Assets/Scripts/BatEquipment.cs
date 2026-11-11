@@ -601,8 +601,7 @@ public class BatEquipment : MonoBehaviour {
             Say("ground smash (target " + Size(faceTarget) + " under " + Tuning.SmashBelow.ToString("0.00") + " of yours): " + struck + " bot" + (struck == 1 ? "" : "s") + " hit");
             if (struck > 0) {
                 WallitVoice.OnBigHit("smash");
-                Juice.HitStop(0.05f);
-                ZeldaStyleCamera.Shake(0.08f, 0.16f);
+                Juice.Contact(Juice.Weight.Finisher, forward);
             }
             LongBall(reach);
             return;
@@ -645,8 +644,7 @@ public class BatEquipment : MonoBehaviour {
         }
         if (count > 0) {
             Crack(finisher ? 1f : 0.75f, distinct ? feel.Pitch : finisher ? 0.9f : Random.Range(0.98f, 1.1f));
-            Juice.HitStop(distinct ? feel.HitStop : finisher ? 0.07f : 0.035f);
-            ZeldaStyleCamera.Shake(finisher ? 0.11f : 0.05f, finisher ? 0.2f : 0.12f);
+            Juice.Contact(finisher ? Juice.Weight.Finisher : Juice.Weight.Light, forward);
             if (finisher && MetaProgress.MetalBat()) {
                 MetalBlast(hits[0].transform.position, hits[0]);
             }
@@ -700,7 +698,9 @@ public class BatEquipment : MonoBehaviour {
             }
             bool dropped = Combat.BatHit(enemy, scale, power, true, tip);
             if (!dropped && enemy != null) {
-                enemy.Knock(KnockOf(enemy, away, knock, lift));
+                // Every hit bot rocks back and slides off, light hits too (at least 2.5 m/s).
+                enemy.Flinch(scale >= Tuning.BatDamageFinisher ? 1.2f : 0.8f);
+                enemy.Knock(KnockOf(enemy, away, Mathf.Max(knock, 2.5f), lift));
                 KnockedBack++;
                 if (lineDrive > 0) {
                     Track(enemy, 0.6f, lineDrive, 0.6f + 0.15f * lineDrive, false);
@@ -757,9 +757,11 @@ public class BatEquipment : MonoBehaviour {
         Fx.Ring(target.transform.position, 3f * Mathf.Sqrt(Mathf.Max(1f, target.BodyScale)), new Color(1f, 0.9f, 0.55f, 0.85f), 0.4f);
         Impacts++;
         Fx.HomeRun(target != null ? target.transform.position + Vector3.up : launchFrom, Mathf.Sqrt(Mathf.Max(1f, target != null ? target.BodyScale : 1f)));
-        Juice.HitStop(0.07f);
+        if (target != null) {
+            target.HomeRunLaunch(flight);
+        }
+        Juice.Contact(Juice.Weight.HomeRun, away);
         Juice.SlowBeat(0.35f, 0.4f);
-        ZeldaStyleCamera.Shake(0.2f, 0.28f);
         Say("home run (charge " + Mathf.RoundToInt(homeRunCharge * 100f) + "%): " + kind + " launched at " + launch.magnitude.ToString("0") + " m/s" + (dropped ? ", dropped" : ""));
         UpgradeLook.Say("HOME RUN!", 1.2f, -40f);
         WallitVoice.OnHomeRun();
@@ -861,8 +863,7 @@ public class BatEquipment : MonoBehaviour {
         }
         if (count > 0) {
             Crack(1f, 0.85f);
-            Juice.HitStop(0.06f);
-            ZeldaStyleCamera.Shake(0.1f, 0.18f);
+            Juice.Contact(Juice.Weight.Finisher, forward);
         }
         Say("grand slam spin (360 degrees, " + radius.ToString("0.0") + " m): " + count + " bot" + (count == 1 ? "" : "s") + " hit" + (thunder ? ", lightning called down" : ""));
         UpgradeLook.Say("GRAND SLAM!", 0.9f, -40f);

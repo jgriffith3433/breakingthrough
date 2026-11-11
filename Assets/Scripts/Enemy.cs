@@ -983,6 +983,7 @@ public class Enemy : MonoBehaviour
         }
 
         grounded = StickToGround(ref next);
+        TickLaunch(dt, next);
 
         if (grounded && verticalVelocity < 0f)
         {
@@ -1090,6 +1091,83 @@ public class Enemy : MonoBehaviour
         }
         flying = false;
         knockAir = Mathf.Max(knockAir, Boss ? 0f : airSeconds);
+    }
+
+    // Bat contact: the bot rocks back a beat (model only) and the shove slides it off. Counted for the playtest.
+    float flinch;
+    float spinLeft;
+    float spinAngle;
+    bool launched;
+    bool launchAirborne;
+    float launchLeft;
+    TrailRenderer launchTrail;
+    public static int Flinches { get; private set; }
+    public static int HomeRunLandings { get; private set; }
+    public static int HomeRunLaunches { get; private set; }
+    public bool Launched { get { return launched; } }
+
+    public void Flinch(float strength)
+    {
+        if (down)
+            return;
+        flinch = Mathf.Clamp(strength, 0.4f, 1.4f);
+        Flinches++;
+    }
+
+    // A home run: the bot tumbles end over end behind a trail until it lands, and puffs where it comes down.
+    public void HomeRunLaunch(float seconds)
+    {
+        if (Boss)
+            return;
+        launched = true;
+        launchAirborne = false;
+        launchLeft = 4f;
+        spinLeft = Mathf.Max(0.5f, seconds);
+        spinAngle = 0f;
+        HomeRunLaunches++;
+        Shader trailShader = SafeShader.Find("Sprites/Default");
+        if (trailShader == null || launchTrail != null)
+            return;
+        var tip = new GameObject("LaunchTrail").transform;
+        tip.SetParent(transform, false);
+        tip.localPosition = Vector3.up * 0.6f;
+        launchTrail = tip.gameObject.AddComponent<TrailRenderer>();
+        launchTrail.time = 0.45f;
+        launchTrail.minVertexDistance = 0.1f;
+        launchTrail.widthMultiplier = 0.7f * Mathf.Sqrt(Mathf.Max(1f, bodyScale));
+        launchTrail.widthCurve = new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(1f, 0f));
+        launchTrail.material = new Material(trailShader);
+        launchTrail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        launchTrail.receiveShadows = false;
+        launchTrail.startColor = new Color(1f, 0.85f, 0.4f, 0.85f);
+        launchTrail.endColor = new Color(1f, 0.6f, 0.3f, 0f);
+    }
+
+    void TickLaunch(float dt, Vector3 at)
+    {
+        if (!launched)
+            return;
+        launchLeft -= dt;
+        if (!grounded)
+            launchAirborne = true;
+        bool landed = grounded && launchAirborne;
+        if (!landed && launchLeft > 0f && !down)
+            return;
+        launched = false;
+        spinLeft = 0f;
+        if (launchTrail != null)
+        {
+            launchTrail.emitting = false;
+            Destroy(launchTrail.gameObject, 0.6f);
+            launchTrail = null;
+        }
+        if (landed)
+        {
+            HomeRunLandings++;
+            float root = Mathf.Sqrt(Mathf.Max(1f, bodyScale));
+            Fx.Emit(FxKind.Dust, at, 8, new Color(0.85f, 0.75f, 0.6f, 0.7f), 1.2f * root, 2.5f, 1.2f);
+            Fx.Ring(at + Vector3.up * 0.1f, 4f * root, new Color(1f, 0.9f, 0.6f, 0.7f), 0.4f);
+        }
     }
 
     public bool Knocked
@@ -1584,8 +1662,15 @@ public class Enemy : MonoBehaviour
         {
             float sway = Mathf.Sin(stridePhase) * (spider ? 1.5f : 3f) * walk;
             float bounce = Mathf.Abs(Mathf.Cos(stridePhase)) * (spider ? 0.015f : 0.025f) * walk;
-            model.localRotation = modelRest * Quaternion.Euler(walk * 4f + (spider ? 0f : strike * 8f), 0f, sway);
-            model.localPosition = new Vector3(0f, bounce, 0f);
+            flinch = Mathf.MoveTowards(flinch, 0f, dt * 6f);
+            model.localRotation = modelRest * Quaternion.Euler(walk * 4f + (spider ? 0f : strike * 8f) - flinch * 16f, 0f, sway);
+            if (spinLeft > 0f)
+            {
+                spinLeft -= dt;
+                spinAngle += dt * 720f;
+                model.localRotation = Quaternion.Euler(spinAngle * 0.35f, spinAngle, 0f) * model.localRotation;
+            }
+            model.localPosition = new Vector3(0f, bounce, -flinch * 0.12f);
         }
 
         if (spider)

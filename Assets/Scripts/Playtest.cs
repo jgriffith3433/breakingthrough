@@ -5554,7 +5554,36 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         if (Juice.Stops == 0) {
             run.Problem(PlaytestSeverity.Bug, "bat hits did no hit-stop");
         } else if (Juice.ShortestStop < Juice.MinStopFrames || Juice.LongestStop > Juice.MaxStopFrames) {
-            run.Problem(PlaytestSeverity.Bug, "hit-stop held " + Juice.ShortestStop + " to " + Juice.LongestStop + " frames, wanted 2 to 4");
+            run.Problem(PlaytestSeverity.Bug, "hit-stop held " + Juice.ShortestStop + " to " + Juice.LongestStop + " frames, wanted 2 to 6");
+        }
+        // Weighted contact: light about 2 frames, finisher 3 to 4, home run 5 to 6; the log says what each hit did.
+        run.Event("hit-weight", "held light " + Juice.LightHeld + ", finisher " + Juice.FinisherHeld + ", home run " + Juice.HomeRunHeld
+            + " frames; camera kick " + ZeldaStyleCamera.KickPeak.ToString("0.00") + " m decays in " + ZeldaStyleCamera.KickDecaySeconds.ToString("0.00")
+            + " s (reduce motion " + ComfortOptions.ReducedMotion + "); bot flinches " + Enemy.Flinches + ", home run launches " + Enemy.HomeRunLaunches
+            + ", landing puffs " + Enemy.HomeRunLandings);
+        for (int h = 0; h < Juice.HitLog.Count && h < 12; h++) {
+            run.Event("hit-log", Juice.HitLog[h]);
+        }
+        run.Metric("hitStopLightFrames", Juice.LightHeld);
+        run.Metric("hitStopFinisherFrames", Juice.FinisherHeld);
+        run.Metric("hitStopHomeRunFrames", Juice.HomeRunHeld);
+        run.Metric("kickDecaySeconds", ZeldaStyleCamera.KickDecaySeconds);
+        run.Metric("botFlinches", Enemy.Flinches);
+        run.Metric("homeRunLandingPuffs", Enemy.HomeRunLandings);
+        if (Juice.HomeRunHeld > 0 && (Juice.HomeRunHeld < 5 || Juice.HomeRunHeld > 6)) {
+            run.Problem(PlaytestSeverity.Bug, "home run froze the world " + Juice.HomeRunHeld + " frames, wanted 5 to 6");
+        }
+        if (Juice.FinisherHeld > 0 && (Juice.FinisherHeld < 3 || Juice.FinisherHeld > 4)) {
+            run.Problem(PlaytestSeverity.Bug, "finisher froze the world " + Juice.FinisherHeld + " frames, wanted 3 to 4");
+        }
+        if (ZeldaStyleCamera.KickDecaySeconds >= 0.3f) {
+            run.Problem(PlaytestSeverity.Bug, "camera kick took " + ZeldaStyleCamera.KickDecaySeconds.ToString("0.00") + " s to decay, wanted under 0.3");
+        }
+        if (BatEquipment.HomeRuns > 0 && Enemy.HomeRunLaunches > 0 && Enemy.HomeRunLandings == 0) {
+            run.Problem(PlaytestSeverity.Bug, "no home run bot landed with a puff");
+        }
+        if (BatEquipment.KnockedBack > 0 && Enemy.Flinches == 0) {
+            run.Problem(PlaytestSeverity.Bug, "hit bots did not flinch");
         }
         if (BatEquipment.TrailSwings == 0) {
             run.Problem(PlaytestSeverity.Bug, "no swing trail showed behind the bat");

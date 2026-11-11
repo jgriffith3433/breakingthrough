@@ -559,20 +559,74 @@ public class ZeldaStyleCamera : MonoBehaviour {
 
     // A small jolt when the bat connects. Unscaled, so it still plays through hit-stop.
     public static void Shake(float amount, float seconds) {
+        if (ComfortOptions.ReducedMotion) {
+            return;
+        }
         shakeAmount = Mathf.Max(shakeAmount * Mathf.Clamp01((shakeUntil - Time.unscaledTime) / Mathf.Max(0.01f, shakeLength)), amount);
         shakeLength = Mathf.Max(0.02f, seconds);
         shakeUntil = Time.unscaledTime + shakeLength;
     }
 
+    // A push of the camera toward the hit that dies away on its own (quadratic ease, `seconds` long), with a short FOV
+    // squeeze. Only BatEquipment calls it. Reduce Motion callers don't reach it (Juice.Contact), and it refuses too.
+    static Vector3 kickDir;
+    static float kickAmount, kickFov, kickLength = 0.2f, kickStart = -10f;
+    static float kickBaseFov;
+    public static float KickDecaySeconds { get; private set; }
+    public static float KickPeak { get; private set; }
+    public static void Kick(Vector3 toward, float meters, float fovDegrees, float seconds) {
+        if (ComfortOptions.ReducedMotion) {
+            return;
+        }
+        toward.y = 0f;
+        if (toward.sqrMagnitude < 0.0001f) {
+            return;
+        }
+        kickDir = toward.normalized;
+        kickAmount = meters;
+        kickFov = fovDegrees;
+        kickLength = Mathf.Clamp(seconds, 0.05f, 0.29f);
+        kickStart = Time.unscaledTime;
+        KickPeak = meters;
+        KickDecaySeconds = kickLength;
+    }
+
+    // Returns the offset to add this frame and drives the FOV punch.
+    Vector3 KickOffset() {
+        Camera view = GetComponent<Camera>();
+        float t = (Time.unscaledTime - kickStart) / kickLength;
+        if (t >= 1f || t < 0f || kickAmount <= 0f) {
+            if (view != null && kickBaseFov > 0f) {
+                view.fieldOfView = kickBaseFov;
+                kickBaseFov = 0f;
+            }
+            return Vector3.zero;
+        }
+        float fade = (1f - t) * (1f - t);
+        if (view != null && kickFov > 0f) {
+            if (kickBaseFov <= 0f) {
+                kickBaseFov = view.fieldOfView;
+            }
+            view.fieldOfView = kickBaseFov - kickFov * fade;
+        }
+        return kickDir * kickAmount * fade * Mathf.Sqrt(Mathf.Max(1f, BodyScale));
+    }
+
     void ApplyShake() {
+        Vector3 kick = KickOffset();
+        if (kick != Vector3.zero) {
+            shakeOffset += kick;
+            transform.position += kick;
+        }
         float left = shakeUntil - Time.unscaledTime;
         if (left <= 0f || shakeAmount <= 0f || LevelUpScreen.IsOpen || PauseMenu.IsOpen) {
             return;
         }
         float fade = left / shakeLength;
         float body = Mathf.Max(1f, BodyScale);
-        shakeOffset = (transform.right * Random.Range(-1f, 1f) + transform.up * Random.Range(-1f, 1f)) * shakeAmount * fade * Mathf.Sqrt(body);
-        transform.position += shakeOffset;
+        Vector3 jolt = (transform.right * Random.Range(-1f, 1f) + transform.up * Random.Range(-1f, 1f)) * shakeAmount * fade * Mathf.Sqrt(body);
+        shakeOffset += jolt;
+        transform.position += jolt;
     }
 
     void ShowLockMarker() {
