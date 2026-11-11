@@ -151,6 +151,13 @@ public partial class Cutscene {
             }
             return;
         }
+        // A reel played on its own (a boss intro, the ending) whose stills and voices are not in yet is fetched first, with the
+        // progress line; the chapters fetch theirs on Begin, so this is a no-op there.
+        string group = "reel_" + r.id;
+        if (!OnDemand.GroupReady(group)) {
+            OnDemand.Need(new[] { group }, "Filing the reel", () => PlayShots(r, done));
+            return;
+        }
         if (instance == null) {
             instance = new GameObject("Cutscene").AddComponent<Cutscene>();
         }
@@ -308,7 +315,7 @@ public partial class Cutscene {
         if (string.IsNullOrEmpty(name)) {
             return null;
         }
-        Texture2D tex = Resources.Load<Texture2D>("Cinematics/Art/" + name);
+        Texture2D tex = OnDemand.Texture("Cinematics/Art/" + name);
         if (tex == null) {
             Events.Add("missing-art|" + name);
             return null;
@@ -519,7 +526,7 @@ public partial class Cutscene {
         if (reel == null || shotIndex < 0 || shotIndex >= ShotCount) {
             return 0f;
         }
-        AudioClip clip = Resources.Load<AudioClip>("Voice/cinema/" + reel.id + "_" + reel.shots[shotIndex].id);
+        AudioClip clip = OnDemand.Audio("Voice/cinema/" + reel.id + "_" + reel.shots[shotIndex].id);
         if (clip == null) {
             return 0f;
         }
@@ -660,7 +667,7 @@ public partial class Cutscene {
         }
         foreach (Texture2D tex in loadedArt) {
             if (tex != null) {
-                Resources.UnloadAsset(tex);
+                OnDemand.Unload(tex);
             }
         }
         loadedArt.Clear();

@@ -69,7 +69,7 @@ public class LoadScreen : MonoBehaviour {
         ReleaseStill();
         Cutscene.Reel reel = Cutscene.LoadReel("ch" + (chapter + 1) + "_open");
         if (reel != null && reel.shots.Length > 0 && !string.IsNullOrEmpty(reel.shots[0].back)) {
-            still = Resources.Load<Texture2D>("Cinematics/Art/" + reel.shots[0].back);
+            still = OnDemand.Texture("Cinematics/Art/" + reel.shots[0].back);
         }
         art.texture = still;
         art.enabled = still != null;
@@ -121,7 +121,7 @@ public class LoadScreen : MonoBehaviour {
     void ReleaseStill() {
         if (still != null) {
             art.texture = null;
-            Resources.UnloadAsset(still);
+            OnDemand.Unload(still);
             still = null;
         }
     }

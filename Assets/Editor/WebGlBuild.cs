@@ -620,14 +620,26 @@ public static class WebGlBuild
         }
 
         Directory.CreateDirectory(buildPath);
-        PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+        // Brotli: the smallest first download. Studio's hosts send the .br files with their Content-Encoding, and the loader's
+        // decompression fallback covers a static host that does not. The campaign's heavy files are not in the data file at all
+        // (OnDemandPack), so this is the menu and Arcade only. Engine modules nothing references are stripped from the player.
+        PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Brotli;
         PlayerSettings.WebGL.decompressionFallback = true;
+        PlayerSettings.WebGL.dataCaching = true;   // a returning player's browser keeps the data file
+        PlayerSettings.WebGL.debugSymbolMode = WebGLDebugSymbolMode.Off;
+        PlayerSettings.stripEngineCode = true;
         PlayerSettings.WebGL.initialMemorySize = 256;
         // Phones kill a tab that grows past about 1.5 GB: the heap may grow from 256 MB but not to 2 GB.
         PlayerSettings.WebGL.maximumMemorySize = 1536;
         PlayerSettings.WebGL.memoryGrowthMode = WebGLMemoryGrowthMode.Geometric;
 
-        BuildReport report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+        // The campaign's voices, stills, portraits, skies and boss meshes leave the data file for the build's StreamingAssets/OnDemand
+        // (OnDemandPack): the originals are moved aside for the build and always moved back.
+        BuildReport report;
+        try
+        {
+            OnDemandPack.Prepare();
+            report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
         {
             scenes = new[]
             {
@@ -647,6 +659,17 @@ public static class WebGlBuild
             locationPathName = buildPath,
             target = BuildTarget.WebGL
         });
+        }
+        finally
+        {
+            OnDemandPack.Restore();
+        }
+
+        if (report.summary.result == BuildResult.Succeeded)
+        {
+            OnDemandPack.Install(buildPath);
+            LogSizes(report, buildPath);
+        }
 
         if (report.summary.result != BuildResult.Succeeded)
         {
@@ -668,6 +691,78 @@ public static class WebGlBuild
 
             throw new Exception(details.ToString());
         }
+    }
+
+    // What the first download holds, by folder, and the biggest assets in it, from the build report: logged and written beside the
+    // build as build-report.txt. AGENTS.md ("Download size") keeps the before and after of the on-demand split.
+    static void LogSizes(BuildReport report, string buildPath)
+    {
+        var text = new StringBuilder();
+        long data = 0, wasm = 0, onDemand = 0, other = 0;
+        string buildDir = Path.Combine(buildPath, "Build");
+        if (Directory.Exists(buildDir))
+        {
+            foreach (string file in Directory.GetFiles(buildDir))
+            {
+                long length = new FileInfo(file).Length;
+                string name = Path.GetFileName(file).ToLowerInvariant();
+                if (name.Contains(".data")) data += length;
+                else if (name.Contains(".wasm")) wasm += length;
+                else other += length;
+            }
+        }
+        string onDemandDir = Path.Combine(buildPath, "StreamingAssets", "OnDemand");
+        if (Directory.Exists(onDemandDir))
+        {
+            foreach (string file in Directory.GetFiles(onDemandDir))
+            {
+                onDemand += new FileInfo(file).Length;
+            }
+        }
+        text.AppendLine("first download (Build/): data " + Mb(data) + " MB, wasm " + Mb(wasm) + " MB, loader and framework " + Mb(other) + " MB");
+        text.AppendLine("on demand (StreamingAssets/OnDemand): " + Mb(onDemand) + " MB, fetched per chapter on the player's choice");
+        text.AppendLine("uncompressed build size by the report: " + Mb((long)report.summary.totalSize) + " MB");
+        var byFolder = new SortedDictionary<string, long>();
+        var big = new List<KeyValuePair<string, long>>();
+        foreach (PackedAssets packed in report.packedAssets)
+        {
+            foreach (PackedAssetInfo info in packed.contents)
+            {
+                string path = info.sourceAssetPath ?? "";
+                if (path.Length == 0)
+                {
+                    continue;
+                }
+                string[] parts = path.Split('/');
+                string folder = parts.Length > 3 ? parts[0] + "/" + parts[1] + "/" + parts[2] : parts.Length > 1 ? parts[0] + "/" + parts[1] : path;
+                long have;
+                byFolder.TryGetValue(folder, out have);
+                byFolder[folder] = have + (long)info.packedSize;
+                big.Add(new KeyValuePair<string, long>(path, (long)info.packedSize));
+            }
+        }
+        text.AppendLine("in the data file, by folder:");
+        foreach (var pair in byFolder)
+        {
+            if (pair.Value > 262144)
+            {
+                text.AppendLine("  " + pair.Key + ": " + Mb(pair.Value) + " MB");
+            }
+        }
+        big.Sort((a, b) => b.Value.CompareTo(a.Value));
+        text.AppendLine("largest assets:");
+        for (int i = 0; i < big.Count && i < 25; i++)
+        {
+            text.AppendLine("  " + Mb(big[i].Value) + " MB  " + big[i].Key);
+        }
+        string result = text.ToString();
+        Debug.Log("[WebGlBuild] Download size\n" + OnDemandPack.Report + result);
+        File.WriteAllText(Path.Combine(buildPath, "build-report.txt"), OnDemandPack.Report + result);
+    }
+
+    static string Mb(long bytes)
+    {
+        return (bytes / 1048576.0).ToString("0.0");
     }
 
     public static void UpdateGamePageVersion(string gamePage, int version)
