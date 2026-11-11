@@ -7,14 +7,8 @@ public static class Story {
     // Wave 30 is the first Spider Bot and carries the order. Clearing it plays the finale.
     public const int FinalWave = 30;
 
-    public static readonly string[] Intro = {
-        "N|THE PLACE DEPARTMENT\nWhere things that should not exist are given an address.",
-        "W|Wallit. One wallet, one bat, no refunds. They stamped me \"Return to sender\" and threw me in here.",
-        "S|Slice. This is the circle: the one address in the Hollow that's filed. Inside it, things exist.",
-        "S|Outside, they're cleared. If I fall, the circle goes, and everything in it. Don't let me fall.",
-        "Y|Hello! Uploading victory! Striking this address now!",
-        "W|Guard Slice. Swing at anything chirpy. Pay up.",
-    };
+    // The first seconds of an Arcade run are not text: ColdOpen.cs plays them (Docs/Story.md, "The intro"). What the old
+    // six pages said now lives in the lore log (Lore.cs, "The First Night").
 
     // The hub: the circle between chapters (Docs/Story.md, "The hub"). Said on arrival, by chapters cleared (index 0 is one
     // cleared). Two lines each, "<speaker>|<text>": Wallit money, Slice clipped.
@@ -846,7 +840,6 @@ public static class Story {
     }
 
     public static IEnumerable<string> All() {
-        foreach (string line in Intro) yield return line;
         foreach (string line in Finale) yield return line;
         foreach (string[] beat in Beats) foreach (string line in beat) yield return line;
         foreach (string line in Overtime) yield return line;

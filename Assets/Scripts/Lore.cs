@@ -44,6 +44,8 @@ public static class Lore {
             Text = "A gold Titan Spider Bot with a ledger held open. It keeps the Department's copies and reads the pages with every leg. Struck from the record." },
         new Entry { Title = "Address Filed", Reveal = 6,
             Text = "The order that carried the wave 30 Spider Bot was only a form, and a form can be answered. DENIED. Slice filed the circle herself. The creature behind the order is not named here, because nothing here names it." },
+        new Entry { Title = "The First Night", Reveal = 0,
+            Text = "THE PLACE DEPARTMENT: where things that should not exist are given an address. Wallit: \"One wallet, one bat, no refunds. They stamped me Return to sender and threw me in here.\" Slice: \"This is the circle: the one address in the Hollow that's filed. Inside it, things exist. Outside, they're cleared. If I fall, the circle goes, and everything in it. Don't let me fall.\" A Yo Bot: \"Hello! Uploading victory! Striking this address now!\" Wallit: \"Guard Slice. Swing at anything chirpy. Pay up.\" (It used to be six pages of text. Now the stamp drops, the ring lights, and the first Yo Bot is already coming.)" },
     };
 
     // Entries revealed by the last Unlock call, for the Chapter Complete card.

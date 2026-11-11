@@ -199,7 +199,10 @@ Stamps, ink, paper and light are the world's weather; no rain, no sparks, no emb
 Each beat is lived. Format: **Where / When** — what the player does and sees; sound and voice; the consequence. Text, at most one
 line, is only the subtitle of a voiced line. Beats marked **(built)** exist per the docs; **(build)** is the gap to close.
 
-1. **The Stamp falls (built).** Moonlit Hollow, first Campaign scene / Arcade wave 1 intro. Black screen, a stamp thump, ink on
+1. **The Stamp falls (built; Arcade version is the cold open, `ColdOpen.cs`).** Arcade, first run on a browser: no text page. The
+   RETURN TO SENDER stamp (`stamp_heavy`) drops onto Wallit, he lands in the circle as its ring lights, Slice says "Stay close."
+   (subtitle only), and the first Yo Bot is already rushing in; any move or swing ends it. Plays once per browser. Campaign scene:
+   Moonlit Hollow, first Campaign scene. Black screen, a stamp thump, ink on
    leather; Wallit rolls into the lit circle ("Ow! That's extra!"), Slice: "You're inside. Inside, you exist." The ring flares
    gold on the word *inside*.
 2. **The first swing (built).** Yard, at the Ring. Wallit takes the bat; the first Clearing Crew bot wakes with `yobot_wake`.

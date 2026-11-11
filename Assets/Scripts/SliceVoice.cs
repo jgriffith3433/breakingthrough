@@ -117,7 +117,7 @@ public class SliceVoice : MonoBehaviour {
 
     // Wave 1 may start before she exists: greet it if no wave start was seen yet.
     void OpeningWave() {
-        if (lastReadyAt < 0f) {
+        if (lastReadyAt < 0f && !ColdOpen.PlayedThisRun) {
             Ready(WaveDirector.Wave);
         }
     }
@@ -310,6 +310,17 @@ public class SliceVoice : MonoBehaviour {
         }
         nextLineAt = Time.time + 3.2f;
         Show(false, line, why);
+    }
+
+    // The cold open's one line (ColdOpen.cs): her voice file and her subtitle, the floor for its length. It counts as her wave-1
+    // greeting, so she does not say a second line when the wave starts.
+    public static void ColdLine(string line) {
+        if (Instance == null) {
+            return;
+        }
+        Instance.lastReadyAt = Time.time;
+        Instance.nextLineAt = Time.time + 3.2f;
+        Instance.Show(false, line, "cold-open");
     }
 
     // A cutscene line (Cutscene.cs): her voice file if there is one, the floor for its length, no subtitle of her own.
