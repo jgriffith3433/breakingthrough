@@ -6,11 +6,11 @@ using UnityEngine.Networking;
 
 // The campaign's heavy files, fetched when the player chooses the campaign instead of shipped in the first download.
 //
-// The WebGL build (WebGlBuild.BuildWebGLTo -> OnDemandPack) takes the voice lines of every cast member but Wallit and Slice, the
-// cinematic stills, the portraits, the painted skies and the baked boss and lodger meshes out of Resources and lays them in
-// <build>/StreamingAssets/OnDemand/ as plain mp3, jpg, png and text files named by content hash, with an index.json listing
-// each file's key (its old Resources path, "Voice/cinema/ch1_open_s1"), its size and the groups it belongs to. The menu and
-// Arcade need none of it, so the page's data file is that much smaller and the menu is up before the bulk arrives.
+// The WebGL build (WebGlBuild.BuildWebGLTo -> OnDemandPack) takes campaign voices (and Wallit/Slice lines outside the Arcade
+// bark keep-set), the cinematic stills, the portraits, the painted skies and the baked boss and lodger meshes out of
+// Resources and lays them in <build>/StreamingAssets/OnDemand/ as plain mp3, jpg, png and text files named by content hash,
+// with an index.json listing each file's key (its old Resources path, "Voice/cinema/ch1_open_s1"), its size and the groups
+// it belongs to. The menu and Arcade keep-set need none of the rest, so the page's data file is that much smaller.
 //
 // A group is "core" (portraits, skies, the hub's lodgers and office pieces: everything any chapter uses) or "ch1".."ch6" (that
 // chapter's stills, its reels' voices, its bosses, the lines of its script; chapter 6 also carries the ending and credits).

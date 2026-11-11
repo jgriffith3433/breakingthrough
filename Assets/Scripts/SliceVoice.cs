@@ -376,7 +376,7 @@ public class SliceVoice : MonoBehaviour {
             if (sliceText != null && why != "cutscene") {
                 sliceText.text = "SLICE  " + line;
             }
-            AudioClip clip = Resources.Load<AudioClip>("Voice/" + id);
+            AudioClip clip = LoadClip(id);
             if (clip != null && audioOut != null && SoundSettings.EffectsLevel > 0f) {
                 audioOut.PlayOneShot(clip, SoundSettings.EffectsLevel);
             }
@@ -408,6 +408,56 @@ public class SliceVoice : MonoBehaviour {
             }
         }
         return sb.ToString();
+    }
+
+    // Voice files that stay in the WebGL data file (OnDemandPack keeps them).
+    public static bool IsArcadeKeep(string id) {
+        EnsureArcadeKeep();
+        return arcadeKeep.Contains(id);
+    }
+
+    static HashSet<string> arcadeKeep;
+    static readonly Dictionary<string, AudioClip> clips = new Dictionary<string, AudioClip>();
+
+    static void EnsureArcadeKeep() {
+        if (arcadeKeep != null) {
+            return;
+        }
+        arcadeKeep = new HashSet<string>();
+        void add(string[] bank) {
+            for (int i = 0; i < bank.Length; i++) {
+                arcadeKeep.Add(LineId(bank[i]));
+            }
+        }
+        add(Idle); add(Wave); add(BossWave); add(Kill); add(Hurt); add(Low); add(NewKind); add(Near);
+        for (int b = 0; b < Banter.Length; b++) {
+            for (int i = 0; i < Banter[b].Length; i++) {
+                string turn = Banter[b][i];
+                if (turn.Length > 2 && turn[0] == 'S' && turn[1] == '|') {
+                    arcadeKeep.Add(LineId(turn.Substring(2)));
+                }
+            }
+        }
+    }
+
+    static AudioClip LoadClip(string id) {
+        AudioClip clip;
+        if (!clips.TryGetValue(id, out clip)) {
+            clip = OnDemand.Audio("Voice/" + id);
+            if (clip == null) {
+                clip = Resources.Load<AudioClip>("Voice/" + id);
+            }
+            clips[id] = clip;
+            if (clip == null) {
+                OnDemand.FetchKey("Voice/" + id, o => {
+                    var fetched = o as AudioClip;
+                    if (fetched != null) {
+                        clips[id] = fetched;
+                    }
+                });
+            }
+        }
+        return clip;
     }
 
     void Note(string kind, string detail) {

@@ -400,12 +400,48 @@ public class WallitVoice : MonoBehaviour {
         return "wallit_" + SliceVoice.LineId(line).Substring(6);
     }
 
+    // Voice files that stay in the WebGL data file (OnDemandPack keeps them). Everything else is fetched on demand.
+    public static bool IsArcadeKeep(string id) {
+        EnsureArcadeKeep();
+        return arcadeKeep.Contains(id);
+    }
+
+    static HashSet<string> arcadeKeep;
+
+    static void EnsureArcadeKeep() {
+        if (arcadeKeep != null) {
+            return;
+        }
+        arcadeKeep = new HashSet<string>();
+        void add(string[] bank) {
+            for (int i = 0; i < bank.Length; i++) {
+                arcadeKeep.Add(LineId(bank[i]));
+            }
+        }
+        add(Kill); add(Streak); add(Big); add(HomeRun); add(Hurt); add(Wave); add(LevelUp); add(Chest);
+        add(SliceLow); add(Stakes); add(BossWave); add(Golden); add(FirstHit); add(WaveClear); add(BossPhase);
+        add(BanterLines);
+    }
+
     static AudioClip LoadClip(string line) {
         string id = LineId(line);
         AudioClip clip;
         if (!clips.TryGetValue(id, out clip)) {
-            clip = Resources.Load<AudioClip>("Voice/" + id);
+            // OnDemand first (campaign / deferred lines), then Resources (Arcade keep-set).
+            clip = OnDemand.Audio("Voice/" + id);
+            if (clip == null) {
+                clip = Resources.Load<AudioClip>("Voice/" + id);
+            }
             clips[id] = clip;
+            // Campaign / deferred Wallit lines: ask OnDemand; no-ops when the key is not in the index.
+            if (clip == null) {
+                OnDemand.FetchKey("Voice/" + id, o => {
+                    var fetched = o as AudioClip;
+                    if (fetched != null) {
+                        clips[id] = fetched;
+                    }
+                });
+            }
         }
         return clip;
     }

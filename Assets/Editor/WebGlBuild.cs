@@ -635,6 +635,13 @@ public static class WebGlBuild
         // Phones kill a tab that grows past about 1.5 GB: the heap may grow from 256 MB but not to 2 GB.
         PlayerSettings.WebGL.maximumMemorySize = 1536;
         PlayerSettings.WebGL.memoryGrowthMode = WebGLMemoryGrowthMode.Geometric;
+        // Unity's splash logo alone was ~2.7 MB in the data file (build 121); phones never need it.
+        PlayerSettings.SplashScreen.show = false;
+        PlayerSettings.SplashScreen.showUnityLogo = false;
+
+        // Rebuild the Arena so the player ships instanced scatter (shared FBX meshes) instead of the old combined
+        // ArenaScatter_*.asset blobs (~40 MB of the data file on build 121), and clear retired bow model refs.
+        BuildArena.RebuildForPlayerBuild();
 
         // The campaign's voices, stills, portraits, skies and boss meshes leave the data file for the build's StreamingAssets/OnDemand
         // (OnDemandPack): the originals are moved aside for the build and always moved back.
@@ -656,8 +663,8 @@ public static class WebGlBuild
                 "Assets/Maps/Map_Reading.unity",
                 "Assets/Maps/Map_Filed.unity",
                 "Assets/Maps/Map_Office.unity",
-                "Assets/Maps/Level_1_Yard.unity",
-                "Assets/Maps/KitPreview.unity"
+                "Assets/Maps/Level_1_Yard.unity"
+                // KitPreview is an editor gallery, not part of the playable first download.
             },
             locationPathName = buildPath,
             target = BuildTarget.WebGL

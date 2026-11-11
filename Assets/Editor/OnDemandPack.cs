@@ -18,10 +18,11 @@ using UnityEngine;
 //               no change. Nothing is ever deleted or re-exported: the sources are only moved and moved back, with their .meta.
 //   Install()   copies Temp/OnDemand into <build>/StreamingAssets/OnDemand, which the page serves as plain files.
 //
-// What moves: Resources/Voice (everything but Wallit's and Slice's lines, which Arcade speaks), Voice/cinema, Cinematics/Art,
-// Portraits, Skies and the Baked boss, lodger and prop meshes. Groups: "core" (portraits, skies, the hub's lodgers and office
-// pieces), "ch1".."ch6" (the stills and voices of the chapter's reels, the lines of its script and Story data, its bosses) and
-// "reel_<id>" (one reel's own files, for a reel played on its own). A voice line no chapter names is fetched by key when spoken.
+// What moves: Resources/Voice (every cast line, including Wallit/Slice lines that are not in the Arcade bark keep-set),
+// Voice/cinema, Cinematics/Art, Portraits, Skies and the Baked boss, lodger and prop meshes. Groups: "core" (portraits, skies,
+// the hub's lodgers and office pieces), "ch1".."ch6" (the stills and voices of the chapter's reels, the lines of its script and
+// Story data, its bosses) and "reel_<id>" (one reel's own files, for a reel played on its own). A voice line no chapter names is
+// fetched by key when spoken. Arcade keep-set lines stay in Resources so the first swing still has a voice file without a fetch.
 [InitializeOnLoad]
 public static class OnDemandPack {
     const string Resources_ = "Assets/Resources/";
@@ -180,12 +181,13 @@ public static class OnDemandPack {
             if (ext != ".mp3" && ext != ".wav" && ext != ".ogg") {
                 return null;   // audio.json stays
             }
-            bool own = lower.StartsWith("voice/wallit_") || lower.StartsWith("voice/slice_");
-            if (own) {
-                return null;   // Arcade speaks these
-            }
             if (ext != ".mp3") {
                 return null;   // only Gen's mp3s are fetched as MPEG
+            }
+            string id = Path.GetFileNameWithoutExtension(rel);
+            // Arcade's first-minute bark banks stay in the data file; campaign and the long Wallit/Slice catalogues leave.
+            if (WallitVoice.IsArcadeKeep(id) || SliceVoice.IsArcadeKeep(id)) {
+                return null;
             }
             item.key = rel.Substring(0, rel.Length - ext.Length);
             return item;

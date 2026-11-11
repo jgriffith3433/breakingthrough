@@ -1,3 +1,4 @@
-- lesson: Cold start vs Tap to play — `MainMenu.ColdStartPlays` must wait for `SoundSettings.TapPromptUp` before `Play()`; starting Arcade in `Start` leaves the run under `#hawkes-tap`.
-- lesson: first-five START regex — Gen matches `tap to start`, not `tap to play`; set `#hawkes-tap` aria-label to a START phrase or the cold bot treats the Unity canvas as gameplay and never presses the card.
-- convention: Tap to play source — edit `Tools/Web/hawkes-sound.js` only; `WebGlBuild.InstallSoundPrompt` copies it to the site on deploy.
+- lesson: build 121 data bloat was Arena CombineMeshes — `ArenaScatter_*.asset` was ~41 MB packed; shared FBX + `DrawMeshInstanced` (`ArenaScatterDraw`) removes that from the first download; force rebuild in `WebGlBuild.BuildWebGLTo` via `BuildArena.RebuildForPlayerBuild`.
+- lesson: OnDemand already ran on 121 (26.5 MB out) but Wallit/Slice kept all 18.7 MB of voice — keep only Arcade banks (`IsArcadeKeep`), defer the rest.
+- convention: read `[WebGlBuild] Download size` / Gen Unity log / `build-report.txt` for folder breakdown before guessing; sandbox has no binaries so size proof is the cloud report.
+- convention: never CombineMeshes unique scenery into Generated assets for WebGL — instances share the FBX and stay out of the data file when unreferenced.
