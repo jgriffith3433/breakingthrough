@@ -632,6 +632,12 @@ public static partial class Playtest {
         float took = Time.realtimeSinceStartup - pressed;
         run.Event("tap-prompt", "audio " + after + ", overlay dismissed in " + took.ToString("0.00") + " s");
         run.Metric("tapDismissSeconds", took);
+        yield return new WaitForSecondsRealtime(0.6f);
+        run.Event("first-tap-sound", string.Join(", ", FirstTapSound.Events) + "; ui sounds " + GameAudio.Played + "; music '" + MusicDirector.Current + "'");
+        run.Metric("firstTapSounds", FirstTapSound.Events.Count);
+        if (FirstTapSound.Fired == 0) {
+            run.Problem(PlaytestSeverity.Bug, "the first tap played no whoosh, thunk and coin ding");
+        }
         yield return new WaitForSecondsRealtime(0.3f);
         run.Metric("audioRunning", after == "running" ? 1 : 0);
         if (after == "prompt") {

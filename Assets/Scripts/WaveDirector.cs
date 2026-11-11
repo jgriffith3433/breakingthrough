@@ -413,6 +413,9 @@ public class WaveDirector : MonoBehaviour {
             RunAnalytics.WaveEnd(Wave, "complete");
             MetaProgress.AddCoins(Tuning.CoinsForWave(Wave), Vector3.zero);
             Pickups.Vacuum();
+            if (ChapterRun.Instance == null && cleared <= Tuning.WaveCardsUntil) {
+                RunBoons.AddWaveCard();
+            }
             if (Musician.Instance != null) {
                 Musician.Instance.Heal(6 * RunBoons.Rank(BoonId.Ovation));
             }
