@@ -130,8 +130,8 @@ public class PauseMenu : MonoBehaviour {
         instance.hint.text = UiFit.Touch ? "" : "P, Esc or pad Start resumes.";
         instance.DisarmQuit();
         instance.ArrangeButtons();
+        PanelFx.Show(instance.root, "pause", instance.deck);
         RunAnalytics.Screen("pause");
-        GameAudio.PlayUI("shot", 0.35f, 0.7f);
     }
 
     public static void Resume() {
@@ -143,7 +143,7 @@ public class PauseMenu : MonoBehaviour {
         ClosedFrame = Time.frameCount;
         HoldFire = true;
         if (instance != null) {
-            instance.root.SetActive(false);
+            PanelFx.Hide(instance.root, "pause");
         }
         Time.timeScale = WaveDirector.IsLost ? 0f : 1f;
         RunAnalytics.Screen(WaveDirector.IsLost ? "game_over" : "wave");

@@ -12,7 +12,7 @@ public class SettingsPanel : MonoBehaviour {
     static SettingsPanel instance;
 
     public static bool IsOpen {
-        get { return instance != null && instance.root != null && instance.root.activeSelf; }
+        get { return instance != null && instance.root != null && instance.root.activeSelf && !PanelFx.Closing(instance.root); }
     }
 
     // The frame Settings closed, so the Escape that closed it doesn't also close the pause menu under it.
@@ -58,6 +58,7 @@ public class SettingsPanel : MonoBehaviour {
         instance.root.SetActive(true);
         instance.Fill();
         instance.Layout();
+        PanelFx.Show(instance.root, "settings", instance.panel);
         RunAnalytics.Screen("settings");
     }
 
@@ -65,7 +66,7 @@ public class SettingsPanel : MonoBehaviour {
         if (!IsOpen) {
             return;
         }
-        instance.root.SetActive(false);
+        PanelFx.Hide(instance.root, "settings");
         ClosedFrame = Time.frameCount;
         SoundSettings.Flush();
         RunAnalytics.SettingsClosed(PauseMenu.IsOpen ? "pause" : "menu");
