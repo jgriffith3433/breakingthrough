@@ -1,0 +1,139 @@
+{
+  "id": "ch1_open_world",
+  "fallback": "ch1_open",
+  "seconds": 33,
+  "shots": [
+    {
+      "id": "s1_arrive",
+      "seconds": 4.5,
+      "camMode": "dolly",
+      "camFrom": [-18, 3.2, -8],
+      "camTo": [-10, 3.0, -6],
+      "lookAt": [-8, 1.4, -9],
+      "fov": 55,
+      "frame": ["wallit", "slice"],
+      "actors": [
+        { "id": "wallit", "from": [-22, 0, -2], "to": [-12, 0, -6], "yaw": 140, "anim": "walk" },
+        { "id": "slice", "at": [0, 0, -9], "yaw": 180, "anim": "idle" }
+      ]
+    },
+    {
+      "id": "s2_inside",
+      "seconds": 4.0,
+      "camMode": "dolly",
+      "camFrom": [-8, 2.6, -14],
+      "camTo": [-5, 2.4, -12],
+      "lookAt": [-2, 1.5, -9],
+      "fov": 50,
+      "frame": ["wallit", "slice"],
+      "speaker": "S",
+      "line": "You're inside. Inside, you exist.",
+      "actors": [
+        { "id": "wallit", "from": [-12, 0, -6], "to": [-4, 0, -12], "yaw": 20, "anim": "walk" },
+        { "id": "slice", "at": [0, 0, -9], "yaw": 220, "anim": "turn" }
+      ]
+    },
+    {
+      "id": "s3_receipt",
+      "seconds": 3.5,
+      "camMode": "dolly",
+      "camFrom": [4, 2.5, -16],
+      "camTo": [2, 2.4, -14],
+      "lookAt": [-1, 1.5, -10],
+      "fov": 48,
+      "frame": ["wallit", "slice"],
+      "speaker": "W",
+      "line": "Does existing come with a receipt?",
+      "actors": [
+        { "id": "wallit", "at": [-3, 0, -13], "yaw": 10, "anim": "idle" },
+        { "id": "slice", "at": [0, 0, -9], "yaw": 200, "anim": "idle" }
+      ]
+    },
+    {
+      "id": "s4_courier",
+      "seconds": 5.0,
+      "camMode": "dolly",
+      "camFrom": [14, 3.4, -6],
+      "camTo": [8, 3.0, -8],
+      "lookAt": [6, 1.6, -8],
+      "fov": 52,
+      "frame": ["courier", "slice"],
+      "speaker": "Y",
+      "line": "Hello! Uploading victory! Striking this address now!",
+      "sfx": "clipboard_raise",
+      "actors": [
+        { "id": "wallit", "at": [-3, 0, -13], "yaw": 40, "anim": "idle" },
+        { "id": "slice", "at": [0, 0, -9], "yaw": 90, "anim": "turn" },
+        { "id": "courier", "from": [18, 0, -4], "to": [8, 0, -8], "yaw": 240, "anim": "walk", "tell": true }
+      ]
+    },
+    {
+      "id": "s5_stamp",
+      "seconds": 2.8,
+      "camMode": "dolly",
+      "camFrom": [2, 5.5, -18],
+      "camTo": [1, 4.2, -14],
+      "lookAt": [0, 0.4, -10],
+      "fov": 45,
+      "frame": ["wallit", "slice"],
+      "stamp": [0, 0, -10],
+      "actors": [
+        { "id": "wallit", "at": [-2, 0, -13], "yaw": 20, "anim": "idle" },
+        { "id": "slice", "at": [0, 0, -9], "yaw": 160, "anim": "idle" },
+        { "id": "courier", "at": [8, 0, -8], "yaw": 250, "anim": "tell" }
+      ]
+    },
+    {
+      "id": "s6_slam",
+      "seconds": 2.4,
+      "camMode": "cut",
+      "camFrom": [-1, 2.2, -16],
+      "camTo": [-1, 2.0, -14],
+      "lookAt": [0, 1.2, -11],
+      "fov": 42,
+      "frame": ["wallit"],
+      "speaker": "W",
+      "line": "Ow! That's extra!",
+      "sfx": "stamp",
+      "slam": true,
+      "actors": [
+        { "id": "wallit", "at": [-2, 0, -13], "yaw": 0, "anim": "idle" },
+        { "id": "slice", "at": [0, 0, -9], "yaw": 180, "anim": "idle" },
+        { "id": "courier", "at": [8, 0, -8], "yaw": 250, "anim": "tell" }
+      ]
+    },
+    {
+      "id": "s7_answer",
+      "seconds": 4.0,
+      "camMode": "dolly",
+      "camFrom": [-6, 2.8, -18],
+      "camTo": [-4, 2.6, -16],
+      "lookAt": [0, 1.4, -10],
+      "fov": 50,
+      "frame": ["wallit", "courier"],
+      "speaker": "W",
+      "line": "Return to sender.",
+      "sfx": "paper_flutter",
+      "actors": [
+        { "id": "wallit", "at": [-1, 0, -14], "yaw": 50, "anim": "idle" },
+        { "id": "slice", "at": [0, 0, -9], "yaw": 140, "anim": "idle" },
+        { "id": "courier", "from": [8, 0, -8], "to": [16, 0, -2], "yaw": 40, "anim": "walk" }
+      ]
+    },
+    {
+      "id": "s8_settle",
+      "seconds": 3.8,
+      "camMode": "orbit",
+      "camFrom": [0, 4.2, -54],
+      "camTo": [0, 3.6, -53],
+      "lookAt": [0, 1.6, -48],
+      "fov": 60,
+      "frame": ["wallit"],
+      "handoff": true,
+      "actors": [
+        { "id": "wallit", "at": [0, 0, -48], "yaw": 0, "anim": "idle" },
+        { "id": "slice", "at": [0, 0, -9], "yaw": 180, "anim": "idle" }
+      ]
+    }
+  ]
+}

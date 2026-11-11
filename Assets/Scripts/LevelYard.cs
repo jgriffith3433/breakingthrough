@@ -107,6 +107,8 @@ public class LevelYard : MonoBehaviour {
         }
     }
     public Vector3 SliceFigureAt { get { return sliceFigure != null ? sliceFigure.position : SlicePos; } }
+    // The live Slice transform for in-engine cinematics (SliceFigure() already names the builder).
+    public Transform SliceBody { get { return sliceFigure; } }
 
     LevelScene scene;
     Transform root;
@@ -621,14 +623,27 @@ public class LevelYard : MonoBehaviour {
         Note("level-start", "Level_1_Yard at " + PlayerStart);
     }
 
-    // The hook: within the first second a stamp falls beside him (to his right, clear of the chalk walk) and slams RETURN TO
-    // SENDER into the ground, and he answers it. The yard's rule is shown before anyone says it.
+    // The opening: an in-engine directed scene in the Sorting Yard (CinematicDirector, ch1_open_world). Wallit arrives on
+    // the west trail, Slice turns in her ring, the Courier raises its clipboard, and the RETURN TO SENDER stamp lands on
+    // the circle; control resumes on the last shot with no black frame. Playtests set CinematicDirector.SuppressOpening
+    // so their bot starts with the stick. Missing actors fall back to the still reel ch1_open.
     IEnumerator Opening() {
-        yield return new WaitForSeconds(0.8f);
-        DropStampAt(PlayerStart + new Vector3(4.5f, 0f, 6f), "the opening");
+        if (CinematicDirector.SuppressOpening) {
+            yield return new WaitForSeconds(0.8f);
+            DropStampAt(PlayerStart + new Vector3(4.5f, 0f, 6f), "the opening");
+            nextStampAt = Time.time + 9f;
+            yield return new WaitForSeconds(Telegraph + 0.5f);
+            LevelBarks.Say('W', "Return to sender. Which sender? I want a refund.", "arrive", true);
+            yield break;
+        }
+        nextStampAt = Time.time + 40f;
+        bool done = false;
+        CinematicDirector.Play("ch1_open_world", this, () => done = true);
+        while (!done) {
+            yield return null;
+        }
         nextStampAt = Time.time + 9f;
-        yield return new WaitForSeconds(Telegraph + 0.5f);
-        LevelBarks.Say('W', "Return to sender. Which sender? I want a refund.", "arrive", true);
+        Note("opening-scene", "ch1_open_world done, shots=" + CinematicDirector.ShotsShown + " skipped=" + CinematicDirector.Skipped);
     }
 
     string Objective() {
