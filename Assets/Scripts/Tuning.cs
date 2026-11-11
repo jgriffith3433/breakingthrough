@@ -60,6 +60,8 @@ public static class Tuning {
     public const float LevelStep = 4f;
     public const float LevelCurve = 0.5f;
     public const int StartRerolls = 1;
+    // Arcade: a free pick-one-of-three card at each wave clear up to this wave, so the build variety shows in the first minute.
+    public const int WaveCardsUntil = 3;
 
     // Bolts each bot drops when it is destroyed. Bigger bots are worth more.
     public static int BoltsFor(BotKind kind, bool elite) {
