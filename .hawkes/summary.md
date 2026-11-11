@@ -1,28 +1,20 @@
-# Arcade run-end: want to go again
+# Fix: Tap to play overlay covers the running game
 
 ## What was wrong
-Losing an Arcade run showed a static "Address struck off" stats dump and any-key returned to the menu. No counting juice, no next unlock, no cast reaction, no one-tap Retry.
+Cold start (`MainMenu.ColdStartPlays`) loaded Arcade **before** the page's Tap to play card was dismissed. The game ran under `#hawkes-tap` for the whole session (Wave 1→2, HUD, game-over visible behind it in first-five@local shots). Gen's first-five also never treated the card as a start button: its START regex matches `tap to start`, not `tap to play`, and a large Unity canvas made it mark "gameplay" without clicking the overlay. Prior overlay-dismiss work (#210) was in the script but could not help once the bot played with keys under a card it never chose.
 
-## What changed
-- **Story / bible:** 12 Wallit/Slice run-end exchanges with conditions in `Docs/Story.md` and `Story.RunEnds`; world-bible beat 12.
-- **Goals ladder:** `Assets/Resources/Data/run_goals.json` (12 rungs) + `RunGoals.cs` (career progress, coin/look unlocks, PlayerPrefs).
-- **Run-end screen:** `RunEndScreen.cs` replaces the stats body: wave/coin count with `coin` SFX, `stamp_heavy` on new best, goal stamps, one-line cast subtitle, large Retry + Menu. Wired from `WaveDirector.Lose`.
-- **Cast talk:** `RunEndTalk.cs` picks by run facts; never repeats an id within 5 runs.
-- **Bat looks:** `UpgradeLook` / `BatMarks` show Night Band, Ink Tip, Pale Wake, Foreman Stripe, Order Seal, Long Ball Gold, Crack Band, Ledger Glow when unlocked.
-- **Voices:** Hawkes Gen lines for the new exchanges under `Assets/Resources/Voice/` (Wallit ElevenLabs, Slice open `hv_heroine`); `audio.json` updated. Reused existing `coin` / `stamp` / `stamp_heavy` SFX.
-- **Playtest:** scenario `run-end` (`PlaytestRunEnd.cs`, `.hawkes/scenario.txt` with 390x844 mobile). Existing `GameOver()` now presses Menu instead of Space.
+## What I changed
+- `Assets/Scripts/MainMenu.cs` — cold start / `?mode=arcade` waits until `SoundSettings.TapPromptUp` is false, then `Play()`.
+- `Assets/Scripts/SoundSettings.cs` — `TapPromptUp` via existing `HawkesSoundState` jslib.
+- `Tools/Web/hawkes-sound.js` — `aria-label="Tap to start"` (visible text still "Tap to play") so first-five clicks it; `hidePrompt` also clears a stray `#hawkes-tap`.
+- `Assets/Scripts/Playtest.cs` — TapToPlay fails if the prompt is still up after press.
+- `.hawkes/scenario.txt` — `first-five` (the scenario that found it).
 
-## Checks
-- Manual C# duplicate-member / quote scan on touched scripts: clean.
-- Unity compile not run here (no editor in this sandbox).
-- Fun reviewer: **thin** (panel over a frozen Hollow; wants in-world strike-off set piece — left for a later pass; this matches the brief's VS/Hades results-screen first slice).
-- Reviewer: **revise** notes addressed (Retry gated until ready, overlap probe skips parent/child, real wave clear for best-stamp, look unlock via reaching wave 10, RunEnd fills the lost panel, missing noted/closer/no_refunds restored from git).
+## How I checked
+- Confirmed first-five START matches `Tap to start` and not `Tap to play` (node).
+- `node --check Tools/Web/hawkes-sound.js`.
+- Read C# for duplicate members / missing usings (none). **Unity compile not run here** (no editor).
+- No browser run (Studio playtest on beta). No conflicts with other agents; `c_1c042f4945ad` may also touch cold-start / first-five — this wait is compatible and required for the overlay not to sit on a live wave.
 
-## Conflicts
-None with other in-flight agents.
-
-## GPU left for J
-Optional later set-piece art (4× `image.generate` stamp/ledger stills + 2× `audio.sfx`): hawkesgen_estimate **$0.24** work / **$2.10** with idle tail on 1 server (~8 min). Not started (brief GPU budget: none). Voices already generated under auto-approve (cents).
-
-## What's left
-In-world circle snuff / ledger tally / bat dolly on unlock (fun-reviewer gaps 1–3). Campaign chapter loss still uses the simple chapter body + Menu.
+## Reviewer
+Verdict: **merge**. Acceptance is met at the cause (do not start the run under the card; make the cold bot press it). Scope is the gate + prompt only. No fun-reviewer pass: not world/content work.

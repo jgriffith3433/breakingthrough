@@ -115,18 +115,21 @@
   }
 
   function hidePrompt() {
-    if (!prompt) {
+    // Also clear any stray #hawkes-tap left in the DOM (a second copy, or a failed earlier remove).
+    var node = prompt || d.getElementById("hawkes-tap");
+    prompt = null;
+    if (!node) {
       return;
     }
     // Hidden first, removed second: if removal ever fails, the overlay is still gone.
     try {
-      prompt.style.setProperty("display", "none", "important");
-      prompt.style.setProperty("pointer-events", "none", "important");
-      prompt.setAttribute("aria-hidden", "true");
+      node.style.setProperty("display", "none", "important");
+      node.style.setProperty("pointer-events", "none", "important");
+      node.setAttribute("aria-hidden", "true");
     } catch (e) {}
     try {
-      if (prompt.parentNode) {
-        prompt.parentNode.removeChild(prompt);
+      if (node.parentNode) {
+        node.parentNode.removeChild(node);
       }
     } catch (e) {}
   }
@@ -262,7 +265,9 @@
     prompt = d.createElement("button");
     prompt.id = "hawkes-tap";
     prompt.type = "button";
-    prompt.setAttribute("aria-label", "Tap to play");
+    // aria-label starts with a first-five START match ("Tap to start"): Gen's cold play clicks that before it
+    // treats the Unity canvas behind as gameplay. Visible label stays "Tap to play".
+    prompt.setAttribute("aria-label", "Tap to start");
     prompt.innerHTML =
       '<span class="t">The Place Department</span>' +
       '<span class="s">Where things that should not exist are given an address.</span>' +
