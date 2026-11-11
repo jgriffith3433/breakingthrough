@@ -65,14 +65,23 @@ continue and the run still ends when Slice falls.
 
 ## The intro
 
-Shown once at the start of a run that begins at wave 1, over the frozen Hollow. Five pages, any key or tap for the next,
-**Skip** (or Enter) leaves at once.
+There is no text intro. An Arcade run that begins at wave 1 opens with a **cold open** of about 4 s (never over 8 s), played
+in the game scene with the real Wallit, Slice and a Yo Bot (`ColdOpen.cs`, no stills, no pages):
 
-1. The tagline and the place.
-2. Wallit says who he is.
-3. Slice says what the circle is.
-4. Slice says why it matters.
-5. A Yo Bot arrives. Wallit says what to do.
+1. The RETURN TO SENDER stamp (`stamp_heavy`) drops onto Wallit from above the circle.
+2. He lands in the circle and the ring lights: soft rings out from Slice's feet, no sparks.
+3. Slice says one line that is already in her bank, "Stay close." Its subtitle is the only text, in the caption band (the top
+   band on phones, clear of the pads).
+4. The first Yo Bot is already rushing in. Wallit speaks no line here; wave 1 adds no beat text and no second voice.
+
+Control is never taken. Any key, tap, stick push or swing ends it on that frame, and Wallit is put where he would have
+landed. It plays once per browser (`hawkes.coldopen`, PlayerPrefs, so localStorage on the web) and Enter or a tap skips it.
+The player is swinging at a Yo Bot within about 10 s of pressing Play and has read nothing.
+
+What the six pages used to say now lives in the lore log (Lore.cs, "The First Night", open from the start of a case file): the tagline,
+Wallit's "One wallet, one bat, no refunds", Slice's "This is the circle: the one address in the Hollow that's filed. Inside it,
+things exist. Outside, they're cleared. If I fall, the circle goes, and everything in it. Don't let me fall.", the Yo Bot's
+"Hello! Uploading victory!" and "Guard Slice. Swing at anything chirpy. Pay up." Campaign chapters keep their own openings.
 
 ## Wallit talks
 

@@ -3,17 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-// Shows the story (Story.cs, Docs/Story.md): the intro and the finale as pages over the frozen game, the ending
-// screen, and the short beats at wave starts. Any key or tap is the next page; Enter or Skip leaves the pages.
+// Shows the story (Story.cs, Docs/Story.md): the finale as pages over the frozen game, the ending
+// screen, and the short beats at wave starts. (The six-page intro is gone: ColdOpen.cs plays the first seconds.) Any key or tap is the next page; Enter or Skip leaves the pages.
 public class StoryScreen : MonoBehaviour {
     static StoryScreen instance;
 
-    // Playtests that are not about the story set this so the intro does not wait for a key.
-    public static bool SuppressIntro;
-
     public static bool IsOpen { get { return instance != null && instance.mode != Mode.None; } }
     public static bool EndingOpen { get { return instance != null && instance.mode == Mode.Ending; } }
-    public static int IntroShown { get; private set; }
     public static int BeatsShown { get; private set; }
     public static int FinaleShown { get; private set; }
     public static int EndingsShown { get; private set; }
@@ -25,7 +21,7 @@ public class StoryScreen : MonoBehaviour {
     public string PageText { get { return lineText != null ? lineText.text : ""; } }
     public static StoryScreen Instance { get { return instance; } }
 
-    enum Mode { None, Intro, Finale, Ending }
+    enum Mode { None, Finale, Ending }
 
     const float PageGap = 0.3f;
     const float BeatSeconds = 2.4f;
@@ -65,7 +61,6 @@ public class StoryScreen : MonoBehaviour {
     void Awake() {
         instance = this;
         Events.Clear();
-        IntroShown = 0;
         BeatsShown = 0;
         FinaleShown = 0;
         EndingsShown = 0;
@@ -82,17 +77,6 @@ public class StoryScreen : MonoBehaviour {
     }
 
     // ---------------------------------------------------------------- public
-
-    // The intro, at a run that starts on wave 1. done runs when it is finished or skipped.
-    public void ShowIntro(Action done) {
-        if (SuppressIntro) {
-            Events.Add("intro|suppressed");
-            done?.Invoke();
-            return;
-        }
-        IntroShown++;
-        Open(Mode.Intro, Story.Intro, _ => done?.Invoke());
-    }
 
     // The finale pages, then the ending screen. closed(true) keeps going into overtime, false leaves for the menu.
     public void ShowFinale(string stats, Action<bool> closed) {
@@ -140,9 +124,8 @@ public class StoryScreen : MonoBehaviour {
         beatText.enabled = false;
         beats.Clear();
         ShowPage();
-        string kind = next == Mode.Intro ? "intro" : "finale";
-        Events.Add(kind + "|open");
-        RunAnalytics.Screen(kind);
+        Events.Add("finale|open");
+        RunAnalytics.Screen("finale");
     }
 
     void ShowPage() {
@@ -154,7 +137,7 @@ public class StoryScreen : MonoBehaviour {
         lineText.fontStyle = speaker == "N" ? FontStyle.Bold : FontStyle.Normal;
         SetHint();
         readyAt = Time.unscaledTime + PageGap;
-        Events.Add((mode == Mode.Intro ? "intro" : "finale") + "-page|" + (page + 1) + "|" + speaker + "|" + Story.Text(line).Replace('\n', ' '));
+        Events.Add("finale-page|" + (page + 1) + "|" + speaker + "|" + Story.Text(line).Replace('\n', ' '));
     }
 
     void SetHint() {
@@ -186,13 +169,9 @@ public class StoryScreen : MonoBehaviour {
     }
 
     void Finish(bool skipped = false) {
-        string kind = mode == Mode.Intro ? "intro" : "finale";
-        Events.Add(kind + "|" + (skipped ? "skipped" : "done"));
+        Events.Add("finale|" + (skipped ? "skipped" : "done"));
         Action<bool> closed = onClose;
         onClose = null;
-        if (mode == Mode.Intro) {
-            Close();
-        }
         closed?.Invoke(true);
     }
 
@@ -340,7 +319,7 @@ public class StoryScreen : MonoBehaviour {
         Anchor(hintText.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 28f), new Vector2(1000f, 36f));
         hintText.rectTransform.pivot = new Vector2(0.5f, 0f);
         SkipButton = MakeButton(pagePanel.transform, "Skip", "Skip", new Vector2(190f, 64f), 28, () => {
-            if (mode == Mode.Intro || mode == Mode.Finale) {
+            if (mode == Mode.Finale) {
                 Finish(true);
             }
         });

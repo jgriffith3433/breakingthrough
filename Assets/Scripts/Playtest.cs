@@ -19,6 +19,7 @@ public static class Playtest {
     static readonly PlaytestScenario[] Scenarios = {
         new PlaytestScenario("explore", "Walks every live map (Arcade, chapters 1-6, the hub) on the stick: stuck cells, falls, reachability per map (map-explore; explore.stuckCells/falls/reachablePct.<map>), plus a per-frame camera feel detector (camera-feel: inside geometry, within 0.15 m, snaps over 30 deg, jitter; feel.cameraInsideFrames/Near/Snap/Jitter.<map>) and acceptance probes (camera-corner pull-in, camera-idle 2 s recentre, camera-lock ease). State note carries chapter, objective, position, grounded, camera, fov and followDist", 1200, "content"),
         new PlaytestScenario("ch1", "Alias of campaign-beats: Chapter 1 from the case file to its boss and the return slot", 700, "content"),
+        new PlaytestScenario("coldopen", "The cold open (Docs/Story.md, \"The intro\"): on a fresh save Arcade shows no text page; the RETURN TO SENDER stamp drops onto Wallit, he lands in the circle as its ring lights, Slice says one existing line (subtitle only) and the first Yo Bot rushes in (events coldopen-start, coldopen-land, coldopen-end with the seconds from Play and why: done or input). The bot lets it play until it ends or a Yo Bot is close, then fights; on a phone viewport (390x844) it plays with fingers only (stick and Swing). Events first-hit (seconds from Play and from the run start, the words on screen before it), coldopen-words (the largest count of visible words outside the standing HUD: 12 or fewer wanted), coldopen-subtitle (HUD overlap check at the moment of Slice's line). Then the menu again and a second Arcade start on the same browser: no coldopen-start (coldopen-absent). Metrics coldopenSeconds, coldopenSecondsToFirstHit, coldopenWords, coldopenSecondStart", 120, "smoke"),
         new PlaytestScenario("smoke", "Boot, menu, Arcade: shots at t=2, 4 and 10 s of play (events open-shot) so a Yo Bot is approaching or in reach by 4 s, the swing hint is gone by 10 s, and the edge arrow only shows while none is in swing reach; then about 30 s of bat play", 50, "smoke"),
         new PlaytestScenario("hollow-slice", "The Moonlit Hollow vertical slice (docs/world-bible.md, A): 60 s of Arcade play with the Department stamp press landmark on the wall (events landmark-stamp; metrics quality.maxQuietSeconds = longest gap between the press stamping, a kill or a pickup-free sight, quality.textOnlyBeats = 0, hollowStamps)", 90, "smoke"),
         new PlaytestScenario("arcade-acts", "Arcade's three acts (docs/world-bible.md, A): play wave 1, then the wave key to 11 and 21 (events act-look with sun, fog and sky horizon, act-shot desktop and phone photos at 390x844; metrics actLookDistance_1_11, actLookDistance_11_21, must be visibly apart); the banner of each act reads and sits on the phone screen clear of the HUD's top bar (act-banner, actBannerOff, actBannerOverlap); the score crossfades over 2 s with the combined layer level never under 1 (actMixFloor, music-crossfade); act 2 has Spider Bots alive (act2-spiders) and act 3's crews hold elites of other kinds than the Yo Bot (act3-mixed-elites)", 240, "smoke"),
@@ -75,7 +76,7 @@ public static class Playtest {
         new PlaytestScenario("chapter-maps", "Each Campaign chapter loads its own map, with its own lighting, and unloads it on leaving (setup: the sandbox case file stands on the chapter; the real save is never touched; leaving a chapter early is a named setup shortcut). Three chapters in turn (1 The Moonlit Hollow, 4 The Long Walk, 5 The Reading Room): Campaign, case file 1, Begin; the map named in the chapter data loads as an extra scene on top of the game scene (event map-loaded: map, scene, scenes open), the chapter's lighting is on (event map-lighting: fog colour and density, sun colour, sky colour; they differ between chapters), the opening scene is skipped with Enter and Wallit walks on the stick; then the chapter is left for the menu and the map is gone (event map-unloaded: scene closed, lighting back) with memory read before and after (metrics mapMemoryBaselineMB, mapMemoryAfterMB, mapMemoryGrowthMB; a growth over 48 MB is a bug). Metrics mapsLoaded, mapsUnloaded, distinctLooks)", 800, "content"),
         new PlaytestScenario("save", "The campaign save: an old-format file loads and is brought up to date, a corrupt one shows a message and starts clean, and every chapter's load time and memory is logged (setup: the sandbox stands where the stored save would, holding version 1 text, text with no version, then corrupt text; the real save is never touched). Events save-old-loaded, save-migrated, save-oldest-loaded, save-corrupt-clean (seven kinds of bad text, none throws), save-old-panel (the case files say the old files were updated), save-old-chapter (file 1 opens chapter 3), save-corrupt-panel (\"Case files unreadable. The Department filed new ones.\", no files), save-corrupt-play (a clean file opens chapter 1); then all six chapters are begun in turn with chapter-load events (card seconds, map seconds, memory MB) and metrics chapter<N>CardSeconds, chapter<N>MapSeconds, chapter<N>MemoryMB, oldSaveLoaded, corruptClean, corruptMessageShown", 1200, "content"),
         new PlaytestScenario("journal", "The journal, with real input (setup: the sandbox case file starts on chapter 1; the real save is never touched). Campaign, case file 1, Begin. Chapter 1 shows its optional extra on the HUD (event journal-extra) and hides one lost thing out in the field (journal-find-hidden). J opens the journal over the pause menu (journal-open-chapter), Back and Resume; Wallit walks out to the find with the stick and it goes into the case file at once (journal-find, metric findKept). The chapter is played to the Courier's fall; the Chapter Complete card judges the extra and names the lost thing kept. Menu, Campaign: the slot shows the journal count (slot-journal); the Journal button opens the journal and the bot reads Active, Finished and Collected (journal-tab, journal-lists; setup marks chapter 2's extra met). Then the files are written out and read back as after a quit (journal-persist, metric journalPersisted) and read again (setup then gives every find and extra: journal-paid says PAID IN FULL)", 900, "content"),
-        new PlaytestScenario("lore","The lore log and the case-file slots, with real input (setup: the sandbox case file starts on chapter 1; the real save is never touched). Campaign, case file 1, Begin, Chapter 1 is played with the bat to the Courier's fall as in the campaign scenario; the Chapter Complete card names the new lore it unlocked (event lore). Menu, Campaign: the case file slot reads its chapter, its play time and its completion (event slot-info: chapter, h:mm:ss on the books, 1/6 filed, lore n/15; problems if any is missing or the time is 0). The Lore log button opens the file's log (event lore-open), the bot turns every page with Next and reads which entries are open and which are sealed (event lore-page per entry, event lore-summary): the entries revealed by opening the file and by Chapter 1 are open, the later ones read Sealed until their chapter is filed (metrics loreUnlocked, loreSealed, slotChapterShown, slotTimeShown, slotCompletionShown). Back closes it", 800, "content"),
+        new PlaytestScenario("lore","The lore log and the case-file slots, with real input (setup: the sandbox case file starts on chapter 1; the real save is never touched). Campaign, case file 1, Begin, Chapter 1 is played with the bat to the Courier's fall as in the campaign scenario; the Chapter Complete card names the new lore it unlocked (event lore). Menu, Campaign: the case file slot reads its chapter, its play time and its completion (event slot-info: chapter, h:mm:ss on the books, 1/6 filed, lore n/16; problems if any is missing or the time is 0). The Lore log button opens the file's log (event lore-open), the bot turns every page with Next and reads which entries are open and which are sealed (event lore-page per entry, event lore-summary): the entries revealed by opening the file and by Chapter 1 are open, the later ones read Sealed until their chapter is filed (metrics loreUnlocked, loreSealed, slotChapterShown, slotTimeShown, slotCompletionShown). Back closes it", 800, "content"),
         new PlaytestScenario("campaign-full", "The whole case file in one run with real input (setup: the sandbox keeps the files off the real save): Campaign, case file 1, then Chapter 1 (Level_1_Yard, as campaign-beats plays it) through Chapters 2-6 to ADDRESS FILED. Per chapter the bot logs a chapter-verdict (distinct map/own scene, memory under 1024 MB, opening cinematic keyframe vs placeholder, map features route/landmark/hazard/setpiece, dialogue choices answered) so the review can score every chapter. Opening reels are watched for a few shots then skipped with Enter; set pieces and choices play in the chapter's own flow. Quit and resume: in Chapter 3 the scene is dropped mid-chapter (setup, as a closed tab does) and the file must reopen on Chapter 3, unfinished (events quit-midchapter, quit-resume-panel, quit-resume; metric quitResumeRight). Ends with ch6_close, the ending-variant reel (ledger/doors/open keyframes, not stand-ins), ADDRESS FILED, the credits card and the case file reading filed (events campaign-full, chapter-verdict, cutscene-open, cinematics-art, choice-open, ending-reel, ending-card, campaign-panel-filed; metrics fullCaseFileCleared, endingShown, caseFileFiled, fullDistinctMaps, fullCinematicKeyframes, fullChoicesMade)", 3600, "content"),
         new PlaytestScenario("chapter6", "Chapter 6, Address Filed, played start to finish with real input (setup: the sandbox case file starts on chapter 6): Campaign, case file 1, Begin on the Chapter 6 card; the opening scene in the changed Hollow plays and is skipped with Enter; Wallit holds the circle with the bat through three waves (events wave-start), then the Spider Bot that carries the order (boss bar up, scroll on its back) arrives and falls; the Filed scene plays over the field, then the finale pages (Story.Finale verbatim, as in Arcade's story run) and the ADDRESS FILED ending card (events filed-scene, finale-page, ending-card); Keep going shows the credits card; the case file is marked complete (6 cleared), Menu, and the Campaign panel's case file 1 reads filed (events chapter6-setup, cutscene-open, objective, wave-start, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, filed-scene, finale-page, ending-card, credits-card, campaign-complete, campaign-panel-filed; metrics bossBar, endingShown, caseFileCleared, caseFileFiled)", 1000, "content"),
         new PlaytestScenario("chapter5", "Chapter 5, Strike This Address, played start to finish with real input (setup: the sandbox case file starts on chapter 5): Campaign, case file 1, Begin on the Chapter 5 card; the opening scene in the Reading Room plays over the map (the order is not signed, so it can be denied; the stamp pressed to the first page shows DENIED; the bot reads pages then skips with Enter); the objective line reads Read the order, page 1 of 5 with the bots down counting up; Wallit holds the circle at the desk with the bat through five pages (each page's wave announced PAGE n OF 5 and its forms on the wall turning blank when it is down: events page-start, page-read); then The Registrar (a gold Titan Spider Bot with a ledger, boss bar up) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 6, Menu, and reopening the file shows Chapter 6's card (events chapter5-setup, cutscene-open, cutscene-page, objective, page-start, page-read, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics pagesRead, bossBar, chapterAdvanced, chapterResumed)", 900, "content"),
@@ -88,7 +89,7 @@ public static class Playtest {
         new PlaytestScenario("grade", "Chapter grades and Hard, with real input (setup: the sandbox case file starts on chapter 1, and later is marked filed; the real save is never touched). Campaign, case file 1, Begin; chapter 1 is played to the Courier's fall. The Chapter Complete card shows a RANK (S, A, B or C from time against par and the damage Slice took) and the best (event rank-shown, metric rankShown). The files are written out and read back as after a quit and the best rank is still there (rank-saved, metric rankSaved). Setup: the file is marked filed. Its chapter card shows the best rank and a Difficulty button; the bot presses it to Hard (hard-on, metric hardOn, saved with the file). Begin; a plain Yo Bot's health is read against Standard (hard-health, metric hardHealthRatio about 1.75) and the bot holds still until a bot lands a blow on Slice, read as meant against as landed (hard-damage, metric hardDamageRatio 2)", 900, "content"),
         new PlaytestScenario("chapter2", "Chapter 2, No Fixed Address, played start to finish with real input (setup: the sandbox case file starts on chapter 2): Campaign, case file 1, Begin on the Chapter 2 card; the opening dialogue plays over the map (the bot reads pages, then skips it with Enter); the objective line reads Reach the gate with its metres counting down; Wallit walks out to the gate under fire from Yo Bots, batting those in reach; at the gate The Gate scene plays (read a few pages, then skipped), the objective turns to Back to the circle, Wallit walks home, three waves are held at the circle (objective Hold the circle, wave n of 3), then The Plated Alpha (stamped INVALID, with a boss bar) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 3, Menu, and reopening the file shows Chapter 3's card (events chapter2-setup, cutscene-open, cutscene-page, cutscene-skip, cutscene-play, objective, gate-leg, gate-reached, gate-scene-skip, home-leg, chapter-wave, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics gateReached, gateSceneSkipped, chapterWaves, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("chapter2-hud", "J's black block, looked at where it was reported: Chapter 2, No Fixed Address, on desktop with HDR on (setup: the sandbox case file starts on chapter 2; the real save is never touched). Campaign, case file 1, Begin; the opening scene is read and skipped; Wallit walks out to the gate (batting what is in reach) and, after The Gate scene, back to the circle with the objective reading Back to the circle and Yo Bots on screen. The top-middle HUD (the Slice bar, the chapter title card, her nameplate) is held still and read for a second and a half at four moments, each with its screen boxes (event hud-shot, scenes Chapter 2 HUD: ...), and the camera is rendered through the real bloom grade every few seconds: a solid black rectangle in the frame is a bug (event black-block), and NaN, Inf or over-bright pixels in the raw HDR frame are counted and traced to the shader or sky that draws them (event hdr-nan, a warning). It stops at the circle, wave 1, after the last shot; it does not play the rest of the chapter (events hdr, hud-shot, black-scan, black-block, hdr-nan, bot-scan, normals, hud-verdict, gate-leg, gate-reached, gate-scene-skip, home-leg; metrics hdrOn, hudShots, blackScans, blackBlocks, topMiddleBlackPct, hdrNanFrames, hdrNanPixelsMax, probesWithYoBots, hdrNanFramesWithYoBots, yoBotBlackPct, yoBotMeanLumaMin, badNormalVertices, yoBotsOnScreenMax, gateReached, gateSceneSkipped); the frames probed while Yo Bots are on screen are counted apart, and the graded frame inside each Yo Bot's screen box is measured for exact black", 330, "content"),
-        new PlaytestScenario("story", "The story: the intro over the frozen Hollow (read page by page: who Wallit is, what the circle is, why Slice must not fall; a Skip button is on it), wave 1's story beats in canon voices, then setup: the testing wave key to wave 10 and wave 30 for the boss-wave title cards and beats (Yo Bots chirpy, Wallit on money, Slice clipped), and setup: wave 30's waiting bots trimmed to the boss and Slice topped up so the bat can finish it with real swings. Clearing wave 30 plays the finale pages and the ADDRESS FILED ending screen; the bot presses Keep going into overtime. Events intro-*, beat, finale-*, ending", 600, "content"),
+        new PlaytestScenario("story", "The story: no intro pages (the cold open replaces them), wave 1's story beats in canon voices, then setup: the testing wave key to wave 10 and wave 30 for the boss-wave title cards and beats (Yo Bots chirpy, Wallit on money, Slice clipped), and setup: wave 30's waiting bots trimmed to the boss and Slice topped up so the bat can finish it with real swings. Clearing wave 30 plays the finale pages and the ADDRESS FILED ending screen; the bot presses Keep going into overtime. Events beat, finale-*, ending", 600, "content"),
         new PlaytestScenario("polish", "The final polish pass, on any screen size (run it on desktop and on the phone): the main menu, the HUD in wave 1, the level-up cards (setup: a level of bolts granted), the pause menu by its button, Resume, 40 s of real play, then the bot holds fire until Slice falls (setup: Plated Yo Bots ring her after 20 s) and the game-over panel reads Address struck off. Each screen gets a layout check (menu, hud, cards, pause, gameover), a stale-words check (no piano, keys or music-stopped words left), and a button-feel check (every button lifts on hover and sinks on press like the menu's); the audio-mix event says how many sounds played, how many stacked softer, how many were capped and how many dipped under a voice line", 420, "full"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.ai and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
     };
@@ -245,7 +246,7 @@ public static class Playtest {
         batRun = id == "bat";
         lockSwitchesSeen = ZeldaStyleCamera.LockSwitches;
         RunAnalytics.EnableDebug();
-        StoryScreen.SuppressIntro = id != "story";
+        ColdOpen.Suppress = id != "coldopen";
         LevelScene.ChapterOneIsLevel = id == "campaign-beats" || id == "campaign-full" || id == "moods" || id == "campaign-touch" || id == "touch-pause" || id == "levels-1-3";   // the older chapter playtests press Begin on Chapter 1 and expect the chapter run
         PlayInput.Release();
         MetaProgress.EnterSandbox(true);
@@ -316,6 +317,13 @@ public static class Playtest {
                 if (run.Done) {
                     yield break;
                 }
+            }
+            if (id == "coldopen") {
+                yield return ColdOpenRun();
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
             }
             if (id == "save") {
                 yield return SaveRun();
@@ -538,7 +546,7 @@ public static class Playtest {
                 run.Finish(PlaytestOutcome.Done);
             }
         } finally {
-            StoryScreen.SuppressIntro = false;
+            ColdOpen.Suppress = false;
             Application.logMessageReceived -= OnLog;
             Stop();
         }
@@ -5774,32 +5782,10 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
     static IEnumerator StoryRun(PlaytestOptions options) {
         storyTold = 0;
         var player = Object.FindAnyObjectByType<CharacterMovement>();
-        yield return run.Until(() => StoryScreen.IsOpen, 10f, "the intro to open on a new run");
-        if (run.Done) {
-            yield break;
-        }
-        run.Scene("Intro");
-        StoryScreen screen = StoryScreen.Instance;
-        bool skipOk = screen.SkipButton != null && screen.SkipButton.isActiveAndEnabled && Inside(ScreenRect((RectTransform)screen.SkipButton.transform));
-        run.Event("intro-shown", "run starts frozen on the intro; Skip button " + (skipOk ? "on screen" : "MISSING"));
-        if (!skipOk) {
-            run.Problem(PlaytestSeverity.Bug, "the intro has no Skip button on screen");
-        }
-        string all = "";
-        for (int i = 0; i < Story.Intro.Length && !run.Done; i++) {
-            yield return new WaitForSecondsRealtime(1.5f);
-            all += " " + screen.PageText;
-            run.Event("intro-page", (i + 1) + " of " + Story.Intro.Length + ": " + screen.PageText.Replace('\n', ' '));
-            PlayInput.Tap(KeyCode.Space);
-            yield return null;
-            yield return null;
-        }
-        yield return run.Until(() => !StoryScreen.IsOpen, 5f, "the intro to close after its last page");
-        TellStory();
-        bool names = all.Contains("Wallit") && all.Contains("circle") && all.Contains("fall");
-        run.Metric("introTellsStory", names ? 1 : 0);
-        if (!names) {
-            run.Problem(PlaytestSeverity.Bug, "the intro does not say who the player is, what the circle is and why to defend it");
+        // No intro pages any more: a run starts in the cold open (the coldopen scenario) or straight in play.
+        run.Event("intro-pages", "none: the six-page intro is gone, the story's first seconds are ColdOpen");
+        if (StoryScreen.IsOpen) {
+            run.Problem(PlaytestSeverity.Bug, "a story page is open at the start of a run; the text intro was removed");
         }
 
         run.Scene("Wave 1: story beats");
@@ -8990,6 +8976,196 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             yield return null;
         }
     }
+
+    // ---------------------------------------------------------------- cold open
+
+    // Arcade's first seconds on a fresh save (ColdOpen.cs), then a second start on the same browser. On a phone viewport the
+    // bot uses fingers only: the stick and Swing through TouchControls.BotFinger.
+    static IEnumerator ColdOpenRun() {
+        bool touch = Screen.height > Screen.width || Screen.height < 500;
+        UiFit.ForceTouch(touch);
+        if (touch) {
+            MobileQuality.Apply();
+        }
+        run.Log("cold open at " + Screen.width + "x" + Screen.height + ", " + (touch ? "touch" : "keys and mouse") + ", layout " + UiFit.Mode);
+        ColdOpen.Forget();
+        run.Event("setup", "fresh save: the cold open has not been seen on this browser");
+
+        for (int pass = 1; pass <= 2 && !run.Done; pass++) {
+            if (pass == 2) {
+                TouchControls.LiftBotFingers();
+                PlayInput.Release();
+                Time.timeScale = 1f;
+                SceneManager.LoadScene(MetaProgress.MenuScene);
+                yield return ToMenu();
+                if (run.Done) {
+                    yield break;
+                }
+            }
+            MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+            Button play = menu != null ? menu.PlayButton : null;
+            if (play == null || !play.isActiveAndEnabled) {
+                run.Problem(PlaytestSeverity.Bug, "no Play button on the menu");
+                run.Finish(PlaytestOutcome.Stuck);
+                yield break;
+            }
+            int startsBefore = ColdOpen.Starts;
+            int endsBefore = ColdOpen.Ends;
+            float t0 = Time.realtimeSinceStartup;
+            Tap(play.gameObject);
+            run.Event("tap", "Play (start " + pass + ")");
+            yield return run.Until(() => WaveDirector.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the game scene after tapping Play");
+            if (run.Done) {
+                yield break;
+            }
+            run.Scene("Wave 1");
+            run.Event("run-start", "start " + pass + ", " + (Time.realtimeSinceStartup - t0).ToString("0.0") + " s after Play");
+            Random.InitState(run.Options.seed);
+            yield return null;
+            float runStart = Time.realtimeSinceStartup;
+            int connects0 = BatEquipment.Connects;
+            var player = Object.FindAnyObjectByType<CharacterMovement>();
+            bool sawStart = false;
+            bool sawEnd = false;
+            bool sawHit = false;
+            bool subtitleChecked = false;
+            bool stickDown = false;
+            bool tapping = false;
+            float nextSwing = 0f;
+            float nextWords = 0f;
+            float hitAt = -1f;
+            int maxWords = 0;
+            string maxWordsWhat = "";
+            float limit = pass == 1 ? 16f : 7f;
+
+            while (!run.Done && Time.realtimeSinceStartup - t0 < limit) {
+                float now = Time.realtimeSinceStartup;
+                if (WaveDirector.IsLost) {
+                    break;
+                }
+                if (StoryScreen.IsOpen) {
+                    run.Problem(PlaytestSeverity.Bug, "a story page is open at the start of Arcade: the text intro should be gone");
+                    PlayInput.Tap(KeyCode.Return);
+                }
+                if (!sawStart && ColdOpen.Starts > startsBefore) {
+                    sawStart = true;
+                    run.Event("coldopen-start", "start " + pass + ", " + (now - t0).ToString("0.0") + " s after Play, " + (now - runStart).ToString("0.0") + " s into the run");
+                    run.Scene("Cold open");
+                }
+                if (sawStart && !sawEnd && ColdOpen.Ends > endsBefore) {
+                    sawEnd = true;
+                    float length = ColdOpen.EndedAt - ColdOpen.StartedAt;
+                    run.Event("coldopen-end", ColdOpen.EndWhy + ", " + length.ToString("0.0") + " s long, " + (now - t0).ToString("0.0") + " s after Play");
+                    run.Metric("coldopenSeconds", Mathf.Round(length * 10f) / 10f);
+                    if (length > ColdOpen.MaxSeconds + 0.01f) {
+                        run.Problem(PlaytestSeverity.Bug, "the cold open ran " + length.ToString("0.0") + " s, over its " + ColdOpen.MaxSeconds.ToString("0") + " s cap");
+                    }
+                    run.Scene("Wave 1");
+                }
+                if (!subtitleChecked && ColdOpen.Events.Exists(e => e.StartsWith("coldopen-line"))) {
+                    subtitleChecked = true;
+                    yield return null;
+                    run.Event("coldopen-subtitle", "Slice's line is on screen (" + (UiFit.Mode) + "); checking the HUD for overlaps with the touch controls");
+                    CheckScreen("coldopen-subtitle");
+                }
+                if (!sawHit && now >= nextWords) {
+                    nextWords = now + 0.1f;
+                    var seen = new List<string>();
+                    int words = ColdOpen.WordsOnScreen(seen);
+                    if (words > maxWords) {
+                        maxWords = words;
+                        maxWordsWhat = string.Join(" | ", seen);
+                    }
+                }
+                if (!sawHit && BatEquipment.Connects > connects0) {
+                    sawHit = true;
+                    hitAt = now;
+                    float fromPlay = now - t0;
+                    run.Event("first-hit", fromPlay.ToString("0.0") + " s after Play, " + (now - runStart).ToString("0.0") + " s into the run; words on screen before it: " + maxWords + (maxWordsWhat.Length > 0 ? " (" + maxWordsWhat + ")" : ""));
+                    run.Event("coldopen-words", maxWords + " words at most on screen before the first hit");
+                    run.Metric("coldopenSecondsToFirstHit", Mathf.Round(fromPlay * 10f) / 10f);
+                    run.Metric("coldopenWords", maxWords);
+                    if (pass == 1) {
+                        if (fromPlay > 10f) {
+                            run.Problem(PlaytestSeverity.Bug, "the first bat hit landed " + fromPlay.ToString("0.0") + " s after Play (wanted 10 s or less)");
+                        }
+                        if (maxWords > 12) {
+                            run.Problem(PlaytestSeverity.Bug, maxWords + " words on screen before the first hit (wanted 12 or fewer): " + maxWordsWhat);
+                        }
+                    }
+                }
+                if (hitAt > 0f && now - hitAt > 2.5f) {
+                    break;
+                }
+
+                // The bot lets the open play until it ends or a Yo Bot is close, then fights. Pass 2 only watches.
+                Enemy near = GuardTarget(player, null);
+                float nearDist = near != null && player != null ? Vector3.Distance(near.transform.position, player.transform.position) : 999f;
+                bool fight = pass == 1 && (!ColdOpen.Playing || nearDist < 9f) && !LevelUpScreen.IsOpen;
+                if (!touch) {
+                    if (fight) {
+                        Batter(player, false, null, true);
+                    }
+                } else {
+                    if (tapping) {
+                        TouchControls.BotFinger(1, Vector2.zero, false);
+                        tapping = false;
+                    }
+                    if (fight && near != null && player != null) {
+                        Vector3 flat = near.transform.position - player.transform.position;
+                        flat.y = 0f;
+                        float gap = flat.magnitude - near.BodyScale * 0.3f;
+                        Vector2 dir = gap > BatEquipment.Reach * 0.6f ? StickToward(flat) : Vector2.zero;
+                        if (dir.magnitude > 0.05f) {
+                            if (!stickDown) {
+                                if (TouchControls.Spot("Stick", out Vector2 stickAt)) {
+                                    touchStickAt = stickAt;
+                                    TouchControls.BotFinger(0, stickAt, true);
+                                    stickDown = true;
+                                }
+                            } else {
+                                TouchControls.BotFinger(0, touchStickAt + Vector2.ClampMagnitude(dir, 1f) * TouchControls.StickReach * 0.9f, true);
+                            }
+                        } else if (stickDown) {
+                            TouchControls.BotFinger(0, touchStickAt, false);
+                            stickDown = false;
+                        }
+                        if (gap <= BatEquipment.Reach * 0.95f && now >= nextSwing && TouchControls.Spot("Swing", out Vector2 swingAt)) {
+                            TouchControls.BotFinger(1, swingAt, true);
+                            tapping = true;
+                            nextSwing = now + 0.2f;
+                        }
+                    }
+                }
+                run.Note(ColdOpen.Playing ? "cold open " + (now - runStart).ToString("0.0") + " s" : Enemy.Roster.Count + " bots");
+                yield return null;
+            }
+            TouchControls.LiftBotFingers();
+            PlayInput.Release();
+
+            if (pass == 1) {
+                if (!sawStart) {
+                    run.Problem(PlaytestSeverity.Bug, "no cold open on a fresh save (coldopen-start never logged)");
+                } else if (!sawEnd) {
+                    run.Problem(PlaytestSeverity.Bug, "the cold open never ended");
+                } else if (ColdOpen.EndedAt - t0 > 8f + 4f) {
+                    run.Event("coldopen-late", "ended " + (ColdOpen.EndedAt - t0).ToString("0.0") + " s after Play (it began after the scene loaded)");
+                }
+                if (!sawHit) {
+                    run.Problem(PlaytestSeverity.Bug, "no bat hit within " + limit.ToString("0") + " s of pressing Play");
+                }
+            } else {
+                run.Metric("coldopenSecondStart", ColdOpen.Starts > startsBefore ? 1f : 0f);
+                if (ColdOpen.Starts > startsBefore) {
+                    run.Problem(PlaytestSeverity.Bug, "the cold open played again on a second Arcade start on the same browser");
+                } else {
+                    run.Event("coldopen-absent", "second start: no coldopen-start (saved as seen)");
+                }
+            }
+        }
+    }
+
+    static Vector2 touchStickAt;
 
     // A ground direction as the stick would push it, camera-relative.
     static Vector2 StickToward(Vector3 flat) {

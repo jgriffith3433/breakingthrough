@@ -134,7 +134,18 @@ public class WaveDirector : MonoBehaviour {
         BeginIntro();
         if (Wave == 1 && !introShown) {
             introShown = true;
-            story.ShowIntro(null);
+            // No text pages: the first seconds are the cold open (ColdOpen.cs), once per browser. The first Yo Bot is
+            // held until Wallit lands, or until any input ends the open (ColdOpenReleased).
+            if (ColdOpen.TryBegin()) {
+                phaseLeft = ColdOpen.MaxSeconds;
+            }
+        }
+    }
+
+    // The cold open lets the first Yo Bot go: the intro beat shrinks to the usual short wave-1 pause.
+    public void ColdOpenReleased() {
+        if (phase == Phase.Intro) {
+            phaseLeft = Mathf.Min(phaseLeft, 0.35f);
         }
     }
 
@@ -237,9 +248,13 @@ public class WaveDirector : MonoBehaviour {
             : -1f;
         RunLog.BeginWave();
         RunAnalytics.WaveStart(Wave, Event, pending.Count);
-        SliceVoice.OnWave(Wave);
-        WallitVoice.OnWave(Wave);
-        story.StartWave(Wave);
+        if (Wave == 1 && ColdOpen.PlayedThisRun) {
+            // The cold open already spent the one voiced line; wave 1 adds no beat text and no second voice.
+        } else {
+            SliceVoice.OnWave(Wave);
+            WallitVoice.OnWave(Wave);
+            story.StartWave(Wave);
+        }
         if (Event != WaveEvent.None) {
             UpgradeLook.Say(EventName, 2.6f, 230f);
             GameAudio.Play("launch", 0.4f, 0.7f);
