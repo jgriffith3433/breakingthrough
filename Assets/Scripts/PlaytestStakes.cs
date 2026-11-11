@@ -34,6 +34,13 @@ public static class PlaytestStakes {
         }
         yield return new WaitForSeconds(0.25f);
         Frames(run, "just hit");
+        // The fee: the coin pile beside Slice shrinks when the bot's blow lands, and the taken coins fly to the bot.
+        int pileFull = CoinPile.Slots;
+        int pileHit = CoinPile.Shown;
+        run.Event("coin-pile", "after the first blow: " + pileHit + "/" + pileFull + " coins on the pile, " + CoinPile.Taken + " taken, " + CoinPile.Flying + " in flight");
+        if (CoinPile.Taken <= 0 || pileHit >= pileFull) {
+            run.Problem(PlaytestSeverity.Bug, "a bot struck Slice but the coin pile did not shrink (" + pileHit + "/" + pileFull + ")");
+        }
 
         // Setup: a blow to under 30% so the warning layer starts.
         run.Event("setup", "one blow takes Slice under 30%");
@@ -54,6 +61,17 @@ public static class PlaytestStakes {
         yield return new WaitForSeconds(5f);
         Frames(run, "recovered");
         float drainRec = StakesFeel.Drain;
+        yield return new WaitForSeconds(2f);
+        run.Event("coin-pile", "recovered: " + CoinPile.Shown + "/" + CoinPile.Slots + " coins back on the pile");
+        if (CoinPile.Shown < CoinPile.Slots) {
+            run.Problem(PlaytestSeverity.Bug, "Slice is healed but the coin pile is not full (" + CoinPile.Shown + ")");
+        }
+        foreach (string e in CoinPile.Events) {
+            string[] cb = e.Split(new[] { '|' }, 3);
+            run.Event(cb[0], cb.Length > 2 ? cb[2] : "");
+        }
+        run.Metric("coinPileTaken", CoinPile.Taken);
+        run.Metric("coinPileAfterHit", pileHit);
 
         int lines = 0;
         foreach (string e in StakesFeel.Events) {
