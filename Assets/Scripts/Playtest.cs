@@ -101,6 +101,12 @@ public static class Playtest {
     static extern string HawkesSoundState();
 
     [DllImport("__Internal")]
+    static extern string HawkesPlaytestStubScenario();
+
+    [DllImport("__Internal")]
+    static extern void HawkesPlaytestStartAdopted(string id);
+
+    [DllImport("__Internal")]
     static extern string HawkesAnalyticsPageLog(int afterSeq);
 
     [DllImport("__Internal")]
@@ -115,6 +121,13 @@ public static class Playtest {
 
     static string HawkesSoundState() {
         return "";
+    }
+
+    static string HawkesPlaytestStubScenario() {
+        return "";
+    }
+
+    static void HawkesPlaytestStartAdopted(string id) {
     }
 
     static string HawkesAnalyticsPageLog(int afterSeq) {
@@ -171,7 +184,18 @@ public static class Playtest {
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Install() {
+        // The page's stand-in bridge is replaced by Register. A run a runner already started on it (before Unity had
+        // loaded) would be dropped and the prompt never pressed, so read it first and start it again here.
+        string adopted = HawkesPlaytestStubScenario();
         HawkesPlaytest.Register(Product, Scenarios, Bot, IsReady, Stop);
+        if (!string.IsNullOrEmpty(adopted)) {
+            foreach (PlaytestScenario scenario in Scenarios) {
+                if (scenario.id == adopted) {
+                    HawkesPlaytestStartAdopted(adopted);
+                    break;
+                }
+            }
+        }
     }
 
     static bool IsReady() {
@@ -3918,12 +3942,12 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         int told = 0;
         int named = 0;
         int read = 0;
-        string[] seen = new string[8];
+        string[] pageSpeakers = new string[8];
         while (read < 7 && Cutscene.IsOpen && !run.Done) {
             yield return new WaitForSecondsRealtime(0.7f);
             string who = scene.NameShown;
             string text = scene.TextShown;
-            seen[read] = who;
+            pageSpeakers[read] = who;
             if (who.Length > 0) {
                 named++;
             }
