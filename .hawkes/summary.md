@@ -1,14 +1,32 @@
-# Sound variants: the files #213/#214 left out
+# Explore Chapter 1 stall (after Arcade)
 
-**Wrong:** #213/#214 added the variant code but no sound files, because Gen was called as `theplacedepartment` ("No access"). With `org_eb0d5c82e8da8c2d.theplacedepartment` `sound_effect` works (about $0.006-0.018 a clip, about $0.35 in all with retries).
+## What was wrong
+On the `explore` scenario, after Arcade the bot waited **60 s** for Chapter 1's level scene and finished **stuck**, with no `chapter-map` / camera-feel metrics and no corner pull-in.
 
-**Changed:** 30 new mp3 files in `Assets/Resources/Sfx/`, no code change. Every name already matches what `GameAudio` / `PanelFx` load.
-- Combat, 3 each (the existing file is variant 1): `hit_2/_3`, `batcrack_2/_3`, `batswing_2/_3`, `coin_2/_3`, `stomp_2/_3`, `stamp_2/_3`, `death_2/_3`. `botstep`, `botstep_2`, `botstep_3` (there was no file, only a synth).
-- Home run: `homerun_whoosh`, `homerun_clang` (the names `BatEquipment` plays).
-- UI: `cardflip1-3`, `stamp1-3`, `panelslide1-3`, `buildup`.
-- Each clip is mono, 44.1 kHz, 64 kbps. Peak loudness (200 ms window) is matched to the existing `hit` sample, so all of them sit within about 2 dB of it. The six takes that were nearly silent were regenerated. Peaks are capped at -1.5 dBFS.
-- Added size is 248 KB, under the 1.5 MB limit.
+Cause: playtests set `LevelScene.ChapterOneIsLevel = false` unless the scenario id is on an allowlist. `explore` was missing, so Begin started the old `ChapterRun` path while `PlaytestExplore.LoadChapter(0)` waited for `LevelScene` / `Level_*` that never appeared.
 
-**Checked:** md5 shows no duplicate files, and loudness was measured with ffmpeg. Unity was not run here, so I did not see the `audio` playtest. It is the scenario named in `.hawkes/scenario.txt` and already logs `audio-variants` and the repeat counts. Unity will create the `.meta` files on import.
-**Look at:** the `/disk` checkout is sparse, so I could not compare against the existing mp3s directly. I read their loudness from git. Whether `cardflip`/`stamp` get logged on a phone-sized level-up is for the beta playtest to confirm, since `PanelFx` falls back to coin/shot only when the files are missing.
-**GPU estimate:** none used.
+## What changed
+- `Assets/Scripts/Playtest.cs` — add `explore` to the `ChapterOneIsLevel` allowlist so Begin loads `Level_1_Yard`.
+- `Assets/Scripts/PlaytestExplore.cs` — Ch1 load capped at **20 s** with a named `stuck-cell` report (scene, `ChapterOneIsLevel`, LevelScene/ChapterRun); on success logs `chapter-map` / `map-change`, `explore.arcadeToChapter1Seconds`; phone portrait forces touch and steers via `TouchControls.BotFinger` with `first-move` / `explore.touchMoveRegistered`; MapPass still runs corner pull-in and `feel.cameraInsideFrames.<map>` for Chapter 1.
+- `.hawkes/scenario.txt` — `explore`
+
+No ZeldaStyleCamera rework. No new features. GPU budget unused ($0).
+
+## Conflicts
+None (branch clean vs task start).
+
+## Other agents
+`c_71d09c558c12` (on-demand chapter download) had no files yet; this change does not touch streaming/load size.
+
+## Checks
+- Hand-read C# for CS issues; brace balance OK.
+- Unity compile not run here (no editor in this sandbox).
+- Code reviewer: **merge**.
+- Fun reviewer: **demo** on living-world scores — expected: this pass only fixes the explore→Ch1 handoff onto the existing Sorting Yard; new yard pressure / fight probes are out of the brief's "no wider scope".
+
+## Acceptance mapping
+1. `chapter-map` / `map-change` + `explore.arcadeToChapter1Seconds` (bug if >30)
+2. `first-move` / `stuck-cell` / `map-explore` within the walk; load stall reports `stuck-cell` by 20 s
+3. `CameraFeel.Report` → `feel.cameraInsideFrames.Level_1_Yard` (or active scene name)
+4. Specific stuck report or finished explore — not silent 60 s
+5. Phone: ForceTouch + BotFinger; `explore.touchMoveRegistered` / `touch-stick`

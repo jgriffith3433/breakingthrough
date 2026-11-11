@@ -1,4 +1,4 @@
-1. Open the beta, press Arcade and swing the bat at the Yo Bots. Hits, cracks and swishes should sound different each time.
-2. Pick up bolts until a level-up card appears. Each card flip and the rare stamp should make a paper or rubber-stamp sound, not a coin.
-3. Hit a home run into a line of bots: you hear a whoosh, then a distant clang.
-4. On a phone (390x844), tap a level-up card. The flip and stamp play at a similar loudness to the bat hits.
+1. Open beta, start Arcade from the menu, play a few seconds so Wallit can move and swing.
+2. Quit to the menu, open Campaign → case file 1 → Begin on Chapter 1.
+3. You should land in the Sorting Yard (`Level_1_Yard`) with control immediately: walk and swing with no frozen screen and no long dead wait.
+4. On a phone (390×844): same path; the move stick stays on screen and answers the thumb as soon as the yard is up.

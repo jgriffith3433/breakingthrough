@@ -8,16 +8,27 @@ using UnityEngine.SceneManagement;
 // The "explore" scenario: walks every live map on the stick (Arcade, chapters 1-6, the hub), hugging what stops it, and
 // reports stuck cells, falls, reachability and the per-frame camera feel detector (inside geometry, near 0.15 m, snaps
 // over 30 deg, jitter). Also probes acceptance criteria: corner pull-in, 2 s idle recentre, lock-on ease. Real input only.
+// Chapter 1 is Level_1_Yard (LevelScene.ChapterOneIsLevel must be on for explore, or Begin loads the old chapter run and
+// this bot hangs waiting for a level scene that never starts).
 public static class PlaytestExplore {
     static PlaytestRun run;
+    const int StickFinger = 1;
+    static bool stickDown;
+    static bool loggedFirstMove;
 
     public static void Publish(PlaytestRun r) {
         var player = Object.FindAnyObjectByType<CharacterMovement>();
         var cam = Camera.main;
         var chapter = ChapterRun.Instance;
+        var level = LevelScene.Instance;
         var sb = new System.Text.StringBuilder();
-        sb.Append("chapter=").Append(chapter == null ? "none" : chapter.name);
-        sb.Append(" objective=").Append(chapter == null ? "" : chapter.ObjectiveLine);
+        if (level != null) {
+            sb.Append("chapter=Level_").Append(level.Chapter + 1).Append(" scene=").Append(level.SceneName);
+            sb.Append(" objective=yard");
+        } else {
+            sb.Append("chapter=").Append(chapter == null ? "none" : chapter.name);
+            sb.Append(" objective=").Append(chapter == null ? "" : chapter.ObjectiveLine);
+        }
         if (player != null) {
             Vector3 p = player.transform.position;
             var cc = player.GetComponent<CharacterController>();
@@ -37,8 +48,61 @@ public static class PlaytestExplore {
         var cam = Camera.main;
         Vector3 fwd = cam != null ? Vector3.ProjectOnPlane(cam.transform.forward, Vector3.up).normalized : Vector3.forward;
         Vector3 right = Vector3.Cross(Vector3.up, fwd);
-        PlayInput.Axis("Horizontal", Mathf.Clamp(Vector3.Dot(dir, right) * 1.4f, -1f, 1f));
-        PlayInput.Axis("Vertical", Mathf.Clamp(Vector3.Dot(dir, fwd) * 1.4f, -1f, 1f));
+        float h = Mathf.Clamp(Vector3.Dot(dir, right) * 1.4f, -1f, 1f);
+        float v = Mathf.Clamp(Vector3.Dot(dir, fwd) * 1.4f, -1f, 1f);
+        if (UiFit.Touch) {
+            // Phone explore: move through the on-screen stick so the first touch move is real finger input.
+            if (h * h + v * v < 0.0004f) {
+                RestStick();
+                return;
+            }
+            if (!TouchControls.Spot("Stick", out Vector2 centre)) {
+                RestStick();
+                return;
+            }
+            Vector2 push = new Vector2(h, v);
+            Vector2 at = stickDown
+                ? centre + push.normalized * Mathf.Min(1f, push.magnitude) * TouchControls.StickReach * 0.9f
+                : centre;
+            TouchControls.BotFinger(StickFinger, at, true);
+            stickDown = true;
+            NoteFirstMove(true);
+            return;
+        }
+        PlayInput.Axis("Horizontal", h);
+        PlayInput.Axis("Vertical", v);
+        if (h * h + v * v > 0.01f) {
+            NoteFirstMove(false);
+        }
+    }
+
+    static void RestStick() {
+        if (stickDown) {
+            TouchControls.BotFinger(StickFinger, Vector2.zero, false);
+            stickDown = false;
+        }
+        PlayInput.Axis("Horizontal", 0f);
+        PlayInput.Axis("Vertical", 0f);
+    }
+
+    static void NoteFirstMove(bool touch) {
+        if (loggedFirstMove || run == null) {
+            return;
+        }
+        loggedFirstMove = true;
+        string map = SceneManager.GetActiveScene().name;
+        run.Event("first-move", (touch ? "touch-stick" : "axes") + " on " + map);
+        run.Metric("explore.firstMove." + map, 1);
+        if (touch) {
+            run.Metric("explore.touchMoveRegistered", 1);
+            bool stickUp = TouchControls.Spot("Stick", out Vector2 _);
+            run.Event("touch-stick", stickUp ? "on screen under the thumb" : "missing");
+            run.Metric("explore.touchStickShown", stickUp ? 1 : 0);
+            if (!stickUp) {
+                run.Problem(PlaytestSeverity.Bug, "explore: touch Stick pad not on screen after entering " + map);
+            }
+        }
+        run.Progress(0.35f);
     }
 
     static void Tap(GameObject target) {
@@ -60,7 +124,13 @@ public static class PlaytestExplore {
     public static IEnumerator RunAll(PlaytestRun r) {
         run = r;
         CampaignSave.EnterSandbox();
-        run.Event("setup", "explore: camera feel detector on; sandbox case file; every map walked");
+        loggedFirstMove = false;
+        stickDown = false;
+        // Phone explore (390x844 portrait, or any forced/coarse touch): show the stick so Steer uses BotFinger.
+        if (UiFit.Touch || (Screen.height > Screen.width && Screen.width <= 500)) {
+            UiFit.ForceTouch(true);
+        }
+        run.Event("setup", "explore: camera feel detector on; sandbox case file; every map walked; ChapterOneIsLevel=" + LevelScene.ChapterOneIsLevel + "; touch=" + UiFit.Touch);
         ZeldaStyleCamera.FeelMaxLockSnapDeg = 0f;
         ZeldaStyleCamera.FeelPullInMeters = 0f;
         ZeldaStyleCamera.FeelRecentred = false;
@@ -71,6 +141,7 @@ public static class PlaytestExplore {
         }
 
         for (int index = 0; index < 6 && !run.Done; index++) {
+            float leaveArcadeAt = Time.realtimeSinceStartup;
             yield return LoadChapter(index);
             if (run.Done) {
                 yield break;
@@ -78,6 +149,14 @@ public static class PlaytestExplore {
             string map = index == 0
                 ? SceneManager.GetActiveScene().name
                 : (ChapterMap.Current != null ? ChapterMap.Current.MapName : "chapter" + (index + 1));
+            if (index == 0) {
+                float toCh1 = Time.realtimeSinceStartup - leaveArcadeAt;
+                run.Metric("explore.arcadeToChapter1Seconds", Mathf.Round(toCh1 * 10f) / 10f);
+                if (toCh1 > 30f) {
+                    run.Problem(PlaytestSeverity.Bug, "explore: Arcade to Chapter 1 took " + toCh1.ToString("0.0") + " s (wanted under 30)");
+                }
+            }
+            loggedFirstMove = false;
             yield return MapPass(map);
             yield return LeaveToMenu();
         }
@@ -107,6 +186,8 @@ public static class PlaytestExplore {
         if (feel != null) {
             feel.ResetCounts(map);
         }
+        run.Event("map-enter", map);
+        run.Progress(map == "arcade" ? 0.1f : 0.3f);
         yield return Run(run, map, shortPass: true);
         if (run.Done) {
             yield break;
@@ -180,8 +261,7 @@ public static class PlaytestExplore {
                     }
                     yield return null;
                 }
-                PlayInput.Axis("Horizontal", 0f);
-                PlayInput.Axis("Vertical", 0f);
+                RestStick();
                 if (ok) {
                     reached++;
                 }
@@ -193,8 +273,7 @@ public static class PlaytestExplore {
                 }
             }
         }
-        PlayInput.Axis("Horizontal", 0f);
-        PlayInput.Axis("Vertical", 0f);
+        RestStick();
         float reach = probes == 0 ? 0f : 100f * reached / probes;
         r.Event("map-explore", map + ": stuck " + stuck.Count + ", falls " + falls + ", reachable " + reach.ToString("0") + "% of " + probes);
         r.Metric("explore.stuckCells." + map, stuck.Count);
@@ -341,10 +420,11 @@ public static class PlaytestExplore {
         slot.chapter = index;
         slot.reached = index;
         slot.cleared = index;
+        RestStick();
+        PlayInput.Release();
         MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
         if (menu == null || menu.CampaignButton == null) {
             // Still on a play scene: go to the menu first.
-            PlayInput.Release();
             SceneManager.LoadScene(MetaProgress.MenuScene);
             yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "menu before chapter " + n);
             menu = Object.FindAnyObjectByType<MainMenu>();
@@ -369,8 +449,45 @@ public static class PlaytestExplore {
         yield return Wait(1f);
         Tap(ChapterScene.Instance.BeginButton.gameObject);
         run.Event("tap", "Begin chapter " + n + " (explore)");
+        float beginAt = Time.realtimeSinceStartup;
         if (index == 0) {
-            yield return run.Until(() => LevelScene.Instance != null && LevelScene.Instance.Yard != null && SceneManager.GetActiveScene().name.StartsWith("Level_"), 60f, "Chapter 1's level scene");
+            // Level_1_Yard must load; if ChapterOneIsLevel was off, Begin starts the old chapter run and this waits forever.
+            // Cap ~20 s and emit a stuck-cell report naming the active scene instead of a silent 60 s hang.
+            const float ch1Budget = 20f;
+            bool ready = false;
+            while (!run.Done && Time.realtimeSinceStartup - beginAt < ch1Budget) {
+                if (LevelScene.Instance != null && LevelScene.Instance.Yard != null
+                    && SceneManager.GetActiveScene().name.StartsWith("Level_")) {
+                    ready = true;
+                    break;
+                }
+                if (Time.frameCount % 30 == 0) {
+                    Publish(run);
+                }
+                yield return null;
+            }
+            if (!ready) {
+                string scene = SceneManager.GetActiveScene().name;
+                var cell = new Vector2Int(0, 0);
+                run.Event("stuck-cell", "Level_1_Yard " + cell + " load-stall scene=" + scene
+                    + " ChapterOneIsLevel=" + LevelScene.ChapterOneIsLevel
+                    + " LevelScene=" + (LevelScene.Instance != null)
+                    + " ChapterRun=" + (ChapterRun.Instance != null)
+                    + " after " + (Time.realtimeSinceStartup - beginAt).ToString("0.0") + " s");
+                run.Metric("explore.stuckCells.Level_1_Yard", 1);
+                run.Problem(PlaytestSeverity.Bug, "explore: Chapter 1 did not load Level_1_Yard within "
+                    + ch1Budget.ToString("0") + " s (active scene '" + scene + "', ChapterOneIsLevel="
+                    + LevelScene.ChapterOneIsLevel + ")");
+                run.Finish(PlaytestOutcome.Stuck);
+                yield break;
+            }
+            string map = SceneManager.GetActiveScene().name;
+            float loadSec = Time.realtimeSinceStartup - beginAt;
+            run.Scene(map);
+            run.Event("chapter-map", "chapter 1 map " + map + " in " + loadSec.ToString("0.0") + " s");
+            run.Event("map-change", "arcade -> " + map);
+            run.Metric("explore.chapter1LoadSeconds", Mathf.Round(loadSec * 10f) / 10f);
+            run.Progress(0.25f);
         } else {
             yield return run.Until(() => ChapterRun.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the chapter's game scene");
             if (run.Done) {
@@ -380,6 +497,11 @@ public static class PlaytestExplore {
             if (run.Done) {
                 yield break;
             }
+            string mapName = ChapterMap.Current != null ? ChapterMap.Current.MapName : ("chapter" + n);
+            run.Scene(mapName);
+            run.Event("chapter-map", "chapter " + n + " map " + mapName);
+            run.Event("map-change", "menu -> " + mapName);
+            run.Progress(0.2f + 0.1f * index);
             yield return run.Until(() => Cutscene.IsOpen || ChapterRun.Instance.PlaySeconds > 3f, 12f, "opening");
             if (Cutscene.IsOpen) {
                 yield return Wait(0.4f);
@@ -387,7 +509,7 @@ public static class PlaytestExplore {
                 yield return run.Until(() => !Cutscene.IsOpen, 8f, "opening closed");
             }
         }
-        yield return Wait(1.5f);
+        yield return Wait(0.6f);
     }
 
     static IEnumerator LoadHub() {
@@ -423,6 +545,7 @@ public static class PlaytestExplore {
     }
 
     static IEnumerator LeaveToMenu() {
+        RestStick();
         PlayInput.Release();
         SceneManager.LoadScene(MetaProgress.MenuScene);
         yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "menu after map");
