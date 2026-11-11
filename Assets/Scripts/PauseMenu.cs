@@ -131,7 +131,7 @@ public class PauseMenu : MonoBehaviour {
         instance.DisarmQuit();
         instance.ArrangeButtons();
         RunAnalytics.Screen("pause");
-        GameAudio.Play("shot", 0.35f, 0.7f);
+        GameAudio.PlayUI("shot", 0.35f, 0.7f);
     }
 
     public static void Resume() {

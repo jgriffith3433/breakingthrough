@@ -46,7 +46,7 @@ public class Pickups : MonoBehaviour {
 
     public static void DropChest(Vector3 at) {
         Spawn(at, 0, true);
-        GameAudio.Play("coin", 0.8f, 0.8f);
+        GameAudio.PlayAt("coin", at, 0.8f, 0.8f);
     }
 
     // Wave over. Everything on the ground flies to you.
@@ -223,16 +223,16 @@ public class Pickups : MonoBehaviour {
             Fx.Ring(transform.position - Vector3.up * 0.4f, 6f, new Color(1f, 0.85f, 0.35f, 0.9f), 0.6f);
             RunBoons.AddChest();
             UpgradeLook.Say("Treasure!", 1.2f, 40f);
-            GameAudio.Play("coin", 0.9f, 1.2f);
+            GameAudio.PlayAt("coin", transform.position, 0.9f, 1.2f);
         } else {
             BoltsCollected++;
             RunBoons.AddFeathers(value);
-            Chime();
+            Chime(transform.position);
         }
         Destroy(gameObject);
     }
 
-    static void Chime() {
+    static void Chime(Vector3 at) {
         if (Time.unscaledTime < nextChime) {
             return;
         }
@@ -242,7 +242,7 @@ public class Pickups : MonoBehaviour {
         nextChime = Time.unscaledTime + 0.05f;
         chimeReset = Time.unscaledTime + 0.6f;
         chimeStep = Mathf.Min(chimeStep + 1, 16);
-        GameAudio.Play("coin", 0.18f, 1.3f + chimeStep * 0.05f);
+        GameAudio.PlayAt("coin", at, 0.18f, 1.3f + chimeStep * 0.05f);
     }
 
     static float GroundY(Vector3 at) {

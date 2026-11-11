@@ -724,6 +724,22 @@ public class CharacterMovement : MonoBehaviour {
 
     // Reads the planted foot off the posed rig, after the Animator has run: how fast it moves over the ground (a
     // slide) and against the body (the stride the clip really covers). The stride pulls the playback speed in line.
+    bool plantedL, plantedR;
+    float stepAt;
+
+    // Wallit's footfalls: a step when a foot lands while he runs on the ground, from where the foot is (3D, never twice alike).
+    void StepSounds(bool l, bool r) {
+        bool landL = l && !plantedL;
+        bool landR = r && !plantedR;
+        plantedL = l;
+        plantedR = r;
+        if ((!landL && !landR) || !moving || Time.timeScale < 0.9f || Time.unscaledTime - stepAt < 0.18f) {
+            return;
+        }
+        stepAt = Time.unscaledTime;
+        GameAudio.PlayAt("wallitstep", landL ? footL.position : footR.position, 0.32f, 1f);
+    }
+
     void TrackFeet() {
         if (model == null || !Anim.isHuman) {
             return;
@@ -745,6 +761,7 @@ public class CharacterMovement : MonoBehaviour {
         Vector3 lh = hips != null ? model.InverseTransformPoint(hips.position) : Vector3.zero;
         footFloor = Mathf.Min(footFloor + 0.05f * dt, Mathf.Min(wl.y, wr.y));
         float scale = VisualScale;
+        StepSounds(wl.y - footFloor < 0.07f * scale, wr.y - footFloor < 0.07f * scale);
 
         if (haveFeet && dt > 0.0001f && Time.timeScale > 0.9f) {
             AnimatorStateInfo cur = Anim.GetCurrentAnimatorStateInfo(0);
