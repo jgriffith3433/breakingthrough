@@ -208,9 +208,9 @@ line, is only the subtitle of a voiced line. Beats marked **(built)** exist per 
    lights, Slice says "Stay close." (subtitle only), and the first Yo Bot is already rushing in; any move or swing ends it.
    Plays once per browser. **Campaign Chapter 1 (Sorting Yard):** an eight-shot in-engine scene (`CinematicDirector`,
    `ch1_open_world`) — Wallit arrives on the west trail, Slice turns in her ring ("You're inside. Inside, you exist."), the
-   Courier raises its clipboard ("Hello! Uploading victory! Striking this address now!"), the stamp lands on the circle, Wallit
-   answers ("Ow! That's extra!", "Return to sender."), and the camera settles behind him for play with no cut to black. Proof:
-   playtest `opening-scene` (events `opening-shot`, `opening-move`, `opening-skip`).
+   Courier raises its clipboard ("Hello! Uploading victory! Striking this address now!"), the stamp lands on Wallit at the
+   circle (flinch and shove), he answers ("Ow! That's extra!", "Return to sender."), and the camera settles behind him for
+   play with no cut to black. Proof: playtest `opening-scene` (events `opening-shot`, `opening-move`, `opening-skip`).
 2. **The first swing (built).** Yard, at the Ring. Wallit takes the bat; the first Clearing Crew bot wakes with `yobot_wake`.
    Combo hits are named (Deposit, Withdrawal, Overdraft!) by voice, not caption.
 3. **The Courier stamps Slice (built).** Yard boss. A clipboard flutter, the notice lands on Slice; the player must dodge (X) a
