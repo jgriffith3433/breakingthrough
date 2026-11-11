@@ -47,6 +47,7 @@ public class CampaignPanel : MonoBehaviour {
     readonly Text[] eraseLabels = new Text[CampaignSave.SlotCount];
     readonly Image[] slotImages = new Image[CampaignSave.SlotCount];
     int armedErase = -1;
+    bool opening;
     int laidStamp = -1;
 
     public static void Open() {
@@ -144,7 +145,16 @@ public class CampaignPanel : MonoBehaviour {
         int chapter = CampaignSave.Open(index);
         RunAnalytics.Screen("chapter_" + (chapter + 1));
         GameAudio.PlayUI("stamp", 0.6f);
-        SceneManager.LoadScene(CampaignSave.Scene);
+        if (opening) {
+            return;
+        }
+        opening = true;
+        // The campaign's portraits, skies and lodgers come down now, on this choice, with the progress line up; the menu
+        // and Arcade never carried them. With nothing to fetch (the editor, a build that kept them) this is at once.
+        OnDemand.Need(new[] { OnDemand.Core }, "Pulling the case file", () => {
+            opening = false;
+            SceneManager.LoadScene(CampaignSave.Scene);
+        });
     }
 
     // The lore log of the file last opened (or the first file in use).

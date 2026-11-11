@@ -1,0 +1,3 @@
+- The repo checkout in the agent sandbox has no binary assets (mp3, png, fbx are stripped), so sizes can only be read from a real build's `[WebGlBuild] Download size` log or `build-report.txt`.
+- The campaign's heavy files are served from `StreamingAssets/OnDemand` (index.json plus hash-named files) and read through `OnDemand.Audio/Texture/Text`, never `Resources.Load`, for Voice (non-Wallit/Slice), Voice/cinema, Cinematics/Art, Portraits, Skies and Baked.
+- WebGL compression is Brotli (the old code used Gzip while the brief assumed Brotli); Studio's hosts send `.br` with Content-Encoding.

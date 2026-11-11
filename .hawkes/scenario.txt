@@ -1,1 +1,2 @@
-explore
+first-load
+{"mobile":true}
