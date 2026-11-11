@@ -917,6 +917,7 @@ public class Enemy : MonoBehaviour
                 peckIn = 1.05f;
                 peckAnim = 1f;
                 swipeLeft = !swipeLeft;
+                GameAudio.PlayAt("batswing", transform.position + Vector3.up, 0.4f, spider ? 0.85f : 1.5f);
                 if (wall != null && wall.Alive)
                     wall.Stop(this);
                 else if (atMusician)
@@ -1116,7 +1117,7 @@ public class Enemy : MonoBehaviour
             Fx.Hit(mark, Mathf.Sqrt(Mathf.Max(1f, bodyScale)), crit);
             if (kind == DamageKind.Arrow || kind == DamageKind.Plain)
             {
-                GameAudio.Play("hit", crit ? 0.9f : 0.6f, crit ? 1.25f : Random.Range(0.92f, 1.08f));
+                GameAudio.PlayAt("hit", transform.position, crit ? 0.9f : 0.6f, crit ? 1.25f : Random.Range(0.92f, 1.08f));
                 UpgradeLook.MarkHit();
             }
             else if (kind == DamageKind.Bat)
@@ -1427,7 +1428,7 @@ public class Enemy : MonoBehaviour
         body.angularVelocity = Random.insideUnitSphere * (2.5f + power);
         if (!recover)
         {
-            GameAudio.Play("death", 0.55f);
+            GameAudio.PlayAt("death", transform.position, 0.55f);
         }
     }
 
@@ -1571,6 +1572,8 @@ public class Enemy : MonoBehaviour
         bool stepSign = step > 0f;
         if (stepSign != lastStepSign && walk > 0.3f && bodyScale > 2.5f && grounded)
             Fx.Footstep(transform.position, bodyScale * 0.6f);
+        if (stepSign != lastStepSign && walk > 0.3f && grounded)
+            GameAudio.PlayAt("botstep", transform.position, Mathf.Clamp(0.12f + bodyScale * 0.05f, 0.12f, 0.6f), spider ? 0.8f : 1f / Mathf.Sqrt(Mathf.Max(1f, bodyScale)));
         lastStepSign = stepSign;
 
         peckAnim = Mathf.MoveTowards(peckAnim, 0f, dt * 4f);

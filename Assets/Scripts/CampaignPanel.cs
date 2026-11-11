@@ -143,7 +143,7 @@ public class CampaignPanel : MonoBehaviour {
         CampaignSave.AckNotice();
         int chapter = CampaignSave.Open(index);
         RunAnalytics.Screen("chapter_" + (chapter + 1));
-        GameAudio.Play("stamp", 0.6f);
+        GameAudio.PlayUI("stamp", 0.6f);
         SceneManager.LoadScene(CampaignSave.Scene);
     }
 

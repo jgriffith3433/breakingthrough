@@ -190,7 +190,7 @@ public class LevelUpScreen : MonoBehaviour {
             Layout();
         }
         Fill();
-        GameAudio.Play("coin", 0.7f, chest ? 0.9f : 1.15f);
+        GameAudio.PlayUI("coin", 0.7f, chest ? 0.9f : 1.15f);
     }
 
     void Fill() {
@@ -247,7 +247,7 @@ public class LevelUpScreen : MonoBehaviour {
         }
         inputReady = true;
         Fill();
-        GameAudio.Play("shot", 0.4f, 1.4f);
+        GameAudio.PlayUI("shot", 0.4f, 1.4f);
     }
 
     void Choose(int index) {
@@ -270,7 +270,7 @@ public class LevelUpScreen : MonoBehaviour {
             Color tint = RunBoons.RarityColor(info.Rarity);
             Fx.Ring(at, 6f * PlayerGrowth.Instance.Scale, new Color(tint.r, tint.g, tint.b, 0.9f), 0.6f);
         }
-        GameAudio.Play("coin", 0.8f, info.Evolution ? 0.7f : 1.3f);
+        GameAudio.PlayUI("coin", 0.8f, info.Evolution ? 0.7f : 1.3f);
     }
 
     void Build() {

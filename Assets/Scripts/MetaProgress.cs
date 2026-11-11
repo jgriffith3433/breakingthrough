@@ -189,7 +189,7 @@ public static class MetaProgress {
         Toast = pay == 1 ? "+1 coin" : "+" + pay + " coins";
         toastUntil = Time.unscaledTime + 2.4f;
         Save();
-        GameAudio.Play("coin", 0.55f);
+        GameAudio.PlayUI("coin", 0.55f);
         return pay;
     }
 
@@ -241,7 +241,7 @@ public static class MetaProgress {
         if (at != Vector3.zero) {
             UpgradeLook.Coins(at, Mathf.Min(amount, 6));
         }
-        GameAudio.Play("coin", 0.55f);
+        GameAudio.PlayUI("coin", 0.55f);
     }
 
     public static bool TrySpend(int cost) {

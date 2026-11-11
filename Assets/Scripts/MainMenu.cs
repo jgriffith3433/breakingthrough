@@ -220,7 +220,7 @@ public class MainMenu : MonoBehaviour {
             return;
         }
         if (startWave > 1) {
-            GameAudio.Play("coin", 0.55f);
+            GameAudio.PlayUI("coin", 0.55f);
         }
         SceneManager.LoadScene(MetaProgress.GameScene);
     }
@@ -836,7 +836,7 @@ public class MainMenu : MonoBehaviour {
         int cost = MetaProgress.Cost(info.Id);
         if (MetaProgress.TryBuy(info.Id)) {
             RunAnalytics.ShopBuy(info, cost);
-            GameAudio.Play("coin", 0.55f);
+            GameAudio.PlayUI("coin", 0.55f);
             flashRow = index;
             flash = 1f;
             if (stamps[index] != null) {
@@ -1309,7 +1309,7 @@ public class MenuButtonFx : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
     public void OnPointerEnter(PointerEventData eventData) {
         over = true;
         if (button != null && button.interactable) {
-            GameAudio.Play("hit", 0.06f, 2f);
+            GameAudio.PlayUI("hit", 0.06f, 2f);
         }
     }
 
@@ -1506,15 +1506,15 @@ public static class MenuSfx {
 
     public static void Thunk(float volume) {
         if (Has("stamp", ref stampClip)) {
-            GameAudio.Play("stamp", volume);
+            GameAudio.PlayUI("stamp", volume);
         } else {
-            GameAudio.Play("stomp", volume * 0.5f, 1.6f);
+            GameAudio.PlayUI("stomp", volume * 0.5f, 1.6f);
         }
     }
 
     public static void Paper(float volume) {
         if (Has("paper", ref paperClip)) {
-            GameAudio.Play("paper", volume);
+            GameAudio.PlayUI("paper", volume);
         }
     }
 }

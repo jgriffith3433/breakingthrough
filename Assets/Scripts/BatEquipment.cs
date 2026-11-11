@@ -658,12 +658,18 @@ public class BatEquipment : MonoBehaviour {
         LongBall(reach);
     }
 
+    System.Collections.IEnumerator Landing(Vector3 at, float after) {
+        yield return new WaitForSeconds(after);
+        GameAudio.PlayAt("homerun_clang", at, 0.8f, 1f);
+    }
+
     // The crack of a hit. The metal bat rings higher and louder.
-    static void Crack(float volume, float pitch) {
+    void Crack(float volume, float pitch) {
+        Vector3 at = transform.position + Flat(transform.forward) * 1.5f + Vector3.up;
         if (MetaProgress.MetalBat()) {
-            GameAudio.Play("batcrack", Mathf.Min(1f, volume * 1.25f), pitch * 1.3f);
+            GameAudio.PlayAt("batcrack", at, Mathf.Min(1f, volume * 1.25f), pitch * 1.3f);
         } else {
-            GameAudio.Play("batcrack", volume, pitch);
+            GameAudio.PlayAt("batcrack", at, volume, pitch);
         }
     }
 
@@ -690,7 +696,7 @@ public class BatEquipment : MonoBehaviour {
             Fx.Impact(enemy.transform.position + Vector3.up * (0.7f * Mathf.Max(1f, enemy.BodyScale)), Mathf.Sqrt(Mathf.Max(1f, enemy.BodyScale)), scale >= Tuning.BatDamageFinisher || tip);
             Impacts++;
             if (count > 1) {
-                GameAudio.Play("hit", 0.5f, Random.Range(0.9f, 1.05f));
+                GameAudio.PlayAt("hit", enemy.transform.position, 0.5f, Random.Range(0.9f, 1.05f));
             }
             bool dropped = Combat.BatHit(enemy, scale, power, true, tip);
             if (!dropped && enemy != null) {
@@ -743,7 +749,11 @@ public class BatEquipment : MonoBehaviour {
             }
         }
         Track(target, 2.2f, 8, 0.9f * power, true);
-        GameAudio.Play("homerun", 0.95f, Random.Range(0.97f, 1.03f));
+        GameAudio.PlayAt("homerun", launchFrom, 0.95f, Random.Range(0.97f, 1.03f));
+        // Layered: the crack, a whoosh as it flies, then a distant clang where it lands.
+        GameAudio.PlayAt("homerun_whoosh", launchFrom + away * 4f, 0.7f, 1f);
+        float flight = Mathf.Clamp(2f * launch.y / 9.8f, 0.8f, 2.2f);
+        StartCoroutine(Landing(launchFrom + away * (Vector3.ProjectOnPlane(launch, Vector3.up).magnitude * flight) - Vector3.up, flight));
         Fx.Ring(target.transform.position, 3f * Mathf.Sqrt(Mathf.Max(1f, target.BodyScale)), new Color(1f, 0.9f, 0.55f, 0.85f), 0.4f);
         Impacts++;
         Fx.HomeRun(target != null ? target.transform.position + Vector3.up : launchFrom, Mathf.Sqrt(Mathf.Max(1f, target != null ? target.BodyScale : 1f)));

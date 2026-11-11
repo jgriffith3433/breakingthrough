@@ -52,6 +52,120 @@ public class GameAudio : MonoBehaviour {
             source.spatialBlend = 0f;
             voices[i] = source;
         }
+        for (int i = 0; i < spatial.Length; i++) {
+            var child = new GameObject("World Sound " + i);
+            child.transform.SetParent(transform, false);
+            AudioSource source = child.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.spatialBlend = 0.8f;
+            source.rolloffMode = AudioRolloffMode.Linear;
+            source.minDistance = NearRange;
+            source.maxDistance = FarRange;
+            source.dopplerLevel = 0f;
+            source.spread = 40f;
+            spatial[i] = source;
+        }
+    }
+
+    public enum Bus { Music, Ambience, Voice, Effects, UI }
+
+    // One sound's variants: a file (name, name_2, name_3 ...) or the same file at its own rate, or a synthesised clip.
+    class Variant { public AudioClip clip; public float rate = 1f; }
+    static readonly Dictionary<string, List<Variant>> variants = new Dictionary<string, List<Variant>>();
+    static readonly Dictionary<string, int> lastVariant = new Dictionary<string, int>();
+    static readonly float[] RateSteps = { 1f, 0.9f, 1.12f, 0.8f, 1.25f };
+    const int WantedVariants = 3;
+
+    // The play log: "time|bus|name|variant|2D" or "...|3D x,y,z". Capped so a long run cannot grow it.
+    public static readonly List<string> Log = new List<string>();
+    public static int Repeats { get; private set; }
+    public static int Snapshots { get; private set; }
+    public static string Snapshot { get; private set; } = "Normal";
+    public static int Spatial { get; private set; }
+
+    // The voice snapshot: effects and UI sink under a line, then come back. Phones get a deeper dip.
+    const float DuckNormal = 1f;
+    const float DuckVoice = 0.5f;
+    const float DuckVoicePhone = 0.38f;
+    float duck = 1f;
+
+    // 3D sources for sounds that come from the world.
+    const int SpatialVoices = 10;
+    const float NearRange = 6f;
+    const float FarRange = 95f;
+    readonly AudioSource[] spatial = new AudioSource[SpatialVoices];
+    readonly float[] spatialBase = new float[SpatialVoices];
+    readonly float[] voiceBase = new float[12];
+    int nextSpatial;
+
+    static List<Variant> VariantsOf(string name) {
+        List<Variant> list;
+        if (variants.TryGetValue(name, out list)) {
+            return list;
+        }
+        list = new List<Variant>();
+        AudioClip first = Resources.Load<AudioClip>("Sfx/" + name);
+        if (first != null) {
+            list.Add(new Variant { clip = first });
+            for (int i = 2; i <= 8; i++) {
+                AudioClip more = Resources.Load<AudioClip>("Sfx/" + name + "_" + i);
+                if (more == null) {
+                    break;
+                }
+                list.Add(new Variant { clip = more });
+            }
+            // Fewer than three files: the same take at its own rate, so no sample plays twice in a row.
+            for (int i = 1; list.Count < WantedVariants && i < RateSteps.Length; i++) {
+                list.Add(new Variant { clip = first, rate = RateSteps[i] });
+            }
+        } else if (SfxSynth.Has(name)) {
+            for (int i = 0; i < WantedVariants; i++) {
+                AudioClip made = SfxSynth.Make(name, i);
+                if (made != null) {
+                    list.Add(new Variant { clip = made });
+                }
+                if (name.StartsWith("homerun")) {
+                    break;
+                }
+            }
+        }
+        variants[name] = list;
+        return list;
+    }
+
+    static Variant Pick(string name, out int index) {
+        List<Variant> list = VariantsOf(name);
+        index = -1;
+        if (list.Count == 0) {
+            return null;
+        }
+        int last;
+        if (!lastVariant.TryGetValue(name, out last)) {
+            last = -1;
+        }
+        index = list.Count == 1 ? 0 : Random.Range(0, list.Count - 1);
+        if (list.Count > 1 && index >= last && last >= 0) {
+            index++;   // skip the one that just played
+        }
+        index = Mathf.Min(index, list.Count - 1);
+        if (list.Count > 1 && index == last) {
+            Repeats++;
+        }
+        lastVariant[name] = index;
+        return list[index];
+    }
+
+    static void Note(Bus bus, string name, int variant, bool has3d, Vector3 at, float volume) {
+        if (Log.Count >= 6000) {
+            return;
+        }
+        Log.Add(Time.unscaledTime.ToString("0.00") + "|" + bus + "|" + name + "|" + (variant + 1) + "|"
+            + (has3d ? "3D " + at.x.ToString("0.0") + "," + at.y.ToString("0.0") + "," + at.z.ToString("0.0") : "2D") + "|" + volume.ToString("0.00"));
+    }
+
+    // Voice and music are 2D and not played here: they note themselves so the log shows every bus.
+    public static void NoteOther(Bus bus, string name) {
+        Note(bus, name, 0, false, Vector3.zero, 1f);
     }
 
     public static void Play(string name, float volume = 1f) {
@@ -59,16 +173,27 @@ public class GameAudio : MonoBehaviour {
     }
 
     public static void Play(string name, float volume, float pitch) {
+        Start(name, volume, pitch, Bus.Effects, false, Vector3.zero);
+    }
+
+    // A menu or card sound: 2D, on the UI bus.
+    public static void PlayUI(string name, float volume = 1f, float pitch = 1f) {
+        Start(name, volume, pitch, Bus.UI, false, Vector3.zero);
+    }
+
+    // A sound that comes from a place in the world: bat hits, bot steps, attacks and deaths, pickups, boss tells.
+    public static void PlayAt(string name, Vector3 position, float volume = 1f, float pitch = 1f) {
+        Start(name, volume, pitch, Bus.Effects, true, position);
+    }
+
+    static void Start(string name, float volume, float pitch, Bus bus, bool world, Vector3 at) {
         float level = SoundSettings.EffectsLevel;
         if (instance == null || string.IsNullOrEmpty(name) || level <= 0f) {
             return;
         }
-        AudioClip clip;
-        if (!clips.TryGetValue(name, out clip)) {
-            clip = Resources.Load<AudioClip>("Sfx/" + name);
-            clips[name] = clip;
-        }
-        if (clip == null) {
+        int index;
+        Variant variant = Pick(name, out index);
+        if (variant == null || variant.clip == null) {
             return;
         }
         float now = Time.unscaledTime;
@@ -89,20 +214,74 @@ public class GameAudio : MonoBehaviour {
             Softened++;
         }
         if (!WallitVoice.FloorFree) {
-            mix *= VoiceDuck;
             Ducked++;
         }
         Played++;
-        AudioSource source = instance.FreeVoice();
+        float rate = Mathf.Clamp(pitch * variant.rate * Random.Range(0.97f, 1.03f), 0.3f, 3f);
+        float baseVolume = Mathf.Clamp01(volume * mix);
+        AudioSource source;
+        if (world) {
+            Spatial++;
+            int slot = instance.FreeSpatial();
+            source = instance.spatial[slot];
+            instance.spatialBase[slot] = baseVolume;
+        } else {
+            int slot = instance.FreeVoice();
+            source = instance.voices[slot];
+            instance.voiceBase[slot] = baseVolume;
+        }
         source.Stop();
-        source.clip = clip;
-        source.pitch = Mathf.Clamp(pitch, 0.3f, 3f);
-        source.volume = Mathf.Clamp01(volume * level * mix);
+        source.clip = variant.clip;
+        source.pitch = rate;
+        if (world) {
+            source.transform.position = at;
+        }
+        source.volume = baseVolume * level * instance.duck;
         source.Play();
+        Note(bus, name, index, world, at, baseVolume);
+    }
+
+    void Update() {
+        bool held = !WallitVoice.FloorFree;
+        string state = held ? "Voice" : "Normal";
+        if (state != Snapshot) {
+            Snapshot = state;
+            Snapshots++;
+            Log.Add(Time.unscaledTime.ToString("0.00") + "|Mixer|snapshot " + state + "|0|2D|" + (held ? (UiFit.Touch ? DuckVoicePhone : DuckVoice) : DuckNormal).ToString("0.00"));
+        }
+        float target = held ? (UiFit.Touch ? DuckVoicePhone : DuckVoice) : DuckNormal;
+        duck = Mathf.MoveTowards(duck, target, Time.unscaledDeltaTime * 6f);
+        float level = SoundSettings.EffectsLevel;
+        for (int i = 0; i < voices.Length; i++) {
+            if (voices[i].isPlaying) {
+                voices[i].volume = Mathf.Clamp01(voiceBase[i] * level * duck);
+            }
+        }
+        for (int i = 0; i < spatial.Length; i++) {
+            if (spatial[i].isPlaying) {
+                spatial[i].volume = Mathf.Clamp01(spatialBase[i] * level * duck);
+            }
+        }
+    }
+
+    int FreeSpatial() {
+        int pick = -1;
+        for (int i = 0; i < spatial.Length; i++) {
+            int index = (nextSpatial + i) % spatial.Length;
+            if (!spatial[index].isPlaying) {
+                pick = index;
+                break;
+            }
+        }
+        if (pick < 0) {
+            pick = nextSpatial;
+        }
+        nextSpatial = (pick + 1) % spatial.Length;
+        return pick;
     }
 
     // A quiet voice if there is one, else the one that started longest ago.
-    AudioSource FreeVoice() {
+    int FreeVoice() {
         int pick = -1;
         for (int i = 0; i < voices.Length; i++) {
             int index = (next + i) % voices.Length;
@@ -121,6 +300,6 @@ public class GameAudio : MonoBehaviour {
         }
         next = (pick + 1) % voices.Length;
         startedAt[pick] = Time.unscaledTime;
-        return voices[pick];
+        return pick;
     }
 }
