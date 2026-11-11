@@ -1,0 +1,50 @@
+{
+"cast": "spiderbot",
+"voice": "hv_narrator_warm",
+"ids": [
+"spiderbot_you_have_been_served",
+"spiderbot_kindly_hold_still",
+"spiderbot_apologies_in_advance",
+"spiderbot_your_appointment_is_now",
+"spiderbot_please_accept_this_leg",
+"spiderbot_regrettably_you_are_overdue",
+"spiderbot_do_excuse_the_stab"
+],
+"lines": [
+{
+"who": "spiderbot",
+"text": "You have been served.",
+"direction": "extremely polite, calm and courteous, like a butler delivering a summons"
+},
+{
+"who": "spiderbot",
+"text": "Kindly hold still.",
+"direction": "extremely polite, calm and courteous, like a butler delivering a summons"
+},
+{
+"who": "spiderbot",
+"text": "Apologies in advance.",
+"direction": "extremely polite, calm and courteous, like a butler delivering a summons"
+},
+{
+"who": "spiderbot",
+"text": "Your appointment is now.",
+"direction": "extremely polite, calm and courteous, like a butler delivering a summons"
+},
+{
+"who": "spiderbot",
+"text": "Please accept this leg.",
+"direction": "extremely polite, calm and courteous, like a butler delivering a summons"
+},
+{
+"who": "spiderbot",
+"text": "Regrettably, you are overdue.",
+"direction": "extremely polite, calm and courteous, like a butler delivering a summons"
+},
+{
+"who": "spiderbot",
+"text": "Do excuse the stab.",
+"direction": "extremely polite, calm and courteous, like a butler delivering a summons"
+}
+]
+}

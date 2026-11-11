@@ -20,6 +20,7 @@ public class SliceVoice : MonoBehaviour {
     static readonly string[] Kill = { "Clean.", "Done.", "Next.", "Tidy.", "One less." };
     static readonly string[] Hurt = { "Tch.", "Careful.", "A scratch.", "Rude.", "Not bad." };
     static readonly string[] Low = { "Getting thin.", "Still standing.", "Wallit. Now." };
+    static readonly string[] NewKind = { "That one's new.", "What is that.", "Different. Watch it.", "Don't know that one." };
     static readonly string[] Near = { "Close.", "Too close.", "Noted.", "Barely." };
 
     // Banter: speaker (W Wallit, S Slice) and line. Wallit talks money; Slice answers short.
@@ -86,6 +87,7 @@ public class SliceVoice : MonoBehaviour {
     void Awake() {
         Instance = this;
         Events.Clear();
+        kindsSeen.Clear();
         audioOut = gameObject.AddComponent<AudioSource>();
         audioOut.playOnAwake = false;
         audioOut.spatialBlend = 0f;
@@ -129,6 +131,15 @@ public class SliceVoice : MonoBehaviour {
             return;
         }
         Instance.Ready(wave);
+    }
+
+    // A kind of bot nobody has seen this run walks in (after the first Yo Bot). She notes it, once per kind.
+    static readonly HashSet<BotKind> kindsSeen = new HashSet<BotKind>();
+    public static void OnNewKind(BotKind kind) {
+        if (Instance == null || kind == BotKind.YoBot || !kindsSeen.Add(kind)) {
+            return;
+        }
+        Instance.Say(NewKind, "new-type");
     }
 
     public static void OnKill(Enemy foe) {

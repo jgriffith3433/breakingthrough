@@ -1,0 +1,68 @@
+{
+"cast": "wallit",
+"voice": "CwhRBWXzGAHq8TQ4Fs17",
+"ids": [
+"wallit_first_payment_received",
+"wallit_there_s_the_deposit",
+"wallit_account_opened_pay_up",
+"wallit_clean_sweep_count_it",
+"wallit_books_balanced",
+"wallit_wave_settled_next_customer",
+"wallit_all_paid_up_who_s_next",
+"wallit_now_it_s_angry_good_bigger_bill",
+"wallit_it_s_got_a_second_wind_i_ve_got_a_second_swing",
+"wallit_overdraft_keep_swinging"
+],
+"lines": [
+{
+"who": "wallit",
+"text": "First payment received.",
+"direction": "brash, greedy, money-minded"
+},
+{
+"who": "wallit",
+"text": "There's the deposit.",
+"direction": "brash, greedy, money-minded"
+},
+{
+"who": "wallit",
+"text": "Account opened. Pay up.",
+"direction": "brash, greedy, money-minded"
+},
+{
+"who": "wallit",
+"text": "Clean sweep. Count it.",
+"direction": "brash, greedy, money-minded"
+},
+{
+"who": "wallit",
+"text": "Books balanced.",
+"direction": "brash, greedy, money-minded"
+},
+{
+"who": "wallit",
+"text": "Wave settled. Next customer.",
+"direction": "brash, greedy, money-minded"
+},
+{
+"who": "wallit",
+"text": "All paid up. Who's next?",
+"direction": "brash, greedy, money-minded"
+},
+{
+"who": "wallit",
+"text": "Now it's angry. Good, bigger bill.",
+"direction": "brash, greedy, money-minded"
+},
+{
+"who": "wallit",
+"text": "It's got a second wind. I've got a second swing.",
+"direction": "brash, greedy, money-minded"
+},
+{
+"who": "wallit",
+"text": "Overdraft! Keep swinging!",
+"direction": "brash, greedy, money-minded"
+}
+]
+}

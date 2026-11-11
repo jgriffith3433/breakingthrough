@@ -66,6 +66,13 @@
    "provider": "open",
    "model": "qwen3-tts",
    "description": "Hawkes Gen audio.dialogue-open, designed voice (job for chime), lodger"
+  },
+  {
+   "name": "spiderbot",
+   "voiceId": "hv_narrator_warm",
+   "provider": "open",
+   "model": "qwen3-tts",
+   "description": "Hawkes Gen audio.dialogue-open, voice hv_narrator_warm, polite Spider Bot"
   }
  ],
  "lines": [
@@ -2039,6 +2046,201 @@
    "id": "wallit_she_s_not_for_sale_back_off",
    "voice": "wallit",
    "text": "She's not for sale. Back off!"
+  },
+  {
+   "id": "yobot_uploading_victory",
+   "voice": "yobot",
+   "text": "Uploading victory."
+  },
+  {
+   "id": "yobot_good_morning_customer",
+   "voice": "yobot",
+   "text": "Good morning, customer!"
+  },
+  {
+   "id": "yobot_online_and_delighted",
+   "voice": "yobot",
+   "text": "Online and delighted!"
+  },
+  {
+   "id": "yobot_booting_cheerfully",
+   "voice": "yobot",
+   "text": "Booting cheerfully!"
+  },
+  {
+   "id": "yobot_wallet_detected",
+   "voice": "yobot",
+   "text": "Wallet detected!"
+  },
+  {
+   "id": "yobot_found_him_hi",
+   "voice": "yobot",
+   "text": "Found him! Hi!"
+  },
+  {
+   "id": "yobot_target_acquired_yay",
+   "voice": "yobot",
+   "text": "Target acquired. Yay!"
+  },
+  {
+   "id": "yobot_ow_rude",
+   "voice": "yobot",
+   "text": "Ow! Rude!"
+  },
+  {
+   "id": "yobot_ooh_that_stung",
+   "voice": "yobot",
+   "text": "Ooh, that stung!"
+  },
+  {
+   "id": "yobot_feedback_received",
+   "voice": "yobot",
+   "text": "Feedback received!"
+  },
+  {
+   "id": "yobot_error_ow",
+   "voice": "yobot",
+   "text": "Error! Ow!"
+  },
+  {
+   "id": "yobot_wheeeee",
+   "voice": "yobot",
+   "text": "Wheeeee!"
+  },
+  {
+   "id": "yobot_going_up",
+   "voice": "yobot",
+   "text": "Going up!"
+  },
+  {
+   "id": "yobot_tell_my_charger_i_love_it",
+   "voice": "yobot",
+   "text": "Tell my charger I love it!"
+  },
+  {
+   "id": "yobot_powering_down_bye",
+   "voice": "yobot",
+   "text": "Powering down. Bye!"
+  },
+  {
+   "id": "yobot_goodbye_circuit",
+   "voice": "yobot",
+   "text": "Goodbye, circuit!"
+  },
+  {
+   "id": "yobot_upload_failed_hi",
+   "voice": "yobot",
+   "text": "Upload failed. Hi!"
+  },
+  {
+   "id": "yobot_thanks_for_having_me",
+   "voice": "yobot",
+   "text": "Thanks for having me!"
+  },
+  {
+   "id": "spiderbot_you_have_been_served",
+   "voice": "spiderbot",
+   "text": "You have been served."
+  },
+  {
+   "id": "spiderbot_kindly_hold_still",
+   "voice": "spiderbot",
+   "text": "Kindly hold still."
+  },
+  {
+   "id": "spiderbot_apologies_in_advance",
+   "voice": "spiderbot",
+   "text": "Apologies in advance."
+  },
+  {
+   "id": "spiderbot_your_appointment_is_now",
+   "voice": "spiderbot",
+   "text": "Your appointment is now."
+  },
+  {
+   "id": "spiderbot_please_accept_this_leg",
+   "voice": "spiderbot",
+   "text": "Please accept this leg."
+  },
+  {
+   "id": "spiderbot_regrettably_you_are_overdue",
+   "voice": "spiderbot",
+   "text": "Regrettably, you are overdue."
+  },
+  {
+   "id": "spiderbot_do_excuse_the_stab",
+   "voice": "spiderbot",
+   "text": "Do excuse the stab."
+  },
+  {
+   "id": "slice_that_one_s_new",
+   "voice": "slice",
+   "text": "That one's new."
+  },
+  {
+   "id": "slice_what_is_that",
+   "voice": "slice",
+   "text": "What is that."
+  },
+  {
+   "id": "slice_different_watch_it",
+   "voice": "slice",
+   "text": "Different. Watch it."
+  },
+  {
+   "id": "slice_don_t_know_that_one",
+   "voice": "slice",
+   "text": "Don't know that one."
+  },
+  {
+   "id": "wallit_first_payment_received",
+   "voice": "wallit",
+   "text": "First payment received."
+  },
+  {
+   "id": "wallit_there_s_the_deposit",
+   "voice": "wallit",
+   "text": "There's the deposit."
+  },
+  {
+   "id": "wallit_account_opened_pay_up",
+   "voice": "wallit",
+   "text": "Account opened. Pay up."
+  },
+  {
+   "id": "wallit_clean_sweep_count_it",
+   "voice": "wallit",
+   "text": "Clean sweep. Count it."
+  },
+  {
+   "id": "wallit_books_balanced",
+   "voice": "wallit",
+   "text": "Books balanced."
+  },
+  {
+   "id": "wallit_wave_settled_next_customer",
+   "voice": "wallit",
+   "text": "Wave settled. Next customer."
+  },
+  {
+   "id": "wallit_all_paid_up_who_s_next",
+   "voice": "wallit",
+   "text": "All paid up. Who's next?"
+  },
+  {
+   "id": "wallit_now_it_s_angry_good_bigger_bill",
+   "voice": "wallit",
+   "text": "Now it's angry. Good, bigger bill."
+  },
+  {
+   "id": "wallit_it_s_got_a_second_wind_i_ve_got_a_second_swing",
+   "voice": "wallit",
+   "text": "It's got a second wind. I've got a second swing."
+  },
+  {
+   "id": "wallit_overdraft_keep_swinging",
+   "voice": "wallit",
+   "text": "Overdraft! Keep swinging!"
   }
  ],
  "note": "Made through Hawkes Gen audio.voice (project theplacedepartment). Ids match WallitVoice.LineId. Slice, narrator, Yo Bot and Courier lines (pass 2) are mono 64 kbps re-encodes of Gen audio.dialogue-open stems."

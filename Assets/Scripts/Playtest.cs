@@ -40,6 +40,7 @@ public static partial class Playtest {
         new PlaytestScenario("slice", "Slice guarding the circle: inspects the live Slice on PianoRecital (bob / coat / boots / scalpel knife from front and side, hands on keys, piano music), runs the full musician scenario (standUp, stab, slash, sitDown, piano, hurt, defeat before game over), and verifies all 8 Animator clips", 220, "content"),
         new PlaytestScenario("personality", "Slice's personality: she speaks short clipped lines (subtitles; the log shows each) at wave starts, kills, near-misses and when hurt or low, never the same line twice in a row, and shows distinct body behaviors (idle scan / knife flip, ready at a wave, kill flourish, glance, stagger, hunch when low). Wallit and Slice trade a short exchange. Real input: the bot fights wave 1 with the bat; then it holds fire, and from 15 s on (setup) a ring of Plated Yo Bots is dropped on her until she is low", 240, "content"),
         new PlaytestScenario("audio", "Positional, varied sound (run it on desktop and with mobile for 390x844): the bat's three moves with a home run (setup drops), then 60 s of real wave play. Events audio-bus (every bus: world sounds are 3D with a position, UI, voice and music are 2D), audio-variants (per sound: how many variants played, the longest run of one variant twice in a row, wanted 3+ and 0), audio-homerun (crack, whoosh and landing layered), audio-snapshot (the voice snapshot ducking effects, with the phone's deeper dip), audio-log (the first world sounds with their positions). Metrics audioWorldSounds, audioRepeats, audioSnapshots, audioFps", 330, "full"),
+        new PlaytestScenario("barks", "Event barks and the bot chorus: three minutes of real wave defense (touch with the mobile option) where Wallit and Slice react to first hit, home run, Slice low, boss phase two, a new kind of bot and a wave cleared, and Yo Bots and Spider Bots chirp from their own position. Any event not reached by 130 s is fired by a named setup shortcut. Events bark-event (each reaction, with why), bot-bark (each chirp), bark-report; metrics barkEventKinds, botChirps, botChirpLines, barkOverlaps, barkRepeats; a bug if an event bark never fires, two voices overlap, a bot line repeats inside 60 s or a Wallit/Slice event line inside 5 minutes", 260, "content"),
         new PlaytestScenario("voice-gap", "The voice director: five minutes of real wave defense with the default numbers (barks at least VoiceDirector.BarkGap apart, same line and same reason on a cooldown, story and boss-wave lines always through, never two lines at once). Real input: the bot fights with the bat. Events voice-line (each line with its priority), voice-drop (barks the director held back), voice-gap (lines per minute, smallest gaps, overlaps, key lines)", 330, "content"),
         new PlaytestScenario("voice", "Wallit talks: he barks short money lines (subtitles; the log shows each, with why) at kills and streaks, big hits and home runs, getting hurt, wave starts and level-ups, never the same line twice in a row and never over Slice; his mouth opens and closes with each line, in the game camera and in a close-up (events wallit-line, wallit-mouth, wallit-voice). Real input: the bot fights with the bat until each kind of line was heard, then stands and takes a hit, then a close-up of his face while he speaks (setup: one line is asked for)", 300, "content"),
         new PlaytestScenario("upgrades", "The bat upgrades: the shop lists Corked Core and Aluminum! Not wood! (setup: both owned in the sandbox) and the metal bat is in the player's hands; wave 1's first level-up cards are read off the screen (bat upgrades, no retired cast words); setup: the testing wave key (=) to wave 14 for tougher Plated Yo Bots and a handful of bat boons granted (Wide Arc, Pine Tar, Ice Bat, Live Wire, Grand Slam, Long Ball and more), each one's mark on the bat logged; then the bot plays until each effect is seen: a wider swing, bots burning, bots slowed, chain sparks shorting bots out, a 360 spin swing, batted bolts landing. Then Thunder Bat is granted for a lightning spin, and 30 s of play", 330, "content"),
@@ -537,6 +538,8 @@ public static partial class Playtest {
                 yield return MusicianRun(options);
             } else if (id == "personality") {
                 yield return PersonalityRun(options);
+            } else if (id == "barks") {
+                yield return BarksRun(options);
             } else if (id == "voice-gap") {
                 yield return VoiceGapRun(options);
             } else if (id == "voice") {
@@ -5728,6 +5731,70 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         }
         if (crackAt >= 0f && whooshAt < 0f) {
             run.Problem(PlaytestSeverity.Bug, "the home run played its crack with no whoosh");
+        }
+    }
+
+    static IEnumerator BarksRun(PlaytestOptions options) {
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+        if (player == null || WallitVoice.Instance == null) {
+            run.Problem(PlaytestSeverity.Bug, "no Wallit player or no WallitVoice in the run");
+            yield break;
+        }
+        run.Scene("Event barks and bot chorus");
+        string[] wanted = { "first-hit", "home-run", "low", "slice-low", "boss-phase", "new-type", "wave-clear" };
+        var heard = new HashSet<string>();
+        var lineAt = new Dictionary<string, float>();
+        int repeats = 0;
+        int told = 0;
+        bool forced = false;
+        float start = Time.realtimeSinceStartup;
+        yield return Fight(player, () => {
+            while (told < VoiceDirector.Events.Count) {
+                string[] bits = VoiceDirector.Events[told++].Split('|');
+                if (bits[0] != "play") {
+                    continue;
+                }
+                string why = bits[1];
+                string line = bits[3];
+                bool bot = why.StartsWith("bot-");
+                float limit = bot ? 60f : VoiceDirector.IsEvent(why) ? 300f : 0f;
+                float last;
+                if (limit > 0f && lineAt.TryGetValue(line, out last) && Time.realtimeSinceStartup - last < limit - 0.5f) {
+                    repeats++;
+                }
+                lineAt[line] = Time.realtimeSinceStartup;
+                if (bot) {
+                    run.Event("bot-bark", why + ": " + line);
+                } else if (VoiceDirector.IsEvent(why)) {
+                    heard.Add(why);
+                    run.Event("bark-event", why + ": " + line);
+                }
+            }
+            float t = Time.realtimeSinceStartup - start;
+            if (!forced && t >= 130f) {
+                forced = true;
+                if (!heard.Contains("boss-phase")) { run.Event("setup", "boss phase two bark"); WallitVoice.OnBossPhaseTwo(); }
+                if (!heard.Contains("new-type")) { run.Event("setup", "new bot kind bark"); SliceVoice.OnNewKind(BotKind.SpiderBot); }
+                if (!heard.Contains("wave-clear")) { run.Event("setup", "wave cleared bark"); WallitVoice.OnWaveCleared(WaveDirector.Wave + 1); }
+            }
+            return t >= 180f;
+        }, 260f, "three minutes of play", null, true);
+        foreach (string w in wanted) {
+            if (!heard.Contains(w) && w != "low" && w != "slice-low" && w != "home-run") {
+                run.Problem(PlaytestSeverity.Bug, "the " + w + " bark never played");
+            }
+        }
+        run.Event("bark-report", heard.Count + " event kinds, " + BotChorus.Spoken + " bot chirps, " + BotChorus.Heard.Count + " different, " + WallitVoice.Overlaps + " overlaps, " + repeats + " repeats");
+        run.Metric("barkEventKinds", heard.Count);
+        run.Metric("botChirps", BotChorus.Spoken);
+        run.Metric("botChirpLines", BotChorus.Heard.Count);
+        run.Metric("barkOverlaps", WallitVoice.Overlaps);
+        run.Metric("barkRepeats", repeats);
+        if (BotChorus.Heard.Count < 5) {
+            run.Problem(PlaytestSeverity.Bug, "only " + BotChorus.Heard.Count + " different bot chirps in the run (wanted 5)");
+        }
+        if (WallitVoice.Overlaps > 0 || repeats > 0) {
+            run.Problem(PlaytestSeverity.Bug, "voice overlaps " + WallitVoice.Overlaps + ", line repeats inside the cooldown " + repeats);
         }
     }
 

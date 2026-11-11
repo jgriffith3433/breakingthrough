@@ -1,0 +1,116 @@
+{
+"cast": "yobot",
+"voice": "hv_kid",
+"ids": [
+"yobot_uploading_victory",
+"yobot_good_morning_customer",
+"yobot_online_and_delighted",
+"yobot_booting_cheerfully",
+"yobot_wallet_detected",
+"yobot_found_him_hi",
+"yobot_target_acquired_yay",
+"yobot_ow_rude",
+"yobot_ooh_that_stung",
+"yobot_feedback_received",
+"yobot_error_ow",
+"yobot_wheeeee",
+"yobot_going_up",
+"yobot_tell_my_charger_i_love_it",
+"yobot_powering_down_bye",
+"yobot_goodbye_circuit",
+"yobot_upload_failed_hi",
+"yobot_thanks_for_having_me"
+],
+"lines": [
+{
+"who": "yobot",
+"text": "Uploading victory.",
+"direction": "chirpy, bright little robot, upbeat and quick"
+},
+{
+"who": "yobot",
+"text": "Good morning, customer!",
+"direction": "chirpy, bright little robot, upbeat and quick"
+},
+{
+"who": "yobot",
+"text": "Online and delighted!",
+"direction": "chirpy, bright little robot, upbeat and quick"
+},
+{
+"who": "yobot",
+"text": "Booting cheerfully!",
+"direction": "chirpy, bright little robot, upbeat and quick"
+},
+{
+"who": "yobot",
+"text": "Wallet detected!",
+"direction": "chirpy, bright little robot, upbeat and quick"
+},
+{
+"who": "yobot",
+"text": "Found him! Hi!",
+"direction": "chirpy, bright little robot, upbeat and quick"
+},
+{
+"who": "yobot",
+"text": "Target acquired. Yay!",
+"direction": "chirpy, bright little robot, upbeat and quick"
+},
+{
+"who": "yobot",
+"text": "Ow! Rude!",
+"direction": "chirpy, bright little robot, upbeat and quick"
+},
+{
+"who": "yobot",
+"text": "Ooh, that stung!",
+"direction": "chirpy, bright little robot, upbeat and quick"
+},
+{
+"who": "yobot",
+"text": "Feedback received!",
+"direction": "chirpy, bright little robot, upbeat and quick"
+},
+{
+"who": "yobot",
+"text": "Error! Ow!",
+"direction": "chirpy, bright little robot, upbeat and quick"
+},
+{
+"who": "yobot",
+"text": "Wheeeee!",
+"direction": "chirpy, bright little robot, upbeat and quick"
+},
+{
+"who": "yobot",
+"text": "Going up!",
+"direction": "chirpy, bright little robot, upbeat and quick"
+},
+{
+"who": "yobot",
+"text": "Tell my charger I love it!",
+"direction": "chirpy, bright little robot, upbeat and quick"
+},
+{
+"who": "yobot",
+"text": "Powering down. Bye!",
+"direction": "chirpy, bright little robot, upbeat and quick"
+},
+{
+"who": "yobot",
+"text": "Goodbye, circuit!",
+"direction": "chirpy, bright little robot, upbeat and quick"
+},
+{
+"who": "yobot",
+"text": "Upload failed. Hi!",
+"direction": "chirpy, bright little robot, upbeat and quick"
+},
+{
+"who": "yobot",
+"text": "Thanks for having me!",
+"direction": "chirpy, bright little robot, upbeat and quick"
+}
+]
+}
