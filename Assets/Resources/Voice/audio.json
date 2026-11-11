@@ -2024,6 +2024,21 @@
    "voice": "slice",
    "text": "Noted.",
    "asset": "restored"
+  },
+  {
+   "id": "wallit_that_s_my_account_hands_off",
+   "voice": "wallit",
+   "text": "That's my account! Hands off!"
+  },
+  {
+   "id": "wallit_touch_her_you_pay_double",
+   "voice": "wallit",
+   "text": "Touch her, you pay double!"
+  },
+  {
+   "id": "wallit_she_s_not_for_sale_back_off",
+   "voice": "wallit",
+   "text": "She's not for sale. Back off!"
   }
  ],
  "note": "Made through Hawkes Gen audio.voice (project theplacedepartment). Ids match WallitVoice.LineId. Slice, narrator, Yo Bot and Courier lines (pass 2) are mono 64 kbps re-encodes of Gen audio.dialogue-open stems."

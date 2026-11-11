@@ -19,6 +19,7 @@ Shader "Hidden/BT/Post"
     float4 _Shadows;     // tint for darks
     float4 _Highlights;  // tint for lights
     float4 _Lift;        // added to darks
+    float _Stakes;       // 0..1 Slice's lost health: the screen's edges drain toward grey
 
     struct v2f
     {
@@ -128,6 +129,11 @@ Shader "Hidden/BT/Post"
                 float2 d = i.uv - 0.5;
                 half v = 1 - dot(d, d) * _Grade.w;
                 c *= saturate(v);
+                // stakes: the edges lose colour and darken, the middle stays readable
+                half edge = saturate(dot(d, d) * 3.2);
+                half drain = _Stakes * edge;
+                half g = dot(c, half3(0.299, 0.587, 0.114));
+                c = lerp(c, g.xxx * (1 - 0.35 * drain), saturate(drain * 1.1));
                 return half4(SafeHDR(c), 1);
             }
             ENDCG

@@ -60,6 +60,7 @@ public static class VoiceDirector {
             case "boss-wave":
             case "low":
             case "slice-low":
+            case "stakes-line":
             case "cutscene":
                 return Priority.Key;
             case "wave":

@@ -23,6 +23,8 @@ public class WallitVoice : MonoBehaviour {
     public static readonly string[] LevelUp = { "Level up! Raise!", "Profit!", "Upgrade me. I'm good for it.", "Bonus time!", "Now we're rich." };
     public static readonly string[] Chest = { "Treasure! Mine!", "Open it! Open it!", "Finders keepers!" };
     public static readonly string[] SliceLow = { "Slice! Hold on!", "I'm coming!", "Not on my tab!", "Nobody collects her!" };
+    // The first time a bot reaches Slice in a run (StakesFeel): one Key line, Wallit about her, in his money voice.
+    public static readonly string[] Stakes = { "That's my account! Hands off!", "Touch her, you pay double!", "She's not for sale. Back off!" };
     public static readonly string[] BossWave = { "Big bill. Big payday.", "Good. Bigger tip." };
     public static readonly string[] Golden = { "Gold! Mine!", "Shiny. Mine.", "That one pays double." };
 
@@ -217,6 +219,12 @@ public class WallitVoice : MonoBehaviour {
         }
     }
 
+    public static void OnStakes() {
+        if (Instance != null) {
+            Instance.Queue(Instance.Pick(Stakes), "stakes-line", 6f);
+        }
+    }
+
     // A Wallit line of a story beat: spoken when the floor is free, within a few seconds of its subtitle.
     public static void OnBeat(string line) {
         if (Instance != null) {
@@ -349,6 +357,9 @@ public class WallitVoice : MonoBehaviour {
         if (text != null && why != "beat" && why != "cutscene") {
             text.text = "WALLIT  " + line;
             text.enabled = true;
+        }
+        if (why == "stakes-line") {
+            StakesFeel.Note("stakes-line", line + "|" + lineLength.ToString("0.00") + "|overlaps " + Overlaps);
         }
         Events.Add("line|" + why + "|" + line + "|" + lineLength.ToString("0.00") + (lineHasFile ? "|voice" : "|subtitle"));
         return lineLength;

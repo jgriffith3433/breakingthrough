@@ -571,6 +571,15 @@ open and the Dead Letter gone; the reward is never paid twice. Wallit: "Returned
 (`BackRooms.All`, the `BackRoom` component on the chapter run, `ChapterRun.Events` lines `secret|...`), `CampaignProgress.RefundFull`,
 `WaveDirector.SpawnMiniAt`; the `secrets` playtest plays all six rooms and the Dead Letter.
 
+## The stakes
+
+Losing Slice is losing the game, and the game never says so. When a bot reaches her the circle's ring (a soft gold ring on the ground
+round her, `StakesFeel.cs`) stutters and dims toward grey, and the screen's edges drain of colour in proportion to the health she has
+lost (`NightGrade.Stakes`, read by `BTPost.shader`). Under 30% a low heartbeat layer rises under the music. The first time a bot
+reaches her in a run Wallit says one short key line about her, in his money voice, and never over another line: "That's my account!
+Hands off!", "Touch her, you pay double!" or "She's not for sale. Back off!" (`WallitVoice.Stakes`, reason `stakes-line`). No text
+explains the circle in wave 1. `stakes` playtest logs `slice-hit`, `slice-low`, `stakes-line`.
+
 ## The cast file
 
 Every voice in a dialogue box is a row in `Assets/Resources/Cast/cast.json`: Wallit, Slice, the Yo Bots (Yo Bot, Mega Yo Bot,

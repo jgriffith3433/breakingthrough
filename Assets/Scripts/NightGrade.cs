@@ -19,6 +19,9 @@ public class NightGrade : MonoBehaviour {
     public Color Highlights = new Color(1.08f, 1.0f, 0.9f);
     public Color Lift = new Color(0.0f, 0.012f, 0.03f);
 
+    // 0..1: how much of Slice's health is gone (StakesFeel). The post pass drains the screen's edges toward grey by it.
+    [HideInInspector] public float Stakes;
+
     Material material;
     readonly RenderTexture[] levels = new RenderTexture[8];
 
@@ -28,6 +31,7 @@ public class NightGrade : MonoBehaviour {
     static readonly int GradeId = Shader.PropertyToID("_Grade");
     static readonly int ShadowsId = Shader.PropertyToID("_Shadows");
     static readonly int HighlightsId = Shader.PropertyToID("_Highlights");
+    static readonly int StakesId = Shader.PropertyToID("_Stakes");
     static readonly int LiftId = Shader.PropertyToID("_Lift");
 
     void OnRenderImage(RenderTexture source, RenderTexture destination) {
@@ -49,6 +53,7 @@ public class NightGrade : MonoBehaviour {
         material.SetColor(ShadowsId, Shadows);
         material.SetColor(HighlightsId, Highlights);
         material.SetColor(LiftId, Lift);
+        material.SetFloat(StakesId, Stakes);
 
         // A phone's screen is 3x its CSS size: start the bloom at a quarter and stop after four steps, or the
         // fill rate alone stalls an iPhone.
