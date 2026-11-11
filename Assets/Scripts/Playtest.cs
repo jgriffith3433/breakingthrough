@@ -12,7 +12,7 @@ using UnityEngine.UI;
 // Shift to lock on, left clicks to swing the bat (held to wind up a home run), back to the piano when the birds
 // are gone, 1-3 for cards, Enter to skip a break. Every scenario first presses the web page's "Tap to play" prompt. Setup only: it plays in MetaProgress's sandbox with fresh ranks, so it never
 // touches the player's save, and it loads the menu scene if the game isn't on it. Nothing runs until a scenario starts.
-public static class Playtest {
+public static partial class Playtest {
     const string Product = "theplacedepartment";
     const float RunCap = 900f;
 
@@ -33,6 +33,7 @@ public static class Playtest {
         new PlaytestScenario("touch-pause", "Pause and Settings by finger only, for a phone-sized screen (mobile, or 844x390): in an Arcade run, then Chapter 1's level, then the hub, the on-screen Pause button is found inside the safe area (pause-button, 44 px or more), tapped (pause-opened), Settings opened from it (settings-opened), sound switched and the music slider set (setting-changed), Done and Resume tapped (resumed; touchPauseCycles counts 3). The pause deck and the Settings panel are checked to sit inside the safe area with every control, in both orientations (pause-fits, settings-fits), so nothing scrolls", 400, "menus"),
         new PlaytestScenario("settings", "Press Tap to play, open Settings from the menu: sound off and on, music and effects sliders, Done; start a run, pause (button, then P), Settings from the pause menu, resume, play a little. Any screen size", 100, "menus"),
         new PlaytestScenario("boss-set-pieces", "Arcade boss waves 10, 20, 30: each opens with a skippable intro (events boss-intro, boss-skip; the bot taps a key mid-intro), the boss bar and phase notch show, and defeat gives hit-stop, slow-mo, a burst and Slice's line (boss-payoff). Setup: wave key to 10/20/30, waiting bots trimmed to the boss, Slice topped up. Phone layout checks apply at 390 wide", 420, "content"),
+        new PlaytestScenario("bot-animation", "Bots that move like creatures (CharacterRig on every Yo Bot and Spider Bot): 60 s of Arcade with a per-frame trace of animation state against ground speed (events anim-trace, anim-speed-band; 0 state/motion mismatches, walk cycles scaled to ground speed so a slowed bot's legs slow with it), hit flinches and a death clip of at least 0.4 s before a killed bot is removed (events anim-flinch, anim-death), then a crowd of 15+ Yo Bots and Spider Bots dropped round Wallit (setup; crowd-fps against the phone budget; two are slowed to show the cycle follow the speed), waves 3, 5, 7, 9 sampled for fps, then the wave 10 boss: its boss-tell events log the rear-up pose held during each ground-mark tell and its boss-phase event the stagger at phase 2, with the animation state (boss-pose). On a phone (mobile, 390x844) every move and tap is a finger: the stick, Swing and the level-up cards. Metrics animFrames, animMismatches, animFlinches, animDeaths, animDeathClipMinS, animTellPoseMin, animStaggers, animCrowdBots, animCrowdFpsAvg, animCrowdFpsWorst, animWaveFpsMin", 600, "content"),
         new PlaytestScenario("bots", "The bots: wave 1's Yo Bots (authored Gen model when present) walk at the musician with feet planting; bolts drop; enemy list names them. Setup: drop 60 Yo Bots and log FPS for the WebGL budget, then the testing wave key (=) to wave 30 for the Spider Bot Alpha (glass pod, six legs when authored) and 30 s of fight", 360, "content"),
         new PlaytestScenario("analytics", "Hawkes Analytics: start a run, clear wave 1, then hold fire on wave 2 so the bots take the musician. Every analytics event is logged as it goes out (run_start, level_start and level_end per wave, card picks, the death and the bot kind that landed it, run_end) with the build version and env; on the game-over screen the \"How was that run?\" card must show, and the bot rates it 4 stars", 240, "full"),
         new PlaytestScenario("musician", "Slice, the musician at the piano: her health bar is titled Slice, and she sits on the bench playing the piano clip with her hands on the keys while the piano music plays. The bot holds fire and frames Slice so wave 1's Yo Bots reach her: she stands (standUp), stabs and slashes the one in reach with her knife (stab / slash with OnSliceKnifeHit blade damage) at most once every 2.5 s, and flinches when hit (hurt); then the bot clears the wave (with Encore pulsing from PianoRecital) and she sits back down (sitDown) to play (piano). Then it holds fire from wave 2 (after 20 s, setup: a ring of Plated Yo Bots dropped around the bench, topped up every 8 s) until the bots empty her bar, she falls (defeat), and the game-over panel appears", 330, "content"),
@@ -518,6 +519,8 @@ public static class Playtest {
                 yield return ActsRun(options);
             } else if (id == "onboarding") {
                 yield return OnboardingRun(options);
+            } else if (id == "bot-animation") {
+                yield return BotAnimRun(options);
             } else if (id == "boss-set-pieces") {
                 yield return BossSetRun();
             } else if (id == "bots") {
@@ -5218,7 +5221,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             } else if (ev.StartsWith("tell|")) {
                 sawTell = true;
             }
-            run.Event(kind, ev + (BossPhases.MarkUp ? " (red marks on the ground)" : ""));
+            run.Event(kind, ev + (BossPhases.MarkUp ? " (red marks on the ground)" : "") + " | anim " + Enemy.BossAnim());
         }
         if (Courier.Events.Count < courierSeen) {
             courierSeen = 0;
@@ -5226,7 +5229,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         for (; courierSeen < Courier.Events.Count; courierSeen++) {
             if (Courier.Events[courierSeen] == "phase2") {
                 sawPhase2 = true;
-                run.Event("boss-phase", "phase2|The Courier (banner, red wash, faster winds)");
+                run.Event("boss-phase", "phase2|The Courier (banner, red wash, faster winds) | anim " + Enemy.BossAnim());
             } else if (Courier.Events[courierSeen].StartsWith("wind|")) {
                 sawTell = true;
             }

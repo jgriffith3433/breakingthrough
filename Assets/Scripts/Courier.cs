@@ -88,6 +88,9 @@ public class Courier : MonoBehaviour {
     // The level puts it back at the drop, asleep, after Wallit goes down: no notice up, the next one starts from the walk.
     public void Rest() {
         DropMark();
+        if (enemy != null) {
+            enemy.EndTell(false);
+        }
         step = Step.Approach;
         clock = 0f;
     }
@@ -115,6 +118,7 @@ public class Courier : MonoBehaviour {
         if (!Angry && enemy.Health01 <= 0.5f) {
             Angry = true;
             enemy.EnterPhase2(new Color(1.45f, 0.75f, 0.3f));
+            enemy.Stagger(1.2f);   // phase two arrives on the body (after the tell, if one is running)
             Events.Add("phase2");
             BossPhases.Announce(enemy, "faster notices, it calls the crew");
             Fx.Ring(transform.position, 7f, new Color(1f, 0.3f, 0.22f, 0.9f), 0.6f);
@@ -170,6 +174,7 @@ public class Courier : MonoBehaviour {
         Events.Add("wind|" + Winds + "|" + windTime.ToString("0.0") + "|" + (who == Aim.Wallit ? "wallit" : "slice"));
         MakeMark(at);
         enemy.Hold(windTime + 0.3f);
+        enemy.BeginTell();   // the clipboard goes up and the body rears back until the notice lands
         nextRing = 0f;
         GameAudio.PlayAt("clipboard_raise", transform.position, 0.8f);
         GameAudio.PlayAt("stomp", transform.position, 0.7f, 1.4f);
@@ -223,6 +228,8 @@ public class Courier : MonoBehaviour {
         DropMark();
         step = Step.Recover;
         clock = DazeSeconds;
+        enemy.EndTell(false);
+        enemy.Stagger(DazeSeconds * 0.6f);
         enemy.Hold(DazeSeconds);
         Fx.Ring(transform.position, 6f, new Color(1f, 1f, 1f, 0.8f), 0.5f);
         Fx.Emit(FxKind.Flash, transform.position + Vector3.up * 1.2f, 1, new Color(1f, 0.95f, 0.8f, 0.7f), 2.2f, 0f);
@@ -278,6 +285,7 @@ public class Courier : MonoBehaviour {
                 break;
         }
         DropMark();
+        enemy.EndTell(true);
         step = Step.Recover;
         clock = Angry ? RecoverSeconds * 0.7f : RecoverSeconds;
         enemy.Hold(clock);

@@ -104,6 +104,7 @@ public class BossPhases : MonoBehaviour {
         Events.Add("phase2|" + enemy.Title + "|" + enemy.Health01.ToString("0.00"));
         CancelWind();
         enemy.Hold(1.4f);
+        enemy.Stagger(1.2f);   // phase two arrives on the body: it lurches and buckles
         nextAttack = 1.8f;
         Announce(enemy, Who + ": " + PhaseLine());
         Fx.Ring(transform.position, enemy.BodyScale * 4.5f, new Color(1f, 0.2f, 0.12f, 0.9f), 0.8f);
@@ -205,6 +206,7 @@ public class BossPhases : MonoBehaviour {
         Tells++;
         Events.Add("tell|" + enemy.Title + "|" + phase + "|" + attackName + "|" + windTime.ToString("0.0"));
         enemy.Hold(windTime + 0.3f);
+        enemy.BeginTell();   // the body rears back and holds until the blow lands
         MarkUp = true;
         nextRing = 0f;
         GameAudio.PlayAt("stomp", transform.position, 0.7f, phase == 1 ? 1.2f : 0.9f);
@@ -240,6 +242,7 @@ public class BossPhases : MonoBehaviour {
             Interrupts++;
             Events.Add("interrupt|" + attackName);
             CancelWind();
+            enemy.Stagger(1.0f);   // the broken wind-up shows: it reels
             enemy.Hold(2f);
             nextAttack = 3.2f;
             Fx.Ring(transform.position, 6f, new Color(1f, 1f, 1f, 0.8f), 0.5f);
@@ -290,6 +293,7 @@ public class BossPhases : MonoBehaviour {
         }
         DropMarks();
         winding = false;
+        enemy.EndTell(true);
         enemy.Hold(phase == 1 ? 1.2f : 0.6f);
         nextAttack = phase == 1 ? 4.5f : 3f;
     }
@@ -297,6 +301,9 @@ public class BossPhases : MonoBehaviour {
     void CancelWind() {
         DropMarks();
         winding = false;
+        if (enemy != null) {
+            enemy.EndTell(false);
+        }
     }
 
     static Vector3 GroundAt(Vector3 p) {
