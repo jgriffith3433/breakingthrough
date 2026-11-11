@@ -83,7 +83,7 @@ public class LevelUpScreen : MonoBehaviour {
     }
 
     void Start() {
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        font = UiSkin.Font(UiSkin.FontRole.Body);
         if (FindAnyObjectByType<EventSystem>() == null) {
             var events = new GameObject("Event System");
             events.AddComponent<EventSystem>();

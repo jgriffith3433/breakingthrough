@@ -573,7 +573,7 @@ public class BuildMode : MonoBehaviour {
         cardRow.pivot = new Vector2(0.5f, 0f);
         cardRow.sizeDelta = new Vector2(760f, 146f);
 
-        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        Font font = UiSkin.Font(UiSkin.FontRole.Label);
         FortKind[] kinds = { FortKind.Wall, FortKind.Spike, FortKind.Tower };
         for (int i = 0; i < kinds.Length; i++) {
             float x = -340f + i * 250f;

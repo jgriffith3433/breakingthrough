@@ -160,7 +160,7 @@ public class ChapterRun : MonoBehaviour {
     }
 
     void Start() {
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        font = UiSkin.Font(UiSkin.FontRole.Label);
         Events.Clear();
         Events.Add("start|" + data.Id + "|" + data.Objective + "|" + data.Target + (Hard ? "|hard" : ""));
         CampaignProgress.BeginChapter();

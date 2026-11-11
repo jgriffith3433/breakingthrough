@@ -223,7 +223,7 @@ public class OfficeMap : OwnMap {
             g.transform.position = new Vector3(0f, 4.15f, 14.8f);
             g.transform.rotation = Quaternion.identity;
             var t = g.AddComponent<TextMesh>();
-            Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            Font font = UiSkin.Font(UiSkin.FontRole.Label);
             t.font = font;
             t.text = "1";
             t.characterSize = 0.3f;

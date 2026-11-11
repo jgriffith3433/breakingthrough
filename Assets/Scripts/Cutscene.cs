@@ -494,7 +494,7 @@ public partial class Cutscene : MonoBehaviour {
     }
 
     void Build() {
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        font = UiSkin.Font(UiSkin.FontRole.Body);
         var canvasGo = new GameObject("Cutscene Canvas");
         canvasGo.transform.SetParent(transform, false);
         var canvas = canvasGo.AddComponent<Canvas>();

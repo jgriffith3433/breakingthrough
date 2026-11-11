@@ -49,7 +49,7 @@ public class RunHud : MonoBehaviour {
     }
 
     void Start() {
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        font = UiSkin.Font(UiSkin.FontRole.Label);
         var canvasGo = new GameObject("Run Canvas");
         canvasGo.transform.SetParent(transform, false);
         var canvas = canvasGo.AddComponent<Canvas>();
