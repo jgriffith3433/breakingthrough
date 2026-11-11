@@ -48,6 +48,9 @@ public static class Tuning {
     public const float MetalKnock = 1.3f;
     public const float MetalBlastDamage = 0.65f;
 
+    // The first minute of Arcade keeps the HUD to a few words (WaveDirector.QuietOpening): first-five allows 40 on screen.
+    public const float QuietOpeningSeconds = 60f;
+
     // Breaks between waves. Space or Enter skips both.
     public const float BreakSeconds = 5f;
     public const float BuildSeconds = 30f;

@@ -1086,7 +1086,7 @@ public class WaveDirector : MonoBehaviour {
 
         detailText.color = new Color(1f, 0.96f, 0.88f, 0.92f);
         if (coinText != null) {
-            coinText.text = MetaProgress.StatusLine();
+            coinText.text = QuietOpening ? "" : MetaProgress.StatusLine();
             float pulse = MetaProgress.PurseFlash;
             coinText.color = pulse > 0.05f
                 ? Color.Lerp(new Color(1f, 0.86f, 0.4f, 0.95f), Color.white, pulse)
@@ -1101,13 +1101,19 @@ public class WaveDirector : MonoBehaviour {
         }
     }
 
+    // A stranger's first minute of Arcade (wave 1, not a chapter): the HUD keeps to the wave line, so the words on screen
+    // are the few that teach the swing. Size, bat damage and the coin purse come in with the second minute or wave 2.
+    public static bool QuietOpening {
+        get { return Wave <= 1 && ChapterRun.Instance == null && Time.timeSinceLevelLoad < Tuning.QuietOpeningSeconds; }
+    }
+
     static string StartHint() {
         return UiFit.Touch ? "tap Next wave" : "Enter to start";
     }
 
     string WaveLine() {
         string size = "";
-        if (PlayerGrowth.Instance != null) {
+        if (PlayerGrowth.Instance != null && !QuietOpening) {
             size = "   ·   Size " + PlayerGrowth.Instance.Scale.ToString("0.00") + "   ·   Bat " + PlayerGrowth.Instance.ArrowDamage;
         }
         if (phase == Phase.Intro) {
