@@ -1121,6 +1121,7 @@ public class Enemy : MonoBehaviour
             return;
         launched = true;
         launchAirborne = false;
+        BotChorus.OnLaunched(this);
         launchLeft = 4f;
         spinLeft = Mathf.Max(0.5f, seconds);
         spinAngle = 0f;
@@ -1206,6 +1207,10 @@ public class Enemy : MonoBehaviour
         }
         if (kind != DamageKind.Burn)
             flash = crit ? 1f : Mathf.Max(flash, 0.7f);
+        if (kind == DamageKind.Bat && !Boss)
+            WallitVoice.OnFirstHit();
+        if (kind != DamageKind.Burn && !launched)
+            BotChorus.OnHit(this);
         float number = shown < 0f ? amount : shown;
         if (number > 0f)
             UpgradeLook.Number(mark, number, crit, kind);
@@ -1232,6 +1237,8 @@ public class Enemy : MonoBehaviour
         }
 
         down = true;
+        if (!launched)
+            BotChorus.OnFall(this);
         flying = false;
         StopClimbing();
         ClearLock();

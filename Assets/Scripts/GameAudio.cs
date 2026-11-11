@@ -97,6 +97,7 @@ public class GameAudio : MonoBehaviour {
     readonly float[] spatialBase = new float[SpatialVoices];
     readonly float[] voiceBase = new float[12];
     int nextSpatial;
+    readonly bool[] spatialIsVoice = new bool[SpatialVoices];
 
     static List<Variant> VariantsOf(string name) {
         List<Variant> list;
@@ -186,6 +187,28 @@ public class GameAudio : MonoBehaviour {
         Start(name, volume, pitch, Bus.Effects, true, position);
     }
 
+    // A spoken clip (a bot's bark) from a place in the world: 3D, at its own pitch, on the Voice bus. The caller owns the floor.
+    public static void PlayVoiceAt(AudioClip clip, string name, Vector3 position, float volume = 1f) {
+        float level = SoundSettings.EffectsLevel;
+        if (instance == null || clip == null || level <= 0f) {
+            return;
+        }
+        int slot = instance.FreeSpatial();
+        AudioSource source = instance.spatial[slot];
+        instance.spatialBase[slot] = Mathf.Clamp01(volume);
+        instance.spatialIsVoice[slot] = true;
+        source.Stop();
+        source.clip = clip;
+        source.pitch = 1f;
+        source.transform.position = position;
+        // Its own line holds the floor, which ducks effects: keep this one out of that dip.
+        source.volume = Mathf.Clamp01(volume) * level;
+        source.Play();
+        Played++;
+        Spatial++;
+        Note(Bus.Voice, name, 0, true, position, volume);
+    }
+
     static void Start(string name, float volume, float pitch, Bus bus, bool world, Vector3 at) {
         float level = SoundSettings.EffectsLevel;
         if (instance == null || string.IsNullOrEmpty(name) || level <= 0f) {
@@ -225,6 +248,7 @@ public class GameAudio : MonoBehaviour {
             int slot = instance.FreeSpatial();
             source = instance.spatial[slot];
             instance.spatialBase[slot] = baseVolume;
+            instance.spatialIsVoice[slot] = false;
         } else {
             int slot = instance.FreeVoice();
             source = instance.voices[slot];
@@ -259,7 +283,7 @@ public class GameAudio : MonoBehaviour {
         }
         for (int i = 0; i < spatial.Length; i++) {
             if (spatial[i].isPlaying) {
-                spatial[i].volume = Mathf.Clamp01(spatialBase[i] * level * duck);
+                spatial[i].volume = Mathf.Clamp01(spatialBase[i] * level * (spatialIsVoice[i] ? 1f : duck));
             }
         }
     }

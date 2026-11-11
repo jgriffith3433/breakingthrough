@@ -26,6 +26,12 @@ public class WallitVoice : MonoBehaviour {
     public static readonly string[] BossWave = { "Big bill. Big payday.", "Good. Bigger tip." };
     public static readonly string[] Golden = { "Gold! Mine!", "Shiny. Mine.", "That one pays double." };
 
+    // Event barks (each has its own why in VoiceDirector, and a 5 minute cooldown per line): the first blow of a run, a wave
+    // cleared, a boss's second phase.
+    public static readonly string[] FirstHit = { "First payment received.", "There's the deposit.", "Account opened. Pay up." };
+    public static readonly string[] WaveClear = { "Clean sweep. Count it.", "Books balanced.", "Wave settled. Next customer.", "All paid up. Who's next?" };
+    public static readonly string[] BossPhase = { "Now it's angry. Good, bigger bill.", "It's got a second wind. I've got a second swing.", "Overdraft! Keep swinging!" };
+
     // Lines Wallit says in Slice's banter (SliceVoice.Banter), voiced here so they get a mouth and a file too.
     public static readonly string[] BanterLines = { "Pay up, bots.", "They'll feel it.", "I know. Pay up!", "Nobody touches her.", "Still mine to guard.", "Coins. Bolts. Mine.", "Pay up.", "You good, Slice?" };
 
@@ -79,6 +85,7 @@ public class WallitVoice : MonoBehaviour {
     float nextBigAt;
     float nextStreakAt;
     float nextWaveAt;
+    bool firstHitDone;
 
     // Wallit's model is built by SetupWallit, which also adds WallitMouth; this finds or adds both for the live player.
     public static void Ensure(GameObject player) {
@@ -174,6 +181,29 @@ public class WallitVoice : MonoBehaviour {
             Instance.Queue(Instance.Pick(HomeRun), "home-run", 1.5f);
         }
     }
+
+    // The first blow of a run lands. Once per WallitVoice (a run's player).
+    public static void OnFirstHit() {
+        if (Instance != null && !Instance.firstHitDone) {
+            Instance.firstHitDone = true;
+            Instance.Queue(Instance.Pick(FirstHit), "first-hit", 3f);
+        }
+    }
+
+    public static void OnWaveCleared(int wave) {
+        if (Instance != null && wave > 1) {
+            Instance.Queue(Instance.Pick(WaveClear), "wave-clear", 4f);
+        }
+    }
+
+    public static void OnBossPhaseTwo() {
+        if (Instance != null) {
+            Instance.Queue(Instance.Pick(BossPhase), "boss-phase", 5f);
+        }
+    }
+
+    // Lines waiting for the floor (the bots' chorus holds back while this is above 0).
+    public static int Waiting { get { return Instance != null ? Instance.pending.Count : 0; } }
 
     public static void OnHurt() {
         if (Instance != null && Time.unscaledTime >= Instance.nextHurtAt) {

@@ -598,3 +598,7 @@ bosses with their own fight get an intro reel as they arrive, over the frozen fi
 the title card) and plays before the ADDRESS FILED card (`StoryScreen.ShowEndCard`); then the RECEIVED reel `ending_received` when the secret is earned, then the
 `credits` reel, then the credits card. All are skippable (Enter, Escape, Skip). New speaker voices: Server (V), Registrar (R), Order-Bearer (O), Mega Yo Bot (M),
 from `Resources/Voice/cinema/<reel>_<shot>.mp3` once made. Page scenes remain as fallback when a reel is missing.
+
+## Barks: who talks mid-fight
+
+Wallit and Slice answer the moment: Wallit on the first blow of a run, a home run, a wave cleared and a boss's second phase; Slice on a new kind of bot and when she runs low. Each of those lines is said once in five minutes. The Yo Bots chorus in chirps (waking, spotting Wallit, hit, launched, falling: "Uploading victory.", "Wheeeee!") and the Spider Bots are polite ("You have been served."), each from the bot's own place, one voice at a time, a line no more than once a minute. Code: `BotChorus.cs`, `VoiceDirector` (reasons `first-hit`, `boss-phase`, `new-type`, `wave-clear`, `bot-*`).
