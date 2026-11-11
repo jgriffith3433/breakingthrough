@@ -24,6 +24,11 @@ public class WaveDirector : MonoBehaviour {
     // Shown on the menu after a run ends. Lives only until the game closes.
     public static string LastRun { get; private set; }
 
+    // = and - skip waves in a debug build. The playtest bot's named setup shortcut uses them too, except while the
+    // first-screen scenario proves a release build ignores them (ReleaseKeysProbe).
+    public static bool ReleaseKeysProbe;
+    public static bool WaveKeysAllowed { get { return !ReleaseKeysProbe && (Debug.isDebugBuild || Playtest.Running); } }
+
     public static string EventName {
         get { return EventLine(Event); }
     }
@@ -201,13 +206,16 @@ public class WaveDirector : MonoBehaviour {
             return;
         }
 
-        if (PlayInput.GetKeyDown(KeyCode.KeypadPlus) || PlayInput.GetKeyDown(KeyCode.Equals)) {
-            GoToWave(Wave + 1);
-            return;
-        }
-        if (PlayInput.GetKeyDown(KeyCode.KeypadMinus) || PlayInput.GetKeyDown(KeyCode.Minus)) {
-            GoToWave(Mathf.Max(1, Wave - 1));
-            return;
+        // The wave-skip keys are a testing tool: a release build ignores them.
+        if (WaveKeysAllowed) {
+            if (PlayInput.GetKeyDown(KeyCode.KeypadPlus) || PlayInput.GetKeyDown(KeyCode.Equals)) {
+                GoToWave(Wave + 1);
+                return;
+            }
+            if (PlayInput.GetKeyDown(KeyCode.KeypadMinus) || PlayInput.GetKeyDown(KeyCode.Minus)) {
+                GoToWave(Mathf.Max(1, Wave - 1));
+                return;
+            }
         }
 
         if (phase == Phase.Intro) {
@@ -540,6 +548,7 @@ public class WaveDirector : MonoBehaviour {
         string purse = MetaProgress.Coins == 1 ? "1 coin to spend." : MetaProgress.Coins + " coins to spend.";
         string run = "Level " + RunBoons.Level + "   ·   Best streak " + Combo.Best;
         string boons = RunBoons.Summary();
+        MetaProgress.NoteRunFinished();
         LastRun = "Fell on wave " + Wave + ", level " + RunBoons.Level + ", streak " + Combo.Best + ", +" + MetaProgress.CoinsThisRun + " coins.\n" + boons;
         RunAnalytics.MusicianDown(Wave);
         lostBody.text = waves + "\n" + bestLine + "\n" + run + "\n\n" + earned + "\n" + purse
