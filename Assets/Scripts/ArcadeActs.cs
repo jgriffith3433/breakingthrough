@@ -336,7 +336,7 @@ public class ArcadeActs : MonoBehaviour {
         var go = new GameObject(name);
         go.transform.SetParent(parent, false);
         var t = go.AddComponent<Text>();
-        t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        t.font = UiSkin.Font(UiSkin.FontRole.Label);
         t.fontSize = size;
         t.fontStyle = style;
         t.alignment = TextAnchor.MiddleCenter;

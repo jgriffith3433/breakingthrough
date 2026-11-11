@@ -48,7 +48,7 @@ public class AbilityList : MonoBehaviour {
         scaler.referenceResolution = new Vector2(1920, 1080);
         canvasGo.AddComponent<GraphicRaycaster>();
 
-        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        Font font = UiSkin.Font(UiSkin.FontRole.Label);
         var go = new GameObject("Lines");
         go.transform.SetParent(canvasGo.transform, false);
         body = go.AddComponent<Text>();

@@ -37,7 +37,7 @@ public class UpgradeLook : MonoBehaviour {
         var textGo = new GameObject("Line");
         textGo.transform.SetParent(go.transform, false);
         var text = textGo.AddComponent<Text>();
-        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        text.font = UiSkin.Font(UiSkin.FontRole.Label);
         text.fontSize = 32;
         text.fontStyle = FontStyle.Bold;
         text.alignment = TextAnchor.MiddleCenter;
@@ -232,7 +232,7 @@ public class UpgradeLook : MonoBehaviour {
         TextMesh mesh = go.AddComponent<TextMesh>();
         int shown = Mathf.Max(1, Mathf.RoundToInt(amount));
         mesh.text = crit ? shown + "!" : shown.ToString();
-        mesh.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        mesh.font = UiSkin.Font(UiSkin.FontRole.Label);
         mesh.fontSize = 64;
         mesh.fontStyle = crit ? FontStyle.Bold : FontStyle.Normal;
         float far = Camera.main != null ? Mathf.Clamp(Vector3.Distance(Camera.main.transform.position, point) / 14f, 1f, 4f) : 1f;
@@ -364,7 +364,7 @@ public class UpgradeLook : MonoBehaviour {
         var textGo = new GameObject("Line");
         textGo.transform.SetParent(go.transform, false);
         var text = textGo.AddComponent<Text>();
-        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        text.font = UiSkin.Font(UiSkin.FontRole.Label);
         text.fontSize = 42;
         text.fontStyle = FontStyle.Bold;
         text.alignment = TextAnchor.MiddleCenter;

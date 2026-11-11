@@ -501,7 +501,7 @@ public class WallitVoice : MonoBehaviour {
         var go = new GameObject("Line");
         go.transform.SetParent(canvasGo.transform, false);
         text = go.AddComponent<Text>();
-        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        text.font = UiSkin.Font(UiSkin.FontRole.Label);
         text.fontSize = 30;
         text.fontStyle = FontStyle.Bold;
         text.alignment = TextAnchor.MiddleCenter;

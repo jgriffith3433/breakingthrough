@@ -145,7 +145,7 @@ public class LoadScreen : MonoBehaviour {
     }
 
     void Build() {
-        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        Font font = UiSkin.Font(UiSkin.FontRole.Body);
         canvasGo = new GameObject("Load Canvas");
         canvasGo.transform.SetParent(transform, false);
         var canvas = canvasGo.AddComponent<Canvas>();

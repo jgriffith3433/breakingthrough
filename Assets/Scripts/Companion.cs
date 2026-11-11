@@ -312,7 +312,7 @@ public class Companion : MonoBehaviour {
         go.transform.SetParent(transform, false);
         go.transform.localPosition = new Vector3(0f, 2.5f, 0f);
         label = go.AddComponent<TextMesh>();
-        label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        label.font = UiSkin.Font(UiSkin.FontRole.Label);
         label.GetComponent<MeshRenderer>().sharedMaterial = label.font.material;
         label.anchor = TextAnchor.MiddleCenter;
         label.alignment = TextAlignment.Center;

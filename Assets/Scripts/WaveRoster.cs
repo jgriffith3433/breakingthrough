@@ -65,7 +65,7 @@ public class WaveRoster : MonoBehaviour {
         scaler.referenceResolution = new Vector2(1920, 1080);
         canvasGo.AddComponent<GraphicRaycaster>();
 
-        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        Font font = UiSkin.Font(UiSkin.FontRole.Label);
         var headerGo = new GameObject("Header");
         headerGo.transform.SetParent(canvasGo.transform, false);
         var header = headerGo.AddComponent<Text>();
