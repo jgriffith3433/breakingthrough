@@ -1,4 +1,6 @@
-1. Open the beta, press Arcade and swing the bat at the Yo Bots. Hits, cracks and swishes should sound different each time.
-2. Pick up bolts until a level-up card appears. Each card flip and the rare stamp should make a paper or rubber-stamp sound, not a coin.
-3. Hit a home run into a line of bots: you hear a whoosh, then a distant clang.
-4. On a phone (390x844), tap a level-up card. The flip and stamp play at a similar loudness to the bat hits.
+On a phone-size viewport (390x844) on beta:
+1. Open the page: the menu shows and Campaign answers a tap within a few seconds, before anything campaign-sized has downloaded.
+2. Tap Campaign, then a case file: a one-line "Pulling the case file... n%" plate shows at the bottom above the home bar, then the chapter card opens.
+3. Tap Begin on Chapter 1: "Filing Chapter 1... n%" shows at the bottom while the screen stays alive, then you have control within 15 s, with voices, stills and the Courier in place.
+4. Play Arcade to wave 10: no download, no stall.
+Scenario: `first-load` (mobile).
