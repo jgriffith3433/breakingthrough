@@ -556,9 +556,16 @@ public static class Playtest {
         run.Scene("Tap to play");
         yield return new WaitForSecondsRealtime(1.5f);
         HawkesSoundPressPrompt();
-        yield return new WaitForSecondsRealtime(0.6f);
+        float pressed = Time.realtimeSinceStartup;
         string after = HawkesSoundState();
-        run.Event("tap-prompt", "audio " + after);
+        while (after == "prompt" && Time.realtimeSinceStartup - pressed < 1f) {
+            yield return null;
+            after = HawkesSoundState();
+        }
+        float took = Time.realtimeSinceStartup - pressed;
+        run.Event("tap-prompt", "audio " + after + ", overlay dismissed in " + took.ToString("0.00") + " s");
+        run.Metric("tapDismissSeconds", took);
+        yield return new WaitForSecondsRealtime(0.3f);
         run.Metric("audioRunning", after == "running" ? 1 : 0);
         if (after == "prompt") {
             run.Problem(PlaytestSeverity.Bug, "the Tap to play prompt did not close when pressed");

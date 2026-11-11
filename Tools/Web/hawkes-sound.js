@@ -114,14 +114,41 @@
     primeElement();
   }
 
-  function tap() {
-    unlock();
-    if (tapped) {
+  function hidePrompt() {
+    if (!prompt) {
       return;
     }
+    // Hidden first, removed second: if removal ever fails, the overlay is still gone.
+    try {
+      prompt.style.setProperty("display", "none", "important");
+      prompt.style.setProperty("pointer-events", "none", "important");
+      prompt.setAttribute("aria-hidden", "true");
+    } catch (e) {}
+    try {
+      if (prompt.parentNode) {
+        prompt.parentNode.removeChild(prompt);
+      }
+    } catch (e) {}
+  }
+
+  // The tap always closes the prompt and starts the game. Audio and focus are best effort: whatever AudioContext.resume,
+  // the silent element or the canvas focus does (throw, reject, never answer), the overlay goes first and stays gone.
+  function tap() {
+    var first = !tapped;
     tapped = true;
-    if (prompt && prompt.parentNode) {
-      prompt.parentNode.removeChild(prompt);
+    hidePrompt();
+    detachDismiss();
+    if (first) {
+      try {
+        console.log("overlay dismissed");
+      } catch (e) {}
+    }
+    try {
+      unlock();
+    } catch (e) {
+      try {
+        console.warn("overlay dismissed; audio unlock failed: " + e);
+      } catch (e2) {}
     }
     var canvas = d.getElementById("unity-canvas");
     if (canvas) {
@@ -130,6 +157,36 @@
       } catch (e) {}
     }
   }
+
+  // Beyond the button's own handlers: while the prompt is up, any click, tap, Enter or Space anywhere on the page
+  // dismisses it, caught in the capture phase so nothing underneath can swallow it. A synthetic click on the page
+  // lands here too.
+  function onDismissEvent(e) {
+    if (tapped) {
+      return;
+    }
+    if (e.type === "keydown") {
+      var k = e.key;
+      if (k !== "Enter" && k !== " " && k !== "Spacebar" && e.code !== "Space" && e.code !== "Enter" && e.code !== "NumpadEnter") {
+        return;
+      }
+    }
+    tap();
+  }
+  var DISMISS = ["pointerup", "pointerdown", "mouseup", "touchend", "click", "keydown", "keyup"];
+  function attachDismiss() {
+    for (var i = 0; i < DISMISS.length; i++) {
+      w.addEventListener(DISMISS[i], onDismissEvent, true);
+      d.addEventListener(DISMISS[i], onDismissEvent, true);
+    }
+  }
+  function detachDismiss() {
+    for (var i = 0; i < DISMISS.length; i++) {
+      w.removeEventListener(DISMISS[i], onDismissEvent, true);
+      d.removeEventListener(DISMISS[i], onDismissEvent, true);
+    }
+  }
+  attachDismiss();
 
   function state() {
     if (!tapped) {
