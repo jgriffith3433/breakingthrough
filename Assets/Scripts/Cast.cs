@@ -101,9 +101,11 @@ public static class Cast {
         if (sprites.TryGetValue(m.id, out s)) {
             return s;
         }
-        Texture2D tex = Resources.Load<Texture2D>(m.portrait);
+        Texture2D tex = OnDemand.Texture(m.portrait);
         s = tex != null ? Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f)) : null;
-        sprites[m.id] = s;
+        if (s != null || !OnDemand.Indexed(m.portrait)) {
+            sprites[m.id] = s;   // a portrait still on its way is asked for again, not remembered as missing
+        }
         return s;
     }
 

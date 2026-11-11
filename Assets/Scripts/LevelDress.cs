@@ -277,7 +277,7 @@ public static class LevelDress {
     // callers then fall back to the gradient Sky below.
     public static Material PanoSky(string key, Color tint, float spin) {
         Shader shader = Shader.Find("Knoll/PanoSky");
-        Texture2D tex = Resources.Load<Texture2D>("Skies/" + key);
+        Texture2D tex = OnDemand.Texture("Skies/" + key);
         if (shader == null || tex == null) {
             return null;
         }

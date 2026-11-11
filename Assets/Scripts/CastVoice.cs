@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -94,8 +95,11 @@ public class CastVoice : MonoBehaviour {
             return 0f;
         }
         string file = who + "_" + SliceVoice.LineId(text).Substring(6);
-        AudioClip clip = Resources.Load<AudioClip>("Voice/" + file);
+        AudioClip clip = OnDemand.Audio("Voice/" + file);
         float len;
+        // A line no chapter group named ahead (a lodger's, a boss's bark) is fetched now and plays when it is in, if the line is
+        // still being said: the subtitle runs meanwhile, so nothing waits and no line is reported missing.
+        bool coming = clip == null && !OnDemand.Cached("Voice/" + file) && OnDemand.Indexed("Voice/" + file);
         if (clip != null && SoundSettings.EffectsLevel > 0f) {
             source.Stop();
             source.clip = clip;
@@ -103,16 +107,37 @@ public class CastVoice : MonoBehaviour {
             source.Play();
             len = clip.length;
         } else {
-            if (clip == null) {
+            if (clip == null && !coming) {
                 Missing++;
             }
             len = WallitVoice.EstimateSeconds(text);
+            if (coming) {
+                StartCoroutine(PlayWhenIn("Voice/" + file, Time.unscaledTime + len * 0.5f));
+            }
         }
         WallitVoice.Claim(who, len);
         VoiceDirector.Spoke(text, why, VoiceDirector.Priority.Key);
         Played++;
         Events.Add("say|" + who + "|" + (clip != null ? "voice" : "subtitle") + "|" + len.ToString("0.00") + "|" + text.Replace('\n', ' '));
         return len;
+    }
+
+    // The line's file is on its way: plays it when it lands, unless the line is mostly over by then.
+    IEnumerator PlayWhenIn(string key, float latest) {
+        AudioClip fetched = null;
+        bool arrived = false;
+        OnDemand.FetchKey(key, o => {
+            fetched = o as AudioClip;
+            arrived = true;
+        });
+        while (!arrived) {
+            yield return null;
+        }
+        if (fetched != null && source != null && Time.unscaledTime <= latest && SoundSettings.EffectsLevel > 0f && !source.isPlaying) {
+            source.clip = fetched;
+            source.volume = Mathf.Clamp01(SoundSettings.EffectsLevel);
+            source.Play();
+        }
     }
 
     void Update() {

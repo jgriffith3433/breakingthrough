@@ -1,3 +1,3 @@
-- lesson: explore needs ChapterOneIsLevel — playtests zero `LevelScene.ChapterOneIsLevel` unless the scenario id is on the allowlist; if `explore` is missing, Begin starts ChapterRun while LoadChapter waits 60 s for Level_1_Yard and the run ends stuck with no chapter metrics.
-- convention: Chapter 1 for players is always Level_1_Yard (`ChapterOneIsLevel` defaults true); only older chapter-run playtests turn it off.
-- lesson: Ch1 load stalls need a stuck-cell event — Until's generic timeout alone leaves a silent hang until 60 s; emit scene + ChapterOneIsLevel in a stuck-cell within ~20 s.
+- lesson: Gen project id — hawkesgen calls need the org-scoped `org_eb0d5c82e8da8c2d.theplacedepartment`; the short name answers "No access".
+- lesson: Gen sfx loudness — some takes come back near-silent (-65 dB); measure and regenerate rather than boosting 30+ dB. `sound_effect` seconds must be at least 0.5.
+- convention: Sfx variants — `name.mp3`, `name_2.mp3`, `name_3.mp3` beside each other in Resources/Sfx; UI ones are `cardflip1..3`, `stamp1..3`, `panelslide1..3`, `buildup`.
