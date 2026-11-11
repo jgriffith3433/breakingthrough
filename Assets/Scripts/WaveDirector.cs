@@ -98,6 +98,8 @@ public class WaveDirector : MonoBehaviour {
     GameObject lostPanel;
     RectTransform lostRect;
     Text lostBody;
+    RunEndScreen runEnd;
+    bool runEndRetry;
     CanvasScaler hudScaler;
     RectTransform hudPurse;
     UiMode hudMode;
@@ -173,22 +175,27 @@ public class WaveDirector : MonoBehaviour {
             LayoutHud();
         }
         if (phase == Phase.Lost) {
+            if (leavingAt <= 0f && runEnd != null) {
+                runEnd.TickLeave();
+            }
             if (leavingAt > 0f) {
                 if (Time.unscaledTime < leavingAt) {
                     return;
                 }
-            } else if (Time.unscaledTime >= returnReadyAt && PlayInput.AnyKeyDown) {
-                // The panel eases out first (PanelFx), then the menu loads.
-                leavingAt = Time.unscaledTime + PanelFx.CloseSeconds;
-                PanelFx.Hide(lostPanel, "gameover");
-                return;
-            }
-            if (leavingAt > 0f) {
                 leavingAt = 0f;
                 Time.timeScale = 1f;
                 pausedGame = false;
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
+                if (runEndRetry) {
+                    runEndRetry = false;
+                    SceneManager.LoadScene(MetaProgress.GameScene);
+                    return;
+                }
+                if (ChapterRun.Instance != null) {
+                    ChapterRun.Instance.ToMenu();
+                    return;
+                }
                 string scene = Application.CanStreamedLevelBeLoaded(MetaProgress.MenuScene)
                     ? MetaProgress.MenuScene
                     : MetaProgress.GameScene;
@@ -520,6 +527,13 @@ public class WaveDirector : MonoBehaviour {
         }
     }
 
+    // RunEndScreen asked to leave: ease the panel out, then Retry reloads the game scene or Menu goes back.
+    public void BeginRunEndLeave(bool retry) {
+        runEndRetry = retry;
+        leavingAt = Time.unscaledTime + PanelFx.CloseSeconds;
+        PanelFx.Hide(lostPanel, "gameover");
+    }
+
     void Lose() {
         if (phase == Phase.Chapter) {
             LoseChapter();
@@ -536,23 +550,28 @@ public class WaveDirector : MonoBehaviour {
         Time.timeScale = 0f;
         PanelFx.Show(lostPanel, "gameover", lostRect);
         returnReadyAt = Time.unscaledTime + 0.4f;
-        string waves = cleared <= 0
-            ? "No waves cleared."
-            : cleared == 1 ? "Cleared 1 wave." : "Cleared " + cleared + " waves.";
-        string bestLine = record
-            ? "New best: " + MetaProgress.BestWave + "."
-            : MetaProgress.BestWave > 0 ? "Best cleared: " + MetaProgress.BestWave + "." : "No best yet.";
-        string earned = MetaProgress.CoinsThisRun == 0
-            ? "No new coins."
-            : "+" + MetaProgress.CoinsThisRun + (MetaProgress.CoinsThisRun == 1 ? " coin this run." : " coins this run.");
-        string purse = MetaProgress.Coins == 1 ? "1 coin to spend." : MetaProgress.Coins + " coins to spend.";
-        string run = "Level " + RunBoons.Level + "   ·   Best streak " + Combo.Best;
         string boons = RunBoons.Summary();
         MetaProgress.NoteRunFinished();
         LastRun = "Fell on wave " + Wave + ", level " + RunBoons.Level + ", streak " + Combo.Best + ", +" + MetaProgress.CoinsThisRun + " coins.\n" + boons;
         RunAnalytics.MusicianDown(Wave);
-        lostBody.text = waves + "\n" + bestLine + "\n" + run + "\n\n" + earned + "\n" + purse
-            + (string.IsNullOrEmpty(boons) ? "" : "\n\n<size=22>" + boons + "</size>") + (UiFit.Touch ? "\n\nTap to go on" : "\n\nPress any key");
+        if (lostBody != null) {
+            lostBody.gameObject.SetActive(false);
+        }
+        if (runEnd == null) {
+            runEnd = RunEndScreen.Ensure(lostPanel.transform);
+        }
+        bool nearly = Musician.Instance != null && Musician.Instance.NearlyFell;
+        runEnd.OpenArcade(
+            Wave,
+            cleared,
+            MetaProgress.CoinsThisRun,
+            record,
+            nearly,
+            RunAnalytics.LastKilledBoss,
+            RunAnalytics.LastKilledBy,
+            BatEquipment.HomeRuns,
+            RunLog.RunKills,
+            BatEquipment.SmashHits);
     }
 
     // A Campaign chapter's bot, placed on a ring round the circle (the same ground check and drop as a wave's bots).
@@ -642,8 +661,13 @@ public class WaveDirector : MonoBehaviour {
         PanelFx.Show(lostPanel, "gameover", lostRect);
         returnReadyAt = Time.unscaledTime + 0.4f;
         ChapterRun.Instance.OnLost();
-        lostBody.text = "Slice fell.\n" + ChapterRun.Instance.Title + " is still open.\nThe file keeps its place."
-            + (UiFit.Touch ? "\n\nTap to go on" : "\n\nPress any key");
+        if (lostBody != null) {
+            lostBody.gameObject.SetActive(false);
+        }
+        if (runEnd == null) {
+            runEnd = RunEndScreen.Ensure(lostPanel.transform);
+        }
+        runEnd.OpenChapter("Slice fell.\n" + ChapterRun.Instance.Title + " is still open.\nThe file keeps its place.");
     }
 
     float SpawnOne(int index) {
@@ -1161,7 +1185,11 @@ public class WaveDirector : MonoBehaviour {
 
         var title = MakeText(lostPanel.transform, font, "Address struck off", 58, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -36f), new Vector2(680f, 90f));
         title.color = new Color(1f, 0.45f, 0.35f);
+        title.gameObject.SetActive(false);
         lostBody = MakeText(lostPanel.transform, font, "", 30, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -140f), new Vector2(820f, 520f));
+        lostBody.gameObject.SetActive(false);
+        lostPanel.GetComponent<Image>().raycastTarget = true;
+        runEnd = RunEndScreen.Ensure(lostPanel.transform);
         lostPanel.SetActive(false);
         hudScaler = scaler;
         hudPurse = purseRect;

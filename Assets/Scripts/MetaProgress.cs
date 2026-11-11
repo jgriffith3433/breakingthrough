@@ -252,6 +252,19 @@ public static class MetaProgress {
         GameAudio.PlayUI("coin", 0.55f);
     }
 
+    // Coins from a finished goals-ladder reward: the purse only, not this run's tally.
+    public static void GrantCoins(int amount) {
+        if (amount <= 0) {
+            return;
+        }
+        Ensure();
+        Coins += amount;
+        PurseFlash = 1f;
+        Toast = amount == 1 ? "+1 coin" : "+" + amount + " coins";
+        toastUntil = Time.unscaledTime + 2.4f;
+        Save();
+    }
+
     public static bool TrySpend(int cost) {
         Ensure();
         if (cost <= 0 || Coins < cost) {
@@ -434,6 +447,8 @@ public static class MetaProgress {
             for (int i = 0; i < ranks.Length; i++) {
                 ranks[i] = 0;
             }
+            RunGoals.EnterSandboxFresh();
+            RunEndTalk.ClearRecent();
         }
     }
 

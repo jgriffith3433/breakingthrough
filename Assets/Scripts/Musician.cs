@@ -31,6 +31,8 @@ public class Musician : MonoBehaviour {
     public int MaxHealth { get; private set; } = BaseHealth;
     public int Health { get; private set; } = BaseHealth;
     public int DamageTaken { get; private set; }
+    // True once this run if her bar dipped to SliceVoice.LowHealth or below while she was still up (run-end "nearly").
+    public bool NearlyFell { get; private set; }
     public float HitFlash { get; private set; }
     public bool Alive { get { return Health > 0; } }
 
@@ -224,6 +226,8 @@ public class Musician : MonoBehaviour {
         Instance = this;
         MaxHealth = BaseHealth + MetaProgress.StageHealth();
         Health = MaxHealth;
+        NearlyFell = false;
+        DamageTaken = 0;
         flare = gameObject.AddComponent<Light>();
         flare.type = LightType.Point;
         flare.color = new Color(1f, 0.25f, 0.18f);
@@ -253,6 +257,9 @@ public class Musician : MonoBehaviour {
         amount = CampaignGrade.Blow(amount);   // Hard (Campaign, a filed file) doubles every blow
         Health = Mathf.Max(0, Health - amount);
         DamageTaken += amount;
+        if (Health > 0 && Health <= SliceVoice.LowHealth) {
+            NearlyFell = true;
+        }
         RunAnalytics.NoteHurt(by, amount);
         HitFlash = 1f;
         if (flinch <= 0f) {

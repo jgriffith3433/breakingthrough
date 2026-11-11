@@ -10,6 +10,31 @@ public static class Story {
     // The first seconds of an Arcade run are not text: ColdOpen.cs plays them (Docs/Story.md, "The intro"). What the old
     // six pages said now lives in the lore log (Lore.cs, "The First Night").
 
+    // Arcade run-end: Wallit and Slice trade one short exchange when Slice falls (Docs/Story.md, "Run-end exchanges").
+    // Id, condition key (RunEndTalk), Wallit's line, Slice's line. Order is priority: first matching id not used in the
+    // last five runs plays. Voices: Wallit money, Slice clipped. Never reorder without updating RunEndTalk.
+    public class RunEnd {
+        public string Id;
+        public string When;
+        public string Wallit;
+        public string Slice;
+    }
+
+    public static readonly RunEnd[] RunEnds = {
+        new RunEnd { Id = "early", When = "early", Wallit = "Short shift. No tip.", Slice = "Again." },
+        new RunEnd { Id = "yo_bot", When = "yo_bot", Wallit = "Chirpy took the ring.", Slice = "Noted." },
+        new RunEnd { Id = "spider", When = "spider", Wallit = "Six legs. One bill.", Slice = "Bigger next." },
+        new RunEnd { Id = "boss", When = "boss", Wallit = "Big one cashed out.", Slice = "Hold." },
+        new RunEnd { Id = "new_best", When = "new_best", Wallit = "New high. Still short.", Slice = "Closer." },
+        new RunEnd { Id = "nearly", When = "nearly", Wallit = "You almost fell.", Slice = "I didn't." },
+        new RunEnd { Id = "near_decade", When = "near_decade", Wallit = "One stamp from the next.", Slice = "Then take it." },
+        new RunEnd { Id = "act2", When = "act2", Wallit = "Plates cost extra.", Slice = "Cover me." },
+        new RunEnd { Id = "act3", When = "act3", Wallit = "Order's still out.", Slice = "Denied later." },
+        new RunEnd { Id = "payday", When = "payday", Wallit = "Purse is fat. Ring's gone.", Slice = "Spend it right." },
+        new RunEnd { Id = "longball", When = "longball", Wallit = "Returned a few.", Slice = "Keep swinging." },
+        new RunEnd { Id = "default", When = "default", Wallit = "No refunds.", Slice = "Clean. Again." },
+    };
+
     // The hub: the circle between chapters (Docs/Story.md, "The hub"). Said on arrival, by chapters cleared (index 0 is one
     // cleared). Two lines each, "<speaker>|<text>": Wallit money, Slice clipped.
     public static readonly string[][] HubArrival = {

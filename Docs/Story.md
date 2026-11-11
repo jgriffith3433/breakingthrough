@@ -22,7 +22,9 @@ any more.
 
 The circle is the only address in the Hollow. Wallit has none, so while he is inside it he is on the books: he exists,
 he can be hurt, he can be paid. If Slice falls, the circle is struck off and everything in it is cleared with her. The
-run ends when Slice falls. That is the whole game: Wallit swings, Slice holds the ring. The game-over panel says so: **Address struck off**.
+run ends when Slice falls. That is the whole game: Wallit swings, Slice holds the ring. The run-end screen still says
+**Address struck off**, then counts the waves and coins, stamps a new best, shows the next goal on the ladder, and lets
+Wallit and Slice trade one short voiced line about how it went before **Retry** starts the next run.
 
 ## Who comes
 
@@ -82,6 +84,34 @@ What the six pages used to say now lives in the lore log (Lore.cs, "The First Ni
 Wallit's "One wallet, one bat, no refunds", Slice's "This is the circle: the one address in the Hollow that's filed. Inside it,
 things exist. Outside, they're cleared. If I fall, the circle goes, and everything in it. Don't let me fall.", the Yo Bot's
 "Hello! Uploading victory!" and "Guard Slice. Swing at anything chirpy. Pay up." Campaign chapters keep their own openings.
+
+## Run-end exchanges (Arcade)
+
+When Slice falls in Arcade, the run-end screen (`RunEndScreen.cs`) keeps the title **Address struck off**. Waves reached and
+coins count up with sound; a new best gets a heavy stamp. A short goals ladder (`Resources/Data/run_goals.json`, twelve
+rungs: reach waves 5/10/20/30, clear each act boss, career home runs and more) shows the next goal with progress and stamps
+any goal just finished; unlocks are coins or a bat look/trail in `UpgradeLook` / `BatMarks`. Then Wallit and Slice trade
+**one** short voiced exchange picked from facts about that run. The same exchange does not repeat within five runs
+(`RunEndTalk`). Retry is one tap and starts the next Arcade run at once. Voices: Wallit money, Slice clipped. Data lives in
+`Story.RunEnds` (change a line here and there). Conditions are checked in priority order; the first match that is not in the
+last five plays.
+
+| Id | When | Wallit | Slice |
+|---|---|---|---|
+| early | fell before wave 5 | Short shift. No tip. | Again. |
+| yo_bot | a Yo Bot landed the last blow (not a boss) | Chirpy took the ring. | Noted. |
+| spider | a Spider Bot landed the last blow (not a boss) | Six legs. One bill. | Bigger next. |
+| boss | a boss landed the last blow | Big one cashed out. | Hold. |
+| new_best | this run set a new best wave | New high. Still short. | Closer. |
+| nearly | Slice was on the brink (≤30 HP) earlier in the run | You almost fell. | I didn't. |
+| near_decade | wave ends in 8 or 9 (one stamp from a decade) | One stamp from the next. | Then take it. |
+| act2 | fell in act two (waves 10–19) | Plates cost extra. | Cover me. |
+| act3 | fell in act three or overtime (wave 20+) | Order's still out. | Denied later. |
+| payday | fifteen or more coins this run | Purse is fat. Ring's gone. | Spend it right. |
+| longball | three or more home runs this run | Returned a few. | Keep swinging. |
+| default | fallback | No refunds. | Clean. Again. |
+
+The subtitle on the screen is one line: `WALLIT  …` then `SLICE  …`, never both at once. Playtest: `run-end`.
 
 ## Wallit talks
 

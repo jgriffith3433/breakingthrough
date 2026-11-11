@@ -226,6 +226,11 @@ line, is only the subtitle of a voiced line. Beats marked **(built)** exist per 
 10. **Back home (built).** Office. The brass door number hangs; the lodgers each say a last line; Chime's bell rings the right
     address. RECEIVED stamped on the ending card with all six lost things set down.
 11. **Arcade finale (built).** Wave 30. The Spider Bot falls, the order drops, same reading as 8, then Enter keeps going.
+12. **Address struck off, then again (built).** Arcade, whenever Slice falls. The run-end screen keeps the title, counts waves
+    and coins with sound, stamps a new best, shows the next ladder goal (and stamps one just finished), then Wallit and Slice
+    trade one voiced exchange from the run's facts (`Story.RunEnds`, never the same within five runs). Retry starts the next
+    run at once. Sound: coin ticks, `stamp_heavy` on a best, goal stamp; voice files under `Resources/Voice/`. Proof: events
+    `run-end-count`, `best-stamp`, `goal-done`, `cast-exchange`, `run-start` after Retry. Playtest: `run-end`.
 
 Beat rule: every new beat gets a row here first, with where, when, the sound and voice it needs, the event that is the proof,
 and a playtest event name.

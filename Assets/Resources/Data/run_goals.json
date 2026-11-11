@@ -1,0 +1,112 @@
+{
+  "goals": [
+    {
+      "id": "wave5",
+      "title": "Reach wave 5",
+      "kind": "reach_wave",
+      "target": 5,
+      "reward": "coins",
+      "amount": 10,
+      "blurb": "+10 coins"
+    },
+    {
+      "id": "wave10",
+      "title": "Reach wave 10",
+      "kind": "reach_wave",
+      "target": 10,
+      "reward": "look",
+      "look": "night_band",
+      "blurb": "Night Band on the bat"
+    },
+    {
+      "id": "wave20",
+      "title": "Reach wave 20",
+      "kind": "reach_wave",
+      "target": 20,
+      "reward": "look",
+      "look": "ink_tip",
+      "blurb": "Ink Tip on the bat"
+    },
+    {
+      "id": "wave30",
+      "title": "Reach wave 30",
+      "kind": "reach_wave",
+      "target": 30,
+      "reward": "look",
+      "look": "pale_wake",
+      "blurb": "Pale Wake trail"
+    },
+    {
+      "id": "boss10",
+      "title": "Beat the Plated Alpha",
+      "kind": "clear_wave",
+      "target": 10,
+      "reward": "coins",
+      "amount": 25,
+      "blurb": "+25 coins"
+    },
+    {
+      "id": "boss20",
+      "title": "Beat the Foreman",
+      "kind": "clear_wave",
+      "target": 20,
+      "reward": "look",
+      "look": "foreman_stripe",
+      "blurb": "Foreman Stripe"
+    },
+    {
+      "id": "boss30",
+      "title": "Beat the Order",
+      "kind": "clear_wave",
+      "target": 30,
+      "reward": "look",
+      "look": "order_seal",
+      "blurb": "Order Seal"
+    },
+    {
+      "id": "homers25",
+      "title": "25 home runs",
+      "kind": "career_homers",
+      "target": 25,
+      "reward": "look",
+      "look": "longball_gold",
+      "blurb": "Long Ball Gold"
+    },
+    {
+      "id": "kills100",
+      "title": "100 bots cleared",
+      "kind": "career_kills",
+      "target": 100,
+      "reward": "coins",
+      "amount": 40,
+      "blurb": "+40 coins"
+    },
+    {
+      "id": "smashes15",
+      "title": "15 ground smashes",
+      "kind": "career_smashes",
+      "target": 15,
+      "reward": "look",
+      "look": "crack_band",
+      "blurb": "Crack Band"
+    },
+    {
+      "id": "coins50",
+      "title": "50 coins in one run",
+      "kind": "run_coins",
+      "target": 50,
+      "reward": "look",
+      "look": "ledger_glow",
+      "blurb": "Ledger Glow trail"
+    },
+    {
+      "id": "clear15",
+      "title": "Clear 15 waves in one run",
+      "kind": "run_cleared",
+      "target": 15,
+      "reward": "coins",
+      "amount": 50,
+      "blurb": "+50 coins"
+    }
+  ]
+}
