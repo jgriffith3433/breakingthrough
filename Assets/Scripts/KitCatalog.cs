@@ -87,7 +87,8 @@ public static partial class KitCatalog {
         return list.ToArray();
     }
 
-    // A piece as a GameObject (no colliders). Place it at grid positions; it stands on y = 0 of its parent.
+    // A piece as a GameObject. Walls and buildings get a CamBlock collider (movers ignore that layer); other pieces stay
+    // collider-free. Place it at grid positions; it stands on y = 0 of its parent.
     public static GameObject Make(string id, Transform parent = null) {
         KitDef d = Def(id);
         if (d == null) {
@@ -106,6 +107,7 @@ public static partial class KitCatalog {
         piece.Palette = d.Palette;
         Vector3 size = mesh.bounds.size;
         piece.Footprint = new Vector2Int(Mathf.CeilToInt(size.x / Grid - 0.01f), Mathf.CeilToInt(size.z / Grid - 0.01f));
+        CamBlock.Attach(go, id);
         return go;
     }
 
