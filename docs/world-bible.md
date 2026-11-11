@@ -44,6 +44,7 @@ Eight places, each its own scene or map, plus six hidden rooms. Size is the walk
 
 - Has: all eight places as scenes, kit-built, with lighting moods, ambience loops (`amb_hub`, `amb_ch1`..`amb_ch6`), score,
   set pieces per chapter, six back rooms. Arcade is unchanged and collider-free.
+- Built: **the title is the Hollow, alive at night** (`MenuStage`, a small rendered stage behind the menu, the same Wallit, Slice and bot models, no new art): the camera drifts and shifts a little with the pointer or a tilted phone; Wallit flips a coin and twirls his bat; Slice stands in her ring; Yo Bots rise over the hedge, look about and duck back; the lamp flickers; paper drifts on the wind. The logo (THE PLACE DEPARTMENT / BREAKING THROUGH) slams in as the Department's rubber stamp with an ink splat and a thud, then Play eases up. Play pushes the camera in to Slice's ring and the run dissolves out of that last frame (no black). The title music bed is a separate task.
 - Built: **Arcade (A) has three acts** (Night Shift, Cold Hour, Last Light, then Overtime) with their own light, sky, grade, score
   layer and enemy mix (see What happens).
 - Gap: the docs record lighting and landmarks but **no per-area "gap clock"**: nothing has measured 10 s between things. Each

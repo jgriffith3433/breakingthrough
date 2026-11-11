@@ -305,7 +305,43 @@ public class MainMenu : MonoBehaviour {
         if (startWave > 1) {
             GameAudio.PlayUI("coin", 0.55f);
         }
+        if (Stage != null && Stage.ModelsShown >= 2 && canvasRoot != null) {
+            StartCoroutine(FlyIn());
+            return;
+        }
         SceneManager.LoadScene(MetaProgress.GameScene);
+    }
+
+    // Play: the camera pushes in toward Slice's ring while the run loads behind it, then the run takes over from that
+    // very frame (the last picture dissolves away over the first frames), so the title is the opening shot with no black.
+    System.Collections.IEnumerator FlyIn() {
+        float seconds = Stage.PushIn();
+        var layers = new System.Collections.Generic.List<CanvasGroup>();
+        foreach (Transform child in canvasRoot.transform) {
+            if (child.gameObject == Stage.gameObject || child == Stage.Image.transform) {
+                continue;
+            }
+            var group = child.GetComponent<CanvasGroup>() ?? child.gameObject.AddComponent<CanvasGroup>();
+            group.blocksRaycasts = false;
+            layers.Add(group);
+        }
+        AsyncOperation load = SceneManager.LoadSceneAsync(MetaProgress.GameScene);
+        load.allowSceneActivation = false;
+        float start = Time.unscaledTime;
+        while (Time.unscaledTime - start < seconds || load.progress < 0.9f) {
+            float fade = 1f - Mathf.Clamp01((Time.unscaledTime - start) / 0.3f);
+            for (int i = 0; i < layers.Count; i++) {
+                if (layers[i] != null) {
+                    layers[i].alpha = fade;
+                }
+            }
+            if (Time.unscaledTime - start > 20f) {
+                break;
+            }
+            yield return null;
+        }
+        MenuHandoff.Begin(Stage.TakePicture());
+        load.allowSceneActivation = true;
     }
 
     void OpenCampaign() {
@@ -465,7 +501,9 @@ public class MainMenu : MonoBehaviour {
         var header = Node(column, "Logo");
         Place(header, 0f, Mathf.Max(0f, (room - logoHeight) * (tall ? 0.45f : 0.25f)), colW, logoHeight);
         BuildHeader(header, colW, logoHeight, desktop, tall);
-        Enter(header, new Vector2(0f, 20f), 0f);
+        if (builtAt >= 0f) {
+            header.gameObject.AddComponent<MenuLogoStamp>().Setup(0.55f, StampRed);
+        }
 
         PlayButton = MakeButton(column, "Play", 0f, playY, colW, playHeight, desktop ? 64 : 48, Play, true);
         CampaignButton = MakeButton(column, "Campaign", 0f, campaignY, colW, campaignHeight, desktop ? 32 : 30, OpenCampaign);
@@ -474,18 +512,23 @@ public class MainMenu : MonoBehaviour {
         if (ShopUnlocked) {
             ShopButton = MakeButton(column, "Shop", iconWidth + gap, iconY, iconWidth, iconHeight, compact ? 26 : 24, OpenShop);
         }
-        Enter(PlayButton.GetComponent<RectTransform>(), new Vector2(0f, -24f), 0.03f);
-        Enter(CampaignButton.GetComponent<RectTransform>(), new Vector2(0f, -24f), 0.07f);
-        Enter(SettingsButton.GetComponent<RectTransform>(), new Vector2(0f, -24f), 0.1f);
+        Enter(PlayButton.GetComponent<RectTransform>(), new Vector2(0f, -24f), 1.05f);
+        Enter(CampaignButton.GetComponent<RectTransform>(), new Vector2(0f, -24f), 1.12f);
+        Enter(SettingsButton.GetComponent<RectTransform>(), new Vector2(0f, -24f), 1.18f);
         if (ShopButton != null) {
-            Enter(ShopButton.GetComponent<RectTransform>(), new Vector2(0f, -24f), 0.1f);
+            Enter(ShopButton.GetComponent<RectTransform>(), new Vector2(0f, -24f), 1.18f);
         }
     }
 
     // The game's title in gold leaf, or the generated logo. It fills the box it is given.
     void BuildHeader(RectTransform parent, float w, float height, bool desktop, bool centered) {
         var anchor = centered ? TextAnchor.MiddleCenter : TextAnchor.MiddleLeft;
-        var title = Label(parent, "BREAKING THROUGH", desktop ? 120 : 96, FontStyle.Bold, Color.white, 0f, 0f, w, height, anchor);
+        var dept = Label(parent, "THE PLACE DEPARTMENT", desktop ? 40 : 34, FontStyle.Bold, Moon, 0f, 0f, w, height * 0.2f, anchor);
+        dept.resizeTextForBestFit = true;
+        dept.resizeTextMinSize = 20;
+        dept.resizeTextMaxSize = desktop ? 40 : 34;
+        dept.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.8f);
+        var title = Label(parent, "BREAKING THROUGH", desktop ? 120 : 96, FontStyle.Bold, Color.white, 0f, height * 0.2f, w, height * 0.8f, anchor);
         title.verticalOverflow = VerticalWrapMode.Truncate;
         title.resizeTextForBestFit = true;
         title.resizeTextMinSize = 36;
@@ -951,7 +994,14 @@ public class MainMenu : MonoBehaviour {
     void BuildBackdrop(Transform canvas, Texture2D texture) {
         var night = Fill(canvas, Night);
         Stretch(night.rectTransform);
-        if (texture != null) {
+        // The live Hollow fills the screen behind the menu: Wallit, Slice and the bots, the same models the run uses.
+        Stage = MenuStage.Make(canvas, Vector2.zero, Vector2.one, size.x / Mathf.Max(1f, size.y));
+        if (Stage != null && Stage.ModelsShown < 2) {
+            // The cast could not be built: fall back to the key art if the file is there.
+            Destroy(Stage.gameObject);
+            Stage = null;
+        }
+        if (Stage == null && texture != null) {
             var artGo = new GameObject("Key Art", typeof(RectTransform));
             artGo.transform.SetParent(canvas, false);
             art = artGo.AddComponent<RawImage>();
@@ -962,16 +1012,7 @@ public class MainMenu : MonoBehaviour {
             float aspect = size.x / Mathf.Max(1f, size.y);
             artWide = aspect >= artAspect ? 1f : aspect / artAspect;
             artTall = aspect >= artAspect ? artAspect / aspect : 1f;
-            // Upright phones see a slice of it: keep Wallit and Slice in it.
             artFocus = builtMode == UiMode.Tall ? 0.36f : 0.5f;
-        }
-        else {
-            // No key art file: show the cast itself, live, in the free part of the screen (right of the column, or above it on a tall phone).
-            bool tallScreen = builtMode == UiMode.Tall;
-            Vector2 from = tallScreen ? new Vector2(0f, 0.3f) : new Vector2(0.3f, 0f);
-            float shownW = (1f - from.x) * size.x;
-            float shownH = (1f - from.y) * size.y;
-            Stage = MenuStage.Make(canvas, from, Vector2.one, shownW / Mathf.Max(1f, shownH));
         }
         moon = Glow(canvas, new Color(0.62f, 0.74f, 1f, 0.12f), Mathf.Max(size.x, size.y) * 0.8f);
         moon.anchorMin = new Vector2(0.4f, 0.85f);
@@ -1557,6 +1598,113 @@ public static class MenuSfx {
     public static void Paper(float volume) {
         if (Has("paper", ref paperClip)) {
             GameAudio.PlayUI("paper", volume);
+        }
+    }
+}
+
+
+// The logo slams in like a rubber stamp: it drops large, lands with a thud and an ink splat that stays behind the words.
+public class MenuLogoStamp : MonoBehaviour {
+    const float Drop = 0.16f;
+    RectTransform rect;
+    CanvasGroup group;
+    Image splat;
+    float startAt;
+    bool landed;
+    Color ink;
+    public static bool Landed { get; private set; }
+    public static float LandedAt { get; private set; }
+
+    public void Setup(float delay, Color inkColor) {
+        rect = (RectTransform)transform;
+        group = gameObject.AddComponent<CanvasGroup>();
+        group.alpha = 0f;
+        group.blocksRaycasts = false;
+        startAt = Time.unscaledTime + (ComfortOptions.ReducedMotion ? 0.2f : delay);
+        ink = inkColor;
+        Landed = false;
+        var go = new GameObject("Ink Splat", typeof(RectTransform));
+        go.transform.SetParent(transform, false);
+        go.transform.SetAsFirstSibling();
+        splat = go.AddComponent<Image>();
+        splat.raycastTarget = false;
+        splat.sprite = SplatSprite();
+        splat.color = new Color(ink.r, ink.g, ink.b, 0f);
+        var r = splat.rectTransform;
+        r.anchorMin = new Vector2(0.5f, 0.5f);
+        r.anchorMax = new Vector2(0.5f, 0.5f);
+        float size = Mathf.Max(Mathf.Max(rect.rect.width, rect.sizeDelta.x), Mathf.Max(rect.rect.height, rect.sizeDelta.y)) * 1.15f;
+        r.sizeDelta = new Vector2(size, size * 0.75f);
+        r.anchoredPosition = Vector2.zero;
+    }
+
+    static Sprite splatSprite;
+
+    // A blot with ragged edges and a few flung drops, drawn once from a radial formula (no art file).
+    static Sprite SplatSprite() {
+        if (splatSprite != null) {
+            return splatSprite;
+        }
+        const int n = 128;
+        var tex = new Texture2D(n, n, TextureFormat.RGBA32, false);
+        tex.wrapMode = TextureWrapMode.Clamp;
+        var px = new Color32[n * n];
+        for (int y = 0; y < n; y++) {
+            for (int x = 0; x < n; x++) {
+                float dx = (x - n * 0.5f) / (n * 0.5f);
+                float dy = (y - n * 0.5f) / (n * 0.5f);
+                float r = Mathf.Sqrt(dx * dx + dy * dy);
+                float a = Mathf.Atan2(dy, dx);
+                float edge = 0.5f + 0.16f * Mathf.Sin(a * 5f + 1f) + 0.1f * Mathf.Sin(a * 9f + 2f) + 0.07f * Mathf.Sin(a * 17f);
+                float alpha = Mathf.Clamp01((edge - r) / 0.05f);
+                // Flung drops out past the edge.
+                for (int k = 0; k < 7; k++) {
+                    float ka = k * 0.9f + 0.4f;
+                    float kr = 0.7f + 0.2f * Mathf.Sin(k * 3.1f);
+                    float ddx = dx - Mathf.Cos(ka) * kr;
+                    float ddy = dy - Mathf.Sin(ka) * kr;
+                    float d = Mathf.Sqrt(ddx * ddx + ddy * ddy);
+                    alpha = Mathf.Max(alpha, Mathf.Clamp01((0.06f + 0.02f * (k % 3) - d) / 0.02f));
+                }
+                px[y * n + x] = new Color32(255, 255, 255, (byte)(alpha * 255f));
+            }
+        }
+        tex.SetPixels32(px);
+        tex.Apply(false, true);
+        splatSprite = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 100f);
+        return splatSprite;
+    }
+
+    void Update() {
+        float k = (Time.unscaledTime - startAt) / Drop;
+        if (k < 0f) {
+            group.alpha = 0f;
+            return;
+        }
+        if (k < 1f) {
+            float s = Mathf.Lerp(2.6f, 1f, k * k);
+            rect.localScale = new Vector3(s, s, 1f);
+            group.alpha = Mathf.Clamp01(k * 2.5f);
+            return;
+        }
+        if (!landed) {
+            landed = true;
+            Landed = true;
+            LandedAt = Time.unscaledTime;
+            MenuSfx.Thunk(0.9f);
+            MenuSfx.Paper(0.35f);
+        }
+        float since = Time.unscaledTime - startAt - Drop;
+        float squash = 1f + Mathf.Max(0f, 0.09f * (1f - since / 0.14f));
+        rect.localScale = new Vector3(squash, squash, 1f);
+        group.alpha = 1f;
+        // The splat bursts out past the logo and settles to a stain.
+        float burst = Mathf.Clamp01(since / 0.12f);
+        splat.color = new Color(ink.r, ink.g, ink.b, Mathf.Lerp(0.85f, 0.5f, Mathf.Clamp01(since / 1.2f)) * burst);
+        splat.rectTransform.localScale = Vector3.one * Mathf.Lerp(0.6f, 1f, burst);
+        if (since > 1.3f) {
+            rect.localScale = Vector3.one;
+            enabled = false;
         }
     }
 }
