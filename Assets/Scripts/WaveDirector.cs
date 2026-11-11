@@ -78,6 +78,7 @@ public class WaveDirector : MonoBehaviour {
     bool pausedGame;
     bool record;
     float returnReadyAt;
+    float leavingAt;
     bool bossPending;
     float goldenIn = -1f;
     StoryScreen story;
@@ -167,7 +168,18 @@ public class WaveDirector : MonoBehaviour {
             LayoutHud();
         }
         if (phase == Phase.Lost) {
-            if (Time.unscaledTime >= returnReadyAt && PlayInput.AnyKeyDown) {
+            if (leavingAt > 0f) {
+                if (Time.unscaledTime < leavingAt) {
+                    return;
+                }
+            } else if (Time.unscaledTime >= returnReadyAt && PlayInput.AnyKeyDown) {
+                // The panel eases out first (PanelFx), then the menu loads.
+                leavingAt = Time.unscaledTime + PanelFx.CloseSeconds;
+                PanelFx.Hide(lostPanel, "gameover");
+                return;
+            }
+            if (leavingAt > 0f) {
+                leavingAt = 0f;
                 Time.timeScale = 1f;
                 pausedGame = false;
                 Cursor.lockState = CursorLockMode.None;
@@ -461,8 +473,9 @@ public class WaveDirector : MonoBehaviour {
         Time.timeScale = 1f;
         pausedGame = false;
         IsLost = false;
+        leavingAt = 0f;
         if (lostPanel != null) {
-            lostPanel.SetActive(false);
+            PanelFx.Hide(lostPanel, "gameover");
         }
         if (Musician.Instance != null) {
             Musician.Instance.ReviveForWave();
@@ -492,6 +505,13 @@ public class WaveDirector : MonoBehaviour {
         return wave >= 5 && (wave - 5) % 10 == 0;
     }
 
+    // The playtest's shortcut to the game-over panel (a named setup event; the real way is Slice's bar emptying).
+    public void DevLose() {
+        if (!IsLost) {
+            Lose();
+        }
+    }
+
     void Lose() {
         if (phase == Phase.Chapter) {
             LoseChapter();
@@ -506,7 +526,7 @@ public class WaveDirector : MonoBehaviour {
         }
         pausedGame = true;
         Time.timeScale = 0f;
-        lostPanel.SetActive(true);
+        PanelFx.Show(lostPanel, "gameover", lostRect);
         returnReadyAt = Time.unscaledTime + 0.4f;
         string waves = cleared <= 0
             ? "No waves cleared."
@@ -610,7 +630,7 @@ public class WaveDirector : MonoBehaviour {
         }
         pausedGame = true;
         Time.timeScale = 0f;
-        lostPanel.SetActive(true);
+        PanelFx.Show(lostPanel, "gameover", lostRect);
         returnReadyAt = Time.unscaledTime + 0.4f;
         ChapterRun.Instance.OnLost();
         lostBody.text = "Slice fell.\n" + ChapterRun.Instance.Title + " is still open.\nThe file keeps its place."

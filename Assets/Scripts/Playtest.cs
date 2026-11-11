@@ -91,6 +91,7 @@ public static class Playtest {
         new PlaytestScenario("chapter2-hud", "J's black block, looked at where it was reported: Chapter 2, No Fixed Address, on desktop with HDR on (setup: the sandbox case file starts on chapter 2; the real save is never touched). Campaign, case file 1, Begin; the opening scene is read and skipped; Wallit walks out to the gate (batting what is in reach) and, after The Gate scene, back to the circle with the objective reading Back to the circle and Yo Bots on screen. The top-middle HUD (the Slice bar, the chapter title card, her nameplate) is held still and read for a second and a half at four moments, each with its screen boxes (event hud-shot, scenes Chapter 2 HUD: ...), and the camera is rendered through the real bloom grade every few seconds: a solid black rectangle in the frame is a bug (event black-block), and NaN, Inf or over-bright pixels in the raw HDR frame are counted and traced to the shader or sky that draws them (event hdr-nan, a warning). It stops at the circle, wave 1, after the last shot; it does not play the rest of the chapter (events hdr, hud-shot, black-scan, black-block, hdr-nan, bot-scan, normals, hud-verdict, gate-leg, gate-reached, gate-scene-skip, home-leg; metrics hdrOn, hudShots, blackScans, blackBlocks, topMiddleBlackPct, hdrNanFrames, hdrNanPixelsMax, probesWithYoBots, hdrNanFramesWithYoBots, yoBotBlackPct, yoBotMeanLumaMin, badNormalVertices, yoBotsOnScreenMax, gateReached, gateSceneSkipped); the frames probed while Yo Bots are on screen are counted apart, and the graded frame inside each Yo Bot's screen box is measured for exact black", 330, "content"),
         new PlaytestScenario("story", "The story: no intro pages (the cold open replaces them), wave 1's story beats in canon voices, then setup: the testing wave key to wave 10 and wave 30 for the boss-wave title cards and beats (Yo Bots chirpy, Wallit on money, Slice clipped), and setup: wave 30's waiting bots trimmed to the boss and Slice topped up so the bat can finish it with real swings. Clearing wave 30 plays the finale pages and the ADDRESS FILED ending screen; the bot presses Keep going into overtime. Events beat, finale-*, ending", 600, "content"),
         new PlaytestScenario("polish", "The final polish pass, on any screen size (run it on desktop and on the phone): the main menu, the HUD in wave 1, the level-up cards (setup: a level of bolts granted), the pause menu by its button, Resume, 40 s of real play, then the bot holds fire until Slice falls (setup: Plated Yo Bots ring her after 20 s) and the game-over panel reads Address struck off. Each screen gets a layout check (menu, hud, cards, pause, gameover), a fonts check (the fonts event and BuiltinFontTexts metric: visible Text still on the built-in font must be 0 on the menu, Settings, HUD, cards, pause and game-over; plus clipped or overflowing texts, 0 at 390x844 and 844x390; the subtitles are checked in coldopen), a stale-words check (no piano, keys or music-stopped words left), and a button-feel check (every button lifts on hover and sinks on press like the menu's); the audio-mix event says how many sounds played, how many stacked softer, how many were capped and how many dipped under a voice line", 420, "full"),
+        new PlaytestScenario("levelup", "The level-up jackpot and the panel transitions, played with real input (on a phone viewport, 390x844 touch, by finger taps): an Arcade run; setup: a level's worth of bolts. The world eases to a stop (event ease-down: time scale samples between 1 and 0), three cards are dealt face down as Department forms and flip one after another with a rising-pitch card-flip sound, the rarest last with the biggest sound and a gold stamp (events level-up-juice: open, flip card n (rarity, pitch, sound cardflip), pick, closed; metrics flipsLogged, rarestLast). The cards are checked on screen: every card tap area 44 px or more and no text or icon boxes overlapping inside a card (events cards-fit, card-tap-size; metrics cardOverlaps, cardMinTapPx). One tap (a number key on desktop) picks a card and stamps APPROVED (event approved-stamp); play eases back (ease-up) and the bot swings (levelup-to-swing: seconds from the level-up to the first accepted swing, wanted under 2.5; metric levelUpToSwingSeconds). Then Pause, Settings and the game-over panel (setup: Slice's bar emptied) open and close, each timed by PanelFx (events panel-transition: seconds, frames, biggest alpha step; metrics panelSecondsMin, panelSecondsMax: wanted 0.15 to 0.25 s, no step over 0.25 in one frame) with a panelslide sound", 300, "menus"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.ai and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
     };
 
@@ -270,6 +271,13 @@ public static class Playtest {
             }
             if (id == "polish") {
                 yield return PolishRun(options);
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "levelup") {
+                yield return LevelUpRun(options);
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
                 }
@@ -9217,6 +9225,230 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
 
     // The final polish pass: every screen a player meets in a run, each checked for layout, leftover piano words and
     // the shared button feel, then the effects mix after real play, and the game-over panel's title.
+    // The "levelup" scenario: the jackpot of a level-up, then the panels' open and close.
+    static IEnumerator LevelUpRun(PlaytestOptions options) {
+        yield return ToMenu();
+        if (run.Done) {
+            yield break;
+        }
+        yield return new WaitForSecondsRealtime(1.5f);
+        if (UnityEngine.Screen.width < 700 && UnityEngine.Screen.height > UnityEngine.Screen.width) {
+            UiFit.ForceTouch(true);
+        }
+        bool touch = UiFit.Touch;
+        run.Log("layout " + UiFit.Mode + " at " + UnityEngine.Screen.width + "x" + UnityEngine.Screen.height + (touch ? " touch" : ""));
+        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+        if (touch && menu != null && menu.PlayButton != null) {
+            Tap(menu.PlayButton.gameObject);
+            run.Event("tap", "Play");
+        }
+        yield return StartRun();
+        if (run.Done) {
+            yield break;
+        }
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+        yield return new WaitForSecondsRealtime(4f);
+        PanelFx.Log.Clear();
+        UiSound.Played.Clear();
+
+        run.Scene("Level-up");
+        RunBoons.AddFeathers(RunBoons.Need(RunBoons.Level));
+        run.Event("setup", "a level's worth of bolts granted so the level-up cards open");
+        yield return run.Until(() => LevelUpScreen.IsOpen, 10f, "the level-up cards");
+        if (run.Done) {
+            yield break;
+        }
+        float openAt = Time.unscaledTime;
+        float lowest = 1f;
+        int between = 0;
+        while (Time.unscaledTime - openAt < 0.5f) {
+            float scale = Time.timeScale;
+            lowest = Mathf.Min(lowest, scale);
+            if (scale > 0.02f && scale < 0.98f) {
+                between++;
+            }
+            yield return null;
+        }
+        run.Event("ease-down", "time scale went from 1 to " + lowest.ToString("0.00") + " over " + between + " frames, then held at " + Time.timeScale.ToString("0.00") + " (build-up sound played: " + UiSound.Played.Contains("buildup") + ")");
+        if (between < 3 || Time.timeScale > 0.01f) {
+            run.Problem(PlaytestSeverity.Bug, "the world did not ease to a stop (" + between + " in-between frames, final scale " + Time.timeScale.ToString("0.00") + ")");
+        }
+        yield return run.Until(() => LevelUpScreen.Flipped >= LevelUpScreen.CardCount, 4f, "the three cards to flip");
+        yield return new WaitForSecondsRealtime(0.4f);
+        int flips = 0;
+        foreach (string line in LevelUpScreen.Events) {
+            run.Event("level-up-juice", line);
+            if (line.Contains("flip card")) {
+                flips++;
+            }
+        }
+        run.Metric("flipsLogged", flips);
+        run.Metric("rarestLast", LevelUpScreen.RarestLast ? 1 : 0);
+        if (flips < LevelUpScreen.CardCount || flips < 2) {
+            run.Problem(PlaytestSeverity.Bug, "only " + flips + " card flips were logged for " + LevelUpScreen.CardCount + " cards");
+        }
+        if (!LevelUpScreen.RarestLast) {
+            run.Problem(PlaytestSeverity.Bug, "the rarest card did not flip last");
+        }
+
+        CheckScreen("cards", 400);
+        CheckCardBoxes();
+
+        // One pick: a tap on a card by finger, a number key on desktop.
+        int picksBefore = RunBoons.Picks;
+        if (touch) {
+            Tap(LevelUpScreen.CardObject(1));
+            run.Event("tap", "card 2");
+        } else {
+            PlayInput.Tap(KeyCode.Alpha2);
+            run.Event("key", "2");
+        }
+        yield return null;
+        yield return null;
+        if (RunBoons.Picks == picksBefore) {
+            run.Problem(PlaytestSeverity.Bug, "a single " + (touch ? "tap" : "key press") + " did not pick the card");
+        }
+        yield return new WaitForSecondsRealtime(0.15f);
+        run.Event("approved-stamp", "APPROVED stamp on the picked card: " + LevelUpScreen.StampShown(1) + " (stamping " + LevelUpScreen.Stamping + ")");
+        if (!LevelUpScreen.StampShown(1)) {
+            run.Problem(PlaytestSeverity.Bug, "no APPROVED stamp on the picked card");
+        }
+        yield return run.Until(() => !LevelUpScreen.IsOpen, 3f, "the level-up cards to close after the pick");
+        if (run.Done) {
+            yield break;
+        }
+        foreach (string line in LevelUpScreen.Events) {
+            if (line.Contains("pick") || line.Contains("closed")) {
+                run.Event("level-up-juice", line);
+            }
+        }
+        int swingsBefore = BatEquipment.Swings;
+        float readyAt = -1f;
+        float swungAt = -1f;
+        float watch = Time.unscaledTime + 8f;
+        while (!run.Done && Time.unscaledTime < watch && swungAt < 0f) {
+            if (readyAt < 0f && !LevelUpScreen.HoldFire) {
+                readyAt = Time.unscaledTime - openAt;
+            }
+            Batter(player, false, null, true);
+            if (BatEquipment.Swings > swingsBefore) {
+                swungAt = Time.unscaledTime - openAt;
+            }
+            yield return null;
+        }
+        PlayInput.Hold(KeyCode.Mouse0, false);
+        run.Event("ease-up", "play back at speed: time scale " + Time.timeScale.ToString("0.00"));
+        run.Event("levelup-to-swing", "swing accepted from " + (readyAt < 0f ? "never" : readyAt.ToString("0.00") + "s") + " after the level-up, first swing " + (swungAt < 0f ? "none in 8 s" : swungAt.ToString("0.00") + "s"));
+        run.Metric("levelUpToSwingSeconds", swungAt >= 0f ? swungAt : readyAt);
+        if (readyAt < 0f || readyAt > 2.5f) {
+            run.Problem(PlaytestSeverity.Bug, "the swing was not accepted within 2.5 s of the level-up (" + readyAt.ToString("0.00") + " s)");
+        }
+        if (swungAt > 2.5f) {
+            run.Problem(PlaytestSeverity.Polish, "the first swing came " + swungAt.ToString("0.00") + " s after the level-up (no bot in reach, or a late swing)");
+        }
+
+        // Panels: Pause, Settings over it, Resume, then the game-over panel.
+        run.Scene("Panels");
+        yield return new WaitForSecondsRealtime(1f);
+        if (touch && PauseMenu.Instance != null && PauseMenu.Instance.PauseButton != null) {
+            Tap(PauseMenu.Instance.PauseButton.gameObject);
+        } else {
+            PlayInput.Tap(KeyCode.P);
+        }
+        yield return run.Until(() => PauseMenu.IsOpen, 5f, "the pause menu");
+        yield return new WaitForSecondsRealtime(0.5f);
+        Tap(PauseMenu.Instance.SettingsButton.gameObject);
+        yield return run.Until(() => SettingsPanel.IsOpen, 5f, "Settings from Pause");
+        yield return new WaitForSecondsRealtime(0.5f);
+        SettingsPanel.Close();
+        yield return new WaitForSecondsRealtime(0.5f);
+        Tap(PauseMenu.Instance.ResumeButton.gameObject);
+        yield return run.Until(() => !PauseMenu.IsOpen && Time.timeScale > 0.01f, 5f, "play to resume");
+        yield return new WaitForSecondsRealtime(0.5f);
+        WaveDirector.Instance.DevLose();
+        run.Event("setup", "Slice's bar emptied: game-over panel");
+        yield return run.Until(() => WaveDirector.IsLost, 5f, "the game-over panel");
+        yield return new WaitForSecondsRealtime(1f);
+        PanelFx.Log.Add("done");
+        float minSeconds = 9f;
+        float maxSeconds = 0f;
+        foreach (string line in PanelFx.Log) {
+            if (line == "done") {
+                continue;
+            }
+            run.Event("panel-transition", line);
+            var timed = System.Text.RegularExpressions.Regex.Match(line, @"(\d+\.\d+)s (\d+) frames");
+            if (timed.Success) {
+                float seconds = float.Parse(timed.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
+                minSeconds = Mathf.Min(minSeconds, seconds);
+                maxSeconds = Mathf.Max(maxSeconds, seconds);
+                if (seconds < 0.15f || seconds > 0.25f) {
+                    run.Problem(PlaytestSeverity.Bug, "a panel transition took " + seconds.ToString("0.000") + " s (wanted 0.15 to 0.25): " + line);
+                }
+            }
+            int step = line.LastIndexOf("step ");
+            if (step > 0 && float.TryParse(line.Substring(step + 5), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float biggest) && biggest > 0.25f) {
+                run.Problem(PlaytestSeverity.Bug, "a panel popped (one-frame step " + biggest.ToString("0.00") + "): " + line);
+            }
+        }
+        run.Metric("panelSecondsMin", minSeconds);
+        run.Metric("panelSecondsMax", maxSeconds);
+        run.Metric("panelTransitions", PanelFx.Log.Count - 1);
+        run.Event("panel-sounds", string.Join(", ", UiSound.Played.ToArray()));
+        if (PanelFx.Log.Count - 1 < 5) {
+            run.Problem(PlaytestSeverity.Bug, "expected at least 5 panel transitions (pause, settings, game over opening; settings, pause closing), saw " + (PanelFx.Log.Count - 1));
+        }
+        PlayInput.Tap(KeyCode.Return);
+    }
+
+    // No text or icon box inside a card overlaps another, and every card's tap area is 44 CSS px or more.
+    static void CheckCardBoxes() {
+        float ratio = UiFit.PixelRatio;
+        int overlaps = 0;
+        float minTap = 999f;
+        for (int i = 0; i < LevelUpScreen.CardCount; i++) {
+            var boxes = new List<(string what, Rect rect)>();
+            foreach (var part in LevelUpScreen.CardParts(i)) {
+                Rect rect;
+                Text text = part.Value.GetComponent<Text>();
+                if (text != null) {
+                    if (string.IsNullOrEmpty(text.text) || !Glyphs(text, out rect)) {
+                        continue;
+                    }
+                } else {
+                    var c = new Vector3[4];
+                    part.Value.GetWorldCorners(c);
+                    rect = Rect.MinMaxRect(c[0].x, c[0].y, c[2].x, c[2].y);
+                    Image image = part.Value.GetComponent<Image>();
+                    if (image == null || !image.enabled || image.sprite == null) {
+                        continue;
+                    }
+                }
+                boxes.Add((part.Key, rect));
+            }
+            for (int a = 0; a < boxes.Count; a++) {
+                for (int b = a + 1; b < boxes.Count; b++) {
+                    if (boxes[a].rect.Overlaps(boxes[b].rect)) {
+                        overlaps++;
+                        run.Problem(PlaytestSeverity.Bug, "card " + (i + 1) + ": " + boxes[a].what + " overlaps " + boxes[b].what);
+                    }
+                }
+            }
+            var corners = new Vector3[4];
+            ((RectTransform)LevelUpScreen.CardObject(i).transform).GetWorldCorners(corners);
+            float w = (corners[2].x - corners[0].x) / ratio;
+            float h = (corners[2].y - corners[0].y) / ratio;
+            minTap = Mathf.Min(minTap, Mathf.Min(w, h));
+        }
+        run.Event("cards-fit", overlaps + " overlapping text/icon boxes across " + LevelUpScreen.CardCount + " cards");
+        run.Event("card-tap-size", "smallest card tap area " + minTap.ToString("0") + " CSS px");
+        run.Metric("cardOverlaps", overlaps);
+        run.Metric("cardMinTapPx", minTap);
+        if (minTap < 44f) {
+            run.Problem(PlaytestSeverity.Bug, "a card tap area is " + minTap.ToString("0") + " px (wanted 44 or more)");
+        }
+    }
+
     static IEnumerator PolishRun(PlaytestOptions options) {
         yield return ToMenu();
         if (run.Done) {
