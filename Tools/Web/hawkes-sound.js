@@ -208,6 +208,8 @@
 
   w.hawkesSound = {
     tap: tap,
+    // Gameplay has started (Unity's menu is up or the run began): a running game is never covered.
+    started: tap,
     state: state,
     attach: function (ctx) {
       track(ctx);
@@ -243,8 +245,32 @@
     }
   });
 
+  // A gesture the page already had (before this script or the card existed) counts: the card is never shown then.
+  function alreadyInteracted() {
+    try {
+      return !!(w.navigator && w.navigator.userActivation && w.navigator.userActivation.hasBeenActive);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // One-time gate: once tapped, anything that tries to bring the card back (a second copy, a fullscreen toggle that
+  // re-runs the page's code) is cleared at once. Entering or leaving fullscreen never shows it.
+  function guard() {
+    if (tapped) {
+      hidePrompt();
+    }
+  }
+  d.addEventListener("fullscreenchange", guard);
+  d.addEventListener("webkitfullscreenchange", guard);
+  w.addEventListener("resize", guard);
+
   function show() {
     if (tapped || prompt || !d.body) {
+      return;
+    }
+    if (alreadyInteracted()) {
+      tap();
       return;
     }
     var style = d.createElement("style");
@@ -286,10 +312,24 @@
     } catch (e) {}
   }
 
+  function watch() {
+    try {
+      new MutationObserver(function () {
+        if (tapped && d.getElementById("hawkes-tap")) {
+          hidePrompt();
+        }
+      }).observe(d.body, { childList: true });
+    } catch (e) {}
+  }
+
   if (d.body) {
     show();
+    watch();
   } else {
-    d.addEventListener("DOMContentLoaded", show);
+    d.addEventListener("DOMContentLoaded", function () {
+      show();
+      watch();
+    });
   }
 })();
 
