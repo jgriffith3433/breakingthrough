@@ -41,13 +41,13 @@ public class Juice : MonoBehaviour {
     }
 
     // Hit-stop is counted in frames, not seconds, so it reads the same at any frame rate. By weight: a light combo
-    // hit 2 frames, a finisher 4, a home run 6. Other big moments ask in seconds and stay at 4 or under.
+    // hit 3 frames (50 ms), a finisher 5, a home run 6. Other big moments ask in seconds and stay at 4 or under.
     public const int MinStopFrames = 2;
     public const int MaxStopFrames = 6;
     public const int OtherMaxFrames = 4;
     public enum Weight { Light, Finisher, HomeRun }
     public static int FramesFor(Weight w) {
-        return w == Weight.HomeRun ? 6 : w == Weight.Finisher ? 4 : 2;
+        return w == Weight.HomeRun ? 6 : w == Weight.Finisher ? 5 : 3;
     }
     // One line per weighted contact: the frames asked and held, and the camera kick with its measured decay.
     public static readonly List<string> HitLog = new List<string>();
@@ -71,6 +71,8 @@ public class Juice : MonoBehaviour {
         }
         if (!still) {
             ZeldaStyleCamera.Kick(toward, kick, fov, seconds);
+            // The bat's small contact jolt (J's 2026-10-19 exception): a few centimetres, gone in a tenth of a second.
+            ZeldaStyleCamera.Shake(w == Weight.HomeRun ? 0.09f : w == Weight.Finisher ? 0.06f : 0.035f * (UiFit.Touch ? 0.7f : 1f), 0.12f);
         }
         stopWeight = Mathf.Max(stopWeight, (int)w);
         HitStopFrames(frames, true);
