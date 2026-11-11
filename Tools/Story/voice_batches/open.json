@@ -1,0 +1,224 @@
+{
+ "ids": [
+  "slice_lock_on_shift",
+  "slice_then_hit_it",
+  "slice_red_is_where_it_lands_move_or_break_it",
+  "narrator_the_notice_drifts_down_nobody_has_signed_it",
+  "slice_left",
+  "slice_you_saw_it_late",
+  "platedalpha_notice_this_plate_is_stamped_invalid",
+  "narrator_a_slow_belt_carries_flat_cleared_things_past_the_hooks_a_hat_a_clock_a_small_bell",
+  "narrator_the_hooks_swing_empty_the_belt_stops_with_a_cleared_clock_still_on_it_ticking",
+  "narrator_the_spider_bot_folds_one_leg_and_holds_out_a_paper_it_waits",
+  "server_please_accept_this_delivery",
+  "server_this_is_your_third_offer_after_this_service_is_by_force",
+  "slice_it_s_polite_that_s_the_worst_of_it",
+  "narrator_the_ink_shows_nothing_then_denied_all_the_forms_on_the_walls_turn_over_at_once_blank",
+  "yobot_page_turned",
+  "slice_four",
+  "yobot_sealed_uploading_uploading",
+  "slice_they_re_not_chirping_right",
+  "orderbearer_signature_required_uploading_nothing",
+  "narrator_the_stamp_prints_address_nothing_strikes_it",
+  "narrator_every_lost_thing_in_the_hollow_gets_a_door",
+  "slice_received",
+  "narrator_two_doors_slice_writes_the_number_twice_one_stroke_at_a_time_the_second_door_sits_beside_the_first",
+  "slice_yours_next_to_mine",
+  "narrator_two_lamps_come_on_in_the_hollow_side_by_side_the_circle_has_a_neighbour",
+  "yobot_two_doors_two_deliveries_uploading_neighbours",
+  "slice_keep_up_wallit",
+  "narrator_the_ledger_one_line_of_writing_around_the_ring_then_one_door_number_in_wallit_s_own_hand",
+  "slice_one_door",
+  "narrator_the_ledger_closes_the_ring_keeps_the_one_name_on_it_and_slice_keeps_the_ring",
+  "narrator_the_open_door_the_slips_on_the_office_wall_are_pinned_every_one_spare_stands_in_the_doorway_lid_on_straight",
+  "yobot_chirp_everyone_is_on_the_books",
+  "narrator_brim_has_an_address_tick_keeps_the_hour_chime_rings_once_for_the_right_door",
+  "slice_numbered_all_of_them",
+  "narrator_the_door_stays_open_nothing_strikes_it"
+ ],
+ "cast": {
+  "narrator": "hv_narrator_warm",
+  "platedalpha": "hv_ai",
+  "server": "hv_british",
+  "yobot": "hv_kid",
+  "orderbearer": "hv_villain",
+  "slice": "hv_heroine"
+ },
+ "lines": [
+  {
+   "who": "slice",
+   "text": "Lock on. Shift.",
+   "direction": "cool, flat and clipped, almost no emotion; short words"
+  },
+  {
+   "who": "slice",
+   "text": "Then hit it.",
+   "direction": "cool, flat and clipped, almost no emotion; short words"
+  },
+  {
+   "who": "slice",
+   "text": "Red is where it lands. Move, or break it.",
+   "direction": "cool, flat and clipped, almost no emotion; short words"
+  },
+  {
+   "who": "narrator",
+   "text": "The notice drifts down. Nobody has signed it.",
+   "direction": "warm, even, storybook narrator; slow and sombre"
+  },
+  {
+   "who": "slice",
+   "text": "Left.",
+   "direction": "cool, flat and clipped, almost no emotion; short words"
+  },
+  {
+   "who": "slice",
+   "text": "You saw it late.",
+   "direction": "cool, flat and clipped, almost no emotion; short words"
+  },
+  {
+   "who": "platedalpha",
+   "text": "Notice! This plate is stamped: INVALID!",
+   "direction": "calm synthetic, stamped and final"
+  },
+  {
+   "who": "narrator",
+   "text": "A slow belt carries flat, cleared things past the hooks: a hat, a clock, a small bell.",
+   "direction": "warm, even, storybook narrator; slow and sombre"
+  },
+  {
+   "who": "narrator",
+   "text": "The hooks swing empty. The belt stops with a cleared clock still on it, ticking.",
+   "direction": "warm, even, storybook narrator; slow and sombre"
+  },
+  {
+   "who": "narrator",
+   "text": "The Spider Bot folds one leg and holds out a paper. It waits.",
+   "direction": "warm, even, storybook narrator; slow and sombre"
+  },
+  {
+   "who": "server",
+   "text": "Please accept this delivery.",
+   "direction": "impeccably polite, patient, offers and waits"
+  },
+  {
+   "who": "server",
+   "text": "This is your third offer. After this, service is by force.",
+   "direction": "impeccably polite, patient, offers and waits"
+  },
+  {
+   "who": "slice",
+   "text": "It's polite. That's the worst of it.",
+   "direction": "cool, flat and clipped, almost no emotion; short words"
+  },
+  {
+   "who": "narrator",
+   "text": "The ink shows nothing, then DENIED. All the forms on the walls turn over at once, blank.",
+   "direction": "warm, even, storybook narrator; slow and sombre"
+  },
+  {
+   "who": "yobot",
+   "text": "Page turned!",
+   "direction": "chirpy, bright, fast, like a cheerful appliance"
+  },
+  {
+   "who": "slice",
+   "text": "Four.",
+   "direction": "cool, flat and clipped, almost no emotion; short words"
+  },
+  {
+   "who": "yobot",
+   "text": "Sealed! Uploading... uploading...",
+   "direction": "chirpy, bright, fast, like a cheerful appliance"
+  },
+  {
+   "who": "slice",
+   "text": "They're not chirping right.",
+   "direction": "cool, flat and clipped, almost no emotion; short words"
+  },
+  {
+   "who": "orderbearer",
+   "text": "Signature... required... uploading... nothing?",
+   "direction": "low, formal, never angry, only final"
+  },
+  {
+   "who": "narrator",
+   "text": "The stamp prints ADDRESS. Nothing strikes it.",
+   "direction": "warm, even, storybook narrator; slow and sombre"
+  },
+  {
+   "who": "narrator",
+   "text": "Every lost thing in the Hollow gets a door.",
+   "direction": "warm, even, storybook narrator; slow and sombre"
+  },
+  {
+   "who": "slice",
+   "text": "Received.",
+   "direction": "cool, flat and clipped, almost no emotion; short words"
+  },
+  {
+   "who": "narrator",
+   "text": "TWO DOORS. Slice writes the number twice, one stroke at a time. The second door sits beside the first.",
+   "direction": "warm, even, storybook narrator; slow and sombre"
+  },
+  {
+   "who": "slice",
+   "text": "Yours. Next to mine.",
+   "direction": "cool, flat and clipped, almost no emotion; short words"
+  },
+  {
+   "who": "narrator",
+   "text": "Two lamps come on in the Hollow, side by side. The circle has a neighbour.",
+   "direction": "warm, even, storybook narrator; slow and sombre"
+  },
+  {
+   "who": "yobot",
+   "text": "Two doors! Two deliveries! Uploading... neighbours!",
+   "direction": "chirpy, bright, fast, like a cheerful appliance"
+  },
+  {
+   "who": "slice",
+   "text": "Keep up, Wallit.",
+   "direction": "cool, flat and clipped, almost no emotion; short words"
+  },
+  {
+   "who": "narrator",
+   "text": "THE LEDGER. One line of writing around the ring, then one door number, in Wallit's own hand.",
+   "direction": "warm, even, storybook narrator; slow and sombre"
+  },
+  {
+   "who": "slice",
+   "text": "One door.",
+   "direction": "cool, flat and clipped, almost no emotion; short words"
+  },
+  {
+   "who": "narrator",
+   "text": "The ledger closes. The ring keeps the one name on it, and Slice keeps the ring.",
+   "direction": "warm, even, storybook narrator; slow and sombre"
+  },
+  {
+   "who": "narrator",
+   "text": "THE OPEN DOOR. The slips on the office wall are pinned, every one. Spare stands in the doorway, lid on straight.",
+   "direction": "warm, even, storybook narrator; slow and sombre"
+  },
+  {
+   "who": "yobot",
+   "text": "Chirp! Everyone is on the books!",
+   "direction": "chirpy, bright, fast, like a cheerful appliance"
+  },
+  {
+   "who": "narrator",
+   "text": "Brim has an address. Tick keeps the hour. Chime rings once for the right door.",
+   "direction": "warm, even, storybook narrator; slow and sombre"
+  },
+  {
+   "who": "slice",
+   "text": "Numbered. All of them.",
+   "direction": "cool, flat and clipped, almost no emotion; short words"
+  },
+  {
+   "who": "narrator",
+   "text": "The door stays open. Nothing strikes it.",
+   "direction": "warm, even, storybook narrator; slow and sombre"
+  }
+ ]
+}

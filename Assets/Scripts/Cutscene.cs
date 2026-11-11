@@ -253,6 +253,7 @@ public partial class Cutscene : MonoBehaviour {
         WallitVoice.Silence();
         SliceVoice.Silence();
         CastVoice.Silence();
+        StopReelVoice();
         VoiceDirector.Scene = false;
         barsOn = false;
         Time.timeScale = savedScale;

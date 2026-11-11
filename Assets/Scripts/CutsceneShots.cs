@@ -203,6 +203,7 @@ public partial class Cutscene {
         WallitVoice.Silence();
         SliceVoice.Silence();
         CastVoice.Silence();
+        StopReelVoice();
         shotIndex++;
         if (shotIndex >= reel.shots.Length) {
             Close(false);
@@ -504,6 +505,13 @@ public partial class Cutscene {
     // The other speakers (Courier, Foreman, Alpha, Yo Bots, narration) speak from Resources/Voice/cinema/<reel>_<shot>.mp3 when
     // the file exists (made through Hawkes Gen audio.voice, one voice per character); with none the subtitle is the line.
     AudioSource castVoice;
+    // The reel's own voice source (Voice/cinema clips). Stopped at every shot change and when the reel closes or is skipped.
+    public static bool ReelVoiceHeard { get { return Instance != null && Instance.castVoice != null && Instance.castVoice.isPlaying; } }
+    public void StopReelVoice() {
+        if (castVoice != null) {
+            castVoice.Stop();
+        }
+    }
     float PlayCastVoice() {
         if (castVoice != null) {
             castVoice.Stop();
