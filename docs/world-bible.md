@@ -102,13 +102,20 @@ ambient sound, what changes. "Gap clock" is the longest the docs allow between t
 - **Interactions:** bat combo/smash/home run, lock-on, jump-landing stomp, build forts (`BuildMode`), pick up bolts, open chests,
   take level-up cards, ability list.
 - **On their own:** wave start beats, event waves (`WaveEvent`), golden Yo Bot dash, elite spawns, boss-wave cards, lanterns
-  sway, notes drift.
-- **Sound:** wind bed, Yo Bot chirp, bat crack, stamp thump from the wall, Slice and Wallit barks (`VoiceDirector`).
+  sway, notes drift; at waves 10/20/30 a skippable boss intro (lights dim, camera dolly, Wallit/Slice cutscene lines) and a
+  defeat payoff (hit-stop, slow-mo, bolt burst, Slice line) before the next act banner (`BossSetPiece`).
+- **Sound:** wind bed, Yo Bot chirp, bat crack, stamp thump from the wall, Slice and Wallit barks (`VoiceDirector`); boss
+  intros reuse existing Wallit/Slice voice clips under the cutscene key.
 - **Acts (built, `ArcadeActs.cs`):** waves 1-10 **Act I Night Shift** (moonlit blue, Yo Bots), 11-20 **Act II Cold Hour** (teal
   storm light, Spider Bots come down the wall), 21-30 **Act III Last Light** (bruised dusk, orange at the rim, every kind can
   roll an elite trait: the first mixed elite crews). After 30 the loop starts again under an **Overtime** red-ink tint. Each
   change crossfades light, sky, grade and score over 2 s and shows a banner with a chime sting. Light and sky only: nothing
   solid in the 150 m, no sparks.
+- **Boss set pieces (built):** wave 10 **The Plated Alpha** (Slice takes a visible first crack mid-intro, Wallit covers her),
+  wave 20 **The Foreman** (Yo Bots read the order aloud through act three via `ActThreeChorus`; wall press stamps faster),
+  wave 30 **The Order** (fallen scroll with a red DENIED blotch; Wallit's DENIED line is on the finale card). Campaign
+  roster bodies and two-phase tells (`BossPhases` red wash). Wave clear waits on `BossSetPiece.PayingOff`. Camera stays
+  out in the open field (9 m+), never into scenery.
 - **Changes over time:** gap, built: wave-power list grows; the acts above replace the old "colder from wave 10" tint. Earlier plan: from wave 10 the moon goes down a notch and the
   lanterns burn a colder white; from wave 20 the wall's stamp press (landmark) stamps in rhythm and the Yo Bots read the order
   aloud; at wave 30 dawn colour on the rim. No new objects in the 150 m, light and the wall only.

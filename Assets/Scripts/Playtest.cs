@@ -7341,15 +7341,20 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         var player = Object.FindAnyObjectByType<CharacterMovement>();
         yield return run.Until(() => WaveDirector.Instance != null && Enemy.Roster.Count > 0, 20f, "Arcade wave 1 bots");
         int[] waves = { 10, 20, 30 };
+        string[] expect = { "The Plated Alpha", "The Foreman", "The Order" };
         for (int i = 0; i < waves.Length && !run.Done && !WaveDirector.IsLost; i++) {
             run.Event("setup", "testing wave key to wave " + waves[i]);
             yield return GoWave(waves[i]);
-            run.Scene("Boss wave " + waves[i]);
+            run.Scene("Boss intro wave " + waves[i]);
             WaveDirector.Instance.TrimForPlaytest();
             int before = BossSetPiece.Intros;
             yield return run.Until(() => BossSetPiece.Intros > before, 60f, "wave " + waves[i] + " boss intro");
             if (run.Done) { yield break; }
-            run.Event("boss-intro", "intro up on wave " + waves[i] + ", " + BossSetPiece.Events[BossSetPiece.Events.Count - 1]);
+            string last = BossSetPiece.Events.Count > 0 ? BossSetPiece.Events[BossSetPiece.Events.Count - 1] : "";
+            run.Event("boss-intro", "intro up on wave " + waves[i] + ", " + last);
+            if (!last.Contains(expect[i])) {
+                run.Problem(PlaytestSeverity.Bug, "boss-set-pieces: wave " + waves[i] + " intro expected " + expect[i] + ", got " + last);
+            }
             if (i == 1) {
                 yield return new WaitForSecondsRealtime(1f);
                 PlayInput.Tap(KeyCode.Space);
@@ -7357,6 +7362,8 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                 run.Event("boss-skip", "skips " + BossSetPiece.Skips + ", intro active " + BossSetPiece.Active);
             }
             yield return run.Until(() => !BossSetPiece.Active, 8f, "intro to end");
+            // Phone-readable boss HUD: bar, phase notch and touch pads at 390 wide (AC 4).
+            yield return BossPhoneCheck(waves[i], expect[i]);
             int payoffs = BossSetPiece.Payoffs;
             float nextHeal = 0f;
             float t0 = Time.realtimeSinceStartup;
@@ -7374,14 +7381,77 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                 yield return null;
             }
             bool paid = BossSetPiece.Payoffs > payoffs;
-            run.Event("boss-payoff", "wave " + waves[i] + (paid ? " payoff played, slow-mo s " + BossSetPiece.LastSlowSeconds : " boss did not fall in 90 s"));
+            run.Scene("Boss defeat wave " + waves[i]);
+            // AC 3: payoff must finish (PayingOff clears) before the wave advances / next act banner.
+            float holdWave = WaveDirector.Wave;
+            yield return run.Until(() => !BossSetPiece.PayingOff, 8f, "payoff to end before act banner");
+            run.Event("boss-payoff", "wave " + waves[i] + (paid ? " payoff played, slow-mo s " + BossSetPiece.LastSlowSeconds
+                + ", held wave " + holdWave + " until payoff ended" : " boss did not fall in 90 s"));
             if (!paid) {
                 run.Problem(PlaytestSeverity.Bug, "boss-set-pieces: wave " + waves[i] + " boss never paid off");
+            }
+            if (paid && BossSetPiece.PayingOff) {
+                run.Problem(PlaytestSeverity.Bug, "boss-set-pieces: wave " + waves[i] + " act advanced while payoff still running");
             }
             yield return new WaitForSecondsRealtime(1.5f);
         }
         run.Metric("bossIntros", BossSetPiece.Intros);
         run.Metric("bossPayoffs", BossSetPiece.Payoffs);
+        run.Metric("feel.hitStopMs", 120);
+    }
+
+    // AC 4: on a 390-wide phone the boss bar, its phase notch and the touch pads all show.
+    static IEnumerator BossPhoneCheck(int wave, string title) {
+        int wasW = Screen.width, wasH = Screen.height;
+        bool wasTouch = UiFit.Touch;
+        UiFit.ForceTouch(true);
+        Screen.SetResolution(390, 844, false);
+        yield return null;
+        yield return null;
+        CheckScreen("boss-phone-" + wave);
+        Enemy boss = null;
+        for (int i = 0; i < Enemy.Roster.Count; i++) {
+            Enemy e = Enemy.Roster[i];
+            if (e != null && e.Alive && e.Boss) {
+                boss = e;
+                break;
+            }
+        }
+        bool bar = boss != null && BossBarShows(boss.Title);
+        // The phase notch is a thin pale Bar (5x30) under the boss health bar; RunHud turns it on when PhaseAt > 0.
+        bool notch = false;
+        RunHud hud = Object.FindAnyObjectByType<RunHud>();
+        if (hud != null) {
+            foreach (Image img in hud.GetComponentsInChildren<Image>(true)) {
+                if (img == null || !img.isActiveAndEnabled) {
+                    continue;
+                }
+                Vector2 sd = img.rectTransform.sizeDelta;
+                if (sd.x <= 8f && sd.y >= 24f && img.color.r > 0.9f && img.color.g > 0.85f) {
+                    notch = true;
+                    break;
+                }
+            }
+        }
+        var pads = new List<RectTransform>();
+        TouchControls.Shown(pads);
+        run.Event("boss-phone", "wave " + wave + " " + title + ": bar " + (bar ? "up" : "missing")
+            + ", notch " + (notch ? "up" : "off") + ", touch pads " + pads.Count + ", " + Screen.width + "x" + Screen.height);
+        run.Metric("bossBarPhone_" + wave, bar ? 1 : 0);
+        run.Metric("bossNotchPhone_" + wave, notch ? 1 : 0);
+        run.Metric("bossTouchPads_" + wave, pads.Count);
+        if (!bar) {
+            run.Problem(PlaytestSeverity.Bug, "boss-set-pieces: boss bar missing on phone for " + title);
+        }
+        if (boss != null && boss.PhaseAt > 0f && boss.Phase < 2 && !notch) {
+            run.Problem(PlaytestSeverity.Bug, "boss-set-pieces: phase notch missing on phone for " + title);
+        }
+        if (pads.Count < 3) {
+            run.Problem(PlaytestSeverity.Bug, "boss-set-pieces: touch pads missing on phone (got " + pads.Count + ")");
+        }
+        Screen.SetResolution(wasW, wasH, false);
+        UiFit.ForceTouch(wasTouch);
+        yield return null;
     }
 
     static IEnumerator BotsRun(PlaytestOptions options) {

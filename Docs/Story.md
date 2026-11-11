@@ -42,10 +42,24 @@ Boss waves (10, 20 and 30) get a title card and a longer beat.
 - **Act three, waves 20 to 29: the order.** The Mega Yo Bot arrives on wave 20 and the Yo Bots stop chirping and read the
   order aloud. Wave 30 is the first Spider Bot, the one that carries the order itself.
 
+### Arcade boss set pieces (waves 10, 20, 30)
+
+Each decade boss is a short set piece, not only a title card. The Alpha is drawn from the campaign roster so the fight
+matches the story's weight: **wave 10 The Plated Alpha**, **wave 20 The Foreman**, **wave 30 The Order**. On spawn the
+lights dim, the camera dollies out to the boss for about four seconds (skippable with one key or tap), and Wallit and
+Slice trade a voiced line through the cutscene voice key (wave 10 is Slice's first crack and Wallit's debt; wave 20 the
+order read aloud with Yo Bots joining in; wave 30 the sealed scroll). The boss bar carries the pale phase notch; half
+health is the shared red-wash phase-two tell (`BossPhases` / `BossSetPiece`). On defeat: hit-stop, half a second of slow
+motion, a bolt burst and Slice's line; wave 30 also drops the order on the grass with a red DENIED blotch (Wallit's
+DENIED read stays on the finale card so it is not said twice). The wave clear and next act banner wait until the
+payoff ends (`BossSetPiece.PayingOff`). Code: `BossSetPiece.cs`, hooked from `WaveDirector.SpawnOne` and
+`Combat.OnKill`. The `boss-set-pieces` playtest walks 10/20/30 with the wave key.
+
 ## The finale: wave 30
 
-Wave 30's boss is the Spider Bot. When the last bot of wave 30 falls, the order drops, and Wallit reads it: "Strike this
-address", stamped DENIED. Slice files the circle herself. The ending screen reads **ADDRESS FILED**, and gives the run:
+Wave 30's boss is **The Order** (the Spider Bot that carries the sealed order). When the last bot of wave 30 falls, the
+order drops, and Wallit reads it: "Strike this address", stamped DENIED. Slice files the circle herself. The ending
+screen reads **ADDRESS FILED**, and gives the run:
 waves, level, streak, coins. Any key goes back to the menu; **Enter keeps going** into overtime, where the waves
 continue and the run still ends when Slice falls.
 
