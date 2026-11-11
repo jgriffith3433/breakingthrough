@@ -136,5 +136,6 @@ public static class VoiceDirector {
             KeyPlayed++;
         }
         Events.Add("play|" + why + "|" + priority + "|" + line);
+        GameAudio.NoteOther(GameAudio.Bus.Voice, line);
     }
 }

@@ -96,6 +96,7 @@ public class MusicDirector : MonoBehaviour {
         Current = track;
         Changes++;
         Events.Add("track|" + track);
+        GameAudio.NoteOther(GameAudio.Bus.Music, track);
         d.active = 1 - d.active;
         AudioSource next = d.sources[d.active];
         next.Stop();

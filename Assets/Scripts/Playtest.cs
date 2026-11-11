@@ -37,6 +37,7 @@ public static class Playtest {
         new PlaytestScenario("musician", "Slice, the musician at the piano: her health bar is titled Slice, and she sits on the bench playing the piano clip with her hands on the keys while the piano music plays. The bot holds fire and frames Slice so wave 1's Yo Bots reach her: she stands (standUp), stabs and slashes the one in reach with her knife (stab / slash with OnSliceKnifeHit blade damage) at most once every 2.5 s, and flinches when hit (hurt); then the bot clears the wave (with Encore pulsing from PianoRecital) and she sits back down (sitDown) to play (piano). Then it holds fire from wave 2 (after 20 s, setup: a ring of Plated Yo Bots dropped around the bench, topped up every 8 s) until the bots empty her bar, she falls (defeat), and the game-over panel appears", 330, "content"),
         new PlaytestScenario("slice", "Slice guarding the circle: inspects the live Slice on PianoRecital (bob / coat / boots / scalpel knife from front and side, hands on keys, piano music), runs the full musician scenario (standUp, stab, slash, sitDown, piano, hurt, defeat before game over), and verifies all 8 Animator clips", 220, "content"),
         new PlaytestScenario("personality", "Slice's personality: she speaks short clipped lines (subtitles; the log shows each) at wave starts, kills, near-misses and when hurt or low, never the same line twice in a row, and shows distinct body behaviors (idle scan / knife flip, ready at a wave, kill flourish, glance, stagger, hunch when low). Wallit and Slice trade a short exchange. Real input: the bot fights wave 1 with the bat; then it holds fire, and from 15 s on (setup) a ring of Plated Yo Bots is dropped on her until she is low", 240, "content"),
+        new PlaytestScenario("audio", "Positional, varied sound (run it on desktop and with mobile for 390x844): the bat's three moves with a home run (setup drops), then 60 s of real wave play. Events audio-bus (every bus: world sounds are 3D with a position, UI, voice and music are 2D), audio-variants (per sound: how many variants played, the longest run of one variant twice in a row, wanted 3+ and 0), audio-homerun (crack, whoosh and landing layered), audio-snapshot (the voice snapshot ducking effects, with the phone's deeper dip), audio-log (the first world sounds with their positions). Metrics audioWorldSounds, audioRepeats, audioSnapshots, audioFps", 330, "full"),
         new PlaytestScenario("voice-gap", "The voice director: five minutes of real wave defense with the default numbers (barks at least VoiceDirector.BarkGap apart, same line and same reason on a cooldown, story and boss-wave lines always through, never two lines at once). Real input: the bot fights with the bat. Events voice-line (each line with its priority), voice-drop (barks the director held back), voice-gap (lines per minute, smallest gaps, overlaps, key lines)", 330, "content"),
         new PlaytestScenario("voice", "Wallit talks: he barks short money lines (subtitles; the log shows each, with why) at kills and streaks, big hits and home runs, getting hurt, wave starts and level-ups, never the same line twice in a row and never over Slice; his mouth opens and closes with each line, in the game camera and in a close-up (events wallit-line, wallit-mouth, wallit-voice). Real input: the bot fights with the bat until each kind of line was heard, then stands and takes a hit, then a close-up of his face while he speaks (setup: one line is asked for)", 300, "content"),
         new PlaytestScenario("upgrades", "The bat upgrades: the shop lists Corked Core and Aluminum! Not wood! (setup: both owned in the sandbox) and the metal bat is in the player's hands; wave 1's first level-up cards are read off the screen (bat upgrades, no retired cast words); setup: the testing wave key (=) to wave 14 for tougher Plated Yo Bots and a handful of bat boons granted (Wide Arc, Pine Tar, Ice Bat, Live Wire, Grand Slam, Long Ball and more), each one's mark on the bat logged; then the bot plays until each effect is seen: a wider swing, bots burning, bots slowed, chain sparks shorting bots out, a 360 spin swing, batted bolts landing. Then Thunder Bat is granted for a lightning spin, and 30 s of play", 330, "content"),
@@ -516,6 +517,14 @@ public static class Playtest {
                 }
                 if (!run.Done) {
                     BatReport();
+                }
+            } else if (id == "audio") {
+                yield return BatRun(options);
+                if (!run.Done) {
+                    float audioStart = Time.realtimeSinceStartup;
+                    int audioFrames = Time.frameCount;
+                    yield return Play(options, 60f, false);
+                    AudioReport(Mathf.Max(0.1f, (Time.frameCount - audioFrames) / Mathf.Max(1f, Time.realtimeSinceStartup - audioStart)));
                 }
             } else if (id == "story") {
                 yield return StoryRun(options);
@@ -5570,6 +5579,87 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
     static int sliceVoiceTold;
 
     // The voice director over five minutes of real play at the default numbers.
+    // The audio scenario's report: what the play log says about positions, variants, layering and the voice snapshot.
+    static void AudioReport(float fps) {
+        var perBus = new Dictionary<string, int>();
+        var runs = new Dictionary<string, int>();
+        var seen = new Dictionary<string, HashSet<string>>();
+        var last = new Dictionary<string, string>();
+        var streak = new Dictionary<string, int>();
+        int world = 0, snapshots = 0, shown = 0;
+        float crackAt = -1f, whooshAt = -1f, clangAt = -1f;
+        foreach (string line in GameAudio.Log) {
+            string[] f = line.Split('|');
+            if (f.Length < 6) {
+                continue;
+            }
+            float t = float.Parse(f[0], System.Globalization.CultureInfo.InvariantCulture);
+            string bus = f[1], name = f[2], variant = f[3], where = f[4];
+            int n;
+            perBus.TryGetValue(bus, out n);
+            perBus[bus] = n + 1;
+            if (bus == "Mixer") {
+                snapshots++;
+                run.Event("audio-snapshot", name + " (effects x" + f[5] + ")");
+                continue;
+            }
+            bool is3d = where.StartsWith("3D");
+            if (is3d) {
+                world++;
+                if (shown++ < 25) {
+                    run.Event("audio-log", name + " variant " + variant + " at " + where.Substring(3));
+                }
+            }
+            if (bus == "Effects") {
+                HashSet<string> set;
+                if (!seen.TryGetValue(name, out set)) {
+                    seen[name] = set = new HashSet<string>();
+                }
+                set.Add(variant);
+                string prev;
+                if (last.TryGetValue(name, out prev) && prev == variant) {
+                    int r;
+                    streak.TryGetValue(name, out r);
+                    streak[name] = r + 1;
+                }
+                last[name] = variant;
+            }
+            if (name == "homerun") crackAt = t;
+            if (name == "homerun_whoosh") whooshAt = t;
+            if (name == "homerun_clang") clangAt = t;
+        }
+        foreach (var pair in perBus) {
+            run.Event("audio-bus", pair.Key + ": " + pair.Value + " sounds" + (pair.Key == "Effects" ? " (" + world + " in the world, 3D, rest 2D)" : ", 2D"));
+        }
+        int repeats = 0;
+        foreach (string name in new[] { "hit", "batcrack", "batswing", "coin", "stomp", "stamp", "death", "botstep", "wallitstep" }) {
+            HashSet<string> set;
+            seen.TryGetValue(name, out set);
+            int r;
+            streak.TryGetValue(name, out r);
+            repeats += r;
+            run.Event("audio-variants", name + ": " + (set != null ? set.Count : 0) + " variants played, " + r + " repeats in a row");
+        }
+        if (crackAt >= 0f) {
+            run.Event("audio-homerun", "crack " + crackAt.ToString("0.00") + " s, whoosh " + (whooshAt >= 0f ? whooshAt.ToString("0.00") + " s" : "MISSING")
+                + ", landing clang " + (clangAt >= 0f ? clangAt.ToString("0.00") + " s" : "not yet"));
+        }
+        run.Event("audio-numbers", GameAudio.Played + " played, " + GameAudio.Spatial + " spatial, " + GameAudio.Capped + " capped, snapshot now " + GameAudio.Snapshot + ", touch " + UiFit.Touch + ", " + fps.ToString("0") + " fps");
+        run.Metric("audioWorldSounds", world);
+        run.Metric("audioRepeats", repeats);
+        run.Metric("audioSnapshots", snapshots);
+        run.Metric("audioFps", fps);
+        if (world == 0) {
+            run.Problem(PlaytestSeverity.Bug, "no world sound was played with a position");
+        }
+        if (repeats > 0 || GameAudio.Repeats > 0) {
+            run.Problem(PlaytestSeverity.Bug, "a sound variant played twice in a row (" + Mathf.Max(repeats, GameAudio.Repeats) + ")");
+        }
+        if (crackAt >= 0f && whooshAt < 0f) {
+            run.Problem(PlaytestSeverity.Bug, "the home run played its crack with no whoosh");
+        }
+    }
+
     static IEnumerator VoiceGapRun(PlaytestOptions options) {
         var player = Object.FindAnyObjectByType<CharacterMovement>();
         if (player == null || WallitVoice.Instance == null) {

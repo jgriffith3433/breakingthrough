@@ -189,7 +189,7 @@ public class SettingsPanel : MonoBehaviour {
             return;
         }
         lastBlip = Time.unscaledTime;
-        GameAudio.Play("shot", 0.6f, 1.2f);
+        GameAudio.PlayUI("shot", 0.6f, 1.2f);
     }
 
     void Build() {
