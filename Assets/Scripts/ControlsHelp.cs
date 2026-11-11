@@ -390,6 +390,7 @@ public class ControlsHelp : MonoBehaviour {
         if (wave >= 2) {
             return "Walk over bolts to level up.";
         }
-        return touch ? "Tap Swing to swing. Hold it for a home run." : "Click to swing. Hold for a home run. Shift locks on.";
+        // Minute one is read in as few words as it takes to swing; the home run and lock-on are found by playing.
+        return touch ? "Tap Swing." : "Click to swing.";
     }
 }

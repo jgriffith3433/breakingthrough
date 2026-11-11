@@ -268,11 +268,11 @@
     // aria-label starts with a first-five START match ("Tap to start"): Gen's cold play clicks that before it
     // treats the Unity canvas behind as gameplay. Visible label stays "Tap to play".
     prompt.setAttribute("aria-label", "Tap to start");
+    // Six words: the first-five check counts every word a stranger sees in the first minute (limit 40), and the tagline
+    // and the sound note are in the menu and Settings for anyone who goes looking.
     prompt.innerHTML =
       '<span class="t">The Place Department</span>' +
-      '<span class="s">Where things that should not exist are given an address.</span>' +
-      '<span class="b">Tap to play</span>' +
-      '<span class="n">Sound comes on with your tap. Turn it down in Settings.</span>';
+      '<span class="b">Tap to play</span>';
     // pointerup, not click: iOS Safari unlocks audio on touchend, and click can lag or be eaten by a scroll.
     prompt.addEventListener("pointerup", tap);
     prompt.addEventListener("touchend", function (e) {
