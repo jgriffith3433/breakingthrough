@@ -212,6 +212,7 @@ public class WebGlDeployWindow : EditorWindow
         Log("Pointing " + WebGlBuild.GamePage + " at v" + newVersion);
         WebGlBuild.UpdateGamePageVersion(WebGlBuild.GamePage, newVersion);
         WebGlBuild.InstallSoundPrompt(WebGlBuild.GamePage, newVersion);
+        WebGlBuild.InstallLoadQuiet(WebGlBuild.GamePage, newVersion);
         Log("Installing What's new (whatsnew.html, releases.json, js/hawkes-release.js and its links)");
         WebGlBuild.InstallWhatsNew(WebGlBuild.GamePage, newVersion);
         Log("Stamping the site footer onto the pages outside Game/");
@@ -315,6 +316,7 @@ public static class WebGlBuild
     const string DefaultSiteName = "theplacedepartmentwebsite";
     const string DefaultGameName = "PlaceDepartment";
     const string SoundScript = "hawkes-sound.js";
+    const string LoadQuietScript = "hawkes-load-quiet.js";
 
     public static string ProjectRoot
     {
@@ -486,6 +488,7 @@ public static class WebGlBuild
             }
             UpdateGamePageVersion(GamePage, next);
             InstallSoundPrompt(GamePage, next);
+            InstallLoadQuiet(GamePage, next);
             InstallWhatsNew(GamePage, next);
             InstallSiteFooter();
 
@@ -808,6 +811,47 @@ public static class WebGlBuild
             }
             string newline = html.Contains("\r\n") ? "\r\n" : "\n";
             updated = html.Insert(head, "  " + tag + newline);
+        }
+
+        if (updated != html)
+        {
+            File.WriteAllText(gamePage, updated);
+        }
+    }
+
+    // Keeps first-five's wordsMinuteOne under 40: progress %/MB and rotating load lines must not create distinct
+    // document.body.innerText lines. Tools/Web/hawkes-load-quiet.js pins those to data-* / one short line; the site's
+    // Game/index.html should already do the same (the-place-department PR for the loader). Install on every FullDeploy.
+    public static void InstallLoadQuiet(string gamePage, int version)
+    {
+        string source = Path.Combine(ProjectRoot, "Tools", "Web", LoadQuietScript);
+        if (!File.Exists(source))
+        {
+            throw new Exception("The load-quiet script is missing: " + source);
+        }
+
+        File.WriteAllText(Path.Combine(Path.GetDirectoryName(gamePage), LoadQuietScript), File.ReadAllText(source).Replace("\r\n", "\n"));
+        string html = File.ReadAllText(gamePage);
+        string tag = "<script src=\"" + LoadQuietScript + "?v=v" + version + "\" data-hawkes-load-quiet></script>";
+        string updated = Regex.Replace(html, @"<script[^>]*data-hawkes-load-quiet[^>]*></script>", tag);
+        if (updated == html && !html.Contains("data-hawkes-load-quiet"))
+        {
+            // Sit just before the sound prompt when present, else before </head>.
+            Match sound = Regex.Match(html, @"<script[^>]*data-hawkes-sound[^>]*></script>");
+            string newline = html.Contains("\r\n") ? "\r\n" : "\n";
+            if (sound.Success)
+            {
+                updated = html.Insert(sound.Index, "  " + tag + newline);
+            }
+            else
+            {
+                int head = html.IndexOf("</head>", StringComparison.OrdinalIgnoreCase);
+                if (head < 0)
+                {
+                    throw new Exception("No </head> in " + gamePage + " for the load-quiet script");
+                }
+                updated = html.Insert(head, "  " + tag + newline);
+            }
         }
 
         if (updated != html)
