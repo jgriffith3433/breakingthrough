@@ -580,6 +580,16 @@ reaches her in a run Wallit says one short key line about her, in his money voic
 Hands off!", "Touch her, you pay double!" or "She's not for sale. Back off!" (`WallitVoice.Stakes`, reason `stakes-line`). No text
 explains the circle in wave 1. `stakes` playtest logs `slice-hit`, `slice-low`, `stakes-line`.
 
+## The fee
+
+Slice's pay is a pile of gold coins at the edge of the circle: **the fee**, the filing fee the Department set aside to keep the
+address open, and the thing Wallit is paid to guard ("I'm covering you"). It is the stakes made into something you can count.
+The pile's height is her health (24 coins, `CoinPile.cs`). When a Yo Bot or Spider Bot's blow lands on Slice, the top coins come
+off the pile, arc through the air to the bot that struck her and vanish in a soft gold ring with a coin clink: the bot takes its
+cut. Wallit's barks ("Touch her, you pay double!") only back this up. When she heals, the coins drop back one at a time. The
+pile is chunky turned discs, no sparks, inside the ring and clear of the playfield's bots. No text. `stakes` playtest logs
+`coin-pile`, `coins-taken` and the metrics `coinPileTaken`, `coinPileAfterHit`.
+
 ## The cast file
 
 Every voice in a dialogue box is a row in `Assets/Resources/Cast/cast.json`: Wallit, Slice, the Yo Bots (Yo Bot, Mega Yo Bot,

@@ -46,6 +46,7 @@ public class StakesFeel : MonoBehaviour {
             return;
         }
         musician.gameObject.AddComponent<StakesFeel>().slice = musician;
+        CoinPile.Ensure(musician);
     }
 
     public static void Note(string what, string detail) {
@@ -83,6 +84,7 @@ public class StakesFeel : MonoBehaviour {
     void Hit(Musician m, int amount, Enemy by) {
         Hits++;
         hitPulse = 1f;
+        CoinPile.OnSliceHit(by);
         int pct = Mathf.RoundToInt(100f * m.Health / Mathf.Max(1, m.MaxHealth));
         if (Hits <= 60) {
             Note("slice-hit", "-" + amount + " -> " + m.Health + "/" + m.MaxHealth + " (" + pct + "%)" + (by != null ? " by " + by.name : ""));

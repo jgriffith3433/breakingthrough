@@ -196,6 +196,10 @@ Stamps, ink, paper and light are the world's weather; no rain, no sparks, no emb
 
 ## Story beats
 
+0. **The fee shrinks (built, Arcade and Slice-guarded chapters, `CoinPile.cs`).** A pile of gold coins sits at the circle's edge, its
+   height Slice's health. A bot's blow sends the top coins arcing to the bot with a clink; healing drops them back. Told by the
+   pile and its sound, with Wallit's "Touch her, you pay double!" only as support. Canon: [Docs/Story.md](../Docs/Story.md), "The fee".
+
 Each beat is lived. Format: **Where / When** — what the player does and sees; sound and voice; the consequence. Text, at most one
 line, is only the subtitle of a voiced line. Beats marked **(built)** exist per the docs; **(build)** is the gap to close.
 
