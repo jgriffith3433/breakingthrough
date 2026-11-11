@@ -2050,147 +2050,176 @@
   {
    "id": "yobot_uploading_victory",
    "voice": "yobot",
-   "text": "Uploading victory."
+   "text": "Uploading victory.",
+   "asset": "a_276e5d174a88b31b"
   },
   {
    "id": "yobot_good_morning_customer",
    "voice": "yobot",
-   "text": "Good morning, customer!"
+   "text": "Good morning, customer!",
+   "asset": "a_d2faab0113349f58"
   },
   {
    "id": "yobot_online_and_delighted",
    "voice": "yobot",
-   "text": "Online and delighted!"
+   "text": "Online and delighted!",
+   "asset": "a_3438984bc98cebe7"
   },
   {
    "id": "yobot_booting_cheerfully",
    "voice": "yobot",
-   "text": "Booting cheerfully!"
+   "text": "Booting cheerfully!",
+   "asset": "a_539a5033ef695029"
   },
   {
    "id": "yobot_wallet_detected",
    "voice": "yobot",
-   "text": "Wallet detected!"
+   "text": "Wallet detected!",
+   "asset": "a_7bfa31514dc5f6ea"
   },
   {
    "id": "yobot_found_him_hi",
    "voice": "yobot",
-   "text": "Found him! Hi!"
+   "text": "Found him! Hi!",
+   "asset": "a_1dfb6fb12c7ee0c4"
   },
   {
    "id": "yobot_target_acquired_yay",
    "voice": "yobot",
-   "text": "Target acquired. Yay!"
+   "text": "Target acquired. Yay!",
+   "asset": "a_5fa5749dbd0ad0cd"
   },
   {
    "id": "yobot_ow_rude",
    "voice": "yobot",
-   "text": "Ow! Rude!"
+   "text": "Ow! Rude!",
+   "asset": "a_113ab51c0c9ff986"
   },
   {
    "id": "yobot_ooh_that_stung",
    "voice": "yobot",
-   "text": "Ooh, that stung!"
+   "text": "Ooh, that stung!",
+   "asset": "a_b22d1a87a411373f"
   },
   {
    "id": "yobot_feedback_received",
    "voice": "yobot",
-   "text": "Feedback received!"
+   "text": "Feedback received!",
+   "asset": "a_2ca54057379e1477"
   },
   {
    "id": "yobot_error_ow",
    "voice": "yobot",
-   "text": "Error! Ow!"
+   "text": "Error! Ow!",
+   "asset": "a_7c44b9adc91718b4"
   },
   {
    "id": "yobot_wheeeee",
    "voice": "yobot",
-   "text": "Wheeeee!"
+   "text": "Wheeeee!",
+   "asset": "a_5e6bcbc578c3b899"
   },
   {
    "id": "yobot_going_up",
    "voice": "yobot",
-   "text": "Going up!"
+   "text": "Going up!",
+   "asset": "a_dba36a80f0afe009"
   },
   {
    "id": "yobot_tell_my_charger_i_love_it",
    "voice": "yobot",
-   "text": "Tell my charger I love it!"
+   "text": "Tell my charger I love it!",
+   "asset": "a_d9ccd5abf17ed45f"
   },
   {
    "id": "yobot_powering_down_bye",
    "voice": "yobot",
-   "text": "Powering down. Bye!"
+   "text": "Powering down. Bye!",
+   "asset": "a_c9724b46bb7fdacc"
   },
   {
    "id": "yobot_goodbye_circuit",
    "voice": "yobot",
-   "text": "Goodbye, circuit!"
+   "text": "Goodbye, circuit!",
+   "asset": "a_87fc74425b1b0ed9"
   },
   {
    "id": "yobot_upload_failed_hi",
    "voice": "yobot",
-   "text": "Upload failed. Hi!"
+   "text": "Upload failed. Hi!",
+   "asset": "a_af16381a7495e5bd"
   },
   {
    "id": "yobot_thanks_for_having_me",
    "voice": "yobot",
-   "text": "Thanks for having me!"
+   "text": "Thanks for having me!",
+   "asset": "a_3aec8a108d55cc18"
   },
   {
    "id": "spiderbot_you_have_been_served",
    "voice": "spiderbot",
-   "text": "You have been served."
+   "text": "You have been served.",
+   "asset": "a_5c26615d2489c1d5"
   },
   {
    "id": "spiderbot_kindly_hold_still",
    "voice": "spiderbot",
-   "text": "Kindly hold still."
+   "text": "Kindly hold still.",
+   "asset": "a_b64c2214f06bbce1"
   },
   {
    "id": "spiderbot_apologies_in_advance",
    "voice": "spiderbot",
-   "text": "Apologies in advance."
+   "text": "Apologies in advance.",
+   "asset": "a_e0ffdd61a13912d9"
   },
   {
    "id": "spiderbot_your_appointment_is_now",
    "voice": "spiderbot",
-   "text": "Your appointment is now."
+   "text": "Your appointment is now.",
+   "asset": "a_e9facacc1e029069"
   },
   {
    "id": "spiderbot_please_accept_this_leg",
    "voice": "spiderbot",
-   "text": "Please accept this leg."
+   "text": "Please accept this leg.",
+   "asset": "a_e52cbfdd9b0bc14b"
   },
   {
    "id": "spiderbot_regrettably_you_are_overdue",
    "voice": "spiderbot",
-   "text": "Regrettably, you are overdue."
+   "text": "Regrettably, you are overdue.",
+   "asset": "a_6449c9f50fa93f6f"
   },
   {
    "id": "spiderbot_do_excuse_the_stab",
    "voice": "spiderbot",
-   "text": "Do excuse the stab."
+   "text": "Do excuse the stab.",
+   "asset": "a_adfab600ba0f354d"
   },
   {
    "id": "slice_that_one_s_new",
    "voice": "slice",
-   "text": "That one's new."
+   "text": "That one's new.",
+   "asset": "a_1877b11450699c7b"
   },
   {
    "id": "slice_what_is_that",
    "voice": "slice",
-   "text": "What is that."
+   "text": "What is that.",
+   "asset": "a_daa7d32f2d3a99a9"
   },
   {
    "id": "slice_different_watch_it",
    "voice": "slice",
-   "text": "Different. Watch it."
+   "text": "Different. Watch it.",
+   "asset": "a_fdb04c048403a532"
   },
   {
    "id": "slice_don_t_know_that_one",
    "voice": "slice",
-   "text": "Don't know that one."
+   "text": "Don't know that one.",
+   "asset": "a_fc7716cd7894ae4f"
   },
   {
    "id": "wallit_first_payment_received",
