@@ -163,13 +163,26 @@ public class ZeldaStyleCamera : MonoBehaviour {
     }
 
     // Ease from the current (cinematic) pose onto the follow camera over `seconds` (about 0.6 s).
+    // Call while the directed view is still held so the blend starts from the last shot, not from a snap.
     public void BeginHandoff(float seconds) {
         handoffDur = Mathf.Max(0.05f, seconds);
         handoffLeft = handoffDur;
         handoffFromPos = cineHeld ? cinePos : transform.position;
         handoffFromRot = cineHeld ? cineRot : transform.rotation;
         cineHeld = false;
+        // Arm the follow orbit behind Wallit without jumping the transform; LateUpdate lerps onto it.
+        if (FollowXForm != null) {
+            orbitYaw = FollowXForm.eulerAngles.y;
+            orbitPitch = 18f;
+            orbitReady = true;
+            viewPrimed = false;
+            VelocityCamSmooth = Vector3.zero;
+            CurrentCameraDistance = MaxDistance;
+            followDist = MaxDistance;
+        }
     }
+
+    public bool HandoffBusy { get { return handoffLeft > 0f || cineHeld; } }
 
     // A camera made in code (the campaign levels, Level*.cs) takes the numbers scene2's camera has serialized.
     public void ConfigureForLevel(GameObject follow, GameObject crosshair, GameObject firstPerson) {

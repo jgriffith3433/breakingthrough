@@ -608,10 +608,11 @@ from `Tools/Cinematics/make_placeholders.py`. Space or a click goes to the next 
 
 **In-engine opening (Chapter 1).** The Sorting Yard opens on a directed scene (`CinematicDirector`, data
 `Resources/Cinematics/ch1_open_world.json`): Wallit walks in on the west trail, Slice turns in her ring, the Courier raises its
-clipboard, and the RETURN TO SENDER stamp lands on the circle. Eight moving shots, existing voice lines and clipboard/stamp
-SFX, letterbox and captions; Esc, Enter or the touch Skip pill ends the whole scene. The camera blends onto the follow camera
-in under a second with no black frame. The still reel `ch1_open` is the fallback only when an actor fails to build. Playtest:
-`opening-scene`. Depth of field and the other chapters' openings stay on their still reels for now.
+clipboard, and the RETURN TO SENDER stamp lands on Wallit at the circle. Eight shots with visible actor motion, existing voice
+lines and clipboard/stamp SFX, letterbox and captions; Esc, Enter or the touch Skip pill ends the whole scene. The camera
+blends from the last shot onto the follow camera in under a second with no black frame. The still reel `ch1_open` is the
+fallback only when an actor fails to build. Playtest: `opening-scene`. Depth of field and the other chapters' openings stay
+on their still reels for now.
 
 Chapters 1-3 now open and close with reels (`ch1_open` .. `ch3_close`, written by `Tools/Cinematics/make_reels.py` from the shot lists
 in `CampaignBible.md`; `ChapterRun.Start` and `Complete` play them before the page scenes, which remain for chapters 4-6). Each shot names its final

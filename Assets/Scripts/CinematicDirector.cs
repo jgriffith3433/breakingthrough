@@ -44,7 +44,8 @@ public class CinematicDirector : MonoBehaviour {
     }
 
     public static CinematicDirector Instance { get; private set; }
-    public static bool IsOpen { get { return Instance != null && Instance.open; } }
+    // True while shots play or the 0.6 s camera handoff is still blending onto the follow camera.
+    public static bool IsOpen { get { return Instance != null && (Instance.open || Instance.handingOff); } }
     // Other playtests turn the Chapter 1 opening off so their bot starts with control.
     public static bool SuppressOpening;
     public static readonly List<string> Events = new List<string>();
@@ -63,6 +64,7 @@ public class CinematicDirector : MonoBehaviour {
     public bool SkipPillShown { get { return skipPill != null && skipPill.activeSelf; } }
 
     bool open;
+    bool handingOff;
     Reel reel;
     int shotIndex = -1;
     float shotStart;
@@ -160,6 +162,7 @@ public class CinematicDirector : MonoBehaviour {
         done = onDone;
         shotIndex = -1;
         open = true;
+        handingOff = false;
         skipRevealed = false;
         viewSet = false;
         Events.Add("open|" + r.id);
@@ -327,7 +330,7 @@ public class CinematicDirector : MonoBehaviour {
         CastVoice.Silence();
         string who = string.IsNullOrEmpty(s.speaker) ? "N" : s.speaker;
         if (namePlate != null) {
-            namePlate.text = who == "W" ? "Wallit" : who == "S" ? "Slice" : who == "Y" || who == "K" ? "Yo Bot" : "";
+            namePlate.text = who == "W" ? "Wallit" : who == "S" ? "Slice" : who == "K" ? "The Courier" : who == "Y" ? "Yo Bot" : "";
             namePlate.color = who == "W" ? new Color(0.95f, 0.82f, 0.4f) : who == "S" ? new Color(0.75f, 0.7f, 0.95f) : new Color(0.7f, 0.9f, 1f);
         }
         if (caption != null) {
@@ -339,7 +342,8 @@ public class CinematicDirector : MonoBehaviour {
         } else if (who == "S") {
             len = SliceVoice.Instance != null ? SliceVoice.Cutscene(s.line) : CastVoice.SayNow("S", s.line, "cutscene");
         } else if (who == "Y" || who == "K") {
-            len = CastVoice.SayNow(who == "K" ? "K" : "Y", s.line, "cutscene");
+            // Courier (K) and Yo Bot (Y) share the chirpy bank; prefer K when the shot names the Courier.
+            len = CastVoice.SayNow(who, s.line, "cutscene");
         } else {
             len = CastVoice.SayNow("N", s.line, "cutscene");
         }
@@ -372,6 +376,18 @@ public class CinematicDirector : MonoBehaviour {
         if (!shotSlam && s.slam && u >= 0.35f) {
             shotSlam = true;
             Events.Add("slam|" + s.id);
+            // The stamp lands on Wallit: flinch and a short shove so the beat is felt, not only captioned.
+            if (wallit != null) {
+                CharacterMovement.PlayWallitClip(CharacterMovement.CLIP_HIT_REACT, 0.55f);
+                if (LevelScene.Instance != null) {
+                    Vector3 away = wallit.position - LevelYard.RingCenter;
+                    away.y = 0f;
+                    if (away.sqrMagnitude < 0.01f) {
+                        away = -wallit.forward;
+                    }
+                    LevelScene.Instance.Shove(away.normalized, 1.6f);
+                }
+            }
         }
     }
 
@@ -418,6 +434,7 @@ public class CinematicDirector : MonoBehaviour {
             return;
         }
         open = false;
+        handingOff = true;
         float handoffStart = Time.unscaledTime;
         WallitVoice.Silence();
         SliceVoice.Silence();
@@ -439,6 +456,7 @@ public class CinematicDirector : MonoBehaviour {
             courier = null;
         }
         // Seat Wallit at the play start and face the Ring so control begins where the yard expects.
+        // Keep the last directed camera pose held until BeginHandoff so the blend starts from that shot.
         if (yard != null && wallit != null) {
             Vector3 start = yard.PlayerStart;
             start.y = LevelYard.H(start.x, start.z) + 0.2f;
@@ -465,9 +483,15 @@ public class CinematicDirector : MonoBehaviour {
             cam.fieldOfView = savedFov;
         }
         if (zelda != null) {
-            zelda.SnapBehind();
+            // Blend from the live cinematic view onto the follow camera (do not SnapBehind first).
             zelda.BeginHandoff(0.6f);
+            StartCoroutine(FinishHandoff(handoffStart, skipped, done));
+            done = null;
+            reel = null;
+            shotIndex = -1;
+            return;
         }
+        handingOff = false;
         LastHandoffSeconds = Time.unscaledTime - handoffStart;
         Events.Add(skipped ? "skipped" : "done");
         Events.Add("handoff|" + LastHandoffSeconds.ToString("0.000"));
@@ -478,6 +502,20 @@ public class CinematicDirector : MonoBehaviour {
         done = null;
         reel = null;
         shotIndex = -1;
+        cb?.Invoke();
+    }
+
+    System.Collections.IEnumerator FinishHandoff(float handoffStart, bool skipped, Action cb) {
+        while (zelda != null && zelda.HandoffBusy) {
+            yield return null;
+        }
+        handingOff = false;
+        LastHandoffSeconds = Time.unscaledTime - handoffStart;
+        Events.Add(skipped ? "skipped" : "done");
+        Events.Add("handoff|" + LastHandoffSeconds.ToString("0.000"));
+        if (!skipped) {
+            Finished++;
+        }
         cb?.Invoke();
     }
 
@@ -603,7 +641,7 @@ public class CinematicDirector : MonoBehaviour {
     }
 
     Vector3 PullBackForFrame(Vector3 pos, Vector3 look, string[] frame, float fov) {
-        if (frame == null || frame.Length == 0) {
+        if (frame == null || frame.Length == 0 || cam == null) {
             return pos + (pos - look).normalized * 1.8f;
         }
         // Pull back until every named actor is inside a portrait-safe frustum (both speakers in shot).
@@ -612,10 +650,20 @@ public class CinematicDirector : MonoBehaviour {
             pull = Vector3.back * 6f;
         }
         pull = pull.normalized;
-        float dist = Vector3.Distance(pos, look);
+        float dist = Mathf.Max(3f, Vector3.Distance(pos, look));
+        float savedFovNow = cam.fieldOfView;
+        Vector3 savedPos = cam.transform.position;
+        Quaternion savedRot = cam.transform.rotation;
         for (int step = 0; step < 8; step++) {
             bool ok = true;
             Vector3 tryPos = look + pull * dist;
+            Vector3 dir = look - tryPos;
+            if (dir.sqrMagnitude < 0.01f) {
+                dir = Vector3.forward;
+            }
+            cam.fieldOfView = fov;
+            cam.transform.position = tryPos;
+            cam.transform.rotation = Quaternion.LookRotation(dir.normalized, Vector3.up);
             foreach (string id in frame) {
                 Transform t = ActorOf(id);
                 if (t == null) {
@@ -629,10 +677,16 @@ public class CinematicDirector : MonoBehaviour {
                 }
             }
             if (ok) {
+                cam.fieldOfView = savedFovNow;
+                cam.transform.position = savedPos;
+                cam.transform.rotation = savedRot;
                 return tryPos;
             }
             dist += 1.4f;
         }
+        cam.fieldOfView = savedFovNow;
+        cam.transform.position = savedPos;
+        cam.transform.rotation = savedRot;
         return look + pull * dist;
     }
 

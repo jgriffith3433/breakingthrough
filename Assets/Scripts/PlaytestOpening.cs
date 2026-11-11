@@ -157,9 +157,24 @@ public static class PlaytestOpening {
         if (movingShots < 6) {
             run.Problem(PlaytestSeverity.Bug, "opening-scene: fewer than 6 shots with visible actor motion (" + movingShots + ")");
         }
-        if (CinematicDirector.VoiceLines < 1) {
-            run.Problem(PlaytestSeverity.Bug, "opening-scene: no voiced lines played");
+        if (CinematicDirector.VoiceLines < 4) {
+            run.Problem(PlaytestSeverity.Bug, "opening-scene: expected at least 4 voiced lines, got " + CinematicDirector.VoiceLines);
         }
+        var lines = new HashSet<string>();
+        int overlaps = 0;
+        foreach (string e in CinematicDirector.Events) {
+            if (!e.StartsWith("voice|")) {
+                continue;
+            }
+            string line = e.Substring(e.IndexOf('|', 6) + 1);
+            if (!lines.Add(line)) {
+                run.Problem(PlaytestSeverity.Bug, "opening-scene: voiced line repeated: " + line);
+            }
+        }
+        if (WallitVoice.Overlaps > 0 || overlaps > 0) {
+            run.Problem(PlaytestSeverity.Bug, "opening-scene: voices overlapped (" + WallitVoice.Overlaps + ")");
+        }
+        run.Metric("openingUniqueVoiceLines", lines.Count);
         if (CinematicDirector.LastHandoffSeconds > 1f) {
             run.Problem(PlaytestSeverity.Bug, "opening-scene: handoff to play took " + CinematicDirector.LastHandoffSeconds.ToString("0.00") + " s (> 1 s)");
         }
