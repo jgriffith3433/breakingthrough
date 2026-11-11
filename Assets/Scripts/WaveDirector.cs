@@ -408,6 +408,7 @@ public class WaveDirector : MonoBehaviour {
             && (Musician.Instance == null || Musician.Instance.Alive)) {
             cleared = Wave;
             UpgradeLook.WaveCleared(cleared);
+            WallitVoice.OnWaveCleared(cleared);
             RunLog.EndWave(Wave, "cleared");
             RunAnalytics.WaveEnd(Wave, "complete");
             MetaProgress.AddCoins(Tuning.CoinsForWave(Wave), Vector3.zero);

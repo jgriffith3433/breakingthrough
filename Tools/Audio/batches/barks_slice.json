@@ -1,0 +1,32 @@
+{
+"cast": "slice",
+"voice": "hv_heroine",
+"ids": [
+"slice_that_one_s_new",
+"slice_what_is_that",
+"slice_different_watch_it",
+"slice_don_t_know_that_one"
+],
+"lines": [
+{
+"who": "slice",
+"text": "That one's new.",
+"direction": "cool, clipped, flat"
+},
+{
+"who": "slice",
+"text": "What is that.",
+"direction": "cool, clipped, flat"
+},
+{
+"who": "slice",
+"text": "Different. Watch it.",
+"direction": "cool, clipped, flat"
+},
+{
+"who": "slice",
+"text": "Don't know that one.",
+"direction": "cool, clipped, flat"
+}
+]
+}
