@@ -67,6 +67,20 @@ public class Enemy : MonoBehaviour
     public float groundRayStartHeight = 0.5f;
 
     public bool Alive { get { return !down; } }
+    public CharacterRig Rig { get { return rig; } }
+    public RigState AnimState { get { return rig != null ? rig.State : RigState.Idle; } }
+
+    // The first living boss's animation state, for the playtest's boss-tell and boss-phase lines.
+    public static string BossAnim()
+    {
+        for (int i = 0; i < Roster.Count; i++)
+        {
+            Enemy e = Roster[i];
+            if (e != null && e.Boss && e.rig != null && !e.down)
+                return CharacterRig.Describe(e.rig.State, e.rig.Rear, e.rig.Stagger);
+        }
+        return "no boss";
+    }
     public bool Climbing { get { return climbing; } }
     public static int Climbers { get; private set; }
 
@@ -93,9 +107,13 @@ public class Enemy : MonoBehaviour
     Quaternion headRestRot = Quaternion.identity;
     Quaternion modelRest = Quaternion.identity;
     bool modelled;
-    float stridePhase;
     bool lastStepSign;
-    float peckAnim;
+    // The bot's animation state (CharacterRig.cs): walk cycle matched to ground speed, wind-up, strike, flinch, stagger, death.
+    CharacterRig rig;
+    bool winding;
+    float windLeft;
+    float slideExcuse;
+    Vector3 modelScaleRest = Vector3.one;
     float holdLeft;
     float topY = 0.9f;
     Vector3 lastPos;
@@ -445,6 +463,26 @@ public class Enemy : MonoBehaviour
         modelTintAmount = 0.92f;
     }
 
+    // A boss's tell, played on its body: rear back and hold while the ground marks fill (BossPhases, Courier, Server), then slam
+    // when it lands or drop the pose when the wind-up is broken. A stagger is phase two arriving, or the wind-up broken.
+    public void BeginTell()
+    {
+        if (rig != null)
+            rig.BeginTell();
+    }
+
+    public void EndTell(bool slam)
+    {
+        if (rig != null)
+            rig.EndTell(slam);
+    }
+
+    public void Stagger(float seconds)
+    {
+        if (rig != null)
+            rig.BeginStagger(seconds);
+    }
+
     // Stand still for a while (the Courier's wind-up and recovery). Bat hits still land.
     public void Hold(float seconds)
     {
@@ -780,6 +818,11 @@ public class Enemy : MonoBehaviour
         if (ragdoll)
         {
             TickRagdoll(dt);
+            if (modelled && this != null)
+            {
+                AnimateModel(dt);
+                TickFlash(dt);
+            }
             return;
         }
 
@@ -790,7 +833,15 @@ public class Enemy : MonoBehaviour
         }
 
         if (!TickStatus(dt))
+        {
+            // Held for a boss's tell, frozen or shorted: the body still plays its pose (the rear-up, the shiver) while it stands.
+            if (modelled && !down && !ragdoll)
+            {
+                AnimateModel(dt);
+                TickFlash(dt);
+            }
             return;
+        }
 
         bool swarm = GoesForPlayer();
         bool hunting = Hunt && !swarm && !down && !Golden && PlayerGrowth.Instance != null;
@@ -908,15 +959,17 @@ public class Enemy : MonoBehaviour
             toPlayer.y = 0f;
             atPlayer = toPlayer.magnitude <= PlayerGrowth.Instance.BodyRadius + 1.15f + bodyScale * 0.22f;
         }
-        if (!down && !IsCourier && (hunting || (musician != null && musician.Alive)) && (wall != null || atMusician || atPlayer))
+        bool canAttack = !down && !IsCourier && (hunting || (musician != null && musician.Alive));
+        if (canAttack && winding)
         {
-            peckIn -= dt;
-            if (peckIn <= 0f)
+            // The tell: the claw goes up (or the front leg rears) for a beat before the blow, so the hit can be read and dodged.
+            windLeft -= dt;
+            if (windLeft <= 0f)
             {
+                winding = false;
                 // A claw swipe from a Yo Bot, a stab of a front leg from a Spider Bot.
-                peckIn = 1.05f;
-                peckAnim = 1f;
-                swipeLeft = !swipeLeft;
+                if (rig != null)
+                    rig.BeginStrike();
                 GameAudio.PlayAt("batswing", transform.position + Vector3.up, 0.4f, spider ? 0.85f : 1.5f);
                 if (wall != null && wall.Alive)
                     wall.Stop(this);
@@ -926,6 +979,25 @@ public class Enemy : MonoBehaviour
                     PlayerGrowth.Instance.OnHit(this);
                 verticalVelocity = Mathf.Max(verticalVelocity, 1.5f);
             }
+        }
+        else if (canAttack && (wall != null || atMusician || atPlayer))
+        {
+            peckIn -= dt;
+            if (peckIn <= 0f)
+            {
+                peckIn = 1.05f;
+                swipeLeft = !swipeLeft;
+                winding = true;
+                windLeft = rig != null ? rig.WindSeconds : 0.3f;
+                if (rig != null)
+                    rig.BeginWindup(windLeft);
+            }
+        }
+        else if (winding)
+        {
+            winding = false;
+            if (rig != null)
+                rig.CancelWind();
         }
 
         if (flying)
@@ -1084,6 +1156,7 @@ public class Enemy : MonoBehaviour
         if (Boss)
             velocity *= 0.25f;
         knock = new Vector3(velocity.x, 0f, velocity.z);
+        slideExcuse = 0.4f;
         if (velocity.y > 0f)
         {
             verticalVelocity = Mathf.Max(verticalVelocity, velocity.y);
@@ -1094,7 +1167,6 @@ public class Enemy : MonoBehaviour
     }
 
     // Bat contact: the bot rocks back a beat (model only) and the shove slides it off. Counted for the playtest.
-    float flinch;
     float spinLeft;
     float spinAngle;
     bool launched;
@@ -1110,8 +1182,9 @@ public class Enemy : MonoBehaviour
     {
         if (down)
             return;
-        flinch = Mathf.Clamp(strength, 0.4f, 1.4f);
         Flinches++;
+        if (rig != null)
+            rig.Flinch(strength);
     }
 
     // A home run: the bot tumbles end over end behind a trail until it lands, and puffs where it comes down.
@@ -1205,7 +1278,12 @@ public class Enemy : MonoBehaviour
             }
         }
         if (kind != DamageKind.Burn)
+        {
             flash = crit ? 1f : Mathf.Max(flash, 0.7f);
+            // Every blow that lands rocks the body (the bat adds its own harder Flinch on top, from BatEquipment).
+            if (rig != null && (!Boss || crit))
+                rig.Flinch(crit ? 0.9f : 0.55f);
+        }
         float number = shown < 0f ? amount : shown;
         if (number > 0f)
             UpgradeLook.Number(mark, number, crit, kind);
@@ -1233,6 +1311,9 @@ public class Enemy : MonoBehaviour
 
         down = true;
         flying = false;
+        winding = false;
+        if (rig != null)
+            rig.BeginDeath();
         StopClimbing();
         ClearLock();
         CelebrateDeath();
@@ -1253,7 +1334,10 @@ public class Enemy : MonoBehaviour
         StopClimbing();
         Hit(scale >= 3f ? 4f : 1.4f);
         if (!down)
+        {
             BeginRagdoll(scale, true);
+            Stagger(1.0f);   // knocked flat and flailing, then back up
+        }
     }
 
     public static void ShakeOffClimbers(float scale)
@@ -1290,6 +1374,7 @@ public class Enemy : MonoBehaviour
             away = transform.forward;
         }
         transform.position += away.normalized * 0.2f;
+        slideExcuse = 0.4f;   // a shove, not a stride
     }
 
     void CelebrateDeath() {
@@ -1348,6 +1433,7 @@ public class Enemy : MonoBehaviour
             return false;
 
         transform.position = dest;
+        slideExcuse = 0.5f;
         return true;
     }
 
@@ -1485,7 +1571,7 @@ public class Enemy : MonoBehaviour
     {
         ragdoll = true;
         tumbleRecover = recover;
-        tumbleLeft = recover ? 1.35f : 3.2f;
+        tumbleLeft = recover ? 1.35f : CharacterRig.DeathTotal;
         flying = false;
         Rigidbody body = GetComponent<Rigidbody>();
         if (body == null)
@@ -1540,6 +1626,9 @@ public class Enemy : MonoBehaviour
             return;
         }
 
+        // The death clip has played out (CharacterRig.DeathTotal): now the body goes.
+        if (rig != null)
+            rig.Removed();
         Destroy(gameObject);
     }
 
@@ -1630,8 +1719,9 @@ public class Enemy : MonoBehaviour
         barRoot.rotation = Quaternion.LookRotation(away, cam.transform.up);
     }
 
-    // Walk cycle, jump jets, head turn and the attack, all from code on the model's parts:
-    // Yo Bots stomp on two legs and swipe a claw, Spider Bots walk on eight and stab with a front leg.
+    // The body, from the rig's pose (CharacterRig.cs): the walk cycle at ground speed, the wind-up and the blow, the flinch, a
+    // boss's rear-up tell and stagger, the death clip, the jump jets and the head turn, all on the model's parts. Yo Bots stomp on
+    // legs and swipe a claw, Spider Bots walk on eight and stab with a front leg.
     void AnimateModel(float dt)
     {
         Vector3 moved = transform.position - lastPos;
@@ -1642,11 +1732,18 @@ public class Enemy : MonoBehaviour
         }
         float scale = Mathf.Max(0.2f, transform.lossyScale.y);
         float speed = dt > 0f ? moved.magnitude / dt / scale : 0f;
-        float walk = Mathf.Clamp01(speed / 2.5f);
-        if (down || frozenLeft > 0f || shortLeft > 0f || holdLeft > 0f)
-            walk = 0f;
-        stridePhase += dt * (spider ? 6f + speed * 4f : 5f + speed * 3.2f);
-        float step = Mathf.Sin(stridePhase);
+        // A planted bot (held for a tell, frozen, shorted, flying, climbing, tumbling) does not walk; a shoved one slides.
+        bool planted = down || frozenLeft > 0f || shortLeft > 0f || holdLeft > 0f || ragdoll || flying || climbing || launched;
+        slideExcuse = Mathf.Max(0f, slideExcuse - dt);
+        bool slid = planted || knock.sqrMagnitude > 0.01f || knockAir > 0f || slideExcuse > 0f;
+        if (planted)
+            speed = 0f;
+        if (rig == null)
+            return;
+        rig.Tick(dt, speed, slid);
+
+        float walk = rig.Walk;
+        float step = rig.Step;
         bool stepSign = step > 0f;
         if (stepSign != lastStepSign && walk > 0.3f && bodyScale > 2.5f && grounded)
             Fx.Footstep(transform.position, bodyScale * 0.6f);
@@ -1654,58 +1751,78 @@ public class Enemy : MonoBehaviour
             GameAudio.PlayAt("botstep", transform.position, Mathf.Clamp(0.12f + bodyScale * 0.05f, 0.12f, 0.6f), spider ? 0.8f : 1f / Mathf.Sqrt(Mathf.Max(1f, bodyScale)));
         lastStepSign = stepSign;
 
-        peckAnim = Mathf.MoveTowards(peckAnim, 0f, dt * 4f);
-        // Wind up slowly, then strike fast.
-        float strike = peckAnim > 0.35f ? (1f - peckAnim) / 0.65f : peckAnim / 0.35f;
+        float wind = rig.Wind;
+        float strike = rig.Strike;
+        float rear = rig.Rear;
+        float flinchPose = rig.FlinchPose;
+        float stagger = rig.Stagger;
+        float death = rig.Death;
+        // The blow: raise through the wind-up, whip through the strike.
+        float attack = Mathf.Max(wind, strike);
 
         if (model != null)
         {
-            float sway = Mathf.Sin(stridePhase) * (spider ? 1.5f : 3f) * walk;
-            float bounce = Mathf.Abs(Mathf.Cos(stridePhase)) * (spider ? 0.015f : 0.025f) * walk;
-            flinch = Mathf.MoveTowards(flinch, 0f, dt * 6f);
-            model.localRotation = modelRest * Quaternion.Euler(walk * 4f + (spider ? 0f : strike * 8f) - flinch * 16f, 0f, sway);
+            float sway = Mathf.Sin(rig.Cycle) * (spider ? 1.5f : 3f) * walk;
+            float bounce = Mathf.Abs(Mathf.Cos(rig.Cycle)) * (spider ? 0.015f : 0.025f) * walk;
+            float tremble = Mathf.Sin(Time.time * 42f + jukePhase) * rear;
+            // Pitch: lean into the stride, back on the wind-up, forward on the blow, back on a hit, rear up on a boss's tell,
+            // buckle on a stagger, fall back as it dies.
+            float pitch = walk * 4f - wind * (spider ? 9f : 12f) + strike * (spider ? 10f : 14f) - flinchPose * 16f
+                          - rear * (spider ? 24f : 16f) + stagger * Mathf.Sin(Time.time * 11f) * 10f - death * 38f;
+            float roll = sway + tremble * 2.2f + stagger * Mathf.Sin(Time.time * 8f + 1f) * 9f + flinchPose * Mathf.Sign(Mathf.Sin(jukePhase * 7f)) * 5f + death * 14f;
+            model.localRotation = modelRest * Quaternion.Euler(pitch, 0f, roll);
             if (spinLeft > 0f)
             {
                 spinLeft -= dt;
                 spinAngle += dt * 720f;
                 model.localRotation = Quaternion.Euler(spinAngle * 0.35f, spinAngle, 0f) * model.localRotation;
             }
-            model.localPosition = new Vector3(0f, bounce, -flinch * 0.12f);
+            float crouch = wind * 0.03f + rear * 0.05f + stagger * 0.04f + death * 0.07f;
+            model.localPosition = new Vector3(0f, bounce - crouch, strike * 0.1f - flinchPose * 0.12f - wind * 0.04f);
+            float fade = 1f - rig.Fade;
+            model.localScale = modelScaleRest * Mathf.Max(0.02f, fade);
         }
 
         if (spider)
-            AnimateSpiderLegs(walk, strike);
+            AnimateSpiderLegs(walk, attack, wind, rear, stagger, death, flinchPose);
         else
-            AnimateYoBotLimbs(walk, step, strike);
+            AnimateYoBotLimbs(walk, step, attack, strike, rear, stagger, death, flinchPose);
 
         if (head != null)
         {
-            float bob = Mathf.Sin(stridePhase * 2f) * 3f * walk + strike * (spider ? -12f : 10f);
-            float look = Mathf.Sin(Time.time * 0.9f + jukePhase * 2f) * (spider ? 14f : 20f) * (1f - walk);
+            float bob = Mathf.Sin(rig.Cycle * 2f) * 3f * walk + attack * (spider ? -12f : 10f) + rear * 16f - flinchPose * 22f
+                        + stagger * Mathf.Sin(Time.time * 9f) * 18f + death * 30f;
+            float look = Mathf.Sin(Time.time * 0.9f + jukePhase * 2f) * (spider ? 14f : 20f) * (1f - Mathf.Max(walk, attack)) * (1f - death)
+                         + flinchPose * 12f;
             head.localRotation = headRestRot * Quaternion.Euler(bob, look, 0f);
         }
     }
 
-    void AnimateYoBotLimbs(float walk, float step, float strike)
+    void AnimateYoBotLimbs(float walk, float step, float attack, float strike, float rear, float stagger, float death, float flinchPose)
     {
-        // Legs tuck under the jets in a hop. Four-leg Gen models trot (FL+BR, FR+BL).
+        // Legs tuck under the jets in a hop, plant wide on a tell, buckle on a stagger and fold under as it falls.
+        // Four-leg Gen models trot (FL+BR, FR+BL).
         float tuck = flying ? -28f : 0f;
+        float brace = rear * 10f + stagger * Mathf.Sin(Time.time * 12f) * 14f + flinchPose * 8f;
+        float fold = death * 62f;
         float frontSwing = step * 30f * walk;
         float backSwing = -step * 30f * walk;
         if (legL != null)
-            legL.localRotation = legLRest * Quaternion.Euler(tuck + frontSwing, 0f, 0f);
+            legL.localRotation = legLRest * Quaternion.Euler(tuck + frontSwing + brace + fold, 0f, 0f);
         if (legR != null)
-            legR.localRotation = legRRest * Quaternion.Euler(tuck - frontSwing, 0f, 0f);
+            legR.localRotation = legRRest * Quaternion.Euler(tuck - frontSwing + brace + fold, 0f, 0f);
         if (legBL != null)
-            legBL.localRotation = legBLRest * Quaternion.Euler(tuck + backSwing, 0f, 0f);
+            legBL.localRotation = legBLRest * Quaternion.Euler(tuck + backSwing - brace + fold, 0f, 0f);
         if (legBR != null)
-            legBR.localRotation = legBRRest * Quaternion.Euler(tuck - backSwing, 0f, 0f);
+            legBR.localRotation = legBRRest * Quaternion.Euler(tuck - backSwing - brace + fold, 0f, 0f);
 
-        AnimateClaw(clawL, clawLRest, -step, walk, swipeLeft ? strike : 0f);
-        AnimateClaw(clawR, clawRRest, step, walk, swipeLeft ? 0f : strike);
+        // The sweep peaks mid-blow: the claw comes down from the wind-up, across, and home.
+        float sweepK = Mathf.Sin(Mathf.Clamp01(strike) * Mathf.PI);
+        AnimateClaw(clawL, clawLRest, -step, walk, swipeLeft ? attack : 0f, swipeLeft ? sweepK : 0f, rear, stagger, death, flinchPose);
+        AnimateClaw(clawR, clawRRest, step, walk, swipeLeft ? 0f : attack, swipeLeft ? 0f : sweepK, rear, stagger, death, flinchPose);
     }
 
-    void AnimateClaw(Transform claw, Quaternion rest, float step, float walk, float swipe)
+    void AnimateClaw(Transform claw, Quaternion rest, float step, float walk, float raiseAmount, float strike, float rear, float stagger, float death, float flinchPose)
     {
         if (claw == null)
             return;
@@ -1713,13 +1830,16 @@ public class Enemy : MonoBehaviour
         // Arms swing against the legs, spread for balance in a hop and grab while climbing.
         float swing = step * 22f * walk;
         float spread = flying ? 38f : climbing ? 25f + Mathf.Sin(Time.time * 14f) * 15f : 6f;
-        // The swipe raises the claw forward and sweeps it across the body.
-        float raise = -95f * swipe;
-        float sweep = -side * 55f * swipe;
+        // The wind-up raises the claw; the blow sweeps it across the body.
+        float raise = -95f * raiseAmount;
+        float sweep = -side * 55f * strike;
+        // A boss's tell throws both arms overhead and shakes them; a stagger flails them; a hit flings them back; death drops them.
+        raise += -125f * rear + stagger * Mathf.Sin(Time.time * 13f + side) * 40f + flinchPose * 30f + death * 55f;
+        spread += rear * 22f * Mathf.Sin(Time.time * 42f) + death * 60f + stagger * 25f;
         claw.localRotation = rest * Quaternion.Euler(swing + raise, sweep, side * spread);
     }
 
-    void AnimateSpiderLegs(float walk, float strike)
+    void AnimateSpiderLegs(float walk, float attack, float wind, float rear, float stagger, float death, float flinchPose)
     {
         for (int i = 0; i < spiderLegs.Length; i++)
         {
@@ -1731,7 +1851,7 @@ public class Enemy : MonoBehaviour
             float side = Mathf.Sign(leg.localPosition.x + 0.0001f);
             // Alternating fours: L1 R2 L3 R4 step together, then the other four.
             int group = (pair + (side > 0f ? 1 : 0)) % 2;
-            float phase = stridePhase + group * Mathf.PI;
+            float phase = rig.Cycle + group * Mathf.PI;
             float swing = Mathf.Sin(phase) * 16f * walk;
             float lift = Mathf.Max(0f, Mathf.Cos(phase)) * 16f * walk;
             if (flying)
@@ -1748,10 +1868,24 @@ public class Enemy : MonoBehaviour
                 bool stabbing = side < 0f ? swipeLeft : !swipeLeft;
                 if (stabbing)
                 {
-                    lift += 55f * strike;
-                    swing += 30f * strike;
+                    lift += 55f * attack;
+                    swing += 30f * attack;
                 }
+                // A boss's tell rears both front legs high and shakes them.
+                lift += rear * (70f + 8f * Mathf.Sin(Time.time * 42f));
+                swing += rear * 18f;
             }
+            else
+            {
+                // The back legs dig in under the rear-up, buckle on a stagger.
+                lift -= rear * 6f;
+                lift += stagger * (6f + 14f * Mathf.Sin(Time.time * 11f + i));
+            }
+            if (pair == 0)
+                lift += stagger * (30f + 20f * Mathf.Sin(Time.time * 10f + i)) + flinchPose * 18f;
+            // Death: every leg curls up into the body.
+            lift += death * 70f;
+            swing *= 1f - death;
             // Positive lift raises the foot on either side; positive swing brings it forward.
             leg.localRotation = spiderLegRest[i] * Quaternion.Euler(0f, -side * swing, side * lift);
         }
@@ -1861,6 +1995,11 @@ public class Enemy : MonoBehaviour
         if (lead != null && Vector3.Dot(lead.position - transform.position, transform.forward) < 0f)
             model.localRotation = Quaternion.Euler(0f, 180f, 0f);
         modelRest = model.localRotation;
+        modelScaleRest = model.localScale;
+        if (rig == null)
+            rig = new CharacterRig(GetInstanceID(), gameObject.name, spider);
+        else
+            rig.Label(gameObject.name);
         if (clawL != null) clawLRest = clawL.localRotation;
         if (clawR != null) clawRRest = clawR.localRotation;
         if (legL != null) legLRest = legL.localRotation;
