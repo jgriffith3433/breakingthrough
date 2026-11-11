@@ -853,6 +853,12 @@ public class CharacterMovement : MonoBehaviour {
                 Anim.SetFloat(FireSpeedHash, 1.35f * RunBoons.DrawSpeed);
             }
 
+            // An in-engine cinematic drives Wallit itself; ignore the stick so feet don't fight the marks.
+            if (CinematicDirector.IsOpen) {
+                AnimationMove(bodyVel);
+                return;
+            }
+
             bool rooted = PlayerGrowth.Instance != null && PlayerGrowth.Instance.Rooted;
             if (rooted) {
                 motor.Move(Vector3.zero);

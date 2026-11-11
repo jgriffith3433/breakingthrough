@@ -142,6 +142,8 @@ public class Enemy : MonoBehaviour
     // room is Dormant (it does nothing) until its encounter wakes it or a blow lands on it.
     public static bool Hunt;
     public bool Dormant;
+    // In-engine cinematic: the director places and poses this bot; Update only animates, never hunts or climbs.
+    public bool Scripted;
     bool flying;
     bool splitter;
     bool juker;
@@ -812,8 +814,18 @@ public class Enemy : MonoBehaviour
         float dt = Time.deltaTime;
         FaceBar();
 
-        if (Dormant && !down)
+        if (Dormant && !down && !Scripted)
             return;
+
+        if (Scripted && !down && !ragdoll)
+        {
+            if (modelled)
+            {
+                AnimateModel(dt);
+                TickFlash(dt);
+            }
+            return;
+        }
 
         if (ragdoll)
         {

@@ -203,12 +203,14 @@ Stamps, ink, paper and light are the world's weather; no rain, no sparks, no emb
 Each beat is lived. Format: **Where / When** — what the player does and sees; sound and voice; the consequence. Text, at most one
 line, is only the subtitle of a voiced line. Beats marked **(built)** exist per the docs; **(build)** is the gap to close.
 
-1. **The Stamp falls (built; Arcade version is the cold open, `ColdOpen.cs`).** Arcade, first run on a browser: no text page. The
-   RETURN TO SENDER stamp (`stamp_heavy`) drops onto Wallit, he lands in the circle as its ring lights, Slice says "Stay close."
-   (subtitle only), and the first Yo Bot is already rushing in; any move or swing ends it. Plays once per browser. Campaign scene:
-   Moonlit Hollow, first Campaign scene. Black screen, a stamp thump, ink on
-   leather; Wallit rolls into the lit circle ("Ow! That's extra!"), Slice: "You're inside. Inside, you exist." The ring flares
-   gold on the word *inside*.
+1. **The Stamp falls (built; Arcade version is the cold open, `ColdOpen.cs`; Campaign Chapter 1 is in-engine).** Arcade, first run
+   on a browser: no text page. The RETURN TO SENDER stamp (`stamp_heavy`) drops onto Wallit, he lands in the circle as its ring
+   lights, Slice says "Stay close." (subtitle only), and the first Yo Bot is already rushing in; any move or swing ends it.
+   Plays once per browser. **Campaign Chapter 1 (Sorting Yard):** an eight-shot in-engine scene (`CinematicDirector`,
+   `ch1_open_world`) — Wallit arrives on the west trail, Slice turns in her ring ("You're inside. Inside, you exist."), the
+   Courier raises its clipboard ("Hello! Uploading victory! Striking this address now!"), the stamp lands on Wallit at the
+   circle (flinch and shove), he answers ("Ow! That's extra!", "Return to sender."), and the camera settles behind him for
+   play with no cut to black. Proof: playtest `opening-scene` (events `opening-shot`, `opening-move`, `opening-skip`).
 2. **The first swing (built).** Yard, at the Ring. Wallit takes the bat; the first Clearing Crew bot wakes with `yobot_wake`.
    Combo hits are named (Deposit, Withdrawal, Overdraft!) by voice, not caption.
 3. **The Courier stamps Slice (built).** Yard boss. A clipboard flutter, the notice lands on Slice; the player must dodge (X) a

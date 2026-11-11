@@ -20,7 +20,10 @@ using UnityEngine.UI;
 public partial class Cutscene : MonoBehaviour {
     static Cutscene instance;
 
-    public static bool IsOpen { get { return instance != null && instance.open; } }
+    // A text-panel or still-reel scene (not an in-engine CinematicDirector scene).
+    public static bool PageOpen { get { return instance != null && instance.open; } }
+    // True for a page/reel scene or an in-engine CinematicDirector scene (both block bat, touch pads and camera orbit).
+    public static bool IsOpen { get { return PageOpen || CinematicDirector.IsOpen; } }
     public static Cutscene Instance { get { return instance; } }
     public static readonly List<string> Events = new List<string>();
 

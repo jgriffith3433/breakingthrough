@@ -158,8 +158,8 @@ public class PauseMenu : MonoBehaviour {
 
     void ArrangeButtons() {
         bool chapter = ChapterRun.Instance != null && CampaignSave.Active >= 0;
-        // Resume, then (in a chapter) Skip scene while a scene plays, Journal, Restart chapter, then Settings and Quit.
-        SkipSceneButton.gameObject.SetActive(chapter && Cutscene.IsOpen);
+        // Resume, then Skip scene while a page reel or the in-engine Chapter 1 opening plays, Journal, Restart, Settings, Quit.
+        SkipSceneButton.gameObject.SetActive((chapter && Cutscene.PageOpen) || (InLevel && CinematicDirector.IsOpen));
         JournalButton.gameObject.SetActive(chapter);
         RestartButton.gameObject.SetActive(chapter && !ChapterRun.Instance.Completed);
         DisarmRestart();
@@ -196,7 +196,13 @@ public class PauseMenu : MonoBehaviour {
 
     // The scene under the pause is over: the same as its Skip button, then play goes on.
     void SkipScene() {
-        if (Cutscene.Instance == null || !Cutscene.IsOpen) {
+        if (CinematicDirector.IsOpen) {
+            SceneSkips++;
+            Resume();
+            CinematicDirector.Instance.Skip();
+            return;
+        }
+        if (Cutscene.Instance == null || !Cutscene.PageOpen) {
             return;
         }
         SceneSkips++;

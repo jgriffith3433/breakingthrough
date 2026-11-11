@@ -316,8 +316,12 @@ public class LevelScene : MonoBehaviour {
         }
         Hud.Health.text = "HP [" + new string('|', Health) + new string('.', MaxHealth - Health) + "]";
 
-        // Esc twice leaves for the hub: the level keeps nothing mid-way, so it asks first.
+        // Esc skips an in-engine opening first; twice leaves for the hub once play has the stick.
         if (PlayInput.GetKeyDown(KeyCode.Escape) && !Completed && !PauseMenu.IsOpen && Time.frameCount != PauseMenu.ClosedFrame && Time.frameCount != SettingsPanel.ClosedFrame) {
+            if (CinematicDirector.IsOpen) {
+                CinematicDirector.Instance.Skip();
+                return;
+            }
             if (Time.time - escAt < 2.5f) {
                 LeaveToHub();
             } else {

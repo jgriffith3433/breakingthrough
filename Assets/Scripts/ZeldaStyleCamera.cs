@@ -83,6 +83,14 @@ public class ZeldaStyleCamera : MonoBehaviour {
     const float TouchFollowRate = 1.6f;
     float unlockYaw;
     float unlockBlend;   // 1 = just released, eases to 0
+    // In-engine cinematic handoff: blend from the last directed shot onto the follow camera (no black frame).
+    float handoffLeft;
+    float handoffDur;
+    Vector3 handoffFromPos;
+    Quaternion handoffFromRot;
+    bool cineHeld;
+    Vector3 cinePos;
+    Quaternion cineRot = Quaternion.identity;
     public static float FeelFollowDist;
     public static float FeelFov;
     public static bool FeelRecentred;
@@ -118,6 +126,63 @@ public class ZeldaStyleCamera : MonoBehaviour {
         Free,
         LockOn
     }
+
+    // The cinematic director writes the view each LateUpdate; the follow camera still ticks underneath.
+    public void CinematicHold(Vector3 pos, Quaternion rot) {
+        cineHeld = true;
+        cinePos = pos;
+        cineRot = rot;
+        handoffLeft = 0f;
+    }
+
+    // Point the orbit behind Wallit and snap there so the handoff has a stable follow target.
+    public void SnapBehind() {
+        cineHeld = false;
+        if (FollowXForm == null) {
+            FollowXForm = GameObject.FindWithTag("Player") != null ? GameObject.FindWithTag("Player").transform : null;
+        }
+        if (FollowXForm == null) {
+            return;
+        }
+        orbitYaw = FollowXForm.eulerAngles.y;
+        orbitPitch = 18f;
+        orbitReady = true;
+        viewPrimed = false;
+        float body = Mathf.Max(1f, BodyScale);
+        float camDist = MaxDistance * Mathf.Lerp(1f, body, 0.18f);
+        Vector3 target = FollowXForm.position + Vector3.up * (DistanceUp * body)
+            + Quaternion.Euler(orbitPitch, orbitYaw, 0f) * new Vector3(0f, 0f, -camDist);
+        transform.position = target;
+        transform.LookAt(FollowXForm.position + Vector3.up * Mathf.Max(1f, DistanceUp * body));
+        VelocityCamSmooth = Vector3.zero;
+        followDist = camDist;
+        CurrentCameraDistance = MaxDistance;
+        lastViewRot = transform.rotation;
+        lastViewTarget = Target != null ? Target.transform.position : FollowXForm.position;
+        viewPrimed = true;
+    }
+
+    // Ease from the current (cinematic) pose onto the follow camera over `seconds` (about 0.6 s).
+    // Call while the directed view is still held so the blend starts from the last shot, not from a snap.
+    public void BeginHandoff(float seconds) {
+        handoffDur = Mathf.Max(0.05f, seconds);
+        handoffLeft = handoffDur;
+        handoffFromPos = cineHeld ? cinePos : transform.position;
+        handoffFromRot = cineHeld ? cineRot : transform.rotation;
+        cineHeld = false;
+        // Arm the follow orbit behind Wallit without jumping the transform; LateUpdate lerps onto it.
+        if (FollowXForm != null) {
+            orbitYaw = FollowXForm.eulerAngles.y;
+            orbitPitch = 18f;
+            orbitReady = true;
+            viewPrimed = false;
+            VelocityCamSmooth = Vector3.zero;
+            CurrentCameraDistance = MaxDistance;
+            followDist = MaxDistance;
+        }
+    }
+
+    public bool HandoffBusy { get { return handoffLeft > 0f || cineHeld; } }
 
     // A camera made in code (the campaign levels, Level*.cs) takes the numbers scene2's camera has serialized.
     public void ConfigureForLevel(GameObject follow, GameObject crosshair, GameObject firstPerson) {
@@ -194,9 +259,32 @@ public class ZeldaStyleCamera : MonoBehaviour {
         }
     }
 
+    void LateUpdate() {
+        if (cineHeld) {
+            transform.position = cinePos;
+            transform.rotation = cineRot;
+            return;
+        }
+        if (handoffLeft > 0f) {
+            Vector3 followPos = transform.position;
+            Quaternion followRot = transform.rotation;
+            handoffLeft -= Mathf.Min(Time.unscaledDeltaTime, 0.05f);
+            float t = 1f - Mathf.Clamp01(handoffLeft / handoffDur);
+            t = t * t * (3f - 2f * t);
+            transform.position = Vector3.Lerp(handoffFromPos, followPos, t);
+            transform.rotation = Quaternion.Slerp(handoffFromRot, followRot, t);
+            if (handoffLeft <= 0f) {
+                viewPrimed = false;
+            }
+        }
+    }
+
     void Update() {
         transform.position -= shakeOffset;
         shakeOffset = Vector3.zero;
+        if (FollowXForm == null) {
+            return;
+        }
         Vector3 characterOffset = FollowXForm.position + new Vector3(0f, DistanceUp, 0f);
         if (!orbitReady && FollowXForm != null) {
             Vector3 fromPlayer = transform.position - FollowXForm.position;
