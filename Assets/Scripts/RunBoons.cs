@@ -141,6 +141,11 @@ public static class RunBoons {
         }
     }
 
+    // A card for clearing an early wave: one pick of three, no level gained.
+    public static void AddWaveCard() {
+        PendingLevels++;
+    }
+
     public static void AddChest() {
         PendingChests++;
     }
