@@ -6,10 +6,11 @@ using UnityEngine;
 // object; the subclass builds the place: a terrain skirt shaped for the place, a sky of its own, lamps, props, a laid
 // route, a landmark, a hazard, a scripted set piece and a music bed.
 //
-// Rules held here: nothing has a collider (bots walk straight lines; the playfield within 150 m of the circle stays
-// free of anything solid), no spark/glitter particles, no camera shake. Everything is drawn in vertex colour on the
-// bots' knoll shader, so it sits in the same night as the rest of the game. `Features` names each piece for the
-// playtest ("route:", "landmark:", "hazard:", "setpiece:").
+// Rules held here: movers meet no solid scenery (bots walk straight lines; the playfield within 150 m of the circle
+// stays free of anything that shoves Wallit). Kit walls and buildings still get CamBlock colliders so the camera can
+// sphere-cast against them without making the field solid. No spark/glitter particles, no camera shake. Everything is
+// drawn in vertex colour on the bots' knoll shader, so it sits in the same night as the rest of the game. `Features`
+// names each piece for the playtest ("route:", "landmark:", "hazard:", "setpiece:").
 public abstract class OwnMap : MonoBehaviour {
     public enum Shape { Box, Cylinder, Cone }
 

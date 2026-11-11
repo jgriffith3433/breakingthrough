@@ -1,3 +1,3 @@
-- lesson: Ending stills already on beta — `git ls-files Assets/Resources/Cinematics/Art/ending_*_back.jpg` shows all 18; sparse checkout hides JPGs on disk (`git sparse-checkout disable` or `studio_gen_import`). Do not re-queue GPU when blobs are real JFIF.
-- convention: campaign-full must set `LevelScene.ChapterOneIsLevel` and play Chapter 1 via `PlaytestBeats.Run(fromCard:true, finish:false)`, then `ChapterScene.ShowCard(1)` before chapters 2–6.
-- canon: ADDRESS FILED variants — Ledger / Two Doors / The Open Door reels are `ending_ledger` / `ending_doors` / `ending_open`; keyframes `ending_<variant>_<n>_back.jpg` beat `alt` stand-ins in CutsceneShots.
+- lesson: Cap yaw per frame — easing with raw unscaled dt snaps after a hitch; clamp dt to 0.05 s and deg/s (ZeldaStyleCamera.LimitYaw/LimitViewTurn).
+- lesson: scenario.txt must say `explore` or review plays smoke and no feel.* metrics exist.
+- lesson: a "playtest build failed, disk full" note is a build-server problem, not a code failure; don't rewrite working code for it.
