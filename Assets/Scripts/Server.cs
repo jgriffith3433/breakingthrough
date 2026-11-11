@@ -142,6 +142,7 @@ public class Server : MonoBehaviour {
         UpgradeLook.Say("Refused " + Refusals + "/" + RefusalsNeeded, 1.8f, 160f);
         CastVoice.SayLater("W", "Refused.", "server-refuse");
         step = Step.BackOff;
+        enemy.Stagger(0.5f);   // a refusal rocks it back
         clock = BackOffSeconds;
         enemy.Hold(BackOffSeconds);
         Vector3 away = transform.position - (Musician.Instance != null ? Musician.Instance.transform.position : transform.position);
@@ -156,6 +157,7 @@ public class Server : MonoBehaviour {
         clock = 0f;
         Events.Add("strike-wind");
         enemy.Hold(StrikeWind + 0.3f);
+        enemy.BeginTell();   // the Server rears up on its front legs before it serves
         GameAudio.PlayAt("stomp", transform.position, 0.8f, 0.7f);
         UpgradeLook.Say("The Server strikes!", 2.2f, 160f);
         if (RefusalsNeeded == DefaultRefusals) {
@@ -166,6 +168,7 @@ public class Server : MonoBehaviour {
 
     void Strike(Musician slice) {
         Struck = true;
+        enemy.EndTell(true);
         Events.Add("strike|slice");
         Fx.Ring(slice.transform.position, 8f, new Color(1f, 0.35f, 0.2f, 0.9f), 0.5f);
         GameAudio.PlayAt("stamp", transform.position, 0.9f, 0.8f);
