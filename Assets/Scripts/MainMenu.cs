@@ -149,8 +149,15 @@ public class MainMenu : MonoBehaviour {
             events.AddComponent<StandaloneInputModule>();
         }
         // A link from the website (?mode=arcade or ?mode=campaign) skips the menu once.
+        bool firstLoad = !modeHandled;
         string mode = modeHandled ? "" : UrlMode();
         modeHandled = true;
+        // A cold page load plays at once: after the "Tap to play" card the bat is in hand on wave 1, with no menu and
+        // no sign-in in between (the first five minutes must not start on a wall). Quit to menu still shows the menu,
+        // and the playtest scenarios (?playtest=) and the editor keep the menu they check.
+        if (mode == "" && firstLoad && ColdStartPlays()) {
+            mode = "arcade";
+        }
         if (mode == "arcade") {
             leaving = true;
             startWave = 1;
@@ -166,6 +173,17 @@ public class MainMenu : MonoBehaviour {
         if (mode == "campaign") {
             OpenCampaign();
         }
+    }
+
+    // True for a real player's first page load of the WebGL build (not the editor, not a ?playtest= or ?menu=1 address).
+    static bool ColdStartPlays() {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        string url = Application.absoluteURL ?? "";
+        return !Playtest.Running && url.IndexOf("playtest=", System.StringComparison.OrdinalIgnoreCase) < 0
+            && url.IndexOf("menu=1", System.StringComparison.OrdinalIgnoreCase) < 0;
+#else
+        return false;
+#endif
     }
 
     // The ?mode= value of the page address, lower case ("arcade", "campaign" or "").
