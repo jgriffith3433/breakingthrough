@@ -29,6 +29,7 @@ public static partial class Playtest {
         new PlaytestScenario("menus", "Shop menu, start a run, a level-up card, reroll and pick", 120, "menus"),
         new PlaytestScenario("words", "Reads the menu, the shop, the help line, build tips, pause, level-up cards and the game-over screen for retired cast words. Setup: the testing wave key visits the tip waves, then wave 2 is held until Slice falls", 300, "menus"),
         new PlaytestScenario("touch", "Touch only, for a phone-sized screen (mobile, or 844x390): the menu fits, tap Play, walk to the bots with the on-screen stick and tap Swing, tap a level-up card, play to wave 2", 330, "menus"),
+        new PlaytestScenario("title-scene", "The live title: Wallit, Slice and Yo Bots peeking over the hedge move in the 3D Hollow behind the menu (title-cast, title-motion), the logo stamps in with an ink splat and a thud within 3 s (title-logo), Play is in the lower third at 64 px or more and the scene holds 30 fps (title-play-layout, title-fps; run with mobile for 390x844 touch), then one tap on Play pushes the camera in and the run starts in under 2 s with no black frame over 0.3 s (title-play). Real taps only", 120, "menus"),
         new PlaytestScenario("first-screen", "The first screen: on a fresh save the menu shows only the logo, Play, Campaign and Settings (no Shop, no hint, no quote); every button is 44 px or more, inside the safe area, nothing overlaps and Play is the largest (events first-screen, first-screen-layout; metrics firstScreenOverlaps, firstScreenMinTapPx, firstScreenPlayLargest). One tap on Play starts Arcade (first-screen-play: seconds to the game scene, wanted under 2). In a release build = and - leave the wave alone (wave-keys-release; WaveDirector.ReleaseKeysProbe stands in for a release build). Setup shortcut: one run recorded as finished, then the menu shows Shop (shop-shown), a tap opens the upgrades and Close returns (shop-open). The ?mode= parser is checked on sample addresses (url-mode); the live address is logged too. Real taps only; run it with mobile or at 844x390 for the phone checks", 150, "menus"),
         new PlaytestScenario("touch-pause", "Pause and Settings by finger only, for a phone-sized screen (mobile, or 844x390): in an Arcade run, then Chapter 1's level, then the hub, the on-screen Pause button is found inside the safe area (pause-button, 44 px or more), tapped (pause-opened), Settings opened from it (settings-opened), sound switched and the music slider set (setting-changed), Done and Resume tapped (resumed; touchPauseCycles counts 3). The pause deck and the Settings panel are checked to sit inside the safe area with every control, in both orientations (pause-fits, settings-fits), so nothing scrolls", 400, "menus"),
         new PlaytestScenario("settings", "Press Tap to play, open Settings from the menu: sound off and on, music and effects sliders, Done; start a run, pause (button, then P), Settings from the pause menu, resume, play a little. Any screen size", 100, "menus"),
@@ -451,6 +452,13 @@ public static partial class Playtest {
             }
             if (id == "campaign-beats") {
                 yield return PlaytestBeats.Run(run);
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "title-scene") {
+                yield return PlaytestTitle.Run(run);
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
                 }
