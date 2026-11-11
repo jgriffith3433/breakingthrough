@@ -11,19 +11,33 @@ public class BossSetPiece : MonoBehaviour {
     public const float IntroSeconds = 4f;
     const float Dim = 0.38f;
 
-    // "intro|<title>|<wave>", "skip|<title>", "intro-end|<title>", "phase2|<title>", "payoff|<title>|<wave>".
+    // "intro|<title>|<wave>", "skip|<title>", "intro-end|<title>", "phase2|<title>", "payoff|<title>|<wave>", "order-drop|<wave>", "slice-crack|10".
     public static readonly List<string> Events = new List<string>();
     public static bool Active { get; private set; }
+    // True while the defeat payoff coroutine runs: WaveDirector holds the wave clear / act banner until it ends.
+    public static bool PayingOff { get; private set; }
     public static int Intros, Skips, Payoffs;
     public static float LastSlowSeconds;
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void ResetStatics() {
+        Events.Clear();
+        Active = false;
+        PayingOff = false;
+        Intros = Skips = Payoffs = 0;
+        LastSlowSeconds = 0f;
+    }
+
+    // Reused from existing Voice/ clips: wave beats from Story.md (first hurt / order aloud / order carried).
     static readonly string[][] WallitLines = {
-        new[] { "Plated. Bolted shut. Pay up.", "Heavy. Heavy costs extra." },
-        new[] { "Big one. Big invoice.", "Foreman. I know that clipboard." },
+        new[] { "You're bleeding, Slice.", "I'm covering you. Tab's open." }, // wave 10 plating
+        new[] { "Then I'm reading mine. Pay up.", "Big bill. Big payday." },  // wave 20 order
+        new[] { "Then it carries my bill.", "Last stretch. Pay up." },         // wave 30 The Order
     };
     static readonly string[][] SliceLines = {
-        new[] { "Close the circle.", "Behind me." },
-        new[] { "Steady.", "Clean." },
+        new[] { "Tch. Plated.", "Behind you." },
+        new[] { "It's reading it out.", "Closer." },
+        new[] { "Take them.", "Closer." },
     };
 
     Enemy boss;
@@ -37,6 +51,8 @@ public class BossSetPiece : MonoBehaviour {
     int line;
     float nextLine;
     string[] wallit, slice;
+    int waveNum;
+    bool cracked;
 
     public static void Begin(Enemy boss, int wave) {
         if (boss == null || ChapterRun.Instance != null || Camera.main == null) {
@@ -47,12 +63,23 @@ public class BossSetPiece : MonoBehaviour {
         if (boss.GetComponent<BossPhases>() == null) {
             boss.gameObject.AddComponent<Phases>();
         }
+        // Act three (waves 20-29): Yo Bots keep reading the order aloud after the Foreman arrives.
+        EnsureActThree(wave);
+    }
+
+    static void EnsureActThree(int wave) {
+        if (wave < 20 || wave >= 30 || Object.FindAnyObjectByType<ActThreeChorus>() != null) {
+            return;
+        }
+        new GameObject("Act Three Chorus").AddComponent<ActThreeChorus>();
     }
 
     void Init(Enemy foe, int wave) {
         boss = foe;
+        waveNum = wave;
+        cracked = false;
         cam = Camera.main.transform;
-        int pick = Mathf.Abs(wave / 10) % 2;
+        int pick = wave == 30 ? 2 : wave == 20 ? 1 : 0;
         wallit = WallitLines[pick];
         slice = SliceLines[pick];
         Events.Add("intro|" + boss.Title + "|" + wave);
@@ -74,7 +101,18 @@ public class BossSetPiece : MonoBehaviour {
         dark.rectTransform.anchorMin = Vector2.zero;
         dark.rectTransform.anchorMax = Vector2.one;
         dark.rectTransform.offsetMin = dark.rectTransform.offsetMax = Vector2.zero;
-        Say();
+        if (wave == 10) {
+            // Covering lines wait until Slice's visible crack (Update at 1.1 s), so the debt beat follows the wound.
+            nextLine = 1.35f;
+            line = 0;
+        } else {
+            Say();
+        }
+        if (wave == 20) {
+            // One order bark under the intro so act three is heard as soon as the Foreman lands.
+            CastVoice.SayLater("Y", "Order, read aloud: STRIKE. THIS. ADDRESS.", "cutscene");
+            GameAudio.Play("stamp", 0.85f, 0.55f);
+        }
     }
 
     void Say() {
@@ -128,6 +166,13 @@ public class BossSetPiece : MonoBehaviour {
             WallitVoice.Silence();
             SliceVoice.Silence();
             t = Mathf.Max(t, IntroSeconds - 0.5f);
+        }
+        // Wave 10: Slice takes the plating's first crack on camera (Story act two), then the covering lines play.
+        if (!cracked && waveNum == 10 && t >= 1.1f && Musician.Instance != null && Musician.Instance.Alive) {
+            cracked = true;
+            Musician.Instance.Hurt(1, boss);
+            Events.Add("slice-crack|10");
+            Fx.Ring(Musician.Instance.transform.position + Vector3.up * 0.4f, 3.5f, new Color(1f, 0.35f, 0.3f, 0.7f), 0.45f);
         }
         if (!skipped && t >= nextLine && line < 4 && t < IntroSeconds - 0.8f) {
             Say();
@@ -222,9 +267,38 @@ public class BossSetPiece : MonoBehaviour {
             return;
         }
         Payoffs++;
+        PayingOff = true;
         Events.Add("payoff|" + foe.Title + "|" + wave);
         var go = new GameObject("Boss Payoff");
         go.AddComponent<PayoffRun>().Go(foe.transform.position, wave);
+    }
+
+    // Waves 20-29: Yo Bots read the order aloud (Story act three) instead of chirping victory.
+    class ActThreeChorus : MonoBehaviour {
+        float next;
+        void Start() { next = Time.time + 5f; }
+        void Update() {
+            int wave = WaveDirector.Wave;
+            if (wave < 20 || wave >= 30 || ChapterRun.Instance != null) {
+                Destroy(gameObject);
+                return;
+            }
+            if (PauseMenu.IsOpen || LevelUpScreen.IsOpen || Active || Cutscene.IsOpen || Time.timeScale < 0.05f) {
+                return;
+            }
+            if (Time.time < next) {
+                return;
+            }
+            next = Time.time + 10f + Random.Range(0f, 5f);
+            string[] lines = {
+                "Order received! Strike the address!",
+                "Order, read aloud: STRIKE. THIS. ADDRESS.",
+                "Strike the address. Strike the address.",
+            };
+            CastVoice.SayLater("Y", lines[Random.Range(0, lines.Length)], "bark");
+            Events.Add("order-chorus|" + wave);
+            GameAudio.Play("stamp", 0.55f, 0.75f);
+        }
     }
 
     class PayoffRun : MonoBehaviour {
@@ -237,27 +311,57 @@ public class BossSetPiece : MonoBehaviour {
             Fx.Ring(at + Vector3.up * 0.3f, 9f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.7f);
             Fx.Emit(FxKind.Flash, at + Vector3.up * 1.4f, 1, new Color(1f, 0.9f, 0.6f, 0.8f), 4f, 0f);
             GameAudio.Play("homerun", 0.9f, 0.7f);
-            string[] lines = { "Clean.", "Paid in full.", "Filed." };
-            string said = lines[(wave / 10) % lines.Length];
-            SliceVoice.Cutscene(said);
-            UpgradeLook.Say("Slice: " + said, 2.2f, 300f);
+            if (wave == 30) {
+                // The order drops on the grass; Wallit's DENIED read stays on the finale card (Story.Finale) so it is not said twice.
+                GameObject scroll = CharacterKit.Prop("scroll");
+                scroll.name = "Fallen Order";
+                scroll.transform.position = at + Vector3.up * 0.12f;
+                scroll.transform.rotation = Quaternion.Euler(8f, Random.Range(-40f, 40f), 90f);
+                scroll.transform.localScale = Vector3.one * 1.1f;
+                GameObject blot = KitMesh.Disc("Denied");
+                blot.transform.SetParent(scroll.transform, false);
+                blot.transform.localPosition = new Vector3(0.02f, 0.02f, 0.04f);
+                blot.transform.localRotation = Quaternion.Euler(90f, 18f, 0f);
+                blot.transform.localScale = new Vector3(0.32f, 0.02f, 0.32f);
+                var shader = SafeShader.Find("Sprites/Default");
+                if (shader != null) {
+                    var mat = new Material(shader) { color = new Color(0.75f, 0.05f, 0.08f, 0.95f) };
+                    var rend = blot.GetComponent<Renderer>();
+                    if (rend != null) {
+                        rend.sharedMaterial = mat;
+                        rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    }
+                }
+                Object.Destroy(scroll, 14f);
+                GameAudio.Play("stamp", 1f, 0.5f);
+                Events.Add("order-drop|" + wave);
+                SliceVoice.Cutscene("Clean.");
+                UpgradeLook.Say("Slice: Clean.", 1.8f, 300f);
+            } else {
+                string[] lines = { "Clean.", "Take them." };
+                string said = lines[wave == 20 ? 1 : 0];
+                SliceVoice.Cutscene(said);
+                UpgradeLook.Say("Slice: " + said, 2.2f, 300f);
+            }
             float slow = 0.5f;
-            if (Time.timeScale > 0.99f && !PauseMenu.IsOpen && !LevelUpScreen.IsOpen) {
+            if (Time.timeScale > 0.99f && !PauseMenu.IsOpen && !LevelUpScreen.IsOpen && !StoryScreen.IsOpen) {
                 Time.timeScale = 0.3f;
                 float t0 = Time.realtimeSinceStartup;
-                while (Time.realtimeSinceStartup - t0 < slow) {
+                while (Time.realtimeSinceStartup - t0 < slow && !StoryScreen.IsOpen) {
                     yield return null;
                 }
-                if (Time.timeScale < 0.99f && Time.timeScale > 0f) {
+                if (Time.timeScale < 0.99f && Time.timeScale > 0f && !StoryScreen.IsOpen) {
                     Time.timeScale = 1f;
                 }
                 LastSlowSeconds = slow;
             }
+            PayingOff = false;
             Destroy(gameObject);
         }
 
         void OnDestroy() {
-            if (Time.timeScale < 0.99f && Time.timeScale > 0.01f) {
+            PayingOff = false;
+            if (Time.timeScale < 0.99f && Time.timeScale > 0.01f && !StoryScreen.IsOpen && !PauseMenu.IsOpen && !LevelUpScreen.IsOpen) {
                 Time.timeScale = 1f;
             }
         }

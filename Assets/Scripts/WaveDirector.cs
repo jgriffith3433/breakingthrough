@@ -361,7 +361,9 @@ public class WaveDirector : MonoBehaviour {
             }
         }
 
-        if (pending.Count == 0 && goldenIn < 0f && !AnyAlive() && (Musician.Instance == null || Musician.Instance.Alive)) {
+        // Hold the wave clear (and the next act banner / finale) until an Arcade boss payoff finishes.
+        if (pending.Count == 0 && goldenIn < 0f && !AnyAlive() && !BossSetPiece.PayingOff
+            && (Musician.Instance == null || Musician.Instance.Alive)) {
             cleared = Wave;
             UpgradeLook.WaveCleared(cleared);
             RunLog.EndWave(Wave, "cleared");
@@ -683,7 +685,17 @@ public class WaveDirector : MonoBehaviour {
         Enemy enemy = Spawn(def, spot, true);
         if (makeBoss) {
             bossPending = false;
-            enemy.MakeBoss();
+            // Arcade decade bosses 10/20/30 reuse the campaign roster (Plated Alpha, Foreman, The Order) as set pieces.
+            int hits = Mathf.RoundToInt(enemy.HitsToDrop * Tuning.BossHealthScale);
+            if (ChapterRun.Instance == null && Wave == 10 && kind == BotKind.PlatedYoBot) {
+                enemy.MakePlatedAlpha("The Plated Alpha", hits);
+            } else if (ChapterRun.Instance == null && Wave == 20 && kind == BotKind.MegaYoBot) {
+                enemy.MakeForeman("The Foreman", hits);
+            } else if (ChapterRun.Instance == null && Wave == 30 && kind == BotKind.SpiderBot) {
+                enemy.MakeOrderBearer("The Order", hits);
+            } else {
+                enemy.MakeBoss();
+            }
             UpgradeLook.Say(enemy.Title + " approaches!", 2.8f, 160f);
             GameAudio.Play("stomp", 1f, 0.6f);
             BossSetPiece.Begin(enemy, Wave);
