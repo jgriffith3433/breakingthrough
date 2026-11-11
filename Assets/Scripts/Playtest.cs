@@ -249,7 +249,7 @@ public static class Playtest {
         lockSwitchesSeen = ZeldaStyleCamera.LockSwitches;
         RunAnalytics.EnableDebug();
         ColdOpen.Suppress = id != "coldopen";
-        LevelScene.ChapterOneIsLevel = id == "campaign-beats" || id == "campaign-full" || id == "moods" || id == "campaign-touch" || id == "touch-pause" || id == "levels-1-3";   // the older chapter playtests press Begin on Chapter 1 and expect the chapter run
+        LevelScene.ChapterOneIsLevel = id == "explore" || id == "campaign-beats" || id == "campaign-full" || id == "moods" || id == "campaign-touch" || id == "touch-pause" || id == "levels-1-3";   // the older chapter playtests press Begin on Chapter 1 and expect the chapter run; explore must load Level_1_Yard or it hangs 60 s waiting for a level that never starts
         PlayInput.Release();
         MetaProgress.EnterSandbox(true);
         Random.InitState(options.seed);
