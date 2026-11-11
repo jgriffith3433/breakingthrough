@@ -3918,12 +3918,12 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         int told = 0;
         int named = 0;
         int read = 0;
-        string[] seen = new string[8];
+        string[] pageSpeakers = new string[8];
         while (read < 7 && Cutscene.IsOpen && !run.Done) {
             yield return new WaitForSecondsRealtime(0.7f);
             string who = scene.NameShown;
             string text = scene.TextShown;
-            seen[read] = who;
+            pageSpeakers[read] = who;
             if (who.Length > 0) {
                 named++;
             }
