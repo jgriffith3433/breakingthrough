@@ -1,6 +1,4 @@
-On a phone-size viewport (390x844) on beta:
-1. Open the page: the menu shows and Campaign answers a tap within a few seconds, before anything campaign-sized has downloaded.
-2. Tap Campaign, then a case file: a one-line "Pulling the case file... n%" plate shows at the bottom above the home bar, then the chapter card opens.
-3. Tap Begin on Chapter 1: "Filing Chapter 1... n%" shows at the bottom while the screen stays alive, then you have control within 15 s, with voices, stills and the Courier in place.
-4. Play Arcade to wave 10: no download, no stall.
-Scenario: `first-load` (mobile).
+1. Open Arcade on beta and play until Slice falls (or hold fire so the bots take her).
+2. Watch the run-end screen: waves and coins count with sound; a new best stamps; the next goal and any just-finished goal show; Wallit then Slice speak one short line.
+3. Tap **Retry** once — a new run should start and bots appear within a few seconds (on a phone, Retry is the big red button).
+4. Optional: clear wave 10 once, lose, and check the bat for Night Band on the next run.

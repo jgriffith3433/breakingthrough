@@ -1,2 +1,2 @@
-first-load
-{"mobile":true}
+run-end
+{"mobile":true,"width":390,"height":844}

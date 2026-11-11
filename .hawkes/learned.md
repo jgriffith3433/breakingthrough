@@ -1,3 +1,5 @@
-- lesson: Gen project id — hawkesgen calls need the org-scoped `org_eb0d5c82e8da8c2d.theplacedepartment`; the short name answers "No access".
-- lesson: Gen sfx loudness — some takes come back near-silent (-65 dB); measure and regenerate rather than boosting 30+ dB. `sound_effect` seconds must be at least 0.5.
-- convention: Sfx variants — `name.mp3`, `name_2.mp3`, `name_3.mp3` beside each other in Resources/Sfx; UI ones are `cardflip1..3`, `stamp1..3`, `panelslide1..3`, `buildup`.
+- canon: Arcade run-end exchanges — twelve Wallit/Slice pairs in `Story.RunEnds` / Docs/Story.md, picked from run facts, never repeat within five runs; title stays Address struck off.
+- convention: Run-end goals — twelve rungs in `Resources/Data/run_goals.json` (bits by index); looks via `RunGoals.HasLook` into `BatMarks`; coins via `MetaProgress.GrantCoins`.
+- lesson: Voice files marked skip-worktree — `git update-index --no-skip-worktree` then `git checkout HEAD -- path` restores them; Gen import is a fallback when the blob is missing.
+- lesson: Run-end Retry — gate `interactable` until the cast exchange finishes; playtests must wait on that, not only `ExchangeId`.
+- convention: Game-over leave — Retry reloads `scene2`; Menu/Escape returns to the menu (old any-key → menu broke Retry).
