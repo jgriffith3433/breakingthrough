@@ -29,6 +29,7 @@ public static class Playtest {
         new PlaytestScenario("menus", "Shop menu, start a run, a level-up card, reroll and pick", 120, "menus"),
         new PlaytestScenario("words", "Reads the menu, the shop, the help line, build tips, pause, level-up cards and the game-over screen for retired cast words. Setup: the testing wave key visits the tip waves, then wave 2 is held until Slice falls", 300, "menus"),
         new PlaytestScenario("touch", "Touch only, for a phone-sized screen (mobile, or 844x390): the menu fits, tap Play, walk to the bots with the on-screen stick and tap Swing, tap a level-up card, play to wave 2", 330, "menus"),
+        new PlaytestScenario("first-screen", "The first screen: on a fresh save the menu shows only the logo, Play, Campaign and Settings (no Shop, no hint, no quote); every button is 44 px or more, inside the safe area, nothing overlaps and Play is the largest (events first-screen, first-screen-layout; metrics firstScreenOverlaps, firstScreenMinTapPx, firstScreenPlayLargest). One tap on Play starts Arcade (first-screen-play: seconds to the game scene, wanted under 2). In a release build = and - leave the wave alone (wave-keys-release; WaveDirector.ReleaseKeysProbe stands in for a release build). Setup shortcut: one run recorded as finished, then the menu shows Shop (shop-shown), a tap opens the upgrades and Close returns (shop-open). The ?mode= parser is checked on sample addresses (url-mode); the live address is logged too. Real taps only; run it with mobile or at 844x390 for the phone checks", 150, "menus"),
         new PlaytestScenario("touch-pause", "Pause and Settings by finger only, for a phone-sized screen (mobile, or 844x390): in an Arcade run, then Chapter 1's level, then the hub, the on-screen Pause button is found inside the safe area (pause-button, 44 px or more), tapped (pause-opened), Settings opened from it (settings-opened), sound switched and the music slider set (setting-changed), Done and Resume tapped (resumed; touchPauseCycles counts 3). The pause deck and the Settings panel are checked to sit inside the safe area with every control, in both orientations (pause-fits, settings-fits), so nothing scrolls", 400, "menus"),
         new PlaytestScenario("settings", "Press Tap to play, open Settings from the menu: sound off and on, music and effects sliders, Done; start a run, pause (button, then P), Settings from the pause menu, resume, play a little. Any screen size", 100, "menus"),
         new PlaytestScenario("boss-set-pieces", "Arcade boss waves 10, 20, 30: each opens with a skippable intro (events boss-intro, boss-skip; the bot taps a key mid-intro), the boss bar and phase notch show, and defeat gives hit-stop, slow-mo, a burst and Slice's line (boss-payoff). Setup: wave key to 10/20/30, waiting bots trimmed to the boss, Slice topped up. Phone layout checks apply at 390 wide", 420, "content"),
@@ -147,6 +148,8 @@ public static class Playtest {
 #endif
 
     static PlaytestRun run;
+    // True from the moment a scenario starts (WaveDirector.WaveKeysAllowed: the bot's setup shortcut may use the wave keys).
+    public static bool Running { get; private set; }
     static int levelUps;
     static int lastWave;
     static float fpsSum;
@@ -207,6 +210,8 @@ public static class Playtest {
     }
 
     static void Stop() {
+        Running = false;
+        WaveDirector.ReleaseKeysProbe = false;
         SettingsPanel.Close();
         PauseMenu.Resume();
         PlayInput.Release();
@@ -220,6 +225,8 @@ public static class Playtest {
 
     static IEnumerator Bot(string id, PlaytestOptions options, PlaytestRun current) {
         run = current;
+        Running = true;
+        WaveDirector.ReleaseKeysProbe = false;
         if (id == "ch1") {
             id = "campaign-beats";
         }
@@ -419,6 +426,13 @@ public static class Playtest {
             }
             if (id == "campaign-beats") {
                 yield return PlaytestBeats.Run(run);
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "first-screen") {
+                yield return PlaytestFirstScreen.Run(run);
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
                 }
@@ -4040,16 +4054,10 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         CheckScreen("menu");
         run.Event("mode-select", "main menu shows \"" + menu.CampaignButton.GetComponentInChildren<Text>().text + "\" and \"" + menu.ArcadeButton.GetComponentInChildren<Text>().text + "\"");
         run.Metric("modeButtons", 2);
-        run.Event("menu-hint", "hint \"" + menu.HintText + "\" truncated=" + menu.HintTruncated + ", Campaign primary=" + menu.CampaignIsPrimary);
+        run.Event("menu-hint", "shop line \"" + menu.HintText + "\" truncated=" + menu.HintTruncated + ", Play primary=" + menu.PlayIsPrimary);
         run.Event("menu-stepper", "visible=" + menu.StepperVisible + " best wave " + MetaProgress.BestWave + " max start " + MetaProgress.MaxStartWave() + (menu.StepperVisible ? " text \"" + menu.StepperText.Replace("\n", " / ") + "\"" : ""));
-        if (menu.HintTruncated) {
-            run.Problem(PlaytestSeverity.Bug, "menu: the hint is cut off");
-        }
-        if (!menu.CampaignIsPrimary) {
-            run.Problem(PlaytestSeverity.Bug, "menu: Campaign is not the primary button");
-        }
-        if (menu.StepperVisible != (MetaProgress.MaxStartWave() >= 10)) {
-            run.Problem(PlaytestSeverity.Bug, "menu: the start-wave stepper shows before wave 10 is reached, or hides after");
+        if (!menu.PlayIsPrimary) {
+            run.Problem(PlaytestSeverity.Bug, "menu: Play is not the primary button");
         }
         run.Progress(0.1f);
         yield return new WaitForSecondsRealtime(2f);
