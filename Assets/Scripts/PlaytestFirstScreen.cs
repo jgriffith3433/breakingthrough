@@ -148,6 +148,13 @@ public static class PlaytestFirstScreen {
         // The fresh menu: logo, Play, Campaign, Settings. No Shop, no hint, no quote.
         bool fresh = MetaProgress.RunsFinished == 0 && MetaProgress.BestWave == 0 && string.IsNullOrEmpty(WaveDirector.LastRun);
         run.Event("first-screen", "fresh save " + fresh + ": buttons " + string.Join(", ", Visible(menu).ConvertAll(Label).ToArray()) + "; other words: " + ReadWords(menu) + "; Shop " + (menu.ShopButton == null ? "absent" : "shown"));
+        MenuStage stage = menu.Stage;
+        bool staged = stage != null && stage.Image != null && stage.Image.isActiveAndEnabled && stage.ModelsShown >= 3;
+        run.Event("first-screen-cast", staged ? "Wallit, Slice and " + (stage.ModelsShown - 2) + " bots on the first screen, one lit palette" : "no cast on the first screen");
+        run.Metric("firstScreenCastModels", stage != null ? stage.ModelsShown : 0);
+        if (!staged && Resources.Load<Texture2D>("UI/MenuArt") == null) {
+            run.Problem(PlaytestSeverity.Bug, "the first screen shows no Wallit, Slice or bots");
+        }
         if (fresh && menu.ShopButton != null) {
             run.Problem(PlaytestSeverity.Bug, "first-screen: the Shop shows before a first finished run");
         }

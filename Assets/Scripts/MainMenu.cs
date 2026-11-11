@@ -86,6 +86,7 @@ public class MainMenu : MonoBehaviour {
     RawImage art;
     float artFocus = 0.5f;
     float artWide = 1f;
+    public MenuStage Stage { get; private set; }
     float artTall = 1f;
     RectTransform moon;
     RectTransform mistLow;
@@ -357,6 +358,7 @@ public class MainMenu : MonoBehaviour {
         }
         // Pieces only some layouts have: forget the last build's.
         art = null;
+        Stage = null;
         flashRow = -1;
         shopOpen = false;
         ShopButton = null;
@@ -945,6 +947,14 @@ public class MainMenu : MonoBehaviour {
             artTall = aspect >= artAspect ? artAspect / aspect : 1f;
             // Upright phones see a slice of it: keep Wallit and Slice in it.
             artFocus = builtMode == UiMode.Tall ? 0.36f : 0.5f;
+        }
+        else {
+            // No key art file: show the cast itself, live, in the free part of the screen (right of the column, or above it on a tall phone).
+            bool tallScreen = builtMode == UiMode.Tall;
+            Vector2 from = tallScreen ? new Vector2(0f, 0.3f) : new Vector2(0.3f, 0f);
+            float shownW = (1f - from.x) * size.x;
+            float shownH = (1f - from.y) * size.y;
+            Stage = MenuStage.Make(canvas, from, Vector2.one, shownW / Mathf.Max(1f, shownH));
         }
         moon = Glow(canvas, new Color(0.62f, 0.74f, 1f, 0.12f), Mathf.Max(size.x, size.y) * 0.8f);
         moon.anchorMin = new Vector2(0.4f, 0.85f);

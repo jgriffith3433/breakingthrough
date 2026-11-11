@@ -837,8 +837,8 @@ public static partial class Playtest {
             SceneManager.LoadScene(MetaProgress.MenuScene);
         }
         yield return run.Until(() => Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the main menu");
-        if (Resources.Load<Texture2D>("UI/MenuArt") == null) {
-            run.Problem(PlaytestSeverity.Polish, "menu key art Resources/UI/MenuArt is missing");
+        if (Resources.Load<Texture2D>("UI/MenuArt") == null && Object.FindAnyObjectByType<MainMenu>()?.Stage == null) {
+            run.Problem(PlaytestSeverity.Polish, "menu key art Resources/UI/MenuArt is missing and no live stage stands in");
         }
         yield return new WaitForSecondsRealtime(1f);
         // The menu's Start must run to its end (it threw a NullReferenceException on a fresh save when the start-wave
@@ -8243,9 +8243,15 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                 shown = true;
             }
         }
-        if (art == null || menu == null || !shown) {
-            run.Problem(PlaytestSeverity.Bug, "the main menu is not showing the key art (Resources/UI/MenuArt)");
+        // No key art file: the menu stages the real cast live (MenuStage). Either one counts as the cast being on the first screen.
+        MenuStage stage = menu != null ? menu.Stage : null;
+        bool staged = stage != null && stage.Image != null && stage.Image.isActiveAndEnabled && stage.ModelsShown >= 3;
+        if (menu == null || (!shown && !staged)) {
+            run.Problem(PlaytestSeverity.Bug, "the main menu is not showing the cast (no key art and no live stage)");
         }
+        run.Event("menu-stage", staged ? "Wallit, Slice and " + (stage.ModelsShown - 2) + " bots live behind the menu, one lit palette" : "no live stage");
+        run.Metric("menuStageModels", stage != null ? stage.ModelsShown : 0);
+        shown = shown || staged;
         run.Event("menu-art", art != null ? "MenuArt " + art.width + "x" + art.height + (shown ? ", up behind the menu (Wallit, Slice and the bots)" : ", loaded but not on screen") : "no MenuArt");
         run.Metric("menuArtShown", shown ? 1 : 0);
         run.Progress(0.1f);
