@@ -968,7 +968,7 @@ public class ChapterRun : MonoBehaviour {
         ToMenu();
     }
 
-    void ToMenu() {
+    public void ToMenu() {
         ChapterMap.Unload();
         Time.timeScale = 1f;
         RunAnalytics.Screen("menu");

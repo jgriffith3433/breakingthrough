@@ -863,7 +863,7 @@ public class BatEquipment : MonoBehaviour {
         }
         if (count > 0) {
             Crack(1f, 0.85f);
-            Juice.Contact(Juice.Weight.Finisher, forward);
+            Juice.Contact(Juice.Weight.Finisher, Flat(transform.forward));
         }
         Say("grand slam spin (360 degrees, " + radius.ToString("0.0") + " m): " + count + " bot" + (count == 1 ? "" : "s") + " hit" + (thunder ? ", lightning called down" : ""));
         UpgradeLook.Say("GRAND SLAM!", 0.9f, -40f);
