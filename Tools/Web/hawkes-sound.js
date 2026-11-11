@@ -263,11 +263,11 @@
     prompt.id = "hawkes-tap";
     prompt.type = "button";
     prompt.setAttribute("aria-label", "Tap to play");
+    // Six words: the first-five check counts every word a stranger sees in the first minute (limit 40), and the tagline
+    // and the sound note are in the menu and Settings for anyone who goes looking.
     prompt.innerHTML =
       '<span class="t">The Place Department</span>' +
-      '<span class="s">Where things that should not exist are given an address.</span>' +
-      '<span class="b">Tap to play</span>' +
-      '<span class="n">Sound comes on with your tap. Turn it down in Settings.</span>';
+      '<span class="b">Tap to play</span>';
     // pointerup, not click: iOS Safari unlocks audio on touchend, and click can lag or be eaten by a scroll.
     prompt.addEventListener("pointerup", tap);
     prompt.addEventListener("touchend", function (e) {
