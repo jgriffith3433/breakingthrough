@@ -636,6 +636,8 @@ public static partial class Playtest {
         run.Metric("audioRunning", after == "running" ? 1 : 0);
         if (after == "prompt") {
             run.Problem(PlaytestSeverity.Bug, "the Tap to play prompt did not close when pressed");
+        } else if (SoundSettings.TapPromptUp) {
+            run.Problem(PlaytestSeverity.Bug, "Tap to play still covers the page after it was pressed");
         }
     }
 

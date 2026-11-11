@@ -45,6 +45,9 @@ public class MainMenu : MonoBehaviour {
     GameObject shopLayer;
     bool shopOpen;
     bool leaving;
+    // Cold start / ?mode=arcade: wait for the page's Tap to play card before loading the game scene, so the
+    // overlay never sits over a running wave (first-five@local played blind under it when Start raced ahead).
+    bool waitTapThenArcade;
     static bool modeHandled;
     Text pageText;
     string hint = "";
@@ -160,8 +163,13 @@ public class MainMenu : MonoBehaviour {
             mode = "arcade";
         }
         if (mode == "arcade") {
-            leaving = true;
             startWave = 1;
+            // Do not load the game under the Tap to play card: wait until it is gone (or was never on this page).
+            if (SoundSettings.TapPromptUp) {
+                waitTapThenArcade = true;
+                return;
+            }
+            leaving = true;
             Play();
             return;
         }
@@ -213,6 +221,15 @@ public class MainMenu : MonoBehaviour {
     }
 
     void Update() {
+        if (waitTapThenArcade) {
+            if (SoundSettings.TapPromptUp) {
+                return;
+            }
+            waitTapThenArcade = false;
+            leaving = true;
+            Play();
+            return;
+        }
         if (leaving || canvasRoot == null) {
             return;
         }

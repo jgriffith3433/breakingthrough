@@ -1,4 +1,4 @@
-1. Open Arcade on beta and play until Slice falls (or hold fire so the bots take her).
-2. Watch the run-end screen: waves and coins count with sound; a new best stamps; the next goal and any just-finished goal show; Wallit then Slice speak one short line.
-3. Tap **Retry** once — a new run should start and bots appear within a few seconds (on a phone, Retry is the big red button).
-4. Optional: clear wave 10 once, lose, and check the bat for Night Band on the next run.
+1. Open the beta Game page cold (no `?playtest=`).
+2. You should see the dark "The Place Department / Tap to play" card and **not** a live Wave HUD behind it.
+3. Tap the green button (or anywhere on the card): the card disappears and Arcade starts with Wallit in the circle.
+4. Confirm the card does not come back when using Fullscreen / Exit Fullscreen.

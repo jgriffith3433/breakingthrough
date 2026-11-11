@@ -33,6 +33,9 @@ public static class SoundSettings {
 
     [DllImport("__Internal")]
     static extern void HawkesSoundAttach();
+
+    [DllImport("__Internal")]
+    static extern string HawkesSoundState();
 #else
     static string HawkesSoundLoad() {
         return "";
@@ -43,7 +46,22 @@ public static class SoundSettings {
 
     static void HawkesSoundAttach() {
     }
+
+    static string HawkesSoundState() {
+        return "";
+    }
 #endif
+
+    // True while the page's "Tap to play" card is still up (WebGL only). Empty/missing prompt is not up.
+    public static bool TapPromptUp {
+        get {
+            try {
+                return HawkesSoundState() == "prompt";
+            } catch (System.Exception) {
+                return false;
+            }
+        }
+    }
 
     public static bool On {
         get { Load(); return now.on; }

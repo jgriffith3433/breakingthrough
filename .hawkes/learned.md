@@ -1,5 +1,3 @@
-- canon: Arcade run-end exchanges — twelve Wallit/Slice pairs in `Story.RunEnds` / Docs/Story.md, picked from run facts, never repeat within five runs; title stays Address struck off.
-- convention: Run-end goals — twelve rungs in `Resources/Data/run_goals.json` (bits by index); looks via `RunGoals.HasLook` into `BatMarks`; coins via `MetaProgress.GrantCoins`.
-- lesson: Voice files marked skip-worktree — `git update-index --no-skip-worktree` then `git checkout HEAD -- path` restores them; Gen import is a fallback when the blob is missing.
-- lesson: Run-end Retry — gate `interactable` until the cast exchange finishes; playtests must wait on that, not only `ExchangeId`.
-- convention: Game-over leave — Retry reloads `scene2`; Menu/Escape returns to the menu (old any-key → menu broke Retry).
+- lesson: Cold start vs Tap to play — `MainMenu.ColdStartPlays` must wait for `SoundSettings.TapPromptUp` before `Play()`; starting Arcade in `Start` leaves the run under `#hawkes-tap`.
+- lesson: first-five START regex — Gen matches `tap to start`, not `tap to play`; set `#hawkes-tap` aria-label to a START phrase or the cold bot treats the Unity canvas as gameplay and never presses the card.
+- convention: Tap to play source — edit `Tools/Web/hawkes-sound.js` only; `WebGlBuild.InstallSoundPrompt` copies it to the site on deploy.
