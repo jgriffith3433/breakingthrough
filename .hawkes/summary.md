@@ -1,12 +1,14 @@
-# Land camera tip 20738af (PR #204 work) on beta
+# Sound variants: the files #213/#214 left out
 
-## What
-J said merge anyway. I merged `origin/agent/merge-camera-023e16bfbe99` (tip 20738af) into this task branch, which sits on beta 703f56e. No camera code was rewritten or touched by me.
-It carries: sphere-cast pull-in, `CamBlock` on kit walls, yaw/view turn-rate caps (`LimitViewTurn`), idle recentre, eased lock-on/release, `CameraFeel` detector, and the `explore` scenario (`.hawkes/scenario.txt` = `explore`).
+**Wrong:** #213/#214 added the variant code but no sound files, because Gen was called as `theplacedepartment` ("No access"). With `org_eb0d5c82e8da8c2d.theplacedepartment` `sound_effect` works (about $0.006-0.018 a clip, about $0.35 in all with retries).
 
-## Conflicts
-Only `.hawkes/{scenario.txt,summary.md,try.md,learned.md}`; resolved with the camera branch's scenario (`explore`) and refreshed notes. No source conflicts (Playtest.cs auto-merged).
+**Changed:** 30 new mp3 files in `Assets/Resources/Sfx/`, no code change. Every name already matches what `GameAudio` / `PanelFx` load.
+- Combat, 3 each (the existing file is variant 1): `hit_2/_3`, `batcrack_2/_3`, `batswing_2/_3`, `coin_2/_3`, `stomp_2/_3`, `stamp_2/_3`, `death_2/_3`. `botstep`, `botstep_2`, `botstep_3` (there was no file, only a synth).
+- Home run: `homerun_whoosh`, `homerun_clang` (the names `BatEquipment` plays).
+- UI: `cardflip1-3`, `stamp1-3`, `panelslide1-3`, `buildup`.
+- Each clip is mono, 44.1 kHz, 64 kbps. Peak loudness (200 ms window) is matched to the existing `hit` sample, so all of them sit within about 2 dB of it. The six takes that were nearly silent were regenerated. Peaks are capped at -1.5 dBFS.
+- Added size is 248 KB, under the 1.5 MB limit.
 
-## Checked
-Unity compile and playtests not run here (no editor). Studio's build compiles; beta's explore run judges criteria 1-4 (Arcade metrics feel.cameraInsideFrames/Near/Snap/Jitter, idle recentre, lock ease).
-Ch1 explore stall is out of scope (k_634c3a07019d). No GPU used; estimate: none.
+**Checked:** md5 shows no duplicate files, and loudness was measured with ffmpeg. Unity was not run here, so I did not see the `audio` playtest. It is the scenario named in `.hawkes/scenario.txt` and already logs `audio-variants` and the repeat counts. Unity will create the `.meta` files on import.
+**Look at:** the `/disk` checkout is sparse, so I could not compare against the existing mp3s directly. I read their loudness from git. Whether `cardflip`/`stamp` get logged on a phone-sized level-up is for the beta playtest to confirm, since `PanelFx` falls back to coin/shot only when the files are missing.
+**GPU estimate:** none used.
