@@ -46,7 +46,7 @@ public class ControlsHelp : MonoBehaviour {
         scaler.referenceResolution = new Vector2(1920, 1080);
         canvasGo.AddComponent<GraphicRaycaster>();
 
-        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        Font font = UiSkin.Font(UiSkin.FontRole.Label);
         var go = new GameObject("Line");
         go.transform.SetParent(canvasGo.transform, false);
         line = go.AddComponent<Text>();
@@ -137,7 +137,7 @@ public class ControlsHelp : MonoBehaviour {
         var go = new GameObject("Bot Arrow");
         go.transform.SetParent(transform.GetChild(0), false);
         arrow = go.AddComponent<Text>();
-        arrow.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        arrow.font = UiSkin.Font(UiSkin.FontRole.Label);
         arrow.fontSize = 72;
         arrow.fontStyle = FontStyle.Bold;
         arrow.text = ">";

@@ -655,7 +655,7 @@ public class ChapterHub : MonoBehaviour {
         go.transform.SetParent(parent, false);
         go.transform.localPosition = local;
         var mesh = go.AddComponent<TextMesh>();
-        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        Font font = UiSkin.Font(UiSkin.FontRole.Body);
         mesh.font = font;
         mesh.text = text;
         mesh.characterSize = size;
@@ -680,7 +680,7 @@ public class ChapterHub : MonoBehaviour {
         text.transform.localPosition = new Vector3(0f, 4.15f, 0.2f);
         text.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
         var mesh = text.AddComponent<TextMesh>();
-        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        Font font = UiSkin.Font(UiSkin.FontRole.Body);
         mesh.font = font;
         mesh.text = "CHAPTER BOARD";
         mesh.characterSize = 0.16f;

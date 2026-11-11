@@ -61,7 +61,7 @@ public class ChapterScene : MonoBehaviour {
         Time.timeScale = 1f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        font = UiSkin.Font(UiSkin.FontRole.Body);
         if (CampaignSave.Active < 0) {
             // Opened straight from the editor: use the last file, or the first.
             CampaignSave.Open(Mathf.Max(0, CampaignSave.Last));

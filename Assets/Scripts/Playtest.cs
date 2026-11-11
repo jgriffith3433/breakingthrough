@@ -91,7 +91,7 @@ public static class Playtest {
         new PlaytestScenario("chapter2", "Chapter 2, No Fixed Address, played start to finish with real input (setup: the sandbox case file starts on chapter 2): Campaign, case file 1, Begin on the Chapter 2 card; the opening dialogue plays over the map (the bot reads pages, then skips it with Enter); the objective line reads Reach the gate with its metres counting down; Wallit walks out to the gate under fire from Yo Bots, batting those in reach; at the gate The Gate scene plays (read a few pages, then skipped), the objective turns to Back to the circle, Wallit walks home, three waves are held at the circle (objective Hold the circle, wave n of 3), then The Plated Alpha (stamped INVALID, with a boss bar) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 3, Menu, and reopening the file shows Chapter 3's card (events chapter2-setup, cutscene-open, cutscene-page, cutscene-skip, cutscene-play, objective, gate-leg, gate-reached, gate-scene-skip, home-leg, chapter-wave, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics gateReached, gateSceneSkipped, chapterWaves, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("chapter2-hud", "J's black block, looked at where it was reported: Chapter 2, No Fixed Address, on desktop with HDR on (setup: the sandbox case file starts on chapter 2; the real save is never touched). Campaign, case file 1, Begin; the opening scene is read and skipped; Wallit walks out to the gate (batting what is in reach) and, after The Gate scene, back to the circle with the objective reading Back to the circle and Yo Bots on screen. The top-middle HUD (the Slice bar, the chapter title card, her nameplate) is held still and read for a second and a half at four moments, each with its screen boxes (event hud-shot, scenes Chapter 2 HUD: ...), and the camera is rendered through the real bloom grade every few seconds: a solid black rectangle in the frame is a bug (event black-block), and NaN, Inf or over-bright pixels in the raw HDR frame are counted and traced to the shader or sky that draws them (event hdr-nan, a warning). It stops at the circle, wave 1, after the last shot; it does not play the rest of the chapter (events hdr, hud-shot, black-scan, black-block, hdr-nan, bot-scan, normals, hud-verdict, gate-leg, gate-reached, gate-scene-skip, home-leg; metrics hdrOn, hudShots, blackScans, blackBlocks, topMiddleBlackPct, hdrNanFrames, hdrNanPixelsMax, probesWithYoBots, hdrNanFramesWithYoBots, yoBotBlackPct, yoBotMeanLumaMin, badNormalVertices, yoBotsOnScreenMax, gateReached, gateSceneSkipped); the frames probed while Yo Bots are on screen are counted apart, and the graded frame inside each Yo Bot's screen box is measured for exact black", 330, "content"),
         new PlaytestScenario("story", "The story: no intro pages (the cold open replaces them), wave 1's story beats in canon voices, then setup: the testing wave key to wave 10 and wave 30 for the boss-wave title cards and beats (Yo Bots chirpy, Wallit on money, Slice clipped), and setup: wave 30's waiting bots trimmed to the boss and Slice topped up so the bat can finish it with real swings. Clearing wave 30 plays the finale pages and the ADDRESS FILED ending screen; the bot presses Keep going into overtime. Events beat, finale-*, ending", 600, "content"),
-        new PlaytestScenario("polish", "The final polish pass, on any screen size (run it on desktop and on the phone): the main menu, the HUD in wave 1, the level-up cards (setup: a level of bolts granted), the pause menu by its button, Resume, 40 s of real play, then the bot holds fire until Slice falls (setup: Plated Yo Bots ring her after 20 s) and the game-over panel reads Address struck off. Each screen gets a layout check (menu, hud, cards, pause, gameover), a stale-words check (no piano, keys or music-stopped words left), and a button-feel check (every button lifts on hover and sinks on press like the menu's); the audio-mix event says how many sounds played, how many stacked softer, how many were capped and how many dipped under a voice line", 420, "full"),
+        new PlaytestScenario("polish", "The final polish pass, on any screen size (run it on desktop and on the phone): the main menu, the HUD in wave 1, the level-up cards (setup: a level of bolts granted), the pause menu by its button, Resume, 40 s of real play, then the bot holds fire until Slice falls (setup: Plated Yo Bots ring her after 20 s) and the game-over panel reads Address struck off. Each screen gets a layout check (menu, hud, cards, pause, gameover), a fonts check (the fonts event and BuiltinFontTexts metric: visible Text still on the built-in font must be 0 on the menu, Settings, HUD, cards, pause and game-over; plus clipped or overflowing texts, 0 at 390x844 and 844x390; the subtitles are checked in coldopen), a stale-words check (no piano, keys or music-stopped words left), and a button-feel check (every button lifts on hover and sinks on press like the menu's); the audio-mix event says how many sounds played, how many stacked softer, how many were capped and how many dipped under a voice line", 420, "full"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.ai and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
     };
 
@@ -9314,6 +9314,19 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         }
         yield return new WaitForSecondsRealtime(1.5f);
         PolishScreen("menu", 0, false);
+        MainMenu fontMenu = Object.FindAnyObjectByType<MainMenu>();
+        if (fontMenu != null && fontMenu.SettingsButton != null && fontMenu.SettingsButton.isActiveAndEnabled) {
+            Tap(fontMenu.SettingsButton.gameObject);
+            run.Event("tap", "Settings (fonts check)");
+            yield return run.Until(() => SettingsPanel.IsOpen, 5f, "Settings to open from the menu");
+            if (run.Done) {
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(1f);
+            PolishScreen("settings", 600, true);
+            SettingsPanel.Close();
+            yield return new WaitForSecondsRealtime(0.4f);
+        }
         run.Progress(0.1f);
 
         yield return StartRun();
@@ -9515,6 +9528,10 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         float minText = 999f;
         float minTap = 999f;
         int found = 0;
+        int builtinFont = 0;
+        int clipped = 0;
+        int serifTexts = 0;
+        int typewriterTexts = 0;
 
         foreach (Text text in Object.FindObjectsByType<Text>(FindObjectsSortMode.None)) {
             if (!text.isActiveAndEnabled || string.IsNullOrEmpty(text.text) || text.color.a < 0.05f) {
@@ -9528,6 +9545,21 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                 continue;
             }
             string what = "\"" + Clip(text.text) + "\"";
+            if (UiSkin.IsBuiltinFont(text.font)) {
+                builtinFont++;
+                run.Problem(PlaytestSeverity.Polish, where + ": text still on the built-in font: " + what);
+            } else if (text.font.name.StartsWith("Fraunces")) {
+                serifTexts++;
+            } else {
+                typewriterTexts++;
+            }
+            Rect box = text.rectTransform.rect;
+            bool tooTall = text.verticalOverflow == VerticalWrapMode.Truncate && text.preferredHeight > box.height * 1.05f + 1f;
+            bool tooWide = text.horizontalOverflow == HorizontalWrapMode.Overflow && !text.resizeTextForBestFit && text.preferredWidth > box.width * 1.05f + 1f;
+            if (tooTall || tooWide) {
+                clipped++;
+                run.Problem(PlaytestSeverity.Polish, where + ": text " + (tooTall ? "clipped" : "overflows its box") + ": " + what);
+            }
             float px = text.fontSize * text.transform.lossyScale.y / ratio;
             minText = Mathf.Min(minText, px);
             if (px < 11f) {
@@ -9599,6 +9631,9 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         run.Metric(where + "MinTextPx", Mathf.Round(minText));
         run.Metric(where + "MinTapPx", Mathf.Round(minTap));
         run.Metric(where + "Overlaps", overlaps);
+        run.Metric(where + "BuiltinFontTexts", builtinFont);
+        run.Metric(where + "ClippedTexts", clipped);
+        run.Event("fonts", where + ": " + builtinFont + " texts on the built-in font, " + serifTexts + " Fraunces, " + typewriterTexts + " Special Elite, " + clipped + " clipped or overflowing");
         run.Event("layout", where + ": " + texts.Count + " texts, " + taps.Count + " buttons, " + overlaps + " overlaps, " + found + " other problems");
     }
 

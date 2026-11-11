@@ -105,7 +105,7 @@ public class PauseMenu : MonoBehaviour {
     }
 
     void Start() {
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        font = UiSkin.Font(UiSkin.FontRole.Body);
         Build();
         root.SetActive(false);
     }

@@ -184,7 +184,7 @@ public class TouchControls : MonoBehaviour {
     }
 
     void Start() {
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        font = UiSkin.Font(UiSkin.FontRole.Label);
         Build();
         root.SetActive(false);
     }

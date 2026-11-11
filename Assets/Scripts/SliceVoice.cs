@@ -500,7 +500,7 @@ public class SliceVoice : MonoBehaviour {
         scaler = canvasGo.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
-        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        Font font = UiSkin.Font(UiSkin.FontRole.Label);
         wallitText = MakeLine(canvasGo.transform, font, 190f, new Color(0.95f, 0.8f, 0.4f));
         sliceText = MakeLine(canvasGo.transform, font, 140f, new Color(0.86f, 0.9f, 1f));
         stamp = UiFit.CaptionStamp;

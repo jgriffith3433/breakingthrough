@@ -281,7 +281,7 @@ public class StoryScreen : MonoBehaviour {
     // ---------------------------------------------------------------- build
 
     void Build() {
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        font = UiSkin.Font(UiSkin.FontRole.Body);
         var canvasGo = new GameObject("Story Canvas");
         canvasGo.transform.SetParent(transform, false);
         var canvas = canvasGo.AddComponent<Canvas>();

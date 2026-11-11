@@ -74,7 +74,7 @@ public static class LevelKit {
         go.transform.localPosition = pos;
         go.transform.localRotation = flat ? Quaternion.Euler(90f, 0f, 0f) : Quaternion.identity;
         var t = go.AddComponent<TextMesh>();
-        t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        t.font = UiSkin.Font(UiSkin.FontRole.Label);
         go.GetComponent<MeshRenderer>().sharedMaterial = t.font.material;
         t.text = text;
         t.anchor = TextAnchor.MiddleCenter;
@@ -189,7 +189,7 @@ public class LevelHud : MonoBehaviour {
         var go = new GameObject(name);
         go.transform.SetParent(transform, false);
         var t = go.AddComponent<Text>();
-        t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        t.font = UiSkin.Font(UiSkin.FontRole.Label);
         t.fontSize = size;
         t.fontStyle = FontStyle.Bold;
         t.alignment = anchor;

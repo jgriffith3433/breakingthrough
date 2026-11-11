@@ -398,7 +398,7 @@ public class Musician : MonoBehaviour {
         veilRect.offsetMin = Vector2.zero;
         veilRect.offsetMax = Vector2.zero;
 
-        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        Font font = UiSkin.Font(UiSkin.FontRole.Label);
         title = MakeText(canvasGo.transform, font, Name, 26, new Vector2(0f, -8f), new Vector2(640f, 32f));
         title.alignment = TextAnchor.MiddleCenter;
 

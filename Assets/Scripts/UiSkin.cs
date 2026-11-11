@@ -3,6 +3,33 @@ using UnityEngine.UI;
 
 // Rounded, softly bordered panels for every UI in the game, drawn in code and nine-sliced.
 public static class UiSkin {
+    // One typeface identity for every screen: Special Elite (typewriter) for labels, stamps and HUD numbers,
+    // Fraunces (serif) for titles and dialogue. Files and licences are in Resources/Fonts.
+    public enum FontRole { Title, Label, Body, Number }
+    static UnityEngine.Font serif, typewriter, fallback;
+
+    public static UnityEngine.Font Font(FontRole role) {
+        if (serif == null) {
+            serif = Resources.Load<UnityEngine.Font>("Fonts/Fraunces-SemiBold");
+        }
+        if (typewriter == null) {
+            typewriter = Resources.Load<UnityEngine.Font>("Fonts/SpecialElite-Regular");
+        }
+        UnityEngine.Font pick = (role == FontRole.Title || role == FontRole.Body) ? serif : typewriter;
+        if (pick != null) {
+            return pick;
+        }
+        if (fallback == null) {
+            fallback = Resources.GetBuiltinResource<UnityEngine.Font>("LegacyRuntime.ttf");
+        }
+        return fallback;
+    }
+
+    // True when a Text still draws with Unity's built-in font (the playtest counts these).
+    public static bool IsBuiltinFont(UnityEngine.Font f) {
+        return f == null || f.name == "LegacyRuntime" || f.name == "Arial";
+    }
+
     static Sprite rounded;
     static Sprite pill;
     static Sprite glow;
