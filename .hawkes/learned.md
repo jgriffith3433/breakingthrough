@@ -1,3 +1,3 @@
-- lesson: Cap yaw per frame — easing with raw unscaled dt snaps after a hitch; clamp dt to 0.05 s and deg/s (ZeldaStyleCamera.LimitYaw/LimitViewTurn).
-- lesson: scenario.txt must say `explore` or review plays smoke and no feel.* metrics exist.
-- lesson: a "playtest build failed, disk full" note is a build-server problem, not a code failure; don't rewrite working code for it.
+- lesson: Gen project id — hawkesgen calls need the org-scoped `org_eb0d5c82e8da8c2d.theplacedepartment`; the short name answers "No access".
+- lesson: Gen sfx loudness — some takes come back near-silent (-65 dB); measure and regenerate rather than boosting 30+ dB. `sound_effect` seconds must be at least 0.5.
+- convention: Sfx variants — `name.mp3`, `name_2.mp3`, `name_3.mp3` beside each other in Resources/Sfx; UI ones are `cardflip1..3`, `stamp1..3`, `panelslide1..3`, `buildup`.
