@@ -1892,6 +1892,138 @@
    "voice": "chime",
    "text": "Quiet is cheap, and I rang for it anyway. Ding. Thank you, Wallit.",
    "asset": "a_fdc25f742e93110e"
+  },
+  {
+   "id": "wallit_short_shift_no_tip",
+   "voice": "wallit",
+   "text": "Short shift. No tip.",
+   "asset": "a_d1ae086c180c0ea4"
+  },
+  {
+   "id": "wallit_chirpy_took_the_ring",
+   "voice": "wallit",
+   "text": "Chirpy took the ring.",
+   "asset": "a_c558324ed10079ec"
+  },
+  {
+   "id": "wallit_six_legs_one_bill",
+   "voice": "wallit",
+   "text": "Six legs. One bill.",
+   "asset": "a_83cbbf343f980c4c"
+  },
+  {
+   "id": "wallit_big_one_cashed_out",
+   "voice": "wallit",
+   "text": "Big one cashed out.",
+   "asset": "a_e0a141c304d3a3fd"
+  },
+  {
+   "id": "wallit_new_high_still_short",
+   "voice": "wallit",
+   "text": "New high. Still short.",
+   "asset": "a_429365e1e3b1a706"
+  },
+  {
+   "id": "wallit_you_almost_fell",
+   "voice": "wallit",
+   "text": "You almost fell.",
+   "asset": "a_3552a063da0b8d0c"
+  },
+  {
+   "id": "wallit_one_stamp_from_the_next",
+   "voice": "wallit",
+   "text": "One stamp from the next.",
+   "asset": "a_0b5896b47e50b692"
+  },
+  {
+   "id": "wallit_plates_cost_extra",
+   "voice": "wallit",
+   "text": "Plates cost extra.",
+   "asset": "a_8cb50f0425aa9091"
+  },
+  {
+   "id": "wallit_order_s_still_out",
+   "voice": "wallit",
+   "text": "Order's still out.",
+   "asset": "a_e40fe87dba30a45e"
+  },
+  {
+   "id": "wallit_purse_is_fat_ring_s_gone",
+   "voice": "wallit",
+   "text": "Purse is fat. Ring's gone.",
+   "asset": "a_243ca104d8d27733"
+  },
+  {
+   "id": "wallit_returned_a_few",
+   "voice": "wallit",
+   "text": "Returned a few.",
+   "asset": "a_3ddefa90ce4dbd5f"
+  },
+  {
+   "id": "slice_again",
+   "voice": "slice",
+   "text": "Again.",
+   "asset": "a_564da39398293248"
+  },
+  {
+   "id": "slice_bigger_next",
+   "voice": "slice",
+   "text": "Bigger next.",
+   "asset": "a_15860c0f8ca7d9d7"
+  },
+  {
+   "id": "slice_hold",
+   "voice": "slice",
+   "text": "Hold.",
+   "asset": "a_dce03cc3925785dd"
+  },
+  {
+   "id": "slice_i_didn_t",
+   "voice": "slice",
+   "text": "I didn't.",
+   "asset": "a_5f0c7130cfcf5acb"
+  },
+  {
+   "id": "slice_then_take_it",
+   "voice": "slice",
+   "text": "Then take it.",
+   "asset": "a_b49d848ea421fae9"
+  },
+  {
+   "id": "slice_cover_me",
+   "voice": "slice",
+   "text": "Cover me.",
+   "asset": "a_a51eccf712f15a72"
+  },
+  {
+   "id": "slice_denied_later",
+   "voice": "slice",
+   "text": "Denied later.",
+   "asset": "a_7250f266c0bd43dc"
+  },
+  {
+   "id": "slice_spend_it_right",
+   "voice": "slice",
+   "text": "Spend it right.",
+   "asset": "a_cefd332594c6e743"
+  },
+  {
+   "id": "slice_keep_swinging",
+   "voice": "slice",
+   "text": "Keep swinging.",
+   "asset": "a_98adb112ac9b0fec"
+  },
+  {
+   "id": "slice_clean_again",
+   "voice": "slice",
+   "text": "Clean. Again.",
+   "asset": "a_530cd42ca7899bfe"
+  },
+  {
+   "id": "slice_noted",
+   "voice": "slice",
+   "text": "Noted.",
+   "asset": "restored"
   }
  ],
  "note": "Made through Hawkes Gen audio.voice (project theplacedepartment). Ids match WallitVoice.LineId. Slice, narrator, Yo Bot and Courier lines (pass 2) are mono 64 kbps re-encodes of Gen audio.dialogue-open stems."

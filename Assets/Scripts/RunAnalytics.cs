@@ -53,6 +53,10 @@ public static class RunAnalytics {
     static bool lastHurtBoss;
     static bool lastHurtElite;
 
+    // The bot that landed the blow that emptied Slice's bar (run-end cast exchange).
+    public static string LastKilledBy { get { return lastHurtBy ?? ""; } }
+    public static bool LastKilledBoss { get { return lastHurtBoss; } }
+
     // The wave.
     static int openWave;
     static int waveSwings;

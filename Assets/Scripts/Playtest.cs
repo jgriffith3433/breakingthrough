@@ -93,6 +93,7 @@ public static class Playtest {
         new PlaytestScenario("chapter2", "Chapter 2, No Fixed Address, played start to finish with real input (setup: the sandbox case file starts on chapter 2): Campaign, case file 1, Begin on the Chapter 2 card; the opening dialogue plays over the map (the bot reads pages, then skips it with Enter); the objective line reads Reach the gate with its metres counting down; Wallit walks out to the gate under fire from Yo Bots, batting those in reach; at the gate The Gate scene plays (read a few pages, then skipped), the objective turns to Back to the circle, Wallit walks home, three waves are held at the circle (objective Hold the circle, wave n of 3), then The Plated Alpha (stamped INVALID, with a boss bar) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 3, Menu, and reopening the file shows Chapter 3's card (events chapter2-setup, cutscene-open, cutscene-page, cutscene-skip, cutscene-play, objective, gate-leg, gate-reached, gate-scene-skip, home-leg, chapter-wave, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics gateReached, gateSceneSkipped, chapterWaves, chapterAdvanced, chapterResumed)", 900, "content"),
         new PlaytestScenario("chapter2-hud", "J's black block, looked at where it was reported: Chapter 2, No Fixed Address, on desktop with HDR on (setup: the sandbox case file starts on chapter 2; the real save is never touched). Campaign, case file 1, Begin; the opening scene is read and skipped; Wallit walks out to the gate (batting what is in reach) and, after The Gate scene, back to the circle with the objective reading Back to the circle and Yo Bots on screen. The top-middle HUD (the Slice bar, the chapter title card, her nameplate) is held still and read for a second and a half at four moments, each with its screen boxes (event hud-shot, scenes Chapter 2 HUD: ...), and the camera is rendered through the real bloom grade every few seconds: a solid black rectangle in the frame is a bug (event black-block), and NaN, Inf or over-bright pixels in the raw HDR frame are counted and traced to the shader or sky that draws them (event hdr-nan, a warning). It stops at the circle, wave 1, after the last shot; it does not play the rest of the chapter (events hdr, hud-shot, black-scan, black-block, hdr-nan, bot-scan, normals, hud-verdict, gate-leg, gate-reached, gate-scene-skip, home-leg; metrics hdrOn, hudShots, blackScans, blackBlocks, topMiddleBlackPct, hdrNanFrames, hdrNanPixelsMax, probesWithYoBots, hdrNanFramesWithYoBots, yoBotBlackPct, yoBotMeanLumaMin, badNormalVertices, yoBotsOnScreenMax, gateReached, gateSceneSkipped); the frames probed while Yo Bots are on screen are counted apart, and the graded frame inside each Yo Bot's screen box is measured for exact black", 330, "content"),
         new PlaytestScenario("story", "The story: no intro pages (the cold open replaces them), wave 1's story beats in canon voices, then setup: the testing wave key to wave 10 and wave 30 for the boss-wave title cards and beats (Yo Bots chirpy, Wallit on money, Slice clipped), and setup: wave 30's waiting bots trimmed to the boss and Slice topped up so the bat can finish it with real swings. Clearing wave 30 plays the finale pages and the ADDRESS FILED ending screen; the bot presses Keep going into overtime. Events beat, finale-*, ending", 600, "content"),
+        new PlaytestScenario("run-end", "Arcade run-end screen (Docs/Story.md): five losses with different facts each play a distinct Wallit/Slice voiced exchange; waves and coins count with sound, a new best stamps, finished goals stamp and unlock a bat look; at 390x844 touch one tap on Retry starts the next run and the first bot spawns within 4 s; the screen fits without scrolling, Retry is the largest button, the subtitle is one line, overlap check 0. Events run-end-count, best-stamp, goal-done, cast-exchange, run-start, first-bot, run-end-layout; metrics runEndExchanges, retryToBotSeconds, runEndOverlaps, runEndRetryLargest, runEndSubtitleOneLine", 420, "full"),
         new PlaytestScenario("polish", "The final polish pass, on any screen size (run it on desktop and on the phone): the main menu, the HUD in wave 1, the level-up cards (setup: a level of bolts granted), the pause menu by its button, Resume, 40 s of real play, then the bot holds fire until Slice falls (setup: Plated Yo Bots ring her after 20 s) and the game-over panel reads Address struck off. Each screen gets a layout check (menu, hud, cards, pause, gameover), a fonts check (the fonts event and BuiltinFontTexts metric: visible Text still on the built-in font must be 0 on the menu, Settings, HUD, cards, pause and game-over; plus clipped or overflowing texts, 0 at 390x844 and 844x390; the subtitles are checked in coldopen), a stale-words check (no piano, keys or music-stopped words left), and a button-feel check (every button lifts on hover and sinks on press like the menu's); the audio-mix event says how many sounds played, how many stacked softer, how many were capped and how many dipped under a voice line", 420, "full"),
         new PlaytestScenario("levelup", "The level-up jackpot and the panel transitions, played with real input (on a phone viewport, 390x844 touch, by finger taps): an Arcade run; setup: a level's worth of bolts. The world eases to a stop (event ease-down: time scale samples between 1 and 0), three cards are dealt face down as Department forms and flip one after another with a rising-pitch card-flip sound, the rarest last with the biggest sound and a gold stamp (events level-up-juice: open, flip card n (rarity, pitch, sound cardflip), pick, closed; metrics flipsLogged, rarestLast). The cards are checked on screen: every card tap area 44 px or more and no text or icon boxes overlapping inside a card (events cards-fit, card-tap-size; metrics cardOverlaps, cardMinTapPx). One tap (a number key on desktop) picks a card and stamps APPROVED (event approved-stamp); play eases back (ease-up) and the bot swings (levelup-to-swing: seconds from the level-up to the first accepted swing, wanted under 2.5; metric levelUpToSwingSeconds). Then Pause, Settings and the game-over panel (setup: Slice's bar emptied) open and close, each timed by PanelFx (events panel-transition: seconds, frames, biggest alpha step; metrics panelSecondsMin, panelSecondsMax: wanted 0.15 to 0.25 s, no step over 0.25 in one frame) with a panelslide sound", 300, "menus"),
         new PlaytestScenario("site", "The website around the game: reads the landing page, every page the deploy listed in site/pages.json and every page linked from them (outside Game/), looks for a blog, logs which pages exist, checks each footer's \"Powered by HAWKES GEN\" link to hawkesgen.ai and the landing page's link to hawkesbiomedical.com, shows each page's footer over the game for a few seconds, then plays 20 s to show the game screen has no footer", 120, "menus"),
@@ -276,6 +277,10 @@ public static class Playtest {
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
                 }
+                yield break;
+            }
+            if (id == "run-end") {
+                yield return PlaytestRunEnd.Run(run);
                 yield break;
             }
             if (id == "polish") {
@@ -801,6 +806,15 @@ public static class Playtest {
     }
 
     // Setup: the run always starts from the menu, as a player's does.
+    // Other playtest modules (PlaytestRunEnd, …) start Arcade the same way the main runner does.
+    public static IEnumerator ToMenuPublic() {
+        yield return ToMenu();
+    }
+
+    public static IEnumerator StartArcadePublic() {
+        yield return StartRun();
+    }
+
     static IEnumerator ToMenu() {
         run.Scene("Main Menu");
         if (SceneManager.GetActiveScene().name != MetaProgress.MenuScene) {
@@ -10049,7 +10063,16 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         } else {
             yield return new WaitForSecondsRealtime(1.5f);
         }
-        PlayInput.Tap(KeyCode.Space);
+        // Retry starts a new run; Menu (or Escape) returns to the main menu for scenarios that expect it.
+        if (RunEndScreen.Instance != null && RunEndScreen.Instance.MenuButton != null && RunEndScreen.Instance.MenuButton.isActiveAndEnabled) {
+            var data = new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left };
+            GameObject menu = RunEndScreen.Instance.MenuButton.gameObject;
+            ExecuteEvents.Execute(menu, data, ExecuteEvents.pointerDownHandler);
+            ExecuteEvents.Execute(menu, data, ExecuteEvents.pointerClickHandler);
+            ExecuteEvents.Execute(menu, data, ExecuteEvents.pointerUpHandler);
+        } else {
+            PlayInput.Tap(KeyCode.Escape);
+        }
         yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene, 20f, "the menu after the game-over screen");
         if (!run.Done) {
             run.Scene("Main Menu");
