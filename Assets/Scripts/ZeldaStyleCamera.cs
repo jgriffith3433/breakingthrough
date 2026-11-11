@@ -74,6 +74,13 @@ public class ZeldaStyleCamera : MonoBehaviour {
     float lockYawVel;
     float lastLockSnapDeg;
     bool wasLocked;
+    // Touch only: the nearest bot in swing reach is locked without the camera turning to it (no Lock button, no Shift).
+    bool softLock;
+    float lastDragAt = -10f;
+    public static float FeelOrbitYaw;
+    public static float FeelMoveYaw = -1f;   // world yaw of the stick's heading, -1 with the stick at rest
+    public static float FeelDragAt = -10f;
+    const float TouchFollowRate = 1.6f;
     float unlockYaw;
     float unlockBlend;   // 1 = just released, eases to 0
     public static float FeelFollowDist;
@@ -212,14 +219,17 @@ public class ZeldaStyleCamera : MonoBehaviour {
         }
 
         TickIdleRecentre();
+        TickTouchFollow();
         TickLockEase();
 
         switch (CamState) {
             case CamStates.Behind:
-                if (!WaveDirector.IsBuilding && !LevelUpScreen.IsOpen && !PauseMenu.IsOpen && !Cutscene.IsOpen && LockedOnGameObject == null && unlockBlend <= 0f) {
+                if (!WaveDirector.IsBuilding && !LevelUpScreen.IsOpen && !PauseMenu.IsOpen && !Cutscene.IsOpen && !HardLocked && unlockBlend <= 0f) {
                     float mx = PlayInput.GetAxis("Mouse X");
                     float my = PlayInput.GetAxis("Mouse Y");
                     if (Mathf.Abs(mx) > 0.001f || Mathf.Abs(my) > 0.001f) {
+                        lastDragAt = Time.unscaledTime;
+                        FeelDragAt = lastDragAt;
                         StoppedMoving = false;
                         FeelRecentred = false;
                     }
@@ -318,6 +328,36 @@ public class ZeldaStyleCamera : MonoBehaviour {
         FeelFollowDist = followDist > 0f ? followDist : Vector3.Distance(transform.position, characterOffset);
     }
 
+    // A lock the camera turns to (Shift on desktop); the touch soft lock only aims Wallit and the bat.
+    bool HardLocked {
+        get { return LockedOnGameObject != null && !softLock; }
+    }
+
+    // Touch: the camera swings behind the way the stick is pushed, damped and capped; a drag turns it and is left alone for a
+    // moment; with no input at all TickIdleRecentre brings it behind Wallit after IdleRecentreSeconds.
+    void TickTouchFollow() {
+        FeelOrbitYaw = orbitYaw;
+        FeelMoveYaw = -1f;
+        if (!UiFit.Touch || FollowXForm == null || HardLocked || WaveDirector.IsBuilding || LevelUpScreen.IsOpen || PauseMenu.IsOpen || Cutscene.IsOpen) {
+            return;
+        }
+        float h = PlayInput.GetAxis("Horizontal");
+        float v = PlayInput.GetAxis("Vertical");
+        if (h * h + v * v < 0.09f) {
+            return;
+        }
+        float angle = Mathf.Atan2(h, v) * Mathf.Rad2Deg;   // 0 = straight ahead of the camera
+        FeelMoveYaw = Mathf.Repeat(orbitYaw + angle, 360f);
+        if (Mathf.Abs(angle) > 110f || Time.unscaledTime - lastDragAt < 0.8f) {
+            return;   // walking back toward the camera never flips it; a drag in progress is respected
+        }
+        float dt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
+        float want = orbitYaw + Mathf.Clamp(angle, -60f, 60f);
+        orbitYaw = LimitYaw(orbitYaw, Mathf.LerpAngle(orbitYaw, want, 1f - Mathf.Exp(-TouchFollowRate * dt)));
+        StoppedMoving = false;
+        FeelRecentred = false;
+    }
+
     float LimitYaw(float from, float to) {
         float max = MaxYawRate * Mathf.Min(Time.unscaledDeltaTime, 0.05f);
         return from + Mathf.Clamp(Mathf.DeltaAngle(from, to), -max, max);
@@ -343,7 +383,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
 
     // After ~2 s with no look input and no lock, ease the orbit back behind Wallit's facing.
     void TickIdleRecentre() {
-        if (FollowXForm == null || LockedOnGameObject != null || WaveDirector.IsBuilding || LevelUpScreen.IsOpen || PauseMenu.IsOpen || Cutscene.IsOpen) {
+        if (FollowXForm == null || HardLocked || WaveDirector.IsBuilding || LevelUpScreen.IsOpen || PauseMenu.IsOpen || Cutscene.IsOpen) {
             StoppedMoving = false;
             return;
         }
@@ -380,7 +420,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
         if (FollowXForm == null) {
             return;
         }
-        bool locked = LockedOnGameObject != null;
+        bool locked = HardLocked;
         if (wasLocked && !locked) {
             unlockYaw = orbitYaw;
             unlockBlend = 1f;
@@ -423,6 +463,11 @@ public class ZeldaStyleCamera : MonoBehaviour {
     // close; right click (or Tab) moves it to the next nearest, round the list.
     void AcquireTarget() {
         bool holding = PlayInput.GetKey(KeyCode.LeftShift) || PlayInput.GetKey(KeyCode.RightShift);
+        if (UiFit.Touch && !holding) {
+            AcquireSoft();
+            return;
+        }
+        softLock = false;
         if (!holding || WaveDirector.IsBuilding) {
             LockedOnGameObject = null;
             return;
@@ -466,6 +511,44 @@ public class ZeldaStyleCamera : MonoBehaviour {
         } else if (current < 0) {
             LockedOnGameObject = lockList[0].gameObject;
         }
+    }
+
+    // Touch: the nearest bot within a little past the bat's reach, kept until another is clearly nearer. No button, no cycling.
+    void AcquireSoft() {
+        softLock = true;
+        if (FollowXForm == null || WaveDirector.IsBuilding || LevelUpScreen.IsOpen || PauseMenu.IsOpen || Cutscene.IsOpen) {
+            LockedOnGameObject = null;
+            return;
+        }
+        Vector3 origin = FollowXForm.position;
+        float reach = BatEquipment.Reach * 1.5f;
+        Enemy best = null;
+        float bestSqr = reach * reach;
+        Enemy held = null;
+        List<Enemy> roster = Enemy.Roster;
+        for (int i = 0; i < roster.Count; i++) {
+            Enemy enemy = roster[i];
+            if (enemy == null || !enemy.Alive || enemy.Climbing || enemy.Dormant) {
+                continue;
+            }
+            float sqr = (enemy.transform.position - origin).sqrMagnitude;
+            if (LockedOnGameObject == enemy.gameObject && sqr <= reach * reach * 1.2f) {
+                held = enemy;
+            }
+            if (sqr < bestSqr) {
+                bestSqr = sqr;
+                best = enemy;
+            }
+        }
+        if (held != null && best != null && best != held) {
+            float heldSqr = (held.transform.position - origin).sqrMagnitude;
+            if (heldSqr < bestSqr * 1.69f) {   // the new one must be a third closer to take over
+                best = held;
+            }
+        } else if (held != null && best == null) {
+            best = held;
+        }
+        LockedOnGameObject = best != null ? best.gameObject : null;
     }
 
     // How far the lock reaches: a walk, not a bowshot. Grows with you.
