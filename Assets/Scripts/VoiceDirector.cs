@@ -80,6 +80,7 @@ public static class VoiceDirector {
             case "boss-phase":
             case "low":
             case "slice-low":
+            case "stakes-line":
             case "cutscene":
                 return Priority.Key;
             case "wave":

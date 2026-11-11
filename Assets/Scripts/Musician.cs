@@ -241,6 +241,7 @@ public class Musician : MonoBehaviour {
         BuildBar();
         FindSlice();
         SliceVoice.Ensure(this);
+        StakesFeel.Ensure(this);
     }
 
     void OnDestroy() {
@@ -268,6 +269,7 @@ public class Musician : MonoBehaviour {
         flinch = 1f;
         GameAudio.Play("hit", 0.45f);
         RefreshBar();
+        StakesFeel.OnSliceHit(this, amount, by);
         if (Alive) {
             OnHurtFlinch();
         } else {

@@ -235,6 +235,8 @@ line, is only the subtitle of a voiced line. Beats marked **(built)** exist per 
 Beat rule: every new beat gets a row here first, with where, when, the sound and voice it needs, the event that is the proof,
 and a playtest event name.
 
+- **The breach (Arcade and chapters that hold the circle).** A bot reaches Slice: the ring stutters and greys, the screen's edges lose colour, under 30% a heartbeat layer rises, and Wallit's first-hit line ("That's my account! Hands off!") is the only word. Seen and heard, never explained.
+
 ## Gaps against the 10-second rule
 
 | Area | Gap | Fix | Cost |

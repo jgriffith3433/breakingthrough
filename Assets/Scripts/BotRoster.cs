@@ -53,7 +53,7 @@ public static class BotRoster {
             Weave = true,
             Tint = new Color(1.25f, 0.95f, 0.4f),
             UnlockWave = 1,
-            Blurb = "Yo Bots. Small, loud, and walking straight at the circle. One chirps: Uploading victory."
+            Blurb = "Yo Bots. Small, loud, and walking straight at her. One chirps: Uploading victory."
         };
     }
 
