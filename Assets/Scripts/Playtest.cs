@@ -8906,6 +8906,36 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         }
     }
 
+    // Touch camera probe: one finger down off the buttons and dragged across (the camera turns), lifted, then nothing for up to
+    // 3.5 s (it recentres behind Wallit after 2 s idle). Logs camera-drag and camera-recentre.
+    static IEnumerator CameraDragProbe() {
+        Vector2 from = new Vector2(Screen.width * 0.6f, Screen.height * 0.6f);
+        float before = ZeldaStyleCamera.FeelOrbitYaw;
+        for (int i = 0; i <= 10; i++) {
+            TouchControls.BotFinger(5, from + new Vector2(i * Screen.width * 0.025f, 0f), true);
+            yield return null;
+        }
+        TouchControls.BotFinger(5, Vector2.zero, false);
+        float turned = Mathf.Abs(Mathf.DeltaAngle(before, ZeldaStyleCamera.FeelOrbitYaw));
+        run.Event("camera-drag", "a drag off the buttons turned the camera " + turned.ToString("0") + " deg");
+        run.Metric("touchDragTurnDeg", Mathf.Round(turned));
+        if (turned < 3f) {
+            run.Problem(PlaytestSeverity.Bug, "a drag off the buttons did not turn the camera");
+        }
+        float idleStart = Time.realtimeSinceStartup;
+        float body;
+        while (Time.realtimeSinceStartup - idleStart < 4f) {
+            body = Juice.Cam != null && Juice.Cam.Target != null ? Juice.Cam.Target.transform.eulerAngles.y : 0f;
+            if (ZeldaStyleCamera.FeelRecentred) {
+                run.Event("camera-recentre", "recentred " + (Time.realtimeSinceStartup - idleStart).ToString("0.0") + " s after the finger lifted (body yaw " + body.ToString("0") + ")");
+                run.Metric("touchRecentreSeconds", Mathf.Round((Time.realtimeSinceStartup - idleStart) * 10f) / 10f);
+                yield break;
+            }
+            yield return null;
+        }
+        run.Problem(PlaytestSeverity.Warning, "the camera had not recentred 4 s after a drag");
+    }
+
     static IEnumerator TouchPlay(float seconds) {
         float start = Time.realtimeSinceStartup;
         float nextMetrics = 0f;
@@ -8919,6 +8949,9 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         int tapFinger = -1;
         bool checkedHud = false;
         bool checkedCards = false;
+        bool dragProbed = false;
+        float steerFor = 0f;
+        float nextYawLog = 1f;
         Vector2 stickAt = Vector2.zero;
         var player = Object.FindAnyObjectByType<CharacterMovement>();
 
@@ -9052,11 +9085,6 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                     tapFinger = 3;
                     nextTap = now + 1.5f;
                     run.Event("tap", "Next wave");
-                } else if (!building && birds != TouchControls.Locked && TouchControls.Spot("Lock", out at)) {
-                    TouchControls.BotFinger(2, at, true);
-                    tapping = true;
-                    tapFinger = 2;
-                    nextTap = now + 0.6f;
                 }
             }
 
@@ -9082,9 +9110,27 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                 yield break;
             }
 
+            // Camera follow: while the stick steers, the camera's yaw against the stick's heading; logged each second.
+            if (stickDown && ZeldaStyleCamera.FeelMoveYaw >= 0f) {
+                steerFor += Time.unscaledDeltaTime;
+                if (steerFor >= nextYawLog) {
+                    nextYawLog = steerFor + 1f;
+                    float off = Mathf.Abs(Mathf.DeltaAngle(ZeldaStyleCamera.FeelOrbitYaw, ZeldaStyleCamera.FeelMoveYaw));
+                    run.Event("camera-yaw", "steering " + steerFor.ToString("0.0") + " s: camera yaw " + ZeldaStyleCamera.FeelOrbitYaw.ToString("0") + ", heading " + ZeldaStyleCamera.FeelMoveYaw.ToString("0") + ", off by " + off.ToString("0") + " deg");
+                }
+            } else {
+                steerFor = 0f;
+                nextYawLog = 1f;
+            }
+            // One camera probe in the first break: a drag off the buttons turns the camera, then 2 s of nothing recentres it.
+            if (!dragProbed && WaveDirector.Waiting && !stickDown && !LevelUpScreen.IsOpen && Juice.Cam != null) {
+                dragProbed = true;
+                yield return CameraDragProbe();
+            }
             if (now >= nextMetrics) {
                 nextMetrics = now + 0.5f;
                 Metrics(elapsed);
+                run.Metric("touchHits", BatEquipment.Connects);
                 run.Metric("touchLocked", TouchControls.Locked ? 1 : 0);
                 run.Progress(Mathf.Clamp01((wave - 1 + (levelUps > 0 ? 0.5f : 0f)) / 2f));
                 run.Note(building ? "build phase" : Enemy.Roster.Count + " bots, musician " + (Musician.Instance != null ? Musician.Instance.Health : 0));

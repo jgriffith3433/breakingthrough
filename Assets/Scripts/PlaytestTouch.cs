@@ -629,8 +629,7 @@ public static class PlaytestTouch {
             }
             if (!lockTapped && nd < 14f) {
                 lockTapped = true;
-                yield return TapPad("Lock");
-                run.Event("touch-lock", "finger on Lock with the crew " + Mathf.RoundToInt(nd) + " m off");
+                run.Event("touch-lock", "no Lock button: the camera soft-locks the nearest bot; crew " + Mathf.RoundToInt(nd) + " m off, locked " + (Juice.Cam != null && Juice.Cam.LockedOnGameObject != null));
             }
             if (Time.realtimeSinceStartup < detourUntil) {
                 SteerLevel(detour);

@@ -4,8 +4,9 @@ using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-// On-screen controls for phones and tablets: a stick on the left, Swing (hold it to wind up a home run), Lock and
-// Jump on the right, Shake once birds climb, Next wave in breaks, and Turn in the build window. The campaign adds Interact (the
+// On-screen controls for phones and tablets: a stick on the left, Swing (tap swings at the bot the camera soft-locked, hold
+// it to wind up a home run; there is no Lock button) and Jump on the right, one Ability button in a chapter (tap: the
+// readiest ability; long press: all three), at most four buttons in a fight, Shake once birds climb, Next wave in breaks, and Turn in the build window. The campaign adds Interact (the
 // context button: it appears while something can be talked to, picked up or opened, and presses E), Dodge and the ability
 // slots in a chapter, Journal, and Menu in the hub and the levels; the hub (walk, talk, doors, board) has them without the bat. They press PlayInput's keys, so gameplay reads
 // them exactly like the keyboard and mouse. A drag that starts off the buttons turns the camera (a finger on a button never does); in the build
@@ -17,6 +18,7 @@ public class TouchControls : MonoBehaviour {
     const float StickSize = 250f;
     const float KnobSize = 110f;
     const int BotFingers = 100;
+    const float LongPress = 0.4f;
 
     enum Role {
         None,
@@ -24,7 +26,7 @@ public class TouchControls : MonoBehaviour {
         Look,
         Place,
         Swing,
-        Lock,
+        Ability,
         Jump,
         Shake,
         Next,
@@ -47,6 +49,7 @@ public class TouchControls : MonoBehaviour {
         public Role Role;
         public Vector2 Start;
         public Vector2 Last;
+        public float Born;
     }
 
     class Pad {
@@ -72,7 +75,7 @@ public class TouchControls : MonoBehaviour {
     RectTransform knob;
     Vector2 stickHome;
     Pad fire;
-    Pad lockOn;
+    Pad ability;
     Pad jump;
     Pad shake;
     Pad next;
@@ -84,7 +87,8 @@ public class TouchControls : MonoBehaviour {
     readonly Pad[] abilities = new Pad[4];
     Pad journal;
     Pad menu;
-    bool locked;
+    bool locked;   // the Lock button is gone on touch (the camera soft-locks the nearest bot); stays false
+    float expandUntil;
     bool shown;
     UiMode laidOut;
     int laidStamp = -1;
@@ -123,7 +127,7 @@ public class TouchControls : MonoBehaviour {
         }
     }
 
-    // Where a control's middle is on screen, for the bot: "Stick", "Swing", "Lock", "Jump", "Shake", "Next".
+    // Where a control's middle is on screen, for the bot: "Stick", "Swing", "Ability", "Jump", "Shake", "Next".
     public static bool Spot(string name, out Vector2 screen) {
         screen = Vector2.zero;
         TouchControls touch = Instance;
@@ -242,22 +246,34 @@ public class TouchControls : MonoBehaviour {
         }
         bool combat = !building && !hub;
         SetShown(fire, combat);
-        SetShown(lockOn, combat);
-        SetShown(jump, combat);
-        SetShown(revive, combat && Companion.Instance != null && Companion.Instance.ReviveReady);
-        // Interact is there only while something can be used; a downed companion's Revive takes its place.
-        bool useful = Interact.Offered && !revive.Go.activeSelf;
-        SetShown(interact, useful);
-        SetShown(shake, combat && !useful && WaveDirector.Wave >= Tuning.ClimbWave);
+        // In a fight: Swing plus at most three more, in this order of need. Interact is there only while something can be
+        // used; a downed companion's Revive takes its place. The campaign's three abilities are one Ability button.
+        int owned = 0;
+        int readiest = ReadiestAbility(combat, out owned, out float readyWait);
+        bool reviveWanted = combat && Companion.Instance != null && Companion.Instance.ReviveReady;
+        bool useful = Interact.Offered && !reviveWanted;
+        bool dodgeWanted = combat && CampaignMoves.Active;
+        bool abilityWanted = owned > 0;
+        bool shakeWanted = combat && !useful && WaveDirector.Wave >= Tuning.ClimbWave;
+        int room = 3;
+        room = Fit(revive, reviveWanted, room);
+        room = Fit(interact, useful, room);
+        room = Fit(ability, abilityWanted, room);
+        room = Fit(dodge, dodgeWanted, room);
+        room = Fit(jump, combat, room);
+        Fit(shake, shakeWanted, room);
+        if (abilityWanted) {
+            ability.Label.text = "Ability" + (readyWait > 0f ? "\n" + Mathf.CeilToInt(readyWait) : "");
+        }
         SetShown(next, WaveDirector.Waiting && !hub);
         SetShown(turnLeft, building);
         SetShown(turnRight, building);
         // The campaign's moves: Dodge from the first step of a chapter, each ability once its level is reached.
-        SetShown(dodge, combat && CampaignMoves.Active);
+        bool expanded = combat && Time.unscaledTime < expandUntil;
         for (int a = 0; a < abilities.Length; a++) {
             int slot = a + 1;
             int fill = CampaignProgress.SlotFill[slot];
-            bool has = combat && CampaignProgress.Active && fill >= 0 && CampaignProgress.Has(fill);
+            bool has = expanded && CampaignProgress.Active && fill >= 0 && CampaignProgress.Has(fill);
             SetShown(abilities[a], has);
             if (has) {
                 float wait = CampaignProgress.Wait(fill);
@@ -265,12 +281,9 @@ public class TouchControls : MonoBehaviour {
                 abilities[a].Label.text = Short(name) + (wait > 0f ? "\n" + Mathf.CeilToInt(wait) : "");
             }
         }
-        SetShown(journal, (hub || (combat && ChapterRun.Instance != null && CampaignSave.Active >= 0)));
+        SetShown(journal, hub);   // in a chapter the Journal is on the pause menu
         SetShown(menu, hub || level);
         menu.Label.text = hub ? "Menu" : "Hub";
-        if (building && locked) {
-            locked = false;
-        }
         if (!building) {
             PlayInput.PadStopPointing();
         }
@@ -291,7 +304,7 @@ public class TouchControls : MonoBehaviour {
         Vector2 look = Vector2.zero;
         foreach (KeyValuePair<int, Vector2> pair in seen) {
             if (!fingers.TryGetValue(pair.Key, out Finger finger)) {
-                finger = new Finger { Start = pair.Value, Last = pair.Value };
+                finger = new Finger { Start = pair.Value, Last = pair.Value, Born = Time.unscaledTime };
                 finger.Role = Claim(pair.Key, pair.Value);
                 fingers[pair.Key] = finger;
                 Press(finger);
@@ -299,6 +312,9 @@ public class TouchControls : MonoBehaviour {
             }
             Vector2 delta = pair.Value - finger.Last;
             finger.Last = pair.Value;
+            if (finger.Role == Role.Ability && Time.unscaledTime - finger.Born > LongPress) {
+                expandUntil = Time.unscaledTime + 4f;   // held: show all three
+            }
             if (finger.Role == Role.Look) {   // only a finger that began off the buttons turns the camera
                 look += delta;
             } else if (finger.Role == Role.Place) {
@@ -310,7 +326,6 @@ public class TouchControls : MonoBehaviour {
         float css = 1f / UiFit.PixelRatio;
         PlayInput.PadAxis("Mouse X", look.x * css * 0.075f);
         PlayInput.PadAxis("Mouse Y", look.y * css * 0.07f);
-        PlayInput.PadHold(KeyCode.LeftShift, locked);
         Paint();
     }
 
@@ -372,9 +387,6 @@ public class TouchControls : MonoBehaviour {
             case Role.Swing:
                 PlayInput.PadHold(KeyCode.Mouse0, true);
                 break;
-            case Role.Lock:
-                locked = !locked;
-                break;
             case Role.Jump:
                 PlayInput.PadHold(KeyCode.Space, true);
                 break;
@@ -404,6 +416,7 @@ public class TouchControls : MonoBehaviour {
             case Role.Ability3:
             case Role.Ability4:
                 PlayInput.PadTap(CampaignProgress.SlotKeys[finger.Role - Role.Ability1 + 1]);
+                expandUntil = 0f;
                 break;
             case Role.Journal:
                 PlayInput.PadTap(KeyCode.J);
@@ -436,7 +449,50 @@ public class TouchControls : MonoBehaviour {
             case Role.Revive:
                 PlayInput.PadHold(KeyCode.E, false);
                 break;
+            case Role.Ability:
+                // A tap fires the readiest ability; a long press has already shown all three.
+                if (Time.unscaledTime - finger.Born <= LongPress) {
+                    int owned;
+                    float wait;
+                    int slot = ReadiestAbility(true, out owned, out wait);
+                    if (slot >= 0) {
+                        PlayInput.PadTap(CampaignProgress.SlotKeys[slot + 1]);
+                    }
+                }
+                break;
         }
+    }
+
+    // The ability that is ready (or soonest ready), by slot order; owned counts those the case file has.
+    int ReadiestAbility(bool combat, out int owned, out float wait) {
+        owned = 0;
+        wait = 0f;
+        int best = -1;
+        float bestWait = float.MaxValue;
+        if (!combat || !CampaignProgress.Active) {
+            return -1;
+        }
+        for (int a = 0; a < abilities.Length; a++) {
+            int fill = CampaignProgress.SlotFill[a + 1];
+            if (fill < 0 || !CampaignProgress.Has(fill)) {
+                continue;
+            }
+            owned++;
+            float w = CampaignProgress.Wait(fill);
+            if (w < bestWait) {
+                bestWait = w;
+                best = a;
+            }
+        }
+        wait = best >= 0 ? bestWait : 0f;
+        return best;
+    }
+
+    // Shows a fight button if it is wanted and there is room under the four-button cap; returns the room left.
+    int Fit(Pad pad, bool wanted, int room) {
+        bool on = wanted && room > 0;
+        SetShown(pad, on);
+        return on ? room - 1 : room;
     }
 
     void LetGoAll() {
@@ -476,7 +532,9 @@ public class TouchControls : MonoBehaviour {
         if (!on) {
             foreach (Finger finger in fingers.Values) {
                 if (finger.Role == pad.Role) {
-                    Lift(finger);
+                    if (pad.Role != Role.Ability) {   // hidden mid-press: no tap
+                        Lift(finger);
+                    }
                     finger.Role = Role.None;
                 }
             }
@@ -485,11 +543,8 @@ public class TouchControls : MonoBehaviour {
 
     void Paint() {
         foreach (Pad pad in pads) {
-            bool held = Busy(pad.Role) || (pad.Role == Role.Lock && locked);
+            bool held = Busy(pad.Role);
             pad.Image.color = held ? Color.Lerp(pad.Rest, new Color(1f, 0.85f, 0.4f, 0.95f), 0.6f) : pad.Rest;
-        }
-        if (lockOn != null) {
-            lockOn.Label.text = locked ? "Locked" : "Lock";
         }
     }
 
@@ -536,7 +591,7 @@ public class TouchControls : MonoBehaviour {
 
         fire = MakePad(Role.Swing, "Swing", 190f, 34, new Color(0.55f, 0.16f, 0.1f, 0.6f));
         jump = MakePad(Role.Jump, "Jump", 130f, 26, new Color(0.12f, 0.2f, 0.32f, 0.6f));
-        lockOn = MakePad(Role.Lock, "Lock", 130f, 26, new Color(0.24f, 0.14f, 0.34f, 0.6f));
+        ability = MakePad(Role.Ability, "Ability", 130f, 24, new Color(0.3f, 0.2f, 0.4f, 0.62f));
         shake = MakePad(Role.Shake, "Shake", 120f, 24, new Color(0.3f, 0.24f, 0.1f, 0.6f));
         turnLeft = MakePad(Role.TurnLeft, "Turn\nleft", 130f, 24, new Color(0.28f, 0.22f, 0.12f, 0.7f));
         turnRight = MakePad(Role.TurnRight, "Turn\nright", 130f, 24, new Color(0.28f, 0.22f, 0.12f, 0.7f));
@@ -584,16 +639,16 @@ public class TouchControls : MonoBehaviour {
         if (tall) {
             // Portrait is too narrow for the arc: Jump goes above Fire, Lock and Shake stack beside them.
             Corner(jump, new Vector2(-105f, 290f));
-            Corner(lockOn, new Vector2(-260f, 200f));
+            Corner(ability, new Vector2(-260f, 205f));
             Corner(shake, new Vector2(-260f, 350f));
         } else {
             Corner(jump, new Vector2(-285f, 70f));
-            Corner(lockOn, new Vector2(-255f, 235f));
+            Corner(ability, new Vector2(-255f, 235f));
             Corner(shake, new Vector2(-75f, 290f));
         }
         // Interact: by the Swing thumb, where the shake pad would sit (the two never show together); portrait keeps Revive's spot.
         Corner(interact, tall ? new Vector2(-105f, 440f) : new Vector2(-105f, 290f));
-        Corner(dodge, tall ? new Vector2(-260f, 75f) : new Vector2(-430f, 95f));
+        Corner(dodge, tall ? new Vector2(-260f, 70f) : new Vector2(-430f, 95f));
         for (int a = 0; a < abilities.Length; a++) {
             Corner(abilities[a], tall ? new Vector2(-75f - 110f * a, 600f) : new Vector2(-190f - 110f * a, 430f));
         }
