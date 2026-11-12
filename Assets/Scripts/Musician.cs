@@ -504,6 +504,16 @@ public class Musician : MonoBehaviour {
         RefreshBar();
     }
 
+    // The paper HUD draws Slice's health as her address card: the old plate steps aside (HudPaper).
+    public void SetBarHidden(bool hidden) {
+        if (back != null) {
+            back.gameObject.SetActive(!hidden);
+        }
+        if (title != null) {
+            title.gameObject.SetActive(!hidden);
+        }
+    }
+
     void RefreshBar() {
         if (fill == null) {
             return;
