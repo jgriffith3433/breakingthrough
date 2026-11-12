@@ -29,6 +29,7 @@ public class Enemy : MonoBehaviour
     public bool Elite { get; private set; }
     public bool Golden { get; private set; }
     public bool Boss { get; private set; }
+    public bool IsSpiderFamily { get { return spider; } }
     // The Courier (Chapter 1's Alpha): it holds still and attacks in telegraphed slams (Courier.cs), never swipes.
     public bool IsCourier { get; private set; }
     public int BlowsTaken;      // blows that landed (the Server counts a refusal when this moves)
@@ -1003,6 +1004,7 @@ public class Enemy : MonoBehaviour
                 windLeft = rig != null ? rig.WindSeconds : 0.3f;
                 if (rig != null)
                     rig.BeginWindup(windLeft);
+                BotSound.Tell(this);
             }
         }
         else if (winding)
@@ -1617,7 +1619,7 @@ public class Enemy : MonoBehaviour
         body.angularVelocity = Random.insideUnitSphere * (2.5f + power);
         if (!recover)
         {
-            GameAudio.PlayAt("death", transform.position, 0.55f);
+            BotSound.Death(this);
         }
     }
 
