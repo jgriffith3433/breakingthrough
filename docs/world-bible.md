@@ -105,7 +105,7 @@ Routines are "through the day": the world has no clock face, so a day is a chapt
 - Arc: alone at the ring → calls Wallit's targets as partner → parries, then stamps, as the acts harden.
 - Moment: a bot closes on her or flanks him; she says one word ("Left." "Mine."), the bot lights with her ring, and (from Cold Hour) she blocks it back (`SliceCallouts`).
 - Personality: cool, clipped, exact.
-- Voice: `hv_heroine` (Hawkes Gen open / qwen3-tts).
+- Voice: `Gmg7bCXPSj9cYwVDrM6h` (Place Department – Slice, ElevenLabs eleven_v4: low, dry, clipped; same cast as Wallit). Narrator: `JjDIROtNEieYxCNGJXgG` (warm, bureaucratic, faintly amused records clerk).
 - Animations: idle, stab, slash, hurt, defeat (`Musician` / Slice controller); companion walk when following (`Companion`); talk via subtitle + voice (no mouth rig); callout block pose and stamp from `SliceCallouts`.
 
 ### Yo Bot
