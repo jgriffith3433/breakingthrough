@@ -6,6 +6,10 @@ using UnityEngine.SceneManagement;
 // music notes from the piano, and the camera grade. Built at runtime so scene2 stays untouched.
 public class NightAtmosphere : MonoBehaviour {
     public static NightAtmosphere Instance { get; private set; }
+    // FilmLight's hooks: the lanterns (read-only), their act multiplier and how hard they stutter (act 1 dusk: the posts flicker on).
+    public static IList<Light> Lamps { get { return Instance != null ? Instance.lanterns : null; } }
+    public static float LampMul = 1f;
+    public static float LampStutter;
 
     readonly List<Light> lanterns = new List<Light>();
     readonly List<float> lanternSeeds = new List<float>();
@@ -193,7 +197,7 @@ public class NightAtmosphere : MonoBehaviour {
         return ps;
     }
 
-    static void Particles(GameObject go, string texture, bool additive, float boost) {
+    internal static void Particles(GameObject go, string texture, bool additive, float boost) {
         var renderer = go.GetComponent<ParticleSystemRenderer>();
         Shader shader = Shader.Find("BT/Particle");
         var material = new Material(shader != null ? shader : SafeShader.Find("Sprites/Default"));
@@ -214,7 +218,9 @@ public class NightAtmosphere : MonoBehaviour {
                 continue;
             }
             float flicker = Mathf.PerlinNoise(lanternSeeds[i], t * 3.2f);
-            lanterns[i].intensity = 1.45f + flicker * 0.5f;
+            float on = Mathf.Clamp01((Time.timeSinceLevelLoad - 0.8f * (i + 1)) / 0.6f);   // the posts come on one after another
+            float stutter = LampStutter > 0f && Mathf.PerlinNoise(lanternSeeds[i] + 40f, t * 7f) < 0.16f * LampStutter ? 0.4f : 1f;
+            lanterns[i].intensity = (1.45f + flicker * 0.5f) * LampMul * on * stutter;
         }
         if (follow != null) {
             Vector3 at = follow.position;
