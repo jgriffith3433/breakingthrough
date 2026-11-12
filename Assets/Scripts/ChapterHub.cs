@@ -147,6 +147,7 @@ public class ChapterHub : MonoBehaviour {
         Instance = this;
         MusicDirector.Play("hub");
         MusicDirector.Ambience("amb_hub");
+        PlaceAudio.Enter(PlaceAudio.Place.Hub, transform);
     }
 
     void OnDestroy() {

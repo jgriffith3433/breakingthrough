@@ -151,6 +151,7 @@ public class BatEquipment : MonoBehaviour {
             trail.minVertexDistance = 0.04f;
             trail.widthCurve = new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(1f, 0f));
             trail.material = new Material(trailShader);
+            trail.material.mainTexture = DeptFx.Smear();   // a soft white smear, not a hard ribbon
             trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             trail.receiveShadows = false;
             trail.emitting = false;
@@ -165,8 +166,9 @@ public class BatEquipment : MonoBehaviour {
         }
         trailWasOn = on;
         trail.emitting = on;
-        trail.widthMultiplier = big ? 0.75f : move == Move.Swing3 || move == Move.Smash ? 0.5f : 0.34f;
-        Color head = big ? new Color(1f, 0.8f, 0.3f, 0.95f) : new Color(1f, 0.96f, 0.82f, 0.8f);
+        trail.widthMultiplier = big ? 0.95f : move == Move.Swing3 || move == Move.Smash ? 0.55f : 0.36f;
+        trail.time = big ? 0.34f : 0.22f;   // a charged swing smears longer and stronger
+        Color head = big ? new Color(1f, 0.92f, 0.55f, 1f) : new Color(1f, 1f, 0.97f, 0.7f);
         trail.startColor = head;
         trail.endColor = new Color(head.r, head.g * 0.8f, head.b * 0.5f, 0f);
     }
@@ -691,7 +693,7 @@ public class BatEquipment : MonoBehaviour {
             Vector3 away = Flat(enemy.transform.position - transform.position);
             bool tip = away.magnitude - enemy.BodyScale * 0.3f >= sweetFrom;
             // Every bot the bat lands on gets its own flash; the second and later also get a thud (the crack is once a swing).
-            Fx.Impact(enemy.transform.position + Vector3.up * (0.7f * Mathf.Max(1f, enemy.BodyScale)), Mathf.Sqrt(Mathf.Max(1f, enemy.BodyScale)), scale >= Tuning.BatDamageFinisher || tip);
+            Fx.Impact(enemy.transform.position + Vector3.up * (0.7f * Mathf.Max(1f, enemy.BodyScale)), Mathf.Sqrt(Mathf.Max(1f, enemy.BodyScale)), scale >= Tuning.BatDamageFinisher || tip, away);
             Impacts++;
             if (count > 1) {
                 GameAudio.PlayAt("hit", enemy.transform.position, 0.5f, Random.Range(0.9f, 1.05f));
@@ -757,6 +759,7 @@ public class BatEquipment : MonoBehaviour {
         Fx.Ring(target.transform.position, 3f * Mathf.Sqrt(Mathf.Max(1f, target.BodyScale)), new Color(1f, 0.9f, 0.55f, 0.85f), 0.4f);
         Impacts++;
         Fx.HomeRun(target != null ? target.transform.position + Vector3.up : launchFrom, Mathf.Sqrt(Mathf.Max(1f, target != null ? target.BodyScale : 1f)));
+        DeptFx.HomeRunLaunch(target != null ? target.transform.position + Vector3.up : launchFrom, Mathf.Sqrt(Mathf.Max(1f, target != null ? target.BodyScale : 1f)), away);
         if (target != null) {
             target.HomeRunLaunch(flight);
         }

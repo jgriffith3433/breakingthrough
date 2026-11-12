@@ -94,6 +94,7 @@ public class LevelScene : MonoBehaviour {
         Yard.Begin();
         MusicDirector.Play(MusicDirector.ChapterTrack(Chapter));
         MusicDirector.Ambience(MusicDirector.AmbienceFor(Chapter));
+        PlaceAudio.Enter(PlaceAudio.ForChapter(Chapter), transform);
         Bed = SceneMood.Bed(transform, SceneMood.Kind.Yard);
         RunAnalytics.Screen("level_" + (Chapter + 1));
     }

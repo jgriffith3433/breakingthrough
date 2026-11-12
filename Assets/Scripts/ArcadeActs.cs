@@ -95,6 +95,7 @@ public class ArcadeActs : MonoBehaviour {
     float[] weights = new float[3];
     float[] weightGoal = new float[3];
     bool musicUp;
+    public AudioSource Master { get { return layers != null && layers.Length > 0 ? layers[0] : null; } }
     int lastWave = -1;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -147,6 +148,18 @@ public class ArcadeActs : MonoBehaviour {
             skyMat = new Material(shader);
         }
         BuildAudio();
+        if (ChapterRun.Instance == null) {
+            // The Hollow's own air: its bed (fetched by URL) and the spots on the ruin's sign, the lanterns and the post boxes. The
+            // landmark builds in its own Start, so the spots look for their objects a moment later.
+            MusicDirector.Ambience("amb_hollow");
+            Invoke(nameof(EnterPlaceAudio), 1.5f);
+        }
+    }
+
+    void EnterPlaceAudio() {
+        if (ChapterRun.Instance == null) {
+            PlaceAudio.Enter(PlaceAudio.Place.Hollow, transform);
+        }
     }
 
     void Update() {
@@ -410,6 +423,7 @@ public class ArcadeActs : MonoBehaviour {
         stingSource = sg.AddComponent<AudioSource>();
         stingSource.spatialBlend = 0f;
         stingSource.playOnAwake = false;
+        gameObject.AddComponent<ArcadeScore>();
         musicUp = true;
     }
 
@@ -417,7 +431,7 @@ public class ArcadeActs : MonoBehaviour {
         if (!musicUp) {
             return;
         }
-        float level = SoundSettings.On ? SoundSettings.Music * Tuning.ActMusicLevel * (BossTheme ? 0.2f : 1f) : 0f;
+        float level = SoundSettings.On ? SoundSettings.Music * Tuning.ActMusicLevel * (BossTheme ? 0.2f : 1f) * ArcadeScore.Dip : 0f;
         float step = dt / Tuning.ActFadeSeconds;
         float mix = 0f;
         for (int i = 0; i < layers.Length; i++) {
