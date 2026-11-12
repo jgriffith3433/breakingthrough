@@ -37,12 +37,25 @@ The creature behind the order is never seen and never named.
 Every wave start gets a short beat. A beat is one to three lines, one speaker each, shown for about two seconds.
 Boss waves (10, 20 and 30) get a title card and a longer beat.
 
-- **Act one, waves 1 to 9: the arrangement.** Wallit is here for the coins, Slice is here for the circle. The Yo Bots are
-  cheerful about erasing them. Wallit works out that the bolts the bots drop are a wage, and Slice admits she needs him.
-- **Act two, waves 10 to 19: the plating.** The Plated Yo Bot arrives on wave 10. Slice is hurt for the first time and says
-  so. Wallit stops talking about himself and starts talking about her debt ("I'm covering you").
-- **Act three, waves 20 to 29: the order.** The Mega Yo Bot arrives on wave 20 and the Yo Bots stop chirping and read the
-  order aloud. Wave 30 is the first Spider Bot, the one that carries the order itself.
+- **Act one / Night Shift, waves 1 to 10: the arrangement.** Wallit is here for the coins, Slice is here for the circle. The
+  Yo Bots are cheerful about erasing them. Wallit works out that the bolts the bots drop are a wage, and Slice admits she
+  needs him. She starts calling threats in one word ("Left." "Behind." "Mine.") so he can see what she sees (`SliceCallouts`).
+- **Act two / Cold Hour, waves 11 to 20: the plating.** The Plated Yo Bot arrives on wave 10; Cold Hour opens at 11. Slice is
+  hurt and says so. Wallit stops talking about himself and starts talking about her debt ("I'm covering you"). She can
+  parry one bot per wave that reaches her circle or flanks him: a block pose, a metallic clink, the bot knocked back 2 m.
+  The first Cold Hour wave she shows the parry on camera once.
+- **Act three / Last Light, waves 21 to 30: the order.** The Mega Yo Bot arrives on wave 20; Last Light opens at 21. Yo Bots
+  stop chirping and read the order aloud. Wave 30 is the Spider Bot that carries the order. She stamps the ground once per
+  wave and stuns nearby bots for 1.5 s; the first Last Light wave she shows the stamp on camera once.
+
+### Slice as partner (callouts and guard)
+
+Slice is not only what Wallit protects. In Arcade and in chapters where she walks with him (`Companion`), she names the
+bot that is about to reach her circle or flank him: one clipped word through `VoiceDirector` at bark priority (never
+stacked), a short-lived ring marker in her accent colour on that bot, and an off-screen edge arrow. Wallit answers some
+of those with money lines ("On it." "Billable."). Guard moves unlock by Arcade act (Night Shift callouts only; Cold Hour
+adds the parry; Last Light adds the stamp). Code: `SliceCallouts.cs`. The `slice-partner` playtest proves three voiced
+callouts and one Act 2 parry.
 
 ### Arcade boss set pieces (waves 10, 20, 30)
 

@@ -34,6 +34,9 @@ public class WallitVoice : MonoBehaviour {
     public static readonly string[] WaveClear = { "Clean sweep. Count it.", "Books balanced.", "Wave settled. Next customer.", "All paid up. Who's next?" };
     public static readonly string[] BossPhase = { "Now it's angry. Good, bigger bill.", "It's got a second wind. I've got a second swing.", "Overdraft! Keep swinging!" };
 
+    // Answers to SliceCallouts (money, short).
+    public static readonly string[] CalloutReply = { "On it.", "Billable.", "On it. Billable.", "Covered." };
+
     // Lines Wallit says in Slice's banter (SliceVoice.Banter), voiced here so they get a mouth and a file too.
     public static readonly string[] BanterLines = { "Pay up, bots.", "They'll feel it.", "I know. Pay up!", "Nobody touches her.", "Still mine to guard.", "Coins. Bolts. Mine.", "Pay up.", "You good, Slice?" };
 
@@ -249,6 +252,14 @@ public class WallitVoice : MonoBehaviour {
         }
     }
 
+    // SliceCallouts: some of her threat names get a money reply once her floor frees (Normal gap, not bark).
+    public static void OnCallout(string sliceWord) {
+        if (Instance == null) {
+            return;
+        }
+        Instance.Queue(Instance.Pick(CalloutReply), "callout-reply", 10f);
+    }
+
     public static void OnStakes() {
         if (Instance != null) {
             Instance.Queue(Instance.Pick(Stakes), "stakes-line", 6f);
@@ -420,7 +431,7 @@ public class WallitVoice : MonoBehaviour {
         }
         add(Kill); add(Streak); add(Big); add(HomeRun); add(Hurt); add(Wave); add(LevelUp); add(Chest);
         add(SliceLow); add(Stakes); add(BossWave); add(Golden); add(FirstHit); add(WaveClear); add(BossPhase);
-        add(BanterLines);
+        add(BanterLines); add(CalloutReply);
     }
 
     static AudioClip LoadClip(string line) {
@@ -556,7 +567,11 @@ public class WallitVoice : MonoBehaviour {
             }
             Pending next = pending[best];
             pending.RemoveAt(best);
-            if (next.Line != LastLine && VoiceDirector.Allow(next.Line, next.Why, VoiceDirector.PriorityOf(next.Why))) {
+            VoiceDirector.Priority pri = VoiceDirector.PriorityOf(next.Why);
+            if (pri >= VoiceDirector.Priority.Normal && now < next.Expires && !VoiceDirector.GapReady(pri)) {
+                // Hold a Normal reply (callout-reply) until the cast gap cools; do not Deny/drop each frame.
+                pending.Insert(0, next);
+            } else if (next.Line != LastLine && VoiceDirector.Allow(next.Line, next.Why, pri)) {
                 Speak(next.Line, next.Why);
             } else {
                 Dropped++;

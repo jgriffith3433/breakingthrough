@@ -2270,7 +2270,109 @@
    "id": "wallit_overdraft_keep_swinging",
    "voice": "wallit",
    "text": "Overdraft! Keep swinging!"
+  },
+  {
+   "id": "slice_left",
+   "voice": "slice",
+   "text": "Left.",
+   "asset": "a_01b882f3894a1abb"
+  },
+  {
+   "id": "slice_right",
+   "voice": "slice",
+   "text": "Right.",
+   "asset": "a_1505b476e6288baa"
+  },
+  {
+   "id": "slice_behind",
+   "voice": "slice",
+   "text": "Behind.",
+   "asset": "a_b41f0324e1421d36"
+  },
+  {
+   "id": "slice_ahead",
+   "voice": "slice",
+   "text": "Ahead.",
+   "asset": "a_8c82667c06f14e09"
+  },
+  {
+   "id": "slice_spider",
+   "voice": "slice",
+   "text": "Spider.",
+   "asset": "a_955f1df70d5b70c9"
+  },
+  {
+   "id": "slice_mine",
+   "voice": "slice",
+   "text": "Mine.",
+   "asset": "a_43a147d7c96d121c"
+  },
+  {
+   "id": "slice_close",
+   "voice": "slice",
+   "text": "Close.",
+   "asset": "a_b8ebd5be7e397325"
+  },
+  {
+   "id": "slice_flank",
+   "voice": "slice",
+   "text": "Flank.",
+   "asset": "a_47556a38e5e15f6f"
+  },
+  {
+   "id": "slice_clear",
+   "voice": "slice",
+   "text": "Clear.",
+   "asset": "a_5740e08c78801373"
+  },
+  {
+   "id": "slice_yo",
+   "voice": "slice",
+   "text": "Yo.",
+   "asset": "a_3f17f74546603de5"
+  },
+  {
+   "id": "slice_down",
+   "voice": "slice",
+   "text": "Down.",
+   "asset": "a_886dbf3543906561"
+  },
+  {
+   "id": "slice_blocked",
+   "voice": "slice",
+   "text": "Blocked.",
+   "asset": "a_c6f75b20a556555c"
+  },
+  {
+   "id": "slice_stamp",
+   "voice": "slice",
+   "text": "Stamp.",
+   "asset": "a_b40dfae01bfd50ca"
+  },
+  {
+   "id": "wallit_on_it",
+   "voice": "wallit",
+   "text": "On it.",
+   "asset": "a_04dff98064f2ff12"
+  },
+  {
+   "id": "wallit_billable",
+   "voice": "wallit",
+   "text": "Billable.",
+   "asset": "a_3e5f77db6c85e605"
+  },
+  {
+   "id": "wallit_on_it_billable",
+   "voice": "wallit",
+   "text": "On it. Billable.",
+   "asset": "a_8ee0a9af0c7dd7d9"
+  },
+  {
+   "id": "wallit_covered",
+   "voice": "wallit",
+   "text": "Covered.",
+   "asset": "a_7274ded245e2f257"
   }
  ],
- "note": "Made through Hawkes Gen audio.voice (project theplacedepartment). Ids match WallitVoice.LineId. Slice, narrator, Yo Bot and Courier lines (pass 2) are mono 64 kbps re-encodes of Gen audio.dialogue-open stems."
+ "note": "Made through Hawkes Gen audio.voice (project theplacedepartment). Ids match WallitVoice.LineId. Slice, narrator, Yo Bot and Courier lines (pass 2) are mono 64 kbps re-encodes of Gen audio.dialogue-open stems. Slice callout stems (partner) are mono 32 kHz 56 kbps from audio.dialogue-open (hv_heroine); Wallit replies from audio.voice."
 }
