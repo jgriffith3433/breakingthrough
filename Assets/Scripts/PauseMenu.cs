@@ -257,7 +257,7 @@ public class PauseMenu : MonoBehaviour {
         } else if (ChapterHub.Instance != null && ChapterScene.Instance != null) {
             ChapterScene.Instance.LeaveToMenu();
         } else {
-            SceneManager.LoadScene(MetaProgress.MenuScene);
+            ScreenTransition.Load(ScreenTransition.Kind.Returned, MetaProgress.MenuScene);
         }
     }
 

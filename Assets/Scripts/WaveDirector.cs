@@ -190,7 +190,7 @@ public class WaveDirector : MonoBehaviour {
                 Cursor.visible = true;
                 if (runEndRetry) {
                     runEndRetry = false;
-                    SceneManager.LoadScene(MetaProgress.GameScene);
+                    ScreenTransition.Load(ScreenTransition.Kind.Returned, MetaProgress.GameScene);
                     return;
                 }
                 if (ChapterRun.Instance != null) {
@@ -200,7 +200,7 @@ public class WaveDirector : MonoBehaviour {
                 string scene = Application.CanStreamedLevelBeLoaded(MetaProgress.MenuScene)
                     ? MetaProgress.MenuScene
                     : MetaProgress.GameScene;
-                SceneManager.LoadScene(scene);
+                ScreenTransition.Load(ScreenTransition.Kind.StruckOff, scene);
             }
             return;
         }
@@ -466,7 +466,7 @@ public class WaveDirector : MonoBehaviour {
         string scene = Application.CanStreamedLevelBeLoaded(MetaProgress.MenuScene)
             ? MetaProgress.MenuScene
             : MetaProgress.GameScene;
-        SceneManager.LoadScene(scene);
+        ScreenTransition.Load(ScreenTransition.Kind.Filed, scene);
     }
 
     // Playtest setup only: drops the wave's waiting bots except the boss kind, so the finale scenario reaches the boss.
@@ -553,19 +553,24 @@ public class WaveDirector : MonoBehaviour {
         }
         pausedGame = true;
         Time.timeScale = 0f;
-        PanelFx.Show(lostPanel, "gameover", lostRect);
-        returnReadyAt = Time.unscaledTime + 0.4f;
+        returnReadyAt = Time.unscaledTime + ScreenTransition.CoverSeconds + 0.4f;
         string boons = RunBoons.Summary();
         MetaProgress.NoteRunFinished();
         LastRun = "Fell on wave " + Wave + ", level " + RunBoons.Level + ", streak " + Combo.Best + ", +" + MetaProgress.CoinsThisRun + " coins.\n" + boons;
         RunAnalytics.MusicianDown(Wave);
+        bool nearly = Musician.Instance != null && Musician.Instance.NearlyFell;
+        // The sheet and a STRUCK OFF stamp turn the page; the run-end panel opens under it and the peel shows it.
+        ScreenTransition.Go(ScreenTransition.Kind.StruckOff, () => ShowRunEnd(nearly));
+    }
+
+    void ShowRunEnd(bool nearly) {
+        PanelFx.Show(lostPanel, "gameover", lostRect);
         if (lostBody != null) {
             lostBody.gameObject.SetActive(false);
         }
         if (runEnd == null) {
             runEnd = RunEndScreen.Ensure(lostPanel.transform);
         }
-        bool nearly = Musician.Instance != null && Musician.Instance.NearlyFell;
         runEnd.OpenArcade(
             Wave,
             cleared,
@@ -663,16 +668,19 @@ public class WaveDirector : MonoBehaviour {
         }
         pausedGame = true;
         Time.timeScale = 0f;
-        PanelFx.Show(lostPanel, "gameover", lostRect);
-        returnReadyAt = Time.unscaledTime + 0.4f;
+        returnReadyAt = Time.unscaledTime + ScreenTransition.CoverSeconds + 0.4f;
         ChapterRun.Instance.OnLost();
-        if (lostBody != null) {
-            lostBody.gameObject.SetActive(false);
-        }
-        if (runEnd == null) {
-            runEnd = RunEndScreen.Ensure(lostPanel.transform);
-        }
-        runEnd.OpenChapter("Slice fell.\n" + ChapterRun.Instance.Title + " is still open.\nThe file keeps its place.");
+        string lostWords = "Slice fell.\n" + ChapterRun.Instance.Title + " is still open.\nThe file keeps its place.";
+        ScreenTransition.Go(ScreenTransition.Kind.StruckOff, () => {
+            PanelFx.Show(lostPanel, "gameover", lostRect);
+            if (lostBody != null) {
+                lostBody.gameObject.SetActive(false);
+            }
+            if (runEnd == null) {
+                runEnd = RunEndScreen.Ensure(lostPanel.transform);
+            }
+            runEnd.OpenChapter(lostWords);
+        });
     }
 
     float SpawnOne(int index) {

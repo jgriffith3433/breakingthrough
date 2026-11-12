@@ -16,8 +16,11 @@ public class ChapterRun : MonoBehaviour {
 
     public static void Begin(int chapter) {
         armed = chapter;
-        LoadScreen.Show(chapter);   // the chapter's art and name until its map is up
-        SceneManager.LoadScene(MetaProgress.GameScene);
+        // The paper sheet and an ENTER stamp cover the swap; the chapter's illustrated card is what the peel shows.
+        ScreenTransition.Go(ScreenTransition.Kind.Enter, () => {
+            LoadScreen.Show(chapter);   // the chapter's art, name and voiced line until its map is up
+            SceneManager.LoadScene(MetaProgress.GameScene);
+        }, true);
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -969,7 +972,15 @@ public class ChapterRun : MonoBehaviour {
         toNext = true;
         ChapterScene.HubNext = true;
         RunAnalytics.Screen("hub");
-        SceneManager.LoadScene(CampaignSave.Scene);
+        ScreenTransition.Go(ScreenTransition.Kind.Filed, () => {
+            LoadScreen.ShowHub();
+            SceneManager.LoadScene(CampaignSave.Scene);
+        }, true);
+    }
+
+    // Playtest setup shortcut: the chapter's end, to the hub (FILED, the hub's card).
+    public void LeaveToHubForPlaytest() {
+        Next();
     }
 
     // The pause menu's Restart chapter: the same chapter from its opening. The file stays open (toNext) for the new run.
@@ -990,7 +1001,7 @@ public class ChapterRun : MonoBehaviour {
         ChapterMap.Unload();
         Time.timeScale = 1f;
         RunAnalytics.Screen("menu");
-        SceneManager.LoadScene(MetaProgress.MenuScene);
+        ScreenTransition.Load(ScreenTransition.Kind.Returned, MetaProgress.MenuScene);
     }
 
     // For the back rooms and other places that hand over a short exchange: said one line at a time, each in its voice.

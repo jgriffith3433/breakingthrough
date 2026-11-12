@@ -52,6 +52,13 @@ Eight places, each its own scene or map, plus six hidden rooms. Size is the walk
   phone, typewriters and radiator tick; the yard's lamp and sign, the gate's stamp press, the floor's crushers, the Long Walk's
   lamp stilts, the Reading Room's clock and chandeliers, the filed Hollow's doorframes. Wallit's wallet-flap steps change with the
   ground (grass, stone, wood, metal; 3 variants each, never the same twice in a row) and land with a heavier slap. `place-audio` playtest.
+- Built: **every change of place is a page turned in the Department's files** (`ScreenTransition.cs`): a sheet of file paper
+  slides over, a red rubber stamp slams down on it (ENTER into a run or a chapter, FILED back to the hub or on a win, STRUCK OFF
+  when Slice falls, RETURNED to the menu or a retry) with a paper-slide and a stamp thud, the swap happens under it and it peels
+  away, 0.5 to 0.8 s in all, never a black frame. Chapter and hub loads end on an **illustrated loading card** (`LoadScreen.cs`,
+  `Resources/LoadCards/card_ch1`..`card_ch6`, `card_hub`, painted case-file art fetched with its chapter): the place's name in the
+  Department typeface, one voiced line (Slice: the Clearing Crew, "Seventy metres. Then back.", the lever, the lamps, the bright
+  circle, the two doors; Wallit: the small print) and a paper strip that fills only as the scene, run and map really arrive.
 - Built: **Arcade (A) has three acts** (Night Shift, Cold Hour, Last Light, then Overtime) with their own light, sky, grade, score
   layer and enemy mix (see What happens).
 - Gap: the docs record lighting and landmarks but **no per-area "gap clock"**: nothing has measured 10 s between things. Each

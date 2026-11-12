@@ -23,7 +23,10 @@ public class LevelScene : MonoBehaviour {
 
     public static void Enter(int chapter) {
         pending = chapter;
-        SceneManager.LoadScene(Scenes[chapter]);
+        ScreenTransition.Go(ScreenTransition.Kind.Enter, () => {
+            LoadScreen.Show(chapter);
+            SceneManager.LoadScene(Scenes[chapter]);
+        }, true);
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -290,7 +293,10 @@ public class LevelScene : MonoBehaviour {
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         ChapterScene.HubNext = true;
-        SceneManager.LoadScene(CampaignSave.Scene);
+        ScreenTransition.Go(ScreenTransition.Kind.Filed, () => {
+            LoadScreen.ShowHub();
+            SceneManager.LoadScene(CampaignSave.Scene);
+        }, true);
     }
 
     void Update() {

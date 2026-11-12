@@ -153,7 +153,7 @@ public class CampaignPanel : MonoBehaviour {
         // and Arcade never carried them. With nothing to fetch (the editor, a build that kept them) this is at once.
         OnDemand.Need(new[] { OnDemand.Core }, "Pulling the case file", () => {
             opening = false;
-            SceneManager.LoadScene(CampaignSave.Scene);
+            ScreenTransition.Load(ScreenTransition.Kind.Enter, CampaignSave.Scene);
         });
     }
 
