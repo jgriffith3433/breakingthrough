@@ -1,29 +1,30 @@
-# Boss eleven_v4 voices + in-fight barks (part 1)
+# Conflict pass: merge origin/beta into boss-barks
 
-## What was wrong
-Campaign bosses shared house/open voices and did not talk back mid-fight, so they read as health bars.
+## What happened
+Beta moved with #258 (hub conversations as acted two-shots). Merged `origin/beta` into this branch and kept both sides' work.
 
-## What changed
-- **Bark lines + story:** three paperwork barks each for Courier, Plated Alpha, Foreman, Server, Registrar, Order-Bearer (`Docs/Story.md` "Boss barks"; banks in `BossVoice.cs`).
-- **Wiring:** `BossVoice.cs` plays through `VoiceDirector` (`boss-phase` Key, `boss-homerun` Normal, `boss-win` Key). Hooks from `BossPhases`, `Courier`, `BossSetPiece`, `BatEquipment` (home run on a boss), `LevelScene.Defeated`, `WaveDirector.MusicianDown`. Yo-family bosses get a light `AudioHighPassFilter` on the mixer source (not baked into files). Captions use `UiFit.PlaceCaption` (upper third on phone).
-- **Distinct eleven_v4 voice ids** in `cast.json` + `audio.json` (six premade library ids; none shared). 18 bark rows registered in `audio.json`; batch list in `Tools/Audio/batches/boss_barks.json`.
-- **World bible:** full Characters entries for all six bosses (Want/Arc/Moment/Personality/Voice/Animations).
-- **Playtest:** `boss-barks` scenario (`PlaytestBossBarks.cs`); `.hawkes/scenario.txt` is phone 390x844.
+## Conflicts and how each was resolved
 
-## Blocked (Gen credits)
-Tested one `audio.voice` line first: Gen has **1 credit left** (needs 8). See `.hawkes/stuck.md`. Custom voice-design estimate alone ~$1.11 vs $0.86 budget. Stems are pending (`.hawkes/pending-gpu.txt`); subtitles still show.
+| File | Resolution |
+|---|---|
+| `.hawkes/scenario.txt` | **Conflict.** Kept this change's playtest pointer: `boss-barks` + phone JSON `{"mobile":true,"width":390,"height":844}`. Beta's `hub-two-shot` stays registered and playable in `Playtest.cs` (Studio only reads line 1 of scenario.txt for this change's criteria). |
+| `Assets/Scripts/Playtest.cs` | **Auto-merged clean.** Both `boss-barks` / `BossBarksRun` and `hub-two-shot` / `PlaytestTwoShot.Run` stay registered and dispatched. |
+| `docs/world-bible.md` | **Auto-merged clean.** Kept this change's six boss Characters rows (distinct eleven_v4 voice ids + BossVoice moments) and beta's ConversationStage talk animations, Office two-shot interactions, and story beat 14. |
 
-## Checks
-- JSON parse of cast/audio/batch: ok
-- Six voice ids unique: ok
-- Brace balance on new C#: ok
+No unsafe binary / scene / prefab conflicts. Did not abort.
+
+## Also pulled from beta (no conflict)
+`ConversationStage.cs`, `PlaytestTwoShot.cs`, and CastVoice/ChapterHub/HubAmbience mouth-amplitude wiring for acted hub talks.
+
+## Checks re-run
+- Six campaign boss `voiceId`s in `cast.json` still distinct (Josh/Adam/Arnold/Charlotte/Harry/James); provider elevenlabs
+- `cast.json`, `audio.json`, `Tools/Audio/batches/boss_barks.json` parse
+- No conflict markers in Playtest.cs / world-bible / scenario.txt
+- Brace balance on Playtest.cs matches both parents (string-stripped)
 - Unity compile not run here (no editor in sandbox)
-- Fun review (self, subagent usage capped): **thin** — wiring and tone are living-world; silent stems until credits
-- Code review (self): **revise for stems** before criteria 2–4 can pass on beta audio; code path and distinct ids are ready
 
-## Conflicts
-None with `c_ccaa518c99cf` (dialogue two-shots); did not touch cutscene/portrait presentation.
+## Other agents
+`c_0e22a5366cf1` (finale Slice address restore) has no files yet — no overlap.
 
-## Left for next pass (credits + optional budget bump)
-1. Record 18 bark stems (+ 11 existing boss line re-records) with `audio.dialogue` / `audio.voice`, ffmpeg mono 32 kHz 56 kbps, `studio_gen_import`.
-2. Optional: replace premade ids with custom `audio.voice-design` (~$1.11+) if J wants designed voices over library ones.
+## Still blocked (unchanged from prior pass)
+Gen credits too low to record the 18 bark stems; subtitles + distinct voice ids + wiring are in. Stems still need a credits/budget pass.
