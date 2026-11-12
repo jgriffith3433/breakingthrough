@@ -1185,6 +1185,7 @@ public class Enemy : MonoBehaviour
     bool launchAirborne;
     float launchLeft;
     TrailRenderer launchTrail;
+    Vector3 launchPrev;
     public static int Flinches { get; private set; }
     public static int HomeRunLandings { get; private set; }
     public static int HomeRunLaunches { get; private set; }
@@ -1206,6 +1207,7 @@ public class Enemy : MonoBehaviour
             return;
         launched = true;
         launchAirborne = false;
+        launchPrev = transform.position;
         BotChorus.OnLaunched(this);
         launchLeft = 4f;
         spinLeft = Mathf.Max(0.5f, seconds);
@@ -1236,6 +1238,9 @@ public class Enemy : MonoBehaviour
         launchLeft -= dt;
         if (!grounded)
             launchAirborne = true;
+        if (launchAirborne && !down)
+            DeptFx.SpeedLines(at + Vector3.up * 0.6f, at - launchPrev, Mathf.Sqrt(Mathf.Max(1f, bodyScale)));
+        launchPrev = at;
         bool landed = grounded && launchAirborne;
         if (!landed && launchLeft > 0f && !down)
             return;
@@ -1253,6 +1258,7 @@ public class Enemy : MonoBehaviour
             float root = Mathf.Sqrt(Mathf.Max(1f, bodyScale));
             Fx.Emit(FxKind.Dust, at, 8, new Color(0.85f, 0.75f, 0.6f, 0.7f), 1.2f * root, 2.5f, 1.2f);
             Fx.Ring(at + Vector3.up * 0.1f, 4f * root, new Color(1f, 0.9f, 0.6f, 0.7f), 0.4f);
+            DeptFx.Landing(at, root);   // the flash and dust puff where it comes down
         }
     }
 
@@ -1398,7 +1404,7 @@ public class Enemy : MonoBehaviour
 
     void CelebrateDeath() {
         bool boss = DebutWave >= 10 || Boss || Golden;
-        Fx.Death(transform.position, transform.lossyScale.y, Paint, boss || Elite);
+        DeptFx.Death(this, transform.position, transform.lossyScale.y, Paint, boss || Elite, spider);   // STRUCK OFF stamp, then Fx.Death and the scraps
         if (Golden)
             Fx.Ring(transform.position, 5f, new Color(1f, 0.82f, 0.35f, 0.9f), 0.6f);
         if (Boss)

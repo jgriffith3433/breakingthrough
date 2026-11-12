@@ -226,6 +226,7 @@ public class Pickups : MonoBehaviour {
             GameAudio.PlayAt("coin", transform.position, 0.9f, 1.2f);
         } else {
             BoltsCollected++;
+            DeptFx.Coin(transform.position);
             RunBoons.AddFeathers(value);
             Chime(transform.position);
         }
