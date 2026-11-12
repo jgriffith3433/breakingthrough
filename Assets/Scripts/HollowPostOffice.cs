@@ -150,7 +150,7 @@ public class HollowPostOffice : MonoBehaviour {
         Place(root, "fd_rubble", W(at, face, 19.5f, 2f), face * Quaternion.Euler(0f, -35f, 0f), 2.8f);
         Place(root, "fd_rubble", W(at, face, 4f, 9f), face * Quaternion.Euler(0f, 80f, 0f), 1.1f);
         // The giant post boxes: one still standing and rusted, one fallen and open.
-        GameObject box = Place(root, "yd_post_box", W(at, face, -25f, 6f), face * Quaternion.Euler(0f, 18f, 0f), 7f);
+        GameObject box = Place(root, "hl_post_box", W(at, face, -25f, 6f), face * Quaternion.Euler(0f, 18f, 0f), 7f);
         Rust(box, new Color(0.62f, 0.34f, 0.2f));
         GameObject fallen = Place(root, "yd_fallen_mailbox", W(at, face, 27f, 5f), face * Quaternion.Euler(0f, -25f, 0f), 6f);
         Rust(fallen, new Color(0.5f, 0.3f, 0.2f));
