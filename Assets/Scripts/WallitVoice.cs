@@ -391,7 +391,7 @@ public class WallitVoice : MonoBehaviour {
         if (lineHasFile && audioOut != null && SoundSettings.EffectsLevel > 0f) {
             audioOut.Stop();
             audioOut.clip = lineClip;
-            audioOut.volume = SoundSettings.EffectsLevel;
+            audioOut.volume = SoundSettings.Voice;
             audioOut.Play();
         }
         shown = Mathf.Max(2.4f, lineLength + 0.5f);

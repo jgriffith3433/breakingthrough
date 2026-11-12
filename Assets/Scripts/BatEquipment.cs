@@ -717,6 +717,7 @@ public class BatEquipment : MonoBehaviour {
     }
 
     void HomeRun(Vector3 forward, float reach, float grown) {
+        AudioMix.HomeRunCrack();
         Enemy target = faceTarget;
         if (target == null || !target.Alive || Flat(target.transform.position - transform.position).magnitude - target.BodyScale * 0.3f > reach * 1.2f) {
             Gather(reach, ArcFor(Move.Swing1) * 0.5f, forward, hits);

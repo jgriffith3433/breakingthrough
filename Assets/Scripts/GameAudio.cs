@@ -267,8 +267,12 @@ public class GameAudio : MonoBehaviour {
         if (world) {
             source.transform.position = at;
         }
-        source.volume = baseVolume * level * instance.duck;
+        source.volume = baseVolume * level * instance.duck * AudioMix.SfxGain * AudioMix.CrackDuck;
+        AudioMix.Reverb(source);
         source.Play();
+        if (name.StartsWith("homerun") || name.StartsWith("batcrack")) {
+            AudioMix.HomeRunCrack();
+        }
         Note(bus, name, index, world, at, baseVolume);
     }
 
