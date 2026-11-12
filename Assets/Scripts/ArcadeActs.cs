@@ -74,6 +74,8 @@ public class ArcadeActs : MonoBehaviour {
     public static ArcadeActs Instance { get; private set; }
     public static int Act { get; private set; } = -1;
     public static bool InOvertime { get; private set; }
+    // A boss theme (MusicDirector) is playing: the act's score layers step back under it (CinematicDirector boss entrances).
+    public static bool BossTheme;
     public static int Changes { get; private set; }
     public static string BannerTitle { get; private set; } = "";
     public static string Stings { get; private set; } = "";
@@ -415,7 +417,7 @@ public class ArcadeActs : MonoBehaviour {
         if (!musicUp) {
             return;
         }
-        float level = SoundSettings.On ? SoundSettings.Music * Tuning.ActMusicLevel : 0f;
+        float level = SoundSettings.On ? SoundSettings.Music * Tuning.ActMusicLevel * (BossTheme ? 0.2f : 1f) : 0f;
         float step = dt / Tuning.ActFadeSeconds;
         float mix = 0f;
         for (int i = 0; i < layers.Length; i++) {

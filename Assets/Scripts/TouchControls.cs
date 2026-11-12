@@ -13,6 +13,8 @@ using UnityEngine.UI;
 // window a drag shows the piece and letting go drops it. Hidden unless the device has touch.
 public class TouchControls : MonoBehaviour {
     public static TouchControls Instance { get; private set; }
+    // The pads are up (a phone, in play): the boss entrance check reads it.
+    public bool IsShown { get { return shown; } }
 
     const float Margin = 28f;
     const float StickSize = 250f;

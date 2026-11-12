@@ -244,6 +244,11 @@ and a playtest event name.
 
 - **The breach (Arcade and chapters that hold the circle).** A bot reaches Slice: the ring stutters and greys, the screen's edges lose colour, under 30% a heartbeat layer rises, and Wallit's first-hit line ("That's my account! Hands off!") is the only word. Seen and heard, never explained.
 
+### Boss entrances (every boss)
+Each boss is introduced on camera, never by a banner alone: slow time, a swing from Wallit to the boss arriving, the
+rig's rear-up and slam, a stamped name card (e.g. THE FOREMAN / Work order 0031), a stinger, the boss's own taunt, then the
+boss theme. Spec and card table: Docs/Story.md, "Boss entrances". Code `CinematicBoss.cs`; playtest `boss-entrances`.
+
 ## Gaps against the 10-second rule
 
 | Area | Gap | Fix | Cost |
