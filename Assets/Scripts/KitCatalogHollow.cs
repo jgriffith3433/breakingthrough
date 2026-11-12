@@ -32,6 +32,11 @@ public static partial class KitCatalog {
                 B(m, x + 0.05f, 4.6f, -0.4f, x + 1.55f, 4.6f + hs[i], 0.4f, 0.04f);   // broken parapet teeth
             }
         });
+        Add("hl_post_box", "yard", "metal", "brass", m => {   // code fallback; the Gen mesh is Baked/hl_post_box
+            Lat(m, V(0, 0, 0), 0f, P(0, 0, .32f, 0, .32f, .1f, .27f, .14f, .27f, .28f, .29f, .3f, .29f, 1.2f, .33f, 1.24f, .33f, 1.3f, .26f, 1.4f, .15f, 1.46f, 0, 1.5f), 14);
+            S1(m);
+            B(m, -.14f, .88f, .26f, .14f, 1.04f, .34f, .008f);
+        });
         Add("hl_clock_face", "yard", "stone", "lamp", m => {
             m.Orient(V(0, 2.4f, 0), V(90f, 0f, 0f));
             m.Lathe(P(0, 0, 2.3f, 0, 2.3f, .3f, 0, .3f), 20, false);
