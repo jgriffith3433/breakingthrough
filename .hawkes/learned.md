@@ -2,4 +2,4 @@
 - convention: Arcade acts — `Tuning.ActOf` is waves 1–10 / 11–20 / 21–30; partner unlocks follow ActOf, not Story's older bounds.
 - convention: Callout voices stay in Arcade keep — banks in `SliceVoice`/`WallitVoice` `EnsureArcadeKeep` so OnDemandPack does not strip them.
 - lesson: Gen short sfx can report −70 LUFS while the file is loud — probe with ffmpeg volumedetect before regenerating; bake mono 64 kbps into `Resources/Sfx`.
-- lesson: Wallit `callout-reply` must be VoiceDirector Normal (not Bark) and wait the cast gap, or BarkGap burns the queue before "On it." plays.
+- lesson: Wallit `callout-reply` must be VoiceDirector Normal (not Bark) and wait the cast gap, or BarkGap burns the reply before "On it." plays.
