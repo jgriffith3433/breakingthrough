@@ -307,6 +307,7 @@ public class Musician : MonoBehaviour {
         }
         flinch = 1f;
         GameAudio.Play("hit", 0.45f);
+        DeptFx.CircleRipple(transform.position, 12f);   // her circle ripples
         RefreshBar();
         StakesFeel.OnSliceHit(this, amount, by);
         if (Alive) {
