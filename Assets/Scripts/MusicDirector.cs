@@ -57,6 +57,8 @@ public class MusicDirector : MonoBehaviour {
         recent.Clear();
         missing.Clear();
         waiting.Clear();
+        standIns.Clear();
+        Stingers = 0;
     }
 
     static MusicDirector Ensure() {
@@ -86,6 +88,12 @@ public class MusicDirector : MonoBehaviour {
 
     // Change the track. The same track again does nothing; "" fades the music out.
     public static void Play(string track) {
+        Play(track, "");
+    }
+
+    // As Play, but when the track has no file the fallback track plays instead (a leitmotif cue not made yet keeps the
+    // chapter's own score), so real cues drop in later with no code change.
+    public static void Play(string track, string fallback) {
         if (track == null) {
             track = "";
         }
@@ -104,7 +112,13 @@ public class MusicDirector : MonoBehaviour {
         if (track.Length == 0) {
             return;
         }
-        Fetch(track, clip => {
+        Action<AudioClip> start = null;
+        start = clip => {
+            if (clip == null && !string.IsNullOrEmpty(fallback) && fallback != track && Current == track) {
+                Events.Add("fallback|" + track + "|" + fallback);
+                Fetch(fallback, c => { if (c != null && Current == track) start(c); });
+                return;
+            }
             // Still the track wanted, on the source it was meant for (a later Play may have moved on).
             if (clip == null || Current != track || instance == null || instance.sources[instance.active] != next) {
                 return;
@@ -114,7 +128,67 @@ public class MusicDirector : MonoBehaviour {
             }
             next.clip = clip;
             next.Play();
+        };
+        Fetch(track, start);
+    }
+
+    // A short one-shot of a lead's motif over the score: "wallit", "slice" or "both" (StreamingAssets/Music/stinger_<name>.mp3,
+    // under 150 KB). With no file a short stand-in is synthesised (StandIn), so the moment is still heard.
+    public static int Stingers { get; private set; }
+    AudioSource stinger;
+    static readonly Dictionary<string, AudioClip> standIns = new Dictionary<string, AudioClip>();
+
+    public static void Stinger(string name) {
+        if (string.IsNullOrEmpty(name)) {
+            return;
+        }
+        Stingers++;
+        Events.Add("stinger|" + name);
+        GameAudio.NoteOther(GameAudio.Bus.Music, "stinger_" + name);
+        Fetch("stinger_" + name, clip => {
+            if (clip == null) {
+                clip = StandIn(name);
+                Events.Add("stinger-standin|" + name);
+            }
+            MusicDirector d = Ensure();
+            if (d.stinger == null) {
+                d.stinger = d.gameObject.AddComponent<AudioSource>();
+                d.stinger.playOnAwake = false;
+                d.stinger.spatialBlend = 0f;
+                d.stinger.ignoreListenerPause = true;
+            }
+            d.stinger.volume = SoundSettings.On ? Mathf.Clamp01(SoundSettings.Music * 0.8f) : 0f;
+            d.stinger.PlayOneShot(clip);
         });
+    }
+
+    // Wallit: jaunty plucks with a stumble. Slice: slow low notes. Both: the two stacked.
+    static AudioClip StandIn(string name) {
+        AudioClip c;
+        if (standIns.TryGetValue(name, out c) && c != null) {
+            return c;
+        }
+        float[] wal = { 392f, 494f, 440f, 587f };
+        float[] sli = { 110f, 131f, 98f, 123f };
+        bool w = name != "slice", s = name != "wallit";
+        int rate = 22050;
+        float[] data = new float[(int)(rate * (s ? 3.2f : 2f))];
+        for (int n = 0; n < 4; n++) {
+            if (w) AddNote(data, rate, wal[n], n * (s ? 0.8f : 0.5f), s ? 0.5f : 0.35f, 0.22f);
+            if (s) AddNote(data, rate, sli[n], n * 0.8f, 0.75f, 0.3f);
+        }
+        c = AudioClip.Create("standin_" + name, data.Length, 1, rate, false);
+        c.SetData(data, 0);
+        standIns[name] = c;
+        return c;
+    }
+
+    static void AddNote(float[] data, int rate, float hz, float start, float length, float gain) {
+        int a = (int)(start * rate), n = (int)(length * rate);
+        for (int i = 0; i < n && a + i < data.Length; i++) {
+            float t = (float)i / n;
+            data[a + i] += Mathf.Sin(2f * Mathf.PI * hz * i / rate) * Mathf.Exp(-4f * t) * Mathf.Min(1f, i / 200f) * gain;
+        }
     }
 
     // The ambience of a place: "amb_hub", "amb_ch1".."amb_ch6", or "" for none. The same bed again does nothing; the old one

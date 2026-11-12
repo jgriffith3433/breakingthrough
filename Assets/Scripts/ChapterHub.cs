@@ -149,7 +149,7 @@ public class ChapterHub : MonoBehaviour {
 
     void Awake() {
         Instance = this;
-        MusicDirector.Play("hub");
+        MusicDirector.Play("hub_wallit", "hub");
         MusicDirector.Ambience("amb_hub");
         PlaceAudio.Enter(PlaceAudio.Place.Hub, transform);
     }

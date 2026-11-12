@@ -121,7 +121,7 @@ public partial class CinematicDirector {
         }
         skipRevealed = false;
         // Chapter 6 score under the hold; ending swells on the print.
-        MusicDirector.Play("ch6_score");
+        MusicDirector.Play("ch6_both", "ch6_score");
         Events.Add("finale-carry|start");
         if (caption != null) {
             caption.text = "";
@@ -537,7 +537,7 @@ public partial class CinematicDirector {
         Fx.Ring(land + Vector3.up * 0.3f, 10f, new Color(0.95f, 0.82f, 0.35f, 0.65f), 0.7f);
         Events.Add("finale-stamp|ADDRESS");
         Events.Add("address-stamp|finale-carry");
-        MusicDirector.Play("ending");
+        MusicDirector.Play("ending_both", "ending");
         // Sync Filed Hollow's Door Number set piece with the stamp (ring unrolls into writing + number).
         if (ChapterMap.Current != null && ChapterMap.Current.Own != null) {
             ChapterMap.Current.Own.Trigger();

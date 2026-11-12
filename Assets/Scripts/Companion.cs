@@ -166,6 +166,7 @@ public class Companion : MonoBehaviour {
         lastPos = transform.position;
         BuildModel();
         BuildLabel();
+        MusicDirector.Stinger("slice");
         if (Musician.Instance != null) {
             Musician.Instance.Away = true;
         }
@@ -694,6 +695,7 @@ public class Companion : MonoBehaviour {
         Health = Mathf.Max(1, Mathf.RoundToInt(MaxHealth * DownedHealth));
         ReviveProgress = 0f;
         Revives++;
+        MusicDirector.Stinger("slice");
         stabIn = 0.5f;
         hurtIn = 1f;
         PlayClip(Musician.CLIP_IDLE, true);

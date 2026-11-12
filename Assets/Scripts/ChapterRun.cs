@@ -821,6 +821,7 @@ public class ChapterRun : MonoBehaviour {
 
     void ShowCompleteCard(string extra, int best) {
         MusicDirector.Play("theme_slice");
+        MusicDirector.Stinger("wallit");
         GameAudio.Play("stamp_heavy", 0.9f);   // the case is stamped
         bool more = Chapter + 1 < CampaignSave.ChapterCount;
         cardTitle.text = "CHAPTER COMPLETE";
@@ -857,7 +858,8 @@ public class ChapterRun : MonoBehaviour {
         if (extraText != null) {
             extraText.text = "";
         }
-        MusicDirector.Play("ending");
+        MusicDirector.Play("ending_both", "ending");
+        MusicDirector.Stinger("both");
         GameAudio.Play("received", 0.9f);   // RECEIVED
         Events.Add("finale|start");
         RunAnalytics.Screen("chapter_complete_" + (Chapter + 1));
@@ -936,7 +938,7 @@ public class ChapterRun : MonoBehaviour {
 
     // Credits scroll over Wallit and Slice in the live Hollow; the still credits reel is the fallback.
     void PlayCreditsReel() {
-        MusicDirector.Play("credits");
+        MusicDirector.Play("credits_full", "credits");
         Events.Add("cinematic|" + data.Id + "|credits-live");
         CinematicDirector.PlayCreditsLive(ShowCredits, SecretShown);
     }
@@ -963,7 +965,7 @@ public class ChapterRun : MonoBehaviour {
     }
 
     void ShowCredits() {
-        MusicDirector.Play("credits");
+        MusicDirector.Play("credits_full", "credits");
         CreditsUp = true;
         creditsAt = Time.unscaledTime + 0.7f;
         cardTitle.text = Story.CreditsTitle;
