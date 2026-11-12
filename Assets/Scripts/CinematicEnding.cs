@@ -36,7 +36,7 @@ public partial class CinematicDirector {
         WallitVoice.Silence();
         SliceVoice.Silence();
         CastVoice.Silence();
-        MusicDirector.Play("credits");
+        MusicDirector.Play("credits_full", "credits");
 
         PlayerGrowth pg = PlayerGrowth.Instance;
         wallit = pg != null ? pg.transform : null;
@@ -203,7 +203,7 @@ public partial class CinematicDirector {
         EnsureCreditsScroll();
         creditsStart = Time.unscaledTime;
         CreditsLive = true;
-        MusicDirector.Play("credits");
+        MusicDirector.Play("credits_full", "credits");
         Events.Add("credits-shot|" + s.id);
     }
 
