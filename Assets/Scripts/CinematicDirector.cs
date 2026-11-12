@@ -9,7 +9,7 @@ using UnityEngine.UI;
 // desktop click, or the touch Skip pill) ends the whole scene and blends to the follow camera in under a second.
 // Data: Resources/Cinematics/<id>.json. Missing actors fall back to Cutscene.PlayShots(fallback).
 [DefaultExecutionOrder(2000)]
-public class CinematicDirector : MonoBehaviour {
+public partial class CinematicDirector : MonoBehaviour {
     [Serializable] public class Mark {
         public string id;
         public float[] at;
@@ -45,7 +45,7 @@ public class CinematicDirector : MonoBehaviour {
 
     public static CinematicDirector Instance { get; private set; }
     // True while shots play or the 0.6 s camera handoff is still blending onto the follow camera.
-    public static bool IsOpen { get { return Instance != null && (Instance.open || Instance.handingOff); } }
+    public static bool IsOpen { get { return Instance != null && (Instance.open || Instance.handingOff || Instance.bossRun); } }
     // Other playtests turn the Chapter 1 opening off so their bot starts with control.
     public static bool SuppressOpening;
     public static readonly List<string> Events = new List<string>();
@@ -287,6 +287,10 @@ public class CinematicDirector : MonoBehaviour {
     }
 
     void Update() {
+        if (bossRun) {
+            TickBoss();
+            return;
+        }
         if (!open) {
             return;
         }
@@ -310,6 +314,14 @@ public class CinematicDirector : MonoBehaviour {
     }
 
     void LateUpdate() {
+        if (bossRun && cam != null && viewSet) {
+            cam.transform.position = viewPos;
+            cam.transform.rotation = viewRot;
+            if (zelda != null) {
+                zelda.CinematicHold(viewPos, viewRot);
+            }
+            return;
+        }
         if (!open || !viewSet || cam == null) {
             return;
         }
@@ -421,6 +433,12 @@ public class CinematicDirector : MonoBehaviour {
     }
 
     public void Skip() {
+        if (bossRun) {
+            BossSkips++;
+            BossEvents.Add("boss-skip|" + LastBossTitle);
+            EndBoss(true);
+            return;
+        }
         if (!open) {
             return;
         }

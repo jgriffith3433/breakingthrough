@@ -118,6 +118,7 @@ public class WaveDirector : MonoBehaviour {
         Waiting = false;
         Event = WaveEvent.None;
         MetaProgress.BeginRun();
+        CinematicDirector.NewRun();   // Arcade's boss entrances play again this run
         FortStock.BeginRun();
         Combo.BeginRun();
         Combat.BeginRun();

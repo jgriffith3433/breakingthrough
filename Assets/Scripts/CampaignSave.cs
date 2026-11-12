@@ -33,6 +33,7 @@ public static class CampaignSave {
         public int side;         // bit per HubLife.Sides row: the favour was returned or the notice pinned (version 8)
         public int choices;      // 2 bits per Choices.All row: 0 not made, 1 first option, 2 second (the file's dialogue choices)
         public int ending;       // the ADDRESS FILED variant last seen (Endings: 1 Ledger, 2 Two Doors, 3 Open Door; 0 never): New Game+ echoes it (version 9)
+        public int bosses;       // bit per chapter: its boss's entrance (CinematicDirector.PlayBoss) has played on this file (version 10)
     }
 
     // Save format. 1: the first files (no stamp on the oldest; no xp, unlocks, errands or lore bits). 2: stamped, every
@@ -44,8 +45,9 @@ public static class CampaignSave {
     // 8: the hub's conversations and side errands (HubLife), a bit a row (older files start with none: nothing to derive).
     // 9: the ending variant last seen (Endings), so New Game+ can echo it; older files start with none and a filed one derives it
     // from its choices and errands the first time New Game+ is begun.
+    // 10: the boss entrances seen, a bit per chapter (older files start with none: nothing to derive).
     // Bump it with a step in Migrate.
-    public const int Version = 9;
+    public const int Version = 10;
     const string BadKey = "hawkes.campaign.bad";
 
     [Serializable]
@@ -121,6 +123,7 @@ public static class CampaignSave {
             s.chats &= (1 << HubLife.Chats.Length) - 1;   // v8
             s.side &= (1 << HubLife.Sides.Length) - 1;
             s.ending = s.ending >= 1 && s.ending <= Endings.Count ? s.ending : 0;   // v9
+            s.bosses &= (1 << (2 * ChapterCount)) - 1;   // v10: a bit per chapter's boss and one per mini-boss
             s.choices = Choices.Clean(s.choices);   // v7: only choices that exist, never the unused pattern 3
             s.seconds = float.IsNaN(s.seconds) || float.IsInfinity(s.seconds) ? 0f : Mathf.Max(0f, s.seconds);
         }
@@ -361,6 +364,7 @@ public static class CampaignSave {
         s.errands = 0;
         s.chats = 0;   // the loop's hub starts quiet again: every conversation and side errand can be had once more
         s.side = 0;
+        s.bosses = 0;   // the loop meets each boss's entrance again
         s.rooms &= 1 << ChapterCount;   // only the Dead Letter's reward is kept
         s.hard = false;
         Touch(s);

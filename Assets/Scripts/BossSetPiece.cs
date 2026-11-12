@@ -58,6 +58,24 @@ public class BossSetPiece : MonoBehaviour {
         if (boss == null || ChapterRun.Instance != null || Camera.main == null) {
             return;
         }
+        // Waves 10, 20, 30: the boss arrives on the CinematicDirector (CinematicBoss.cs). Anything else keeps the dolly below.
+        CinematicDirector.BossResult entrance = CinematicDirector.PlayBoss(boss, -1, wave, () => {
+            Active = false;
+            Events.Add("intro-end|" + boss.Title);
+            AfterEntrance(wave);
+        });
+        if (entrance != CinematicDirector.BossResult.Unavailable) {
+            if (entrance == CinematicDirector.BossResult.Played) {
+                Intros++;
+                Active = true;
+                Events.Add("intro|" + boss.Title + "|" + wave);
+            }
+            if (boss.GetComponent<BossPhases>() == null) {
+                boss.gameObject.AddComponent<Phases>();
+            }
+            EnsureActThree(wave);
+            return;
+        }
         var go = new GameObject("Boss Intro");
         go.AddComponent<BossSetPiece>().Init(boss, wave);
         if (boss.GetComponent<BossPhases>() == null) {
@@ -123,6 +141,39 @@ public class BossSetPiece : MonoBehaviour {
         line++;
     }
 
+    // Wallit and Slice answer the boss's taunt once it has been said (the first pair of the wave's lines).
+    static void AfterEntrance(int wave) {
+        var go = new GameObject("Boss Afterword");
+        go.AddComponent<Afterword>().Go(wave == 30 ? 2 : wave == 20 ? 1 : 0);
+    }
+
+    class Afterword : MonoBehaviour {
+        public void Go(int pick) { StartCoroutine(Run(pick)); }
+
+        IEnumerator Run(int pick) {
+            yield return new WaitForSecondsRealtime(0.3f);
+            string w = WallitLines[pick][0];
+            float seconds = WallitVoice.Cutscene(w);
+            UpgradeLook.Say("Wallit: " + w, Mathf.Min(seconds, 1.8f), 300f);
+            yield return new WaitForSecondsRealtime(Mathf.Clamp(seconds + 0.3f, 1.2f, 2.2f));
+            string s = SliceLines[pick][0];
+            seconds = SliceVoice.Cutscene(s);
+            UpgradeLook.Say("Slice: " + s, Mathf.Min(seconds, 1.8f), 300f);
+            yield return new WaitForSecondsRealtime(Mathf.Clamp(seconds + 0.3f, 1.2f, 2.2f));
+            Destroy(gameObject);
+        }
+    }
+
+    // Story act two: Slice takes the plating's first crack, on camera (wave 10). Shared by the old dolly and the entrance.
+    public static void CrackSlice(Enemy boss) {
+        if (Musician.Instance == null || !Musician.Instance.Alive) {
+            return;
+        }
+        Musician.Instance.Hurt(1, boss);
+        Events.Add("slice-crack|10");
+        Fx.Ring(Musician.Instance.transform.position + Vector3.up * 0.4f, 3.5f, new Color(1f, 0.35f, 0.3f, 0.7f), 0.45f);
+    }
+
     static bool SkipPressed() {
         if (Input.anyKeyDown || PlayInput.GetKeyDown(KeyCode.Space) || PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.Mouse0)) {
             return true;
@@ -170,9 +221,7 @@ public class BossSetPiece : MonoBehaviour {
         // Wave 10: Slice takes the plating's first crack on camera (Story act two), then the covering lines play.
         if (!cracked && waveNum == 10 && t >= 1.1f && Musician.Instance != null && Musician.Instance.Alive) {
             cracked = true;
-            Musician.Instance.Hurt(1, boss);
-            Events.Add("slice-crack|10");
-            Fx.Ring(Musician.Instance.transform.position + Vector3.up * 0.4f, 3.5f, new Color(1f, 0.35f, 0.3f, 0.7f), 0.45f);
+            CrackSlice(boss);
         }
         if (!skipped && t >= nextLine && line < 4 && t < IntroSeconds - 0.8f) {
             Say();
@@ -268,6 +317,8 @@ public class BossSetPiece : MonoBehaviour {
         }
         Payoffs++;
         PayingOff = true;
+        ArcadeActs.BossTheme = false;   // the act's score comes back up
+        MusicDirector.Play("");
         Events.Add("payoff|" + foe.Title + "|" + wave);
         var go = new GameObject("Boss Payoff");
         go.AddComponent<PayoffRun>().Go(foe.transform.position, wave);
