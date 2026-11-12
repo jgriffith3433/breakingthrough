@@ -1,4 +1,4 @@
-1. Open Arcade on beta (desktop or phone). Let wave 1 bots walk in; hold fire a few seconds.
-2. Listen for Slice's one-word callouts ("Left." "Mine." "Behind.") with a pale ring on that bot and a one-word caption; if the bot is off-screen, an edge arrow appears clear of the stick/buttons.
-3. Skip or play to wave 11 (Cold Hour): when a bot reaches her circle she blocks (slash pose), you hear the metallic clink, and the bot is shoved back about 2 m. Wallit may answer "On it." / "Billable." after her line.
-4. Optional: wave 21+ once per wave she stamps and nearby bots stun briefly.
+1. On beta, open Arcade: a paper sheet slides over, stamps ENTER, peels into the run (no black cut).
+2. Let Slice fall or force run-end: STRUCK OFF sheet, then Retry stamps RETURNED into the next run; Quit to menu stamps RETURNED.
+3. From the menu open Campaign → a case file → Begin a chapter: ENTER, then that chapter's painted loading card with Slice or Wallit's line and a strip that fills; leave to the hub for FILED and the office card.
+4. On a phone (390×844), the same path: cards crop to the subject, text stays readable, sheet motion stays smooth.

@@ -1,5 +1,3 @@
-- canon: Slice as partner — Arcade callouts (one word + accent ring + edge arrow) and act guard moves (Cold Hour parry, Last Light stamp); `SliceCallouts.cs`; companion chapters get callouts + parry.
-- convention: Arcade acts — `Tuning.ActOf` is waves 1–10 / 11–20 / 21–30; partner unlocks follow ActOf, not Story's older bounds.
-- convention: Callout voices stay in Arcade keep — banks in `SliceVoice`/`WallitVoice` `EnsureArcadeKeep` so OnDemandPack does not strip them.
-- lesson: Gen short sfx can report −70 LUFS while the file is loud — probe with ffmpeg volumedetect before regenerating; bake mono 64 kbps into `Resources/Sfx`.
-- lesson: Wallit `callout-reply` must be VoiceDirector Normal (not Bark) and wait the cast gap, or BarkGap burns the reply before "On it." plays.
+- lesson: Latent CS0120 — `CinematicDirector.ReelId` is instance-only; PlaytestOpening called it static since the director PR and only failed on a clean beta rebuild. Prefer `Instance?.ReelId` next to other Instance reads.
+- convention: ScreenTransition — every scene/panel place-change goes through `Load`/`Go`; LoadScreen cards sit inside the swap so the peel reveals them.
+- convention: scenario.txt — must name the AC playtest (`transitions` here); HEAD can still hold a stale id from an older merge note.

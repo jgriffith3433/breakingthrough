@@ -117,7 +117,7 @@ public static class PlaytestOpening {
         if (Seen("fallback")) {
             run.Problem(PlaytestSeverity.Bug, "opening-scene: fell back to still reel (an actor was missing)");
         }
-        run.Event("opening-start", CinematicDirector.ReelId + " open=" + CinematicDirector.IsOpen);
+        run.Event("opening-start", (CinematicDirector.Instance != null ? CinematicDirector.Instance.ReelId : "") + " open=" + CinematicDirector.IsOpen);
 
         // Watch the whole scene: sample each shot for actor motion and captions.
         int movingShots = 0;
