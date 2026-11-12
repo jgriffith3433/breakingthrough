@@ -301,7 +301,7 @@ boss theme. Spec and card table: Docs/Story.md, "Boss entrances". Code `Cinemati
 
 | Area | Gap | Fix | Cost |
 |---|---|---|---|
-| A Hollow | stamp press silhouette still open | Dead Letter Office ruin (built, `HollowPostOffice`); three acts with light, sky, score and mix (built, `arcade-acts`); wall stamp press silhouette still open; painted act skies and recorded stems would be GPU extras | code |
+| A Hollow | stamp press silhouette still open | Dead Letter Office ruin (built, `HollowPostOffice`); three acts with light, sky, score and mix (built, `arcade-acts`); wall stamp press silhouette still open; painted act skies and recorded stems would be GPU extras; the score reacts to danger (ArcadeScore: percussion and brass stems on bar lines, a boss phase layer, a 4 s cadence on each boss death, `arcade-score`) | code |
 | E Walk | stilts 25 m apart is too thin | skimming papers, far bell, stilt chirps | code + 2 sfx |
 | F Reading | long stretches between lecterns | flying forms, desk stamp tap | code + 1 sfx |
 | G Filed | quiet by design | doorframes open on old chapter sounds | code, reuse sfx |
