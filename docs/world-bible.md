@@ -58,7 +58,7 @@ One far-visible thing per area, so a player can steer by it. All are already in 
 
 | Area | Landmark (seen from) | Why it steers |
 |---|---|---|
-| A Hollow | **The lantern ring and the circle's gold glow**, with the Department wall's dark line at the rim | Home is always the light; the wall is the edge |
+| A Hollow | **The Dead Letter Office ruin** (leaning brick front, arched door, a clock with no hands, giant rusted post boxes, sorting shelves spilling envelopes) 162 m out on the bearing Wallit faces at the start; the lantern ring and the circle's gold glow; a hedge and picket rim at 186 m | Home is always the light; the wall is the edge |
 | B Yard | **The Dead Letter Office clock tower**, lit face, 95 m north (visible from the start) | Goes north-east to the amber Return Slot once the crew falls |
 | C Gate | **The gate arch with three red INVALID bars**, lit amber, 70 m out, and the watchtower beam sweeping | The beam crosses the player every few seconds |
 | D Floor | **The red-lamp chute** high on a stack, seven glowing stack mouths | Red means the lever; belts show where things go |
@@ -68,7 +68,7 @@ One far-visible thing per area, so a player can steer by it. All are already in 
 | H Office | **The six doors with status lamps**, and the **brass door number** that hangs when all six are filed | The room reads the file at a glance |
 | I Back rooms | **A soft gold pulsing ring from 40 m** | Appears only once the clue is kept |
 
-Gap: B has the strongest landmark; **A has none beyond light**. Add a distant, slowly turning **Department stamp press silhouette
+Built (`HollowPostOffice.cs`, `KitCatalogHollow.cs`): A now has the Dead Letter Office, the place the Department sent every unfiled letter; the ruin is what the Hollow was before it was filed. Hero props (the two giant post boxes and the shelves) are kit stand-ins until their Gen versions are baked under the same piece ids. Still open: a distant, slowly turning **Department stamp press silhouette
 on the Hollow's wall** that lifts and falls on the wave clock, so Arcade has a far thing to steer by and a clock that is seen,
 not read. (Beyond 150 m, no collider.)
 
