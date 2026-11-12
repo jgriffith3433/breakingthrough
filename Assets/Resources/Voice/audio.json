@@ -13,17 +13,15 @@
   },
   {
    "name": "slice",
-   "voiceId": "hv_heroine",
-   "provider": "open",
-   "model": "qwen3-tts",
-   "description": "Hawkes Gen audio.dialogue-open, voice hv_heroine"
+   "description": "Place Department – Slice: clipped, low, dry goth bodyguard (ElevenLabs voice-design, eleven_v4)",
+   "voiceId": "Gmg7bCXPSj9cYwVDrM6h",
+   "model": "eleven_v4"
   },
   {
    "name": "narrator",
-   "voiceId": "hv_narrator_warm",
-   "provider": "open",
-   "model": "qwen3-tts",
-   "description": "Hawkes Gen audio.dialogue-open, voice hv_narrator_warm"
+   "description": "Narrator: warm, bureaucratic, faintly amused records clerk (ElevenLabs voice-design, eleven_v4)",
+   "voiceId": "JjDIROtNEieYxCNGJXgG",
+   "model": "eleven_v4"
   },
   {
    "name": "yobot",
@@ -1364,229 +1362,229 @@
    "id": "slice_always_don_t_thank_me",
    "voice": "slice",
    "text": "Always. Don't thank me.",
-   "asset": "a_f00cb0eba0b0b172"
+   "asset": "a_4e3dcbfef8faeb7d"
   },
   {
    "id": "slice_behind_you",
    "voice": "slice",
    "text": "Behind you.",
-   "asset": "a_ff94af54c2c890ed"
+   "asset": "a_fd39893d90319da4"
   },
   {
    "id": "slice_blank_is_a_fresh_account",
    "voice": "slice",
    "text": "Blank is a fresh account.",
-   "asset": "a_dbdd65426ed1deaa"
+   "asset": "a_f09ee9b3e42c6ddc"
   },
   {
    "id": "slice_clean_stand_as_long_as_you_like",
    "voice": "slice",
    "text": "Clean. Stand as long as you like.",
-   "asset": "a_484fe3bc63ba45bc"
+   "asset": "a_21b0f34a479030ea"
   },
   {
    "id": "slice_closer",
    "voice": "slice",
    "text": "Closer.",
-   "asset": "a_fece4aba7734d50d"
+   "asset": "a_9402b44ff417e3b8"
   },
   {
    "id": "slice_counted_four_would_be_rude",
    "voice": "slice",
    "text": "Counted. Four would be rude.",
-   "asset": "a_515392a80eaba9ae"
+   "asset": "a_c23fd60770c9de7b"
   },
   {
    "id": "slice_door_s_yours_stay_clear_of_the_lamp",
    "voice": "slice",
    "text": "Door's yours. Stay clear of the lamp.",
-   "asset": "a_90f93eac3f31710b"
+   "asset": "a_18d2bb0d81715785"
   },
   {
    "id": "slice_every_slip_on_the_wall_was_pinned_the_floor_sends_fewer_now",
    "voice": "slice",
    "text": "Every slip on the wall was pinned. The Floor sends fewer now.",
-   "asset": "a_3620394bb272c9c2"
+   "asset": "a_ee3472e4707a4985"
   },
   {
    "id": "slice_fine_keep_swinging",
    "voice": "slice",
    "text": "Fine. Keep swinging.",
-   "asset": "a_8b6de7f319ff2f01"
+   "asset": "a_8254339cdf87665e"
   },
   {
    "id": "slice_good_keep_swinging",
    "voice": "slice",
    "text": "Good. Keep swinging.",
-   "asset": "a_146b4d852c60bb43"
+   "asset": "a_7a80e1653a5188de"
   },
   {
    "id": "slice_i_m_armed",
    "voice": "slice",
    "text": "I'm armed.",
-   "asset": "a_7efe1a324d16fe72"
+   "asset": "a_8bf3adc5ea2f3494"
   },
   {
    "id": "slice_last_time_you_signed_for_the_notice_two_names_one_pen_do_it_again",
    "voice": "slice",
    "text": "Last time you signed for the notice. Two names, one pen. Do it again.",
-   "asset": "a_2277359535171131"
+   "asset": "a_ea2669057479f6a8"
   },
   {
    "id": "slice_let_it_ring_is_full",
    "voice": "slice",
    "text": "Let it. Ring is full.",
-   "asset": "a_7eb30f90372e890c"
+   "asset": "a_59e3a8ee62e581f2"
   },
   {
    "id": "slice_look_west_the_trail_lost_things_lying_where_they_landed",
    "voice": "slice",
    "text": "Look west. The trail. Lost things, lying where they landed.",
-   "asset": "a_ddffb15b35989657"
+   "asset": "a_ef7db679f2b59605"
   },
   {
    "id": "slice_out_north_east",
    "voice": "slice",
    "text": "Out. North-east.",
-   "asset": "a_f8eead547533a1f7"
+   "asset": "a_4bf5e52b1b886e00"
   },
   {
    "id": "slice_paid_in_kind_stay",
    "voice": "slice",
    "text": "Paid. In kind. Stay.",
-   "asset": "a_7f6e9f43bb163fc8"
+   "asset": "a_2636f60ac4c58bdf"
   },
   {
    "id": "slice_quiet_is_rent_take_it",
    "voice": "slice",
    "text": "Quiet is rent. Take it.",
-   "asset": "a_7e7ca9c93564fba8"
+   "asset": "a_e9050ffe1fbb1af6"
   },
   {
    "id": "slice_sender_unknown_billing_void",
    "voice": "slice",
    "text": "Sender unknown. Billing void.",
-   "asset": "a_f5846864aa5369d3"
+   "asset": "a_5a272c6beebe3f27"
   },
   {
    "id": "slice_take_them",
    "voice": "slice",
    "text": "Take them.",
-   "asset": "a_19d05b44dc2416a7"
+   "asset": "a_5dfc0c2aaf664673"
   },
   {
    "id": "slice_the_door_never_shut_it_will_stay_open",
    "voice": "slice",
    "text": "The door never shut. It will stay open.",
-   "asset": "a_49e096f7aaeadb1e"
+   "asset": "a_9602902772bb5e15"
   },
   {
    "id": "slice_the_hollow_knows_our_door_somebody_will_knock",
    "voice": "slice",
    "text": "The Hollow knows our door. Somebody will knock.",
-   "asset": "a_35077918bf964cf8"
+   "asset": "a_52026f8253bb0e39"
   },
   {
    "id": "slice_the_registrar_reads_one_name_aloud_last_time_it_was_yours_alone",
    "voice": "slice",
    "text": "The Registrar reads one name aloud. Last time it was yours alone.",
-   "asset": "a_64709d86963434e9"
+   "asset": "a_4e5c712f3f501c73"
   },
   {
    "id": "slice_the_server_kept_two_names_last_time_it_will_ask_for_two",
    "voice": "slice",
    "text": "The Server kept two names last time. It will ask for two.",
-   "asset": "a_b63898c6301910e1"
+   "asset": "a_866aa4af931dd2e0"
   },
   {
    "id": "slice_they_can_t_hear_you",
    "voice": "slice",
    "text": "They can't hear you.",
-   "asset": "a_1915c5f3c6efb75c"
+   "asset": "a_711da5a5a373e9cd"
   },
   {
    "id": "slice_two_doors_wallit_s_is_next_to_mine_knock_on_it",
    "voice": "slice",
    "text": "Two doors. Wallit's is next to mine. Knock on it.",
-   "asset": "a_cfb998d9029246f8"
+   "asset": "a_0077d73d6ef33f3a"
   },
   {
    "id": "slice_two_numbers_side_by_side_same_pen_same_line",
    "voice": "slice",
    "text": "Two numbers, side by side. Same pen. Same line.",
-   "asset": "a_8a5172d149e1e5b4"
+   "asset": "a_613a4a2ee1a452dd"
   },
   {
    "id": "slice_wallit",
    "voice": "slice",
    "text": "Wallit.",
-   "asset": "a_2926c3c645e51151"
+   "asset": "a_6be85b3c5a840274"
   },
   {
    "id": "slice_you_did_don_t_boast",
    "voice": "slice",
    "text": "You did. Don't boast.",
-   "asset": "a_804d991d01ea7eb4"
+   "asset": "a_ad99db43aeb8908c"
   },
   {
    "id": "slice_you_filed_the_ledger_alone_the_foreman_reads_it_back_differently_now",
    "voice": "slice",
    "text": "You filed the ledger alone. The Foreman reads it back differently now.",
-   "asset": "a_e2467ffa866e7c2a"
+   "asset": "a_6b6afe3de78c85d0"
   },
   {
    "id": "slice_yours_keep_the_receipt",
    "voice": "slice",
    "text": "Yours. Keep the receipt.",
-   "asset": "a_2db023f5ce19ddff"
+   "asset": "a_0e724a7aefa45fbe"
   },
   {
    "id": "narrator_a_gummed_label_on_brim_s_hook_reads_brim_in_brim_s_own_slow_hand",
    "voice": "narrator",
    "text": "A gummed label on Brim's hook reads BRIM, in Brim's own slow hand.",
-   "asset": "a_4827050b1d2c8b1b"
+   "asset": "a_48b0291c0a4b6039"
   },
   {
    "id": "narrator_brim_hangs_on_the_wall_by_the_door_number_band_on_left_of_the_desk_it_has_an_address",
    "voice": "narrator",
    "text": "Brim hangs on the wall by the door number, band on, left of the desk. It has an address.",
-   "asset": "a_e56b9474798c18a4"
+   "asset": "a_054d8e21d5626f72"
   },
   {
    "id": "narrator_chime_rings_once_for_the_right_address_it_is_the_quietest_bell_in_the_hollow",
    "voice": "narrator",
    "text": "Chime rings once for the right address. It is the quietest bell in the Hollow.",
-   "asset": "a_e64d19bf39156bab"
+   "asset": "a_50c70ca7f19b7ad2"
   },
   {
    "id": "narrator_spare_chirps_once_properly_and_the_hollow_answers",
    "voice": "narrator",
    "text": "Spare chirps once, properly, and the Hollow answers.",
-   "asset": "a_453c5d2e8a9361b1"
+   "asset": "a_eab0a962b8582557"
   },
   {
    "id": "narrator_spare_is_in_the_doorway_of_the_ring_lid_on_straight_cheering_at_nothing_in_particular",
    "voice": "narrator",
    "text": "Spare is in the doorway of the ring, lid on straight, cheering at nothing in particular.",
-   "asset": "a_6efa481e269cde0e"
+   "asset": "a_57d1126177839514"
   },
   {
    "id": "narrator_tick_is_wound_nobody_had_to_be_the_department_to_do_it",
    "voice": "narrator",
    "text": "Tick is wound. Nobody had to be the Department to do it.",
-   "asset": "a_58c4d6bc1eb4f873"
+   "asset": "a_ed589f1bc5176e82"
   },
   {
    "id": "narrator_tick_keeps_the_hour_every_pin_where_it_should_be",
    "voice": "narrator",
    "text": "Tick keeps the hour. Every pin where it should be.",
-   "asset": "a_3762dd96f700be1b"
+   "asset": "a_160ddeb1bb0b9261"
   },
   {
    "id": "narrator_twelve_slips_on_the_office_wall_every_one_pinned_the_department_files_itself",
    "voice": "narrator",
    "text": "Twelve slips on the office wall, every one pinned. The Department files itself.",
-   "asset": "a_704492eabf05ab9a"
+   "asset": "a_21ffd2fd93f6acc0"
   },
   {
    "id": "yobot_lids_on_the_door_opens_for_us_this_time",
@@ -1970,67 +1968,67 @@
    "id": "slice_again",
    "voice": "slice",
    "text": "Again.",
-   "asset": "a_564da39398293248"
+   "asset": "a_728d2c3928f0ca60"
   },
   {
    "id": "slice_bigger_next",
    "voice": "slice",
    "text": "Bigger next.",
-   "asset": "a_15860c0f8ca7d9d7"
+   "asset": "a_e2c916e3a07b80b1"
   },
   {
    "id": "slice_hold",
    "voice": "slice",
    "text": "Hold.",
-   "asset": "a_dce03cc3925785dd"
+   "asset": "a_f5669aa0888d1c32"
   },
   {
    "id": "slice_i_didn_t",
    "voice": "slice",
    "text": "I didn't.",
-   "asset": "a_5f0c7130cfcf5acb"
+   "asset": "a_22e94742e775d099"
   },
   {
    "id": "slice_then_take_it",
    "voice": "slice",
    "text": "Then take it.",
-   "asset": "a_b49d848ea421fae9"
+   "asset": "a_c778ce3d9631598c"
   },
   {
    "id": "slice_cover_me",
    "voice": "slice",
    "text": "Cover me.",
-   "asset": "a_a51eccf712f15a72"
+   "asset": "a_bd64aa1d2f54ac40"
   },
   {
    "id": "slice_denied_later",
    "voice": "slice",
    "text": "Denied later.",
-   "asset": "a_7250f266c0bd43dc"
+   "asset": "a_eacfa4686fa781f5"
   },
   {
    "id": "slice_spend_it_right",
    "voice": "slice",
    "text": "Spend it right.",
-   "asset": "a_cefd332594c6e743"
+   "asset": "a_5e2378d2bfb59f4b"
   },
   {
    "id": "slice_keep_swinging",
    "voice": "slice",
    "text": "Keep swinging.",
-   "asset": "a_98adb112ac9b0fec"
+   "asset": "a_502b5e6a24a89bfb"
   },
   {
    "id": "slice_clean_again",
    "voice": "slice",
    "text": "Clean. Again.",
-   "asset": "a_530cd42ca7899bfe"
+   "asset": "a_328b0fe328ccff30"
   },
   {
    "id": "slice_noted",
    "voice": "slice",
    "text": "Noted.",
-   "asset": "restored"
+   "asset": "a_505ce72efcfb1c88"
   },
   {
    "id": "wallit_that_s_my_account_hands_off",
@@ -2201,25 +2199,25 @@
    "id": "slice_that_one_s_new",
    "voice": "slice",
    "text": "That one's new.",
-   "asset": "a_1877b11450699c7b"
+   "asset": "a_ea0c826447e8e827"
   },
   {
    "id": "slice_what_is_that",
    "voice": "slice",
    "text": "What is that.",
-   "asset": "a_daa7d32f2d3a99a9"
+   "asset": "a_1cad13a09f30f224"
   },
   {
    "id": "slice_different_watch_it",
    "voice": "slice",
    "text": "Different. Watch it.",
-   "asset": "a_fdb04c048403a532"
+   "asset": "a_63869707521a9e8e"
   },
   {
    "id": "slice_don_t_know_that_one",
    "voice": "slice",
    "text": "Don't know that one.",
-   "asset": "a_fc7716cd7894ae4f"
+   "asset": "a_355cafde288b6dfd"
   },
   {
    "id": "wallit_first_payment_received",
@@ -2275,79 +2273,79 @@
    "id": "slice_left",
    "voice": "slice",
    "text": "Left.",
-   "asset": "a_01b882f3894a1abb"
+   "asset": "a_25b41de0aa67eee4"
   },
   {
    "id": "slice_right",
    "voice": "slice",
    "text": "Right.",
-   "asset": "a_1505b476e6288baa"
+   "asset": "a_15b4b565eda331bd"
   },
   {
    "id": "slice_behind",
    "voice": "slice",
    "text": "Behind.",
-   "asset": "a_b41f0324e1421d36"
+   "asset": "a_0baf38d27ee3b1c7"
   },
   {
    "id": "slice_ahead",
    "voice": "slice",
    "text": "Ahead.",
-   "asset": "a_8c82667c06f14e09"
+   "asset": "a_651f570632a9b666"
   },
   {
    "id": "slice_spider",
    "voice": "slice",
    "text": "Spider.",
-   "asset": "a_955f1df70d5b70c9"
+   "asset": "a_00d5a13f87f2d7bf"
   },
   {
    "id": "slice_mine",
    "voice": "slice",
    "text": "Mine.",
-   "asset": "a_43a147d7c96d121c"
+   "asset": "a_c31f517e38f63283"
   },
   {
    "id": "slice_close",
    "voice": "slice",
    "text": "Close.",
-   "asset": "a_b8ebd5be7e397325"
+   "asset": "a_1664523d933ed849"
   },
   {
    "id": "slice_flank",
    "voice": "slice",
    "text": "Flank.",
-   "asset": "a_47556a38e5e15f6f"
+   "asset": "a_00545faaf0f4371a"
   },
   {
    "id": "slice_clear",
    "voice": "slice",
    "text": "Clear.",
-   "asset": "a_5740e08c78801373"
+   "asset": "a_472e2c33dde0edb7"
   },
   {
    "id": "slice_yo",
    "voice": "slice",
    "text": "Yo.",
-   "asset": "a_3f17f74546603de5"
+   "asset": "a_4aa697823cdfb25e"
   },
   {
    "id": "slice_down",
    "voice": "slice",
    "text": "Down.",
-   "asset": "a_886dbf3543906561"
+   "asset": "a_54a9441b8f7b3c02"
   },
   {
    "id": "slice_blocked",
    "voice": "slice",
    "text": "Blocked.",
-   "asset": "a_c6f75b20a556555c"
+   "asset": "a_5e3205235db5f27c"
   },
   {
    "id": "slice_stamp",
    "voice": "slice",
    "text": "Stamp.",
-   "asset": "a_b40dfae01bfd50ca"
+   "asset": "a_d3b7b8e3fbee2759"
   },
   {
    "id": "wallit_on_it",
@@ -2374,5 +2372,5 @@
    "asset": "a_7274ded245e2f257"
   }
  ],
- "note": "Made through Hawkes Gen audio.voice (project theplacedepartment). Ids match WallitVoice.LineId. Slice, narrator, Yo Bot and Courier lines (pass 2) are mono 64 kbps re-encodes of Gen audio.dialogue-open stems. Slice callout stems (partner) are mono 32 kHz 56 kbps from audio.dialogue-open (hv_heroine); Wallit replies from audio.voice."
+ "note": "Made through Hawkes Gen audio.voice (project theplacedepartment). Ids match WallitVoice.LineId. Yo Bot and Courier lines (pass 2) are mono 64 kbps re-encodes of Gen audio.dialogue-open stems. Slice and narrator lines are eleven_v4 (audio.dialogue), mono 32 kHz 56 kbps, loudness-matched to Wallit (about -21 LUFS). Wallit replies from audio.voice."
 }

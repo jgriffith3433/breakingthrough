@@ -11,10 +11,10 @@
    "glyph": "",
    "voice": "none",
    "bible": "Narration over the frozen Hollow and the finale",
-   "voiceId": "hv_narrator_warm",
-   "voiceName": "Morgan",
-   "direction": "warm, even, storybook narrator; slow and sombre",
-   "provider": "open"
+   "voiceId": "JjDIROtNEieYxCNGJXgG",
+   "voiceName": "Narrator",
+   "direction": "warm, even, bureaucratic, faintly amused: a records clerk reading a fairy tale",
+   "provider": "elevenlabs"
   },
   {
    "id": "wallit",
@@ -39,10 +39,10 @@
    "glyph": "S",
    "voice": "slice",
    "bible": "Goth guard of the circle, scalpel knife. Clipped.",
-   "voiceId": "hv_heroine",
-   "voiceName": "Ava",
-   "direction": "cool, flat and clipped, almost no emotion; short words",
-   "provider": "open"
+   "voiceId": "Gmg7bCXPSj9cYwVDrM6h",
+   "voiceName": "Slice",
+   "direction": "cool, low, dry and clipped, almost no emotion; answers in one word",
+   "provider": "elevenlabs"
   },
   {
    "id": "yobot",
