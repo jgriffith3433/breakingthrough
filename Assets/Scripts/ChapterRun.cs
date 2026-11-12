@@ -401,8 +401,22 @@ public class ChapterRun : MonoBehaviour {
                 bossSpawned = true;
                 boss = director.SpawnForChapter(data.Boss, true, RingRadius, data.BossName, data.BossHits, data.PlainBoss);
                 Events.Add("boss|" + boss.Title + "|" + boss.HitsToDrop);
-                MusicDirector.Play(MusicDirector.BossTrack(data.BossName));
-                PlayBossIntro();
+                // The boss arrives on the CinematicDirector (CinematicBoss.cs): it turns the music itself. Seen already on this
+                // file: the music turns now and the two reaction lines still follow. Unavailable: the old reel.
+                CinematicDirector.BossResult entrance = CinematicDirector.PlayBoss(boss, Chapter, -1, () => {
+                    Events.Add("boss-intro-done|" + data.BossName);
+                    TellAfterTaunt(data.BossLines);
+                });
+                if (entrance == CinematicDirector.BossResult.Played) {
+                    Events.Add("cinematic|" + data.Id + "|boss-entrance");
+                } else {
+                    MusicDirector.Play(MusicDirector.BossTrack(data.BossName));
+                    if (entrance == CinematicDirector.BossResult.Seen) {
+                        TellAfterTaunt(data.BossLines);
+                    } else {
+                        PlayBossIntro();
+                    }
+                }
             }
         } else if (defeatIn > 0f) {
             defeatIn -= Time.deltaTime;
@@ -629,7 +643,10 @@ public class ChapterRun : MonoBehaviour {
         miniSpawned = true;
         mini = WaveDirector.Instance.SpawnMiniAt(data.MiniKind, data.MiniName, data.MiniHits, data.MiniTint, spot);
         Events.Add("mini-boss|" + data.MiniName + "|" + mini.HitsToDrop);
-        Tell(data.MiniLines);
+        CinematicDirector.BossResult entrance = CinematicDirector.PlayBoss(mini, Chapter, -1, () => TellAfterTaunt(data.MiniLines));
+        if (entrance != CinematicDirector.BossResult.Played) {
+            Tell(data.MiniLines);
+        }
         return mini;
     }
 
@@ -978,6 +995,16 @@ public class ChapterRun : MonoBehaviour {
     // For the back rooms and other places that hand over a short exchange: said one line at a time, each in its voice.
     public void TellLines(string[] lines) {
         Tell(lines);
+    }
+
+    // A boss that has just spoken its own first line in its entrance: the rest of the lines (Slice's and Wallit's replies) follow.
+    void TellAfterTaunt(string[] lines) {
+        if (lines == null || lines.Length < 2) {
+            return;
+        }
+        var rest = new string[lines.Length - 1];
+        System.Array.Copy(lines, 1, rest, 0, rest.Length);
+        Tell(rest);
     }
 
     // Lines said one after another over the field (the boss's arrival, the defeat beat).

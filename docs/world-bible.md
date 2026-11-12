@@ -58,7 +58,7 @@ One far-visible thing per area, so a player can steer by it. All are already in 
 
 | Area | Landmark (seen from) | Why it steers |
 |---|---|---|
-| A Hollow | **The lantern ring and the circle's gold glow**, with the Department wall's dark line at the rim | Home is always the light; the wall is the edge |
+| A Hollow | **The Dead Letter Office ruin** (leaning brick front, arched door, a clock with no hands, giant rusted post boxes, sorting shelves spilling envelopes) 162 m out on the bearing Wallit faces at the start; the lantern ring and the circle's gold glow; a hedge and picket rim at 186 m | Home is always the light; the wall is the edge |
 | B Yard | **The Dead Letter Office clock tower**, lit face, 95 m north (visible from the start) | Goes north-east to the amber Return Slot once the crew falls |
 | C Gate | **The gate arch with three red INVALID bars**, lit amber, 70 m out, and the watchtower beam sweeping | The beam crosses the player every few seconds |
 | D Floor | **The red-lamp chute** high on a stack, seven glowing stack mouths | Red means the lever; belts show where things go |
@@ -68,7 +68,7 @@ One far-visible thing per area, so a player can steer by it. All are already in 
 | H Office | **The six doors with status lamps**, and the **brass door number** that hangs when all six are filed | The room reads the file at a glance |
 | I Back rooms | **A soft gold pulsing ring from 40 m** | Appears only once the clue is kept |
 
-Gap: B has the strongest landmark; **A has none beyond light**. Add a distant, slowly turning **Department stamp press silhouette
+Built (`HollowPostOffice.cs`, `KitCatalogHollow.cs`): A now has the Dead Letter Office, the place the Department sent every unfiled letter; the ruin is what the Hollow was before it was filed. Hero props (the two giant post boxes and the shelves) are kit stand-ins until their Gen versions are baked under the same piece ids. Still open: a distant, slowly turning **Department stamp press silhouette
 on the Hollow's wall** that lifts and falls on the wave clock, so Arcade has a far thing to steer by and a clock that is seen,
 not read. (Beyond 150 m, no collider.)
 
@@ -285,11 +285,16 @@ and a playtest event name.
     from Last Light she stamps once to stun. Wallit sometimes answers ("On it." / "Billable."). Proof: events `slice-callout`,
     `callout-ring`, `callout-arrow`, `slice-parry`, `slice-stamp`; playtest `slice-partner`.
 
+### Boss entrances (every boss)
+Each boss is introduced on camera, never by a banner alone: slow time, a swing from Wallit to the boss arriving, the
+rig's rear-up and slam, a stamped name card (e.g. THE FOREMAN / Work order 0031), a stinger, the boss's own taunt, then the
+boss theme. Spec and card table: Docs/Story.md, "Boss entrances". Code `CinematicBoss.cs`; playtest `boss-entrances`.
+
 ## Gaps against the 10-second rule
 
 | Area | Gap | Fix | Cost |
 |---|---|---|---|
-| A Hollow | no landmark or arc beyond waves | wall stamp press silhouette (built); three acts with light, sky, score and mix (built, `arcade-acts`); painted act skies and recorded stems would be GPU extras | code |
+| A Hollow | stamp press silhouette still open | Dead Letter Office ruin (built, `HollowPostOffice`); three acts with light, sky, score and mix (built, `arcade-acts`); wall stamp press silhouette still open; painted act skies and recorded stems would be GPU extras | code |
 | E Walk | stilts 25 m apart is too thin | skimming papers, far bell, stilt chirps | code + 2 sfx |
 | F Reading | long stretches between lecterns | flying forms, desk stamp tap | code + 1 sfx |
 | G Filed | quiet by design | doorframes open on old chapter sounds | code, reuse sfx |

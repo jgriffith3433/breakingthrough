@@ -70,6 +70,30 @@ DENIED read stays on the finale card so it is not said twice). The wave clear an
 payoff ends (`BossSetPiece.PayingOff`). Code: `BossSetPiece.cs`, hooked from `WaveDirector.SpawnOne` and
 `Combat.OnKill`. The `boss-set-pieces` playtest walks 10/20/30 with the wave key.
 
+### Boss entrances
+
+Every named boss arrives as an event, 4 to 8 seconds on the `CinematicDirector` (`CinematicBoss.cs`). Time slows, the camera
+leaves Wallit's shoulder and swings to the boss arriving, the boss plays its rig's signature move (the rear-up tell, then the
+slam), its name and title are stamped across the upper third in the Department's typewriter face, a stinger hits on the slam
+and the boss track follows it, the boss says its taunt (the first of its existing lines, in its own voice file), and the play
+camera comes back in 0.3 s. Any tap, click or Enter/Space skips; the music still turns. Boss health, phases and tells are
+untouched: the boss is held while it plays and put back as it was. Once per Arcade run, once per case file (a replay of a
+cleared chapter plays it again).
+
+| Boss | Card | Arrives | Taunt |
+|---|---|---|---|
+| The Courier (ch1) | THE COURIER / Notice of striking | rises out of the drop-box ring | "Special delivery! Notice of striking!" |
+| The Plated Alpha (ch2, wave 10) | THE PLATED ALPHA / Plate 0010: INVALID | drops in | "Notice! This plate is stamped: INVALID!" |
+| The Foreman (ch3, wave 20) | THE FOREMAN / Work order 0031 | unfolds off the belt | "Order, read aloud: STRIKE. THIS. ADDRESS." |
+| The Half-Built (ch3 mini) | THE HALF-BUILT / Still on its hook | swings down off its hook | "I am... not finished! Finish me?" |
+| The Server (ch4) | THE SERVER / Signature required | climbs over the wall | "Order delivery! Signature required!" |
+| The Registrar (ch5) | THE REGISTRAR / Page ten, filing | unfolds | "Registrar on the floor! Please remain seated!" |
+| The Order-Bearer (ch6, wave 30) | THE ORDER-BEARER / Sealed. Carried. Unsigned. | climbs over the wall | "Order delivery! Signature required!" |
+
+After the taunt, Slice's and Wallit's replies (the rest of the chapter's boss lines) follow in the field as before. At wave
+10 the entrance's slam is also Slice's first crack. Each boss has its own stinger root so no two entrances play the same
+sound. The `boss-entrances` playtest plays all nine (three Arcade, seven campaign cards including the Registrar).
+
 ## The finale: wave 30
 
 Wave 30's boss is **The Order** (the Spider Bot that carries the sealed order). When the last bot of wave 30 falls, the

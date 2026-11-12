@@ -878,8 +878,19 @@ public class LevelYard : MonoBehaviour {
         yield return new WaitForSeconds(1.5f);
         SpawnCourier();
         yield return new WaitForSeconds(1.4f);
+        // The Courier's entrance (CinematicBoss.cs): the camera swings to it, its name is stamped and it speaks the first line.
+        bool entering = true;
+        CinematicDirector.BossResult entrance = CinematicDirector.PlayBoss(TheCourier, 0, -1, () => entering = false);
+        if (entrance == CinematicDirector.BossResult.Played) {
+            while (entering) {
+                yield return null;
+            }
+            yield return new WaitForSeconds(0.3f);
+        } else {
+            MusicDirector.Play(MusicDirector.BossTrack("The Courier"));
+        }
         string[] lines = Story.Chapters[0].BossLines;
-        for (int i = 0; lines != null && i < lines.Length; i++) {
+        for (int i = entrance == CinematicDirector.BossResult.Played ? 1 : 0; lines != null && i < lines.Length; i++) {
             if (TheCourier == null || !TheCourier.Alive || !TheCourier.Dormant) {
                 break;   // Wallit did not wait for the reading
             }
@@ -1013,6 +1024,7 @@ public class LevelYard : MonoBehaviour {
     // and the drop is cleared.
     void CourierFell() {
         CourierDown = true;
+        MusicDirector.Play(MusicDirector.ChapterTrack(scene.Chapter));   // the boss theme gives way to the chapter's score
         foreach (Enemy e in new List<Enemy>(called)) {
             if (e != null && e.Alive) {
                 e.Damage(9999f, DamageKind.Plain, false);
