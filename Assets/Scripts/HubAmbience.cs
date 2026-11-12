@@ -63,6 +63,22 @@ public class HubAmbience : MonoBehaviour {
         if (hub == null || !hub.Shown) {
             return;
         }
+        // A two-shot owns the speakers' facing/gestures; other lodgers keep their idle so the room still breathes.
+        // Ring banter waits until the stage closes.
+        if (ConversationStage.IsOpen) {
+            Line = "";
+            for (int i = 0; i < models.Length; i++) {
+                if (models[i] == null) {
+                    continue;
+                }
+                Transform root = models[i].parent;
+                bool inShot = ConversationStage.Holds(root) || ConversationStage.Holds(models[i]);
+                if (!inShot) {
+                    Idle(i);
+                }
+            }
+            return;
+        }
         for (int i = 0; i < models.Length; i++) {
             if (models[i] != null) {
                 Idle(i);

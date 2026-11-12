@@ -93,6 +93,10 @@ public class ChapterHub : MonoBehaviour {
         return -1;
     }
     public string LodgerName(int i) { return Story.Lodgers[i].Name; }
+    // Lodger / Slice bodies for the two-shot conversation stage (playtest and ConversationStage).
+    public Transform LodgerRoot(int i) { return lodgerRoots != null && i >= 0 && i < lodgerRoots.Length ? lodgerRoots[i] : null; }
+    public Transform SliceRoot { get { return slice; } }
+    public bool ConversationOpen { get { return ConversationStage.IsOpen; } }
     // What a lodger says now: the line for the chapters the file has cleared.
     public string LodgerLine(int i) {
         int cleared = Mathf.Clamp(CampaignSave.Get(CampaignSave.Active).cleared, 1, Story.Lodgers[i].Lines.Length);
@@ -177,6 +181,9 @@ public class ChapterHub : MonoBehaviour {
             TalkText = "";
             talkUntil = 0f;
             chatLines.Clear();
+            ConversationStage.End();
+        } else {
+            ConversationStage.End();
         }
         if (cam != null) {
             cam.cullingMask = shown ? -1 : 0;
@@ -413,9 +420,14 @@ public class ChapterHub : MonoBehaviour {
         if (talkUntil > 0f && Time.unscaledTime >= talkUntil) {
             TalkText = "";
             talkUntil = 0f;
+            if (chatLines.Count == 0 && ConversationStage.IsOpen) {
+                ConversationStage.End();
+                twoShotOther = -99;
+            }
         }
-        talk.text = TalkText;
-        if (NearLodger >= 0 && !BoardOpen && !NearBoard && (PlayInput.GetKeyDown(KeyCode.E) || PlayInput.GetKeyDown(KeyCode.JoystickButton0) || PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter))) {
+        // While the two-shot caption bar is up, keep the old hub talk line empty.
+        talk.text = ConversationStage.IsOpen ? "" : TalkText;
+        if (!ConversationStage.IsOpen && NearLodger >= 0 && !BoardOpen && !NearBoard && (PlayInput.GetKeyDown(KeyCode.E) || PlayInput.GetKeyDown(KeyCode.JoystickButton0) || PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter))) {
             TalkTo(NearLodger);
         }
     }
@@ -427,19 +439,62 @@ public class ChapterHub : MonoBehaviour {
     readonly System.Collections.Generic.List<string> chatLines = new System.Collections.Generic.List<string>();
     int chatLodger;
     float nextChatAt;
+    int twoShotOther = -99;   // lodger index, or -1 for Slice; -99 = none
 
     void NextChatLine() {
         string l = chatLines[0];
         chatLines.RemoveAt(0);
-        TalkText = (l[0] == 'W' ? "Wallit" : l[0] == 'S' ? "Slice" : Story.Lodgers[chatLodger].Name) + ": \"" + l.Substring(2) + "\"";
+        string who = l[0] == 'W' ? "Wallit" : l[0] == 'S' ? "Slice" : Story.Lodgers[chatLodger].Name;
+        string body = l.Substring(2);
+        TalkText = who + ": \"" + body + "\"";
+        Color colour = l[0] == 'W' ? new Color(1f, 0.82f, 0.38f) : l[0] == 'S' ? new Color(0.62f, 0.95f, 0.86f) : Hex(Story.Lodgers[chatLodger].Colour);
         if (l[0] == 'W' || l[0] == 'S') {
-            CastVoice.SayLater(l.Substring(0, 1), l.Substring(2), "hub");
+            CastVoice.SayLater(l.Substring(0, 1), body, "hub");
         } else if (l[0] == 'L') {
-            CastVoice.SayLater(CastVoice.LodgerCode(chatLodger), l.Substring(2), "hub");
+            CastVoice.SayLater(CastVoice.LodgerCode(chatLodger), body, "hub");
+        }
+        // Reframe to Wallit + the body that speaks (Slice lines cut to her ring).
+        EnsureTwoShot(l[0] == 'S' ? -1 : chatLodger);
+        string code = l[0] == 'L' ? CastVoice.LodgerCode(chatLodger) : l.Substring(0, 1);
+        ConversationStage.Say(code, who, body, colour, true);
+        if (talk != null) {
+            talk.text = "";   // captions live on the two-shot bar
         }
         GameAudio.Play("paper", 0.3f, 1.2f);
         nextChatAt = Time.unscaledTime + Mathf.Clamp(1.2f + l.Length * 0.05f, 2.4f, 5f);
         talkUntil = nextChatAt + 1.5f;
+        if (chatLines.Count == 0) {
+            // Last line: keep the two-shot up through talkUntil, then End in Update.
+        }
+    }
+
+    // Side / OTS two-shot of Wallit and the other speaker (lodger index, or Slice when lodger < 0).
+    void EnsureTwoShot(int lodger) {
+        if (Player == null || cam == null) {
+            return;
+        }
+        Transform other;
+        string otherKind;
+        if (lodger < 0) {
+            other = slice;
+            otherKind = "slice";
+        } else {
+            other = LodgerRoot(lodger);
+            otherKind = Story.Lodgers[lodger].Id;
+        }
+        if (other == null) {
+            return;
+        }
+        if (ConversationStage.IsOpen && twoShotOther == lodger) {
+            return;
+        }
+        if (ConversationStage.IsOpen) {
+            ConversationStage.End();
+        }
+        WallitVoice.Ensure(Player.gameObject);
+        WallitMouth.Attach(Player.gameObject);
+        ConversationStage.Begin(cam, Player, "wallit", other, otherKind);
+        twoShotOther = lodger;
     }
 
     void TalkTo(int i) {
@@ -460,6 +515,7 @@ public class ChapterHub : MonoBehaviour {
             chatLines.AddRange(c.Lines);
             chatLodger = c.Lodger;
             GameAudio.Play("talk_start", 0.7f);
+            EnsureTwoShot(c.Lodger);
             NextChatLine();
             RunAnalytics.Screen("hub_chat_" + c.Id);
             PlaceLodgers();
@@ -522,8 +578,15 @@ public class ChapterHub : MonoBehaviour {
             TalkText = who + ": \"" + text + "\"";
             // The lodger's own line for the chapters cleared is spoken (an errand's ask after it stays text).
             string spoken = LodgerLine(i);
-            if (text.StartsWith(spoken)) {
+            bool voiced = text.StartsWith(spoken);
+            if (voiced) {
                 CastVoice.SayLater(CastVoice.LodgerCode(i), spoken, "hub");
+            }
+            // Acted two-shot whenever both bodies are in the room; errand/favour text without a voice stays on the bar too.
+            EnsureTwoShot(i);
+            ConversationStage.Say(CastVoice.LodgerCode(i), who, text, Hex(Story.Lodgers[i].Colour), true);
+            if (talk != null) {
+                talk.text = "";
             }
         }
         talk.color = Hex(Story.Lodgers[i].Colour);
@@ -783,19 +846,35 @@ public class ChapterHub : MonoBehaviour {
                 return;
             }
         }
-        Walk();
-        TickDoors();
+        if (!ConversationStage.IsOpen) {
+            Walk();
+            TickDoors();
+        }
         if (!Shown) {
             return;
         }
-        TickSpeech();
-        if (speech.text.Length == 0 && Ambience != null && Ambience.Line.Length > 0) {
-            speech.text = Ambience.Line;
-            speech.color = Ambience.LineColor;
+        if (!ConversationStage.IsOpen) {
+            TickSpeech();
+            if (speech.text.Length == 0 && Ambience != null && Ambience.Line.Length > 0) {
+                speech.text = Ambience.Line;
+                speech.color = Ambience.LineColor;
+            }
+        } else {
+            speech.text = "";
         }
         NearBoard = (Player.position - BoardPosition).magnitude <= BoardReach;
         TickLodgers();
-        if (!BoardOpen) {
+        if (ConversationStage.IsOpen) {
+            prompt.text = Interact.Prompt("next");
+            Interact.Offer("next");
+            if (Interact.Pressed) {
+                if (chatLines.Count > 0) {
+                    nextChatAt = Time.unscaledTime;
+                } else {
+                    talkUntil = Time.unscaledTime;
+                }
+            }
+        } else if (!BoardOpen) {
             prompt.text = NearDoor >= 0 && !DoorOpen[NearDoor] ? "Chapter " + (NearDoor + 1) + ": the door is shut" : NearDoor >= 0 ? "Chapter " + (NearDoor + 1) + ": " + Story.Chapters[NearDoor].Title + (DoorUsable ? ". " + Interact.Prompt("open the door") : "") : NearBoard ? Interact.Prompt("read the chapter board") : NearLodger >= 0 ? Interact.Prompt("talk to " + Story.Lodgers[NearLodger].Name) : ErrandCarried ? "Carrying the " + Story.Errands[ErrandActive].Thing + ". Take it to Chime." : FavourCarried ? "Carrying the " + HubLife.Sides[FavourActive].Thing + ". Take it to " + Story.Lodgers[HubLife.Sides[FavourActive].Giver].Name + "." : (UiFit.Touch ? "Stick: walk. " : "WASD: walk. ") + "Doors along the back wall. Board on the left, lodgers about the room. " + (UiFit.Touch ? "Journal button: journal." : "J: journal.");
             if (NearBoard) {
                 Interact.Offer("read the chapter board");
@@ -813,18 +892,22 @@ public class ChapterHub : MonoBehaviour {
         } else {
             prompt.text = "";
         }
+        // Desktop: Space also advances a two-shot line (Interact.Pressed already covers E / pad / touch Interact).
+        if (ConversationStage.IsOpen && chatLines.Count > 0 && PlayInput.GetKeyDown(KeyCode.Space)) {
+            nextChatAt = Time.unscaledTime;
+        }
         status.text = StatusLine();
     }
 
     void LateUpdate() {
-        if (Shown && Player != null) {
+        if (Shown && Player != null && !ConversationStage.IsOpen) {
             PlaceCamera(false);
         }
     }
 
     void Walk() {
         Vector3 move = Vector3.zero;
-        if (!BoardOpen) {
+        if (!BoardOpen && !ConversationStage.IsOpen) {
             move = new Vector3(PlayInput.GetAxis("Horizontal"), 0f, PlayInput.GetAxis("Vertical"));
             if (move.sqrMagnitude > 1f) {
                 move.Normalize();

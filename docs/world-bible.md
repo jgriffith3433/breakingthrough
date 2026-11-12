@@ -105,7 +105,7 @@ Routines are "through the day": the world has no clock face, so a day is a chapt
 - Moment: first bot reaches Slice; he says "That's my account! Hands off!" and the fee pile shrinks (`StakesFeel`, `CoinPile`).
 - Personality: brash, money-minded, loyal.
 - Voice: `CwhRBWXzGAHq8TQ4Fs17` (eleven_v4 / ElevenLabs Wallit).
-- Animations: idle, walk/run/strafe/backPedal (`CharacterMovement`), talk (mouth from `WallitMouth` on voiced lines), swing1–3, groundSmash, homeRunCharge/Release, hitReact, shakeOff, victory, death.
+- Animations: idle, walk/run/strafe/backPedal (`CharacterMovement`), talk (coin-flip gesture + amplitude body bob in `ConversationStage` two-shots; mouth from `WallitMouth` on voiced lines), swing1–3, groundSmash, homeRunCharge/Release, hitReact, shakeOff, victory, death.
 
 ### Slice
 - Want: keep the circle filed — the one address in the Hollow that may stay.
@@ -113,7 +113,7 @@ Routines are "through the day": the world has no clock face, so a day is a chapt
 - Moment: a bot closes on her or flanks him; she says one word ("Left." "Mine."), the bot lights with her ring, and (from Cold Hour) she blocks it back (`SliceCallouts`).
 - Personality: cool, clipped, exact.
 - Voice: `Gmg7bCXPSj9cYwVDrM6h` (Place Department – Slice, ElevenLabs eleven_v4: low, dry, clipped; same cast as Wallit). Narrator: `JjDIROtNEieYxCNGJXgG` (warm, bureaucratic, faintly amused records clerk).
-- Animations: idle, stab, slash, hurt, defeat (`Musician` / Slice controller); companion walk when following (`Companion`); talk via subtitle + voice (no mouth rig); callout block pose and stamp from `SliceCallouts`.
+- Animations: idle, stab, slash, hurt, defeat (`Musician` / Slice controller); companion walk when following (`Companion`); talk (single nod in `ConversationStage` two-shots; body bob from voice amplitude; no mouth rig); callout block pose and stamp from `SliceCallouts`.
 
 ### Yo Bot
 - Want: clear the unfiled — erase Wallit and Slice's address.
@@ -235,8 +235,9 @@ ambient sound, what changes. "Gap clock" is the longest the docs allow between t
   (hub ticking, belt hum, lamp buzz, paper hush), a sonic memory of the chapters.
 
 ### H. The Office (hub)
-- **Interactions:** talk to four lodgers (three chats each), Chime's errand, a favour, a loose notice pinned to the wall, board,
-  six doors, the journal, Slice's ring banter, Chime's bell, the Brass Door Number.
+- **Interactions:** talk to four lodgers (three chats each) as acted two-shots (`ConversationStage`: side/OTS camera, speakers face
+  each other, talk gestures + amplitude bob, slim caption bar; portrait only if a speaker has no 3D body), Chime's errand, a favour,
+  a loose notice pinned to the wall, board, six doors, the journal, Slice's ring banter, Chime's bell, the Brass Door Number.
 - **On their own:** Tick swings and strikes the hour; Brim tips a hat it does not have; Spare hops and chirps; Chime rings;
   the window goes from night to dawn; the desk changes hands; slips and lamps appear on the walls.
 - **Sound:** ticking room, paper hush, clock strike, lodger voices, door latches, kettle-hiss of the radiator.
@@ -315,6 +316,12 @@ and a playtest event name.
     in one word, a pale ring marks that bot, an edge arrow points if it is off-screen; from Cold Hour she parries one per wave,
     from Last Light she stamps once to stun. Wallit sometimes answers ("On it." / "Billable."). Proof: events `slice-callout`,
     `callout-ring`, `callout-arrow`, `slice-parry`, `slice-stamp`; playtest `slice-partner`.
+14. **Hub talks are acted, not boxed (built, hub first).** Office. Press Interact beside a lodger: the camera eases to a side/OTS
+    two-shot of Wallit and that body, they face each other, talk gestures play (Wallit flips a coin, lodgers tilt and chirp, Slice
+    nods), jaw/body bob follows the voice amplitude, and a slim Department caption bar names the speaker. Portraits appear only when
+    a speaker has no 3D body in the scene. VoiceDirector gating and skip stay. Proof: events `two-shot-open`, `two-shot-speakers`,
+    `two-shot-amplitude`, `two-shot-portrait`, `two-shot-phone`; playtest `hub-two-shot`. Chapter cutscenes still use the portrait
+    box until the same stage is wired there.
 
 ### Boss entrances (every boss)
 Each boss is introduced on camera, never by a banner alone: slow time, a swing from Wallit to the boss arriving, the
