@@ -9,9 +9,11 @@ using UnityEngine.UI;
 // The "first-screen" scenario: the main menu on a fresh save shows the logo, Play, Campaign and Settings and nothing to read;
 // one tap on Play starts Arcade; a release build ignores the = and - wave keys; after a finished run the Shop appears and opens
 // the upgrades; the ?mode= address parser. On a phone viewport (mobile, or 844x390) touch is forced and every button is audited
-// for size (44 CSS px), the safe area, overlaps and Play being the largest. Events first-screen, first-screen-layout,
-// first-screen-play, wave-keys-release, shop-shown, shop-open, url-mode. Metrics firstScreenOverlaps, firstScreenMinTapPx,
-// firstScreenPlayLargest, firstScreenPlaySeconds, firstScreenButtons.
+// for size (44 CSS px), the safe area, overlaps, left/right edges (no sideways scroll) and Play being the largest.
+// The live MenuStage cast (Wallit, Slice, bots, one night palette) is required when MenuArt is missing
+// (events first-screen, first-screen-cast, first-screen-layout, first-screen-phone, first-screen-play, wave-keys-release,
+// shop-shown, shop-open, url-mode). Metrics firstScreenOverlaps, firstScreenMinTapPx, firstScreenPlayLargest,
+// firstScreenPlaySeconds, firstScreenButtons, firstScreenCastModels, firstScreenCastOk, firstScreenOffscreenX.
 public static class PlaytestFirstScreen {
     static PlaytestRun run;
 
@@ -51,9 +53,11 @@ public static class PlaytestFirstScreen {
         int overlaps = 0;
         int outside = 0;
         int small = 0;
+        int offX = 0;
         float minTap = 9999f;
         float playArea = 0f;
         float biggestOther = 0f;
+        float screenW = UnityEngine.Screen.width;
         var names = new List<string>();
         for (int i = 0; i < buttons.Count; i++) {
             Rect a = Box((RectTransform)buttons[i].transform);
@@ -65,6 +69,10 @@ public static class PlaytestFirstScreen {
             }
             if (a.xMin < safe.xMin - 1.5f || a.xMax > safe.xMax + 1.5f || a.yMin < safe.yMin - 1.5f || a.yMax > safe.yMax + 1.5f) {
                 outside++;
+            }
+            // Sideways scroll: a control past the screen's left/right edge needs a horizontal drag to reach.
+            if (a.xMin < -1.5f || a.xMax > screenW + 1.5f) {
+                offX++;
             }
             float area = a.width * a.height;
             if (buttons[i] == menu.PlayButton) {
@@ -79,11 +87,12 @@ public static class PlaytestFirstScreen {
             }
         }
         bool largest = playArea > biggestOther;
-        run.Event("first-screen-layout", where + " " + UiFit.Mode + " " + UnityEngine.Screen.width + "x" + UnityEngine.Screen.height + ": " + buttons.Count + " buttons (" + string.Join(", ", names.ToArray()) + "), " + overlaps + " overlaps, " + small + " under 44 px (smallest " + Mathf.Round(minTap) + "), " + outside + " outside the safe area, Play largest " + largest);
+        run.Event("first-screen-layout", where + " " + UiFit.Mode + " " + UnityEngine.Screen.width + "x" + UnityEngine.Screen.height + ": " + buttons.Count + " buttons (" + string.Join(", ", names.ToArray()) + "), " + overlaps + " overlaps, " + small + " under 44 px (smallest " + Mathf.Round(minTap) + "), " + outside + " outside the safe area, " + offX + " past left/right edge, Play largest " + largest);
         run.Metric("firstScreenOverlaps", overlaps);
         run.Metric("firstScreenMinTapPx", Mathf.Round(minTap));
         run.Metric("firstScreenPlayLargest", largest ? 1 : 0);
         run.Metric("firstScreenButtons", buttons.Count);
+        run.Metric("firstScreenOffscreenX", offX);
         if (!strict) {
             return;
         }
@@ -95,6 +104,9 @@ public static class PlaytestFirstScreen {
         }
         if (outside > 0) {
             run.Problem(PlaytestSeverity.Bug, "first-screen: " + outside + " buttons leave the safe area at " + where);
+        }
+        if (offX > 0) {
+            run.Problem(PlaytestSeverity.Bug, "first-screen: " + offX + " buttons sit past the left/right edge (would need sideways scroll) at " + where);
         }
         if (!largest) {
             run.Problem(PlaytestSeverity.Bug, "first-screen: Play is not the largest button at " + where);
@@ -150,15 +162,23 @@ public static class PlaytestFirstScreen {
         run.Event("first-screen", "fresh save " + fresh + ": buttons " + string.Join(", ", Visible(menu).ConvertAll(Label).ToArray()) + "; other words: " + ReadWords(menu) + "; Shop " + (menu.ShopButton == null ? "absent" : "shown"));
         MenuStage stage = menu.Stage;
         bool staged = stage != null && stage.Image != null && stage.Image.isActiveAndEnabled && stage.ModelsShown >= 3;
-        run.Event("first-screen-cast", staged ? "Wallit, Slice and " + (stage.ModelsShown - 2) + " bots on the first screen, one lit palette" : "no cast on the first screen");
+        int bots = stage != null ? Mathf.Max(0, stage.ModelsShown - 2) : 0;
+        run.Event("first-screen-cast", staged
+            ? "Wallit, Slice and " + bots + " bots on the first screen, one lit night palette (warm lamp + cold moon)"
+            : "no cast on the first screen");
         run.Metric("firstScreenCastModels", stage != null ? stage.ModelsShown : 0);
+        run.Metric("firstScreenCastOk", staged ? 1 : 0);
         if (!staged && Resources.Load<Texture2D>("UI/MenuArt") == null) {
             run.Problem(PlaytestSeverity.Bug, "the first screen shows no Wallit, Slice or bots");
         }
         if (fresh && menu.ShopButton != null) {
             run.Problem(PlaytestSeverity.Bug, "first-screen: the Shop shows before a first finished run");
         }
-        Audit(menu, "fresh menu");
+        bool phoneLayout = UiFit.Touch || UnityEngine.Screen.width <= 420 || (UnityEngine.Screen.height > UnityEngine.Screen.width && UnityEngine.Screen.width <= 900);
+        Audit(menu, phoneLayout ? "fresh menu phone" : "fresh menu");
+        if (phoneLayout) {
+            run.Event("first-screen-phone", UnityEngine.Screen.width + "x" + UnityEngine.Screen.height + " touch=" + UiFit.Touch + " mode=" + UiFit.Mode + " cast=" + (staged ? "yes" : "no"));
+        }
         yield return new WaitForSecondsRealtime(1f);
 
         // One tap on Play.
