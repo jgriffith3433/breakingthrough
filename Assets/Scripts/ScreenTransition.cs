@@ -256,7 +256,7 @@ public class ScreenTransition : MonoBehaviour {
         edgeImage.sprite = EdgeSprite();
         edgeImage.raycastTarget = false;
 
-        header = Words(sheet, "Header", 26, new Color(0.35f, 0.3f, 0.22f, 0.9f), TextAnchor.UpperCenter);
+        header = MakeWords(sheet, "Header", 26, new Color(0.35f, 0.3f, 0.22f, 0.9f), TextAnchor.UpperCenter);
         var hr = header.rectTransform;
         hr.anchorMin = new Vector2(0.04f, 0.9f);
         hr.anchorMax = new Vector2(0.96f, 0.97f);
@@ -277,7 +277,7 @@ public class ScreenTransition : MonoBehaviour {
         stamp.localRotation = Quaternion.Euler(0f, 0f, -7f);
         Color ink = new Color(0.72f, 0.1f, 0.1f, 1f);
         Frame(stamp, ink, 10f);
-        stampText = Words(stamp, "Word", 150, ink, TextAnchor.MiddleCenter);
+        stampText = MakeWords(stamp, "Word", 150, ink, TextAnchor.MiddleCenter);
         stampText.fontStyle = FontStyle.Bold;
         var sr = stampText.rectTransform;
         sr.anchorMin = Vector2.zero;
@@ -330,7 +330,7 @@ public class ScreenTransition : MonoBehaviour {
         }
     }
 
-    static Text Words(Transform parent, string name, int size, Color color, TextAnchor anchor) {
+    static Text MakeWords(Transform parent, string name, int size, Color color, TextAnchor anchor) {
         var rect = Child(parent, name);
         var text = rect.gameObject.AddComponent<Text>();
         text.font = UiSkin.Font(UiSkin.FontRole.Label);
