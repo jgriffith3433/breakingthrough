@@ -1,3 +1,4 @@
-- lesson: Latent CS0120 — `CinematicDirector.ReelId` is instance-only; PlaytestOpening called it static since the director PR and only failed on a clean beta rebuild. Prefer `Instance?.ReelId` next to other Instance reads.
-- convention: ScreenTransition — every scene/panel place-change goes through `Load`/`Go`; LoadScreen cards sit inside the swap so the peel reveals them.
-- convention: scenario.txt — must name the AC playtest (`transitions` here); HEAD can still hold a stale id from an older merge note.
+- lesson: Critic “grey H + Google” first paint — often Studio’s beta gate or the Tap to play shell, not Unity; put cast art in `Tools/Web/hawkes-sound.js` (and ship `Tools/Web/cast` via `InstallSoundPrompt`) so first-five sees the game before MenuStage loads.
+- lesson: `#hawkes-tap .s` was the italic subtitle rule — never reuse `.s` on Slice’s portrait or she inherits opacity 0.7.
+- convention: MenuArt.png is still missing; Unity first screen cast is `MenuStage` (live models, one night palette); web first paint uses site cast webps framed as case-file portraits.
+- convention: `CinematicDirector.ReelId` is instance-only — always `CinematicDirector.Instance.ReelId` (null-safe), same as `ShotIndex`.

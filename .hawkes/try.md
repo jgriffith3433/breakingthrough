@@ -1,4 +1,4 @@
-1. On beta, open Arcade: a paper sheet slides over, stamps ENTER, peels into the run (no black cut).
-2. Let Slice fall or force run-end: STRUCK OFF sheet, then Retry stamps RETURNED into the next run; Quit to menu stamps RETURNED.
-3. From the menu open Campaign → a case file → Begin a chapter: ENTER, then that chapter's painted loading card with Slice or Wallit's line and a strip that fills; leave to the hub for FILED and the office card.
-4. On a phone (390×844), the same path: cards crop to the subject, text stays readable, sheet motion stays smooth.
+1. Open the beta Game page on a phone-sized window (or a real phone).
+2. Before you tap anything: you should see Wallit, Slice, a Yo Bot and a Spider Bot in gilt frames on a night blue field, with **The Place Department** and a green **Tap to play** (no grey H/Google-only card).
+3. Tap to play, then look at the menu: the same cast should keep living behind the buttons (Wallit with the bat, Slice in her ring, bots over the hedge).
+4. Confirm Play, Campaign and Settings are all reachable without sideways scrolling, and Play is the big green control.
