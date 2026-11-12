@@ -61,7 +61,8 @@ public static partial class Playtest {
         new PlaytestScenario("kit-preview", "The Model Kit (Docs/ModelKit.md): loads the KitPreview scene (setup shortcut), validates every kit piece (no built-in primitive meshes, 24 vertices or more, textured and instanced materials, triangles and texture memory within budget) and photographs a street corner vignette, an interior room vignette and the gallery of every piece on a labelled grid, one stop for every few pieces. Events kit-report, kit-palette, photo (stop name, palette, visible triangles), vignette-street, vignette-office, kit-done; metrics kitPieces, kitTriangles, kitTextureMB, kitPrimitives, kitPhotos, kitMaxVisibleTriangles", 240, "content"),
         new PlaytestScenario("opening-scene", "Chapter 1's in-engine opening (CinematicDirector, ch1_open_world): Campaign, case file 1, Begin loads Level_1_Yard and the directed scene plays (events opening-start, opening-shot, opening-move, opening-end, opening-skip). At least 6 shots show Wallit, Slice or the Courier moving; each voiced line plays once with its caption; Esc or a phone tap on the Skip pill ends the scene and play starts within 1 s with the camera where the last shot ended (no black frame over 0.3 s). On 390x844 the scene reframes so both speakers stay in shot and captions sit above the bottom 15%. Metrics openingShots, openingMovingShots, openingVoiceLines, openingHandoffMs, openingSkipMs, openingCaptionBottom01. Every other playtest sets CinematicDirector.SuppressOpening so its bot starts with control", 120, "content"),
         new PlaytestScenario("opening-ch23", "Chapters 2 and 3 in-engine openings (CinematicDirector, ch2_open_world / ch3_open_world) on their own maps: Campaign, case file 1 on each chapter, Begin; each scene has at least 5 moving shots under 60 s; Chapter 2 shows the postmark slamming the gate (event opening-postmark); Chapter 3 shows the belt carrying cleared things (event opening-belt); Esc or a phone tap skips with play within 1 s. On 390x844 (touch) the speaker stays framed and captions sit above the bottom 15%. Metrics openingCh2Shots, openingCh2Moving, openingCh2Seconds, openingCh3Shots, openingCh3Moving, openingCh3Seconds, openingPostmark, openingBelt, openingSkipMs, openingCaptionBottom01, openingPhoneFramesOk", 240, "content"),
-        new PlaytestScenario("opening-endings", "Chapters 4-6 in-engine openings and the ADDRESS FILED / RECEIVED endings (CinematicDirector): each open has ≥5 moving shots (events opening-shot, opening-move, opening-paper on ch4); ending_filed_world shows the ADDRESS stamp in engine (ending-stamp); ending_received_world raises ≥6 doors around the ring (ending-doors); live credits scroll over Wallit and Slice with the credits score, and on 390x844 touch credits text is ≥14 px and a tap jumps to the end card within 1 s (creditsTextPx, creditsSkipMs). Still reels stay as fallback only. Metrics openingCh4Shots/Moving, openingCh5Shots/Moving, openingCh6Shots/Moving, openingPaper, endingStamp, endingDoors, creditsTextPx, creditsSkipMs", 480, "content"),
+        new PlaytestScenario("opening-endings", "Chapters 4-6 in-engine openings and the ADDRESS FILED / RECEIVED endings (CinematicDirector): each open has ≥5 moving shots (events opening-shot, opening-move, opening-paper on ch4); ending_filed_world's finaleCarry hold prints the ADDRESS stamp in engine (ending-stamp); ending_received_world raises ≥6 doors around the ring (ending-doors); live credits scroll over Wallit and Slice with the credits score, and on 390x844 touch credits text is ≥14 px and a tap jumps to the end card within 1 s (creditsTextPx, creditsSkipMs). Still reels stay as fallback only. Metrics openingCh4Shots/Moving, openingCh5Shots/Moving, openingCh6Shots/Moving, openingPaper, endingStamp, endingDoors, creditsTextPx, creditsSkipMs", 480, "content"),
+        new PlaytestScenario("finale-carry", "Chapter 6 ADDRESS FILED interactive beat (CinematicDirector finaleCarry): after the filed Hollow is up (setup: sandbox on Chapter 6, opening skipped), ending_filed_world arms the carry; the bot holds swing to walk the stamp to Slice's ring, bats 3 raining notices on timing prompts (a miss only knocks back), releases to print ADDRESS, ≥4 lamps light one by one, Slice's closing line plays; then RECEIVED still raises ≥6 doors. On 390x844 touch the hold prompt sits in the lower third and is ≥88 CSS px wide (icons not words). Events finale-hold, finale-bat, finale-stamp, finale-lamps, finale-hold-prompt, received-intact; metrics finaleCarrySeconds, finaleCarryBats, finaleLamps, finaleHoldPromptPx, endingStamp, endingDoors", 420, "content"),
         new PlaytestScenario("campaign-beats", "Chapter 1 as its own scene (Docs/CampaignDesign.md, 8.1), with real input and the sandbox save: Campaign, case file 1, Begin loads Level_1_Yard (event level-scene; the wave director and the chapter run are absent; a bug if the active scene is the arena). Before any bot is awake the bot walks the chalk from the doors to the Ring (explore, 40 m or more), presses E at Slice and hears her out (talk; she joins as a companion), has a stamp dropped under it inside the Ring (setup; ring-safe: no push) and outside it (setup; hazard-hit and verb-stamp-floor: shoved back), reads the three notices on the west trail and lifts the Mailbox Flag (notice, pickup; metrics metresBeforeCombat, noticesRead). The flag wakes the Clearing Crew at the drop (encounter-wake, enemy-woke, secondsBeforeFirstCombat): it locks on and swings the bat until five Yo Bots are down, stamps falling under the bots (stampsLanded, botsStamped); then the Courier steps out from behind the drop box and is fought to the end (boss-tell, boss-interrupt, boss-phase, boss-defeated; metrics courierWinds, courierSeconds, bossPhase2, noticeKept; a bug if it never comes, never winds up, skips phase two or the slot stays shut), then walks out of the return slot (level-complete) and back to the hub with the file advanced (chapterAdvanced). Every bark is listed with its speaker (barks, barkSpeakers, barkOverlaps: wanted 12, 3 and 0). Other scenarios keep playing Chapter 1 the old way", 700, "content"),
         new PlaytestScenario("levels-1-3", "Chapters 1, 2 and 3 as three different places built from the Model Kit (Docs/Levels1to3.md), with real input on the menus and the sandbox save: for each chapter Campaign, case file 1 on that chapter, Begin; the scene fills in (event level-load: seconds and memory, Chapter 1 its own level scene, 2 and 3 their chapter maps; a bug over 25 s or 1024 MB); the scene scan reports renderers, kit pieces, built-in primitive meshes, triangles, estimated draw calls and lights (event scene-scan, metrics levelTriangles1..3, levelVisibleTriangles1..3, levelDrawCalls1..3, levelPrimitives1..3; a bug for any primitive renderer, over 150,000 visible triangles or over 400 draw calls); then every region of the chapter is photographed from a named setup camera (events photo-region and photo: region, landmark, visible triangles, draw calls, lights; 7 photos in chapter 1, 6 in chapters 2 and 3). Metrics levelPhotos, levelPrimitivesTotal. The objectives, set pieces, dialogues and encounters of the three chapters are played end to end by campaign-beats, chapter2 and chapter3", 600, "content"),
         new PlaytestScenario("campaign-pacing", "How much of the Campaign is fighting (J: too much fighting), with real input and the sandbox save: Chapters 2 and 3 played start to finish the way chapter2 and chapter3 play them (Chapter 1's own level is timed by campaign-beats). Each chapter opens quiet: Wallit walks 30 m (explore), the opening scene plays (talk) and he takes the Receipt (pickup, XP) before any bot is awake; then at most three encounters, each placed asleep at a fixed spot and woken by Wallit walking up to it, with 10 s of quiet between them, then the boss. Nothing spawns on a timer (pacing-plan, encounter-place, encounter-wake, encounter-clear, encounter-skipped events). Each chapter reports pacing: encounters, combat seconds, play seconds and combat share (metrics pacingEncounters2, pacingCombatShare2, pacingFirstAttack2, pacingEncounters3, ...); a bug if there are more than three encounters, a bot is awake before explore, talk and pickup are done, or the combat share is half or more", 1500, "content"),
@@ -475,6 +476,13 @@ public static partial class Playtest {
             }
             if (id == "opening-ch23") {
                 yield return PlaytestOpeningCh23.Run(run);
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "finale-carry") {
+                yield return PlaytestFinaleCarry.Run(run);
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
                 }
@@ -3597,7 +3605,29 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             float limit = Time.realtimeSinceStartup + 180f;
             int lastShot = -1;
             string lastReel = "";
+            bool carryHolding = false;
             while (!StoryScreen.EndingOpen && !run.Done && Time.realtimeSinceStartup < limit) {
+                // In-engine ADDRESS FILED: drive the finale carry hold/bat, don't Space-skip it away.
+                if (CinematicDirector.FinaleCarryActive) {
+                    if (!carryHolding) {
+                        PlayInput.PadHold(KeyCode.Mouse0, true);
+                        carryHolding = true;
+                        run.Event("filed-scene", "finale-carry hold");
+                    }
+                    if (CinematicDirector.FinaleTimingOpen) {
+                        PlayInput.PadTap(KeyCode.Space);
+                    }
+                    if (CinematicDirector.FinaleCarryReady) {
+                        PlayInput.PadHold(KeyCode.Mouse0, false);
+                        carryHolding = false;
+                    }
+                    yield return null;
+                    continue;
+                }
+                if (carryHolding) {
+                    PlayInput.PadHold(KeyCode.Mouse0, false);
+                    carryHolding = false;
+                }
                 if (Cutscene.IsOpen && Cutscene.Instance != null) {
                     Cutscene scene = Cutscene.Instance;
                     if (scene.IsReel) {
@@ -3627,6 +3657,18 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                     } else {
                         yield return ReadDialogue();
                     }
+                } else if (CinematicDirector.IsOpen) {
+                    // Pre-carry shots of ending_filed_world: let them play (no Mouse0 skip).
+                    if (CinematicDirector.Instance != null && CinematicDirector.Instance.ReelId == "ending_filed_world") {
+                        if (lastReel != "ending_filed_world") {
+                            lastReel = "ending_filed_world";
+                            run.Event("filed-scene", "ending_filed_world");
+                        }
+                        yield return new WaitForSecondsRealtime(0.3f);
+                    } else {
+                        PlayInput.Tap(KeyCode.Escape);
+                        yield return new WaitForSecondsRealtime(0.5f);
+                    }
                 } else if (StoryScreen.IsOpen && !StoryScreen.EndingOpen) {
                     StoryScreen screen = StoryScreen.Instance;
                     run.Event("finale-page", screen.PageText.Replace('\n', ' '));
@@ -3635,6 +3677,9 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                 } else {
                     yield return new WaitForSecondsRealtime(0.3f);
                 }
+            }
+            if (carryHolding) {
+                PlayInput.PadHold(KeyCode.Mouse0, false);
             }
             yield return run.Until(() => StoryScreen.EndingOpen, 8f, "the ADDRESS FILED ending card");
             if (run.Done) {

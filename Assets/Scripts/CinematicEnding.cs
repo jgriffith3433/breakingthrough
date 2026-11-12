@@ -426,6 +426,7 @@ public partial class CinematicDirector {
             addressStampGo = null;
             addressStampHead = null;
         }
+        ClearFinaleCarryProps();
         if (!keepDoors) {
             for (int i = 0; i < doorGos.Count; i++) {
                 if (doorGos[i] != null) {

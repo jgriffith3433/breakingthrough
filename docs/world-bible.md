@@ -109,8 +109,8 @@ Routines are "through the day": the world has no clock face, so a day is a chapt
 
 ### Slice
 - Want: keep the circle filed — the one address in the Hollow that may stay.
-- Arc: alone at the ring → calls Wallit's targets as partner → parries, then stamps, as the acts harden.
-- Moment: a bot closes on her or flanks him; she says one word ("Left." "Mine."), the bot lights with her ring, and (from Cold Hour) she blocks it back (`SliceCallouts`).
+- Arc: alone at the ring → calls Wallit's targets as partner → needs him to carry the last stamp to her ring.
+- Moment: after the Order-Bearer falls, Wallit holds swing and walks the stamp into her circle while batting the last notices; on release her address prints and the lamps light (`finaleCarry` on `ending_filed_world`). Mid-run: a bot closes and she says one word ("Left." "Mine.") (`SliceCallouts`).
 - Personality: cool, clipped, exact.
 - Voice: `Gmg7bCXPSj9cYwVDrM6h` (Place Department – Slice, ElevenLabs eleven_v4: low, dry, clipped; same cast as Wallit). Narrator: `JjDIROtNEieYxCNGJXgG` (warm, bureaucratic, faintly amused records clerk).
 - Animations: idle, stab, slash, hurt, defeat (`Musician` / Slice controller); companion walk when following (`Companion`); talk (single nod in `ConversationStage` two-shots; body bob from voice amplitude; no mouth rig); callout block pose and stamp from `SliceCallouts`.
@@ -291,9 +291,12 @@ line, is only the subtitle of a voiced line. Beats marked **(built)** exist per 
    paper sound set. Proof: events `page-read-1`..`page-read-5`, `vault-hum`, `final-stamp`.
 8. **Address Filed opens; ADDRESS FILED ending in engine (built).** Filed Hollow. Chapter 6 opens as a six-shot in-engine scene
    (`ch6_open_world`): wall gone to stumps, Slice "The circle is brighter.", Wallit "Then let's file it. Pay up." After the
-   Order-Bearer falls, `ending_filed_world` plays on the live map: the order drops, DENIED, the ADDRESS stamp comes down in
-   engine, then the ending card. Credits scroll over Wallit and Slice in the ring (`PlayCreditsLive`, credits score). Still
-   `ch6_close` / `credits` reels are fallback only. Proof: `opening-endings` (`ending-stamp`, `credits-live`, `creditsTextPx`).
+   Order-Bearer falls, `ending_filed_world` plays on the live map: the order drops, DENIED, then the **finale carry** beat
+   (`finaleCarry`): the player holds swing to walk the stamp to Slice's ring while batting three raining notices (a miss only
+   knocks Wallit back); on release ADDRESS prints on the ring, ≥4 lamps light one by one, Slice "Clean. Good swing, Wallit.",
+   ch6 score swells into the ending card. RECEIVED after ADDRESS FILED is unchanged. Credits scroll over the ring
+   (`PlayCreditsLive`). Still `ch6_close` / `credits` reels are fallback only. Proof: `finale-carry` (`finale-hold`,
+   `finale-bat`, `finale-stamp`, `finale-lamps`, `finale-hold-prompt`); `opening-endings` still logs `ending-stamp`.
 9. **The Door Number (built, polish).** Filed Hollow. The ring unrolls into a line of writing and a number; the doorframes
    open on the chapters' sounds (see G).
 10. **RECEIVED (built).** After ADDRESS FILED, if all six lost things are kept: `ending_received_world` on the live ring —

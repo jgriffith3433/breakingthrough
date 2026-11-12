@@ -47,6 +47,7 @@ public partial class CinematicDirector : MonoBehaviour {
         public bool belt;       // Chapter 3: belt of cleared things slides toward the shredder
         public bool paper;      // Chapter 4: the Server folds a leg and offers its paper
         public bool addressStamp; // ADDRESS FILED / RECEIVED: the stamp comes down and prints ADDRESS
+        public bool finaleCarry;  // ADDRESS FILED: player holds swing to carry the stamp; bats 3 notices
         public bool doors;      // RECEIVED: six doors rise around the ring (one per lost thing)
         public bool keepsakes;  // RECEIVED: six lost things laid in the ring (seen, not only narrated)
         public bool credits;    // credits scroll over the live scene on this shot
@@ -77,6 +78,17 @@ public partial class CinematicDirector : MonoBehaviour {
     public static float CreditsTextPx { get; private set; }
     public static float CreditsSkipMs { get; private set; }
     public static bool CreditsLive { get; private set; }
+    // Finale carry beat (Chapter 6 ADDRESS FILED): hold swing, bat notices, release to print.
+    public static bool FinaleCarryActive { get; private set; }
+    public static bool FinaleCarryReady { get; private set; }
+    public static float FinaleCarryProgress { get; private set; }
+    public static float FinaleCarrySeconds { get; private set; }
+    public static int FinaleCarryBats { get; private set; }
+    public static int FinaleCarryMisses { get; private set; }
+    public static int FinaleLampsLit { get; private set; }
+    public static float FinaleHoldPromptWidthPx { get; private set; }
+    public static float FinaleHoldPromptCenterY01 { get; private set; }
+    public static bool FinaleTimingOpen { get; private set; }
 
     public int ShotIndex { get { return shotIndex; } }
     public int ShotCount { get { return reel != null && reel.shots != null ? reel.shots.Length : 0; } }
@@ -171,6 +183,16 @@ public partial class CinematicDirector : MonoBehaviour {
         CreditsTextPx = 0f;
         CreditsSkipMs = 0f;
         CreditsLive = false;
+        FinaleCarryActive = false;
+        FinaleCarryReady = false;
+        FinaleCarryProgress = 0f;
+        FinaleCarrySeconds = 0f;
+        FinaleCarryBats = 0;
+        FinaleCarryMisses = 0;
+        FinaleLampsLit = 0;
+        FinaleHoldPromptWidthPx = 0f;
+        FinaleHoldPromptCenterY01 = 0f;
+        FinaleTimingOpen = false;
     }
 
     public static void Play(string id, LevelYard host, Action onDone) {
@@ -531,6 +553,9 @@ public partial class CinematicDirector : MonoBehaviour {
         if (namePlate != null) {
             namePlate.text = "";
         }
+        if (s.finaleCarry) {
+            BeginFinaleCarry(s);
+        }
     }
 
     void Update() {
@@ -550,6 +575,12 @@ public partial class CinematicDirector : MonoBehaviour {
         }
         float now = Time.unscaledTime;
         Shot s = reel.shots[shotIndex];
+        if (FinaleCarryActive) {
+            TickFinaleCarry();
+            EaseBars(true);
+            LayoutUi();
+            return;
+        }
         float u = Mathf.Clamp01((now - shotStart) / shotLength);
         PlaceActors(s, Ease(u));
         ApplyCamera(s, Ease(u));
@@ -787,6 +818,12 @@ public partial class CinematicDirector : MonoBehaviour {
             return;
         }
         if (!open) {
+            return;
+        }
+        // Esc / Enter during the carry completes the stamp instead of dumping the whole ending.
+        if (FinaleCarryActive) {
+            Events.Add("finale-carry-skip");
+            FinishFinaleCarry(true);
             return;
         }
         Skipped++;
