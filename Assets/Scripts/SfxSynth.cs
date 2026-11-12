@@ -6,7 +6,7 @@ public static class SfxSynth {
     const int Rate = 44100;
 
     public static bool Has(string name) {
-        return name.StartsWith("step_") || name.StartsWith("land_") || name.StartsWith("spot_") || name == "botstep" || name == "wallitstep" || name == "homerun_whoosh" || name == "homerun_clang";
+        return name.StartsWith("step_") || name.StartsWith("land_") || name.StartsWith("spot_") || name == "botstep" || name.StartsWith("bot_") || name == "wallitstep" || name == "homerun_whoosh" || name == "homerun_clang";
     }
 
     // Variant i (0 based) of a synthesised sound, or null.
@@ -17,6 +17,9 @@ public static class SfxSynth {
         if (name.StartsWith("spot_")) {
             return Spot(name);
         }
+        if (name.StartsWith("bot_")) {
+            return BotSound.Make(name, i);
+        }
         switch (name) {
             case "botstep": return Step("botstep" + i, 0.16f, 95f - i * 14f, 1400f + i * 500f, 0.55f + i * 0.1f, 11 + i * 7);
             case "wallitstep": return Step("wallitstep" + i, 0.13f, 150f + i * 22f, 2600f + i * 400f, 0.4f, 31 + i * 5);
@@ -26,7 +29,7 @@ public static class SfxSynth {
         return null;
     }
 
-    static AudioClip Build(string id, float seconds, System.Func<int, float, float> sample) {
+    public static AudioClip Build(string id, float seconds, System.Func<int, float, float> sample) {
         int n = Mathf.CeilToInt(seconds * Rate);
         var data = new float[n];
         for (int s = 0; s < n; s++) {

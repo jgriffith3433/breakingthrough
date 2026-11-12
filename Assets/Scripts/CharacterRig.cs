@@ -16,8 +16,8 @@ public sealed class CharacterRig {
     public const float CycleSeconds = 0.8f;
     public const float YoStride = 1.3f;        // model-space metres one walk cycle covers
     public const float SpiderStride = 1.6f;
-    public const float YoWind = 0.30f;         // the claw goes up this long before the swipe lands
-    public const float SpiderWind = 0.40f;     // the front leg rears this long before the stab
+    public const float YoWind = 0.45f;         // the claw goes up this long before the swipe lands
+    public const float SpiderWind = 0.50f;     // the front leg rears this long before the stab
     public const float StrikeSeconds = 0.22f;
     public const float FlinchSeconds = 0.35f;
     public const float DeathSeconds = 0.9f;    // the death clip: stumble, limbs fold, drop
