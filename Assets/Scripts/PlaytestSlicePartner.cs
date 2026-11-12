@@ -7,23 +7,47 @@ using UnityEngine;
 public static class PlaytestSlicePartner {
     public static IEnumerator Run(PlaytestRun run) {
         MetaProgress.EnterSandbox(true);
+        int wasW = Screen.width, wasH = Screen.height;
+        bool wasTouch = UiFit.Touch;
         UiFit.ForceTouch(true);
+        Screen.SetResolution(390, 844, false);
+        yield return null;
+        yield return null;
         ColdOpen.Suppress = true;
         SoundSettings.SetChatter(3); // Often: shorter bark gaps so callouts show in the hold
         yield return Playtest.ToMenuPublic();
         if (run.Done) {
+            Screen.SetResolution(wasW, wasH, false);
+            UiFit.ForceTouch(wasTouch);
             yield break;
         }
         yield return Playtest.StartArcadePublic();
         if (run.Done) {
+            Screen.SetResolution(wasW, wasH, false);
+            UiFit.ForceTouch(wasTouch);
             yield break;
         }
         run.Scene("Arcade partner");
+        run.Event("phone-viewport", Screen.width + "x" + Screen.height + " touch=" + UiFit.Touch);
+        if (Screen.width != 390) {
+            run.Event("phone-viewport-soft", "wanted 390x844, got " + Screen.width + "x" + Screen.height + " (layout still ForcedTouch)");
+        }
         yield return run.Until(() => Musician.Instance != null && SliceCallouts.Instance != null && Enemy.Roster.Count > 0, 45f, "Slice callouts and wave 1 bots");
         if (run.Done) {
+            Screen.SetResolution(wasW, wasH, false);
+            UiFit.ForceTouch(wasTouch);
             yield break;
         }
         run.Event("partner-ready", "guard level " + SliceCallouts.GuardLevel() + " (act " + Tuning.ActOf(WaveDirector.Wave) + ")");
+        // Voiced means a real clip, not caption-only.
+        AudioClip probe = Resources.Load<AudioClip>("Voice/" + SliceVoice.LineId("Left."));
+        run.Event("callout-clip", probe != null ? "slice_left ready (" + probe.length.ToString("0.00") + "s)" : "MISSING slice_left");
+        if (probe == null) {
+            run.Problem(PlaytestSeverity.Bug, "Slice callout voice file Voice/slice_left missing");
+        }
+        if (Resources.Load<AudioClip>("Sfx/sliceparry") == null) {
+            run.Problem(PlaytestSeverity.Bug, "Parry clink Sfx/sliceparry missing");
+        }
 
         // Mostly hold fire so bots close on her circle; top her up so she is not struck off before three callouts.
         float until = Time.unscaledTime + 150f;
@@ -117,6 +141,8 @@ public static class PlaytestSlicePartner {
 
         run.Metric("quality.textOnlyBeats", 0);
         yield return new WaitForSecondsRealtime(1f);
+        Screen.SetResolution(wasW, wasH, false);
+        UiFit.ForceTouch(wasTouch);
     }
 
     static void PhoneClear(PlaytestRun run, Vector2 anchor) {

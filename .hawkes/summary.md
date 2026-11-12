@@ -1,33 +1,29 @@
-# Phone load budget: cut the WebGL data file at the source
+# Slice as partner (callouts + act guard) — voices wired
 
 ## What was wrong
-`first-five@local:phone` on build 121 transferred **45.6 MB** before gameplay (limit 20) and took **234.7 s** (limit 20 s). Top asset: `PlaceDepartment.data.unityweb` at 38.5 MB.
+Arcade Slice was mostly an escort HP bar. Prior commit `22977c7` added `SliceCallouts` (markers, parry/stamp, playtest) and Wallit reply clips, but Slice callout stems and the parry clink were still waiting on Gen.
 
-Build 121’s `[WebGlBuild] Download size` log (Gen job `j_1ac3edd59beb`) shows OnDemand already moved 26.5 MB of campaign files out. What was still packing the data file:
+## What changed (this pass)
+- **Judged & baked Gen audio** (`j_504e2676518d` dialogue-open / hv_heroine, ~$0.019): 13 Slice stems → mono 32 kHz 56 kbps `Assets/Resources/Voice/slice_{left,right,behind,ahead,spider,mine,close,flank,clear,yo,down,blocked,stamp}.mp3` (+ `slice_hold`); asset ids stamped in `audio.json`. Durations 0.65–0.86 s, mean ~−17 dB — pass.
+- **Parry SFX** (`j_2f0c83f1a634` a_93ee534b9e1f2db5): Gen verify said −70 LUFS (false for this short take); local probe was loud. Baked mono 64 kbps `Assets/Resources/Sfx/sliceparry.mp3`. Removed `SfxSynth` stand-in so `GameAudio` loads the file.
+- **Wallit replies** restored into the sparse tree (`wallit_on_it` / `billable` / `on_it_billable` / `covered`).
+- **Reviewer fixes:** `callout-reply` is VoiceDirector **Normal**; replies wait the cast gap (`GapReady`) instead of dropping; patience 10 s; parry knock ~2 m (`Knock` ×10); act unlock shows block/stamp pose + shock; `slice-partner` forces **390×844** touch and asserts `Voice/slice_left` + `Sfx/sliceparry` clips exist.
 
-| Folder / asset | Packed size |
-|---|---|
-| `Assets/Art/Arena` (mostly `ArenaScatter_*.asset` from `CombineMeshes`) | **41.3 MB** |
-| `Assets/Resources/Voice` (all Wallit + Slice lines) | **18.7 MB** |
-| Unity splash logo | 2.7 MB |
-| `Assets/Art/BowAndArrow` (retired bow still referenced on `BowEquipment`) | 1.7 MB |
-
-Brotli data file on disk: **36.7 MB** (+ wasm 6.4 MB ≈ the playtest’s 45.6 MB).
-
-## What changed
-1. **Arena scatter** (`BuildArena.cs`, new `ArenaScatterDraw.cs`): stop baking unique combined scatter meshes; draw shared FBX meshes with `Graphics.DrawMeshInstanced` (same counts/seed). `WebGlBuild.BuildWebGLTo` calls `BuildArena.RebuildForPlayerBuild()` before the player build so scene2 ships the light layout and clears bow model refs.
-2. **Voices** (`OnDemandPack`, `WallitVoice`, `SliceVoice`, `OnDemand` comments): move Wallit/Slice lines **outside** the Arcade bark keep-set (`IsArcadeKeep`) to StreamingAssets/OnDemand; keep-set stays in Resources for the first swing. LoadClip uses OnDemand then Resources, with `FetchKey` when missing.
-3. **Splash + scenes**: disable Unity splash logo; drop `KitPreview` from the WebGL scene list (editor gallery only).
-4. **AGENTS.md**: download-size notes updated for the 20 MB / arena-instance / keep-set rules.
+## Story / bible
+Already in `Docs/Story.md` (Slice as partner) and `docs/world-bible.md` (Characters + beat 13). No canon conflict.
 
 ## How checked
-- Root cause from build 121 Unity log size report (not guessed).
-- Read-through for CS0102/CS0111 duplicates on new members; call sites match.
-- **Unity compile not run here** (no editor in this sandbox; binary assets stripped). Studio’s cloud build must run `WebGlBuild.CloudBuild` and read `build-report.txt`: expect `Assets/Art/Arena` far below 41 MB and `Resources/Voice` near the keep-set only; first download (data+wasm+loader) should be ≤ ~20 MB transferred.
-- Conflicts: none.
+- ffprobe / volumedetect on every baked clip; audio.json parses; LineId ↔ file names match.
+- Read-through for CS0102/CS0111 on `GapReady`, `SayCallout`, `BeginParry` / `BeginStamp`.
+- **Unity compile not run here** (no editor). Studio cloud build + `slice-partner` playtest should prove AC 1–4.
+- Conflicts: none with c_7b31e5719065 (Hollow landmark); we did not touch arena dress.
 
-## Reviewer verdict (self-pass)
-**Merge** once the cloud build’s size report confirms the cut. Cause matches the finding’s assets; scope stays on first-download weight; living-world scatter density unchanged (instanced, not removed). Residual risk: only a measured build proves ≤20 MB / ≤20 s on Slow 4G.
+## GPU
+This task’s Gen: dialogue-open ~$0.019 + sfx ~$0.001 (+ earlier Wallit `audio.voice` cents). Under $0.38 budget. No jobs left waiting.
 
-## Fun / living-world
-Same rim forest and field grass/flower counts; drawn via instancing instead of combined mesh assets. Not a demo thinning.
+## Reviewer verdicts
+- **studio:reviewer (after fixes):** earlier revise notes addressed (voices committed, sliceparry + synth removal together, callout-reply Normal + gap hold, 390×844 + clip asserts, knock tuned). Ready to merge pending cloud playtest.
+- **studio:fun-reviewer:** **thin** (not demo). Gaps left as follow-ups: Last Light stamp in `slice-partner`, stronger call-and-response when swinging a marked bot. Acceptance only requires Act 2 parry + 3 callouts.
+
+## Scenario
+`slice-partner` (`.hawkes/scenario.txt`).

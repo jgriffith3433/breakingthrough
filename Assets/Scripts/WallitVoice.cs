@@ -252,12 +252,12 @@ public class WallitVoice : MonoBehaviour {
         }
     }
 
-    // SliceCallouts: some of her threat names get a money reply once her floor frees.
+    // SliceCallouts: some of her threat names get a money reply once her floor frees (Normal gap, not bark).
     public static void OnCallout(string sliceWord) {
         if (Instance == null) {
             return;
         }
-        Instance.Queue(Instance.Pick(CalloutReply), "callout-reply", 3.5f);
+        Instance.Queue(Instance.Pick(CalloutReply), "callout-reply", 10f);
     }
 
     public static void OnStakes() {
@@ -567,7 +567,11 @@ public class WallitVoice : MonoBehaviour {
             }
             Pending next = pending[best];
             pending.RemoveAt(best);
-            if (next.Line != LastLine && VoiceDirector.Allow(next.Line, next.Why, VoiceDirector.PriorityOf(next.Why))) {
+            VoiceDirector.Priority pri = VoiceDirector.PriorityOf(next.Why);
+            if (pri >= VoiceDirector.Priority.Normal && now < next.Expires && !VoiceDirector.GapReady(pri)) {
+                // Hold a Normal reply (callout-reply) until the cast gap cools; do not Deny/drop each frame.
+                pending.Insert(0, next);
+            } else if (next.Line != LastLine && VoiceDirector.Allow(next.Line, next.Why, pri)) {
                 Speak(next.Line, next.Why);
             } else {
                 Dropped++;

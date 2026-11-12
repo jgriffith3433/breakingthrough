@@ -92,6 +92,7 @@ public static class VoiceDirector {
             case "wave-clear":
             case "golden":
             case "setup":
+            case "callout-reply":
                 return Priority.Normal;
             default:
                 return Priority.Bark;
@@ -102,6 +103,18 @@ public static class VoiceDirector {
     // beats, cutscenes, Slice low) always play. "Key lines" drops every Bark and Normal line.
     public static float GapScale(int chatter) {
         return chatter <= 1 ? 2.5f : chatter == 2 ? 1f : 0.5f;
+    }
+
+    // True when the cast gap for this priority has cooled (Key always ready). Used to hold a queued Normal reply
+    // without burning a Deny each frame.
+    public static bool GapReady(Priority priority) {
+        if (priority == Priority.Key) {
+            return true;
+        }
+        float scale = GapScale(SoundSettings.Chatter);
+        float since = Time.unscaledTime - lastCastAt;
+        float need = (priority == Priority.Bark ? BarkGap : NormalGap) * scale;
+        return since >= need;
     }
 
     // True when a line may be said right now. Every priority needs a free floor (Key lines wait for it, they are not

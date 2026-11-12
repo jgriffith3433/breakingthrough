@@ -6,8 +6,7 @@ public static class SfxSynth {
     const int Rate = 44100;
 
     public static bool Has(string name) {
-        return name == "botstep" || name == "wallitstep" || name == "homerun_whoosh" || name == "homerun_clang"
-            || name == "sliceparry";
+        return name == "botstep" || name == "wallitstep" || name == "homerun_whoosh" || name == "homerun_clang";
     }
 
     // Variant i (0 based) of a synthesised sound, or null.
@@ -17,21 +16,8 @@ public static class SfxSynth {
             case "wallitstep": return Step("wallitstep" + i, 0.13f, 150f + i * 22f, 2600f + i * 400f, 0.4f, 31 + i * 5);
             case "homerun_whoosh": return Whoosh();
             case "homerun_clang": return Clang();
-            case "sliceparry": return ParryClink(i);
         }
         return null;
-    }
-
-    // Slice's Act 2 parry: a short steel clink (stand-in until Resources/Sfx/sliceparry.mp3 lands from Gen).
-    static AudioClip ParryClink(int i) {
-        float baseHz = 2200f + i * 180f;
-        return Build("sliceparry" + i, 0.18f, (s, t) => {
-            float env = Mathf.Exp(-t * 55f);
-            float click = Mathf.Sin(2f * Mathf.PI * baseHz * t) * env;
-            float ring = Mathf.Sin(2f * Mathf.PI * (baseHz * 1.67f) * t) * Mathf.Exp(-t * 28f) * 0.45f;
-            float grit = (Mathf.PerlinNoise(t * 900f, i * 3.1f) * 2f - 1f) * Mathf.Exp(-t * 90f) * 0.25f;
-            return (click + ring + grit) * Mathf.Min(1f, t * 600f) * 0.7f;
-        });
     }
 
     static AudioClip Build(string id, float seconds, System.Func<int, float, float> sample) {

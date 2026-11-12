@@ -168,8 +168,10 @@ public class SliceCallouts : MonoBehaviour {
             Note("partner-unlock", "Cold Hour: Slice will parry");
             if (SliceVoice.Instance != null) {
                 SliceVoice.Instance.SayCallout("Hold.");
+                SliceVoice.Instance.BeginBlock();
             }
             LastWord = "Hold.";
+            PulseShock(SliceAt(), 1.2f, 0.4f);
             WallitVoice.OnCallout("Hold.");
         } else if (act >= 2 && !unlockStampShown) {
             unlockStampShown = true;
@@ -178,6 +180,10 @@ public class SliceCallouts : MonoBehaviour {
                 SliceVoice.Instance.SayCallout("Stamp.");
             }
             LastWord = "Stamp.";
+            if (musician != null) {
+                musician.BeginStamp();
+            }
+            PulseShock(SliceAt(), 2.2f, 0.55f);
             WallitVoice.OnCallout("Stamp.");
         }
     }
@@ -316,7 +322,7 @@ public class SliceCallouts : MonoBehaviour {
         }
         dir.Normalize();
         musician.BeginParry(bot, dir);
-        bot.Knock(dir * 7f, 0.12f); // ~2 m shove with ground drag
+        bot.Knock(dir * 10f, 0.18f); // ~2 m shove (ground drag eats slower starts)
         bot.Flinch(0.85f);
         GameAudio.Play("sliceparry", 0.7f, 1f);
         Mark(bot);
