@@ -18,18 +18,19 @@ public class LoadScreen : MonoBehaviour {
     // One card per place: id (art LoadCards/card_<id>), the place's name, its line and who says it (voice file key).
     class Card {
         public string Id, Title, Place, Voice, Words;
+        public Vector4 Focus = new Vector4(0f, 1f, 0f, 1f);   // the painted subject in the art: x0, x1, top y0, y1 (0..1 from the top-left)
     }
 
     static readonly Card[] Cards = {
-        new Card { Id = "ch1", Voice = "slice_the_clearing_crew_stamped_out_here_one_batch_for_every_unfiled_thing_in_the_hollow",
+        new Card { Id = "ch1", Focus = new Vector4(.10f, .93f, .38f, .75f), Voice = "slice_the_clearing_crew_stamped_out_here_one_batch_for_every_unfiled_thing_in_the_hollow",
             Words = "The Clearing Crew. Stamped out here, one batch for every unfiled thing in the Hollow." },
-        new Card { Id = "ch2", Voice = "slice_seventy_metres_then_back", Words = "Seventy metres. Then back." },
-        new Card { Id = "ch3", Voice = "slice_pull_the_lever_the_belt_stops_the_crew_stops", Words = "Pull the lever. The belt stops. The crew stops." },
+        new Card { Id = "ch2", Focus = new Vector4(0f, 1f, .30f, .72f), Voice = "slice_seventy_metres_then_back", Words = "Seventy metres. Then back." },
+        new Card { Id = "ch3", Focus = new Vector4(.17f, .83f, .25f, .75f), Voice = "slice_pull_the_lever_the_belt_stops_the_crew_stops", Words = "Pull the lever. The belt stops. The crew stops." },
         new Card { Id = "ch4", Voice = "slice_walk_the_lamps_hold_each_i_ll_keep_the_ring", Words = "Walk the lamps. Hold each. I'll keep the ring." },
         new Card { Id = "ch5", Voice = "wallit_pages_four_and_five_are_the_small_print_nobody_reads_the_small_print_i_do",
             Words = "Pages four and five are the small print. Nobody reads the small print. I do." },
-        new Card { Id = "ch6", Voice = "slice_the_wall_is_gone_the_circle_is_brighter", Words = "The wall is gone. The circle is brighter." },
-        new Card { Id = "hub", Title = "The Office", Place = "Where the files are kept", Voice = "slice_two_doors_wallit_s_is_next_to_mine_knock_on_it",
+        new Card { Id = "ch6", Focus = new Vector4(0f, 1f, .45f, 1f), Voice = "slice_the_wall_is_gone_the_circle_is_brighter", Words = "The wall is gone. The circle is brighter." },
+        new Card { Id = "hub", Focus = new Vector4(.22f, .78f, .12f, .88f), Title = "The Office", Place = "Where the files are kept", Voice = "slice_two_doors_wallit_s_is_next_to_mine_knock_on_it",
             Words = "Two doors. Wallit's is next to mine. Knock on it." },
     };
 
@@ -72,6 +73,7 @@ public class LoadScreen : MonoBehaviour {
     float progress;
     int cardIndex;
     Texture2D still;
+    Vector4 focus = new Vector4(0f, 1f, 0f, 1f);
     CanvasScaler scaler;
     float shownAt;
     float fading = -1f;
@@ -140,6 +142,7 @@ public class LoadScreen : MonoBehaviour {
                 still = OnDemand.Texture("Cinematics/Art/" + reel.shots[0].back);
             }
         }
+        focus = cardArt ? data.Focus : new Vector4(0f, 1f, 0f, 1f);
         art.texture = still;
         art.enabled = still != null;
         plate.color = still != null ? new Color(0f, 0f, 0f, 0.38f) : new Color(0.04f, 0.05f, 0.1f, 1f);
@@ -319,15 +322,13 @@ public class LoadScreen : MonoBehaviour {
             return;
         }
         float screen = Screen.height > 0 ? (float)Screen.width / Screen.height : 1.78f;
-        float image = (float)still.width / Mathf.Max(1, still.height);
-        Rect r = new Rect(0f, 0f, 1f, 1f);
-        if (screen > image) {
-            r.height = image / screen;
-            r.y = (1f - r.height) * 0.5f;
-        } else {
-            r.width = screen / image;
-            r.x = (1f - r.width) * 0.5f;
-        }
+        // the smallest screen-shaped window that holds the painted subject, centred on it, kept inside the image
+        float fw = (focus.y - focus.x) * still.width, fh = (focus.w - focus.z) * still.height;
+        float cx = (focus.x + focus.y) * 0.5f * still.width, cy = (1f - (focus.z + focus.w) * 0.5f) * still.height;
+        float w = Mathf.Max(fw, fh * screen), h = w / screen;
+        if (w > still.width) { w = still.width; h = w / screen; }
+        if (h > still.height) { h = still.height; w = h * screen; }
+        Rect r = new Rect(Mathf.Clamp(cx - w * 0.5f, 0f, still.width - w) / still.width, Mathf.Clamp(cy - h * 0.5f, 0f, still.height - h) / still.height, w / still.width, h / still.height);
         art.uvRect = r;
     }
 
