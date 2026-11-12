@@ -39,27 +39,27 @@ public class ArcadeActs : MonoBehaviour {
     const string OvertimeLine = "The clock won't clock out. Pay up.";
 
     static readonly Look[] Looks = {
-        // Night Shift: the Moonlit Hollow as NightAtmosphere has always lit it.
-        new Look { Sun = new Color(0.62f, 0.72f, 1f), SunIntensity = 0.9f, Fog = new Color(0.1f, 0.13f, 0.22f), FogDensity = 0.0062f,
-            SkyTop = new Color(0.03f, 0.05f, 0.14f), SkyHorizon = new Color(0.16f, 0.22f, 0.42f), SkyGround = new Color(0.04f, 0.05f, 0.09f),
-            AmbSky = new Color(0.27f, 0.33f, 0.55f), AmbEq = new Color(0.16f, 0.2f, 0.3f), AmbGround = new Color(0.07f, 0.08f, 0.11f),
-            Disc = new Color(0.8f, 0.88f, 1f), DiscDir = new Vector3(-0.3f, 0.55f, 0.8f), DiscSize = 0.05f, Haze = 0.5f,
-            Exposure = 1.08f, Contrast = 1.12f, Saturation = 0.9f, Vignette = 0.85f,
-            Shadows = new Color(0.8f, 0.9f, 1.16f), Highlights = new Color(1.08f, 1f, 0.9f), Lift = new Color(0f, 0.012f, 0.03f) },
-        // Cold Hour: a teal storm light, the moon gone behind it.
-        new Look { Sun = new Color(0.5f, 0.85f, 0.95f), SunIntensity = 0.72f, Fog = new Color(0.06f, 0.17f, 0.19f), FogDensity = 0.0078f,
-            SkyTop = new Color(0.02f, 0.07f, 0.1f), SkyHorizon = new Color(0.12f, 0.32f, 0.35f), SkyGround = new Color(0.03f, 0.06f, 0.08f),
-            AmbSky = new Color(0.16f, 0.38f, 0.42f), AmbEq = new Color(0.1f, 0.24f, 0.27f), AmbGround = new Color(0.04f, 0.08f, 0.09f),
-            Disc = new Color(0.5f, 0.9f, 0.95f), DiscDir = new Vector3(0.45f, 0.3f, -0.8f), DiscSize = 0.03f, Haze = 0.85f,
-            Exposure = 1.04f, Contrast = 1.2f, Saturation = 1.02f, Vignette = 1.05f,
-            Shadows = new Color(0.7f, 1.02f, 1.1f), Highlights = new Color(0.95f, 1.05f, 1f), Lift = new Color(0f, 0.025f, 0.03f) },
-        // Last Light: a bruised dusk, orange at the rim, the Hollow's last hour before the Department opens.
-        new Look { Sun = new Color(1f, 0.66f, 0.5f), SunIntensity = 1.05f, Fog = new Color(0.28f, 0.13f, 0.15f), FogDensity = 0.0052f,
-            SkyTop = new Color(0.12f, 0.05f, 0.16f), SkyHorizon = new Color(0.85f, 0.38f, 0.3f), SkyGround = new Color(0.1f, 0.05f, 0.07f),
-            AmbSky = new Color(0.5f, 0.35f, 0.5f), AmbEq = new Color(0.32f, 0.2f, 0.24f), AmbGround = new Color(0.12f, 0.07f, 0.08f),
-            Disc = new Color(1f, 0.7f, 0.5f), DiscDir = new Vector3(0.2f, 0.08f, 0.95f), DiscSize = 0.12f, Haze = 0.7f,
-            Exposure = 1.15f, Contrast = 1.1f, Saturation = 1.12f, Vignette = 0.9f,
-            Shadows = new Color(1.05f, 0.85f, 0.95f), Highlights = new Color(1.15f, 0.95f, 0.8f), Lift = new Color(0.03f, 0.006f, 0.012f) }
+        // Act I dusk: a low warm sun-to-moon key, amber fog, a violet sky going to ink; the lamp posts flicker on.
+        new Look { Sun = new Color(1f, 0.6f, 0.32f), SunIntensity = 1.1f, Fog = new Color(0.24f, 0.14f, 0.2f), FogDensity = 0.0058f,
+            SkyTop = new Color(0.1f, 0.08f, 0.24f), SkyHorizon = new Color(0.95f, 0.5f, 0.3f), SkyGround = new Color(0.08f, 0.05f, 0.08f),
+            AmbSky = new Color(0.44f, 0.36f, 0.52f), AmbEq = new Color(0.3f, 0.22f, 0.26f), AmbGround = new Color(0.1f, 0.07f, 0.08f),
+            Disc = new Color(1f, 0.78f, 0.55f), DiscDir = new Vector3(-0.3f, 0.12f, 0.8f), DiscSize = 0.1f, Haze = 0.6f,
+            Exposure = 1.1f, Contrast = 1.1f, Saturation = 1.08f, Vignette = 0.8f,
+            Shadows = new Color(0.9f, 0.88f, 1.1f), Highlights = new Color(1.14f, 0.98f, 0.82f), Lift = new Color(0.015f, 0.006f, 0.02f) },
+        // Act II deep night: a cold blue moon key from behind the post office, rim light on everyone, warm lamp pools, ground fog.
+        new Look { Sun = new Color(0.4f, 0.58f, 1f), SunIntensity = 0.95f, Fog = new Color(0.04f, 0.08f, 0.2f), FogDensity = 0.0072f,
+            SkyTop = new Color(0.01f, 0.02f, 0.09f), SkyHorizon = new Color(0.07f, 0.15f, 0.4f), SkyGround = new Color(0.02f, 0.03f, 0.07f),
+            AmbSky = new Color(0.16f, 0.26f, 0.5f), AmbEq = new Color(0.09f, 0.14f, 0.28f), AmbGround = new Color(0.04f, 0.05f, 0.1f),
+            Disc = new Color(0.7f, 0.85f, 1f), DiscDir = new Vector3(0.45f, 0.35f, -0.8f), DiscSize = 0.05f, Haze = 0.8f,
+            Exposure = 1.04f, Contrast = 1.2f, Saturation = 0.95f, Vignette = 1f,
+            Shadows = new Color(0.72f, 0.88f, 1.2f), Highlights = new Color(0.95f, 1.02f, 1.08f), Lift = new Color(0f, 0.012f, 0.045f) },
+        // Act III the Department's red alert: a red key, a beacon sweeping the lawn, ash in the air, higher contrast.
+        new Look { Sun = new Color(1f, 0.2f, 0.16f), SunIntensity = 0.95f, Fog = new Color(0.26f, 0.03f, 0.05f), FogDensity = 0.0062f,
+            SkyTop = new Color(0.14f, 0f, 0.04f), SkyHorizon = new Color(0.7f, 0.07f, 0.1f), SkyGround = new Color(0.08f, 0.01f, 0.02f),
+            AmbSky = new Color(0.5f, 0.14f, 0.18f), AmbEq = new Color(0.3f, 0.07f, 0.1f), AmbGround = new Color(0.1f, 0.02f, 0.03f),
+            Disc = new Color(1f, 0.2f, 0.18f), DiscDir = new Vector3(0.2f, 0.08f, 0.95f), DiscSize = 0.12f, Haze = 0.75f,
+            Exposure = 1.1f, Contrast = 1.32f, Saturation = 1.05f, Vignette = 1.1f,
+            Shadows = new Color(1.1f, 0.74f, 0.82f), Highlights = new Color(1.18f, 0.9f, 0.82f), Lift = new Color(0.035f, 0f, 0.008f) }
     };
 
     static readonly Look Overtime = new Look {
@@ -81,6 +81,9 @@ public class ArcadeActs : MonoBehaviour {
     public static string Stings { get; private set; } = "";
     // Lowest combined layer level seen once the score was up: near 1 means no gap and no hard cut in a crossfade.
     public static float MixFloor { get; private set; } = 9f;
+    // Each act's share of the look right now (0..1, they sum to 1): FilmLight blends its key direction, rim, lamps, fog cards,
+    // beacon, ash and LUT by it, so the whole set changes over the same Tuning.ActFadeSeconds as the colours.
+    public static float Weight(int act) { return Instance != null && act >= 0 && act < 3 ? Instance.weights[act] : 0f; }
     public static bool Settled { get { return Instance != null && Instance.fade >= 1f; } }
 
     Look from, cur, target;
@@ -148,6 +151,7 @@ public class ArcadeActs : MonoBehaviour {
             skyMat = new Material(shader);
         }
         BuildAudio();
+        gameObject.AddComponent<FilmLight>();   // the film-set light layer, blended by this class's weights
         if (ChapterRun.Instance == null) {
             // The Hollow's own air: its bed (fetched by URL) and the spots on the ruin's sign, the lanterns and the post boxes. The
             // landmark builds in its own Start, so the spots look for their objects a moment later.

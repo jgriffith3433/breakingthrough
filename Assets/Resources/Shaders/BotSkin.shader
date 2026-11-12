@@ -32,6 +32,8 @@ Shader "Knoll/BotSkin"
         float _RimStrength;
         float _Glow;
         float4 _Flash;
+        // The act's film rim (FilmLight sets it for every character: rgb colour, a gain). Zero when nothing sets it.
+        float4 _FilmRim;
 
         struct Input
         {
@@ -55,7 +57,8 @@ Shader "Knoll/BotSkin"
             float nSq = dot(IN.worldNormal, IN.worldNormal);
             float3 normal = nSq > 1e-8 ? IN.worldNormal * rsqrt(nSq) : float3(0, 1, 0);
             float rim = pow(1.0 - saturate(dot(viewDir, normal)), 4.0);
-            float3 rimLight = _RimColor.rgb * rim * _RimStrength;
+            float filmRim = pow(1.0 - saturate(dot(viewDir, normal)), 2.2);
+            float3 rimLight = _RimColor.rgb * rim * _RimStrength + _FilmRim.rgb * filmRim * _FilmRim.a;
 
             // Capped so a bright texel can never burn to a flat white shape or bleed past the silhouette.
             float3 lit = albedo * skin.a * _Glow + albedo * _AmbientBoost * 0.35 + rimLight;
