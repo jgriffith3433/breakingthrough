@@ -1,4 +1,4 @@
-- lesson: Critic “grey H + Google” first paint — often Studio’s beta gate or the Tap to play shell, not Unity; put cast art in `Tools/Web/hawkes-sound.js` (and ship `Tools/Web/cast` via `InstallSoundPrompt`) so first-five sees the game before MenuStage loads.
-- lesson: `#hawkes-tap .s` was the italic subtitle rule — never reuse `.s` on Slice’s portrait or she inherits opacity 0.7.
-- convention: MenuArt.png is still missing; Unity first screen cast is `MenuStage` (live models, one night palette); web first paint uses site cast webps framed as case-file portraits.
-- convention: `CinematicDirector.ReelId` is instance-only — always `CinematicDirector.Instance.ReelId` (null-safe), same as `ShotIndex`.
+- canon: ADDRESS FILED finale carry — after the Order-Bearer, the player holds swing to carry the stamp to Slice’s ring, bats three raining notices, and on release ADDRESS prints and ring lamps light before the ending card; RECEIVED after ADDRESS FILED is unchanged.
+- convention: CinematicDirector interactive shots — `Shot.finaleCarry` pauses reel advance in `Update`; Esc/Enter calls `FinishFinaleCarry` instead of `End`; metrics live as statics on `CinematicDirector`.
+- lesson: phone playtests during cinematics — `Cutscene.IsOpen` hides touch pads, so drive hold/bat with `PlayInput.PadHold`/`PadTap`, not `TouchControls.BotFinger`.
+- lesson: hold-prompt CSS px — divide world-corner width by `UiFit.PixelRatio` (same pattern as PlaytestTouch).
