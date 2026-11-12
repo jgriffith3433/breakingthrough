@@ -1,23 +1,21 @@
-# Fix beta build: PlaytestOpening CS0120 (transitions already shipped)
+# Art cohesion on the first screen (cast + compile)
 
 ## What was wrong
-Beta build web 122 failed after the stamped-transitions change merged: `Assets/Scripts/PlaytestOpening.cs(120,36): error CS0120` — `CinematicDirector.ReelId` is an instance property, but the opening playtest called it as static. Latent since the cinematic-director PR; a clean beta rebuild surfaced it. The transitions feature itself (ScreenTransition, LoadScreen, seven LoadCards, `transitions` playtest) was already on beta.
+The critic’s first-five frame (t≈2s) showed a grey web card with an H logo and Google — no Wallit, Slice or bots. MenuStage already puts the live cast behind the Unity menu (#229/#238), but paint-zero is the Tap to play overlay, which was text on a flat night gradient. Separately, beta had hit CS0120 on `CinematicDirector.ReelId`; that call site is already fixed on beta (`PlaytestOpening.cs:120` uses `Instance.ReelId`).
 
 ## What changed
-- `Assets/Scripts/PlaytestOpening.cs`: read `CinematicDirector.Instance.ReelId` (null-safe), same pattern as `ShotIndex` two lines later.
-- `.hawkes/scenario.txt`: `transitions` (was stale `slice-partner` from an older merge note in HEAD).
-
-No GPU spend. No new art. Conflicts: none.
+- **`Tools/Web/hawkes-sound.js`**: Tap to play now shows Wallit, Slice, Yo Bot and Spider Bot as framed case-file portraits on one night Department palette (gilt frames, warm lamp / cold moon veil). Safe-area padding, overflow hidden, Tap target ≥48 CSS px. `data-hawkes-cast` marks the lineup. Six visible words only (aria-hidden portraits).
+- **`Tools/Web/cast/*.webp`**: Existing site cast portraits (no GPU). Deployed next to the Game page.
+- **`Assets/Editor/WebGlBuild.cs`**: `InstallSoundPrompt` copies `Tools/Web/cast` into `Game/cast` on every FullDeploy.
+- **`PlaytestFirstScreen.cs` / `Playtest.cs`**: `first-screen` requires the MenuStage cast (`first-screen-cast`, `firstScreenCastOk`), logs `first-screen-phone`, and fails controls past the left/right edge (`firstScreenOffscreenX` — sideways scroll). Scenario named in `.hawkes/scenario.txt`.
 
 ## Checks
-- Grep: only that one bad static `ReelId` call; nested types like `BossResult` are fine.
-- `transitions` still registered in `Playtest.cs`; `PlaytestTransitions.cs` present; seven `LoadCards/card_*.png` and `paper_slide` / `stamp_heavy` tracked.
-- Animation timing still 0.66 s (0.26+0.08+0.06+0.26).
-- Unity compile not run here (no editor). Studio cloud build should clear CS0120.
+- CS0120: no `CinematicDirector.ReelId` static use left; line 120 is instance-safe.
+- `node --check Tools/Web/hawkes-sound.js` passed.
+- C# compile not run here (no Unity in this sandbox). Read changed C# for duplicate members / signature traps; none found.
+- Fun reviewer: **thin** (cast present; tap card still mute/static vs living MenuStage). Gaps are polish (idle voice, Ken Burns), not blockers for art-cohesion presence.
+- Reviewer: **revise** notes fixed (Slice `.s` opacity clash removed; portraits framed as one dossier strip so opaque blue plates don’t fight the night palette). Tap-card HTML isn’t asserted from Unity; MenuStage + first-five footage cover the criterion.
+- Conflicts: none.
 
-## Reviewers
-- **fun-reviewer:** thin (not demo). Soul 5; story-as-experience 4. Gaps beyond this AC (Settings/Shop hard cuts; card is watch-only; art-miss fallback) left for later — this pass is the build fix.
-- **reviewer:** merge. Compile fix is the real cause; scope tight; feature kept.
-
-## Left for later (not this change)
-Settings / Shop / pause / level-up still hard-cut; optional card interaction while the strip fills; richer art-miss fallback than the night plate.
+## For J
+Open beta → first paint should be Wallit / Slice / bots in gilt frames on night blue, then Tap to play, then the live MenuStage Hollow. GPU estimate for true alpha cutouts / a single MenuArt still: not run (budget was none); ask if you want that pass.

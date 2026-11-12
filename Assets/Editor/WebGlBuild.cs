@@ -805,7 +805,24 @@ public static class WebGlBuild
         }
 
         // LF, as the website repo keeps its files (this project's checkout can be CRLF on Windows).
-        File.WriteAllText(Path.Combine(Path.GetDirectoryName(gamePage), SoundScript), File.ReadAllText(source).Replace("\r\n", "\n"));
+        string gameDir = Path.GetDirectoryName(gamePage);
+        File.WriteAllText(Path.Combine(gameDir, SoundScript), File.ReadAllText(source).Replace("\r\n", "\n"));
+        // Cast portraits for the Tap card (Wallit, Slice, Yo Bot, Spider Bot) so first paint shows the game.
+        string castSrc = Path.Combine(ProjectRoot, "Tools", "Web", "cast");
+        if (Directory.Exists(castSrc))
+        {
+            string castDst = Path.Combine(gameDir, "cast");
+            Directory.CreateDirectory(castDst);
+            foreach (string file in Directory.GetFiles(castSrc))
+            {
+                string name = Path.GetFileName(file);
+                if (name.StartsWith("."))
+                {
+                    continue;
+                }
+                File.Copy(file, Path.Combine(castDst, name), true);
+            }
+        }
         string html = File.ReadAllText(gamePage);
         string tag = "<script src=\"" + SoundScript + "?v=v" + version + "\" data-hawkes-sound></script>";
         string updated = Regex.Replace(html, @"<script[^>]*data-hawkes-sound[^>]*></script>", tag);
