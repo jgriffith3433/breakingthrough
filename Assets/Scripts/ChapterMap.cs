@@ -321,6 +321,9 @@ public class ChapterMap : MonoBehaviour {
         public enum Mode { Press, Belt }
         Mode mode;
         float high, low, period, offset, speed;
+        float speedMult = 1f;
+        float phase;            // belt travel so a temporary boost does not teleport items
+        bool phaseInit;
         Vector3 origin, along;
         float lineLength;
         public int Cycles { get; private set; }
@@ -332,6 +335,32 @@ public class ChapterMap : MonoBehaviour {
             period = Mathf.Max(0.5f, p);
             offset = off;
             speed = p;
+            speedMult = 1f;
+            phase = 0f;
+            phaseInit = false;
+        }
+
+        // Chapter 3 opening: temporary speed-up; ClearBoost restores. Phase-based so items do not jump.
+        public void Boost(float mult) {
+            if (mode == Mode.Belt) {
+                EnsurePhase();
+                speedMult = Mathf.Max(0.1f, mult);
+            }
+        }
+
+        public void ClearBoost() {
+            if (mode == Mode.Belt) {
+                EnsurePhase();
+                speedMult = 1f;
+            }
+        }
+
+        void EnsurePhase() {
+            if (phaseInit || mode != Mode.Belt) {
+                return;
+            }
+            phase = Mathf.Repeat(offset + Time.time * Mathf.Abs(speed), Mathf.Max(0.01f, lineLength));
+            phaseInit = true;
         }
 
         public void SetLine(Vector3 start, Vector3 dir, float length) {
@@ -375,7 +404,9 @@ public class ChapterMap : MonoBehaviour {
                 float k = t < 0.55f ? Mathf.SmoothStep(0f, 1f, t / 0.55f) : t < 0.7f ? 1f : t < 0.78f ? 1f - (t - 0.7f) / 0.08f : 0f;
                 p.y = Mathf.Lerp(low, high, k);
             } else {
-                float s = Mathf.Repeat(offset + Time.time * Mathf.Abs(speed), lineLength);
+                EnsurePhase();
+                phase += Time.deltaTime * Mathf.Abs(speed) * speedMult;
+                float s = Mathf.Repeat(phase, lineLength);
                 float at = speed >= 0f ? s : lineLength - s;
                 p = origin + along * at;
                 p.y = SurfaceY(at, transform.position.y);

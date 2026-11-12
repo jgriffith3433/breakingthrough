@@ -32,6 +32,8 @@ public class Companion : MonoBehaviour {
     public const float DownedHealth = 0.5f;   // share of her health she gets back
 
     public static Companion Instance { get; private set; }
+    // CinematicDirector holds her on marks during a chapter opening: AI off, stride still ticks from HeldMove.
+    public bool Held;
 
     public Def Data { get; private set; }
     public int MaxHealth { get; private set; }
@@ -177,6 +179,7 @@ public class Companion : MonoBehaviour {
         }
         if (Instance == this) {
             Instance = null;
+            Held = false;
             if (Musician.Instance != null) {
                 Musician.Instance.Away = false;
             }
@@ -343,6 +346,12 @@ public class Companion : MonoBehaviour {
             Player = pg != null ? pg.transform : null;
             return;
         }
+        if (Held) {
+            float dtHeld = Mathf.Max(0.0001f, Time.deltaTime);
+            TickStride(dtHeld);
+            Refresh();
+            return;
+        }
         if (Frozen) {
             return;
         }
@@ -363,6 +372,23 @@ public class Companion : MonoBehaviour {
         groundSpeed = Mathf.SmoothDamp(groundSpeed, speedNow, ref groundSpeedVel, 0.08f);
         TickStride(dt);
         Refresh();
+    }
+
+    // CinematicDirector places her each frame; stride rate follows the real distance covered (no fixed fake speed).
+    public void HeldMove(Vector3 pos, bool walk) {
+        Vector3 delta = pos - transform.position;
+        delta.y = 0f;
+        float dt = Mathf.Max(0.0001f, Time.deltaTime);
+        transform.position = pos;
+        lastPos = pos;
+        walking = walk && delta.sqrMagnitude > 0.0004f;
+        groundSpeed = walking ? Mathf.Clamp(delta.magnitude / dt, 0f, Data.Speed * 1.1f) : 0f;
+        if (walking && delta.sqrMagnitude > 0.01f) {
+            transform.rotation = Quaternion.LookRotation(delta.normalized);
+        }
+        if (!walk) {
+            walkStop = 0.2f;
+        }
     }
 
     // Once a frame, before her Animator runs: walk while she covers ground, idle (the controller) when she stops,

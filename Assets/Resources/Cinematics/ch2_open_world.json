@@ -1,0 +1,107 @@
+{
+  "id": "ch2_open_world",
+  "fallback": "ch2_open",
+  "seconds": 40,
+  "shots": [
+    {
+      "id": "s1_edge",
+      "seconds": 5.0,
+      "camMode": "dolly",
+      "camFromPolar": [150, 1, -7, 3.2],
+      "camToPolar": [150, 3, -6, 2.9],
+      "lookPolar": [150, 18, 0, 1.5],
+      "fov": 54,
+      "frame": ["wallit", "slice"],
+      "speaker": "W",
+      "line": "There's a door. Doors have senders.",
+      "actors": [
+        { "id": "wallit", "fromPolar": [150, 3, 1.0], "toPolar": [150, 10, 0.4], "yaw": 150, "anim": "walk" },
+        { "id": "slice", "fromPolar": [150, 1.5, -1.2], "toPolar": [150, 6, -0.8], "yaw": 150, "anim": "walk" }
+      ]
+    },
+    {
+      "id": "s2_locks",
+      "seconds": 4.0,
+      "camMode": "dolly",
+      "camFromPolar": [150, 5, 5.5, 2.6],
+      "camToPolar": [150, 7, 4.5, 2.4],
+      "lookPolar": [150, 10, -0.4, 1.5],
+      "fov": 46,
+      "frame": ["slice", "wallit"],
+      "speaker": "S",
+      "line": "Doors have locks. Come back.",
+      "actors": [
+        { "id": "wallit", "fromPolar": [150, 10, 0.4], "toPolar": [150, 14, 0.6], "yaw": 150, "anim": "walk" },
+        { "id": "slice", "fromPolar": [150, 6, -0.8], "toPolar": [150, 9, -0.5], "yaw": 150, "anim": "walk" }
+      ]
+    },
+    {
+      "id": "s3_keys",
+      "seconds": 5.0,
+      "camMode": "dolly",
+      "camFromPolar": [150, 10, -6, 2.8],
+      "camToPolar": [150, 14, -5, 2.6],
+      "lookPolar": [150, 22, 0.2, 1.4],
+      "fov": 50,
+      "frame": ["wallit", "slice"],
+      "speaker": "W",
+      "line": "Locks have keys. Keys have owners. Owners get paid.",
+      "actors": [
+        { "id": "wallit", "fromPolar": [150, 14, 0.6], "toPolar": [150, 24, 0.2], "yaw": 150, "anim": "walk" },
+        { "id": "slice", "fromPolar": [150, 9, -0.5], "toPolar": [150, 18, -0.9], "yaw": 150, "anim": "walk" }
+      ]
+    },
+    {
+      "id": "s4_metres",
+      "seconds": 4.0,
+      "camMode": "dolly",
+      "camFromPolar": [150, 16, 5, 2.5],
+      "camToPolar": [150, 20, 4, 2.4],
+      "lookPolar": [150, 22, -0.4, 1.5],
+      "fov": 46,
+      "frame": ["slice"],
+      "speaker": "S",
+      "line": "Seventy metres. Then back.",
+      "actors": [
+        { "id": "wallit", "fromPolar": [150, 24, 0.2], "toPolar": [150, 30, 0.4], "yaw": 150, "anim": "walk" },
+        { "id": "slice", "fromPolar": [150, 18, -0.9], "toPolar": [150, 22, -0.6], "yaw": 150, "anim": "walk" }
+      ]
+    },
+    {
+      "id": "s5_postmark",
+      "seconds": 6.0,
+      "camMode": "dolly",
+      "camFromPolar": [150, 48, 7, 3.2],
+      "camToPolar": [150, 56, 4, 2.8],
+      "lookPolar": [150, 74, 0, 1.8],
+      "fov": 44,
+      "frame": ["wallit", "yobot"],
+      "speaker": "Y",
+      "line": "Address unknown! Deleting!",
+      "sfx": "stamp",
+      "postmark": true,
+      "actors": [
+        { "id": "wallit", "fromPolar": [150, 30, 0.4], "toPolar": [150, 42, 0.8], "yaw": 150, "anim": "walk" },
+        { "id": "slice", "fromPolar": [150, 22, -0.6], "toPolar": [150, 30, -0.8], "yaw": 150, "anim": "walk" },
+        { "id": "yobot", "atPolar": [150, 68, 2.5], "yaw": 330, "anim": "idle" }
+      ]
+    },
+    {
+      "id": "s6_stake",
+      "seconds": 5.5,
+      "camMode": "orbit",
+      "camFromPolar": [150, 12, -7, 3.4],
+      "camToPolar": [150, 10, -5.5, 3.1],
+      "lookPolar": [150, 5, 0, 1.4],
+      "fov": 52,
+      "frame": ["wallit", "slice"],
+      "speaker": "S",
+      "line": "Ring's staked. I'm coming.",
+      "handoff": true,
+      "actors": [
+        { "id": "wallit", "fromPolar": [150, 42, 0.8], "toPolar": [150, 6, 1.0], "yaw": 330, "anim": "walk" },
+        { "id": "slice", "fromPolar": [150, 30, -0.8], "toPolar": [150, 3, -1.0], "yaw": 330, "anim": "walk" }
+      ]
+    }
+  ]
+}

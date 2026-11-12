@@ -192,19 +192,36 @@ public class ChapterRun : MonoBehaviour {
         Pacing = new ChapterPacing(this, data);
         gameObject.AddComponent<BackRoom>();   // the chapter's secret room, once its clue is held (BackRooms.cs)
         RunAnalytics.Screen("chapter_play_" + (Chapter + 1));
-        Cutscene.Reel openReel = Cutscene.LoadReel("ch" + (Chapter + 1) + "_open");
-        if (openReel != null) {
-            // Every chapter opens with a shot reel (Resources/Cinematics/ch<n>_open.json, Tools/Cinematics/make_reels.py).
-            Events.Add("cinematic|" + data.Id + "|open");
-            Cutscene.PlayShots(openReel, OpenDone);
-        } else if (data.Cutscene != null && data.Cutscene.Length > 0) {
-            // The chapter's opening scene plays over the frozen map; reading it or skipping it hands over to play.
-            Events.Add("cutscene|" + data.Id);
-            Cutscene.Play(data.Cutscene, OpenDone);
+        // Chapters 2 and 3 open as in-engine scenes on the map (CinematicDirector); still reels stay as fallback / load-card art.
+        string worldOpen = "ch" + (Chapter + 1) + "_open_world";
+        if (CinematicDirector.HasWorld(worldOpen)) {
+            Events.Add("cinematic|" + data.Id + "|world|" + worldOpen);
+            StartCoroutine(OpenWorldWhenReady(worldOpen));
         } else {
-            Say(data.Lines.Length > 0 ? data.Lines[0] : "", 3.2f);
-            OpenDone();
+            Cutscene.Reel openReel = Cutscene.LoadReel("ch" + (Chapter + 1) + "_open");
+            if (openReel != null) {
+                // Other chapters keep their shot reels (Resources/Cinematics/ch<n>_open.json).
+                Events.Add("cinematic|" + data.Id + "|open");
+                Cutscene.PlayShots(openReel, OpenDone);
+            } else if (data.Cutscene != null && data.Cutscene.Length > 0) {
+                // The chapter's opening scene plays over the frozen map; reading it or skipping it hands over to play.
+                Events.Add("cutscene|" + data.Id);
+                Cutscene.Play(data.Cutscene, OpenDone);
+            } else {
+                Say(data.Lines.Length > 0 ? data.Lines[0] : "", 3.2f);
+                OpenDone();
+            }
         }
+    }
+
+    // The chapter map scene fills in a frame or two after Load; wait so polar marks and the postmark/belt land on real pieces.
+    System.Collections.IEnumerator OpenWorldWhenReady(string worldOpen) {
+        VoiceDirector.Scene = true;   // hold the voice floor so a bark cannot speak before the opening
+        float t0 = Time.unscaledTime;
+        while ((ChapterMap.Current == null || ChapterMap.Current.Own == null) && Time.unscaledTime - t0 < 2.5f) {
+            yield return null;
+        }
+        CinematicDirector.PlayChapter(worldOpen, OpenDone);
     }
 
     // The opening scene is over and play begins. On a New Game+ loop the chapter says one line about the playthrough before it.
