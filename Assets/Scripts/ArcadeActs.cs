@@ -148,6 +148,18 @@ public class ArcadeActs : MonoBehaviour {
             skyMat = new Material(shader);
         }
         BuildAudio();
+        if (ChapterRun.Instance == null) {
+            // The Hollow's own air: its bed (fetched by URL) and the spots on the ruin's sign, the lanterns and the post boxes. The
+            // landmark builds in its own Start, so the spots look for their objects a moment later.
+            MusicDirector.Ambience("amb_hollow");
+            Invoke(nameof(EnterPlaceAudio), 1.5f);
+        }
+    }
+
+    void EnterPlaceAudio() {
+        if (ChapterRun.Instance == null) {
+            PlaceAudio.Enter(PlaceAudio.Place.Hollow, transform);
+        }
     }
 
     void Update() {

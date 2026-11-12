@@ -338,7 +338,7 @@ public class MusicDirector : MonoBehaviour {
         if (ambience != null && ambience.isPlaying) {
             // Under the score, ducked a little harder under a voice, and gone with Sound off; a bed that was replaced fades out.
             float wantAmb = SoundSettings.On && !reelBed && AmbienceCurrent.Length > 0 && ambience.clip != null && ambience.clip.name == AmbienceCurrent
-                ? SoundSettings.Music * AmbienceLevel * (voice ? 0.5f : 1f) : 0f;
+                ? SoundSettings.Music * AmbienceLevel * (voice ? (UiFit.Touch ? 0.38f : 0.5f) : 1f) : 0f;
             ambience.volume = Mathf.MoveTowards(ambience.volume, wantAmb, dt / FadeSeconds);
             ambVolume = ambience.volume;
             if (wantAmb <= 0f && ambience.volume <= 0.001f && AmbienceCurrent.Length == 0) {

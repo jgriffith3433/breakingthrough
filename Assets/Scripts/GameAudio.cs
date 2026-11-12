@@ -125,13 +125,20 @@ public class GameAudio : MonoBehaviour {
                 if (made != null) {
                     list.Add(new Variant { clip = made });
                 }
-                if (name.StartsWith("homerun")) {
+                if (name.StartsWith("homerun") || name.StartsWith("spot_")) {
                     break;
                 }
             }
         }
         variants[name] = list;
         return list;
+    }
+
+    // One clip of a sound (a spot emitter plays it on its own source): a random variant, never the one just before.
+    public static AudioClip ClipOf(string name) {
+        int index;
+        Variant v = Pick(name, out index);
+        return v != null ? v.clip : null;
     }
 
     static Variant Pick(string name, out int index) {
