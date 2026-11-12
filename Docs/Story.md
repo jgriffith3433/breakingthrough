@@ -551,6 +551,10 @@ Voices and sound: the lodgers each have their own voice (Tick a measured wound-c
 
 The long night has three hours. **Act I, Night Shift** (waves 1-10): moon-blue, the Yo Bots come chirping up the hill, "Uploading victory." **Act II, Cold Hour** (11-20): the light turns teal and the Spider Bots come down the wall; Slice: "Legs. Count them." **Act III, Last Light** (21-30): a bruised dusk, orange at the rim, and no crew is plain any more: Plated, Mega and Spider Bots wear elite crests. Wallit: "Pay up." After wave 30 the clock will not clock out: **Overtime** is the same three hours in red ink, and the banner says so. Light and sky only: no weather, no sparks, nothing solid in the playfield.
 
+### The act changes
+
+When the wave 10 and wave 20 bosses fall, the night does not cut to the next hour: it turns, in front of Wallit and Slice (once per run per act, about 6 s, a tap skips it). The camera lifts over the whole Hollow with both of them in frame, the sky and light blend to the next hour and the score follows. **Cold Hour:** the lamp posts go dark and flare back on one by one, fog rolls in over the hedges; Slice: "Legs. Count them." Wallit: "Pay up." **Last Light:** the ruin's red beacon lights and starts to sweep the lawn, and paper begins to burn at the edges; Wallit: "Nobody touches her." Slice: "Clean." The card is stamped in the Department typeface, ACT II / COLD HOUR or ACT III / LAST LIGHT, on a bar of the score. Light, smoke and big soft glows only: no sparks, no shake, nothing solid on the lawn. `CinematicAct.cs`; playtest `act-change`.
+
 ## Canon established here
 
 - Arcade's acts: Night Shift (1-10), Cold Hour (11-20), Last Light (21-30), then Overtime in red ink; Spider Bots arrive in act II and elites of every kind in act III.

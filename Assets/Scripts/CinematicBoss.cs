@@ -651,6 +651,11 @@ public partial class CinematicDirector {
     }
 
     void OnDestroy() {
+        if (actRun) {
+            actRun = false;
+            NightAtmosphere.StageReveal = -1f;
+            VoiceDirector.Scene = false;
+        }
         if (bossRun) {
             bossRun = false;
             Time.timeScale = 1f;

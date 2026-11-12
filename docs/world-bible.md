@@ -367,6 +367,10 @@ and a playtest event name.
     `two-shot-amplitude`, `two-shot-portrait`, `two-shot-phone`; playtest `hub-two-shot`. Chapter cutscenes still use the portrait
     box until the same stage is wired there.
 
+### The act changes (Arcade)
+
+After the wave 10 and wave 20 bosses the hour turns as a staged 6.2 s event on the CinematicDirector (`CinematicAct.cs`), once per run per act, a tap skips it. Camera: pulls up and back over the whole Hollow with Wallit and Slice kept in frame (pushed back further on a portrait phone), the post-office ruin on the horizon, then returns to play (0.3 s hand-off). Light: sky, key, fog, grade and score blend to the next act's look over the scene. World change: **Cold Hour**, the lamp posts go dark and flare on one by one and fog rolls in over the hedges; **Last Light**, the ruin's red beacon lights and sweeps the lawn and paper burns at the edges (big soft glows and smoke, never sparks). Voice: one exchange of existing lines (Cold Hour: Slice "Legs. Count them." / Wallit "Pay up."; Last Light: Wallit "Nobody touches her." / Slice "Clean."). The card (ACT II / COLD HOUR, ACT III / LAST LIGHT) is stamped in the upper third in the Department typeface with the act's chime.
+
 ### Boss entrances (every boss)
 Each boss is introduced on camera, never by a banner alone: slow time, a swing from Wallit to the boss arriving, the
 rig's rear-up and slam, a stamped name card (e.g. THE FOREMAN / Work order 0031), a stinger, the boss's own taunt, then the

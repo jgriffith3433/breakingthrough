@@ -86,6 +86,13 @@ public class ArcadeActs : MonoBehaviour {
     public static float Weight(int act) { return Instance != null && act >= 0 && act < 3 ? Instance.weights[act] : 0f; }
     public static bool Settled { get { return Instance != null && Instance.fade >= 1f; } }
 
+    // The staged act change (CinematicAct.cs): the blend lasts as long as the scene; the sting and the card wait for it.
+    public static float FadeSeconds = Tuning.ActFadeSeconds;
+    public static int StagedChanges { get; private set; }
+    int pendingAct = -1;
+    bool pendingOver;
+    readonly bool[] staged = new bool[3];
+
     Look from, cur, target;
     float fade = 1f;
     Material skyMat;
@@ -127,6 +134,8 @@ public class ArcadeActs : MonoBehaviour {
         Act = -1;
         InOvertime = false;
         Changes = 0;
+        FadeSeconds = Tuning.ActFadeSeconds;
+        StagedChanges = 0;
         BannerTitle = "";
         Stings = "";
         MixFloor = 9f;
@@ -177,22 +186,34 @@ public class ArcadeActs : MonoBehaviour {
             int act = Tuning.ActOf(wave);
             bool over = Tuning.IsOvertime(wave);
             if (act != Act || over != InOvertime) {
-                Change(act, over);
+                // Acts II and III arrive as a staged scene once per run (after the wave 10 and 20 bosses); it waits for any card.
+                if (Act >= 0 && !over && act > Act && !staged[act] && CinematicDirector.ActScenesAllowed) {
+                    pendingAct = act;
+                    pendingOver = over;
+                } else {
+                    Change(act, over, false);
+                }
             }
+        }
+        if (pendingAct >= 0 && !LevelUpScreen.IsOpen && !PauseMenu.IsOpen && !Cutscene.IsOpen && !StoryScreen.IsOpen) {
+            int a = pendingAct;
+            pendingAct = -1;
+            staged[a] = true;
+            Change(a, pendingOver, true);
         }
         if (Act < 0) {
             return;
         }
         float dt = Time.unscaledDeltaTime;
         if (fade < 1f) {
-            fade = Mathf.Min(1f, fade + dt / Tuning.ActFadeSeconds);
+            fade = Mathf.Min(1f, fade + dt / FadeSeconds);
             cur = Look.Lerp(from, target, Mathf.SmoothStep(0f, 1f, fade));
         }
         Apply(cur);
         TickMusic(dt);
     }
 
-    void Change(int act, bool over) {
+    void Change(int act, bool over, bool stage) {
         bool firstChange = Act < 0;
         Act = act;
         InOvertime = over;
@@ -212,8 +233,14 @@ public class ArcadeActs : MonoBehaviour {
             weightGoal[i] = i == act ? 1f : 0f;
         }
         BannerTitle = TitleOf(lastWave);
-        Banner(BannerTitle, over ? OvertimeLine : Lines[act]);
-        Sting(act, over);
+        FadeSeconds = Tuning.ActFadeSeconds;
+        if (stage && CinematicDirector.PlayAct(act, BannerTitle, null)) {
+            StagedChanges++;
+            FadeSeconds = CinematicDirector.ActSeconds * 0.8f;   // the sky, light and score finish just before the camera returns
+        } else {
+            Banner(BannerTitle, over ? OvertimeLine : Lines[act]);
+            Sting(act, over);
+        }
         RunAnalytics.Screen("act");
     }
 
@@ -436,7 +463,7 @@ public class ArcadeActs : MonoBehaviour {
             return;
         }
         float level = SoundSettings.On ? SoundSettings.Music * Tuning.ActMusicLevel * (BossTheme ? 0.2f : 1f) * ArcadeScore.Dip : 0f;
-        float step = dt / Tuning.ActFadeSeconds;
+        float step = dt / FadeSeconds;
         float mix = 0f;
         for (int i = 0; i < layers.Length; i++) {
             weights[i] = Mathf.MoveTowards(weights[i], weightGoal[i], step);
@@ -447,6 +474,20 @@ public class ArcadeActs : MonoBehaviour {
             layers[i].pitch = InOvertime ? 0.94f : 1f;
         }
         MixFloor = Mathf.Min(MixFloor, mix);
+    }
+
+    // A setup shortcut for the playtest: every act's scene may play again.
+    public static void ForgetStaged() {
+        if (Instance != null) {
+            System.Array.Clear(Instance.staged, 0, Instance.staged.Length);
+        }
+    }
+
+    // The scene stamps its card on the bar and calls this: the act's chime lands with it.
+    public static void StingNow(int act) {
+        if (Instance != null) {
+            Instance.Sting(act, false);
+        }
     }
 
     void Sting(int act, bool over) {
