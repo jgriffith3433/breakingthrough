@@ -63,7 +63,7 @@ public partial class CinematicDirector : MonoBehaviour {
 
     public static CinematicDirector Instance { get; private set; }
     // True while shots play, live credits scroll, or the 0.6 s camera handoff is still blending onto the follow camera.
-    public static bool IsOpen { get { return Instance != null && (Instance.open || Instance.handingOff || Instance.bossRun || Instance.creditsOnly); } }
+    public static bool IsOpen { get { return Instance != null && (Instance.open || Instance.handingOff || Instance.bossRun || Instance.actRun || Instance.creditsOnly); } }
     // Other playtests turn the Chapter 1 opening off so their bot starts with control.
     public static bool SuppressOpening;
     public static readonly List<string> Events = new List<string>();
@@ -563,6 +563,10 @@ public partial class CinematicDirector : MonoBehaviour {
             TickBoss();
             return;
         }
+        if (actRun) {
+            TickAct();
+            return;
+        }
         if (creditsOnly) {
             TickCreditsOnly();
             return;
@@ -603,7 +607,7 @@ public partial class CinematicDirector : MonoBehaviour {
     }
 
     void LateUpdate() {
-        if (bossRun && cam != null && viewSet) {
+        if ((bossRun || actRun) && cam != null && viewSet) {
             cam.transform.position = viewPos;
             cam.transform.rotation = viewRot;
             if (zelda != null) {
@@ -807,6 +811,10 @@ public partial class CinematicDirector : MonoBehaviour {
     }
 
     public void Skip() {
+        if (actRun) {
+            EndAct(true);
+            return;
+        }
         if (bossRun) {
             BossSkips++;
             BossEvents.Add("boss-skip|" + LastBossTitle);
