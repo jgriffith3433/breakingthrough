@@ -1,0 +1,106 @@
+{
+  "id": "ch6_open_world",
+  "fallback": "ch6_open",
+  "seconds": 40,
+  "shots": [
+    {
+      "id": "s1_dawn",
+      "seconds": 5.5,
+      "camMode": "dolly",
+      "camFromPolar": [180, 4, -9, 4.0],
+      "camToPolar": [180, 10, -7, 3.5],
+      "lookPolar": [180, 40, 0, 2.0],
+      "fov": 56,
+      "frame": ["wallit", "slice"],
+      "speaker": "N",
+      "line": "The Moonlit Hollow, changed. The wall of the Department is a row of broken stumps, and a path of pale slabs runs out to nothing.",
+      "actors": [
+        { "id": "wallit", "fromPolar": [180, 3, 1.0], "toPolar": [180, 8, 0.5], "yaw": 180, "anim": "walk" },
+        { "id": "slice", "atPolar": [180, 1.5, -1.0], "yaw": 180, "anim": "idle" }
+      ]
+    },
+    {
+      "id": "s2_brighter",
+      "seconds": 4.5,
+      "camMode": "dolly",
+      "camFromPolar": [200, 6, 5, 2.7],
+      "camToPolar": [190, 5, 4, 2.5],
+      "lookPolar": [180, 2, -0.6, 1.5],
+      "fov": 48,
+      "frame": ["slice"],
+      "speaker": "S",
+      "line": "The wall is gone. The circle is brighter.",
+      "actors": [
+        { "id": "wallit", "fromPolar": [180, 8, 0.5], "toPolar": [180, 10, 0.8], "yaw": 180, "anim": "walk" },
+        { "id": "slice", "fromPolar": [180, 1.5, -1.0], "toPolar": [180, 2.5, -0.5], "yaw": 200, "anim": "turn" }
+      ]
+    },
+    {
+      "id": "s3_file",
+      "seconds": 4.5,
+      "camMode": "dolly",
+      "camFromPolar": [160, 7, -5, 2.5],
+      "camToPolar": [170, 6, -4, 2.3],
+      "lookPolar": [180, 10, 0.6, 1.5],
+      "fov": 46,
+      "frame": ["wallit"],
+      "speaker": "W",
+      "line": "Then let's file it. Pay up.",
+      "actors": [
+        { "id": "wallit", "fromPolar": [180, 10, 0.8], "toPolar": [180, 14, 0.4], "yaw": 180, "anim": "walk" },
+        { "id": "slice", "atPolar": [180, 2.5, -0.5], "yaw": 180, "anim": "idle" }
+      ]
+    },
+    {
+      "id": "s4_order",
+      "seconds": 4.5,
+      "camMode": "dolly",
+      "camFromPolar": [180, 30, 6, 3.0],
+      "camToPolar": [180, 36, 5, 2.7],
+      "lookPolar": [180, 50, 0, 1.8],
+      "fov": 48,
+      "frame": ["wallit", "yobot"],
+      "speaker": "Y",
+      "line": "Order delivery! Signature required!",
+      "actors": [
+        { "id": "wallit", "fromPolar": [180, 14, 0.4], "toPolar": [180, 20, 0.6], "yaw": 180, "anim": "walk" },
+        { "id": "slice", "atPolar": [180, 2.5, -0.5], "yaw": 180, "anim": "idle" },
+        { "id": "yobot", "atPolar": [180, 48, 1.5], "yaw": 0, "anim": "idle", "lift": 0.55 }
+      ]
+    },
+    {
+      "id": "s5_path",
+      "seconds": 5.0,
+      "camMode": "dolly",
+      "camFromPolar": [180, 12, -6, 3.0],
+      "camToPolar": [180, 10, -5, 2.7],
+      "lookPolar": [180, 4, -0.4, 1.5],
+      "fov": 50,
+      "frame": ["slice", "wallit"],
+      "speaker": "S",
+      "line": "The order. It comes down the path, last. Hold the circle until it does.",
+      "actors": [
+        { "id": "wallit", "fromPolar": [180, 20, 0.6], "toPolar": [180, 8, 0.8], "yaw": 0, "anim": "walk" },
+        { "id": "slice", "fromPolar": [180, 2.5, -0.5], "toPolar": [180, 2.0, -0.8], "yaw": 180, "anim": "walk" },
+        { "id": "yobot", "atPolar": [180, 52, 1.0], "yaw": 0, "anim": "idle", "lift": 0.55 }
+      ]
+    },
+    {
+      "id": "s6_ring",
+      "seconds": 5.0,
+      "camMode": "orbit",
+      "camFromPolar": [180, 9, -7, 3.4],
+      "camToPolar": [180, 7, -5.5, 3.1],
+      "lookPolar": [180, 2, 0, 1.4],
+      "fov": 52,
+      "frame": ["wallit", "slice"],
+      "speaker": "W",
+      "line": "Last of the Crew. Then the big one. Exact change.",
+      "handoff": true,
+      "actors": [
+        { "id": "wallit", "fromPolar": [180, 8, 0.8], "toPolar": [180, 3.5, 1.0], "yaw": 0, "anim": "walk" },
+        { "id": "slice", "atPolar": [180, 1.8, -0.7], "yaw": 180, "anim": "idle" }
+      ]
+    }
+  ]
+}

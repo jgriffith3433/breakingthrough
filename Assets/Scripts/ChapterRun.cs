@@ -192,7 +192,7 @@ public class ChapterRun : MonoBehaviour {
         Pacing = new ChapterPacing(this, data);
         gameObject.AddComponent<BackRoom>();   // the chapter's secret room, once its clue is held (BackRooms.cs)
         RunAnalytics.Screen("chapter_play_" + (Chapter + 1));
-        // Chapters 2 and 3 open as in-engine scenes on the map (CinematicDirector); still reels stay as fallback / load-card art.
+        // Chapters 2-6 open as in-engine scenes on the map (CinematicDirector); still reels stay as fallback / load-card art.
         string worldOpen = "ch" + (Chapter + 1) + "_open_world";
         if (CinematicDirector.HasWorld(worldOpen)) {
             Events.Add("cinematic|" + data.Id + "|world|" + worldOpen);
@@ -850,8 +850,8 @@ public class ChapterRun : MonoBehaviour {
         RunAnalytics.Screen("chapter_complete_" + (Chapter + 1));
     }
 
-    // The last chapter: the Filed scene, the Finale pages (Story.Finale, as in Arcade), the ADDRESS FILED ending card, then the
-    // credits card. The case file is already marked filed (Complete saved it).
+    // The last chapter: in-engine ADDRESS FILED (stamp on the live Hollow), variant stills when chosen, the ending card,
+    // then live credits over the ring. The case file is already marked filed (Complete saved it).
     void CompleteFinal() {
         objective.text = "";
         if (extraText != null) {
@@ -862,31 +862,37 @@ public class ChapterRun : MonoBehaviour {
         Events.Add("finale|start");
         RunAnalytics.Screen("chapter_complete_" + (Chapter + 1));
         string stats = "Case file " + (CampaignSave.Active + 1) + ": filed\n" + CampaignSave.Played(CampaignSave.Get(CampaignSave.Active)) + "\n" + CampaignGrade.Line(Chapter, Rank, PlaySeconds, DamageTaken, Hard);
-        // ADDRESS FILED plays as a reel (ch6_close: the order drops, DENIED, the door number); the old page scene is the fallback.
+        System.Action afterFiledScene = () => {
+            Events.Add("finale|reel");
+            // The choices and errands settle which ADDRESS FILED this is (Endings): its own closing reel, then the notes.
+            EndingVariant = Endings.Current;
+            CampaignSave.MarkEnding(EndingVariant);
+            Events.Add("ending|" + EndingVariant + "|" + Endings.Name(EndingVariant) + "|company " + Endings.Company(CampaignSave.Get(CampaignSave.Active)) + "|sides " + HubLife.SideCount(CampaignSave.Get(CampaignSave.Active)));
+            Cutscene.Reel variant = EndingVariant > 0 ? Cutscene.LoadReel(Endings.Reels[EndingVariant]) : null;
+            System.Action notesThenCard = () => {
+                string[] notes = Choices.Resolve(System.Array.FindAll(data.Ending, l => l.StartsWith("?|")));
+                var scene = new List<string> { "B|on", "C|wide" };
+                scene.AddRange(notes);
+                PlayScene(notes.Length > 0 ? scene.ToArray() : null, "ending-notes", () => StoryScreen.Ensure().ShowEndCard(stats, keepGoing => AfterFiled(keepGoing), Endings.CardLine(EndingVariant)));
+            };
+            if (variant != null) {
+                EndingReel = variant.id;
+                Events.Add("cinematic|" + data.Id + "|" + variant.id);
+                Cutscene.PlayShots(variant, notesThenCard);
+            } else {
+                notesThenCard();
+            }
+        };
+        // Prefer the in-engine filed scene (stamp comes down on the live map); still ch6_close is the fallback.
+        if (CinematicDirector.HasWorld("ending_filed_world")) {
+            Events.Add("cinematic|" + data.Id + "|world|ending_filed_world");
+            CinematicDirector.PlayChapter("ending_filed_world", afterFiledScene);
+            return;
+        }
         Cutscene.Reel filed = Cutscene.LoadReel("ch6_close");
         if (filed != null) {
             Events.Add("cinematic|" + data.Id + "|close");
-            Cutscene.PlayShots(filed, () => {
-                Events.Add("finale|reel");
-                // The choices and errands settle which ADDRESS FILED this is (Endings): its own closing reel, then the notes.
-                EndingVariant = Endings.Current;
-                CampaignSave.MarkEnding(EndingVariant);
-                Events.Add("ending|" + EndingVariant + "|" + Endings.Name(EndingVariant) + "|company " + Endings.Company(CampaignSave.Get(CampaignSave.Active)) + "|sides " + HubLife.SideCount(CampaignSave.Get(CampaignSave.Active)));
-                Cutscene.Reel variant = EndingVariant > 0 ? Cutscene.LoadReel(Endings.Reels[EndingVariant]) : null;
-                System.Action notesThenCard = () => {
-                    string[] notes = Choices.Resolve(System.Array.FindAll(data.Ending, l => l.StartsWith("?|")));
-                    var scene = new List<string> { "B|on", "C|wide" };
-                    scene.AddRange(notes);
-                    PlayScene(notes.Length > 0 ? scene.ToArray() : null, "ending-notes", () => StoryScreen.Ensure().ShowEndCard(stats, keepGoing => AfterFiled(keepGoing), Endings.CardLine(EndingVariant)));
-                };
-                if (variant != null) {
-                    EndingReel = variant.id;
-                    Events.Add("cinematic|" + data.Id + "|" + variant.id);
-                    Cutscene.PlayShots(variant, notesThenCard);
-                } else {
-                    notesThenCard();
-                }
-            });
+            Cutscene.PlayShots(filed, afterFiledScene);
             return;
         }
         Cutscene.Play(data.Ending, () => {
@@ -895,7 +901,7 @@ public class ChapterRun : MonoBehaviour {
         });
     }
 
-    // After the ADDRESS FILED card: the secret ending (every lost thing kept) as a reel, then the credits reel and card.
+    // After the ADDRESS FILED card: the secret ending (every lost thing kept) in engine, then live credits over the ring.
     void AfterFiled(bool keepGoing) {
         Events.Add("finale|" + (keepGoing ? "credits" : "menu"));
         if (CampaignSave.SecretEarned(CampaignSave.Get(CampaignSave.Active))) {
@@ -903,7 +909,6 @@ public class ChapterRun : MonoBehaviour {
             CampaignSave.MarkSecret();
             Events.Add("secret|ending");
             RunAnalytics.Screen("secret_ending");
-            Cutscene.Reel received = Cutscene.LoadReel("ending_received");
             System.Action after = () => {
                 if (keepGoing) {
                     PlayCreditsReel();
@@ -911,10 +916,16 @@ public class ChapterRun : MonoBehaviour {
                     ToMenu();
                 }
             };
-            if (received != null) {
-                Cutscene.PlayShots(received, after);
+            if (CinematicDirector.HasWorld("ending_received_world")) {
+                Events.Add("cinematic|" + data.Id + "|world|ending_received_world");
+                CinematicDirector.PlayChapter("ending_received_world", after);
             } else {
-                Cutscene.Play(Story.SecretEnding, after);
+                Cutscene.Reel received = Cutscene.LoadReel("ending_received");
+                if (received != null) {
+                    Cutscene.PlayShots(received, after);
+                } else {
+                    Cutscene.Play(Story.SecretEnding, after);
+                }
             }
         } else if (keepGoing) {
             PlayCreditsReel();
@@ -923,15 +934,11 @@ public class ChapterRun : MonoBehaviour {
         }
     }
 
+    // Credits scroll over Wallit and Slice in the live Hollow; the still credits reel is the fallback.
     void PlayCreditsReel() {
         MusicDirector.Play("credits");
-        Cutscene.Reel credits = Cutscene.LoadReel("credits");
-        if (credits == null) {
-            ShowCredits();
-            return;
-        }
-        Events.Add("cinematic|" + data.Id + "|credits");
-        Cutscene.PlayShots(credits, ShowCredits);
+        Events.Add("cinematic|" + data.Id + "|credits-live");
+        CinematicDirector.PlayCreditsLive(ShowCredits, SecretShown);
     }
 
     // The named boss's intro reel (boss_courier, boss_foreman, boss_server, boss_order) plays as it arrives, over the frozen field.

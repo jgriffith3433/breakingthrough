@@ -409,7 +409,12 @@ the `ch6_close` reel and before the ending notes and the ADDRESS FILED card (the
   stamp (6.c1) and asking for two numbers (6.c2). Slice writes the number twice; the second door sits beside the first.
 - **The Open Door** (`ending_open`): otherwise, 6 or more of the hub's side slips and favours done (`HubLife.SideCount`). Every lodger is on the books.
 - **The Ledger** (`ending_ledger`): everything else. Wallit's stamp, his door, one name. Slice keeps the ring.
-Voices stay as ever: Wallit money, Slice clipped ("Clean.", "Numbered."), Yo Bots chirpy. The reels are data (`Tools/Cinematics/make_endings.py`) on stand-in stills; real keyframes named `ending_<variant>_<n>_back` replace them when they exist.
+Voices stay as ever: Wallit money, Slice clipped ("Clean.", "Numbered."), Yo Bots chirpy. The three variant reels stay data
+(`Tools/Cinematics/make_endings.py`); real keyframes named `ending_<variant>_<n>_back` replace stand-ins when they exist.
+**Chapters 4–6 openings and the main ADDRESS FILED / RECEIVED payoffs are in-engine** (`CinematicDirector`,
+`ch4_open_world` / `ch5_open_world` / `ch6_open_world`, `ending_filed_world`, `ending_received_world`): the Server offers its
+paper on the causeway, the ADDRESS stamp comes down on the live Hollow, six doors rise for RECEIVED, and credits scroll over
+Wallit and Slice with the credits score (still reels remain as fallback / load-card art only).
 
 **Ratings and the chapter select.** The hub's chapter board lists each filed chapter with its best rank (and Hard rank); the case files list shows all six ranks per file.
 

@@ -1,0 +1,126 @@
+{
+  "id": "ending_received_world",
+  "fallback": "ending_received",
+  "seconds": 48,
+  "shots": [
+    {
+      "id": "s1_keepsakes",
+      "seconds": 5.5,
+      "camMode": "dolly",
+      "camFromPolar": [0, 10, 0, 8.5],
+      "camToPolar": [0, 7, 0, 6.5],
+      "lookPolar": [0, 0, 0, 0.4],
+      "fov": 48,
+      "frame": ["wallit", "slice"],
+      "speaker": "N",
+      "line": "Wallit sets six things down in the ring: a postcard, a key, a hat, a paper, a leaf, a stamp.",
+      "keepsakes": true,
+      "actors": [
+        { "id": "wallit", "fromPolar": [40, 3.5, 0.8], "toPolar": [20, 2.4, 0.4], "yaw": 200, "anim": "walk" },
+        { "id": "slice", "atPolar": [200, 2.2, -0.6], "yaw": 20, "anim": "idle" }
+      ]
+    },
+    {
+      "id": "s2_no_address",
+      "seconds": 3.5,
+      "camMode": "dolly",
+      "camFromPolar": [220, 5, -4, 2.5],
+      "camToPolar": [210, 4, -3.2, 2.3],
+      "lookPolar": [200, 2.2, -0.4, 1.5],
+      "fov": 46,
+      "frame": ["slice", "wallit"],
+      "speaker": "S",
+      "line": "No address.",
+      "actors": [
+        { "id": "wallit", "atPolar": [20, 2.4, 0.4], "yaw": 200, "anim": "idle" },
+        { "id": "slice", "fromPolar": [200, 2.2, -0.6], "toPolar": [195, 2.0, -0.3], "yaw": 30, "anim": "walk" }
+      ]
+    },
+    {
+      "id": "s3_give_one",
+      "seconds": 4.5,
+      "camMode": "dolly",
+      "camFromPolar": [30, 5, 4, 2.5],
+      "camToPolar": [25, 4, 3.2, 2.3],
+      "lookPolar": [20, 2.4, 0.3, 1.5],
+      "fov": 46,
+      "frame": ["wallit"],
+      "speaker": "W",
+      "line": "Then give it one. You've got the stamp.",
+      "actors": [
+        { "id": "wallit", "fromPolar": [20, 2.4, 0.4], "toPolar": [25, 2.2, 0.2], "yaw": 220, "anim": "walk" },
+        { "id": "slice", "atPolar": [195, 2.0, -0.3], "yaw": 30, "anim": "idle" }
+      ]
+    },
+    {
+      "id": "s4_stamp_doors",
+      "seconds": 7.5,
+      "camMode": "orbit",
+      "camFromPolar": [0, 11, -2, 4.2],
+      "camToPolar": [40, 10, -1, 3.8],
+      "lookPolar": [0, 0, 0, 0.6],
+      "fov": 52,
+      "frame": ["wallit", "slice"],
+      "speaker": "N",
+      "line": "The stamp prints ADDRESS. Nothing strikes it. Every lost thing in the Hollow gets a door.",
+      "sfx": "stamp",
+      "addressStamp": true,
+      "doors": true,
+      "actors": [
+        { "id": "wallit", "atPolar": [25, 2.2, 0.2], "yaw": 200, "anim": "idle" },
+        { "id": "slice", "atPolar": [195, 2.0, -0.3], "yaw": 20, "anim": "idle" }
+      ]
+    },
+    {
+      "id": "s5_delivery",
+      "seconds": 4.5,
+      "camMode": "dolly",
+      "camFromPolar": [90, 8, 4, 2.6],
+      "camToPolar": [80, 7, 3.2, 2.4],
+      "lookPolar": [70, 6, 1.0, 1.4],
+      "fov": 48,
+      "frame": ["yobot", "wallit"],
+      "speaker": "Y",
+      "line": "Delivery! ... Oh. It's for us?",
+      "actors": [
+        { "id": "wallit", "atPolar": [25, 2.2, 0.2], "yaw": 90, "anim": "idle" },
+        { "id": "slice", "atPolar": [195, 2.0, -0.3], "yaw": 80, "anim": "idle" },
+        { "id": "yobot", "fromPolar": [70, 10, 1.5], "toPolar": [70, 6.5, 0.8], "yaw": 250, "anim": "walk", "lift": 0.55 }
+      ]
+    },
+    {
+      "id": "s6_received",
+      "seconds": 4.5,
+      "camMode": "dolly",
+      "camFromPolar": [210, 6, -4.5, 2.6],
+      "camToPolar": [200, 5, -3.5, 2.4],
+      "lookPolar": [180, 2, 0, 1.5],
+      "fov": 48,
+      "frame": ["slice", "wallit"],
+      "speaker": "S",
+      "line": "Not this time. Received.",
+      "actors": [
+        { "id": "wallit", "fromPolar": [25, 2.2, 0.2], "toPolar": [30, 2.0, 0.4], "yaw": 200, "anim": "walk" },
+        { "id": "slice", "fromPolar": [195, 2.0, -0.3], "toPolar": [185, 1.9, -0.2], "yaw": 20, "anim": "walk" },
+        { "id": "yobot", "atPolar": [70, 6.5, 0.8], "yaw": 250, "anim": "idle", "lift": 0.55 }
+      ]
+    },
+    {
+      "id": "s7_full",
+      "seconds": 4.5,
+      "camMode": "orbit",
+      "camFromPolar": [0, 8, -6, 3.2],
+      "camToPolar": [20, 7, -5, 3.0],
+      "lookPolar": [0, 0, 0, 1.4],
+      "fov": 50,
+      "frame": ["wallit", "slice"],
+      "speaker": "W",
+      "line": "Received. In full. Pay up.",
+      "actors": [
+        { "id": "wallit", "atPolar": [30, 2.0, 0.4], "yaw": 200, "anim": "idle" },
+        { "id": "slice", "atPolar": [185, 1.9, -0.2], "yaw": 20, "anim": "idle" },
+        { "id": "yobot", "atPolar": [70, 6.5, 0.8], "yaw": 250, "anim": "idle", "lift": 0.55 }
+      ]
+    }
+  ]
+}

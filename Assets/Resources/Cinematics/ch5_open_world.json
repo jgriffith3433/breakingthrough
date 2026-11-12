@@ -1,0 +1,109 @@
+{
+  "id": "ch5_open_world",
+  "fallback": "ch5_open",
+  "seconds": 44,
+  "shots": [
+    {
+      "id": "s1_hall",
+      "seconds": 5.5,
+      "camMode": "dolly",
+      "camFromPolar": [0, 2, -9, 3.8],
+      "camToPolar": [0, 6, -7, 3.4],
+      "lookPolar": [0, 18, 0, 1.6],
+      "fov": 56,
+      "frame": ["wallit", "slice"],
+      "speaker": "N",
+      "line": "A bare round hall. The circle is drawn on its floor at the Hollow's scale, and every wall is lined with identical forms.",
+      "actors": [
+        { "id": "wallit", "fromPolar": [0, 2, 1.0], "toPolar": [0, 7, 0.4], "yaw": 0, "anim": "walk" },
+        { "id": "slice", "atPolar": [0, 1.4, -1.0], "yaw": 0, "anim": "idle" }
+      ]
+    },
+    {
+      "id": "s2_read",
+      "seconds": 5.5,
+      "camMode": "dolly",
+      "camFromPolar": [0, 14, 5, 2.8],
+      "camToPolar": [0, 12, 4, 2.5],
+      "lookPolar": [0, 10, -0.4, 1.6],
+      "fov": 46,
+      "frame": ["mega", "wallit"],
+      "speaker": "M",
+      "line": "Order, read aloud: STRIKE. THIS. ADDRESS.",
+      "actors": [
+        { "id": "wallit", "fromPolar": [0, 7, 0.4], "toPolar": [0, 9, 1.0], "yaw": 0, "anim": "walk" },
+        { "id": "slice", "fromPolar": [0, 1.4, -1.0], "toPolar": [0, 3, -0.8], "yaw": 0, "anim": "walk" },
+        { "id": "mega", "atPolar": [0, 10, -0.5], "yaw": 180, "anim": "idle" }
+      ]
+    },
+    {
+      "id": "s3_reading",
+      "seconds": 4.0,
+      "camMode": "dolly",
+      "camFromPolar": [0, 6, -5, 2.6],
+      "camToPolar": [0, 5, -4, 2.4],
+      "lookPolar": [0, 3, -0.6, 1.3],
+      "fov": 48,
+      "frame": ["slice"],
+      "speaker": "S",
+      "line": "It's reading it out.",
+      "actors": [
+        { "id": "wallit", "atPolar": [0, 9, 1.0], "yaw": 0, "anim": "idle" },
+        { "id": "slice", "fromPolar": [0, 3, -0.8], "toPolar": [0, 2.2, -0.4], "yaw": 0, "anim": "walk" },
+        { "id": "mega", "atPolar": [0, 10, -0.5], "yaw": 180, "anim": "idle" }
+      ]
+    },
+    {
+      "id": "s4_pay",
+      "seconds": 4.5,
+      "camMode": "dolly",
+      "camFromPolar": [20, 8, 4.5, 2.5],
+      "camToPolar": [10, 7, 3.5, 2.3],
+      "lookPolar": [0, 9, 0.8, 1.5],
+      "fov": 46,
+      "frame": ["wallit"],
+      "speaker": "W",
+      "line": "Then I'm reading mine. Pay up.",
+      "actors": [
+        { "id": "wallit", "fromPolar": [0, 9, 1.0], "toPolar": [0, 6, 0.6], "yaw": 180, "anim": "walk" },
+        { "id": "slice", "atPolar": [0, 2.2, -0.4], "yaw": 0, "anim": "idle" },
+        { "id": "mega", "atPolar": [0, 10, -0.5], "yaw": 180, "anim": "idle" }
+      ]
+    },
+    {
+      "id": "s5_unsigned",
+      "seconds": 4.0,
+      "camMode": "dolly",
+      "camFromPolar": [0, 5, -4.5, 2.4],
+      "camToPolar": [0, 4, -3.5, 2.2],
+      "lookPolar": [0, 5, 0.4, 1.4],
+      "fov": 48,
+      "frame": ["wallit", "slice"],
+      "speaker": "W",
+      "line": "It's not signed.",
+      "actors": [
+        { "id": "wallit", "fromPolar": [0, 6, 0.6], "toPolar": [0, 4.5, 0.3], "yaw": 0, "anim": "walk" },
+        { "id": "slice", "fromPolar": [0, 2.2, -0.4], "toPolar": [0, 2.5, -0.2], "yaw": 200, "anim": "turn" },
+        { "id": "mega", "atPolar": [0, 10, -0.5], "yaw": 180, "anim": "idle" }
+      ]
+    },
+    {
+      "id": "s6_desk",
+      "seconds": 5.5,
+      "camMode": "orbit",
+      "camFromPolar": [0, 9, -7, 3.4],
+      "camToPolar": [0, 7, -5.5, 3.1],
+      "lookPolar": [0, 2, 0, 1.4],
+      "fov": 52,
+      "frame": ["wallit", "slice"],
+      "speaker": "S",
+      "line": "Five pages. The room reads them all, and the Crew comes with each. Hold the circle at the desk.",
+      "handoff": true,
+      "actors": [
+        { "id": "wallit", "fromPolar": [0, 4.5, 0.3], "toPolar": [0, 3, 0.8], "yaw": 180, "anim": "walk" },
+        { "id": "slice", "atPolar": [0, 1.8, -0.7], "yaw": 180, "anim": "idle" },
+        { "id": "mega", "atPolar": [0, 12, -1.0], "yaw": 180, "anim": "idle" }
+      ]
+    }
+  ]
+}

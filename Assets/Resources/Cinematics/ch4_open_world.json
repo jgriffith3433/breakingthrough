@@ -1,0 +1,111 @@
+{
+  "id": "ch4_open_world",
+  "fallback": "ch4_open",
+  "seconds": 42,
+  "shots": [
+    {
+      "id": "s1_causeway",
+      "seconds": 5.5,
+      "camMode": "dolly",
+      "camFromPolar": [330, 2, -8, 3.6],
+      "camToPolar": [330, 6, -6.5, 3.2],
+      "lookPolar": [330, 28, 0, 1.6],
+      "fov": 56,
+      "frame": ["wallit", "slice"],
+      "speaker": "N",
+      "line": "A causeway of pale slabs runs out over a pit of mist. Six lamps stand along it, paired like folded legs.",
+      "actors": [
+        { "id": "wallit", "fromPolar": [330, 2, 1.0], "toPolar": [330, 8, 0.5], "yaw": 330, "anim": "walk" },
+        { "id": "slice", "atPolar": [330, 1.5, -1.0], "yaw": 330, "anim": "idle" }
+      ]
+    },
+    {
+      "id": "s2_chirp",
+      "seconds": 4.0,
+      "camMode": "dolly",
+      "camFromPolar": [330, 10, 4.5, 2.6],
+      "camToPolar": [330, 12, 3.5, 2.4],
+      "lookPolar": [330, 14, 0.8, 1.4],
+      "fov": 46,
+      "frame": ["yobot", "wallit"],
+      "speaker": "Y",
+      "line": "Spiders en route! Chirp!",
+      "actors": [
+        { "id": "wallit", "fromPolar": [330, 8, 0.5], "toPolar": [330, 14, 0.6], "yaw": 330, "anim": "walk" },
+        { "id": "slice", "atPolar": [330, 1.5, -1.0], "yaw": 330, "anim": "idle" },
+        { "id": "yobot", "atPolar": [330, 16, 2.2], "yaw": 150, "anim": "idle", "lift": 0.55 }
+      ]
+    },
+    {
+      "id": "s3_legs",
+      "seconds": 4.0,
+      "camMode": "dolly",
+      "camFromPolar": [330, 8, -5, 2.7],
+      "camToPolar": [330, 10, -4, 2.5],
+      "lookPolar": [330, 4, -0.6, 1.5],
+      "fov": 48,
+      "frame": ["slice", "spider"],
+      "speaker": "S",
+      "line": "Mind the legs.",
+      "actors": [
+        { "id": "wallit", "fromPolar": [330, 14, 0.6], "toPolar": [330, 18, 0.4], "yaw": 330, "anim": "walk" },
+        { "id": "slice", "fromPolar": [330, 1.5, -1.0], "toPolar": [330, 3, -0.6], "yaw": 330, "anim": "walk" },
+        { "id": "spider", "atPolar": [330, 42, 1.5], "yaw": 150, "anim": "idle" }
+      ]
+    },
+    {
+      "id": "s4_deliveries",
+      "seconds": 5.0,
+      "camMode": "dolly",
+      "camFromPolar": [330, 16, 5, 2.6],
+      "camToPolar": [330, 20, 4, 2.4],
+      "lookPolar": [330, 24, 0.4, 1.5],
+      "fov": 48,
+      "frame": ["wallit", "spider"],
+      "speaker": "W",
+      "line": "They're not bigger Yo Bots. They're... deliveries.",
+      "actors": [
+        { "id": "wallit", "fromPolar": [330, 18, 0.4], "toPolar": [330, 26, 0.8], "yaw": 330, "anim": "walk" },
+        { "id": "slice", "atPolar": [330, 3, -0.6], "yaw": 330, "anim": "idle" },
+        { "id": "spider", "fromPolar": [330, 42, 1.5], "toPolar": [330, 34, 0.8], "yaw": 150, "anim": "walk" }
+      ]
+    },
+    {
+      "id": "s5_paper",
+      "seconds": 6.5,
+      "camMode": "dolly",
+      "camFromPolar": [330, 28, -6, 3.0],
+      "camToPolar": [330, 30, -4.5, 2.6],
+      "lookPolar": [330, 32, 0.2, 1.6],
+      "fov": 44,
+      "frame": ["spider", "slice"],
+      "speaker": "S",
+      "line": "Process servers. They stand and wait while it's read.",
+      "sfx": "paper_flutter",
+      "paper": true,
+      "actors": [
+        { "id": "wallit", "fromPolar": [330, 26, 0.8], "toPolar": [330, 28, 1.2], "yaw": 330, "anim": "walk" },
+        { "id": "slice", "atPolar": [330, 3, -0.6], "yaw": 330, "anim": "idle" },
+        { "id": "spider", "atPolar": [330, 32, 0.5], "yaw": 150, "anim": "tell", "tell": true }
+      ]
+    },
+    {
+      "id": "s6_lamps",
+      "seconds": 5.5,
+      "camMode": "orbit",
+      "camFromPolar": [330, 10, -7, 3.4],
+      "camToPolar": [330, 8, -5.5, 3.1],
+      "lookPolar": [330, 3, 0, 1.4],
+      "fov": 52,
+      "frame": ["wallit", "slice"],
+      "speaker": "S",
+      "line": "Walk the lamps. Hold each. I'll keep the ring.",
+      "handoff": true,
+      "actors": [
+        { "id": "wallit", "fromPolar": [330, 28, 1.2], "toPolar": [330, 5, 1.0], "yaw": 150, "anim": "walk" },
+        { "id": "slice", "atPolar": [330, 2.0, -0.8], "yaw": 180, "anim": "idle" },
+        { "id": "spider", "atPolar": [330, 32, 0.5], "yaw": 150, "anim": "idle" }
+      ]
+    }
+  ]
+}

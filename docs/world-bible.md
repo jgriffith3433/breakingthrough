@@ -279,17 +279,26 @@ line, is only the subtitle of a voiced line. Beats marked **(built)** exist per 
    scene (`ch3_open_world`): half-built Yo Bot on a hook, Slice names the Clearing Floor, the belt carries a hat, a clock and
    a bell toward the shredder, she stakes a second ring. Lever stop remains mid-chapter (`belt-stopped`). Still reel `ch3_open`
    is fallback / load-card art only. Proof: `opening-ch23` event `opening-belt`.
-6. **The Server's three refusals (built).** Long Walk. Paper held out, X to refuse; at the third the stilt heads open and
-   the Server strikes. Slice answers it herself if the player chose it (choice).
-7. **The page nobody signed (build).** Reading Room. Five pages are read and the racks go blank one by one; the last page is
-   blank, the Registrar stops mid-read: sound drops to the vault hum, then one stamp. Needed: the 5-page paper sound set. Proof: events `page-read-1`..`page-read-5`, `vault-hum`, `final-stamp`.
-8. **Strike this address (built).** Threshold. The Order-Bearer is down, the order drops, Wallit reads it aloud: "Strike this
-   address." stamped DENIED (the stamp hits the page on the word); Slice files the circle herself: ADDRESS FILED as a sound
-   and a ring, plus the word once on the card.
+6. **The Process Servers open (built).** Long Walk. Chapter 4 opens as a six-shot in-engine scene (`ch4_open_world`): Wallit
+   and Slice on the causeway, a Yo Bot chirps "Spiders en route!", a lilac Server folds a leg and offers a folded paper on its
+   claw tip (`paper` beat), Slice names process servers. Still reel `ch4_open` is fallback / load-card art only. Proof: playtest
+   `opening-endings` (`opening-paper`, `opening-shot`). Mid-chapter: the Server's three refusals (paper held out, blow to refuse;
+   at the third the stilt heads open and it strikes).
+7. **Strike This Address opens (built); pages mid-chapter (build sound).** Reading Room. Chapter 5 opens as a six-shot in-engine
+   scene (`ch5_open_world`): bare hall, a Mega Yo Bot reading "STRIKE. THIS. ADDRESS.", Wallit "It's not signed." / "Pay up."
+   Still reel `ch5_open` is fallback only. Proof: `opening-endings`. Mid-chapter: five pages blank the racks; needed: the 5-page
+   paper sound set. Proof: events `page-read-1`..`page-read-5`, `vault-hum`, `final-stamp`.
+8. **Address Filed opens; ADDRESS FILED ending in engine (built).** Filed Hollow. Chapter 6 opens as a six-shot in-engine scene
+   (`ch6_open_world`): wall gone to stumps, Slice "The circle is brighter.", Wallit "Then let's file it. Pay up." After the
+   Order-Bearer falls, `ending_filed_world` plays on the live map: the order drops, DENIED, the ADDRESS stamp comes down in
+   engine, then the ending card. Credits scroll over Wallit and Slice in the ring (`PlayCreditsLive`, credits score). Still
+   `ch6_close` / `credits` reels are fallback only. Proof: `opening-endings` (`ending-stamp`, `credits-live`, `creditsTextPx`).
 9. **The Door Number (built, polish).** Filed Hollow. The ring unrolls into a line of writing and a number; the doorframes
    open on the chapters' sounds (see G).
-10. **Back home (built).** Office. The brass door number hangs; the lodgers each say a last line; Chime's bell rings the right
-    address. RECEIVED stamped on the ending card with all six lost things set down.
+10. **RECEIVED (built).** After ADDRESS FILED, if all six lost things are kept: `ending_received_world` on the live ring —
+    Wallit sets the keepsakes, the stamp prints ADDRESS, six doors rise around the ring (one per find), Slice "Not this time.
+    Received." Then live credits (with the RECEIVED block) over the doors. Condition unchanged (`CampaignSave.SecretEarned`).
+    Proof: `opening-endings` (`ending-doors` ≥6).
 11. **Arcade finale (built).** Wave 30. The Spider Bot falls, the order drops, same reading as 8, then Enter keeps going.
 12. **Address struck off, then again (built).** Arcade, whenever Slice falls. The run-end screen keeps the title, counts waves
     and coins with sound, stamps a new best, shows the next ladder goal (and stamps one just finished), then Wallit and Slice
