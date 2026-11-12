@@ -18,6 +18,10 @@ public static partial class Playtest {
         }
         run.Event("hit-fx-setup", (animTouch ? "touch 390x844 phone tier" : "keys and mouse") + ", particle tier x" + DeptFx.Tier.ToString("0.0")
             + ", atlas " + DeptFx.Atlas().width + "x" + DeptFx.Atlas().height);
+        bool codeAtlas = DeptFx.Atlas().name == "dept_atlas";
+        run.Event("atlas-source", (codeAtlas ? "code" : "gen") + " atlas "
+            + (codeAtlas ? "drawn in code (no Resources/Fx/DeptAtlas.png)" : "loaded from Resources/Fx/DeptAtlas.png")
+            + ", " + DeptFx.Atlas().width + "x" + DeptFx.Atlas().height);
         yield return run.Until(() => WaveDirector.Instance != null && Enemy.Roster.Count > 0 && DeptFx.Ready, 30f, "wave 1's bots and the effects");
         if (run.Done) {
             yield break;
