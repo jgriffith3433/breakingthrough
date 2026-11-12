@@ -41,6 +41,8 @@ public class SliceVoice : MonoBehaviour {
     public const string BStagger = "stagger";
     public const string BHunch = "hunch";
     public const string BBanter = "banter-turn";
+    public const string BBlock = "block";
+    public const string BStamp = "stamp";
 
     // Playtest and diagnostics: everything she said or did, in order ("kind|detail").
     public static readonly List<string> Events = new List<string>();
@@ -430,6 +432,7 @@ public class SliceVoice : MonoBehaviour {
             }
         }
         add(Idle); add(Wave); add(BossWave); add(Kill); add(Hurt); add(Low); add(NewKind); add(Near);
+        add(SliceCallouts.Callouts); add(SliceCallouts.ParryLine); add(SliceCallouts.StampLine);
         for (int b = 0; b < Banter.Length; b++) {
             for (int i = 0; i < Banter[b].Length; i++) {
                 string turn = Banter[b][i];
@@ -438,6 +441,41 @@ public class SliceVoice : MonoBehaviour {
                 }
             }
         }
+    }
+
+    // SliceCallouts: one exact word through VoiceDirector bark priority. Returns false if the floor or director refused.
+    public bool SayCallout(string line) {
+        if (string.IsNullOrEmpty(line) || banterRunning) {
+            return false;
+        }
+        if (!WallitVoice.FloorFree) {
+            return false;
+        }
+        if (line == LastLine || !VoiceDirector.Allow(line, "callout", VoiceDirector.Priority.Bark)) {
+            return false;
+        }
+        nextLineAt = Time.time + 2.2f;
+        // Caption is the one-word callout overlay (SliceCallouts); keep her bank subtitle off for these.
+        LastLine = line;
+        LinesSpoken++;
+        string id = LineId(line);
+        AudioClip clip = LoadClip(id);
+        if (clip != null && audioOut != null && SoundSettings.EffectsLevel > 0f) {
+            audioOut.PlayOneShot(clip, SoundSettings.EffectsLevel);
+        }
+        float len = clip != null ? clip.length : WallitVoice.EstimateSeconds(line);
+        WallitVoice.Claim("slice", len);
+        VoiceDirector.Spoke(line, "callout", VoiceDirector.Priority.Bark);
+        Note("line", "callout|" + line);
+        return true;
+    }
+
+    public void BeginBlock() {
+        Begin(BBlock, 0.7f);
+    }
+
+    public void BeginStampPose() {
+        Begin(BStamp, 0.85f);
     }
 
     static AudioClip LoadClip(string id) {
@@ -529,6 +567,16 @@ public class SliceVoice : MonoBehaviour {
                 break;
             case BBanter:
                 bodyYaw = turnTo * Mathf.Clamp01(Mathf.Min(k * 8f, (1f - k) * 8f));
+                break;
+            case BBlock:
+                lean = -8f * env;
+                headYaw = -4f * env;
+                spin = 25f * env;
+                shift = -body.forward * 0.08f * env;
+                break;
+            case BStamp:
+                lean = 14f * env;
+                shift = body.forward * 0.06f * env;
                 break;
         }
         if (hunch > 0.01f) {

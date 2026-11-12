@@ -78,8 +78,44 @@ Routines are "through the day": the world has no clock face, so a day is a chapt
 
 - **Wallit** (player). Reacts to the world in money: coins on pickups, a price on hazards ("That's extra!"). Voiced; subtitles only
   as backup.
-- **Slice.** In the circle; idles, watches the nearest bot, stabs what gets close, flinches when hit. In chapters she follows when
-  asked (Ch2) and can be downed and revived (held E). Two lines in a row at most, then silence; a nod is an animation, not text.
+- **Slice.** In the circle; idles, watches the nearest bot, stabs what gets close, flinches when hit. Calls threats in one word
+  with a ring marker (`SliceCallouts`); by Arcade act she also parries (Cold Hour) or stamps to stun (Last Light). In chapters
+  she follows when asked (Ch2) and can be downed and revived (held E). Two lines in a row at most, then silence; a nod is an
+  animation, not text.
+
+## Characters
+
+### Wallit
+- Want: get paid — coins, bolts, the fee for guarding Slice's circle.
+- Arc: arrives for himself → covers Slice's debt → files the address and keeps swinging in overtime.
+- Moment: first bot reaches Slice; he says "That's my account! Hands off!" and the fee pile shrinks (`StakesFeel`, `CoinPile`).
+- Personality: brash, money-minded, loyal.
+- Voice: `CwhRBWXzGAHq8TQ4Fs17` (eleven_v4 / ElevenLabs Wallit).
+- Animations: idle, walk/run/strafe/backPedal (`CharacterMovement`), talk (mouth from `WallitMouth` on voiced lines), swing1–3, groundSmash, homeRunCharge/Release, hitReact, shakeOff, victory, death.
+
+### Slice
+- Want: keep the circle filed — the one address in the Hollow that may stay.
+- Arc: alone at the ring → calls Wallit's targets as partner → parries, then stamps, as the acts harden.
+- Moment: a bot closes on her or flanks him; she says one word ("Left." "Mine."), the bot lights with her ring, and (from Cold Hour) she blocks it back (`SliceCallouts`).
+- Personality: cool, clipped, exact.
+- Voice: `hv_heroine` (Hawkes Gen open / qwen3-tts).
+- Animations: idle, stab, slash, hurt, defeat (`Musician` / Slice controller); companion walk when following (`Companion`); talk via subtitle + voice (no mouth rig); callout block pose and stamp from `SliceCallouts`.
+
+### Yo Bot
+- Want: clear the unfiled — erase Wallit and Slice's address.
+- Arc: cheerful Clearing Crew → plated and mega variants → chorus that reads the order from wave 20.
+- Moment: wakes with `yobot_wake` and chirps "Uploading victory!" while walking a straight line at the circle.
+- Personality: chirpy, bright, relentless.
+- Voice: `hv_kid`.
+- Animations: walk cycle, wind-up, claw strike, flinch, death (`CharacterRig` on Yo Bot parts).
+
+### The Courier
+- Want: deliver the notice of striking onto Slice.
+- Arc: clipboard raised → stamps notices → breaks when the notice is broken or stood in.
+- Moment: raises the clipboard; the stamp mark appears under Wallit or Slice (`Courier`).
+- Personality: polite, official, brittle.
+- Voice: `hv_young_hero`.
+- Animations: idle (clipboard), walk, talk (bark), tell/stamp, stagger, death (`CharacterKit` courier).
 - **Yo Bots / Plated / Mega** (the Clearing Crew). Sleep dormant at their drop in chapters, wake by proximity ("yobot_wake"), chirp
   while walking, read the order aloud from wave 20. A Yo Bot that has been struck sags then rights itself; a golden one runs.
 - **Spider Bots** (process servers). Walk to an address and wait; the Server offers a paper and strikes only on the third refusal.
@@ -243,6 +279,11 @@ Beat rule: every new beat gets a row here first, with where, when, the sound and
 and a playtest event name.
 
 - **The breach (Arcade and chapters that hold the circle).** A bot reaches Slice: the ring stutters and greys, the screen's edges lose colour, under 30% a heartbeat layer rises, and Wallit's first-hit line ("That's my account! Hands off!") is the only word. Seen and heard, never explained.
+
+13. **Slice calls the shot (built).** Arcade (and companion chapters): a bot closes on her circle or flanks Wallit; she names it
+    in one word, a pale ring marks that bot, an edge arrow points if it is off-screen; from Cold Hour she parries one per wave,
+    from Last Light she stamps once to stun. Wallit sometimes answers ("On it." / "Billable."). Proof: events `slice-callout`,
+    `callout-ring`, `callout-arrow`, `slice-parry`, `slice-stamp`; playtest `slice-partner`.
 
 ## Gaps against the 10-second rule
 

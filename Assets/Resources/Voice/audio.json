@@ -2270,6 +2270,95 @@
    "id": "wallit_overdraft_keep_swinging",
    "voice": "wallit",
    "text": "Overdraft! Keep swinging!"
+  },
+  {
+   "id": "slice_left",
+   "voice": "slice",
+   "text": "Left."
+  },
+  {
+   "id": "slice_right",
+   "voice": "slice",
+   "text": "Right."
+  },
+  {
+   "id": "slice_behind",
+   "voice": "slice",
+   "text": "Behind."
+  },
+  {
+   "id": "slice_ahead",
+   "voice": "slice",
+   "text": "Ahead."
+  },
+  {
+   "id": "slice_spider",
+   "voice": "slice",
+   "text": "Spider."
+  },
+  {
+   "id": "slice_mine",
+   "voice": "slice",
+   "text": "Mine."
+  },
+  {
+   "id": "slice_close",
+   "voice": "slice",
+   "text": "Close."
+  },
+  {
+   "id": "slice_flank",
+   "voice": "slice",
+   "text": "Flank."
+  },
+  {
+   "id": "slice_clear",
+   "voice": "slice",
+   "text": "Clear."
+  },
+  {
+   "id": "slice_yo",
+   "voice": "slice",
+   "text": "Yo."
+  },
+  {
+   "id": "slice_down",
+   "voice": "slice",
+   "text": "Down."
+  },
+  {
+   "id": "slice_blocked",
+   "voice": "slice",
+   "text": "Blocked."
+  },
+  {
+   "id": "slice_stamp",
+   "voice": "slice",
+   "text": "Stamp."
+  },
+  {
+   "id": "wallit_on_it",
+   "voice": "wallit",
+   "text": "On it.",
+   "asset": "a_04dff98064f2ff12"
+  },
+  {
+   "id": "wallit_billable",
+   "voice": "wallit",
+   "text": "Billable.",
+   "asset": "a_3e5f77db6c85e605"
+  },
+  {
+   "id": "wallit_on_it_billable",
+   "voice": "wallit",
+   "text": "On it. Billable.",
+   "asset": "a_8ee0a9af0c7dd7d9"
+  },
+  {
+   "id": "wallit_covered",
+   "voice": "wallit",
+   "text": "Covered.",
+   "asset": "a_7274ded245e2f257"
   }
  ],
  "note": "Made through Hawkes Gen audio.voice (project theplacedepartment). Ids match WallitVoice.LineId. Slice, narrator, Yo Bot and Courier lines (pass 2) are mono 64 kbps re-encodes of Gen audio.dialogue-open stems."

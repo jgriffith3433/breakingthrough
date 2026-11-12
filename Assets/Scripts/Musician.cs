@@ -242,6 +242,45 @@ public class Musician : MonoBehaviour {
         FindSlice();
         SliceVoice.Ensure(this);
         StakesFeel.Ensure(this);
+        SliceCallouts.Ensure(this);
+    }
+
+    // SliceCallouts Act 2: a visible block pose, then the bot is knocked back. Uses the slash clip as the block beat.
+    public void BeginParry(Enemy foe, Vector3 dir) {
+        if (!Alive || Away || defeating) {
+            return;
+        }
+        if (dir.sqrMagnitude > 0.01f) {
+            threatDir = dir.normalized;
+        }
+        strikeTarget = foe;
+        strikeHitDone = true;
+        strikeLeft = 0.55f;
+        strikeHitIn = 99f;
+        stabIn = StabCooldown * 0.6f;
+        hurtLeft = 0f;
+        lunge = 0.6f;
+        PlayClip(CLIP_SLASH, true);
+        if (SliceVoice.Instance != null) {
+            SliceVoice.Instance.BeginBlock();
+        }
+    }
+
+    // SliceCallouts Act 3: stamp the ground; pose holds a beat while bots are stunned.
+    public void BeginStamp() {
+        if (!Alive || Away || defeating) {
+            return;
+        }
+        strikeHitDone = true;
+        strikeLeft = 0.7f;
+        strikeHitIn = 99f;
+        stabIn = StabCooldown;
+        hurtLeft = 0f;
+        lunge = 0.35f;
+        PlayClip(CLIP_STAB, true);
+        if (SliceVoice.Instance != null) {
+            SliceVoice.Instance.BeginStampPose();
+        }
     }
 
     void OnDestroy() {
