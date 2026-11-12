@@ -74,6 +74,7 @@ public static partial class Playtest {
         new PlaytestScenario("first-load", "The first download and the chapter download on a phone (run it with mobile, 390x844; touch is forced, the menus are tapped, the sandbox save is used). The menu is up and its Campaign button answers before any campaign file has come down (menu-interactive, metrics menuInteractiveSeconds, onDemandBeforeMenu: a problem if above 0). Tap Campaign, tap case file 1: the campaign's core files (portraits, skies, lodgers) are fetched with the one-line Department progress at the bottom inside the safe area (progress-line: its words, plate rectangle against the canvas and the safe inset, on screen, low, \"Filing\" or \"Pulling\" with a percentage; metric progressLine_*_ok), the chapter card opens (case-file-open, caseFileSeconds). Begin on Chapter 1 fetches its stills, reel voices and boss bodies with the line up again and gives control within 15 s (chapter-control, chapterControlSeconds; a problem past 15). Then on-demand reports what came over the network on the player's choice (on-demand: files, MB, failures, the longest frame while fetching, the fetch log; metrics onDemandFiles, onDemandMb, onDemandFailed, onDemandLongestFrameMs, castVoiceMissing): any failed file, a frame over 1 s, a missing voice or a download with no progress line is a problem. In the editor, where nothing moves out of Resources, nothing is fetched and the events say so", 240, "content"),
         new PlaytestScenario("modes", "The mode select: the main menu shows Campaign and Arcade; Campaign opens the three case files (save slots, setup: the sandbox keeps them off the real save), opening an empty file loads the placeholder Chapter 1 scene with Wallit and Slice's lines, Menu returns and the file now reads Chapter 1 with its time on the books, Erase (asked twice) empties it; then Arcade starts today's wave defense and the bot plays 40 s of it with the bat. Events mode-select, campaign-files, chapter-open, chapter-lines, campaign-saved, campaign-erased, arcade-start", 200, "content"),
         new PlaytestScenario("pause-nav", "Pause and menus by keyboard and gamepad, in every chapter (setup: the sandbox case file stands on each chapter in turn). From the main menu with keys only: C opens the case files, Enter opens file 1, Enter begins the chapter, Enter skips the opening scene. Then P pauses (time stops) and P resumes, the pad's Start pauses, Down and Enter open Settings (first chapter): Left turns the music and effects sliders (the gold ring follows), Enter on Voices cycles how often the voices speak, the pad's B closes Settings and the pause stays, the settings are read back from their saved JSON; Resume with Enter; pause again, and Down, Down, Enter, Enter on Quit to menu returns to the main menu. Events nav-menu, nav-case-files, nav-chapter-card, chapter-paused, chapter-resumed, pad-paused, nav-settings, volume-changed, voices-changed, settings-persisted, nav-quit; metrics chaptersPaused, menuMoves, menuSubmits, sliderTurns", 900, "content"),
+        new PlaytestScenario("leitmotifs", "Wallit's and Slice's motifs. Setup shortcuts: each stinger (wallit, slice, both) is fired and its start latency and file found or stand-in are logged (events leitmotif-stinger); the cue tracks hub_wallit, ch6_both, ending_both and credits_full are asked for with their chapter-score fallbacks (events leitmotif-cue: file or fallback). Checked: every stinger sounds within 0.5 s, a real stinger file is under 150 KB", 120, "content"),
         new PlaytestScenario("score", "The score and the cast voices. Setup shortcuts: the music director is asked for every track by name (theme_wallit, theme_slice, theme_department, ch1_score..ch6_score, the six boss themes, hub, ending, credits) and each is heard for 2 s (events music-track: track, loaded or missing, volume); then nine shot reels (ch1_open, boss_courier, ch2_close, boss_foreman, boss_server, ch5_open, ch6_close, ending_received, credits) play to the end by name. Per reel: its bed (event reel-bed), every spoken shot's voice file found or missing (voice-file, with the cast voice), the set-piece sounds fired (sfx), and the voice events. Checked: no two voice lines overlap (Wallit's floor, the scene and the cast voice all count), the music ducks under speech (lowest duck below 0.9), every line of every reel has a voice file, every track exists. Metrics scoreTracks, scoreTracksLoaded, scoreVoiceLines, scoreVoiceMissing, scoreOverlaps, scoreLowestDuck, scoreSfx", 900, "content"),
         new PlaytestScenario("cinematic", "The shot-based cinematic player (Cutscene.PlayShots, data in Resources/Cinematics/sample.json): a seven-shot sample plays over the game with placeholder stills, Ken Burns moves, parallax, crossfades, letterbox bars, voice lines through the voice director, a music bed that ducks under them, and typed subtitles. Pass 1 presses Space for the next shot and then Enter to skip mid-scene: play resumes (time scale 1, the director free, the bed fades out). Pass 2 runs to the end untouched. Setup: the scene is started by name (the shot list is the data). Events cinematic-open, cinematic-shot (id, zoom, pan, subtitle, bed volume, duck), cinematic-next, cinematic-skip, cinematic-resume, cinematic-done, cinematic-memory; metrics cinematicShots, cinematicSkipped, cinematicOverlaps, cinematicVoiceLines, cinematicSubtitles, cinematicDuckLow, cinematicMemoryMB", 200, "content"),
         new PlaytestScenario("chapter-cinematics", "Every campaign cinematic: the openings and closings of Chapters 1-6, the four boss intros (Courier, Foreman, Server, Order), ADDRESS FILED (ch6_close, played before the ending card), the RECEIVED ending and the credits reel (Resources/Cinematics, wired in ChapterRun.Start, Complete, PlayBossIntro, CompleteFinal). Each reel is played by name over the game, the way the chapters play them. The bot lets all but two run to their end (Space on shot 2 of the first) and presses Enter to skip the Server intro and the credits mid-scene. Per reel it logs the shots, the voice lines (Wallit and Slice through the director, the Courier, Foreman, Plated Alpha, Half-Built, Server, Registrar, Order-Bearer, Mega Yo Bot and Yo Bots from Resources/Voice/cinema), the subtitles, the music bed ducking, and per shot the still on screen (cinematics-art: the generated keyframe from Resources/Cinematics/Art, its size, load time and cast, one Hawkes Gen character sheet per character so Wallit, Slice, the Courier, the Foreman, the Server and the Order-Bearer stay on-model; a placeholder or missing still is a bug). Checked: play resumes (time scale 1, director free, bed fades), no overlapping voices. Events cinematics-reel (id, shots, voice, subtitles, missing art, placeholder shots), cinematics-art, cinematics-cast, cinematics-skip, cinematics-resume, cinematics-done; metrics cinematicsReels, cinematicsShots, cinematicsVoiceLines, cinematicsMissingArt, cinematicsPlaceholderShots, cinematicsKeyframeShots, cinematicsArtLoadMsMax, cinematicsSkipped", 900, "content"),
@@ -682,6 +683,8 @@ public static partial class Playtest {
                 yield return BibleRun(options);
             } else if (id == "cinematic") {
                 yield return CinematicRun(options);
+            } else if (id == "leitmotifs") {
+                yield return LeitmotifRun(options);
             } else if (id == "score") {
                 yield return ScoreRun(options);
             } else if (id == "chapter-cinematics") {
@@ -8653,6 +8656,37 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         float until = Time.realtimeSinceStartup + 10f;
         while (MusicDirector.Cached(track) == null && !MusicDirector.Missing(track) && Time.realtimeSinceStartup < until) {
             yield return null;
+        }
+    }
+
+    // Wallit's and Slice's motifs: stingers and cue variations, with stand-ins while the Gen files are not made (scenario "leitmotifs").
+    static IEnumerator LeitmotifRun(PlaytestOptions options) {
+        yield return new WaitForSecondsRealtime(2f);
+        foreach (string n in new[] { "wallit", "slice", "both" }) {
+            if (run.Done) {
+                yield break;
+            }
+            int before = MusicDirector.Events.Count;
+            float t0 = Time.realtimeSinceStartup;
+            MusicDirector.Stinger(n);
+            yield return AwaitTrack("stinger_" + n);
+            float latency = Time.realtimeSinceStartup - t0;
+            bool standIn = MusicDirector.Events.IndexOf("stinger-standin|" + n, before) >= 0;
+            run.Event("leitmotif-stinger", n + ": " + (standIn ? "stand-in" : "file") + ", started in " + latency.ToString("0.00") + " s");
+            if (latency > 0.5f) {
+                run.Problem(PlaytestSeverity.Bug, "leitmotifs: stinger_" + n + " took " + latency.ToString("0.00") + " s");
+            }
+            yield return new WaitForSecondsRealtime(3f);
+        }
+        string[][] cues = { new[] { "hub_wallit", "hub" }, new[] { "ch6_both", "ch6_score" }, new[] { "ending_both", "ending" }, new[] { "credits_full", "credits" } };
+        foreach (string[] c in cues) {
+            if (run.Done) {
+                yield break;
+            }
+            MusicDirector.Play(c[0], c[1]);
+            yield return AwaitTrack(c[0]);
+            yield return new WaitForSecondsRealtime(2f);
+            run.Event("leitmotif-cue", c[0] + ": " + (MusicDirector.Cached(c[0]) != null ? "file" : "fallback " + c[1]) + ", playing " + MusicDirector.Current);
         }
     }
 
