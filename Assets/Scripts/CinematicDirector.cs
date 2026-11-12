@@ -22,6 +22,8 @@ public partial class CinematicDirector : MonoBehaviour {
         public float yaw;
         public string anim;
         public bool tell;
+        // Extra height above the ground. JsonUtility leaves missing floats at 0 (= actor default: yobot hangs at 2.4, spider/mega stand at 0.55). Set a positive lift to stand a yobot on the ground.
+        public float lift;
     }
     [Serializable] public class Shot {
         public string id;
@@ -43,6 +45,11 @@ public partial class CinematicDirector : MonoBehaviour {
         public bool slam;
         public bool postmark;   // Chapter 2: slam a torn postmark onto the gate
         public bool belt;       // Chapter 3: belt of cleared things slides toward the shredder
+        public bool paper;      // Chapter 4: the Server folds a leg and offers its paper
+        public bool addressStamp; // ADDRESS FILED / RECEIVED: the stamp comes down and prints ADDRESS
+        public bool doors;      // RECEIVED: six doors rise around the ring (one per lost thing)
+        public bool keepsakes;  // RECEIVED: six lost things laid in the ring (seen, not only narrated)
+        public bool credits;    // credits scroll over the live scene on this shot
         public bool handoff;
         public Mark[] actors;
     }
@@ -54,8 +61,8 @@ public partial class CinematicDirector : MonoBehaviour {
     }
 
     public static CinematicDirector Instance { get; private set; }
-    // True while shots play or the 0.6 s camera handoff is still blending onto the follow camera.
-    public static bool IsOpen { get { return Instance != null && (Instance.open || Instance.handingOff || Instance.bossRun); } }
+    // True while shots play, live credits scroll, or the 0.6 s camera handoff is still blending onto the follow camera.
+    public static bool IsOpen { get { return Instance != null && (Instance.open || Instance.handingOff || Instance.bossRun || Instance.creditsOnly); } }
     // Other playtests turn the Chapter 1 opening off so their bot starts with control.
     public static bool SuppressOpening;
     public static readonly List<string> Events = new List<string>();
@@ -65,6 +72,11 @@ public partial class CinematicDirector : MonoBehaviour {
     public static int Finished { get; private set; }
     public static float LastHandoffSeconds { get; private set; }
     public static float CaptionBottom01 { get; private set; }
+    public static int DoorsShown { get; private set; }
+    public static bool AddressStampSeen { get; private set; }
+    public static float CreditsTextPx { get; private set; }
+    public static float CreditsSkipMs { get; private set; }
+    public static bool CreditsLive { get; private set; }
 
     public int ShotIndex { get { return shotIndex; } }
     public int ShotCount { get { return reel != null && reel.shots != null ? reel.shots.Length : 0; } }
@@ -104,12 +116,29 @@ public partial class CinematicDirector : MonoBehaviour {
     Companion sliceCompanion;
     Enemy courier;
     Enemy yobot;
+    Enemy spider;
+    Enemy mega;
     bool courierOwned;
     bool yobotOwned;
+    bool spiderOwned;
+    bool megaOwned;
     bool shotPostmark;
     bool shotBelt;
+    bool shotPaper;
+    bool shotAddressStamp;
+    bool shotDoors;
+    bool shotKeepsakes;
+    bool shotCredits;
     GameObject postmarkGo;
     Transform postmarkHead;
+    GameObject addressStampGo;
+    Transform addressStampHead;
+    readonly List<GameObject> doorGos = new List<GameObject>();
+    Text creditsScroll;
+    RectTransform creditsRt;
+    float creditsStart = -1f;
+    bool creditsOnly;          // PlayCreditsLive: orbit the ring and scroll, no shot reel
+    string creditsBody;
 
     Font font;
     CanvasScaler scaler;
@@ -137,6 +166,11 @@ public partial class CinematicDirector : MonoBehaviour {
         Finished = 0;
         LastHandoffSeconds = 0f;
         CaptionBottom01 = 0f;
+        DoorsShown = 0;
+        AddressStampSeen = false;
+        CreditsTextPx = 0f;
+        CreditsSkipMs = 0f;
+        CreditsLive = false;
     }
 
     public static void Play(string id, LevelYard host, Action onDone) {
@@ -334,6 +368,8 @@ public partial class CinematicDirector : MonoBehaviour {
         }
         bool needCourier = false;
         bool needYobot = false;
+        bool needSpider = false;
+        bool needMega = false;
         foreach (Shot s in r.shots) {
             if (s.actors == null) {
                 continue;
@@ -348,6 +384,12 @@ public partial class CinematicDirector : MonoBehaviour {
                 if (m.id == "yobot") {
                     needYobot = true;
                 }
+                if (m.id == "spider" || m.id == "server") {
+                    needSpider = true;
+                }
+                if (m.id == "mega") {
+                    needMega = true;
+                }
             }
         }
         if (needCourier) {
@@ -359,6 +401,18 @@ public partial class CinematicDirector : MonoBehaviour {
         if (needYobot) {
             EnsureYobot();
             if (yobot == null) {
+                return false;
+            }
+        }
+        if (needSpider) {
+            EnsureSpider();
+            if (spider == null) {
+                return false;
+            }
+        }
+        if (needMega) {
+            EnsureMega();
+            if (mega == null) {
                 return false;
             }
         }
@@ -393,7 +447,7 @@ public partial class CinematicDirector : MonoBehaviour {
         var go = new GameObject("Cinematic Half-Built");
         go.tag = "enemy";
         Vector3 p = PolarPoint(chapterBearing > 1f ? chapterBearing : 200f, 36f, 0f);
-        // Hang at hook height on the gantry (landmark), not on the floor.
+        // Hang at hook height on the gantry (landmark), not on the floor. Override with Mark.lift when standing.
         p.y = Ground(p.x, p.z) + 2.4f;
         go.transform.position = p;
         go.transform.rotation = Quaternion.Euler(0f, chapterBearing + 180f, 0f);
@@ -403,6 +457,45 @@ public partial class CinematicDirector : MonoBehaviour {
         e.Scripted = true;
         yobot = e;
         yobotOwned = true;
+    }
+
+    void EnsureSpider() {
+        if (spider != null) {
+            return;
+        }
+        BotDef def = BotRoster.ForSpawn(BotKind.SpiderBot, 1);
+        var go = new GameObject("Cinematic Server");
+        go.tag = "enemy";
+        Vector3 p = PolarPoint(chapterBearing > 1f ? chapterBearing : 330f, 18f, 0f);
+        p.y = Ground(p.x, p.z) + 0.55f;
+        go.transform.position = p;
+        go.transform.rotation = Quaternion.Euler(0f, chapterBearing + 180f, 0f);
+        Enemy e = go.AddComponent<Enemy>();
+        e.ApplyBot(def);
+        e.MakeServer("The Server", 40);
+        e.Dormant = true;
+        e.Scripted = true;
+        spider = e;
+        spiderOwned = true;
+    }
+
+    void EnsureMega() {
+        if (mega != null) {
+            return;
+        }
+        BotDef def = BotRoster.ForSpawn(BotKind.MegaYoBot, 1);
+        var go = new GameObject("Cinematic Mega");
+        go.tag = "enemy";
+        Vector3 p = PolarPoint(chapterBearing > 1f ? chapterBearing : 0f, 10f, 0f);
+        p.y = Ground(p.x, p.z) + 0.55f;
+        go.transform.position = p;
+        go.transform.rotation = Quaternion.Euler(0f, chapterBearing + 180f, 0f);
+        Enemy e = go.AddComponent<Enemy>();
+        e.ApplyBot(def);
+        e.Dormant = true;
+        e.Scripted = true;
+        mega = e;
+        megaOwned = true;
     }
 
     void NextShot() {
@@ -420,6 +513,11 @@ public partial class CinematicDirector : MonoBehaviour {
         shotSlam = false;
         shotPostmark = false;
         shotBelt = false;
+        shotPaper = false;
+        shotAddressStamp = false;
+        shotDoors = false;
+        shotKeepsakes = false;
+        shotCredits = false;
         ShotsShown++;
         Events.Add("shot|" + s.id + "|" + shotIndex);
         PlaceActors(s, 0f);
@@ -440,6 +538,10 @@ public partial class CinematicDirector : MonoBehaviour {
             TickBoss();
             return;
         }
+        if (creditsOnly) {
+            TickCreditsOnly();
+            return;
+        }
         if (!open) {
             return;
         }
@@ -456,6 +558,11 @@ public partial class CinematicDirector : MonoBehaviour {
         TickStamp(s, u);
         TickPostmark(s, u);
         TickBelt(s, u);
+        TickPaper(s, u);
+        TickAddressStamp(s, u);
+        TickDoors(s, u);
+        TickKeepsakes(s, u);
+        TickCreditsShot(s, u);
         TickSkipInput();
         EaseBars(true);
         LayoutUi();
@@ -473,7 +580,7 @@ public partial class CinematicDirector : MonoBehaviour {
             }
             return;
         }
-        if (!open || !viewSet || cam == null) {
+        if ((!open && !creditsOnly) || !viewSet || cam == null) {
             return;
         }
         cam.transform.position = viewPos;
@@ -494,7 +601,7 @@ public partial class CinematicDirector : MonoBehaviour {
         string who = string.IsNullOrEmpty(s.speaker) ? "N" : s.speaker;
         SubtitleSpeaker = who;
         if (namePlate != null) {
-            namePlate.text = who == "W" ? "Wallit" : who == "S" ? "Slice" : who == "K" ? "The Courier" : who == "Y" ? "Yo Bot" : "";
+            namePlate.text = who == "W" ? "Wallit" : who == "S" ? "Slice" : who == "K" ? "The Courier" : who == "Y" ? "Yo Bot" : who == "M" ? "Mega Yo Bot" : who == "V" ? "The Server" : "";
             namePlate.color = who == "W" ? new Color(0.95f, 0.82f, 0.4f) : who == "S" ? new Color(0.75f, 0.7f, 0.95f) : new Color(0.7f, 0.9f, 1f);
         }
         if (caption != null) {
@@ -505,8 +612,8 @@ public partial class CinematicDirector : MonoBehaviour {
             len = WallitVoice.Cutscene(s.line);
         } else if (who == "S") {
             len = SliceVoice.Instance != null ? SliceVoice.Cutscene(s.line) : CastVoice.SayNow("S", s.line, "cutscene");
-        } else if (who == "Y" || who == "K") {
-            // Courier (K) and Yo Bot (Y) share the chirpy bank; prefer K when the shot names the Courier.
+        } else if (who == "Y" || who == "K" || who == "M" || who == "V") {
+            // Courier (K), Yo Bot (Y), Mega (M) and Server (V) use cast voices; prefer the shot's code.
             len = CastVoice.SayNow(who, s.line, "cutscene");
         } else {
             len = CastVoice.SayNow("N", s.line, "cutscene");
@@ -675,6 +782,10 @@ public partial class CinematicDirector : MonoBehaviour {
             EndBoss(true);
             return;
         }
+        if (creditsOnly) {
+            EndCreditsLive(true);
+            return;
+        }
         if (!open) {
             return;
         }
@@ -720,6 +831,30 @@ public partial class CinematicDirector : MonoBehaviour {
             yobot.Dormant = true;
             yobot = null;
         }
+        if (spiderOwned && spider != null) {
+            if (spider.gameObject != null) {
+                Destroy(spider.gameObject);
+            }
+            spider = null;
+            spiderOwned = false;
+        } else if (spider != null) {
+            spider.Scripted = false;
+            spider.Dormant = true;
+            spider = null;
+        }
+        if (megaOwned && mega != null) {
+            if (mega.gameObject != null) {
+                Destroy(mega.gameObject);
+            }
+            mega = null;
+            megaOwned = false;
+        } else if (mega != null) {
+            mega.Scripted = false;
+            mega.Dormant = true;
+            mega = null;
+        }
+        // RECEIVED leaves its six doors up under the live credits; openings clear every prop.
+        ClearEndingProps(DoorsShown > 0);
         if (sliceCompanion != null) {
             sliceCompanion.Held = false;
             sliceCompanion = null;
@@ -846,9 +981,24 @@ public partial class CinematicDirector : MonoBehaviour {
                     courier.EndTell(false);
                 }
             } else if (m.id == "yobot" && yobot != null) {
-                pos.y = Ground(pos.x, pos.z) + 2.4f;
+                // 0 (JSON default) keeps the Chapter 3 hook hang; a positive lift seats it on the ground (ch4/ch6).
+                float lift = m.lift > 0.01f ? m.lift : 2.4f;
+                pos.y = Ground(pos.x, pos.z) + lift;
                 yobot.transform.position = pos;
                 yobot.transform.rotation = Quaternion.Euler(0f, m.yaw, 0f);
+            } else if ((m.id == "spider" || m.id == "server") && spider != null) {
+                float lift = m.lift > 0.01f ? m.lift : 0.55f;
+                pos.y = Ground(pos.x, pos.z) + lift;
+                spider.transform.position = pos;
+                spider.transform.rotation = Quaternion.Euler(0f, m.yaw, 0f);
+                if (m.tell || m.anim == "tell") {
+                    spider.BeginTell();
+                }
+            } else if (m.id == "mega" && mega != null) {
+                float lift = m.lift > 0.01f ? m.lift : 0.55f;
+                pos.y = Ground(pos.x, pos.z) + lift;
+                mega.transform.position = pos;
+                mega.transform.rotation = Quaternion.Euler(0f, m.yaw, 0f);
             } else {
                 pos.y = Ground(pos.x, pos.z);
                 t.position = pos;
@@ -950,6 +1100,12 @@ public partial class CinematicDirector : MonoBehaviour {
         }
         if (id == "yobot") {
             return yobot != null ? yobot.transform : null;
+        }
+        if (id == "spider" || id == "server") {
+            return spider != null ? spider.transform : null;
+        }
+        if (id == "mega") {
+            return mega != null ? mega.transform : null;
         }
         return null;
     }
