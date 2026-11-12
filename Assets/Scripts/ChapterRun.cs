@@ -849,6 +849,45 @@ public class ChapterRun : MonoBehaviour {
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         RunAnalytics.Screen("chapter_complete_" + (Chapter + 1));
+        // The ceremony (ChapterCeremony) replaces the stats panel. The old panel's text stays on the hidden card for the
+        // playtests' CardText, and other playtests keep the plain card (they tap its buttons at once).
+        if (!Playtest.Running || CeremonyInTest) {
+            StartCeremony(more, extra);
+        }
+    }
+
+    // Playtest: the `ceremony` scenario plays the real thing; every other scenario keeps the plain card.
+    public static bool CeremonyInTest;
+    public ChapterCeremony Ceremony { get; private set; }
+
+    // Playtest: the ceremony again over the same card (to tap it through).
+    public void ReplayCeremony() {
+        if (Ceremony != null) {
+            Destroy(Ceremony.gameObject);
+        }
+        StartCeremony(Chapter + 1 < CampaignSave.ChapterCount, "");
+    }
+
+    void StartCeremony(bool more, string extra) {
+        column.gameObject.SetActive(false);
+        var shade = card.GetComponent<Image>();
+        shade.color = new Color(0.02f, 0.03f, 0.06f, 0.5f);   // the field stays in view: Wallit and Slice at the chapter's end point
+        CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
+        float par = CampaignGrade.ParOf(Chapter);
+        var rows = new[] {
+            new ChapterCeremony.Stat("TIME", Clock(PlaySeconds) + "  (par " + Clock(par) + ")"),
+            new ChapterCeremony.Stat("SLICE HURT", DamageTaken <= 0 ? "none" : DamageTaken.ToString()),
+            new ChapterCeremony.Stat("LOST THING", FindKept ? Journal.Finds[Chapter].Name : "still out there"),
+            new ChapterCeremony.Stat("COLLECTED", Journal.FindCount(slot) + " / " + Journal.Count + (GoalMet ? "  extra filed" : "")),
+        };
+        string footer = "LV " + CampaignProgress.Level + "   XP " + CampaignProgress.Xp + (more ? "   Next: " + Story.Chapters[Chapter + 1].Title : "");
+        Ceremony = ChapterCeremony.Begin(cardRect, data.Title, CampaignSave.Active + 1, rows, Rank, footer, Next, ToMenu);
+        Events.Add("ceremony|start|" + data.Id + "|rank " + CampaignGrade.Letter(Rank));
+    }
+
+    static string Clock(float seconds) {
+        int total = Mathf.RoundToInt(seconds);
+        return (total / 60) + ":" + (total % 60).ToString("00");
     }
 
     // The last chapter: in-engine ADDRESS FILED (stamp on the live Hollow), variant stills when chosen, the ending card,

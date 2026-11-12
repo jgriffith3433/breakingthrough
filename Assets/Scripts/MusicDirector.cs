@@ -170,6 +170,9 @@ public class MusicDirector : MonoBehaviour {
         }
         float[] wal = { 392f, 494f, 440f, 587f };
         float[] sli = { 110f, 131f, 98f, 123f };
+        if (name.StartsWith("rank_")) {
+            return RankStandIn(name);
+        }
         bool w = name != "slice", s = name != "wallit";
         int rate = 22050;
         float[] data = new float[(int)(rate * (s ? 3.2f : 2f))];
@@ -181,6 +184,43 @@ public class MusicDirector : MonoBehaviour {
         c.SetData(data, 0);
         standIns[name] = c;
         return c;
+    }
+
+    // The Chapter Complete ceremony's rank stings (rank_c, rank_b, rank_a, rank_s): a brass line that grows with the rank. C is
+    // two low notes, B a rising third, A a major arpeggio, S the arpeggio with a held chord. Stand-ins until stinger_rank_*.mp3 lands.
+    static AudioClip RankStandIn(string name) {
+        AudioClip c;
+        if (standIns.TryGetValue(name, out c) && c != null) {
+            return c;
+        }
+        char r = name[name.Length - 1];
+        float[] notes = r == 's' ? new[] { 261.6f, 329.6f, 392f, 523.3f } : r == 'a' ? new[] { 261.6f, 329.6f, 392f } : r == 'b' ? new[] { 261.6f, 329.6f } : new[] { 196f, 174.6f };
+        float step = r == 'c' ? 0.45f : 0.22f;
+        float tail = r == 's' ? 1.6f : r == 'a' ? 1.0f : 0.6f;
+        int rate = 22050;
+        float[] data = new float[(int)(rate * (notes.Length * step + tail))];
+        for (int n = 0; n < notes.Length; n++) {
+            AddBrass(data, rate, notes[n], n * step, n == notes.Length - 1 ? tail : step * 1.6f, r == 'c' ? 0.2f : 0.26f);
+        }
+        if (r == 's') {
+            // The held chord under the last note.
+            AddBrass(data, rate, 329.6f, (notes.Length - 1) * step, tail, 0.18f);
+            AddBrass(data, rate, 392f, (notes.Length - 1) * step, tail, 0.18f);
+        }
+        c = AudioClip.Create("standin_" + name, data.Length, 1, rate, false);
+        c.SetData(data, 0);
+        standIns[name] = c;
+        return c;
+    }
+
+    // A brass-ish note: the first harmonics with a quick swell and a decay.
+    static void AddBrass(float[] data, int rate, float hz, float start, float length, float gain) {
+        int a = (int)(start * rate), n = (int)(length * rate);
+        for (int i = 0; i < n && a + i < data.Length; i++) {
+            float t = (float)i / n, ph = 2f * Mathf.PI * hz * i / rate;
+            float v = Mathf.Sin(ph) + 0.5f * Mathf.Sin(2f * ph) + 0.3f * Mathf.Sin(3f * ph);
+            data[a + i] += v * Mathf.Min(1f, i / 700f) * Mathf.Exp(-2.5f * t) * gain * 0.7f;
+        }
     }
 
     static void AddNote(float[] data, int rate, float hz, float start, float length, float gain) {
