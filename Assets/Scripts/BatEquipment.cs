@@ -767,6 +767,10 @@ public class BatEquipment : MonoBehaviour {
         Juice.SlowBeat(0.35f, 0.4f);
         Say("home run (charge " + Mathf.RoundToInt(homeRunCharge * 100f) + "%): " + kind + " launched at " + launch.magnitude.ToString("0") + " m/s" + (dropped ? ", dropped" : ""));
         UpgradeLook.Say("HOME RUN!", 1.2f, -40f);
+        // Boss talks back first (Sekiro-style); Wallit's money bark waits for the floor.
+        if (target != null && target.Boss) {
+            BossVoice.OnHomeRun(target);
+        }
         WallitVoice.OnHomeRun();
     }
 

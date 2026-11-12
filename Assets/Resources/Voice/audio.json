@@ -32,10 +32,45 @@
   },
   {
    "name": "courier",
-   "voiceId": "hv_young_hero",
-   "provider": "open",
-   "model": "qwen3-tts",
-   "description": "Hawkes Gen audio.dialogue-open, voice hv_young_hero"
+   "voiceId": "TxGEqnHWrfWFTfGW9XjX",
+   "provider": "elevenlabs",
+   "model": "eleven_v4",
+   "description": "Courier: chirpy postal clerk, bright mid voice (ElevenLabs Josh, eleven_v4); robotic high-pass in mixer"
+  },
+  {
+   "name": "platedalpha",
+   "voiceId": "pNInz6obpgDQGcFmaJgB",
+   "provider": "elevenlabs",
+   "model": "eleven_v4",
+   "description": "Plated Alpha: clipped metallic (ElevenLabs Adam, eleven_v4); robotic high-pass in mixer"
+  },
+  {
+   "name": "foreman",
+   "voiceId": "VR6AewLTigWG4xSOukaG",
+   "provider": "elevenlabs",
+   "model": "eleven_v4",
+   "description": "Foreman: gravelly site boss (ElevenLabs Arnold, eleven_v4); robotic high-pass in mixer"
+  },
+  {
+   "name": "server",
+   "voiceId": "XB0fDUnXU5powFXDhCwa",
+   "provider": "elevenlabs",
+   "model": "eleven_v4",
+   "description": "Server: polite insistent British (ElevenLabs Charlotte, eleven_v4)"
+  },
+  {
+   "name": "registrar",
+   "voiceId": "SOYHLrjzK2X1ezoPC6cr",
+   "provider": "elevenlabs",
+   "model": "eleven_v4",
+   "description": "Registrar: dry and final ledger clerk (ElevenLabs Harry, eleven_v4)"
+  },
+  {
+   "name": "orderbearer",
+   "voiceId": "ZQe5CZNOzWyzPSCn5a3c",
+   "provider": "elevenlabs",
+   "model": "eleven_v4",
+   "description": "Order-Bearer: slow ceremonial (ElevenLabs James, eleven_v4)"
   },
   {
    "name": "tick",
@@ -2370,7 +2405,133 @@
    "voice": "wallit",
    "text": "Covered.",
    "asset": "a_7274ded245e2f257"
+  },
+  {
+   "id": "courier_second_notice_rush_delivery",
+   "voice": "courier",
+   "text": "Second notice! Rush delivery!",
+   "kind": "boss-bark",
+   "why": "boss-phase"
+  },
+  {
+   "id": "courier_air_mail_whoa",
+   "voice": "courier",
+   "text": "Air mail! Whoa!",
+   "kind": "boss-bark",
+   "why": "boss-homerun"
+  },
+  {
+   "id": "courier_return_to_sender_done",
+   "voice": "courier",
+   "text": "Return to sender. Done!",
+   "kind": "boss-bark",
+   "why": "boss-win"
+  },
+  {
+   "id": "platedalpha_stamp_void_continue",
+   "voice": "platedalpha",
+   "text": "Stamp: VOID. Continue.",
+   "kind": "boss-bark",
+   "why": "boss-phase"
+  },
+  {
+   "id": "platedalpha_impact_logged",
+   "voice": "platedalpha",
+   "text": "Impact logged.",
+   "kind": "boss-bark",
+   "why": "boss-homerun"
+  },
+  {
+   "id": "platedalpha_address_invalid",
+   "voice": "platedalpha",
+   "text": "Address: INVALID.",
+   "kind": "boss-bark",
+   "why": "boss-win"
+  },
+  {
+   "id": "foreman_overtime_read_louder",
+   "voice": "foreman",
+   "text": "Overtime. Read louder.",
+   "kind": "boss-bark",
+   "why": "boss-phase"
+  },
+  {
+   "id": "foreman_that_ain_t_billable",
+   "voice": "foreman",
+   "text": "That ain't billable!",
+   "kind": "boss-bark",
+   "why": "boss-homerun"
+  },
+  {
+   "id": "foreman_shift_closed_cleared",
+   "voice": "foreman",
+   "text": "Shift closed. Cleared.",
+   "kind": "boss-bark",
+   "why": "boss-win"
+  },
+  {
+   "id": "server_final_offer_please_sign",
+   "voice": "server",
+   "text": "Final offer. Please sign.",
+   "kind": "boss-bark",
+   "why": "boss-phase"
+  },
+  {
+   "id": "server_delivery_delayed_briefly",
+   "voice": "server",
+   "text": "Delivery delayed. Briefly.",
+   "kind": "boss-bark",
+   "why": "boss-homerun"
+  },
+  {
+   "id": "server_served_kindly_remain",
+   "voice": "server",
+   "text": "Served. Kindly remain.",
+   "kind": "boss-bark",
+   "why": "boss-win"
+  },
+  {
+   "id": "registrar_page_two_initial_here",
+   "voice": "registrar",
+   "text": "Page two. Initial here.",
+   "kind": "boss-bark",
+   "why": "boss-phase"
+  },
+  {
+   "id": "registrar_margin_note_struck",
+   "voice": "registrar",
+   "text": "Margin note: struck.",
+   "kind": "boss-bark",
+   "why": "boss-homerun"
+  },
+  {
+   "id": "registrar_filed_case_closed",
+   "voice": "registrar",
+   "text": "Filed. Case closed.",
+   "kind": "boss-bark",
+   "why": "boss-win"
+  },
+  {
+   "id": "orderbearer_the_seal_turns",
+   "voice": "orderbearer",
+   "text": "The seal turns.",
+   "kind": "boss-bark",
+   "why": "boss-phase"
+  },
+  {
+   "id": "orderbearer_the_order_holds",
+   "voice": "orderbearer",
+   "text": "The order... holds.",
+   "kind": "boss-bark",
+   "why": "boss-homerun"
+  },
+  {
+   "id": "orderbearer_address_struck",
+   "voice": "orderbearer",
+   "text": "Address. Struck.",
+   "kind": "boss-bark",
+   "why": "boss-win"
   }
  ],
- "note": "Made through Hawkes Gen audio.voice (project theplacedepartment). Ids match WallitVoice.LineId. Yo Bot and Courier lines (pass 2) are mono 64 kbps re-encodes of Gen audio.dialogue-open stems. Slice and narrator lines are eleven_v4 (audio.dialogue), mono 32 kHz 56 kbps, loudness-matched to Wallit (about -21 LUFS). Wallit replies from audio.voice."
+ "note": "Made through Hawkes Gen audio.voice (project theplacedepartment). Ids match WallitVoice.LineId / CastVoice.FileOf. Yo Bot lines are mono 64 kbps open-model stems. Slice, narrator and the six bosses are eleven_v4; boss bark stems pending Gen credits (mono 32 kHz 56 kbps when landed). Wallit replies from audio.voice. Bot-family bosses (Courier, Plated Alpha, Foreman) get a light robotic high-pass in BossVoice, not baked into the file."
 }

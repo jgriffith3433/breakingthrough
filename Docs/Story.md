@@ -294,6 +294,16 @@ unread..." / "Paid in full." / "Clean." The file then moves to Chapter 4. Flow: 
 `chapter3` playtest plays it. Slice stays at the circle and does not follow (her second ring holds it); the Foreman reads the order
 only in its lines, with no special attack yet.
 
+### Boss barks
+
+Each campaign boss talks back in its own eleven_v4 voice during the fight (`BossVoice.cs`), never over Wallit or Slice
+(`VoiceDirector` reasons `boss-phase`, `boss-homerun`, `boss-win`). Three short paperwork lines each (under ten words),
+one at phase two, one when a home run lands on it, one when Wallit goes down (or Slice falls with that boss live). Captions
+sit in the upper third on a phone. Yo-family bosses (Courier, Plated Alpha, Foreman) get a light robotic high-pass in the
+mixer, not baked into the file. Voices: Courier chirpy postal clerk; Plated Alpha clipped metallic; Foreman gravelly site
+boss; Server polite and insistent; Registrar dry and final; Order-Bearer slow and ceremonial. The `boss-barks` playtest
+checks distinct voice ids and at least two barks per fight.
+
 ### Boss phases
 
 Every chapter boss has two phases. The boss bar carries a pale notch where the second begins (half health; 0.4 for the Server),

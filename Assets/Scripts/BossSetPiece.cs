@@ -304,6 +304,7 @@ public class BossSetPiece : MonoBehaviour {
             }
             enemy.EnterPhase2(new Color(1.5f, 0.5f, 0.35f));
             BossPhases.Announce(enemy, enemy.Title + " is angry.");
+            BossVoice.OnPhase(enemy);
             Events.Add("phase2|" + enemy.Title);
             Fx.Ring(transform.position, enemy.BodyScale * 4.5f, new Color(1f, 0.2f, 0.12f, 0.9f), 0.8f);
             GameAudio.Play("stomp", 1f, 0.5f);
