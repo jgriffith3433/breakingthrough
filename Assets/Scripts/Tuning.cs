@@ -127,7 +127,7 @@ public static class Tuning {
     }
 
     // Arcade acts (docs/world-bible.md, A): waves 1-10, 11-20, 21-30, then the loop under an overtime tint (wave 31 on).
-    public const float ActFadeSeconds = 2f;
+    public const float ActFadeSeconds = 1.5f;
     public const float ActBannerSeconds = 3.4f;
     public const float OvertimeTint = 0.5f;
     public const float ActMusicLevel = 0.4f;
