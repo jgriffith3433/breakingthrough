@@ -558,7 +558,7 @@ public static partial class Playtest {
             } else if (id == "arcade-acts") {
                 yield return ActsRun(options);
             } else if (id == "arcade-score") {
-                yield return ScoreRun(options);
+                yield return ArcadeScoreRun(options);
             } else if (id == "onboarding") {
                 yield return OnboardingRun(options);
             } else if (id == "boss-entrances") {

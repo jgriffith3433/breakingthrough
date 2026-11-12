@@ -7,7 +7,7 @@ using UnityEngine;
 // layers come in on a bar line; fights the wave out and checks the layers are gone within 4 s of the clear; then the wave key (a
 // named setup) to the bosses of waves 10, 20 and 30: each must add a layer at its phase change and play a 3-5 s cadence on death.
 public static partial class Playtest {
-    static IEnumerator ScoreRun(PlaytestOptions options) {
+    static IEnumerator ArcadeScoreRun(PlaytestOptions options) {
         animTouch = Screen.height > Screen.width || Screen.height < 500;
         UiFit.ForceTouch(animTouch);
         if (animTouch) {
