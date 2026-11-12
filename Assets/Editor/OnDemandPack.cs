@@ -196,7 +196,7 @@ public static class OnDemandPack {
             item.key = rel.Substring(0, rel.Length - ext.Length);
             return item;
         }
-        if ((lower.StartsWith("portraits/") || lower.StartsWith("skies/")) && (ext == ".png" || ext == ".jpg" || ext == ".jpeg")) {
+        if ((lower.StartsWith("portraits/") || lower.StartsWith("skies/") || lower.StartsWith("loadcards/")) && (ext == ".png" || ext == ".jpg" || ext == ".jpeg")) {
             item.key = rel.Substring(0, rel.Length - ext.Length);
             return item;
         }
@@ -219,7 +219,7 @@ public static class OnDemandPack {
             item.bytes = src;
             item.ext = ".txt";
         } else {
-            int cap = item.key.StartsWith("Cinematics/") ? StillWidth : item.key.StartsWith("Skies/") ? SkyWidth : PortraitWidth;
+            int cap = item.key.StartsWith("Cinematics/") || item.key.StartsWith("LoadCards/") ? StillWidth : item.key.StartsWith("Skies/") ? SkyWidth : PortraitWidth;
             EncodePicture(item, src, cap, ext);
         }
     }
@@ -354,6 +354,10 @@ public static class OnDemandPack {
         foreach (Item i in items) {
             if (i.key.StartsWith("Portraits/") || i.key.StartsWith("Skies/")) {
                 i.groups.Add("core");
+            } else if (i.key.StartsWith("LoadCards/")) {
+                // a chapter's loading card comes with that chapter (card_ch3 -> ch3); the hub's is core
+                string id = i.key.Substring("LoadCards/card_".Length);
+                i.groups.Add(id.StartsWith("ch") ? id : "core");
             } else if (i.key.StartsWith("Baked/")) {
                 string id = i.key.Substring("Baked/".Length);
                 string g = BakedGroup(id);

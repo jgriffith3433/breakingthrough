@@ -667,3 +667,11 @@ from `Resources/Voice/cinema/<reel>_<shot>.mp3` once made. Page scenes remain as
 ## Barks: who talks mid-fight
 
 Wallit and Slice answer the moment: Wallit on the first blow of a run, a home run, a wave cleared and a boss's second phase; Slice on a new kind of bot and when she runs low. Each of those lines is said once in five minutes. The Yo Bots chorus in chirps (waking, spotting Wallit, hit, launched, falling: "Uploading victory.", "Wheeeee!") and the Spider Bots are polite ("You have been served."), each from the bot's own place, one voice at a time, a line no more than once a minute. Code: `BotChorus.cs`, `VoiceDirector` (reasons `first-hit`, `boss-phase`, `new-type`, `wave-clear`, `bot-*`).
+
+## Turning the page (transitions and loading cards)
+
+The Department files everything, so nothing in the game cuts. Every change of place is a sheet of file paper sliding over the
+screen with a rubber stamp slammed on it, then peeling away: **ENTER** into a run or a chapter, **FILED** back to the hub (and
+on a win), **STRUCK OFF** when Slice falls, **RETURNED** to the menu or on a retry. A chapter's or the hub's load ends on its case-file
+card: the place's name, one line from Wallit or Slice about it (existing voice lines, nothing new) and a paper strip that fills as the
+place truly loads. Code: `ScreenTransition.cs`, `LoadScreen.cs`; art `Resources/LoadCards/`.

@@ -309,7 +309,7 @@ public class MainMenu : MonoBehaviour {
             StartCoroutine(FlyIn());
             return;
         }
-        SceneManager.LoadScene(MetaProgress.GameScene);
+        ScreenTransition.Load(ScreenTransition.Kind.Enter, MetaProgress.GameScene);
     }
 
     // Play: the camera pushes in toward Slice's ring while the run loads behind it, then the run takes over from that
@@ -340,8 +340,12 @@ public class MainMenu : MonoBehaviour {
             }
             yield return null;
         }
-        MenuHandoff.Begin(Stage.TakePicture());
-        load.allowSceneActivation = true;
+        // The paper sheet and ENTER stamp cover the hand-over, so the run opens from the page turning, not a cut.
+        RenderTexture picture = Stage.TakePicture();
+        ScreenTransition.Go(ScreenTransition.Kind.Enter, () => {
+            MenuHandoff.Begin(picture);
+            load.allowSceneActivation = true;
+        }, true);
     }
 
     void OpenCampaign() {

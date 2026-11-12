@@ -223,7 +223,7 @@ public class ChapterScene : MonoBehaviour {
     void ToMenu() {
         Leave();
         RunAnalytics.Screen("menu");
-        SceneManager.LoadScene(MetaProgress.MenuScene);
+        ScreenTransition.Load(ScreenTransition.Kind.Returned, MetaProgress.MenuScene);
     }
 
     void Build(Story.Chapter chapter) {
