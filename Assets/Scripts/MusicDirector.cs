@@ -319,10 +319,10 @@ public class MusicDirector : MonoBehaviour {
     void Update() {
         float dt = Time.unscaledDeltaTime;
         bool voice = !WallitVoice.FloorFree || CastVoice.Speaking;
-        duck = Mathf.MoveTowards(duck, voice ? DuckLevel : 1f, dt * (voice ? 4f : 0.8f));
+        duck = AudioMix.MusicDuck * AudioMix.CrackDuck;
         LowestDuck = Mathf.Min(LowestDuck, duck);
         bool reelBed = Cutscene.IsOpen && Cutscene.Instance != null && Cutscene.Instance.BedPlaying;
-        float want = SoundSettings.On && !reelBed ? SoundSettings.Music * BedLevel * duck : 0f;
+        float want = SoundSettings.On && !reelBed ? SoundSettings.Music * AudioMix.MusicGain * BedLevel * duck : 0f;
         for (int i = 0; i < 2; i++) {
             AudioSource s = sources[i];
             if (s == null || !s.isPlaying) {
@@ -338,7 +338,7 @@ public class MusicDirector : MonoBehaviour {
         if (ambience != null && ambience.isPlaying) {
             // Under the score, ducked a little harder under a voice, and gone with Sound off; a bed that was replaced fades out.
             float wantAmb = SoundSettings.On && !reelBed && AmbienceCurrent.Length > 0 && ambience.clip != null && ambience.clip.name == AmbienceCurrent
-                ? SoundSettings.Music * AmbienceLevel * (voice ? (UiFit.Touch ? 0.38f : 0.5f) : 1f) : 0f;
+                ? SoundSettings.Music * AmbienceLevel * (AudioMix.AmbienceDuck * AudioMix.CrackDuck) : 0f;
             ambience.volume = Mathf.MoveTowards(ambience.volume, wantAmb, dt / FadeSeconds);
             ambVolume = ambience.volume;
             if (wantAmb <= 0f && ambience.volume <= 0.001f && AmbienceCurrent.Length == 0) {

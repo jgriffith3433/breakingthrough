@@ -14,6 +14,7 @@ public static class SoundSettings {
         public bool on = true;
         public float music = 1f;
         public float sfx = 1f;
+        public float voice = 1f;
         // How often the voices speak up: 0 Key lines only, 1 Rarely, 2 Normal, 3 Often (VoiceDirector).
         public int chatter = 2;
     }
@@ -73,6 +74,25 @@ public static class SoundSettings {
 
     public static float Sfx {
         get { Load(); return now.sfx; }
+    }
+
+    public static float Voice {
+        get { Load(); return now.on ? now.voice : 0f; }
+    }
+
+    public static float VoiceSlider {
+        get { Load(); return now.voice; }
+    }
+
+    public static void SetVoice(float v) {
+        Load();
+        now.voice = Mathf.Clamp01(v);
+        if (!MetaProgress.Sandbox) {
+            string json = JsonUtility.ToJson(now);
+            HawkesSoundSave(json);
+            PlayerPrefs.SetString(Key, json);
+            dirty = true;
+        }
     }
 
     public const int ChatterOff = 0;
@@ -136,6 +156,7 @@ public static class SoundSettings {
             now.on = read.on;
             now.music = Mathf.Clamp01(read.music);
             now.sfx = Mathf.Clamp01(read.sfx);
+            now.voice = Mathf.Clamp01(read.voice);
             now.chatter = Mathf.Clamp(read.chatter, ChatterOff, ChatterMax);
             Apply();
             return true;
@@ -198,6 +219,7 @@ public static class SoundSettings {
                 now.on = read.on;
                 now.music = Mathf.Clamp01(read.music);
                 now.sfx = Mathf.Clamp01(read.sfx);
+                now.voice = Mathf.Clamp01(read.voice);
                 now.chatter = Mathf.Clamp(read.chatter, ChatterOff, ChatterMax);
             }
         } catch (System.Exception) {
