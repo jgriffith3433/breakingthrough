@@ -110,7 +110,7 @@ public class CastVoice : MonoBehaviour {
         if (clip != null && SoundSettings.EffectsLevel > 0f) {
             source.Stop();
             source.clip = clip;
-            source.volume = Mathf.Clamp01(SoundSettings.EffectsLevel);
+            source.volume = Mathf.Clamp01(SoundSettings.Voice);
             source.Play();
             len = clip.length;
         } else {
@@ -143,7 +143,7 @@ public class CastVoice : MonoBehaviour {
         }
         if (fetched != null && source != null && Time.unscaledTime <= latest && SoundSettings.EffectsLevel > 0f && !source.isPlaying) {
             source.clip = fetched;
-            source.volume = Mathf.Clamp01(SoundSettings.EffectsLevel);
+            source.volume = Mathf.Clamp01(SoundSettings.Voice);
             source.Play();
         }
     }
