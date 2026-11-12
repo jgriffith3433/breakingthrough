@@ -856,7 +856,9 @@ public partial class CinematicDirector : MonoBehaviour {
                 if (m.id == "slice") {
                     if (sliceCompanion != null) {
                         sliceCompanion.HeldMove(pos, m.anim == "walk");
-                        sliceCompanion.transform.rotation = Quaternion.Euler(0f, m.yaw, 0f);
+                        if (m.anim != "walk") {
+                            sliceCompanion.transform.rotation = Quaternion.Euler(0f, m.yaw, 0f);
+                        }
                     } else if (sliceAnim != null && (m.anim == "turn" || m.anim == "idle")) {
                         int idle = Animator.StringToHash("idle");
                         if (sliceAnim.HasState(0, idle) && !sliceAnim.GetCurrentAnimatorStateInfo(0).IsName("idle")) {
