@@ -1,4 +1,5 @@
+- canon: ADDRESS FILED finale carry — after the Order-Bearer, the player holds swing to carry the stamp to Slice’s ring, bats three raining notices, and on release ADDRESS prints and ring lamps light before the ending card; RECEIVED after ADDRESS FILED is unchanged.
 - canon: Boss in-fight barks — each of the six campaign bosses has three short paperwork lines (phase / home-run / Wallit-down) via BossVoice; Yo-family gets a mixer high-pass, not a baked filter.
-- convention: Boss voices — cast.json / audio.json hold distinct eleven_v4 voice ids per boss; stems are Resources/Voice/<castid>_<slug>.mp3 listed in audio.json; batch plan in Tools/Audio/batches/boss_barks.json.
-- lesson: Beta conflict on scenario.txt — Studio plays only line 1 for this change; keep this task's scenario id there and keep the other change's scenario registered in Playtest.cs so both stay playable.
-- convention: VoiceDirector boss reasons — boss-phase and boss-win are Key; boss-homerun is Normal; call BossVoice before WallitVoice.OnHomeRun so the boss claims the floor first.
+- convention: CinematicDirector interactive shots — `Shot.finaleCarry` pauses reel advance in `Update`; Esc/Enter calls `FinishFinaleCarry` instead of `End`; metrics live as statics on `CinematicDirector`.
+- convention: Boss voices — cast.json / audio.json hold distinct eleven_v4 voice ids per boss (`boss-phase` / `boss-win` Key, `boss-homerun` Normal in `VoiceDirector`).
+- lesson: phone playtests during cinematics — `Cutscene.IsOpen` hides touch pads, so drive hold/bat with `PlayInput.PadHold`/`PadTap` and divide world-corner width by `UiFit.PixelRatio` for CSS px.

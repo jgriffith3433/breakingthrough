@@ -1,2 +1,2 @@
-boss-barks
-{"mobile":true,"width":390,"height":844}
+finale-carry
+{"mobile":true}

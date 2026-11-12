@@ -386,12 +386,16 @@ uploading... nothing?" / "Struck from the record." / "Clean." The Done card: the
 The Moonlit Hollow, changed: the wall is gone, a path of pale slabs leads out and stops at nothing, and the circle breathes a soft gold
 ring. The opening scene has Slice say "The wall is gone. The circle is brighter." and Wallit "Then let's file it. Pay up." The chapter is
 **three waves** of four bots (Yo Bots, Plated, Mega) at the circle, then **The Order**, the Spider Bot that carries the order (wave 30's
-Alpha, a scroll with a red seal across its back). Defeat beat: "Signature... required... uploading... nothing?" / "Clean." Then *Filed*:
-the ring becomes a line of writing, then a door number, which Slice writes with her scalpel; then the **Finale pages, verbatim from
-`Story.Finale`** ("The Spider Bot comes apart. The order drops." ... "Pay up."), the **ADDRESS FILED** ending card, and a credits card
-(`Story.Credits`). The case file is marked complete (6 cleared) and reads "(filed)" in the Campaign panel. There is no Next chapter.
+Alpha, a scroll with a red seal across its back). Defeat beat: "Signature... required... uploading... nothing?" / "Clean." Then *Filed*
+as a short **playable beat** on the live Hollow (`CinematicDirector`, `ending_filed_world`, `finaleCarry`): the camera settles on Slice's
+ring; Wallit **holds swing** (hold the Swing pad on touch) to carry the stamp to her circle while the Order-Bearer's last notices rain
+down; he bats away **three** with timing prompts (a miss only knocks him back — the beat cannot fail). On release the stamp prints her
+address on the ring, four or more lamps around the ring light one by one, Slice says her existing closing line ("Clean. Good swing,
+Wallit.") in her voice, and the Chapter 6 theme swells into the **ADDRESS FILED** ending card and credits (`Story.Credits`). The beat
+lasts about 20 to 40 s; existing Finale lines only, no new voice. The **RECEIVED** path after ADDRESS FILED is unchanged. The case file
+is marked complete (6 cleared) and reads "(filed)" in the Campaign panel. There is no Next chapter.
 Flow: `HoldThenBoss` with `Final` in `ChapterRun.cs` (`CompleteFinal`, `ShowCredits`, `BuildChangedHollow`), lines in `Story.Chapters[5]`,
-the boss `Enemy.MakeOrderBearer`; the `chapter6` playtest plays it.
+the boss `Enemy.MakeOrderBearer`; playtests `chapter6` and `finale-carry`.
 
 ## New Game+ and the secret ending
 
@@ -423,8 +427,9 @@ Voices stay as ever: Wallit money, Slice clipped ("Clean.", "Numbered."), Yo Bot
 (`Tools/Cinematics/make_endings.py`); real keyframes named `ending_<variant>_<n>_back` replace stand-ins when they exist.
 **Chapters 4–6 openings and the main ADDRESS FILED / RECEIVED payoffs are in-engine** (`CinematicDirector`,
 `ch4_open_world` / `ch5_open_world` / `ch6_open_world`, `ending_filed_world`, `ending_received_world`): the Server offers its
-paper on the causeway, the ADDRESS stamp comes down on the live Hollow, six doors rise for RECEIVED, and credits scroll over
-Wallit and Slice with the credits score (still reels remain as fallback / load-card art only).
+paper on the causeway; ADDRESS FILED's stamp is **carried by the player** (hold swing, bat three falling notices, release to print
+ADDRESS and light the ring lamps) before the ending card; six doors rise for RECEIVED; credits scroll over Wallit and Slice with
+the credits score (still reels remain as fallback / load-card art only).
 
 **Ratings and the chapter select.** The hub's chapter board lists each filed chapter with its best rank (and Hard rank); the case files list shows all six ranks per file.
 

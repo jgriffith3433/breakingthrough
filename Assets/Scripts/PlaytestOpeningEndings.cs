@@ -252,15 +252,37 @@ public static class PlaytestOpeningEndings {
         int movingShots = 0;
         var lastPos = new Dictionary<string, Vector3>();
         int lastShot = -1;
-        while (!run.Done && CinematicDirector.IsOpen && Time.realtimeSinceStartup - started < 80f) {
+        bool holding = false;
+        while (!run.Done && CinematicDirector.IsOpen && Time.realtimeSinceStartup - started < 90f) {
             int idx = CinematicDirector.Instance != null ? CinematicDirector.Instance.ShotIndex : -1;
             if (idx != lastShot && idx >= 0) {
                 lastShot = idx;
                 run.Event("ending-shot", tag + " " + CinematicDirector.Instance.ShotId + " #" + idx);
                 lastPos.Clear();
             }
-            SampleMotion(ref movingShots, lastPos);
+            // Drive the finale carry hold so ending_filed_world can print ADDRESS.
+            if (CinematicDirector.FinaleCarryActive) {
+                if (!holding) {
+                    PlayInput.PadHold(KeyCode.Mouse0, true);
+                    holding = true;
+                }
+                if (CinematicDirector.FinaleTimingOpen) {
+                    PlayInput.PadTap(KeyCode.Space);
+                }
+                if (CinematicDirector.FinaleCarryReady) {
+                    PlayInput.PadHold(KeyCode.Mouse0, false);
+                    holding = false;
+                }
+            } else if (holding) {
+                PlayInput.PadHold(KeyCode.Mouse0, false);
+                holding = false;
+            } else {
+                SampleMotion(ref movingShots, lastPos);
+            }
             yield return null;
+        }
+        if (holding) {
+            PlayInput.PadHold(KeyCode.Mouse0, false);
         }
         yield return run.Until(() => done || !CinematicDirector.IsOpen, 5f, id + " end");
         bool beat = string.IsNullOrEmpty(beatPrefix) || Seen(beatPrefix);

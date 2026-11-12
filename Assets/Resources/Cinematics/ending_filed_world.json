@@ -69,21 +69,18 @@
       ]
     },
     {
-      "id": "s5_stamp",
-      "seconds": 6.5,
+      "id": "s5_carry",
+      "seconds": 36,
       "camMode": "orbit",
       "camFromPolar": [0, 9, -6, 3.6],
-      "camToPolar": [20, 8, -5, 3.2],
+      "camToPolar": [15, 8, -5, 3.2],
       "lookPolar": [0, 0, 0, 0.8],
       "fov": 50,
       "frame": ["wallit", "slice"],
-      "speaker": "S",
-      "line": "Clean. Good swing, Wallit.",
-      "sfx": "stamp",
-      "addressStamp": true,
+      "finaleCarry": true,
       "actors": [
-        { "id": "wallit", "atPolar": [30, 2.2, 0.5], "yaw": 200, "anim": "idle" },
-        { "id": "slice", "atPolar": [190, 2.0, -0.3], "yaw": 20, "anim": "idle" }
+        { "id": "wallit", "atPolar": [20, 5.5, 0.8], "yaw": 200, "anim": "idle" },
+        { "id": "slice", "atPolar": [200, 2.0, -0.5], "yaw": 20, "anim": "idle" }
       ]
     },
     {
