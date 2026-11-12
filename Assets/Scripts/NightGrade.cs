@@ -19,6 +19,10 @@ public class NightGrade : MonoBehaviour {
     public Color Highlights = new Color(1.08f, 1.0f, 0.9f);
     public Color Lift = new Color(0.0f, 0.012f, 0.03f);
 
+    // Colour-grading LUT strips (256x16) of the two looks being blended, set by FilmLight. LutAmount 0 = off.
+    [HideInInspector] public Texture2D LutA, LutB;
+    [HideInInspector] public float LutBlend, LutAmount;
+
     // 0..1: how much of Slice's health is gone (StakesFeel). The post pass drains the screen's edges toward grey by it.
     [HideInInspector] public float Stakes;
 
@@ -32,6 +36,9 @@ public class NightGrade : MonoBehaviour {
     static readonly int ShadowsId = Shader.PropertyToID("_Shadows");
     static readonly int HighlightsId = Shader.PropertyToID("_Highlights");
     static readonly int StakesId = Shader.PropertyToID("_Stakes");
+    static readonly int LutAId = Shader.PropertyToID("_LutA");
+    static readonly int LutBId = Shader.PropertyToID("_LutB");
+    static readonly int LutId = Shader.PropertyToID("_Lut");
     static readonly int LiftId = Shader.PropertyToID("_Lift");
 
     void OnRenderImage(RenderTexture source, RenderTexture destination) {
@@ -54,6 +61,10 @@ public class NightGrade : MonoBehaviour {
         material.SetColor(HighlightsId, Highlights);
         material.SetColor(LiftId, Lift);
         material.SetFloat(StakesId, Stakes);
+        bool lut = LutA != null && LutB != null && LutAmount > 0f;
+        material.SetTexture(LutAId, lut ? LutA : Texture2D.blackTexture);
+        material.SetTexture(LutBId, lut ? LutB : Texture2D.blackTexture);
+        material.SetVector(LutId, new Vector4(LutBlend, lut ? LutAmount : 0f, 0f, 0f));
 
         // A phone's screen is 3x its CSS size: start the bloom at a quarter and stop after four steps, or the
         // fill rate alone stalls an iPhone.

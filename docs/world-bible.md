@@ -157,11 +157,16 @@ ambient sound, what changes. "Gap clock" is the longest the docs allow between t
   defeat payoff (hit-stop, slow-mo, bolt burst, Slice line) before the next act banner (`BossSetPiece`).
 - **Sound:** wind bed, Yo Bot chirp, bat crack, stamp thump from the wall, Slice and Wallit barks (`VoiceDirector`); boss
   intros reuse existing Wallit/Slice voice clips under the cutscene key.
-- **Acts (built, `ArcadeActs.cs`):** waves 1-10 **Act I Night Shift** (moonlit blue, Yo Bots), 11-20 **Act II Cold Hour** (teal
-  storm light, Spider Bots come down the wall), 21-30 **Act III Last Light** (bruised dusk, orange at the rim, every kind can
-  roll an elite trait: the first mixed elite crews). After 30 the loop starts again under an **Overtime** red-ink tint. Each
-  change crossfades light, sky, grade and score over 2 s and shows a banner with a chime sting. Light and sky only: nothing
-  solid in the 150 m, no sparks.
+- **Acts (built, `ArcadeActs.cs` and `FilmLight.cs`):** each act is a different hour of the same night, lit like a film set.
+  Waves 1-10 **Act I Night Shift**, dusk (a low warm key from the side and long shadows, amber fog, the lamp posts stutter on one
+  after another, Yo Bots); 11-20 **Act II Cold Hour**, deep night (a cold blue moon key from behind the post office ruin, a blue
+  rim on Wallit, Slice and every bot, warm lamp pools on the lawn that read as the safe zones, ground fog cards drifting, Spider
+  Bots come down the wall); 21-30 **Act III Last Light**, the Department's red alert (a red key, an alarm beacon on the ruin
+  sweeping the lawn, big slow ash glows, harder contrast; every kind can roll an elite trait). After 30 the loop starts again under
+  an **Overtime** red-ink tint. Each change blends light, sky, grade (and a colour LUT per act) and score over 1.5 s with a banner
+  and a chime sting. Desktop: soft key shadows and a reflection probe; phone: no real-time shadows, a lighter bloom, the rim carried
+  by the character shader. Nothing solid in the 150 m, no camera shake, no tiny sparks (the ash is large and soft). Not built:
+  baked light probes and lightmaps (need an editor bake of the scene).
 - **Boss set pieces (built):** wave 10 **The Plated Alpha** (Slice takes a visible first crack mid-intro, Wallit covers her),
   wave 20 **The Foreman** (Yo Bots read the order aloud through act three via `ActThreeChorus`; wall press stamps faster),
   wave 30 **The Order** (fallen scroll with a red DENIED blotch; Wallit's DENIED line is on the finale card). Campaign
