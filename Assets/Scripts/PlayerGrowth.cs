@@ -293,6 +293,7 @@ public class PlayerGrowth : MonoBehaviour {
         if (OnFeet()) {
             if (leftGround && airTime > 0.18f) {
                 Landings++;
+                PlaceAudio.Land(transform.position);
                 if (wave >= Tuning.JumpWave) {
                     LandStomp();
                 } else {

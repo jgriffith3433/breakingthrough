@@ -45,6 +45,13 @@ Eight places, each its own scene or map, plus six hidden rooms. Size is the walk
 - Has: all eight places as scenes, kit-built, with lighting moods, ambience loops (`amb_hub`, `amb_ch1`..`amb_ch6`), score,
   set pieces per chapter, six back rooms. Arcade is unchanged and collider-free.
 - Built: **the title is the Hollow, alive at night** (`MenuStage`, a small rendered stage behind the menu, the same Wallit, Slice and bot models, no new art): the camera drifts and shifts a little with the pointer or a tilted phone; Wallit flips a coin and twirls his bat; Slice stands in her ring; Yo Bots rise over the hedge, look about and duck back; the lamp flickers; paper drifts on the wind. The logo (THE PLACE DEPARTMENT / BREAKING THROUGH) slams in as the Department's rubber stamp with an ink splat and a thud, then Play eases up. Play pushes the camera in to Slice's ring and the run dissolves out of that last frame (no black). The title music bed is a separate task.
+- Built: **every place has its own air** (`PlaceAudio.cs`): the Hollow's bed `amb_hollow` (crickets, a far owl, wind through loose
+  paper), the hub's and chapters' beds `amb_hub`/`amb_ch1`..`amb_ch6`, fetched with their place (never in the first download),
+  ducked under any voice line (deeper on a phone), plus three spot emitters per place on real objects, 3D with a linear rolloff and
+  random gaps: the Hollow's lantern buzz, the Dead Letter Office's creaking sign, a post box's drip; the office's ringing desk
+  phone, typewriters and radiator tick; the yard's lamp and sign, the gate's stamp press, the floor's crushers, the Long Walk's
+  lamp stilts, the Reading Room's clock and chandeliers, the filed Hollow's doorframes. Wallit's wallet-flap steps change with the
+  ground (grass, stone, wood, metal; 3 variants each, never the same twice in a row) and land with a heavier slap. `place-audio` playtest.
 - Built: **Arcade (A) has three acts** (Night Shift, Cold Hour, Last Light, then Overtime) with their own light, sky, grade, score
   layer and enemy mix (see What happens).
 - Gap: the docs record lighting and landmarks but **no per-area "gap clock"**: nothing has measured 10 s between things. Each

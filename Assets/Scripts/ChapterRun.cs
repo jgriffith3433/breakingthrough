@@ -166,6 +166,7 @@ public class ChapterRun : MonoBehaviour {
         CampaignProgress.BeginChapter();
         MusicDirector.Play(MusicDirector.ChapterTrack(Chapter));
         MusicDirector.Ambience(MusicDirector.AmbienceFor(Chapter));
+        PlaceAudio.Enter(PlaceAudio.ForChapter(Chapter), transform);
         MusicDirector.Prefetch(MusicDirector.BossTrack(data.BossName));   // fetched by URL: ready before the boss walks in
         gameObject.AddComponent<CampaignAbilities>();
         if (!string.IsNullOrEmpty(data.Companion)) {

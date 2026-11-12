@@ -737,7 +737,8 @@ public class CharacterMovement : MonoBehaviour {
             return;
         }
         stepAt = Time.unscaledTime;
-        GameAudio.PlayAt("wallitstep", landL ? footL.position : footR.position, 0.32f, 1f);
+        Vector3 at = landL ? footL.position : footR.position;
+        GameAudio.PlayAt(PlaceAudio.StepName(transform.position), at, 0.32f, Random.Range(0.94f, 1.06f));
     }
 
     void TrackFeet() {
