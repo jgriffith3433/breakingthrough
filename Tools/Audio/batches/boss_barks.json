@@ -1,0 +1,52 @@
+{
+  "note": "18 in-fight boss barks + re-record of 11 existing boss lines once Gen has credits. Project org_eb0d5c82e8da8c2d.theplacedepartment. Prefer one audio.dialogue batch per boss (stems in line order). Transcode mono 32 kHz 56 kbps. Do not bake robotic filter into files.",
+  "cast": {
+    "courier": "TxGEqnHWrfWFTfGW9XjX",
+    "platedalpha": "pNInz6obpgDQGcFmaJgB",
+    "foreman": "VR6AewLTigWG4xSOukaG",
+    "server": "XB0fDUnXU5powFXDhCwa",
+    "registrar": "SOYHLrjzK2X1ezoPC6cr",
+    "orderbearer": "ZQe5CZNOzWyzPSCn5a3c"
+  },
+  "model": "eleven_v4",
+  "provider": "elevenlabs",
+  "barks": [
+    { "id": "courier_second_notice_rush_delivery", "who": "courier", "text": "Second notice! Rush delivery!", "why": "boss-phase" },
+    { "id": "courier_air_mail_whoa", "who": "courier", "text": "Air mail! Whoa!", "why": "boss-homerun" },
+    { "id": "courier_return_to_sender_done", "who": "courier", "text": "Return to sender. Done!", "why": "boss-win" },
+    { "id": "platedalpha_stamp_void_continue", "who": "platedalpha", "text": "Stamp: VOID. Continue.", "why": "boss-phase" },
+    { "id": "platedalpha_impact_logged", "who": "platedalpha", "text": "Impact logged.", "why": "boss-homerun" },
+    { "id": "platedalpha_address_invalid", "who": "platedalpha", "text": "Address: INVALID.", "why": "boss-win" },
+    { "id": "foreman_overtime_read_louder", "who": "foreman", "text": "Overtime. Read louder.", "why": "boss-phase" },
+    { "id": "foreman_that_ain_t_billable", "who": "foreman", "text": "That ain't billable!", "why": "boss-homerun" },
+    { "id": "foreman_shift_closed_cleared", "who": "foreman", "text": "Shift closed. Cleared.", "why": "boss-win" },
+    { "id": "server_final_offer_please_sign", "who": "server", "text": "Final offer. Please sign.", "why": "boss-phase" },
+    { "id": "server_delivery_delayed_briefly", "who": "server", "text": "Delivery delayed. Briefly.", "why": "boss-homerun" },
+    { "id": "server_served_kindly_remain", "who": "server", "text": "Served. Kindly remain.", "why": "boss-win" },
+    { "id": "registrar_page_two_initial_here", "who": "registrar", "text": "Page two. Initial here.", "why": "boss-phase" },
+    { "id": "registrar_margin_note_struck", "who": "registrar", "text": "Margin note: struck.", "why": "boss-homerun" },
+    { "id": "registrar_filed_case_closed", "who": "registrar", "text": "Filed. Case closed.", "why": "boss-win" },
+    { "id": "orderbearer_the_seal_turns", "who": "orderbearer", "text": "The seal turns.", "why": "boss-phase" },
+    { "id": "orderbearer_the_order_holds", "who": "orderbearer", "text": "The order... holds.", "why": "boss-homerun" },
+    { "id": "orderbearer_address_struck", "who": "orderbearer", "text": "Address. Struck.", "why": "boss-win" }
+  ],
+  "rerecord": [
+    "courier_notice_undelivered_uploading_defeat",
+    "foreman_order_read_aloud_one_hat_blue_uploading_that_is_not_the_order",
+    "foreman_order_read_aloud_strike_this_address",
+    "foreman_order_unread",
+    "foreman_strike_this_address",
+    "orderbearer_order_in_force_strike_this_address",
+    "platedalpha_plate_voided_uploading_nothing",
+    "registrar_register_closed_uploading_nothing",
+    "server_delivery_is_to_the_named_address",
+    "server_delivery_undelivered_chirp",
+    "server_three_knocks_on_record"
+  ],
+  "estimate_usd": {
+    "six_voice_designs_short": 1.11,
+    "eighteen_barks_audio_voice": 0.28,
+    "six_tiny_dialogue_batches": 0.84,
+    "note": "Budget was $0.86; designs alone exceed it. Using premade eleven_v4 library ids for now; custom voice-design when credits and budget allow (~$2 total)."
+  }
+}

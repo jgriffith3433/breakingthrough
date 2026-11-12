@@ -237,6 +237,10 @@ public class LevelScene : MonoBehaviour {
         CharacterMovement.PlayWallitClip(CharacterMovement.CLIP_DEATH, 1.6f);
         Hud.ShowReceipt("RETURNED TO SENDER. Fee: one coin.", 2.4f);
         GameAudio.Play("stomp", 0.8f, 0.7f);
+        Enemy boss = BossVoice.LiveBoss();
+        if (boss != null) {
+            BossVoice.OnWallitDown(boss);
+        }
     }
 
     void Resume() {

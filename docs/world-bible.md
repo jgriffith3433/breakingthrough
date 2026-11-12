@@ -126,15 +126,56 @@ Routines are "through the day": the world has no clock face, so a day is a chapt
 ### The Courier
 - Want: deliver the notice of striking onto Slice.
 - Arc: clipboard raised → stamps notices → breaks when the notice is broken or stood in.
-- Moment: raises the clipboard; the stamp mark appears under Wallit or Slice (`Courier`).
-- Personality: polite, official, brittle.
-- Voice: `hv_young_hero`.
+- Moment: raises the clipboard; the stamp mark appears under Wallit or Slice (`Courier`). Phase two: "Second notice! Rush delivery!"
+- Personality: chirpy, dutiful, unbothered.
+- Voice: `TxGEqnHWrfWFTfGW9XjX` (eleven_v4 Josh; chirpy postal clerk; robotic high-pass in `BossVoice`).
 - Animations: idle (clipboard), walk, talk (bark), tell/stamp, stagger, death (`CharacterKit` courier).
+
+### The Plated Alpha
+- Want: stamp Wallit's address INVALID and clear the circle.
+- Arc: plated wall at the gate → phase two dual stamps → plate voided on defeat.
+- Moment: phase two bark "Stamp: VOID. Continue." while two ground marks fill (`BossPhases` / `BossVoice`).
+- Personality: clipped, metallic, final.
+- Voice: `pNInz6obpgDQGcFmaJgB` (eleven_v4 Adam; robotic high-pass in `BossVoice`).
+- Animations: idle, walk, talk (bark), tell/stamp, stagger, death (`CharacterKit` platedalpha).
+
+### The Foreman
+- Want: read the order aloud until the address is struck and the belt runs overtime.
+- Arc: order on its chest → overtime phase → order unread when broken.
+- Moment: phase two "Overtime. Read louder." as a march and a page land together.
+- Personality: gravelly, blunt, overtime-minded.
+- Voice: `VR6AewLTigWG4xSOukaG` (eleven_v4 Arnold; robotic high-pass in `BossVoice`).
+- Animations: idle (order sheet), walk, talk (bark), tell/march, stagger, death (`CharacterKit` foreman).
+
+### The Server
+- Want: serve the paper to the named address and wait until it is accepted or refused thrice.
+- Arc: polite offer → three refusals → unleashed marches at 40% health.
+- Moment: phase bark "Final offer. Please sign." once it fights in earnest (`BossPhases` after `Unleash`).
+- Personality: polite, insistent, patient.
+- Voice: `XB0fDUnXU5powFXDhCwa` (eleven_v4 Charlotte).
+- Animations: idle (paper), walk, talk (bark), offer/strike, stagger, death (`CharacterKit` server).
+
+### The Registrar
+- Want: read every page of the order into the ledger and close the register.
+- Arc: ledger open → page-and-stamp phase two → register closed on defeat.
+- Moment: phase bark "Page two. Initial here." as the red wash hits (`BossVoice`).
+- Personality: dry, final, exact.
+- Voice: `SOYHLrjzK2X1ezoPC6cr` (eleven_v4 Harry).
+- Animations: idle (ledger/page turn), walk, talk (bark), tell/page, stagger, death (`CharacterKit` registrar).
+
+### The Order-Bearer
+- Want: carry the sealed order to the circle and leave it in force.
+- Arc: scroll on its back → the seal turns at half health → order in force until struck.
+- Moment: phase bark "The seal turns." then marches and called Yo Bots.
+- Personality: slow, ceremonial, final.
+- Voice: `ZQe5CZNOzWyzPSCn5a3c` (eleven_v4 James).
+- Animations: idle (scroll), walk, talk (bark), tell/stamp, stagger, death (`CharacterKit` orderbearer).
+
 - **Yo Bots / Plated / Mega** (the Clearing Crew). Sleep dormant at their drop in chapters, wake by proximity ("yobot_wake"), chirp
   while walking, read the order aloud from wave 20. A Yo Bot that has been struck sags then rights itself; a golden one runs.
 - **Spider Bots** (process servers). Walk to an address and wait; the Server offers a paper and strikes only on the third refusal.
-- **The named ones:** the Courier (Ch1, clipboard, stamps notices on Slice), the Plated Alpha (Ch2), the Foreman (Ch3, overtime),
-  the Server (Ch4), the Registrar (Ch5, gold Titan with a ledger), the Order-Bearer (Ch6), the Dead Letter (Ch4 back room).
+- **The named ones:** the Courier (Ch1), the Plated Alpha (Ch2), the Foreman (Ch3), the Server (Ch4), the Registrar (Ch5), the
+  Order-Bearer (Ch6), the Dead Letter (Ch4 back room). Each of the six has three in-fight barks (`BossVoice`).
 - **The lodgers** (Office, none fights): **Tick** (clock; pendulum swing, strikes the hour), **Brim** (hat; looks about, tips what it
   does not have), **Spare** (half-built Yo Bot; hops, chirps, tinkers), **Chime** (bell; rocks, rings; gives errands). The desk
   changes hands as the file advances (Tick, Spare, Brim, Tick). Each has a voice and three chats; a gold **!** marks an unheard one.

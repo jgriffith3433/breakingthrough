@@ -485,6 +485,10 @@ public class WaveDirector : MonoBehaviour {
         if (phase == Phase.Lost) {
             return;
         }
+        Enemy boss = BossVoice.LiveBoss();
+        if (boss != null) {
+            BossVoice.OnWallitDown(boss);
+        }
         Lose();
     }
 

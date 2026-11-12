@@ -1,1 +1,2 @@
-hub-two-shot
+boss-barks
+{"mobile":true,"width":390,"height":844}

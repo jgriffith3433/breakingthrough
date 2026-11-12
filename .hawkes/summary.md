@@ -1,21 +1,30 @@
-# Art cohesion on the first screen (cast + compile)
+# Conflict pass: merge origin/beta into boss-barks
 
-## What was wrong
-The critic’s first-five frame (t≈2s) showed a grey web card with an H logo and Google — no Wallit, Slice or bots. MenuStage already puts the live cast behind the Unity menu (#229/#238), but paint-zero is the Tap to play overlay, which was text on a flat night gradient. Separately, beta had hit CS0120 on `CinematicDirector.ReelId`; that call site is already fixed on beta (`PlaytestOpening.cs:120` uses `Instance.ReelId`).
+## What happened
+Beta moved with #258 (hub conversations as acted two-shots). Merged `origin/beta` into this branch and kept both sides' work.
 
-## What changed
-- **`Tools/Web/hawkes-sound.js`**: Tap to play now shows Wallit, Slice, Yo Bot and Spider Bot as framed case-file portraits on one night Department palette (gilt frames, warm lamp / cold moon veil). Safe-area padding, overflow hidden, Tap target ≥48 CSS px. `data-hawkes-cast` marks the lineup. Six visible words only (aria-hidden portraits).
-- **`Tools/Web/cast/*.webp`**: Existing site cast portraits (no GPU). Deployed next to the Game page.
-- **`Assets/Editor/WebGlBuild.cs`**: `InstallSoundPrompt` copies `Tools/Web/cast` into `Game/cast` on every FullDeploy.
-- **`PlaytestFirstScreen.cs` / `Playtest.cs`**: `first-screen` requires the MenuStage cast (`first-screen-cast`, `firstScreenCastOk`), logs `first-screen-phone`, and fails controls past the left/right edge (`firstScreenOffscreenX` — sideways scroll). Scenario named in `.hawkes/scenario.txt`.
+## Conflicts and how each was resolved
 
-## Checks
-- CS0120: no `CinematicDirector.ReelId` static use left; line 120 is instance-safe.
-- `node --check Tools/Web/hawkes-sound.js` passed.
-- C# compile not run here (no Unity in this sandbox). Read changed C# for duplicate members / signature traps; none found.
-- Fun reviewer: **thin** (cast present; tap card still mute/static vs living MenuStage). Gaps are polish (idle voice, Ken Burns), not blockers for art-cohesion presence.
-- Reviewer: **revise** notes fixed (Slice `.s` opacity clash removed; portraits framed as one dossier strip so opaque blue plates don’t fight the night palette). Tap-card HTML isn’t asserted from Unity; MenuStage + first-five footage cover the criterion.
-- Conflicts: none.
+| File | Resolution |
+|---|---|
+| `.hawkes/scenario.txt` | **Conflict.** Kept this change's playtest pointer: `boss-barks` + phone JSON `{"mobile":true,"width":390,"height":844}`. Beta's `hub-two-shot` stays registered and playable in `Playtest.cs` (Studio only reads line 1 of scenario.txt for this change's criteria). |
+| `Assets/Scripts/Playtest.cs` | **Auto-merged clean.** Both `boss-barks` / `BossBarksRun` and `hub-two-shot` / `PlaytestTwoShot.Run` stay registered and dispatched. |
+| `docs/world-bible.md` | **Auto-merged clean.** Kept this change's six boss Characters rows (distinct eleven_v4 voice ids + BossVoice moments) and beta's ConversationStage talk animations, Office two-shot interactions, and story beat 14. |
 
-## For J
-Open beta → first paint should be Wallit / Slice / bots in gilt frames on night blue, then Tap to play, then the live MenuStage Hollow. GPU estimate for true alpha cutouts / a single MenuArt still: not run (budget was none); ask if you want that pass.
+No unsafe binary / scene / prefab conflicts. Did not abort.
+
+## Also pulled from beta (no conflict)
+`ConversationStage.cs`, `PlaytestTwoShot.cs`, and CastVoice/ChapterHub/HubAmbience mouth-amplitude wiring for acted hub talks.
+
+## Checks re-run
+- Six campaign boss `voiceId`s in `cast.json` still distinct (Josh/Adam/Arnold/Charlotte/Harry/James); provider elevenlabs
+- `cast.json`, `audio.json`, `Tools/Audio/batches/boss_barks.json` parse
+- No conflict markers in Playtest.cs / world-bible / scenario.txt
+- Brace balance on Playtest.cs matches both parents (string-stripped)
+- Unity compile not run here (no editor in sandbox)
+
+## Other agents
+`c_0e22a5366cf1` (finale Slice address restore) has no files yet — no overlap.
+
+## Still blocked (unchanged from prior pass)
+Gen credits too low to record the 18 bark stems; subtitles + distinct voice ids + wiring are in. Stems still need a credits/budget pass.

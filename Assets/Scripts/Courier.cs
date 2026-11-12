@@ -121,6 +121,7 @@ public class Courier : MonoBehaviour {
             enemy.Stagger(1.2f);   // phase two arrives on the body (after the tell, if one is running)
             Events.Add("phase2");
             BossPhases.Announce(enemy, "faster notices, it calls the crew");
+            BossVoice.OnPhase(enemy);
             Fx.Ring(transform.position, 7f, new Color(1f, 0.3f, 0.22f, 0.9f), 0.6f);
             GameAudio.PlayAt("stamp_heavy", transform.position, 0.7f, 1.1f);
             Line(Story.CourierSecond, "courier-second");
