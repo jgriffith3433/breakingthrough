@@ -1,20 +1,23 @@
-# Merge with origin/beta — Slice partner + Hollow / boss entrances
+# Fix beta build: PlaytestOpening CS0120 (transitions already shipped)
 
-## Conflict
-- **`docs/world-bible.md`** (only conflict). Both sides added Story-beats content after "The breach":
-  - **Ours (HEAD):** beat 13 "Slice calls the shot" (callouts, Cold Hour parry, Last Light stamp, `slice-partner` proof).
-  - **Beta:** "Boss entrances (every boss)" (`CinematicBoss.cs`, `boss-entrances` playtest) from the boss-intros change.
-- **Resolution:** kept both sections in order (beat 13, then Boss entrances). Characters / Who-lives Slice partner rows from our branch stayed; beta's Dead Letter Office landmark row and `HollowPostOffice` note stayed. Updated the A Hollow gaps table so it no longer says "no landmark" (Office ruin is built; stamp-press silhouette still open).
-- No other conflicts. Auto-merged cleanly: `Docs/Story.md` (partner + boss entrances), `Playtest.cs` (`slice-partner` + `boss-entrances` + `hollow-*`), Hollow / CinematicBoss scripts from beta.
+## What was wrong
+Beta build web 122 failed after the stamped-transitions change merged: `Assets/Scripts/PlaytestOpening.cs(120,36): error CS0120` — `CinematicDirector.ReelId` is an instance property, but the opening playtest called it as static. Latent since the cinematic-director PR; a clean beta rebuild surfaced it. The transitions feature itself (ScreenTransition, LoadScreen, seven LoadCards, `transitions` playtest) was already on beta.
 
-## Prior work (unchanged this pass)
-`SliceCallouts`, voice/sfx bake, `slice-partner` playtest — already on the branch. Did not redo the task. Did not touch the queued Hollow landmark change's files beyond accepting beta's merge.
+## What changed
+- `Assets/Scripts/PlaytestOpening.cs`: read `CinematicDirector.Instance.ReelId` (null-safe), same pattern as `ShotIndex` two lines later.
+- `.hawkes/scenario.txt`: `transitions` (was stale `slice-partner` from an older merge note in HEAD).
+
+No GPU spend. No new art. Conflicts: none.
 
 ## Checks
-- No conflict markers left in the tree.
-- World-bible Characters still have Want/Arc/Moment/Personality/Voice/Animations for Wallit, Slice, Yo Bot, The Courier.
-- `slice-partner` scenario still registered; SliceCallouts.cs present.
-- Unity compile not run here (no editor). Studio cloud build + `slice-partner` playtest should prove AC 1–4.
+- Grep: only that one bad static `ReelId` call; nested types like `BossResult` are fine.
+- `transitions` still registered in `Playtest.cs`; `PlaytestTransitions.cs` present; seven `LoadCards/card_*.png` and `paper_slide` / `stamp_heavy` tracked.
+- Animation timing still 0.66 s (0.26+0.08+0.06+0.26).
+- Unity compile not run here (no editor). Studio cloud build should clear CS0120.
 
-## Scenario
-`slice-partner`
+## Reviewers
+- **fun-reviewer:** thin (not demo). Soul 5; story-as-experience 4. Gaps beyond this AC (Settings/Shop hard cuts; card is watch-only; art-miss fallback) left for later — this pass is the build fix.
+- **reviewer:** merge. Compile fix is the real cause; scope tight; feature kept.
+
+## Left for later (not this change)
+Settings / Shop / pause / level-up still hard-cut; optional card interaction while the strip fills; richer art-miss fallback than the night plate.
