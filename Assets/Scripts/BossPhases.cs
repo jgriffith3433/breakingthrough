@@ -107,6 +107,7 @@ public class BossPhases : MonoBehaviour {
         enemy.Stagger(1.2f);   // phase two arrives on the body: it lurches and buckles
         nextAttack = 1.8f;
         Announce(enemy, Who + ": " + PhaseLine());
+        BossVoice.OnPhase(enemy);
         Fx.Ring(transform.position, enemy.BodyScale * 4.5f, new Color(1f, 0.2f, 0.12f, 0.9f), 0.8f);
         Fx.Emit(FxKind.Flash, transform.position + Vector3.up * 1.4f, 1, new Color(1f, 0.4f, 0.3f, 0.8f), 3.2f, 0f);
         GameAudio.PlayAt("stomp", transform.position, 1f, 0.5f);

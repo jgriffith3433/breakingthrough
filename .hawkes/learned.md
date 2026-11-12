@@ -1,4 +1,4 @@
-- lesson: Critic “grey H + Google” first paint — often Studio’s beta gate or the Tap to play shell, not Unity; put cast art in `Tools/Web/hawkes-sound.js` (and ship `Tools/Web/cast` via `InstallSoundPrompt`) so first-five sees the game before MenuStage loads.
-- lesson: `#hawkes-tap .s` was the italic subtitle rule — never reuse `.s` on Slice’s portrait or she inherits opacity 0.7.
-- convention: MenuArt.png is still missing; Unity first screen cast is `MenuStage` (live models, one night palette); web first paint uses site cast webps framed as case-file portraits.
-- convention: `CinematicDirector.ReelId` is instance-only — always `CinematicDirector.Instance.ReelId` (null-safe), same as `ShotIndex`.
+- canon: Boss in-fight barks — each of the six campaign bosses has three short paperwork lines (phase / home-run / Wallit-down) via BossVoice; Yo-family gets a mixer high-pass, not a baked filter.
+- convention: Boss voices — cast.json / audio.json hold distinct eleven_v4 voice ids per boss; stems are Resources/Voice/<castid>_<slug>.mp3 listed in audio.json; batch plan in Tools/Audio/batches/boss_barks.json.
+- lesson: Gen credits gate voice work — audio.voice needs ~8 credits; with 1 left, stop after one failed test line and write stuck.md; estimate custom voice-design alone ~$1.11 so a $0.86 budget cannot cover six designs.
+- convention: VoiceDirector boss reasons — boss-phase and boss-win are Key; boss-homerun is Normal; call BossVoice before WallitVoice.OnHomeRun so the boss claims the floor first.

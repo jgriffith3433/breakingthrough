@@ -1,21 +1,29 @@
-# Art cohesion on the first screen (cast + compile)
+# Boss eleven_v4 voices + in-fight barks (part 1)
 
 ## What was wrong
-The critic’s first-five frame (t≈2s) showed a grey web card with an H logo and Google — no Wallit, Slice or bots. MenuStage already puts the live cast behind the Unity menu (#229/#238), but paint-zero is the Tap to play overlay, which was text on a flat night gradient. Separately, beta had hit CS0120 on `CinematicDirector.ReelId`; that call site is already fixed on beta (`PlaytestOpening.cs:120` uses `Instance.ReelId`).
+Campaign bosses shared house/open voices and did not talk back mid-fight, so they read as health bars.
 
 ## What changed
-- **`Tools/Web/hawkes-sound.js`**: Tap to play now shows Wallit, Slice, Yo Bot and Spider Bot as framed case-file portraits on one night Department palette (gilt frames, warm lamp / cold moon veil). Safe-area padding, overflow hidden, Tap target ≥48 CSS px. `data-hawkes-cast` marks the lineup. Six visible words only (aria-hidden portraits).
-- **`Tools/Web/cast/*.webp`**: Existing site cast portraits (no GPU). Deployed next to the Game page.
-- **`Assets/Editor/WebGlBuild.cs`**: `InstallSoundPrompt` copies `Tools/Web/cast` into `Game/cast` on every FullDeploy.
-- **`PlaytestFirstScreen.cs` / `Playtest.cs`**: `first-screen` requires the MenuStage cast (`first-screen-cast`, `firstScreenCastOk`), logs `first-screen-phone`, and fails controls past the left/right edge (`firstScreenOffscreenX` — sideways scroll). Scenario named in `.hawkes/scenario.txt`.
+- **Bark lines + story:** three paperwork barks each for Courier, Plated Alpha, Foreman, Server, Registrar, Order-Bearer (`Docs/Story.md` "Boss barks"; banks in `BossVoice.cs`).
+- **Wiring:** `BossVoice.cs` plays through `VoiceDirector` (`boss-phase` Key, `boss-homerun` Normal, `boss-win` Key). Hooks from `BossPhases`, `Courier`, `BossSetPiece`, `BatEquipment` (home run on a boss), `LevelScene.Defeated`, `WaveDirector.MusicianDown`. Yo-family bosses get a light `AudioHighPassFilter` on the mixer source (not baked into files). Captions use `UiFit.PlaceCaption` (upper third on phone).
+- **Distinct eleven_v4 voice ids** in `cast.json` + `audio.json` (six premade library ids; none shared). 18 bark rows registered in `audio.json`; batch list in `Tools/Audio/batches/boss_barks.json`.
+- **World bible:** full Characters entries for all six bosses (Want/Arc/Moment/Personality/Voice/Animations).
+- **Playtest:** `boss-barks` scenario (`PlaytestBossBarks.cs`); `.hawkes/scenario.txt` is phone 390x844.
+
+## Blocked (Gen credits)
+Tested one `audio.voice` line first: Gen has **1 credit left** (needs 8). See `.hawkes/stuck.md`. Custom voice-design estimate alone ~$1.11 vs $0.86 budget. Stems are pending (`.hawkes/pending-gpu.txt`); subtitles still show.
 
 ## Checks
-- CS0120: no `CinematicDirector.ReelId` static use left; line 120 is instance-safe.
-- `node --check Tools/Web/hawkes-sound.js` passed.
-- C# compile not run here (no Unity in this sandbox). Read changed C# for duplicate members / signature traps; none found.
-- Fun reviewer: **thin** (cast present; tap card still mute/static vs living MenuStage). Gaps are polish (idle voice, Ken Burns), not blockers for art-cohesion presence.
-- Reviewer: **revise** notes fixed (Slice `.s` opacity clash removed; portraits framed as one dossier strip so opaque blue plates don’t fight the night palette). Tap-card HTML isn’t asserted from Unity; MenuStage + first-five footage cover the criterion.
-- Conflicts: none.
+- JSON parse of cast/audio/batch: ok
+- Six voice ids unique: ok
+- Brace balance on new C#: ok
+- Unity compile not run here (no editor in sandbox)
+- Fun review (self, subagent usage capped): **thin** — wiring and tone are living-world; silent stems until credits
+- Code review (self): **revise for stems** before criteria 2–4 can pass on beta audio; code path and distinct ids are ready
 
-## For J
-Open beta → first paint should be Wallit / Slice / bots in gilt frames on night blue, then Tap to play, then the live MenuStage Hollow. GPU estimate for true alpha cutouts / a single MenuArt still: not run (budget was none); ask if you want that pass.
+## Conflicts
+None with `c_ccaa518c99cf` (dialogue two-shots); did not touch cutscene/portrait presentation.
+
+## Left for next pass (credits + optional budget bump)
+1. Record 18 bark stems (+ 11 existing boss line re-records) with `audio.dialogue` / `audio.voice`, ffmpeg mono 32 kHz 56 kbps, `studio_gen_import`.
+2. Optional: replace premade ids with custom `audio.voice-design` (~$1.11+) if J wants designed voices over library ones.

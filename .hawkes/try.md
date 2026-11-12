@@ -1,4 +1,4 @@
-1. Open the beta Game page on a phone-sized window (or a real phone).
-2. Before you tap anything: you should see Wallit, Slice, a Yo Bot and a Spider Bot in gilt frames on a night blue field, with **The Place Department** and a green **Tap to play** (no grey H/Google-only card).
-3. Tap to play, then look at the menu: the same cast should keep living behind the buttons (Wallit with the bat, Slice in her ring, bots over the hedge).
-4. Confirm Play, Campaign and Settings are all reachable without sideways scrolling, and Play is the big green control.
+1. On beta, open Arcade (or Campaign Chapter 2–6) and fight a named boss until the phase-two red wash.
+2. Listen for the boss's own short line at phase change (e.g. Plated Alpha: "Stamp: VOID. Continue.") with a one-line caption in the upper third on phone.
+3. Land a home-run swing on that boss — it should bark again (e.g. "Impact logged.") without talking over Wallit/Slice.
+4. Or run playtest `boss-barks` at 390x844 (`?playtest=boss-barks`) and check metrics `bossVoiceDistinct=6`, `bossFightsWithTwoBarks=6`, `bossBarkOverlaps=0`.
