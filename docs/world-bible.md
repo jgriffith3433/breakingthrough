@@ -107,7 +107,7 @@ Routines are "through the day": the world has no clock face, so a day is a chapt
 - Moment: wakes with `yobot_wake` and chirps "Uploading victory!" while walking a straight line at the circle.
 - Personality: chirpy, bright, relentless.
 - Voice: `hv_kid`.
-- Animations: walk cycle, wind-up, claw strike, flinch, death (`CharacterRig` on Yo Bot parts).
+- Animations: idle (dormant / standing), walk cycle, talk (chirp bark via `CastVoice` / `hv_kid`), wind-up, claw strike, flinch, death (`CharacterRig` on Yo Bot parts).
 
 ### The Courier
 - Want: deliver the notice of striking onto Slice.
