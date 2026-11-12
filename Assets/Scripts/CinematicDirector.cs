@@ -15,6 +15,10 @@ public partial class CinematicDirector : MonoBehaviour {
         public float[] at;
         public float[] from;
         public float[] to;
+        // Polar marks for chapter maps: [bearingDeg, alongMetres, sideMetres] from the circle (Musician).
+        public float[] atPolar;
+        public float[] fromPolar;
+        public float[] toPolar;
         public float yaw;
         public string anim;
         public bool tell;
@@ -26,6 +30,10 @@ public partial class CinematicDirector : MonoBehaviour {
         public float[] camFrom;
         public float[] camTo;
         public float[] lookAt;
+        // Polar camera: [bearingDeg, along, side, heightY] from the circle.
+        public float[] camFromPolar;
+        public float[] camToPolar;
+        public float[] lookPolar;
         public float fov = 55f;
         public string[] frame;
         public string speaker = "N";
@@ -33,6 +41,8 @@ public partial class CinematicDirector : MonoBehaviour {
         public string sfx;
         public float[] stamp;
         public bool slam;
+        public bool postmark;   // Chapter 2: slam a torn postmark onto the gate
+        public bool belt;       // Chapter 3: belt of cleared things slides toward the shredder
         public bool handoff;
         public Mark[] actors;
     }
@@ -61,6 +71,7 @@ public partial class CinematicDirector : MonoBehaviour {
     public string ShotId { get { return reel != null && shotIndex >= 0 && shotIndex < ShotCount ? reel.shots[shotIndex].id : ""; } }
     public string ReelId { get { return reel != null ? reel.id : ""; } }
     public string Subtitle { get { return caption != null ? caption.text : ""; } }
+    public string SubtitleSpeaker { get; private set; }
     public bool SkipPillShown { get { return skipPill != null && skipPill.activeSelf; } }
 
     bool open;
@@ -82,13 +93,23 @@ public partial class CinematicDirector : MonoBehaviour {
     bool viewSet;
 
     LevelYard yard;
+    bool chapterHost;          // ChapterRun in scene2 (EdgeMap / FloorMap), not LevelYard
+    Vector3 circle;            // Musician / ring centre for polar marks
+    float chapterBearing;      // chapter route bearing (gate / belt)
     Transform wallit;
     CharacterController wallitBody;
     MovementMotor wallitMotor;
     Transform slice;
     Animator sliceAnim;
+    Companion sliceCompanion;
     Enemy courier;
+    Enemy yobot;
     bool courierOwned;
+    bool yobotOwned;
+    bool shotPostmark;
+    bool shotBelt;
+    GameObject postmarkGo;
+    Transform postmarkHead;
 
     Font font;
     CanvasScaler scaler;
@@ -130,6 +151,23 @@ public partial class CinematicDirector : MonoBehaviour {
         Instance.Begin(r, host, onDone);
     }
 
+    // Chapter 2 / 3 openings in scene2: Wallit is the run's player, Slice is the companion or the ring figure.
+    public static void PlayChapter(string id, Action onDone) {
+        Reel r = Load(id);
+        if (r == null || r.shots == null || r.shots.Length == 0) {
+            onDone?.Invoke();
+            return;
+        }
+        if (Instance == null) {
+            Instance = new GameObject("Cinematic Director").AddComponent<CinematicDirector>();
+        }
+        Instance.BeginChapter(r, onDone);
+    }
+
+    public static bool HasWorld(string id) {
+        return Load(id) != null;
+    }
+
     public static Reel Load(string id) {
         TextAsset asset = Resources.Load<TextAsset>("Cinematics/" + id);
         if (asset == null) {
@@ -158,6 +196,9 @@ public partial class CinematicDirector : MonoBehaviour {
             End(true);
         }
         yard = host;
+        chapterHost = false;
+        circle = LevelYard.RingCenter;
+        chapterBearing = 0f;
         reel = r;
         done = onDone;
         shotIndex = -1;
@@ -174,36 +215,19 @@ public partial class CinematicDirector : MonoBehaviour {
         LevelScene level = LevelScene.Instance;
         if (level != null) {
             wallit = level.Player;
-            if (wallit != null) {
-                wallitBody = wallit.GetComponent<CharacterController>();
-                wallitMotor = wallit.GetComponent<MovementMotor>();
-                if (wallitMotor != null) {
-                    wallitMotor.Stop();
-                }
-            }
+            BindWallit();
             cam = level.Cam;
             if (cam != null) {
                 zelda = cam.GetComponent<ZeldaStyleCamera>();
                 savedFov = cam.fieldOfView;
             }
         }
+        sliceCompanion = null;
         slice = host != null ? host.SliceBody : null;
-        if (slice != null) {
-            sliceAnim = slice.GetComponent<Animator>();
-            if (sliceAnim == null) {
-                sliceAnim = slice.GetComponentInChildren<Animator>();
-            }
-        }
+        BindSliceAnim();
 
         if (!ActorsReady(r)) {
-            Events.Add("fallback|" + (r.fallback ?? "ch1_open"));
-            open = false;
-            VoiceDirector.Scene = false;
-            string fb = string.IsNullOrEmpty(r.fallback) ? "ch1_open" : r.fallback;
-            Cutscene.PlayShots(fb, () => {
-                done?.Invoke();
-                done = null;
-            });
+            FallbackStill(r);
             return;
         }
 
@@ -214,24 +238,127 @@ public partial class CinematicDirector : MonoBehaviour {
         NextShot();
     }
 
+    void BeginChapter(Reel r, Action onDone) {
+        if (open) {
+            End(true);
+        }
+        yard = null;
+        chapterHost = true;
+        circle = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
+        chapterBearing = RouteBearing();
+        reel = r;
+        done = onDone;
+        shotIndex = -1;
+        open = true;
+        handingOff = false;
+        skipRevealed = false;
+        viewSet = false;
+        Events.Add("open|" + r.id);
+        VoiceDirector.Scene = true;
+        WallitVoice.Silence();
+        SliceVoice.Silence();
+        CastVoice.Silence();
+
+        PlayerGrowth pg = PlayerGrowth.Instance;
+        wallit = pg != null ? pg.transform : null;
+        BindWallit();
+        Camera main = Camera.main;
+        if (main != null) {
+            cam = main;
+            zelda = main.GetComponent<ZeldaStyleCamera>();
+            savedFov = main.fieldOfView;
+        }
+        // Chapter 2: Slice walks with Wallit (Companion). Chapter 3: she holds the ring (Musician figure).
+        sliceCompanion = Companion.Instance;
+        if (sliceCompanion != null) {
+            slice = sliceCompanion.transform;
+            sliceCompanion.Held = true;
+        } else if (Musician.Instance != null) {
+            slice = Musician.Instance.transform;
+        } else {
+            slice = null;
+        }
+        BindSliceAnim();
+
+        if (!ActorsReady(r)) {
+            if (sliceCompanion != null) {
+                sliceCompanion.Held = false;
+            }
+            FallbackStill(r);
+            return;
+        }
+
+        EnsureUi();
+        uiRoot.SetActive(true);
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        NextShot();
+    }
+
+    void BindWallit() {
+        if (wallit == null) {
+            return;
+        }
+        wallitBody = wallit.GetComponent<CharacterController>();
+        wallitMotor = wallit.GetComponent<MovementMotor>();
+        if (wallitMotor != null) {
+            wallitMotor.Stop();
+        }
+    }
+
+    void BindSliceAnim() {
+        sliceAnim = null;
+        if (slice == null) {
+            return;
+        }
+        sliceAnim = slice.GetComponent<Animator>();
+        if (sliceAnim == null) {
+            sliceAnim = slice.GetComponentInChildren<Animator>();
+        }
+    }
+
+    void FallbackStill(Reel r) {
+        Events.Add("fallback|" + (r.fallback ?? "ch1_open"));
+        open = false;
+        VoiceDirector.Scene = false;
+        string fb = string.IsNullOrEmpty(r.fallback) ? "ch1_open" : r.fallback;
+        Cutscene.PlayShots(fb, () => {
+            done?.Invoke();
+            done = null;
+        });
+    }
+
     bool ActorsReady(Reel r) {
         if (wallit == null || slice == null) {
             return false;
         }
         bool needCourier = false;
+        bool needYobot = false;
         foreach (Shot s in r.shots) {
             if (s.actors == null) {
                 continue;
             }
             foreach (Mark m in s.actors) {
-                if (m != null && m.id == "courier") {
+                if (m == null) {
+                    continue;
+                }
+                if (m.id == "courier") {
                     needCourier = true;
+                }
+                if (m.id == "yobot") {
+                    needYobot = true;
                 }
             }
         }
         if (needCourier) {
             EnsureCourier();
             if (courier == null) {
+                return false;
+            }
+        }
+        if (needYobot) {
+            EnsureYobot();
+            if (yobot == null) {
                 return false;
             }
         }
@@ -258,6 +385,26 @@ public partial class CinematicDirector : MonoBehaviour {
         courierOwned = true;
     }
 
+    void EnsureYobot() {
+        if (yobot != null) {
+            return;
+        }
+        BotDef def = BotRoster.ForSpawn(BotKind.YoBot, 1);
+        var go = new GameObject("Cinematic Half-Built");
+        go.tag = "enemy";
+        Vector3 p = PolarPoint(chapterBearing > 1f ? chapterBearing : 200f, 36f, 0f);
+        // Hang at hook height on the gantry (landmark), not on the floor.
+        p.y = Ground(p.x, p.z) + 2.4f;
+        go.transform.position = p;
+        go.transform.rotation = Quaternion.Euler(0f, chapterBearing + 180f, 0f);
+        Enemy e = go.AddComponent<Enemy>();
+        e.ApplyBot(def);
+        e.Dormant = true;
+        e.Scripted = true;
+        yobot = e;
+        yobotOwned = true;
+    }
+
     void NextShot() {
         shotIndex++;
         if (reel == null || reel.shots == null || shotIndex >= reel.shots.Length) {
@@ -271,6 +418,8 @@ public partial class CinematicDirector : MonoBehaviour {
         shotSfx = false;
         shotStamp = false;
         shotSlam = false;
+        shotPostmark = false;
+        shotBelt = false;
         ShotsShown++;
         Events.Add("shot|" + s.id + "|" + shotIndex);
         PlaceActors(s, 0f);
@@ -305,6 +454,8 @@ public partial class CinematicDirector : MonoBehaviour {
         TickVoice(s, u);
         TickSfx(s, u);
         TickStamp(s, u);
+        TickPostmark(s, u);
+        TickBelt(s, u);
         TickSkipInput();
         EaseBars(true);
         LayoutUi();
@@ -341,6 +492,7 @@ public partial class CinematicDirector : MonoBehaviour {
         SliceVoice.Silence();
         CastVoice.Silence();
         string who = string.IsNullOrEmpty(s.speaker) ? "N" : s.speaker;
+        SubtitleSpeaker = who;
         if (namePlate != null) {
             namePlate.text = who == "W" ? "Wallit" : who == "S" ? "Slice" : who == "K" ? "The Courier" : who == "Y" ? "Yo Bot" : "";
             namePlate.color = who == "W" ? new Color(0.95f, 0.82f, 0.4f) : who == "S" ? new Color(0.75f, 0.7f, 0.95f) : new Color(0.7f, 0.9f, 1f);
@@ -401,6 +553,90 @@ public partial class CinematicDirector : MonoBehaviour {
                 }
             }
         }
+    }
+
+    void TickPostmark(Shot s, float u) {
+        if (!s.postmark || shotPostmark || u < 0.08f) {
+            return;
+        }
+        shotPostmark = true;
+        Vector3 at = GatePoint();
+        DropPostmarkAt(at);
+        GameAudio.Play("stamp", 0.95f, 0.75f);
+        Fx.Ring(at + Vector3.up * 0.4f, 8f, new Color(0.9f, 0.25f, 0.2f, 0.7f), 0.55f);
+        Events.Add("postmark|" + s.id);
+    }
+
+    void TickBelt(Shot s, float u) {
+        if (!s.belt || shotBelt || u < 0.1f) {
+            return;
+        }
+        shotBelt = true;
+        FloorMap floor = ChapterMap.Current != null ? ChapterMap.Current.Own as FloorMap : null;
+        int moving = 0;
+        if (floor != null) {
+            moving = floor.PulseBelts(1.8f);
+        }
+        GameAudio.Play("paper_slide", 0.7f, 0.85f);
+        Events.Add("belt|" + s.id + "|items=" + moving);
+    }
+
+    void DropPostmarkAt(Vector3 gate) {
+        if (postmarkGo != null) {
+            Destroy(postmarkGo);
+        }
+        float yaw = chapterBearing > 1f ? chapterBearing + 180f : 330f;
+        // Face of the gate (toward the circle): a torn postmark pressed into the stone, not a floor decal.
+        Vector3 face = gate + Quaternion.Euler(0f, chapterBearing, 0f) * new Vector3(0f, 1.7f, -0.35f);
+        postmarkGo = new GameObject("Cinematic Postmark");
+        postmarkGo.transform.position = face;
+        postmarkGo.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+        // Decal is XZ by default; stand it on the gate face (parent faces the circle).
+        GameObject ink = LevelKit.Decal(postmarkGo.transform, "Ink", new Vector3(0f, 0f, 0.02f), new Vector2(2.4f, 1.8f), new Color(0.76f, 0.23f, 0.23f, 0.55f));
+        ink.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+        Renderer r = ink.GetComponent<Renderer>();
+        if (r != null) {
+            r.material = new Material(r.sharedMaterial);
+        }
+        // Upright on the gate face, readable from the circle (never LookAt / never negative scale).
+        TextMesh words = LevelKit.Text(postmarkGo.transform, "RETURN\nTO SENDER", new Vector3(0f, 0f, 0.05f), 0.055f, new Color(1f, 0.85f, 0.85f, 0.95f), false);
+        words.name = "Words";
+        GameObject head = LevelDress.Put(postmarkGo.transform, "gt_press_head", face + Vector3.up * 6f, yaw, 0.45f);
+        if (head != null) {
+            head.name = "PostmarkHead";
+            postmarkHead = head.transform;
+            StartCoroutine(SlamPostmarkHead(face + postmarkGo.transform.forward * 0.15f));
+        }
+        if (wallit != null) {
+            CharacterMovement.PlayWallitClip(CharacterMovement.CLIP_HIT_REACT, 0.4f);
+        }
+    }
+
+    System.Collections.IEnumerator SlamPostmarkHead(Vector3 land) {
+        if (postmarkHead == null) {
+            yield break;
+        }
+        Vector3 from = postmarkHead.position;
+        float t0 = Time.unscaledTime;
+        while (postmarkHead != null && Time.unscaledTime - t0 < 0.45f) {
+            float k = Mathf.Clamp01((Time.unscaledTime - t0) / 0.45f);
+            float e = k * k;
+            postmarkHead.position = Vector3.Lerp(from, land, e);
+            yield return null;
+        }
+        if (postmarkHead != null) {
+            postmarkHead.position = land;
+        }
+    }
+
+    Vector3 GatePoint() {
+        EdgeMap edge = ChapterMap.Current != null ? ChapterMap.Current.Own as EdgeMap : null;
+        if (edge != null) {
+            return edge.GatePos;
+        }
+        float b = chapterBearing > 1f ? chapterBearing : 150f;
+        float dist = ChapterRun.Instance != null ? Story.Chapters[ChapterRun.Instance.Chapter].Target + 4f : 74f;
+        return PolarPoint(b, dist, 0f);
     }
 
     void TickSkipInput() {
@@ -473,6 +709,30 @@ public partial class CinematicDirector : MonoBehaviour {
             courier.Dormant = true;
             courier = null;
         }
+        if (yobotOwned && yobot != null) {
+            if (yobot.gameObject != null) {
+                Destroy(yobot.gameObject);
+            }
+            yobot = null;
+            yobotOwned = false;
+        } else if (yobot != null) {
+            yobot.Scripted = false;
+            yobot.Dormant = true;
+            yobot = null;
+        }
+        if (sliceCompanion != null) {
+            sliceCompanion.Held = false;
+            sliceCompanion = null;
+        }
+        FloorMap floorClear = ChapterMap.Current != null ? ChapterMap.Current.Own as FloorMap : null;
+        if (floorClear != null) {
+            floorClear.ClearBeltBoost();
+        }
+        if (postmarkGo != null) {
+            Destroy(postmarkGo);
+            postmarkGo = null;
+            postmarkHead = null;
+        }
         // Seat Wallit at the play start and face the Ring so control begins where the yard expects.
         // Keep the last directed camera pose held until BeginHandoff so the blend starts from that shot.
         if (yard != null && wallit != null) {
@@ -490,10 +750,28 @@ public partial class CinematicDirector : MonoBehaviour {
                 wallitMotor.Stop();
             }
             CharacterMovement.PlayWallitClip(CharacterMovement.CLIP_IDLE);
+        } else if (chapterHost && wallit != null) {
+            // Stay where the last shot left him (near the circle); face the route. No teleport pop.
+            Vector3 face = PolarPoint(chapterBearing > 1f ? chapterBearing : 0f, 12f, 0f) - wallit.position;
+            face.y = 0f;
+            if (face.sqrMagnitude < 0.01f) {
+                face = Quaternion.Euler(0f, chapterBearing, 0f) * Vector3.forward;
+            }
+            wallit.rotation = Quaternion.LookRotation(face.normalized);
+            if (wallitMotor != null) {
+                wallitMotor.Stop();
+            }
+            CharacterMovement.PlayWallitClip(CharacterMovement.CLIP_IDLE);
         }
-        if (slice != null) {
+        if (yard != null && slice != null) {
             Vector3 sp = LevelYard.SlicePos;
             sp.y = LevelYard.H(sp.x, sp.z);
+            slice.position = sp;
+            slice.rotation = Quaternion.LookRotation(Vector3.back);
+        } else if (chapterHost && slice != null && Companion.Instance == null) {
+            // Ring Slice stays at the circle; companion Slice is left where the last shot put her (she walks with Wallit).
+            Vector3 sp = circle;
+            sp.y = Ground(sp.x, sp.z);
             slice.position = sp;
             slice.rotation = Quaternion.LookRotation(Vector3.back);
         }
@@ -552,18 +830,14 @@ public partial class CinematicDirector : MonoBehaviour {
                 continue;
             }
             Vector3 pos;
-            if (m.from != null && m.from.Length >= 2 && m.to != null && m.to.Length >= 2) {
-                pos = Vector3.Lerp(SeatXZ(m.from), SeatXZ(m.to), u);
-            } else if (m.at != null && m.at.Length >= 2) {
-                pos = SeatXZ(m.at);
-            } else {
+            if (!TryMarkPos(m, u, out pos)) {
                 continue;
             }
             if (m.id == "wallit") {
-                pos.y = LevelYard.H(pos.x, pos.z) + 0.2f;
+                pos.y = Ground(pos.x, pos.z) + 0.2f;
                 MoveWallit(pos, m, u);
             } else if (m.id == "courier" && courier != null) {
-                pos.y = LevelYard.H(pos.x, pos.z) + 0.55f;
+                pos.y = Ground(pos.x, pos.z) + 0.55f;
                 courier.transform.position = pos;
                 courier.transform.rotation = Quaternion.Euler(0f, m.yaw, 0f);
                 if (m.tell || m.anim == "tell") {
@@ -571,12 +845,19 @@ public partial class CinematicDirector : MonoBehaviour {
                 } else if (m.anim == "walk" && u >= 0.98f) {
                     courier.EndTell(false);
                 }
+            } else if (m.id == "yobot" && yobot != null) {
+                pos.y = Ground(pos.x, pos.z) + 2.4f;
+                yobot.transform.position = pos;
+                yobot.transform.rotation = Quaternion.Euler(0f, m.yaw, 0f);
             } else {
-                pos.y = LevelYard.H(pos.x, pos.z);
+                pos.y = Ground(pos.x, pos.z);
                 t.position = pos;
                 t.rotation = Quaternion.Euler(0f, m.yaw, 0f);
-                if (m.id == "slice" && sliceAnim != null) {
-                    if (m.anim == "turn" || m.anim == "idle") {
+                if (m.id == "slice") {
+                    if (sliceCompanion != null) {
+                        sliceCompanion.HeldMove(pos, m.anim == "walk");
+                        sliceCompanion.transform.rotation = Quaternion.Euler(0f, m.yaw, 0f);
+                    } else if (sliceAnim != null && (m.anim == "turn" || m.anim == "idle")) {
                         int idle = Animator.StringToHash("idle");
                         if (sliceAnim.HasState(0, idle) && !sliceAnim.GetCurrentAnimatorStateInfo(0).IsName("idle")) {
                             sliceAnim.CrossFadeInFixedTime("idle", 0.15f, 0, 0f);
@@ -587,25 +868,51 @@ public partial class CinematicDirector : MonoBehaviour {
         }
     }
 
+    bool TryMarkPos(Mark m, float u, out Vector3 pos) {
+        if (m.fromPolar != null && m.fromPolar.Length >= 2 && m.toPolar != null && m.toPolar.Length >= 2) {
+            pos = Vector3.Lerp(PolarMark(m.fromPolar), PolarMark(m.toPolar), u);
+            return true;
+        }
+        if (m.atPolar != null && m.atPolar.Length >= 2) {
+            pos = PolarMark(m.atPolar);
+            return true;
+        }
+        if (m.from != null && m.from.Length >= 2 && m.to != null && m.to.Length >= 2) {
+            pos = Vector3.Lerp(SeatXZ(m.from), SeatXZ(m.to), u);
+            return true;
+        }
+        if (m.at != null && m.at.Length >= 2) {
+            pos = SeatXZ(m.at);
+            return true;
+        }
+        pos = Vector3.zero;
+        return false;
+    }
+
     void MoveWallit(Vector3 pos, Mark m, float u) {
         if (wallit == null) {
             return;
         }
         Vector3 flat = pos - wallit.position;
         flat.y = 0f;
-        bool walking = m.anim == "walk" && flat.sqrMagnitude > 0.01f;
+        float dt = Mathf.Max(0.0001f, Time.deltaTime);
+        float speed = flat.magnitude / dt;
+        bool walking = m.anim == "walk" && flat.sqrMagnitude > 0.0004f;
         if (wallitBody != null && wallitBody.enabled) {
-            Vector3 delta = pos - wallit.position;
-            wallitBody.Move(delta);
+            wallitBody.Move(pos - wallit.position);
         } else {
             wallit.position = pos;
         }
-        wallit.rotation = Quaternion.Euler(0f, m.yaw, 0f);
+        // Face the direction of travel when walking so return legs do not moonwalk.
+        if (walking && flat.sqrMagnitude > 0.01f) {
+            wallit.rotation = Quaternion.LookRotation(flat.normalized);
+        } else {
+            wallit.rotation = Quaternion.Euler(0f, m.yaw, 0f);
+        }
         if (walking) {
             CharacterMovement.PlayWallitClip(CharacterMovement.CLIP_RUN);
             if (wallitMotor != null) {
-                Vector3 dir = flat.normalized * 3.2f;
-                wallitMotor.Move(dir);
+                wallitMotor.Move(flat.normalized * Mathf.Clamp(speed, 1.5f, 5.5f));
             }
         } else {
             CharacterMovement.PlayWallitClip(CharacterMovement.CLIP_IDLE);
@@ -613,6 +920,20 @@ public partial class CinematicDirector : MonoBehaviour {
                 wallitMotor.Stop();
             }
         }
+    }
+
+    static float RouteBearing() {
+        if (ChapterRun.Instance == null) {
+            return 0f;
+        }
+        Story.Chapter ch = Story.Chapters[ChapterRun.Instance.Chapter];
+        if (ch.Bearing > 1f) {
+            return ch.Bearing;
+        }
+        if (ch.Stops != null && ch.Stops.Length > 0) {
+            return ch.Stops[0].Bearing;
+        }
+        return 0f;
     }
 
     Transform ActorOf(string id) {
@@ -625,6 +946,9 @@ public partial class CinematicDirector : MonoBehaviour {
         if (id == "courier") {
             return courier != null ? courier.transform : null;
         }
+        if (id == "yobot") {
+            return yobot != null ? yobot.transform : null;
+        }
         return null;
     }
 
@@ -632,9 +956,9 @@ public partial class CinematicDirector : MonoBehaviour {
         if (cam == null) {
             return;
         }
-        Vector3 from = s.camFrom != null && s.camFrom.Length >= 3 ? Vec(s.camFrom) : cam.transform.position;
-        Vector3 to = s.camTo != null && s.camTo.Length >= 3 ? Vec(s.camTo) : from;
-        Vector3 look = s.lookAt != null && s.lookAt.Length >= 3 ? Vec(s.lookAt) : lookFallback(s);
+        Vector3 from = CamPoint(s.camFromPolar, s.camFrom, cam.transform.position);
+        Vector3 to = CamPoint(s.camToPolar, s.camTo, from);
+        Vector3 look = CamLook(s.lookPolar, s.lookAt, s);
         float k = s.camMode == "cut" ? 1f : Ease(u);
         if (s.camMode == "orbit") {
             Vector3 pivot = look;
@@ -715,7 +1039,7 @@ public partial class CinematicDirector : MonoBehaviour {
                 return t.position + Vector3.up * 1.4f;
             }
         }
-        return LevelYard.RingCenter + Vector3.up * 1.4f;
+        return circle + Vector3.up * 1.4f;
     }
 
     static bool Phone() {
@@ -737,14 +1061,64 @@ public partial class CinematicDirector : MonoBehaviour {
         return new Vector3(a[0], 0f, a[1]);
     }
 
-    static Vector3 SeatXZ(float[] a) {
+    Vector3 SeatXZ(float[] a) {
         Vector3 v = Vec(a);
-        v.y = LevelYard.H(v.x, v.z);
+        v.y = Ground(v.x, v.z);
         return v;
     }
 
-    static Vector3 Seat(float x, float z) {
-        return new Vector3(x, LevelYard.H(x, z), z);
+    Vector3 Seat(float x, float z) {
+        return new Vector3(x, Ground(x, z), z);
+    }
+
+    float Ground(float x, float z) {
+        if (yard != null) {
+            return LevelYard.H(x, z);
+        }
+        if (ChapterMap.Current != null && ChapterMap.Current.Own != null) {
+            return ChapterMap.Current.Own.HeightAt(x, z);
+        }
+        return LevelDress.GroundY(x, z, circle.y);
+    }
+
+    Vector3 PolarPoint(float bearingDeg, float along, float side) {
+        float a = bearingDeg * Mathf.Deg2Rad;
+        Vector3 fwd = new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a));
+        Vector3 right = new Vector3(fwd.z, 0f, -fwd.x);
+        Vector3 p = circle + fwd * along + right * side;
+        p.y = Ground(p.x, p.z);
+        return p;
+    }
+
+    Vector3 PolarMark(float[] polar) {
+        float b = polar.Length > 0 ? polar[0] : chapterBearing;
+        float along = polar.Length > 1 ? polar[1] : 0f;
+        float side = polar.Length > 2 ? polar[2] : 0f;
+        return PolarPoint(b, along, side);
+    }
+
+    Vector3 CamPoint(float[] polar, float[] abs, Vector3 fallback) {
+        if (polar != null && polar.Length >= 3) {
+            Vector3 p = PolarPoint(polar[0], polar[1], polar[2]);
+            p.y = polar.Length >= 4 ? polar[3] : Ground(p.x, p.z) + 3f;
+            return p;
+        }
+        if (abs != null && abs.Length >= 3) {
+            return Vec(abs);
+        }
+        return fallback;
+    }
+
+    Vector3 CamLook(float[] polar, float[] abs, Shot s) {
+        if (polar != null && polar.Length >= 3) {
+            Vector3 p = PolarPoint(polar[0], polar[1], polar[2]);
+            p.y = polar.Length >= 4 ? polar[3] : Ground(p.x, p.z) + 1.4f;
+            return p;
+        }
+        if (abs != null && abs.Length >= 3) {
+            return Vec(abs);
+        }
+        return lookFallback(s);
     }
 
     // ---------------------------------------------------------------- UI

@@ -643,19 +643,21 @@ Reels live in `Assets/Resources/Cinematics/<id>.json` and play with `Cutscene.Pl
 `sample` is the Chapter 1 opening (the stamp, "Ow! That's extra!", the ring, "You're inside. Inside, you exist.") on placeholder art
 from `Tools/Cinematics/make_placeholders.py`. Space or a click goes to the next shot; Enter, Escape or Skip leaves at any point.
 
-**In-engine opening (Chapter 1).** The Sorting Yard opens on a directed scene (`CinematicDirector`, data
-`Resources/Cinematics/ch1_open_world.json`): Wallit walks in on the west trail, Slice turns in her ring, the Courier raises its
-clipboard, and the RETURN TO SENDER stamp lands on Wallit at the circle. Eight shots with visible actor motion, existing voice
-lines and clipboard/stamp SFX, letterbox and captions; Esc, Enter or the touch Skip pill ends the whole scene. The camera
-blends from the last shot onto the follow camera in under a second with no black frame. The still reel `ch1_open` is the
-fallback only when an actor fails to build. Playtest: `opening-scene`. Depth of field and the other chapters' openings stay
-on their still reels for now.
+**In-engine openings (Chapters 1–3).** Directed scenes on `CinematicDirector` (`Resources/Cinematics/chN_open_world.json`):
+- **Chapter 1 (Sorting Yard):** Wallit walks in on the west trail, Slice turns in her ring, the Courier raises its clipboard, and
+  the RETURN TO SENDER stamp lands on Wallit at the circle. Eight shots. Playtest: `opening-scene`.
+- **Chapter 2 (Hollow edge):** Wallit and Slice walk the chalk road toward the blank gate; a torn postmark slams onto the gate
+  (RETURN TO SENDER); Slice stakes the ring and walks with him. Six shots under 60 s. Still reel `ch2_open` is fallback / load-card art only.
+- **Chapter 3 (Clearing Floor):** the sunken yard and a half-built Yo Bot on a hook; Slice names the Clearing Crew; the belt
+  carries cleared things (hat, clock, bell) toward the shredder; she stakes a second ring at the circle. Six shots under 60 s.
+  Still reel `ch3_open` is fallback / load-card art only.
 
-Chapters 1-3 now open and close with reels (`ch1_open` .. `ch3_close`, written by `Tools/Cinematics/make_reels.py` from the shot lists
-in `CampaignBible.md`; `ChapterRun.Start` and `Complete` play them before the page scenes, which remain for chapters 4-6). Each shot names its final
-art (`Art/<reel>_<n>_back|front`) and an `alt` placeholder shown until Hawkes Gen's stills are in. Courier (K), Plated Alpha (P), Half-Built (H),
-Foreman (F) and Yo Bot (Y) lines play from `Resources/Voice/cinema/<reel>_<shot>.mp3` when present. `Tools/Cinematics/gen_manifest.json` lists
-every sheet, still, clip, voice and sound still to make. Wallit and Slice keep their voice systems.
+Existing voice lines and stamp/paper SFX only; Esc, Enter or the touch Skip pill ends the scene; the camera blends onto the
+follow camera in under a second with no black frame. Playtest: `opening-ch23` (Chapters 2 and 3, including 390x844 touch).
+
+Chapters 1–3 still close with reels (`ch1_close` .. `ch3_close`, written by `Tools/Cinematics/make_reels.py`). Chapters 4–6 keep
+opening and closing still reels. Courier (K), Plated Alpha (P), Half-Built (H), Foreman (F) and Yo Bot (Y) lines play from
+`Resources/Voice/cinema/<reel>_<shot>.mp3` when present. Wallit and Slice keep their voice systems.
 
 Part two (chapters 4-6): `ch4_open` .. `ch6_close` complete the set, so every chapter opens and closes with a reel (`ChapterRun.Start`, `Complete`). The four named
 bosses with their own fight get an intro reel as they arrive, over the frozen field (`boss_courier`, `boss_foreman`, `boss_server`, `boss_order`;

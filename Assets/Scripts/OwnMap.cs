@@ -376,6 +376,11 @@ public abstract class OwnMap : MonoBehaviour {
     }
 
     // The drawn floor's height at x, z: the skin where there is one, the live ground elsewhere.
+    // Public height for cinematics and placement that must sit on the drawn ground (chapter maps have no colliders).
+    public float HeightAt(float x, float z) {
+        return SkinY(x, z);
+    }
+
     protected float SkinY(float x, float z) {
         float cx = x - center.x, cz = z - center.z;
         if (!hasSkin || cx * cx + cz * cz > skinR2) {

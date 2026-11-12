@@ -271,11 +271,14 @@ line, is only the subtitle of a voiced line. Beats marked **(built)** exist per 
    Combo hits are named (Deposit, Withdrawal, Overdraft!) by voice, not caption.
 3. **The Courier stamps Slice (built).** Yard boss. A clipboard flutter, the notice lands on Slice; the player must dodge (X) a
    stamp aimed at her ("MISSED ME"). The Courier is broken; its last word is a question it cannot answer.
-4. **The Gate (build as event).** Edge. Slice follows only when Wallit waits at the ring. The gate's tannoy speaks (voice) the
-   word INVALID; the arch bars shatter on the Alpha. Needed: tannoy voice file, bar-shatter sound. Proof: playtest events `gate-tannoy`, `gate-bars-shatter`.
-5. **The belt of cleared things (build).** Floor. Wallit sees his own kind (a hat, a clock) pass on the belt; Slice: "It isn't." (her
-   longest line). The belt stops at the lever, and the stopped belt is the beat. Needed: a belt-stop sound and a pause in the
-   music. Proof: events `belt-stop`, `slice-it-isnt`.
+4. **No Fixed Address opens (built).** Edge. Chapter 2 opens as a six-shot in-engine scene (`ch2_open_world`): Wallit and Slice
+   on the chalk road, a torn postmark slamming the blank gate (RETURN TO SENDER), Slice staking the ring ("Ring's staked. I'm
+   coming."). The mid-chapter Gate scene still plays on arrival. Still reel `ch2_open` is fallback / load-card art only.
+   Proof: playtest `opening-ch23` (`opening-postmark`, `opening-shot`, `opening-skip`).
+5. **The belt of cleared things (built as opening; lever stop mid-chapter).** Floor. Chapter 3 opens as a six-shot in-engine
+   scene (`ch3_open_world`): half-built Yo Bot on a hook, Slice names the Clearing Floor, the belt carries a hat, a clock and
+   a bell toward the shredder, she stakes a second ring. Lever stop remains mid-chapter (`belt-stopped`). Still reel `ch3_open`
+   is fallback / load-card art only. Proof: `opening-ch23` event `opening-belt`.
 6. **The Server's three refusals (built).** Long Walk. Paper held out, X to refuse; at the third the stilt heads open and
    the Server strikes. Slice answers it herself if the player chose it (choice).
 7. **The page nobody signed (build).** Reading Room. Five pages are read and the racks go blank one by one; the last page is

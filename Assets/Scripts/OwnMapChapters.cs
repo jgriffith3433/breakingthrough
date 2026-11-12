@@ -142,6 +142,8 @@ public class EdgeMap : OwnMap {
     int printed;
     Material redMat;
     readonly System.Random rng = new System.Random(5);
+    // Gate door foot for the Chapter 2 opening's postmark slam (CinematicDirector).
+    public Vector3 GatePos { get; private set; }
 
     static Color C(float r, float g, float b) { return new Color(r, g, b, 1f); }
 
@@ -245,6 +247,7 @@ public class EdgeMap : OwnMap {
         }
         Transform gateGroup = Group("Gatehouse");
         Vector3 gatePos = At(g2, 0f);
+        GatePos = gatePos;
         GameObject arch = LevelDress.Put(gateGroup, "gt_gate_arch", gatePos, bearing + 180f, 2.5f);
         arch.name = "Gate Arch";
         LevelDress.Put(gateGroup, "gt_gate_door", gatePos + Quaternion.Euler(0f, bearing + 180f, 0f) * new Vector3(0f, 0f, 0.2f), bearing + 180f, 1f).name = "Gate Door (no handle)";
@@ -670,6 +673,38 @@ public class FloorMap : OwnMap {
 
     public override void Trigger() {
         Stop();
+    }
+
+    // Chapter 3 opening: speed the cleared-thing belts so the shot shows them sliding toward the shredder.
+    public int PulseBelts(float mult) {
+        int n = 0;
+        foreach (ChapterMap.MapMover m in belts) {
+            if (m != null && m.enabled) {
+                m.Boost(mult);
+                n++;
+            }
+        }
+        return n;
+    }
+
+    public void ClearBeltBoost() {
+        foreach (ChapterMap.MapMover m in belts) {
+            if (m != null) {
+                m.ClearBoost();
+            }
+        }
+    }
+
+    public int BeltCount {
+        get {
+            int n = 0;
+            foreach (ChapterMap.MapMover m in belts) {
+                if (m != null && m.enabled) {
+                    n++;
+                }
+            }
+            return n;
+        }
     }
 
     void Update() {
