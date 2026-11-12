@@ -177,6 +177,9 @@ public class RunHud : MonoBehaviour {
             Layout();
         }
         bool hidden = WaveDirector.IsLost;
+        if (HudPaper.Active && xpBack.gameObject.activeSelf) {
+            xpBack.gameObject.SetActive(false);   // the level is the paper HUD's ink stamp now
+        }
         float target = RunBoons.LevelProgress;
         shownXp = Mathf.MoveTowards(shownXp, target, Time.unscaledDeltaTime * 2.5f);
         if (target < shownXp - 0.3f) {
@@ -185,7 +188,7 @@ public class RunHud : MonoBehaviour {
         xpFill.rectTransform.sizeDelta = new Vector2(xpWidth * shownXp, 10f);
         // A pill narrower than it is tall squashes into a blob at the bar's end: show the fill once it is a bar.
         xpFill.enabled = xpWidth * shownXp >= 10f;
-        levelText.text = hidden ? "" : "Lv " + RunBoons.Level;
+        levelText.text = hidden || HudPaper.Active ? "" : "Lv " + RunBoons.Level;
 
         int combo = Combo.Count;
         if (combo >= 5 && !hidden) {
