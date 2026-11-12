@@ -92,3 +92,11 @@ Drawn in the campaign HUD as a row of 44 unit icons under the XP line (`ChapterR
 - Boon icons in the in-run HUD list and on phone cards (a 56 unit icon needs the Wide layout re-measured).
 - Panel frame for the settings panel, chapter cards and the hub board (they use `UiSkin.Round` directly).
 - `polish` logs `ui-art` per screen: which of these pieces are drawing.
+
+## The paper HUD (HudPaper)
+
+`Assets/Scripts/HudPaper.cs` draws Arcade's run HUD from one atlas, `Resources/UiArt/hud_atlas.png` (painted Department style via
+Hawkes Gen, cut out and packed 1024x1024; the pixel rects are constants in `HudPaper`). Slice's address card (four stages, tears at 75/50/25%
+health, flutters on a hit, tape patch on a heal), the coin ledger (odometer digits, `coin` twice on a gain), the wave postmark
+(one per act, re-stamped each wave, red seal on boss waves) and the level ink stamp. With no atlas `HudPaper.Active` is false and the old
+text HUD (RunHud, Musician bar, WaveDirector coin/wave lines) shows. `hud-paper` playtest (`PlaytestHudPaper.cs`).

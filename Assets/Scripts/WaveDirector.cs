@@ -717,13 +717,13 @@ public class WaveDirector : MonoBehaviour {
         inner = Mathf.Min(inner, outer - 10f);
         if (Wave == 1) {
             // Opening: first Yo Bot almost in swing range of Wallit, the next ones a short rush away.
-            inner = spawnSerial <= 1 ? 3.5f : spawnSerial <= 3 ? 7f + spawnSerial : 11f + spawnSerial * 1.2f;
+            inner = spawnSerial <= 1 ? 3.5f : spawnSerial <= 3 ? 7f + spawnSerial : Mathf.Min(11f + spawnSerial * 1.2f, 14f);
             outer = inner + (spawnSerial <= 1 ? 1.2f : spawnSerial <= 3 ? 3f : 6f);
         }
         float jitter = Wave == 1 && spawnSerial <= 1 ? 35f : (small ? 110f : 80f);
         float gap = small ? 8f + waveT * 0.08f : Mathf.Max(7f, def.Scale * 0.85f);
         if (Wave == 1) {
-            gap = Mathf.Min(gap, 4f);
+            gap = Mathf.Min(gap, 2.5f);   // wave 1: a bot every couple of seconds, so the lawn is never empty
         }
         Vector3 spot = origin;
         float bestClear = -1f;
@@ -1070,11 +1070,17 @@ public class WaveDirector : MonoBehaviour {
         return found ? y : preferY;
     }
 
+    bool paperLaid;
+
     void RefreshHud() {
         timerText.text = "";
+        if (paperLaid != HudPaper.Active) {
+            paperLaid = HudPaper.Active;
+            LayoutHud();   // the paper HUD owns the top middle: move the wave line under its card
+        }
 
         if (phase == Phase.Intro) {
-            waveText.text = WaveLine();
+            waveText.text = HudPaper.Active ? "" : WaveLine();
             detailText.text = Flavor(Wave);
         } else if (phase == Phase.Build) {
             waveText.text = "Build  ·  " + Mathf.CeilToInt(Mathf.Max(phaseLeft, 0f)) + "s   ·   " + StartHint();
@@ -1093,20 +1099,23 @@ public class WaveDirector : MonoBehaviour {
             waveText.text = "Slice fell";
             detailText.text = "";
         } else if (!string.IsNullOrEmpty(PlayerGrowth.Banner)) {
-            waveText.text = WaveLine();
+            waveText.text = HudPaper.Active ? "" : WaveLine();
             detailText.text = PlayerGrowth.Banner;
         } else {
-            waveText.text = WaveLine();
+            waveText.text = HudPaper.Active ? "" : WaveLine();
             detailText.text = Flavor(Wave);
         }
 
         detailText.color = new Color(1f, 0.96f, 0.88f, 0.92f);
         if (coinText != null) {
-            coinText.text = QuietOpening ? "" : MetaProgress.StatusLine();
+            coinText.text = QuietOpening || HudPaper.Active ? "" : MetaProgress.StatusLine();
             float pulse = MetaProgress.PurseFlash;
             coinText.color = pulse > 0.05f
                 ? Color.Lerp(new Color(1f, 0.86f, 0.4f, 0.95f), Color.white, pulse)
                 : new Color(1f, 0.86f, 0.4f, 0.95f);
+        }
+        if (HudPaper.Active && hudPurse != null && hudPurse.gameObject.activeSelf) {
+            hudPurse.gameObject.SetActive(false);
         }
         if (purseFill != null && MetaProgress.NextCoinAt > 0) {
             float ratio = Mathf.Clamp01(MetaProgress.HensToward / (float)MetaProgress.NextCoinAt);
@@ -1230,8 +1239,8 @@ public class WaveDirector : MonoBehaviour {
         UiFit.Apply(hudScaler);
         Vector2 size = UiFit.Size;
         if (hudMode == UiMode.Desktop) {
-            Fit(waveText, 32, new Vector2(0f, -108f), new Vector2(1500f, 46f));
-            Fit(detailText, 24, new Vector2(0f, -154f), new Vector2(1400f, 72f));
+            Fit(waveText, 32, new Vector2(0f, HudPaper.Active ? -130f : -108f), new Vector2(1500f, 46f));
+            Fit(detailText, 24, new Vector2(0f, HudPaper.Active ? -174f : -154f), new Vector2(1400f, 72f));
             Fit(coinText, 26, new Vector2(36f, -24f), new Vector2(860f, 40f));
             hudPurse.anchoredPosition = new Vector2(36f, -68f);
             lostPanel.transform.localScale = Vector3.one;
@@ -1243,8 +1252,8 @@ public class WaveDirector : MonoBehaviour {
         float middle = tall ? size.x - 48f : Mathf.Max(360f, size.x - 800f);
         hudPurse.anchoredPosition = new Vector2(24f, tall ? -80f : -18f);
         Fit(coinText, 22, new Vector2(24f, tall ? -92f : -34f), new Vector2(tall ? size.x - 48f : 360f, 56f));
-        Fit(waveText, 28, new Vector2(0f, tall ? -126f : -66f), new Vector2(middle, 70f));
-        Fit(detailText, 22, new Vector2(0f, tall ? -196f : -136f), new Vector2(middle, 56f));
+        Fit(waveText, 28, new Vector2(0f, tall ? -126f : HudPaper.Active ? -108f : -66f), new Vector2(middle, 70f));
+        Fit(detailText, 22, new Vector2(0f, tall ? -196f : HudPaper.Active ? -168f : -136f), new Vector2(middle, 56f));
         float fit = Mathf.Min(1f, (size.x - 40f) / 900f, (size.y - 40f) / 700f);
         lostPanel.transform.localScale = new Vector3(fit, fit, 1f);
         // Portrait: sit the panel in the upper half, so the page's "How was that run?" card has the bottom to itself.
