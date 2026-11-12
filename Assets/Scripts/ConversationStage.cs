@@ -437,7 +437,7 @@ public class ConversationStage : MonoBehaviour {
         go.transform.SetParent(transform, false);
         go.transform.localScale = new Vector3(0.12f, 0.01f, 0.12f);
         var r = go.GetComponent<MeshRenderer>();
-        r.sharedMaterial = new Material(Shader.Find("Sprites/Default") ?? Shader.Find("UI/Default") ?? r.sharedMaterial);
+        r.sharedMaterial = new Material(Shader.Find("Sprites/Default") ?? Shader.Find("UI/Default"));
         r.sharedMaterial.color = new Color(1f, 0.82f, 0.3f);
         go.SetActive(false);
         coin = go.transform;

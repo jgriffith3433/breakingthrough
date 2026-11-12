@@ -10,6 +10,7 @@ using UnityEngine.UI;
 // Watches moving shots, the postmark slam (ch2), the belt carrying things (ch3), skip-to-play, and phone framing.
 public static class PlaytestOpeningCh23 {
     static PlaytestRun run;
+    static int framedOk;
 
     static void Tap(GameObject target) {
         var data = new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left };
@@ -108,9 +109,9 @@ public static class PlaytestOpeningCh23 {
         run = r;
         CinematicDirector.Events.Clear();
         run.Event("setup", "opening-ch23: Chapters 2 and 3 in-engine openings; touch=" + UiFit.Touch + " size=" + Screen.width + "x" + Screen.height);
-        int framedOk = 0;
+        framedOk = 0;
 
-        yield return WatchChapter(1, "ch2_open_world", "postmark", ref framedOk);
+        yield return WatchChapter(1, "ch2_open_world", "postmark");
         if (run.Done) {
             yield break;
         }
@@ -122,13 +123,13 @@ public static class PlaytestOpeningCh23 {
         yield return Wait(1.2f);
 
         CinematicDirector.Events.Clear();
-        yield return WatchChapter(2, "ch3_open_world", "belt", ref framedOk);
+        yield return WatchChapter(2, "ch3_open_world", "belt");
         if (run.Done) {
             yield break;
         }
 
         // Skip pass on Chapter 3 while it is still open, or re-enter Chapter 2 for skip.
-        yield return SkipPass(2, ref framedOk);
+        yield return SkipPass(2);
 
         run.Metric("openingPhoneFramesOk", framedOk);
         run.Metric("openingCaptionBottom01", CinematicDirector.CaptionBottom01);
@@ -141,7 +142,7 @@ public static class PlaytestOpeningCh23 {
         }
     }
 
-    static IEnumerator WatchChapter(int chapter, string expectId, string beat, ref int framedOk) {
+    static IEnumerator WatchChapter(int chapter, string expectId, string beat) {
         yield return EnterChapter(chapter);
         if (run.Done) {
             yield break;
@@ -178,7 +179,7 @@ public static class PlaytestOpeningCh23 {
             }
             SampleMotion(ref movingShots, lastPos);
             if (Phone) {
-                CheckPhoneFrame(ref framedOk);
+                CheckPhoneFrame();
             }
             if (CinematicDirector.CaptionBottom01 + 0.001f < 0.15f && !string.IsNullOrEmpty(CinematicDirector.Instance != null ? CinematicDirector.Instance.Subtitle : null)) {
                 run.Problem(PlaytestSeverity.Bug, "opening-ch23: caption bottom " + CinematicDirector.CaptionBottom01.ToString("0.00") + " is under the bottom 15%");
@@ -222,7 +223,7 @@ public static class PlaytestOpeningCh23 {
         }
     }
 
-    static IEnumerator SkipPass(int chapter, ref int framedOk) {
+    static IEnumerator SkipPass(int chapter) {
         run.Event("setup", "re-enter Chapter " + (chapter + 1) + " and skip mid-opening");
         if (ChapterRun.Instance != null) {
             ChapterRun.Instance.ToMenu();
@@ -293,7 +294,7 @@ public static class PlaytestOpeningCh23 {
         }
     }
 
-    static void CheckPhoneFrame(ref int framedOk) {
+    static void CheckPhoneFrame() {
         Camera cam = Camera.main;
         if (cam == null || CinematicDirector.Instance == null) {
             return;
