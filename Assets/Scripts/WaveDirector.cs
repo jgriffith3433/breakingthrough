@@ -717,13 +717,13 @@ public class WaveDirector : MonoBehaviour {
         inner = Mathf.Min(inner, outer - 10f);
         if (Wave == 1) {
             // Opening: first Yo Bot almost in swing range of Wallit, the next ones a short rush away.
-            inner = spawnSerial <= 1 ? 3.5f : spawnSerial <= 3 ? 7f + spawnSerial : 11f + spawnSerial * 1.2f;
+            inner = spawnSerial <= 1 ? 3.5f : spawnSerial <= 3 ? 7f + spawnSerial : Mathf.Min(11f + spawnSerial * 1.2f, 14f);
             outer = inner + (spawnSerial <= 1 ? 1.2f : spawnSerial <= 3 ? 3f : 6f);
         }
         float jitter = Wave == 1 && spawnSerial <= 1 ? 35f : (small ? 110f : 80f);
         float gap = small ? 8f + waveT * 0.08f : Mathf.Max(7f, def.Scale * 0.85f);
         if (Wave == 1) {
-            gap = Mathf.Min(gap, 4f);
+            gap = Mathf.Min(gap, 2.5f);   // wave 1: a bot every couple of seconds, so the lawn is never empty
         }
         Vector3 spot = origin;
         float bestClear = -1f;
