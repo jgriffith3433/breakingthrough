@@ -129,8 +129,17 @@ public class MusicDirector : MonoBehaviour {
             next.clip = clip;
             next.Play();
         };
+        // A cue with no file yet goes straight to its fallback: asking the server for it only 404s (a console error).
+        if (!string.IsNullOrEmpty(fallback) && fallback != track && !MadeCues.Contains(track)) {
+            start(null);
+            return;
+        }
         Fetch(track, start);
     }
+
+    // Leitmotif cues that have a real file in StreamingAssets/Music (hub_wallit, ch6_both, ending_both, credits_full). Add a
+    // name here in the same change that adds its mp3; until then Play(cue, fallback) never requests the cue.
+    static readonly HashSet<string> MadeCues = new HashSet<string>();
 
     // A short one-shot of a lead's motif over the score: "wallit", "slice" or "both" (StreamingAssets/Music/stinger_<name>.mp3,
     // under 150 KB). With no file a short stand-in is synthesised (StandIn), so the moment is still heard.
