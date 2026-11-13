@@ -38,9 +38,7 @@ public static class PlaytestOpening {
         }
         run.Event("mode-select", "Campaign");
         if (Phone) {
-            TouchControls.BotFinger(8, RectScreen(menu.CampaignButton.GetComponent<RectTransform>()), true);
-            yield return Wait(0.05f);
-            TouchControls.BotFinger(8, Vector2.zero, false);
+            yield return PlaytestUiFinger.Tap(RectScreen(menu.CampaignButton.GetComponent<RectTransform>()), "PlaytestOpening");
         } else {
             Tap(menu.CampaignButton.gameObject);
         }
@@ -51,9 +49,7 @@ public static class PlaytestOpening {
         yield return Wait(1f);
         Button slot = CampaignPanel.Instance.SlotButtons[0];
         if (Phone) {
-            TouchControls.BotFinger(8, RectScreen(slot.GetComponent<RectTransform>()), true);
-            yield return Wait(0.05f);
-            TouchControls.BotFinger(8, Vector2.zero, false);
+            yield return PlaytestUiFinger.Tap(RectScreen(slot.GetComponent<RectTransform>()), "PlaytestOpening");
         } else {
             Tap(slot.gameObject);
         }
@@ -64,9 +60,7 @@ public static class PlaytestOpening {
         }
         yield return Wait(2f);
         if (Phone) {
-            TouchControls.BotFinger(8, RectScreen(ChapterScene.Instance.BeginButton.GetComponent<RectTransform>()), true);
-            yield return Wait(0.05f);
-            TouchControls.BotFinger(8, Vector2.zero, false);
+            yield return PlaytestUiFinger.Tap(RectScreen(ChapterScene.Instance.BeginButton.GetComponent<RectTransform>()), "PlaytestOpening");
         } else {
             Tap(ChapterScene.Instance.BeginButton.gameObject);
         }

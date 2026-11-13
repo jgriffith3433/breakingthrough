@@ -61,9 +61,7 @@ public static class PlaytestFinaleCarry {
         }
         run.Event("mode-select", "Campaign");
         if (Phone) {
-            TouchControls.BotFinger(8, RectScreen(menu.CampaignButton.GetComponent<RectTransform>()), true);
-            yield return Wait(0.05f);
-            TouchControls.BotFinger(8, Vector2.zero, false);
+            yield return PlaytestUiFinger.Tap(RectScreen(menu.CampaignButton.GetComponent<RectTransform>()), "PlaytestFinaleCarry");
         } else {
             Tap(menu.CampaignButton.gameObject);
         }
@@ -74,9 +72,7 @@ public static class PlaytestFinaleCarry {
         yield return Wait(0.6f);
         Button slot = CampaignPanel.Instance.SlotButtons[0];
         if (Phone) {
-            TouchControls.BotFinger(8, RectScreen(slot.GetComponent<RectTransform>()), true);
-            yield return Wait(0.05f);
-            TouchControls.BotFinger(8, Vector2.zero, false);
+            yield return PlaytestUiFinger.Tap(RectScreen(slot.GetComponent<RectTransform>()), "PlaytestFinaleCarry");
         } else {
             Tap(slot.gameObject);
         }
@@ -87,9 +83,7 @@ public static class PlaytestFinaleCarry {
         ChapterScene.Instance.ShowCard(5);
         yield return Wait(0.8f);
         if (Phone) {
-            TouchControls.BotFinger(8, RectScreen(ChapterScene.Instance.BeginButton.GetComponent<RectTransform>()), true);
-            yield return Wait(0.05f);
-            TouchControls.BotFinger(8, Vector2.zero, false);
+            yield return PlaytestUiFinger.Tap(RectScreen(ChapterScene.Instance.BeginButton.GetComponent<RectTransform>()), "PlaytestFinaleCarry");
         } else {
             Tap(ChapterScene.Instance.BeginButton.gameObject);
         }
