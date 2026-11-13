@@ -49,7 +49,7 @@ public class OfficeMap : OwnMap {
         // The board floor.
         Mesh floorMesh = LevelDress.GridMesh("Office Floor", -hw, -10.5f, hw, 15.1f, 1.5f, (x, z) => 0f, 3f);
         made.Add(floorMesh);
-        Material floorMat = LevelDress.GroundMaterial("office", "wood", C(0.86f, 0.72f, 0.58f));
+        Material floorMat = PbrKit.HubFloor(hw, -10.5f, 15.1f) ?? LevelDress.GroundMaterial("office", "wood", C(0.86f, 0.72f, 0.58f));
         made.Add(floorMat);
         GameObject floor = LevelDress.Surface(room, "Office Floor", floorMesh, floorMat, false, 0);
         floor.transform.position = new Vector3(0f, -0.02f, 0f);
