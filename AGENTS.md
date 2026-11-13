@@ -349,7 +349,7 @@ To build from the command line:
 
 Notes:
 
-- The player starts with 256 MB of memory and Brotli compression (the smallest first download; Studio's hosts send the `.br` files with their `Content-Encoding`), with a decompression fallback so a static host (the site's `python -m http.server`, or GitHub Pages) can serve the `.unityweb` files without a `Content-Encoding` header. `dataCaching` is on, debug symbols are off and `stripEngineCode` is set explicitly in `BuildWebGLTo`, so engine modules nothing references (physics 2D, terrain, cloth, XR...) are left out of the wasm. The manifest keeps its modules: removing them changes nothing in the player once stripping is on, and cannot be compiled here.
+- The player starts with 256 MB of memory and **Gzip** compression, with a decompression fallback, so the files are `.unityweb`. Never switch to Brotli: the build's address (`Game/build.json` base on sites.hawkesgen.ai) sends them with no `Content-Encoding`, and the Game page's loader unpacks only gzip with the browser's `DecompressionStream` while it downloads. Brotli went to Unity's JavaScript decoder instead, which froze the phone page for a minute after the download (build 135). `WebGlBuild.RequireGzip` fails a build whose files are not gzip; the `first-load` playtest logs `page-to-menu` (`pageToMenuSeconds`, `pageBeforeUnitySeconds`) from the page's own clock. `dataCaching` is on, debug symbols are off and `stripEngineCode` is set explicitly in `BuildWebGLTo`, so engine modules nothing references (physics 2D, terrain, cloth, XR...) are left out of the wasm. The manifest keeps its modules: removing them changes nothing in the player once stripping is on, and cannot be compiled here.
 - This project's own `Game/` folder and `auto-start.bat` (Vite on port 8089) are the old local target. The deploy no longer uses them.
 - Runtime shaders that no scene references live in `Assets/Resources/Shaders/`, so builds include them.
 
@@ -368,7 +368,7 @@ The first download is the menu and Arcade only. The campaign's voices, stills, p
 
 | | Before (build 121) | After |
 |---|---|---|
-| `Build/*.data` (first download, Brotli) | 36.7 MB (folder report: Arena scatter combined meshes 41.3 MB packed, Voice 18.7 MB) | rebuild with instanced scatter + Arcade-only Wallit/Slice keep-set; read `[WebGlBuild] Download size` / `build-report.txt` |
+| `Build/*.data` (first download, compressed) | 36.7 MB (folder report: Arena scatter combined meshes 41.3 MB packed, Voice 18.7 MB) | rebuild with instanced scatter + Arcade-only Wallit/Slice keep-set; read `[WebGlBuild] Download size` / `build-report.txt` |
 | `StreamingAssets/OnDemand` (per chapter / deferred voices) | 19.2 MB | grows by deferred Wallit/Slice lines; still fetched on choice / when spoken |
 | Transferred before gameplay (first-five phone) | 45.6 MB / 234.7 s | target ≤20 MB / ≤20 s (CrazyGames mobile bar) |
 

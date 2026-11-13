@@ -31,6 +31,16 @@ mergeInto(LibraryManager.library, {
     } catch (e) {}
   },
 
+  // Seconds since the page itself started loading (performance.now()): unlike Time.realtimeSinceStartup it includes the
+  // download and the unpacking before Unity runs. Read by the first-load playtest.
+  HawkesPageSeconds: function () {
+    try {
+      return (window.performance && performance.now ? performance.now() : 0) / 1000;
+    } catch (e) {
+      return 0;
+    }
+  },
+
   HawkesCoarsePointer: function () {
     try {
       return window.matchMedia && window.matchMedia("(pointer: coarse)").matches ? 1 : 0;

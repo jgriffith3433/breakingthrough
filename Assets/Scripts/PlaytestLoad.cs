@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Runtime.InteropServices;
 using Hawkes.Playtest;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -15,6 +16,15 @@ using UnityEngine.SceneManagement;
 // When the build kept everything in Resources (the editor), nothing is fetched and the line never shows: the events say so.
 public static class PlaytestLoad {
     static PlaytestRun run;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+    [DllImport("__Internal")]
+    static extern float HawkesPageSeconds();
+#else
+    static float HawkesPageSeconds() {
+        return 0f;
+    }
+#endif
 
     static void Tap(GameObject target) {
         var data = new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left };
@@ -86,6 +96,16 @@ public static class PlaytestLoad {
         run.Event("menu-interactive", "the Campaign button is up " + menuAt.ToString("0.0") + " s after the player started; the campaign's files fetched so far: "
             + OnDemand.Fetched + " (" + (OnDemand.FetchedBytes / 1048576f).ToString("0.0") + " MB)");
         run.Metric("menuInteractiveSeconds", Mathf.Round(menuAt * 10f) / 10f);
+        // The page's own clock: the download and the unpacking before Unity ran are in it (build 135 froze for a minute
+        // there, unpacking Brotli in JavaScript; the build is gzip now, unpacked by the browser while it downloads).
+        float pageAt = HawkesPageSeconds();
+        if (pageAt > 0f) {
+            float beforeUnity = Mathf.Max(0f, pageAt - menuAt);
+            run.Event("page-to-menu", "the menu answers " + pageAt.ToString("0.0") + " s after the page opened; download and unpacking before Unity ran: "
+                + beforeUnity.ToString("0.0") + " s");
+            run.Metric("pageToMenuSeconds", Mathf.Round(pageAt * 10f) / 10f);
+            run.Metric("pageBeforeUnitySeconds", Mathf.Round(beforeUnity * 10f) / 10f);
+        }
         run.Metric("onDemandBeforeMenu", OnDemand.Fetched);
         if (OnDemand.Fetched > 0) {
             run.Problem(PlaytestSeverity.Bug, "first-load: campaign files were fetched before the player chose the campaign");
