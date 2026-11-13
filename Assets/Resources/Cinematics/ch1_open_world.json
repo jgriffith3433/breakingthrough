@@ -53,7 +53,9 @@
           "yaw": 180,
           "anim": "idle"
         }
-      ]
+      ],
+      "speaker": "S",
+      "line": "You're inside. Inside, you exist."
     },
     {
       "id": "s2_courier",
@@ -202,7 +204,9 @@
           "yaw": 40,
           "anim": "walk"
         }
-      ]
+      ],
+      "speaker": "W",
+      "line": "Return to sender."
     }
   ]
 }
