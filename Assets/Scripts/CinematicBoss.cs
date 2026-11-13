@@ -132,12 +132,44 @@ public partial class CinematicDirector {
         if (Instance == null) {
             Instance = new GameObject("Cinematic Director").AddComponent<CinematicDirector>();
         }
+        if (LevelUpScreen.IsOpen) {
+            // The wave-cleared / level-up cards own the screen: the entrance waits (Update) until the player has picked.
+            Instance.pendC = c;
+            Instance.pendBoss = boss;
+            Instance.pendChapter = chapter;
+            Instance.pendWave = wave;
+            Instance.pendDone = done;
+            return BossResult.Played;
+        }
         Instance.BeginBoss(c, boss, player.transform, cam, chapter, wave, done);
         return BossResult.Played;
     }
 
     static bool bossBusy() {
-        return Instance != null && (Instance.open || Instance.bossRun);
+        return Instance != null && (Instance.open || Instance.bossRun || Instance.pendBoss != null);
+    }
+
+    // An entrance asked for while a card picker was open: started here once it has closed, dropped (its done called) if the boss fell.
+    BossCard pendC;
+    Enemy pendBoss;
+    int pendChapter, pendWave;
+    Action pendDone;
+
+    void TickPendingBoss() {
+        if (pendBoss == null || LevelUpScreen.IsOpen || PauseMenu.IsOpen) {
+            return;
+        }
+        Enemy foe = pendBoss;
+        Action cb = pendDone;
+        pendBoss = null;
+        pendDone = null;
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        Camera camera = Camera.main;
+        if (!foe.Alive || player == null || camera == null) {
+            cb?.Invoke();
+            return;
+        }
+        BeginBoss(pendC, foe, player.transform, camera, pendChapter, pendWave, cb);
     }
 
     static int SaveBit(BossCard c, int chapter) {

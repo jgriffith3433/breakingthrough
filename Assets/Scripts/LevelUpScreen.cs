@@ -172,6 +172,7 @@ public class LevelUpScreen : MonoBehaviour {
         }
         if (!IsOpen) {
             TickEaseBack();
+            UpgradeLook.PumpAnnouncements();   // banners that waited for the cards go up now
             if (WaveDirector.IsLost || PauseMenu.IsOpen || StoryScreen.IsOpen || Cutscene.IsOpen || root == null || Time.frameCount <= closedFrame) {
                 return;
             }

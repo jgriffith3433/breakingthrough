@@ -560,6 +560,7 @@ public partial class CinematicDirector : MonoBehaviour {
     }
 
     void Update() {
+        TickPendingBoss();
         if (bossRun) {
             TickBoss();
             return;
