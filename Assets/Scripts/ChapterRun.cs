@@ -221,6 +221,17 @@ public class ChapterRun : MonoBehaviour {
         while ((ChapterMap.Current == null || ChapterMap.Current.Own == null) && Time.unscaledTime - t0 < 2.5f) {
             yield return null;
         }
+        // The cold blow: Wallit's bat drops a Yo Bot from a fixed 3/4 camera before the directed opening (ChapterColdBlow.cs).
+        if (Chapter >= 1 && Chapter <= 5 && !firstBlowOver) {
+            Transform w = player != null ? player : (PlayerGrowth.Instance != null ? PlayerGrowth.Instance.transform : null);
+            Vector3 dir = HasMarker && w != null ? Marker - w.position : Vector3.zero;
+            yield return ChapterColdBlow.Run(this, w, dir);
+            if (ChapterColdBlow.StartedAt > 0f) {
+                firstBlowOver = true;   // the objective line may show once the opening hands over
+                FirstBotDown = ChapterColdBlow.Done;
+                FirstBotDownSeconds = ChapterColdBlow.KillSeconds;
+            }
+        }
         bool handed = false;
         CinematicDirector.PlayChapter(worldOpen, () => {
             handed = true;

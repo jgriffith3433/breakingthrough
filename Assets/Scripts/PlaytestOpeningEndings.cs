@@ -178,7 +178,26 @@ public static class PlaytestOpeningEndings {
         if (run.Done) {
             yield break;
         }
+        float begun = Time.realtimeSinceStartup;
         run.Scene(SceneManager.GetActiveScene().name);
+        // The cold blow comes first: a fixed 3/4 camera on the bat dropping a Yo Bot (hit-flash, damage number, kill count plate).
+        yield return run.Until(() => ChapterColdBlow.StartedAt > 0f || CinematicDirector.IsOpen, 20f, "Chapter " + (chapter + 1) + "'s cold blow");
+        if (ChapterColdBlow.StartedAt > 0f) {
+            float blowStart = ChapterColdBlow.StartedAt;
+            yield return run.Until(() => !ChapterColdBlow.Active, 12f, "the cold blow to end");
+            float sinceBegin = blowStart - begun;
+            run.Event("cold-blow", "chapter " + (chapter + 1) + ": camera=" + ChapterColdBlow.CameraKind + " down=" + ChapterColdBlow.Done
+                + " kill after " + ChapterColdBlow.KillSeconds.ToString("0.0") + " s, numbers=" + ChapterColdBlow.Numbers
+                + ", plate=\"" + ChapterColdBlow.PlateText + "\", fixed camera at " + sinceBegin.ToString("0.0") + " s, kill at "
+                + (sinceBegin + ChapterColdBlow.KillSeconds).ToString("0.0") + " s after Begin");
+            run.Metric("coldBlowCh" + (chapter + 1) + "KillSeconds", sinceBegin + ChapterColdBlow.KillSeconds);
+            if (!ChapterColdBlow.Done || ChapterColdBlow.Numbers < 1 || ChapterColdBlow.KillCount < 1 || sinceBegin + ChapterColdBlow.KillSeconds > 10f) {
+                run.Problem(PlaytestSeverity.Bug, "opening-endings: Chapter " + (chapter + 1) + "'s first Yo Bot was not down with a number and a count within 10 s ("
+                    + (sinceBegin + ChapterColdBlow.KillSeconds).ToString("0.0") + " s)");
+            }
+        } else {
+            run.Problem(PlaytestSeverity.Bug, "opening-endings: Chapter " + (chapter + 1) + " had no cold blow before its opening");
+        }
         yield return run.Until(() => CinematicDirector.IsOpen || Seen("fallback"), 20f, expectId + " to start");
         if (run.Done) {
             yield break;
