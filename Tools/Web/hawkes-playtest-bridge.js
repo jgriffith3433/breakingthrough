@@ -57,7 +57,9 @@
           var t0 = Date.now();
           (function wait() {
             var cur = window.hawkesPlaytest;
-            if (cur && cur !== obj && !cur.__hawkesBridged && typeof cur.start === "function") {
+            // Unity's object is patched by the setter above too (so __hawkesBridged is set on it): what marks it as
+            // the real bridge is that it is not this stand-in. Its patched start forwards a scenario it knows to Unity.
+            if (cur && cur !== obj && typeof cur.start === "function") {
               try { resolve(cur.start.apply(cur, args)); } catch (e) { reject(e); }
             } else if (Date.now() - t0 > 180000) {
               reject(new Error("Unity playtest bridge never loaded for " + id));
