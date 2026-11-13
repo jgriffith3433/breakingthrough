@@ -390,6 +390,16 @@ public static class KitTextures {
             case "stone": smooth = 0.08f; break;
             case "cloth": smooth = 0.02f; break;
         }
+        // The hub office's walls, boards, cabinets and rug wear the Gen-painted PBR sets once the hub's files are here (PbrKit).
+        Texture2D pa, pn;
+        float psm;
+        if (palette == "office" && !lamp && PbrKit.Hub(set, out pa, out pn, out psm)) {
+            m.mainTexture = pa;
+            m.SetTexture("_BumpMap", pn);
+            m.SetColor("_Color", Color.Lerp(Color.white, Tint(palette, set), 0.5f));
+            smooth = psm;
+            metal = (set == "metal" || set == "iron") ? 0.15f : 0f;
+        }
         m.SetFloat("_Glossiness", smooth);
         m.SetFloat("_Metallic", metal);
         if (lamp) {

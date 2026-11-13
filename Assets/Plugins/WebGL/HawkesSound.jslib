@@ -47,6 +47,40 @@ mergeInto(LibraryManager.library, {
     return 1;
   },
 
+  // The Game page defines a stand-in window.hawkesPlaytest before Unity loads (the loading card's own contract), and the
+  // playtest bridge replaces it when Unity starts. A runner that called start() in between started the stand-in's run,
+  // which the replacement drops: Unity sat idle, nobody pressed "Tap to play" and the run was stuck. This reads the id
+  // of such a run (call it before HawkesPlaytest.Register); "" when there is none, the bridge is already ours, or the
+  // URL has ?playtest= (the bridge starts that one itself).
+  HawkesPlaytestStubScenario: function () {
+    var id = "";
+    try {
+      var api = window.hawkesPlaytest;
+      var auto = new URLSearchParams(window.location.search).get("playtest");
+      if (api && api.engine !== "unity" && !auto && typeof api.report === "function" && typeof api.state === "function") {
+        var report = api.report();
+        var state = api.state();
+        if (report && report.scenario && state && state.status === "running") {
+          id = String(report.scenario);
+        }
+      }
+    } catch (e) {}
+    var size = lengthBytesUTF8(id) + 1;
+    var buffer = _malloc(size);
+    stringToUTF8(id, buffer, size);
+    return buffer;
+  },
+
+  // Starts that run again on the Unity bridge (call it after HawkesPlaytest.Register); its bot presses the prompt.
+  HawkesPlaytestStartAdopted: function (idPtr) {
+    try {
+      var id = UTF8ToString(idPtr);
+      if (id && window.hawkesPlaytest && window.hawkesPlaytest.engine === "unity") {
+        window.hawkesPlaytest.start(id, {});
+      }
+    } catch (e) {}
+  },
+
   // "prompt" (not tapped yet), "running", "suspended", "none" (no Web Audio yet) or "" (no prompt on this page).
   HawkesSoundState: function () {
     var state = "";

@@ -96,16 +96,18 @@ public static class BakedMesh {
             return list;
         }
         list = null;
-        TextAsset ta = Resources.Load<TextAsset>("Baked/" + id + ".mesh");
-        if (ta != null) {
+        string meshText = OnDemand.Text("Baked/" + id + ".mesh");
+        if (meshText != null) {
             try {
-                list = Parse(ta.text);
+                list = Parse(meshText);
             } catch (System.Exception e) {
                 Debug.LogWarning("[Baked] " + id + " unreadable, using the code version: " + e.Message);
                 list = null;
             }
         }
-        cache[id] = list;
+        if (list != null || !OnDemand.Indexed("Baked/" + id + ".mesh")) {
+            cache[id] = list;   // a mesh still to be fetched keeps the code version for now and is asked for again
+        }
         return list;
     }
 

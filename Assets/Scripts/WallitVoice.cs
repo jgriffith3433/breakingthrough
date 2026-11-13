@@ -23,8 +23,19 @@ public class WallitVoice : MonoBehaviour {
     public static readonly string[] LevelUp = { "Level up! Raise!", "Profit!", "Upgrade me. I'm good for it.", "Bonus time!", "Now we're rich." };
     public static readonly string[] Chest = { "Treasure! Mine!", "Open it! Open it!", "Finders keepers!" };
     public static readonly string[] SliceLow = { "Slice! Hold on!", "I'm coming!", "Not on my tab!", "Nobody collects her!" };
+    // The first time a bot reaches Slice in a run (StakesFeel): one Key line, Wallit about her, in his money voice.
+    public static readonly string[] Stakes = { "That's my account! Hands off!", "Touch her, you pay double!", "She's not for sale. Back off!" };
     public static readonly string[] BossWave = { "Big bill. Big payday.", "Good. Bigger tip." };
     public static readonly string[] Golden = { "Gold! Mine!", "Shiny. Mine.", "That one pays double." };
+
+    // Event barks (each has its own why in VoiceDirector, and a 5 minute cooldown per line): the first blow of a run, a wave
+    // cleared, a boss's second phase.
+    public static readonly string[] FirstHit = { "First payment received.", "There's the deposit.", "Account opened. Pay up." };
+    public static readonly string[] WaveClear = { "Clean sweep. Count it.", "Books balanced.", "Wave settled. Next customer.", "All paid up. Who's next?" };
+    public static readonly string[] BossPhase = { "Now it's angry. Good, bigger bill.", "It's got a second wind. I've got a second swing.", "Overdraft! Keep swinging!" };
+
+    // Answers to SliceCallouts (money, short).
+    public static readonly string[] CalloutReply = { "On it.", "Billable.", "On it. Billable.", "Covered." };
 
     // Lines Wallit says in Slice's banter (SliceVoice.Banter), voiced here so they get a mouth and a file too.
     public static readonly string[] BanterLines = { "Pay up, bots.", "They'll feel it.", "I know. Pay up!", "Nobody touches her.", "Still mine to guard.", "Coins. Bolts. Mine.", "Pay up.", "You good, Slice?" };
@@ -79,6 +90,7 @@ public class WallitVoice : MonoBehaviour {
     float nextBigAt;
     float nextStreakAt;
     float nextWaveAt;
+    bool firstHitDone;
 
     // Wallit's model is built by SetupWallit, which also adds WallitMouth; this finds or adds both for the live player.
     public static void Ensure(GameObject player) {
@@ -175,6 +187,29 @@ public class WallitVoice : MonoBehaviour {
         }
     }
 
+    // The first blow of a run lands. Once per WallitVoice (a run's player).
+    public static void OnFirstHit() {
+        if (Instance != null && !Instance.firstHitDone) {
+            Instance.firstHitDone = true;
+            Instance.Queue(Instance.Pick(FirstHit), "first-hit", 3f);
+        }
+    }
+
+    public static void OnWaveCleared(int wave) {
+        if (Instance != null && wave > 1) {
+            Instance.Queue(Instance.Pick(WaveClear), "wave-clear", 4f);
+        }
+    }
+
+    public static void OnBossPhaseTwo() {
+        if (Instance != null) {
+            Instance.Queue(Instance.Pick(BossPhase), "boss-phase", 5f);
+        }
+    }
+
+    // Lines waiting for the floor (the bots' chorus holds back while this is above 0).
+    public static int Waiting { get { return Instance != null ? Instance.pending.Count : 0; } }
+
     public static void OnHurt() {
         if (Instance != null && Time.unscaledTime >= Instance.nextHurtAt) {
             Instance.nextHurtAt = Time.unscaledTime + 4f;
@@ -214,6 +249,23 @@ public class WallitVoice : MonoBehaviour {
         }
         if (why == "low") {
             Instance.Queue(Instance.Pick(SliceLow), "slice-low", 4f);
+        } else if (why == "hurt" || why == "wave") {
+            // She spoke to him: he answers short and in money ("On it." / "Billable.").
+            Instance.Queue(Instance.Pick(CalloutReply), "callout-reply", 10f);
+        }
+    }
+
+    // SliceCallouts: some of her threat names get a money reply once her floor frees (Normal gap, not bark).
+    public static void OnCallout(string sliceWord) {
+        if (Instance == null) {
+            return;
+        }
+        Instance.Queue(Instance.Pick(CalloutReply), "callout-reply", 10f);
+    }
+
+    public static void OnStakes() {
+        if (Instance != null) {
+            Instance.Queue(Instance.Pick(Stakes), "stakes-line", 6f);
         }
     }
 
@@ -330,6 +382,10 @@ public class WallitVoice : MonoBehaviour {
         ByReason[why] = count + 1;
 
         lineClip = LoadClip(line);
+        // A clip that never decoded (length 0, NaN) is no file: the subtitle and the line's estimate carry it.
+        if (lineClip != null && (float.IsNaN(lineClip.length) || lineClip.length <= 0.05f || lineClip.loadState == AudioDataLoadState.Failed)) {
+            lineClip = null;
+        }
         lineHasFile = lineClip != null;
         lineLength = lineHasFile ? lineClip.length : EstimateSeconds(line);
         envelope = lineHasFile ? EnvelopeOf(line, lineClip) : null;
@@ -342,7 +398,7 @@ public class WallitVoice : MonoBehaviour {
         if (lineHasFile && audioOut != null && SoundSettings.EffectsLevel > 0f) {
             audioOut.Stop();
             audioOut.clip = lineClip;
-            audioOut.volume = SoundSettings.EffectsLevel;
+            audioOut.volume = SoundSettings.Voice;
             audioOut.Play();
         }
         shown = Mathf.Max(2.4f, lineLength + 0.5f);
@@ -350,7 +406,13 @@ public class WallitVoice : MonoBehaviour {
             text.text = "WALLIT  " + line;
             text.enabled = true;
         }
+        if (why == "stakes-line") {
+            StakesFeel.Note("stakes-line", line + "|" + lineLength.ToString("0.00") + "|overlaps " + Overlaps);
+        }
         Events.Add("line|" + why + "|" + line + "|" + lineLength.ToString("0.00") + (lineHasFile ? "|voice" : "|subtitle"));
+        if ((why == "callout-reply" || why == "slice-low") && SliceVoice.Instance != null) {
+            SliceVoice.Instance.CountReply(why, line);
+        }
         return lineLength;
     }
 
@@ -359,12 +421,48 @@ public class WallitVoice : MonoBehaviour {
         return "wallit_" + SliceVoice.LineId(line).Substring(6);
     }
 
+    // Voice files that stay in the WebGL data file (OnDemandPack keeps them). Everything else is fetched on demand.
+    public static bool IsArcadeKeep(string id) {
+        EnsureArcadeKeep();
+        return arcadeKeep.Contains(id);
+    }
+
+    static HashSet<string> arcadeKeep;
+
+    static void EnsureArcadeKeep() {
+        if (arcadeKeep != null) {
+            return;
+        }
+        arcadeKeep = new HashSet<string>();
+        void add(string[] bank) {
+            for (int i = 0; i < bank.Length; i++) {
+                arcadeKeep.Add(LineId(bank[i]));
+            }
+        }
+        add(Kill); add(Streak); add(Big); add(HomeRun); add(Hurt); add(Wave); add(LevelUp); add(Chest);
+        add(SliceLow); add(Stakes); add(BossWave); add(Golden); add(FirstHit); add(WaveClear); add(BossPhase);
+        add(BanterLines); add(CalloutReply);
+    }
+
     static AudioClip LoadClip(string line) {
         string id = LineId(line);
         AudioClip clip;
         if (!clips.TryGetValue(id, out clip)) {
-            clip = Resources.Load<AudioClip>("Voice/" + id);
+            // OnDemand first (campaign / deferred lines), then Resources (Arcade keep-set).
+            clip = OnDemand.Audio("Voice/" + id);
+            if (clip == null) {
+                clip = Resources.Load<AudioClip>("Voice/" + id);
+            }
             clips[id] = clip;
+            // Campaign / deferred Wallit lines: ask OnDemand; no-ops when the key is not in the index.
+            if (clip == null) {
+                OnDemand.FetchKey("Voice/" + id, o => {
+                    var fetched = o as AudioClip;
+                    if (fetched != null) {
+                        clips[id] = fetched;
+                    }
+                });
+            }
         }
         return clip;
     }
@@ -376,34 +474,11 @@ public class WallitVoice : MonoBehaviour {
         if (envelopes.TryGetValue(id, out env)) {
             return env;
         }
-        env = null;
-        try {
-            int channels = Mathf.Max(1, clip.channels);
-            var data = new float[clip.samples * channels];
-            if (clip.samples > 0 && clip.GetData(data, 0)) {
-                int step = Mathf.Max(1, clip.frequency / 50);
-                env = new float[clip.samples / step + 1];
-                float peak = 0.0001f;
-                for (int w = 0; w < env.Length; w++) {
-                    double sum = 0.0;
-                    int n = 0;
-                    for (int s = w * step; s < (w + 1) * step && s < clip.samples; s++) {
-                        float v = data[s * channels];
-                        sum += v * v;
-                        n++;
-                    }
-                    env[w] = n > 0 ? Mathf.Sqrt((float)(sum / n)) : 0f;
-                    peak = Mathf.Max(peak, env[w]);
-                }
-                for (int w = 0; w < env.Length; w++) {
-                    env[w] = Mathf.Clamp01(env[w] / (peak * 0.8f));
-                }
-            }
-        } catch (System.Exception) {
-            env = null;
-        }
-        envelopes[id] = env;
-        return env;
+        // Never AudioClip.GetData: a Voice clip may be compressed in memory (fetched on demand, or a Resources import that kept
+        // Vorbis on WebGL), and every read logs "Cannot get data on compressed samples" with no way to ask first. The mouth
+        // follows the speaker's output (Update) instead, so the line still plays and the mouth still moves.
+        envelopes[id] = null;
+        return null;
     }
 
     // ---------------------------------------------------------------- tick
@@ -479,7 +554,11 @@ public class WallitVoice : MonoBehaviour {
             }
             Pending next = pending[best];
             pending.RemoveAt(best);
-            if (next.Line != LastLine && VoiceDirector.Allow(next.Line, next.Why, VoiceDirector.PriorityOf(next.Why))) {
+            VoiceDirector.Priority pri = VoiceDirector.PriorityOf(next.Why);
+            if (pri >= VoiceDirector.Priority.Normal && now < next.Expires && !VoiceDirector.GapReady(pri)) {
+                // Hold a Normal reply (callout-reply) until the cast gap cools; do not Deny/drop each frame.
+                pending.Insert(0, next);
+            } else if (next.Line != LastLine && VoiceDirector.Allow(next.Line, next.Why, pri)) {
                 Speak(next.Line, next.Why);
             } else {
                 Dropped++;
@@ -501,7 +580,7 @@ public class WallitVoice : MonoBehaviour {
         var go = new GameObject("Line");
         go.transform.SetParent(canvasGo.transform, false);
         text = go.AddComponent<Text>();
-        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        text.font = UiSkin.Font(UiSkin.FontRole.Label);
         text.fontSize = 30;
         text.fontStyle = FontStyle.Bold;
         text.alignment = TextAnchor.MiddleCenter;

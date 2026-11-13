@@ -72,6 +72,13 @@ static class BuildArena
             Debug.LogWarning("Arena: KnollLit material is missing.");
             return;
         }
+        // The scatter is drawn with DrawMeshInstanced: without this flag at build time the player strips the instancing
+        // shader variant and every grass tuft, flower, rock and tree vanishes (bare dark plane).
+        if (!material.enableInstancing)
+        {
+            material.enableInstancing = true;
+            EditorUtility.SetDirty(material);
+        }
 
         ClearOldMap();
         Directory.CreateDirectory(GeneratedFolder);
@@ -113,32 +120,55 @@ static class BuildArena
         plazaGo.AddComponent<MeshFilter>().sharedMesh = plaza;
         plazaGo.AddComponent<MeshRenderer>().sharedMaterial = material;
 
-        // Scatter
-        var buckets = new Dictionary<int, List<CombineInstance>>();
-        Scatter(buckets, center, noise, seedX, seedZ);
-        foreach (KeyValuePair<int, List<CombineInstance>> pair in buckets)
+        // Scatter: one DrawMeshInstanced batch per source mesh (shared FBX), not CombineMeshes into unique assets.
+        // The old ArenaScatter_*.asset files ballooned the WebGL data file to ~40 MB of duplicated grass/tree verts.
+        // Left on disk they are unreferenced and stay out of the player; do not DeleteAsset here (local FullDeploy).
+        var batches = new Dictionary<Mesh, List<Matrix4x4>>();
+        var soft = new HashSet<Mesh>();
+        Scatter(batches, soft, center, noise, seedX, seedZ);
+        int batchIndex = 0;
+        foreach (KeyValuePair<Mesh, List<Matrix4x4>> pair in batches)
         {
-            var combined = new Mesh();
-            combined.name = "ArenaScatter_" + pair.Key;
-            combined.indexFormat = IndexFormat.UInt32;
-            combined.CombineMeshes(pair.Value.ToArray(), true, true);
-            combined.RecalculateBounds();
-            SaveMesh(combined, combined.name);
-            var go = new GameObject(combined.name);
+            if (pair.Key == null || pair.Value.Count == 0)
+                continue;
+            var go = new GameObject("ArenaScatter_" + batchIndex++);
             go.transform.SetParent(root.transform, false);
             go.isStatic = true;
-            go.AddComponent<MeshFilter>().sharedMesh = combined;
-            var renderer = go.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = material;
-            // Grass and flowers do not cast shadows; trees and rocks do.
-            renderer.shadowCastingMode = pair.Key >= 100 ? ShadowCastingMode.Off : ShadowCastingMode.On;
+            var draw = go.AddComponent<ArenaScatterDraw>();
+            draw.Set(pair.Key, material, soft.Contains(pair.Key) ? ShadowCastingMode.Off : ShadowCastingMode.On, pair.Value.ToArray());
         }
 
         AssetDatabase.SaveAssets();
         var scene = EditorSceneManager.GetActiveScene();
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
-        Debug.Log("Arena built: open meadow bowl, stone plaza, rim forest. Houses and the old knoll are gone.");
+        Debug.Log("Arena built: open meadow bowl, stone plaza, rim forest (instanced scatter, no combined mesh assets).");
+    }
+
+    // Cloud / WebGL build: rebuild scene2's Arena so the player no longer ships the old combined scatter meshes.
+    public static void RebuildForPlayerBuild()
+    {
+        var scene = EditorSceneManager.OpenScene("Assets/scene2.unity", OpenSceneMode.Single);
+        GameObject existing = GameObject.Find(RootName);
+        if (existing != null)
+            Object.DestroyImmediate(existing);
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(ArtFolder + "/Pine_A.fbx") == null)
+        {
+            Debug.LogWarning("Arena: Pine_A.fbx missing; scatter rebuild skipped.");
+            return;
+        }
+        Build();
+        // Retired bow models were still referenced on BowEquipment and pulled ~1.7 MB into the data file.
+        foreach (BowEquipment bow in Object.FindObjectsByType<BowEquipment>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            SerializedObject so = new SerializedObject(bow);
+            so.FindProperty("bowModel").objectReferenceValue = null;
+            so.FindProperty("arrowModel").objectReferenceValue = null;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(bow);
+        }
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene);
     }
 
     static void ClearOldMap()
@@ -369,7 +399,7 @@ static class BuildArena
         return filter != null ? filter.sharedMesh : null;
     }
 
-    static void Scatter(Dictionary<int, List<CombineInstance>> buckets, Vector3 center, System.Random rng, float seedX, float seedZ)
+    static void Scatter(Dictionary<Mesh, List<Matrix4x4>> batches, HashSet<Mesh> soft, Vector3 center, System.Random rng, float seedX, float seedZ)
     {
         Mesh[] pines = { Load("Pine_A"), Load("Pine_B"), Load("Pine_C") };
         Mesh broadleaf = Load("Broadleaf_A");
@@ -378,6 +408,10 @@ static class BuildArena
         Mesh bush = Load("Bush_A");
         Mesh[] grass = { Load("Grass_A"), Load("Grass_B") };
         Mesh[] flowers = { Load("Flowers_White"), Load("Flowers_Blue"), Load("Flowers_Gold") };
+        foreach (Mesh g in grass)
+            if (g != null) soft.Add(g);
+        foreach (Mesh f in flowers)
+            if (f != null) soft.Add(f);
 
         // Rim forest: thick enough to read as a wall of trees from the field.
         for (int i = 0; i < 900; i++)
@@ -385,7 +419,7 @@ static class BuildArena
             float r = Mathf.Lerp(158f, 262f, Mathf.Pow((float)rng.NextDouble(), 0.8f));
             float a = (float)rng.NextDouble() * Mathf.PI * 2f;
             Mesh mesh = rng.NextDouble() < 0.12 ? broadleaf : pines[rng.Next(pines.Length)];
-            Add(buckets, 0, mesh, center, r, a, 0.85f + (float)rng.NextDouble() * 0.8f, rng, seedX, seedZ, -0.3f);
+            Add(batches, mesh, center, r, a, 0.85f + (float)rng.NextDouble() * 0.8f, rng, seedX, seedZ, -0.3f);
         }
         // Boulders and rocks where the meadow turns into the rim.
         for (int i = 0; i < 90; i++)
@@ -393,20 +427,20 @@ static class BuildArena
             float r = Mathf.Lerp(150f, 215f, (float)rng.NextDouble());
             float a = (float)rng.NextDouble() * Mathf.PI * 2f;
             Mesh mesh = rng.NextDouble() < 0.35 ? boulder : rocks[rng.Next(rocks.Length)];
-            Add(buckets, 0, mesh, center, r, a, 0.8f + (float)rng.NextDouble() * 1.2f, rng, seedX, seedZ, -0.6f);
+            Add(batches, mesh, center, r, a, 0.8f + (float)rng.NextDouble() * 1.2f, rng, seedX, seedZ, -0.6f);
         }
         for (int i = 0; i < 70; i++)
         {
             float r = Mathf.Lerp(146f, 175f, (float)rng.NextDouble());
             float a = (float)rng.NextDouble() * Mathf.PI * 2f;
-            Add(buckets, 0, bush, center, r, a, 1f + (float)rng.NextDouble() * 1.4f, rng, seedX, seedZ, -0.1f);
+            Add(batches, bush, center, r, a, 1f + (float)rng.NextDouble() * 1.4f, rng, seedX, seedZ, -0.1f);
         }
-        // The field: only soft things birds can walk through.
+        // The field: only soft things bots can walk through.
         for (int i = 0; i < 2600; i++)
         {
             float r = Mathf.Lerp(7f, 165f, Mathf.Sqrt((float)rng.NextDouble()));
             float a = (float)rng.NextDouble() * Mathf.PI * 2f;
-            Add(buckets, 100, grass[rng.Next(grass.Length)], center, r, a, 0.8f + (float)rng.NextDouble() * 0.9f, rng, seedX, seedZ, 0f);
+            Add(batches, grass[rng.Next(grass.Length)], center, r, a, 0.8f + (float)rng.NextDouble() * 0.9f, rng, seedX, seedZ, 0f);
         }
         for (int i = 0; i < 650; i++)
         {
@@ -414,11 +448,11 @@ static class BuildArena
             float drift = (float)rng.Next(24);
             float a = drift / 24f * Mathf.PI * 2f + ((float)rng.NextDouble() - 0.5f) * 0.18f;
             float r = Mathf.Lerp(18f, 140f, Mathf.PerlinNoise(drift * 3.1f, 0.5f)) + ((float)rng.NextDouble() - 0.5f) * 14f;
-            Add(buckets, 100, flowers[(int)drift % flowers.Length], center, r, a, 0.9f + (float)rng.NextDouble() * 0.6f, rng, seedX, seedZ, 0f);
+            Add(batches, flowers[(int)drift % flowers.Length], center, r, a, 0.9f + (float)rng.NextDouble() * 0.6f, rng, seedX, seedZ, 0f);
         }
     }
 
-    static void Add(Dictionary<int, List<CombineInstance>> buckets, int layerBase, Mesh mesh, Vector3 center, float r, float a, float scale, System.Random rng, float seedX, float seedZ, float sink)
+    static void Add(Dictionary<Mesh, List<Matrix4x4>> batches, Mesh mesh, Vector3 center, float r, float a, float scale, System.Random rng, float seedX, float seedZ, float sink)
     {
         if (mesh == null)
             return;
@@ -426,19 +460,13 @@ static class BuildArena
         float z = center.z + Mathf.Cos(a) * r;
         float y = center.y + Height(x, z, center, seedX, seedZ) + sink * scale;
         Quaternion spin = Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f);
-        int sector = ((Mathf.FloorToInt((a / (Mathf.PI * 2f)) * 12f) % 12) + 12) % 12;
-        int key = layerBase + sector;
-        List<CombineInstance> list;
-        if (!buckets.TryGetValue(key, out list))
+        List<Matrix4x4> list;
+        if (!batches.TryGetValue(mesh, out list))
         {
-            list = new List<CombineInstance>();
-            buckets[key] = list;
+            list = new List<Matrix4x4>();
+            batches[mesh] = list;
         }
-        list.Add(new CombineInstance
-        {
-            mesh = mesh,
-            transform = Matrix4x4.TRS(new Vector3(x, y, z), spin, Vector3.one * scale)
-        });
+        list.Add(Matrix4x4.TRS(new Vector3(x, y, z), spin, Vector3.one * scale));
     }
 
     static void SaveMesh(Mesh mesh, string name)

@@ -67,7 +67,7 @@ public class LorePanel : MonoBehaviour {
 
     void Awake() {
         instance = this;
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        font = UiSkin.Font(UiSkin.FontRole.Body);
         if (FindAnyObjectByType<EventSystem>() == null) {
             var events = new GameObject("Event System");
             events.AddComponent<EventSystem>();

@@ -107,6 +107,8 @@ public class LevelYard : MonoBehaviour {
         }
     }
     public Vector3 SliceFigureAt { get { return sliceFigure != null ? sliceFigure.position : SlicePos; } }
+    // The live Slice transform for in-engine cinematics (SliceFigure() already names the builder).
+    public Transform SliceBody { get { return sliceFigure; } }
 
     LevelScene scene;
     Transform root;
@@ -621,14 +623,98 @@ public class LevelYard : MonoBehaviour {
         Note("level-start", "Level_1_Yard at " + PlayerStart);
     }
 
-    // The hook: within the first second a stamp falls beside him (to his right, clear of the chalk walk) and slams RETURN TO
-    // SENDER into the ground, and he answers it. The yard's rule is shown before anyone says it.
+    // The opening: an in-engine directed scene in the Sorting Yard (CinematicDirector, ch1_open_world). Wallit arrives on
+    // the west trail, Slice turns in her ring, the Courier raises its clipboard, and the RETURN TO SENDER stamp lands on
+    // the circle; control resumes on the last shot with no black frame. Playtests set CinematicDirector.SuppressOpening
+    // so their bot starts with the stick. Missing actors fall back to the still reel ch1_open.
     IEnumerator Opening() {
-        yield return new WaitForSeconds(0.8f);
-        DropStampAt(PlayerStart + new Vector3(4.5f, 0f, 6f), "the opening");
+        if (CinematicDirector.SuppressOpening) {
+            yield return new WaitForSeconds(0.8f);
+            DropStampAt(PlayerStart + new Vector3(4.5f, 0f, 6f), "the opening");
+            nextStampAt = Time.time + 9f;
+            yield return new WaitForSeconds(Telegraph + 0.5f);
+            LevelBarks.Say('W', "Return to sender. Which sender? I want a refund.", "arrive", true);
+            yield break;
+        }
+        nextStampAt = Time.time + 40f;
+        bool done = false;
+        CinematicDirector.Play("ch1_open_world", this, () => done = true);
+        // The opening never holds the chapter for good: if it has not handed over well after its own length (a voice clip
+        // that never decodes, a shot that never ends), it is cut and the player gets the stick.
+        CinematicDirector.Reel opening = CinematicDirector.Load("ch1_open_world");
+        float budget = 20f;
+        if (opening != null && opening.shots != null) {
+            foreach (CinematicDirector.Shot shot in opening.shots) {
+                budget += shot.seconds + 4f;
+            }
+        }
+        float started = Time.unscaledTime;
+        while (!done) {
+            // The first Yo Bot is placed (held) while the last shot plays, so it is already at the ring when the stick returns.
+            if (firstBot == null && CinematicDirector.Instance != null && CinematicDirector.IsOpen
+                && CinematicDirector.Instance.ShotCount > 0 && CinematicDirector.Instance.ShotIndex >= CinematicDirector.Instance.ShotCount - 1) {
+                firstBot = PlaceFirstBot(PlayerStart);
+                firstBot.Scripted = true;
+            }
+            if (Time.unscaledTime - started > budget && CinematicDirector.Instance != null) {
+                Note("opening-timeout", "ch1_open_world cut after " + (Time.unscaledTime - started).ToString("0.0") + " s");
+                CinematicDirector.Instance.Skip();
+                started = Time.unscaledTime;
+                if (!CinematicDirector.IsOpen && !Cutscene.IsOpen) {
+                    done = true;   // nothing is playing any more: stop waiting
+                }
+            }
+            yield return null;
+        }
         nextStampAt = Time.time + 9f;
-        yield return new WaitForSeconds(Telegraph + 0.5f);
-        LevelBarks.Say('W', "Return to sender. Which sender? I want a refund.", "arrive", true);
+        Note("opening-scene", "ch1_open_world done, shots=" + CinematicDirector.ShotsShown + " skipped=" + CinematicDirector.Skipped);
+        StartCoroutine(FirstBlow());
+    }
+
+    public bool FirstBotDown { get; private set; }
+    public float FirstBotDownSeconds { get; private set; }   // seconds from the bot's arrival to its fall
+
+    // The first blow: the opening is about 7 s, then one Yo Bot of the Clearing Crew's post already runs at Wallit inside the ring.
+    // The bat swings by itself at it (BatEquipment.OpeningAuto) so a stranger sees a hit, a puff of plates and a kill before
+    // any text. It is not part of the crew: the encounter counts, the Courier and the notices stay as they were.
+    Enemy firstBot;
+
+    Enemy PlaceFirstBot(Vector3 w) {
+        Vector3 toRing = LevelKit.Flat(SlicePos - w);
+        Vector3 dir = toRing.sqrMagnitude > 0.01f ? toRing.normalized : Vector3.forward;
+        Vector3 side = Vector3.Cross(Vector3.up, dir);
+        BotDef def = BotRoster.ForSpawn(BotKind.YoBot, 1);
+        var go = new GameObject("First Yo Bot");
+        go.tag = "enemy";
+        Vector3 p = w + dir * 1f + side * 3f;
+        p.y = 0.55f + def.Scale * 0.08f;
+        go.transform.position = p;
+        go.transform.rotation = Quaternion.LookRotation(LevelKit.Flat(w - p));
+        Enemy e = go.AddComponent<Enemy>();
+        e.ApplyBot(def);
+        return e;
+    }
+
+    IEnumerator FirstBlow() {
+        if (scene == null || scene.Player == null) {
+            yield break;
+        }
+        Enemy e = firstBot != null ? firstBot : PlaceFirstBot(scene.Player.position);
+        firstBot = null;
+        e.Scripted = false;
+        float spawned = Time.time;   // control starts now: the fight is timed from here
+        BatEquipment.OpeningAuto = true;
+        Note("first-blow-start", "a Yo Bot runs in from " + e.transform.position.ToString("0.0") + "; the bat swings by itself");
+        while (e != null && e.Alive && Time.time - spawned < 14f) {
+            yield return null;
+        }
+        BatEquipment.OpeningAuto = false;
+        FirstBotDown = e == null || !e.Alive;
+        FirstBotDownSeconds = Time.time - spawned;
+        Note("first-blow-kill", (FirstBotDown ? "down" : "still up") + " after " + FirstBotDownSeconds.ToString("0.0") + " s");
+        if (!FirstBotDown && e != null) {
+            Destroy(e.gameObject);
+        }
     }
 
     string Objective() {
@@ -863,8 +949,19 @@ public class LevelYard : MonoBehaviour {
         yield return new WaitForSeconds(1.5f);
         SpawnCourier();
         yield return new WaitForSeconds(1.4f);
+        // The Courier's entrance (CinematicBoss.cs): the camera swings to it, its name is stamped and it speaks the first line.
+        bool entering = true;
+        CinematicDirector.BossResult entrance = CinematicDirector.PlayBoss(TheCourier, 0, -1, () => entering = false);
+        if (entrance == CinematicDirector.BossResult.Played) {
+            while (entering) {
+                yield return null;
+            }
+            yield return new WaitForSeconds(0.3f);
+        } else {
+            MusicDirector.Play(MusicDirector.BossTrack("The Courier"));
+        }
         string[] lines = Story.Chapters[0].BossLines;
-        for (int i = 0; lines != null && i < lines.Length; i++) {
+        for (int i = entrance == CinematicDirector.BossResult.Played ? 1 : 0; lines != null && i < lines.Length; i++) {
             if (TheCourier == null || !TheCourier.Alive || !TheCourier.Dormant) {
                 break;   // Wallit did not wait for the reading
             }
@@ -998,6 +1095,7 @@ public class LevelYard : MonoBehaviour {
     // and the drop is cleared.
     void CourierFell() {
         CourierDown = true;
+        MusicDirector.Play(MusicDirector.ChapterTrack(scene.Chapter));   // the boss theme gives way to the chapter's score
         foreach (Enemy e in new List<Enemy>(called)) {
             if (e != null && e.Alive) {
                 e.Damage(9999f, DamageKind.Plain, false);

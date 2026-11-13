@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -39,9 +40,48 @@ public class Juice : MonoBehaviour {
         new GameObject("Juice").AddComponent<Juice>();
     }
 
-    // Hit-stop is counted in frames, not seconds, so it reads the same at any frame rate: 2 to 4 frames.
+    // Hit-stop is counted in frames, not seconds, so it reads the same at any frame rate. By weight: a light combo
+    // hit 3 frames (50 ms), a finisher 5, a home run 6. Other big moments ask in seconds and stay at 4 or under.
     public const int MinStopFrames = 2;
-    public const int MaxStopFrames = 4;
+    public const int MaxStopFrames = 6;
+    public const int OtherMaxFrames = 4;
+    public enum Weight { Light, Finisher, HomeRun }
+    public static int FramesFor(Weight w) {
+        return w == Weight.HomeRun ? 6 : w == Weight.Finisher ? 5 : 3;
+    }
+    // One line per weighted contact: the frames asked and held, and the camera kick with its measured decay.
+    public static readonly List<string> HitLog = new List<string>();
+    public static int LightHeld { get; private set; }
+    public static int FinisherHeld { get; private set; }
+    public static int HomeRunHeld { get; private set; }
+    static int stopCap = OtherMaxFrames;
+    static int stopWeight = -1;
+
+    // Bat contact scaled by weight: hit-stop frames, the camera kick toward the hit (off with Reduce Motion; the
+    // freeze stays) and, for a home run, a short FOV punch. `toward` is the world direction of the blow.
+    public static void Contact(Weight w, Vector3 toward) {
+        int frames = FramesFor(w);
+        bool still = ComfortOptions.ReducedMotion;
+        float kick = w == Weight.HomeRun ? 0.32f : w == Weight.Finisher ? 0.12f : 0.04f;
+        float fov = w == Weight.HomeRun ? 4f : w == Weight.Finisher ? 1f : 0f;
+        float seconds = w == Weight.HomeRun ? 0.26f : w == Weight.Finisher ? 0.18f : 0.1f;
+        if (UiFit.Touch) {
+            kick *= 0.6f;   // a phone's frame is small: the play area must stay on screen
+            fov *= 0.75f;
+        }
+        if (!still) {
+            ZeldaStyleCamera.Kick(toward, kick, fov, seconds);
+            // The bat's small contact jolt (J's 2026-10-19 exception): a few centimetres, gone in a tenth of a second.
+            ZeldaStyleCamera.Shake(w == Weight.HomeRun ? 0.09f : w == Weight.Finisher ? 0.06f : 0.035f * (UiFit.Touch ? 0.7f : 1f), 0.12f);
+        }
+        stopWeight = Mathf.Max(stopWeight, (int)w);
+        HitStopFrames(frames, true);
+        HitLog.Add(w + " hit: hit-stop " + frames + " frames, kick " + (still ? 0f : kick).ToString("0.00") + " m"
+            + (still ? " (off: Reduce Motion)" : ", decays in " + seconds.ToString("0.00") + " s, fov punch " + fov.ToString("0.0") + " deg"));
+        if (HitLog.Count > 40) {
+            HitLog.RemoveAt(0);
+        }
+    }
     public static int Stops { get; private set; }
     public static int ShortestStop { get; private set; }
     public static int LongestStop { get; private set; }
@@ -57,6 +97,10 @@ public class Juice : MonoBehaviour {
         ShortestStop = 0;
         LongestStop = 0;
         HomeRunBeats = 0;
+        LightHeld = 0;
+        FinisherHeld = 0;
+        HomeRunHeld = 0;
+        HitLog.Clear();
     }
 
     // Freeze the world for a blink. Never fights a real pause. Seconds are turned into 2 to 4 frames at 60 fps.
@@ -64,18 +108,20 @@ public class Juice : MonoBehaviour {
         HitStopFrames(Mathf.RoundToInt(seconds * 60f));
     }
 
-    public static void HitStopFrames(int frames) {
-        frames = Mathf.Clamp(frames, MinStopFrames, MaxStopFrames);
+    public static void HitStopFrames(int frames, bool weighted = false) {
+        frames = Mathf.Clamp(frames, MinStopFrames, weighted ? MaxStopFrames : OtherMaxFrames);
         if (Time.timeScale < 0.99f && !stopping) {
             return;
         }
         if (!stopping) {
             stopStartFrame = Time.frameCount;
             stopEndFrame = stopStartFrame;
+            stopCap = OtherMaxFrames;
             Stops++;
         }
         stopping = true;
-        stopEndFrame = Mathf.Min(Mathf.Max(stopEndFrame, Time.frameCount + frames), stopStartFrame + MaxStopFrames);
+        stopCap = Mathf.Max(stopCap, frames);
+        stopEndFrame = Mathf.Min(Mathf.Max(stopEndFrame, Time.frameCount + frames), stopStartFrame + stopCap);
         Time.timeScale = 0.05f;
     }
 
@@ -93,6 +139,18 @@ public class Juice : MonoBehaviour {
             int held = Time.frameCount - stopStartFrame;
             ShortestStop = ShortestStop == 0 ? held : Mathf.Min(ShortestStop, held);
             LongestStop = Mathf.Max(LongestStop, held);
+            if (stopWeight == (int)Weight.HomeRun) {
+                HomeRunHeld = Mathf.Max(HomeRunHeld, held);
+            } else if (stopWeight == (int)Weight.Finisher) {
+                FinisherHeld = Mathf.Max(FinisherHeld, held);
+            } else if (stopWeight == (int)Weight.Light) {
+                LightHeld = LightHeld == 0 ? held : Mathf.Max(LightHeld, held);
+            }
+            if (stopWeight >= 0) {
+                HitLog.Add("hit-stop held " + held + " frames (" + (Weight)stopWeight + "), kick decayed in "
+                    + ZeldaStyleCamera.KickDecaySeconds.ToString("0.00") + " s");
+            }
+            stopWeight = -1;
             if (Time.timeScale > 0.01f) {
                 Time.timeScale = 1f;
             }

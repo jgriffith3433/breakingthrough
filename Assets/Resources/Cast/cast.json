@@ -11,10 +11,10 @@
    "glyph": "",
    "voice": "none",
    "bible": "Narration over the frozen Hollow and the finale",
-   "voiceId": "hv_narrator_warm",
-   "voiceName": "Morgan",
-   "direction": "warm, even, storybook narrator; slow and sombre",
-   "provider": "open"
+   "voiceId": "JjDIROtNEieYxCNGJXgG",
+   "voiceName": "Narrator",
+   "direction": "warm, even, bureaucratic, faintly amused: a records clerk reading a fairy tale",
+   "provider": "elevenlabs"
   },
   {
    "id": "wallit",
@@ -39,10 +39,10 @@
    "glyph": "S",
    "voice": "slice",
    "bible": "Goth guard of the circle, scalpel knife. Clipped.",
-   "voiceId": "hv_heroine",
-   "voiceName": "Ava",
-   "direction": "cool, flat and clipped, almost no emotion; short words",
-   "provider": "open"
+   "voiceId": "Gmg7bCXPSj9cYwVDrM6h",
+   "voiceName": "Slice",
+   "direction": "cool, low, dry and clipped, almost no emotion; answers in one word",
+   "provider": "elevenlabs"
   },
   {
    "id": "yobot",
@@ -81,10 +81,10 @@
    "glyph": "K",
    "voice": "bark",
    "bible": "Chapter 1 boss: Alpha Yo Bot with a clipboard and a notice of striking.",
-   "voiceId": "hv_young_hero",
-   "voiceName": "Jamie",
-   "direction": "cheerful delivery clerk, upbeat and unbothered",
-   "provider": "open"
+   "voiceId": "TxGEqnHWrfWFTfGW9XjX",
+   "voiceName": "Courier (Josh)",
+   "direction": "chirpy postal clerk, bright mid voice, upbeat and unbothered, short notices",
+   "provider": "elevenlabs"
   },
   {
    "id": "platedalpha",
@@ -95,10 +95,10 @@
    "glyph": "P",
    "voice": "bark",
    "bible": "Chapter 2 boss: Plated Yo Bot stamped INVALID.",
-   "voiceId": "hv_ai",
-   "voiceName": "Unit",
-   "direction": "calm synthetic, stamped and final",
-   "provider": "open"
+   "voiceId": "pNInz6obpgDQGcFmaJgB",
+   "voiceName": "Plated Alpha (Adam)",
+   "direction": "clipped and metallic, stamped and final, even pace, no warmth",
+   "provider": "elevenlabs"
   },
   {
    "id": "foreman",
@@ -109,10 +109,10 @@
    "glyph": "F",
    "voice": "bark",
    "bible": "Chapter 3 boss: Mega Yo Bot Alpha that reads the order on its charges.",
-   "voiceId": "hv_trailer",
-   "voiceName": "Rex",
-   "direction": "deep, flat, reads overtime as law",
-   "provider": "open"
+   "voiceId": "VR6AewLTigWG4xSOukaG",
+   "voiceName": "Foreman (Arnold)",
+   "direction": "gravelly site boss, deep and flat, reads overtime as law",
+   "provider": "elevenlabs"
   },
   {
    "id": "halfbuilt",
@@ -137,10 +137,10 @@
    "glyph": "V",
    "voice": "bark",
    "bible": "Chapter 4 boss: the first Spider Bot; offers a paper and waits.",
-   "voiceId": "hv_british",
-   "voiceName": "Eleanor",
-   "direction": "impeccably polite, patient, offers and waits",
-   "provider": "open"
+   "voiceId": "XB0fDUnXU5powFXDhCwa",
+   "voiceName": "Server (Charlotte)",
+   "direction": "polite, insistent, offers the paper and waits, British and patient",
+   "provider": "elevenlabs"
   },
   {
    "id": "registrar",
@@ -151,10 +151,10 @@
    "glyph": "R",
    "voice": "bark",
    "bible": "Chapter 5 boss: gold Titan Spider Bot that reads the pages.",
-   "voiceId": "hv_elder",
-   "voiceName": "Walter",
-   "direction": "dry gravelly clerk reading a ledger",
-   "provider": "open"
+   "voiceId": "SOYHLrjzK2X1ezoPC6cr",
+   "voiceName": "Registrar (Harry)",
+   "direction": "dry and final, gravelly clerk reading a ledger, no hurry",
+   "provider": "elevenlabs"
   },
   {
    "id": "orderbearer",
@@ -165,10 +165,10 @@
    "glyph": "O",
    "voice": "bark",
    "bible": "Chapter 6 and wave 30: the Spider Bot that carries the order.",
-   "voiceId": "hv_villain",
-   "voiceName": "Victor",
-   "direction": "low, formal, never angry, only final",
-   "provider": "open"
+   "voiceId": "ZQe5CZNOzWyzPSCn5a3c",
+   "voiceName": "Order-Bearer (James)",
+   "direction": "slow and ceremonial, low, formal, never angry, only final",
+   "provider": "elevenlabs"
   },
   {
    "id": "tick",

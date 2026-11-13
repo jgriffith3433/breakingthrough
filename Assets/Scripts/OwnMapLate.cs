@@ -554,7 +554,7 @@ public class FiledMap : OwnMap {
         number.position = Polar(0f, 0f, 9f) + new Vector3(0f, 0f, 36f);
         number.rotation = Quaternion.Euler(0f, 0f, 0f);
         numberText = numberGo.AddComponent<TextMesh>();
-        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        Font font = UiSkin.Font(UiSkin.FontRole.Label);
         numberText.font = font;
         numberText.text = "1";
         numberText.characterSize = 2.2f;

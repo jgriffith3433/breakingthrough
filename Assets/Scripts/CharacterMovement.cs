@@ -724,6 +724,23 @@ public class CharacterMovement : MonoBehaviour {
 
     // Reads the planted foot off the posed rig, after the Animator has run: how fast it moves over the ground (a
     // slide) and against the body (the stride the clip really covers). The stride pulls the playback speed in line.
+    bool plantedL, plantedR;
+    float stepAt;
+
+    // Wallit's footfalls: a step when a foot lands while he runs on the ground, from where the foot is (3D, never twice alike).
+    void StepSounds(bool l, bool r) {
+        bool landL = l && !plantedL;
+        bool landR = r && !plantedR;
+        plantedL = l;
+        plantedR = r;
+        if ((!landL && !landR) || !moving || Time.timeScale < 0.9f || Time.unscaledTime - stepAt < 0.18f) {
+            return;
+        }
+        stepAt = Time.unscaledTime;
+        Vector3 at = landL ? footL.position : footR.position;
+        GameAudio.PlayAt(PlaceAudio.StepName(transform.position), at, 0.32f, Random.Range(0.94f, 1.06f));
+    }
+
     void TrackFeet() {
         if (model == null || !Anim.isHuman) {
             return;
@@ -745,6 +762,7 @@ public class CharacterMovement : MonoBehaviour {
         Vector3 lh = hips != null ? model.InverseTransformPoint(hips.position) : Vector3.zero;
         footFloor = Mathf.Min(footFloor + 0.05f * dt, Mathf.Min(wl.y, wr.y));
         float scale = VisualScale;
+        StepSounds(wl.y - footFloor < 0.07f * scale, wr.y - footFloor < 0.07f * scale);
 
         if (haveFeet && dt > 0.0001f && Time.timeScale > 0.9f) {
             AnimatorStateInfo cur = Anim.GetCurrentAnimatorStateInfo(0);
@@ -834,6 +852,12 @@ public class CharacterMovement : MonoBehaviour {
             haveBodyPos = true;
             if (hasFireSpeed) {
                 Anim.SetFloat(FireSpeedHash, 1.35f * RunBoons.DrawSpeed);
+            }
+
+            // An in-engine cinematic drives Wallit itself; ignore the stick so feet don't fight the marks.
+            if (CinematicDirector.IsOpen) {
+                AnimationMove(bodyVel);
+                return;
             }
 
             bool rooted = PlayerGrowth.Instance != null && PlayerGrowth.Instance.Rooted;

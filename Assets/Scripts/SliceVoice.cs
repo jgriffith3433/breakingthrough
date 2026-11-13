@@ -20,6 +20,7 @@ public class SliceVoice : MonoBehaviour {
     static readonly string[] Kill = { "Clean.", "Done.", "Next.", "Tidy.", "One less." };
     static readonly string[] Hurt = { "Tch.", "Careful.", "A scratch.", "Rude.", "Not bad." };
     static readonly string[] Low = { "Getting thin.", "Still standing.", "Wallit. Now." };
+    static readonly string[] NewKind = { "That one's new.", "What is that.", "Different. Watch it.", "Don't know that one." };
     static readonly string[] Near = { "Close.", "Too close.", "Noted.", "Barely." };
 
     // Banter: speaker (W Wallit, S Slice) and line. Wallit talks money; Slice answers short.
@@ -40,6 +41,8 @@ public class SliceVoice : MonoBehaviour {
     public const string BStagger = "stagger";
     public const string BHunch = "hunch";
     public const string BBanter = "banter-turn";
+    public const string BBlock = "block";
+    public const string BStamp = "stamp";
 
     // Playtest and diagnostics: everything she said or did, in order ("kind|detail").
     public static readonly List<string> Events = new List<string>();
@@ -86,6 +89,7 @@ public class SliceVoice : MonoBehaviour {
     void Awake() {
         Instance = this;
         Events.Clear();
+        kindsSeen.Clear();
         audioOut = gameObject.AddComponent<AudioSource>();
         audioOut.playOnAwake = false;
         audioOut.spatialBlend = 0f;
@@ -117,7 +121,7 @@ public class SliceVoice : MonoBehaviour {
 
     // Wave 1 may start before she exists: greet it if no wave start was seen yet.
     void OpeningWave() {
-        if (lastReadyAt < 0f) {
+        if (lastReadyAt < 0f && !ColdOpen.PlayedThisRun) {
             Ready(WaveDirector.Wave);
         }
     }
@@ -129,6 +133,15 @@ public class SliceVoice : MonoBehaviour {
             return;
         }
         Instance.Ready(wave);
+    }
+
+    // A kind of bot nobody has seen this run walks in (after the first Yo Bot). She notes it, once per kind.
+    static readonly HashSet<BotKind> kindsSeen = new HashSet<BotKind>();
+    public static void OnNewKind(BotKind kind) {
+        if (Instance == null || kind == BotKind.YoBot || !kindsSeen.Add(kind)) {
+            return;
+        }
+        Instance.Say(NewKind, "new-type");
     }
 
     public static void OnKill(Enemy foe) {
@@ -173,6 +186,17 @@ public class SliceVoice : MonoBehaviour {
     // ---------------------------------------------------------------- tick
 
     void Update() {
+        if (WaveDirector.IsLost) {
+            // Time is stopped on the run-end panel, so the shown timers below never run out: clear the lines here.
+            sliceShown = 0f;
+            wallitShown = 0f;
+            if (sliceText != null) {
+                sliceText.enabled = false;
+            }
+            if (wallitText != null) {
+                wallitText.enabled = false;
+            }
+        }
         Musician slice = Musician.Instance;
         if (slice == null || Time.deltaTime <= 0f) {
             return;
@@ -252,6 +276,13 @@ public class SliceVoice : MonoBehaviour {
         }
     }
 
+    // Wallit answered something Slice just said (a callout, a hurt or low line): that is an exchange too, not only the
+    // idle banter, which needs a quiet minute that a real fight rarely gives.
+    public void CountReply(string why, string line) {
+        Exchanges++;
+        Note("banter", "exchange " + Exchanges + " (reply " + why + ": " + line + ")");
+    }
+
     System.Collections.IEnumerator TradeLines() {
         banterRunning = true;
         string[] pair = Banter[Random.Range(0, Banter.Length)];
@@ -312,6 +343,17 @@ public class SliceVoice : MonoBehaviour {
         Show(false, line, why);
     }
 
+    // The cold open's one line (ColdOpen.cs): her voice file and her subtitle, the floor for its length. It counts as her wave-1
+    // greeting, so she does not say a second line when the wave starts.
+    public static void ColdLine(string line) {
+        if (Instance == null) {
+            return;
+        }
+        Instance.lastReadyAt = Time.time;
+        Instance.nextLineAt = Time.time + 3.2f;
+        Instance.Show(false, line, "cold-open");
+    }
+
     // A cutscene line (Cutscene.cs): her voice file if there is one, the floor for its length, no subtitle of her own.
     public static float Cutscene(string line) {
         if (Instance != null) {
@@ -354,7 +396,7 @@ public class SliceVoice : MonoBehaviour {
             if (sliceText != null && why != "cutscene") {
                 sliceText.text = "SLICE  " + line;
             }
-            AudioClip clip = Resources.Load<AudioClip>("Voice/" + id);
+            AudioClip clip = LoadClip(id);
             if (clip != null && audioOut != null && SoundSettings.EffectsLevel > 0f) {
                 audioOut.PlayOneShot(clip, SoundSettings.EffectsLevel);
             }
@@ -386,6 +428,92 @@ public class SliceVoice : MonoBehaviour {
             }
         }
         return sb.ToString();
+    }
+
+    // Voice files that stay in the WebGL data file (OnDemandPack keeps them).
+    public static bool IsArcadeKeep(string id) {
+        EnsureArcadeKeep();
+        return arcadeKeep.Contains(id);
+    }
+
+    static HashSet<string> arcadeKeep;
+    static readonly Dictionary<string, AudioClip> clips = new Dictionary<string, AudioClip>();
+
+    static void EnsureArcadeKeep() {
+        if (arcadeKeep != null) {
+            return;
+        }
+        arcadeKeep = new HashSet<string>();
+        void add(string[] bank) {
+            for (int i = 0; i < bank.Length; i++) {
+                arcadeKeep.Add(LineId(bank[i]));
+            }
+        }
+        add(Idle); add(Wave); add(BossWave); add(Kill); add(Hurt); add(Low); add(NewKind); add(Near);
+        add(SliceCallouts.Callouts); add(SliceCallouts.ParryLine); add(SliceCallouts.StampLine);
+        for (int b = 0; b < Banter.Length; b++) {
+            for (int i = 0; i < Banter[b].Length; i++) {
+                string turn = Banter[b][i];
+                if (turn.Length > 2 && turn[0] == 'S' && turn[1] == '|') {
+                    arcadeKeep.Add(LineId(turn.Substring(2)));
+                }
+            }
+        }
+    }
+
+    // SliceCallouts: one exact word through VoiceDirector bark priority. Returns false if the floor or director refused.
+    public bool SayCallout(string line) {
+        if (string.IsNullOrEmpty(line) || banterRunning) {
+            return false;
+        }
+        if (!WallitVoice.FloorFree) {
+            return false;
+        }
+        if (line == LastLine || !VoiceDirector.Allow(line, "callout", VoiceDirector.Priority.Bark)) {
+            return false;
+        }
+        nextLineAt = Time.time + 2.2f;
+        // Caption is the one-word callout overlay (SliceCallouts); keep her bank subtitle off for these.
+        LastLine = line;
+        LinesSpoken++;
+        string id = LineId(line);
+        AudioClip clip = LoadClip(id);
+        if (clip != null && audioOut != null && SoundSettings.EffectsLevel > 0f) {
+            audioOut.PlayOneShot(clip, SoundSettings.EffectsLevel);
+        }
+        float len = clip != null ? clip.length : WallitVoice.EstimateSeconds(line);
+        WallitVoice.Claim("slice", len);
+        VoiceDirector.Spoke(line, "callout", VoiceDirector.Priority.Bark);
+        Note("line", "callout|" + line);
+        return true;
+    }
+
+    public void BeginBlock() {
+        Begin(BBlock, 0.7f);
+    }
+
+    public void BeginStampPose() {
+        Begin(BStamp, 0.85f);
+    }
+
+    static AudioClip LoadClip(string id) {
+        AudioClip clip;
+        if (!clips.TryGetValue(id, out clip)) {
+            clip = OnDemand.Audio("Voice/" + id);
+            if (clip == null) {
+                clip = Resources.Load<AudioClip>("Voice/" + id);
+            }
+            clips[id] = clip;
+            if (clip == null) {
+                OnDemand.FetchKey("Voice/" + id, o => {
+                    var fetched = o as AudioClip;
+                    if (fetched != null) {
+                        clips[id] = fetched;
+                    }
+                });
+            }
+        }
+        return clip;
     }
 
     void Note(string kind, string detail) {
@@ -458,6 +586,16 @@ public class SliceVoice : MonoBehaviour {
             case BBanter:
                 bodyYaw = turnTo * Mathf.Clamp01(Mathf.Min(k * 8f, (1f - k) * 8f));
                 break;
+            case BBlock:
+                lean = -8f * env;
+                headYaw = -4f * env;
+                spin = 25f * env;
+                shift = -body.forward * 0.08f * env;
+                break;
+            case BStamp:
+                lean = 14f * env;
+                shift = body.forward * 0.06f * env;
+                break;
         }
         if (hunch > 0.01f) {
             lean += (14f + Mathf.Sin(Time.time * 3f) * 2.5f) * hunch;
@@ -489,7 +627,7 @@ public class SliceVoice : MonoBehaviour {
         scaler = canvasGo.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
-        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        Font font = UiSkin.Font(UiSkin.FontRole.Label);
         wallitText = MakeLine(canvasGo.transform, font, 190f, new Color(0.95f, 0.8f, 0.4f));
         sliceText = MakeLine(canvasGo.transform, font, 140f, new Color(0.86f, 0.9f, 1f));
         stamp = UiFit.CaptionStamp;

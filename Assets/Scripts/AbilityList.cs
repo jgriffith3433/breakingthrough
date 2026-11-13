@@ -48,7 +48,7 @@ public class AbilityList : MonoBehaviour {
         scaler.referenceResolution = new Vector2(1920, 1080);
         canvasGo.AddComponent<GraphicRaycaster>();
 
-        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        Font font = UiSkin.Font(UiSkin.FontRole.Label);
         var go = new GameObject("Lines");
         go.transform.SetParent(canvasGo.transform, false);
         body = go.AddComponent<Text>();
@@ -96,7 +96,7 @@ public class AbilityList : MonoBehaviour {
         if (laidStamp != UiFit.Stamp) {
             Layout();
         }
-        if (Time.timeScale == 0f) {
+        if (Time.timeScale == 0f || BossSetPiece.EntranceUp) {   // a boss's name card owns the screen
             if (body.text.Length > 0) {
                 body.text = "";
                 cachedWave = -2;

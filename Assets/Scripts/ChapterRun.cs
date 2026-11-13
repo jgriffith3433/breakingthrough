@@ -16,8 +16,11 @@ public class ChapterRun : MonoBehaviour {
 
     public static void Begin(int chapter) {
         armed = chapter;
-        LoadScreen.Show(chapter);   // the chapter's art and name until its map is up
-        SceneManager.LoadScene(MetaProgress.GameScene);
+        // The paper sheet and an ENTER stamp cover the swap; the chapter's illustrated card is what the peel shows.
+        ScreenTransition.Go(ScreenTransition.Kind.Enter, () => {
+            LoadScreen.Show(chapter);   // the chapter's art, name and voiced line until its map is up
+            SceneManager.LoadScene(MetaProgress.GameScene);
+        }, true);
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -160,12 +163,13 @@ public class ChapterRun : MonoBehaviour {
     }
 
     void Start() {
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        font = UiSkin.Font(UiSkin.FontRole.Label);
         Events.Clear();
         Events.Add("start|" + data.Id + "|" + data.Objective + "|" + data.Target + (Hard ? "|hard" : ""));
         CampaignProgress.BeginChapter();
         MusicDirector.Play(MusicDirector.ChapterTrack(Chapter));
         MusicDirector.Ambience(MusicDirector.AmbienceFor(Chapter));
+        PlaceAudio.Enter(PlaceAudio.ForChapter(Chapter), transform);
         MusicDirector.Prefetch(MusicDirector.BossTrack(data.BossName));   // fetched by URL: ready before the boss walks in
         gameObject.AddComponent<CampaignAbilities>();
         if (!string.IsNullOrEmpty(data.Companion)) {
@@ -188,24 +192,82 @@ public class ChapterRun : MonoBehaviour {
         Pacing = new ChapterPacing(this, data);
         gameObject.AddComponent<BackRoom>();   // the chapter's secret room, once its clue is held (BackRooms.cs)
         RunAnalytics.Screen("chapter_play_" + (Chapter + 1));
-        Cutscene.Reel openReel = Cutscene.LoadReel("ch" + (Chapter + 1) + "_open");
-        if (openReel != null) {
-            // Every chapter opens with a shot reel (Resources/Cinematics/ch<n>_open.json, Tools/Cinematics/make_reels.py).
-            Events.Add("cinematic|" + data.Id + "|open");
-            Cutscene.PlayShots(openReel, OpenDone);
-        } else if (data.Cutscene != null && data.Cutscene.Length > 0) {
-            // The chapter's opening scene plays over the frozen map; reading it or skipping it hands over to play.
-            Events.Add("cutscene|" + data.Id);
-            Cutscene.Play(data.Cutscene, OpenDone);
+        // Chapters 2-6 open as in-engine scenes on the map (CinematicDirector); still reels stay as fallback / load-card art.
+        string worldOpen = "ch" + (Chapter + 1) + "_open_world";
+        if (CinematicDirector.HasWorld(worldOpen)) {
+            Events.Add("cinematic|" + data.Id + "|world|" + worldOpen);
+            StartCoroutine(OpenWorldWhenReady(worldOpen));
         } else {
-            Say(data.Lines.Length > 0 ? data.Lines[0] : "", 3.2f);
+            Cutscene.Reel openReel = Cutscene.LoadReel("ch" + (Chapter + 1) + "_open");
+            if (openReel != null) {
+                // Other chapters keep their shot reels (Resources/Cinematics/ch<n>_open.json).
+                Events.Add("cinematic|" + data.Id + "|open");
+                Cutscene.PlayShots(openReel, OpenDone);
+            } else if (data.Cutscene != null && data.Cutscene.Length > 0) {
+                // The chapter's opening scene plays over the frozen map; reading it or skipping it hands over to play.
+                Events.Add("cutscene|" + data.Id);
+                Cutscene.Play(data.Cutscene, OpenDone);
+            } else {
+                Say(data.Lines.Length > 0 ? data.Lines[0] : "", 3.2f);
+                OpenDone();
+            }
+        }
+    }
+
+    // The chapter map scene fills in a frame or two after Load; wait so polar marks and the postmark/belt land on real pieces.
+    System.Collections.IEnumerator OpenWorldWhenReady(string worldOpen) {
+        VoiceDirector.Scene = true;   // hold the voice floor so a bark cannot speak before the opening
+        float t0 = Time.unscaledTime;
+        while ((ChapterMap.Current == null || ChapterMap.Current.Own == null) && Time.unscaledTime - t0 < 2.5f) {
+            yield return null;
+        }
+        bool handed = false;
+        CinematicDirector.PlayChapter(worldOpen, () => {
+            handed = true;
             OpenDone();
+        });
+        // The opening never holds the chapter for good (a voice that never decodes, a shot that never ends, a fallback reel that
+        // never plays): past its own length plus a margin it is cut, and if nothing is left playing the chapter goes on to play.
+        CinematicDirector.Reel opening = CinematicDirector.Load(worldOpen);
+        float budget = 20f;
+        if (opening != null && opening.shots != null) {
+            foreach (CinematicDirector.Shot shot in opening.shots) {
+                budget += shot.seconds + 4f;
+            }
+        }
+        float started = Time.unscaledTime;
+        while (!handed && this != null) {
+            // The first Yo Bot is placed (held) while the last shot plays, so it is at Wallit's side when the stick returns.
+            if (HasFirstBlow && firstBot == null && CinematicDirector.Instance != null && CinematicDirector.IsOpen
+                && CinematicDirector.Instance.ShotCount > 0 && CinematicDirector.Instance.ShotIndex >= CinematicDirector.Instance.ShotCount - 1) {
+                PlaceFirstBot();
+            }
+            if (Time.unscaledTime - started > budget) {
+                Events.Add("opening-timeout|" + data.Id + "|" + worldOpen);
+                Debug.LogWarning("[ChapterRun] " + worldOpen + " did not hand over in " + budget.ToString("0") + " s: cut");
+                if (CinematicDirector.Instance != null && CinematicDirector.IsOpen) {
+                    CinematicDirector.Instance.Skip();
+                }
+                if (Cutscene.PageOpen && Cutscene.Instance != null) {
+                    Cutscene.Instance.SkipFromPause();   // the still-reel fallback
+                }
+                started = Time.unscaledTime;
+                if (!handed && !CinematicDirector.IsOpen && !Cutscene.IsOpen) {
+                    handed = true;
+                    VoiceDirector.Scene = false;
+                    OpenDone();
+                }
+            }
+            yield return null;
         }
     }
 
     // The opening scene is over and play begins. On a New Game+ loop the chapter says one line about the playthrough before it.
     void OpenDone() {
         Events.Add("play|" + data.Id);
+        if (HasFirstBlow) {
+            StartCoroutine(FirstBlow());
+        }
         if (Pacing != null) {
             Pacing.Talked("the opening scene");
         }
@@ -236,7 +298,7 @@ public class ChapterRun : MonoBehaviour {
         }
         SavePlayTime();
         Companion.Despawn();
-        ChapterMap.Unload();
+        ChapterMap.Forget();   // Next, ToMenu and Restart unload before the switch; here the scene is already going (ChapterMap.Forget)
         if (!toNext) {
             CampaignSave.Close();
         }
@@ -401,8 +463,22 @@ public class ChapterRun : MonoBehaviour {
                 bossSpawned = true;
                 boss = director.SpawnForChapter(data.Boss, true, RingRadius, data.BossName, data.BossHits, data.PlainBoss);
                 Events.Add("boss|" + boss.Title + "|" + boss.HitsToDrop);
-                MusicDirector.Play(MusicDirector.BossTrack(data.BossName));
-                PlayBossIntro();
+                // The boss arrives on the CinematicDirector (CinematicBoss.cs): it turns the music itself. Seen already on this
+                // file: the music turns now and the two reaction lines still follow. Unavailable: the old reel.
+                CinematicDirector.BossResult entrance = CinematicDirector.PlayBoss(boss, Chapter, -1, () => {
+                    Events.Add("boss-intro-done|" + data.BossName);
+                    TellAfterTaunt(data.BossLines);
+                });
+                if (entrance == CinematicDirector.BossResult.Played) {
+                    Events.Add("cinematic|" + data.Id + "|boss-entrance");
+                } else {
+                    MusicDirector.Play(MusicDirector.BossTrack(data.BossName));
+                    if (entrance == CinematicDirector.BossResult.Seen) {
+                        TellAfterTaunt(data.BossLines);
+                    } else {
+                        PlayBossIntro();
+                    }
+                }
             }
         } else if (defeatIn > 0f) {
             defeatIn -= Time.deltaTime;
@@ -629,7 +705,10 @@ public class ChapterRun : MonoBehaviour {
         miniSpawned = true;
         mini = WaveDirector.Instance.SpawnMiniAt(data.MiniKind, data.MiniName, data.MiniHits, data.MiniTint, spot);
         Events.Add("mini-boss|" + data.MiniName + "|" + mini.HitsToDrop);
-        Tell(data.MiniLines);
+        CinematicDirector.BossResult entrance = CinematicDirector.PlayBoss(mini, Chapter, -1, () => TellAfterTaunt(data.MiniLines));
+        if (entrance != CinematicDirector.BossResult.Played) {
+            Tell(data.MiniLines);
+        }
         return mini;
     }
 
@@ -643,7 +722,75 @@ public class ChapterRun : MonoBehaviour {
         return n;
     }
 
+    // The first blow (chapters 2-5, the walking ones): J's critic found no fight in the first minute. When the opening hands over,
+    // one Yo Bot is already at Wallit's side and the bat swings by itself (BatEquipment.OpeningAuto); one blow drops it, with the
+    // kill's hit-stop, the plates and a ring. The objective line ("Reach the gate: 79 m") stays blank until it is down.
+    Enemy firstBot;
+    bool firstBlowOver;
+    public bool FirstBotDown { get; private set; }
+    public float FirstBotDownSeconds { get; private set; }
+    bool HasFirstBlow { get { return Chapter >= 1 && Chapter <= 4 && !firstBlowOver; } }
+
+    void PlaceFirstBot() {
+        if (firstBot != null || WaveDirector.Instance == null) {
+            return;
+        }
+        Transform w = player != null ? player : (PlayerGrowth.Instance != null ? PlayerGrowth.Instance.transform : null);
+        if (w == null) {
+            return;
+        }
+        Vector3 dir = HasMarker ? Marker - w.position : w.forward;
+        dir.y = 0f;
+        dir = dir.sqrMagnitude > 0.01f ? dir.normalized : Vector3.forward;
+        Vector3 side = Vector3.Cross(Vector3.up, dir);
+        firstBot = WaveDirector.Instance.SpawnPlaced(BotKind.YoBot, w.position + dir * 5f + side * 2.5f);
+        if (firstBot == null) {
+            return;
+        }
+        firstBot.Dormant = false;
+        firstBot.Scripted = true;   // held until the stick is back
+        firstBot.HitsToDrop = 1;    // one bat swing
+        Events.Add("first-bot-placed|" + data.Id + "|held at Wallit's side");
+    }
+
+    System.Collections.IEnumerator FirstBlow() {
+        float t0 = Time.time;
+        while (player == null && Time.time - t0 < 2f) {
+            yield return null;
+        }
+        PlaceFirstBot();
+        Enemy e = firstBot;
+        if (e == null) {
+            firstBlowOver = true;
+            yield break;
+        }
+        e.Scripted = false;
+        float spawned = Time.time;
+        BatEquipment.OpeningAuto = true;
+        Events.Add("first-blow-start|" + data.Id + "|a Yo Bot runs in; the bat swings by itself");
+        while (e != null && e.Alive && Time.time - spawned < 12f) {
+            yield return null;
+        }
+        BatEquipment.OpeningAuto = false;
+        FirstBotDown = e == null || !e.Alive;
+        FirstBotDownSeconds = Time.time - spawned;
+        if (FirstBotDown) {
+            Vector3 at = e != null ? e.transform.position : (player != null ? player.position : Vector3.zero);
+            Juice.HitStop(0.08f);
+            Fx.Ring(at + Vector3.up * 0.5f, 5f, new Color(1f, 0.88f, 0.5f, 0.8f), 0.6f);
+            GameAudio.Play("coin", 0.6f, 1.4f);
+        } else if (e != null) {
+            Destroy(e.gameObject);
+        }
+        firstBot = null;
+        firstBlowOver = true;
+        Events.Add("first-blow-kill|" + data.Id + "|" + (FirstBotDown ? "down" : "still up") + " after " + FirstBotDownSeconds.ToString("0.0") + " s|objective line shown after");
+    }
+
     string Line() {
+        if (Chapter >= 1 && Chapter <= 4 && !firstBlowOver && PlaySeconds < 30f) {
+            return "";
+        }
         string pace = Pacing != null ? Pacing.Line() : null;
         if (pace != null) {
             return pace;
@@ -783,6 +930,7 @@ public class ChapterRun : MonoBehaviour {
 
     void ShowCompleteCard(string extra, int best) {
         MusicDirector.Play("theme_slice");
+        MusicDirector.Stinger("wallit");
         GameAudio.Play("stamp_heavy", 0.9f);   // the case is stamped
         bool more = Chapter + 1 < CampaignSave.ChapterCount;
         cardTitle.text = "CHAPTER COMPLETE";
@@ -810,45 +958,91 @@ public class ChapterRun : MonoBehaviour {
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         RunAnalytics.Screen("chapter_complete_" + (Chapter + 1));
+        // The ceremony (ChapterCeremony) replaces the stats panel. The old panel's text stays on the hidden card for the
+        // playtests' CardText, and other playtests keep the plain card (they tap its buttons at once).
+        if (!Playtest.Running || CeremonyInTest) {
+            StartCeremony(more, extra);
+        }
     }
 
-    // The last chapter: the Filed scene, the Finale pages (Story.Finale, as in Arcade), the ADDRESS FILED ending card, then the
-    // credits card. The case file is already marked filed (Complete saved it).
+    // Playtest: the `ceremony` scenario plays the real thing; every other scenario keeps the plain card.
+    public static bool CeremonyInTest;
+    public ChapterCeremony Ceremony { get; private set; }
+
+    // Playtest: the ceremony again over the same card (to tap it through).
+    public void ReplayCeremony() {
+        if (Ceremony != null) {
+            Destroy(Ceremony.gameObject);
+        }
+        StartCeremony(Chapter + 1 < CampaignSave.ChapterCount, "");
+    }
+
+    void StartCeremony(bool more, string extra) {
+        column.gameObject.SetActive(false);
+        var shade = card.GetComponent<Image>();
+        shade.color = new Color(0.02f, 0.03f, 0.06f, 0.5f);   // the field stays in view: Wallit and Slice at the chapter's end point
+        CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
+        float par = CampaignGrade.ParOf(Chapter);
+        var rows = new[] {
+            new ChapterCeremony.Stat("TIME", Clock(PlaySeconds) + "  (par " + Clock(par) + ")"),
+            new ChapterCeremony.Stat("SLICE HURT", DamageTaken <= 0 ? "none" : DamageTaken.ToString()),
+            new ChapterCeremony.Stat("LOST THING", FindKept ? Journal.Finds[Chapter].Name : "still out there"),
+            new ChapterCeremony.Stat("COLLECTED", Journal.FindCount(slot) + " / " + Journal.Count + (GoalMet ? "  extra filed" : "")),
+        };
+        string footer = "LV " + CampaignProgress.Level + "   XP " + CampaignProgress.Xp + (more ? "   Next: " + Story.Chapters[Chapter + 1].Title : "");
+        Ceremony = ChapterCeremony.Begin(cardRect, data.Title, CampaignSave.Active + 1, rows, Rank, footer, Next, ToMenu);
+        Events.Add("ceremony|start|" + data.Id + "|rank " + CampaignGrade.Letter(Rank));
+    }
+
+    static string Clock(float seconds) {
+        int total = Mathf.RoundToInt(seconds);
+        return (total / 60) + ":" + (total % 60).ToString("00");
+    }
+
+    // The last chapter: in-engine ADDRESS FILED (stamp on the live Hollow), variant stills when chosen, the ending card,
+    // then live credits over the ring. The case file is already marked filed (Complete saved it).
     void CompleteFinal() {
         objective.text = "";
         if (extraText != null) {
             extraText.text = "";
         }
-        MusicDirector.Play("ending");
+        MusicDirector.Play("ending_both", "ending");
+        MusicDirector.Stinger("both");
         GameAudio.Play("received", 0.9f);   // RECEIVED
         Events.Add("finale|start");
         RunAnalytics.Screen("chapter_complete_" + (Chapter + 1));
         string stats = "Case file " + (CampaignSave.Active + 1) + ": filed\n" + CampaignSave.Played(CampaignSave.Get(CampaignSave.Active)) + "\n" + CampaignGrade.Line(Chapter, Rank, PlaySeconds, DamageTaken, Hard);
-        // ADDRESS FILED plays as a reel (ch6_close: the order drops, DENIED, the door number); the old page scene is the fallback.
+        System.Action afterFiledScene = () => {
+            Events.Add("finale|reel");
+            // The choices and errands settle which ADDRESS FILED this is (Endings): its own closing reel, then the notes.
+            EndingVariant = Endings.Current;
+            CampaignSave.MarkEnding(EndingVariant);
+            Events.Add("ending|" + EndingVariant + "|" + Endings.Name(EndingVariant) + "|company " + Endings.Company(CampaignSave.Get(CampaignSave.Active)) + "|sides " + HubLife.SideCount(CampaignSave.Get(CampaignSave.Active)));
+            Cutscene.Reel variant = EndingVariant > 0 ? Cutscene.LoadReel(Endings.Reels[EndingVariant]) : null;
+            System.Action notesThenCard = () => {
+                string[] notes = Choices.Resolve(System.Array.FindAll(data.Ending, l => l.StartsWith("?|")));
+                var scene = new List<string> { "B|on", "C|wide" };
+                scene.AddRange(notes);
+                PlayScene(notes.Length > 0 ? scene.ToArray() : null, "ending-notes", () => StoryScreen.Ensure().ShowEndCard(stats, keepGoing => AfterFiled(keepGoing), Endings.CardLine(EndingVariant)));
+            };
+            if (variant != null) {
+                EndingReel = variant.id;
+                Events.Add("cinematic|" + data.Id + "|" + variant.id);
+                Cutscene.PlayShots(variant, notesThenCard);
+            } else {
+                notesThenCard();
+            }
+        };
+        // Prefer the in-engine filed scene (stamp comes down on the live map); still ch6_close is the fallback.
+        if (CinematicDirector.HasWorld("ending_filed_world")) {
+            Events.Add("cinematic|" + data.Id + "|world|ending_filed_world");
+            CinematicDirector.PlayChapter("ending_filed_world", afterFiledScene);
+            return;
+        }
         Cutscene.Reel filed = Cutscene.LoadReel("ch6_close");
         if (filed != null) {
             Events.Add("cinematic|" + data.Id + "|close");
-            Cutscene.PlayShots(filed, () => {
-                Events.Add("finale|reel");
-                // The choices and errands settle which ADDRESS FILED this is (Endings): its own closing reel, then the notes.
-                EndingVariant = Endings.Current;
-                CampaignSave.MarkEnding(EndingVariant);
-                Events.Add("ending|" + EndingVariant + "|" + Endings.Name(EndingVariant) + "|company " + Endings.Company(CampaignSave.Get(CampaignSave.Active)) + "|sides " + HubLife.SideCount(CampaignSave.Get(CampaignSave.Active)));
-                Cutscene.Reel variant = EndingVariant > 0 ? Cutscene.LoadReel(Endings.Reels[EndingVariant]) : null;
-                System.Action notesThenCard = () => {
-                    string[] notes = Choices.Resolve(System.Array.FindAll(data.Ending, l => l.StartsWith("?|")));
-                    var scene = new List<string> { "B|on", "C|wide" };
-                    scene.AddRange(notes);
-                    PlayScene(notes.Length > 0 ? scene.ToArray() : null, "ending-notes", () => StoryScreen.Ensure().ShowEndCard(stats, keepGoing => AfterFiled(keepGoing), Endings.CardLine(EndingVariant)));
-                };
-                if (variant != null) {
-                    EndingReel = variant.id;
-                    Events.Add("cinematic|" + data.Id + "|" + variant.id);
-                    Cutscene.PlayShots(variant, notesThenCard);
-                } else {
-                    notesThenCard();
-                }
-            });
+            Cutscene.PlayShots(filed, afterFiledScene);
             return;
         }
         Cutscene.Play(data.Ending, () => {
@@ -857,7 +1051,7 @@ public class ChapterRun : MonoBehaviour {
         });
     }
 
-    // After the ADDRESS FILED card: the secret ending (every lost thing kept) as a reel, then the credits reel and card.
+    // After the ADDRESS FILED card: the secret ending (every lost thing kept) in engine, then live credits over the ring.
     void AfterFiled(bool keepGoing) {
         Events.Add("finale|" + (keepGoing ? "credits" : "menu"));
         if (CampaignSave.SecretEarned(CampaignSave.Get(CampaignSave.Active))) {
@@ -865,7 +1059,6 @@ public class ChapterRun : MonoBehaviour {
             CampaignSave.MarkSecret();
             Events.Add("secret|ending");
             RunAnalytics.Screen("secret_ending");
-            Cutscene.Reel received = Cutscene.LoadReel("ending_received");
             System.Action after = () => {
                 if (keepGoing) {
                     PlayCreditsReel();
@@ -873,10 +1066,16 @@ public class ChapterRun : MonoBehaviour {
                     ToMenu();
                 }
             };
-            if (received != null) {
-                Cutscene.PlayShots(received, after);
+            if (CinematicDirector.HasWorld("ending_received_world")) {
+                Events.Add("cinematic|" + data.Id + "|world|ending_received_world");
+                CinematicDirector.PlayChapter("ending_received_world", after);
             } else {
-                Cutscene.Play(Story.SecretEnding, after);
+                Cutscene.Reel received = Cutscene.LoadReel("ending_received");
+                if (received != null) {
+                    Cutscene.PlayShots(received, after);
+                } else {
+                    Cutscene.Play(Story.SecretEnding, after);
+                }
             }
         } else if (keepGoing) {
             PlayCreditsReel();
@@ -885,15 +1084,11 @@ public class ChapterRun : MonoBehaviour {
         }
     }
 
+    // Credits scroll over Wallit and Slice in the live Hollow; the still credits reel is the fallback.
     void PlayCreditsReel() {
-        MusicDirector.Play("credits");
-        Cutscene.Reel credits = Cutscene.LoadReel("credits");
-        if (credits == null) {
-            ShowCredits();
-            return;
-        }
-        Events.Add("cinematic|" + data.Id + "|credits");
-        Cutscene.PlayShots(credits, ShowCredits);
+        MusicDirector.Play("credits_full", "credits");
+        Events.Add("cinematic|" + data.Id + "|credits-live");
+        CinematicDirector.PlayCreditsLive(ShowCredits, SecretShown);
     }
 
     // The named boss's intro reel (boss_courier, boss_foreman, boss_server, boss_order) plays as it arrives, over the frozen field.
@@ -918,7 +1113,7 @@ public class ChapterRun : MonoBehaviour {
     }
 
     void ShowCredits() {
-        MusicDirector.Play("credits");
+        MusicDirector.Play("credits_full", "credits");
         CreditsUp = true;
         creditsAt = Time.unscaledTime + 0.7f;
         cardTitle.text = Story.CreditsTitle;
@@ -951,7 +1146,15 @@ public class ChapterRun : MonoBehaviour {
         toNext = true;
         ChapterScene.HubNext = true;
         RunAnalytics.Screen("hub");
-        SceneManager.LoadScene(CampaignSave.Scene);
+        ScreenTransition.Go(ScreenTransition.Kind.Filed, () => {
+            LoadScreen.ShowHub();
+            SceneManager.LoadScene(CampaignSave.Scene);
+        }, true);
+    }
+
+    // Playtest setup shortcut: the chapter's end, to the hub (FILED, the hub's card).
+    public void LeaveToHubForPlaytest() {
+        Next();
     }
 
     // The pause menu's Restart chapter: the same chapter from its opening. The file stays open (toNext) for the new run.
@@ -968,16 +1171,26 @@ public class ChapterRun : MonoBehaviour {
         ToMenu();
     }
 
-    void ToMenu() {
+    public void ToMenu() {
         ChapterMap.Unload();
         Time.timeScale = 1f;
         RunAnalytics.Screen("menu");
-        SceneManager.LoadScene(MetaProgress.MenuScene);
+        ScreenTransition.Load(ScreenTransition.Kind.Returned, MetaProgress.MenuScene);
     }
 
     // For the back rooms and other places that hand over a short exchange: said one line at a time, each in its voice.
     public void TellLines(string[] lines) {
         Tell(lines);
+    }
+
+    // A boss that has just spoken its own first line in its entrance: the rest of the lines (Slice's and Wallit's replies) follow.
+    void TellAfterTaunt(string[] lines) {
+        if (lines == null || lines.Length < 2) {
+            return;
+        }
+        var rest = new string[lines.Length - 1];
+        System.Array.Copy(lines, 1, rest, 0, rest.Length);
+        Tell(rest);
     }
 
     // Lines said one after another over the field (the boss's arrival, the defeat beat).

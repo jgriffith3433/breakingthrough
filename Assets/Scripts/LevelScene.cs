@@ -23,7 +23,10 @@ public class LevelScene : MonoBehaviour {
 
     public static void Enter(int chapter) {
         pending = chapter;
-        SceneManager.LoadScene(Scenes[chapter]);
+        ScreenTransition.Go(ScreenTransition.Kind.Enter, () => {
+            LoadScreen.Show(chapter);
+            SceneManager.LoadScene(Scenes[chapter]);
+        }, true);
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -94,6 +97,7 @@ public class LevelScene : MonoBehaviour {
         Yard.Begin();
         MusicDirector.Play(MusicDirector.ChapterTrack(Chapter));
         MusicDirector.Ambience(MusicDirector.AmbienceFor(Chapter));
+        PlaceAudio.Enter(PlaceAudio.ForChapter(Chapter), transform);
         Bed = SceneMood.Bed(transform, SceneMood.Kind.Yard);
         RunAnalytics.Screen("level_" + (Chapter + 1));
     }
@@ -233,6 +237,10 @@ public class LevelScene : MonoBehaviour {
         CharacterMovement.PlayWallitClip(CharacterMovement.CLIP_DEATH, 1.6f);
         Hud.ShowReceipt("RETURNED TO SENDER. Fee: one coin.", 2.4f);
         GameAudio.Play("stomp", 0.8f, 0.7f);
+        Enemy boss = BossVoice.LiveBoss();
+        if (boss != null) {
+            BossVoice.OnWallitDown(boss);
+        }
     }
 
     void Resume() {
@@ -289,7 +297,10 @@ public class LevelScene : MonoBehaviour {
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         ChapterScene.HubNext = true;
-        SceneManager.LoadScene(CampaignSave.Scene);
+        ScreenTransition.Go(ScreenTransition.Kind.Filed, () => {
+            LoadScreen.ShowHub();
+            SceneManager.LoadScene(CampaignSave.Scene);
+        }, true);
     }
 
     void Update() {
@@ -316,8 +327,12 @@ public class LevelScene : MonoBehaviour {
         }
         Hud.Health.text = "HP [" + new string('|', Health) + new string('.', MaxHealth - Health) + "]";
 
-        // Esc twice leaves for the hub: the level keeps nothing mid-way, so it asks first.
+        // Esc skips an in-engine opening first; twice leaves for the hub once play has the stick.
         if (PlayInput.GetKeyDown(KeyCode.Escape) && !Completed && !PauseMenu.IsOpen && Time.frameCount != PauseMenu.ClosedFrame && Time.frameCount != SettingsPanel.ClosedFrame) {
+            if (CinematicDirector.IsOpen) {
+                CinematicDirector.Instance.Skip();
+                return;
+            }
             if (Time.time - escAt < 2.5f) {
                 LeaveToHub();
             } else {

@@ -104,11 +104,13 @@ public class BossPhases : MonoBehaviour {
         Events.Add("phase2|" + enemy.Title + "|" + enemy.Health01.ToString("0.00"));
         CancelWind();
         enemy.Hold(1.4f);
+        enemy.Stagger(1.2f);   // phase two arrives on the body: it lurches and buckles
         nextAttack = 1.8f;
         Announce(enemy, Who + ": " + PhaseLine());
+        BossVoice.OnPhase(enemy);
         Fx.Ring(transform.position, enemy.BodyScale * 4.5f, new Color(1f, 0.2f, 0.12f, 0.9f), 0.8f);
         Fx.Emit(FxKind.Flash, transform.position + Vector3.up * 1.4f, 1, new Color(1f, 0.4f, 0.3f, 0.8f), 3.2f, 0f);
-        GameAudio.Play("stomp", 1f, 0.5f);
+        GameAudio.PlayAt("stomp", transform.position, 1f, 0.5f);
     }
 
     // The on-screen change, shared with the Courier and the Server's own scripts: a red wash that fades, and the banner.
@@ -205,9 +207,11 @@ public class BossPhases : MonoBehaviour {
         Tells++;
         Events.Add("tell|" + enemy.Title + "|" + phase + "|" + attackName + "|" + windTime.ToString("0.0"));
         enemy.Hold(windTime + 0.3f);
+        enemy.BeginTell();   // the body rears back and holds until the blow lands
+        BotSound.TellIn(enemy, windTime);
         MarkUp = true;
         nextRing = 0f;
-        GameAudio.Play("stomp", 0.7f, phase == 1 ? 1.2f : 0.9f);
+        GameAudio.PlayAt("stomp", transform.position, 0.7f, phase == 1 ? 1.2f : 0.9f);
         Fx.Emit(FxKind.Flash, transform.position + Vector3.up * 1.2f, 1, new Color(1f, 0.5f, 0.4f, 0.5f), 2f, 0f);
         if (!toldTip) {
             toldTip = true;
@@ -240,14 +244,16 @@ public class BossPhases : MonoBehaviour {
             Interrupts++;
             Events.Add("interrupt|" + attackName);
             CancelWind();
+            enemy.Stagger(1.0f);   // the broken wind-up shows: it reels
             enemy.Hold(2f);
             nextAttack = 3.2f;
             Fx.Ring(transform.position, 6f, new Color(1f, 1f, 1f, 0.8f), 0.5f);
-            GameAudio.Play("batcrack", 0.8f, 0.8f);
+            GameAudio.PlayAt("batcrack", transform.position, 0.8f, 0.8f);
             UpgradeLook.Say("Wind-up broken!", 1.8f, 160f);
             return;
         }
         if (clock >= windTime) {
+            BotSound.Hit(enemy);
             Land(slice);
         }
     }
@@ -274,7 +280,7 @@ public class BossPhases : MonoBehaviour {
                 }
             }
         }
-        GameAudio.Play("stamp", 0.9f, 0.9f);
+        GameAudio.PlayAt("stamp", transform.position, 0.9f, 0.9f);
         if (wallitHit && player != null) {
             Lands++;
             Events.Add("land|" + attackName + "|wallit");
@@ -290,6 +296,7 @@ public class BossPhases : MonoBehaviour {
         }
         DropMarks();
         winding = false;
+        enemy.EndTell(true);
         enemy.Hold(phase == 1 ? 1.2f : 0.6f);
         nextAttack = phase == 1 ? 4.5f : 3f;
     }
@@ -297,6 +304,9 @@ public class BossPhases : MonoBehaviour {
     void CancelWind() {
         DropMarks();
         winding = false;
+        if (enemy != null) {
+            enemy.EndTell(false);
+        }
     }
 
     static Vector3 GroundAt(Vector3 p) {

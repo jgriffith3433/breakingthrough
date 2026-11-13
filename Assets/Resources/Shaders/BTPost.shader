@@ -19,6 +19,23 @@ Shader "Hidden/BT/Post"
     float4 _Shadows;     // tint for darks
     float4 _Highlights;  // tint for lights
     float4 _Lift;        // added to darks
+    sampler2D _LutA;     // colour-grading LUTs, a 256x16 strip of 16 slices (FilmLight); _Lut.x = blend A to B, _Lut.y = amount
+    sampler2D _LutB;
+    float4 _Lut;
+    float _Stakes;       // 0..1 Slice's lost health: the screen's edges drain toward grey
+
+    half3 LutSample(sampler2D lut, half3 c)
+    {
+        c = saturate(c);
+        half b = c.b * 15.0;
+        half b0 = floor(b);
+        half f = b - b0;
+        half b1 = min(b0 + 1.0, 15.0);
+        half2 rg = c.rg * (15.0 / 16.0) + (0.5 / 16.0);
+        half u0 = (b0 + rg.x) / 16.0;
+        half u1 = (b1 + rg.x) / 16.0;
+        return lerp(tex2D(lut, half2(u0, rg.y)).rgb, tex2D(lut, half2(u1, rg.y)).rgb, f);
+    }
 
     struct v2f
     {
@@ -125,9 +142,19 @@ Shader "Hidden/BT/Post"
                 // gentle shoulder so bright bloom rolls off instead of clipping hard
                 c = c / (1 + max(c - 0.85, 0) * 0.6);
 
+                if (_Lut.y > 0.001)
+                {
+                    half3 graded = lerp(LutSample(_LutA, c), LutSample(_LutB, c), _Lut.x);
+                    c = lerp(c, graded, _Lut.y);
+                }
                 float2 d = i.uv - 0.5;
                 half v = 1 - dot(d, d) * _Grade.w;
                 c *= saturate(v);
+                // stakes: the edges lose colour and darken, the middle stays readable
+                half edge = saturate(dot(d, d) * 3.2);
+                half drain = _Stakes * edge;
+                half g = dot(c, half3(0.299, 0.587, 0.114));
+                c = lerp(c, g.xxx * (1 - 0.35 * drain), saturate(drain * 1.1));
                 return half4(SafeHDR(c), 1);
             }
             ENDCG

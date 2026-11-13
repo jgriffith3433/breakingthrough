@@ -13,7 +13,7 @@ class AudioImportRules : AssetPostprocessor
 
     public override uint GetVersion()
     {
-        return 1;
+        return 3;
     }
 
     void OnPreprocessAudio()
@@ -31,10 +31,17 @@ class AudioImportRules : AssetPostprocessor
             settings.sampleRateSetting = AudioSampleRateSetting.OverrideSampleRate;
             settings.sampleRateOverride = 22050;
             settings.quality = 0.35f;
+            // Nothing reads these clips' samples any more (the mouth follows the speaker output); decoding on load keeps
+            // playback instant. Not a size change: the download is the same compressed data.
+            settings.loadType = AudioClipLoadType.DecompressOnLoad;
         }
         else
         {
-            settings.quality = 0.5f;
+            // Sound effects stay stereo (their level and pan are unchanged), at 32 kHz and a lower Vorbis quality: short
+            // hits and swishes, the first download's second-biggest sound folder after the bark keep-set.
+            settings.sampleRateSetting = AudioSampleRateSetting.OverrideSampleRate;
+            settings.sampleRateOverride = 32000;
+            settings.quality = 0.4f;
         }
         importer.defaultSampleSettings = settings;
     }

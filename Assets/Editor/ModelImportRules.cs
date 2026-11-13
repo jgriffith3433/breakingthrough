@@ -8,23 +8,33 @@ class ModelImportRules : AssetPostprocessor
 {
     const float SmoothingAngle = 60f;
 
+    public override uint GetVersion()
+    {
+        return 3;
+    }
+
     void OnPreprocessModel()
     {
         if (!assetPath.StartsWith("Assets/Resources/Models/") && !assetPath.StartsWith("Assets/Art/Arena/"))
             return;
         var importer = (ModelImporter)assetImporter;
         importer.isReadable = true;
+        // Quantised vertex data (16-bit positions, UVs and normals): the phone's first download holds these meshes, the bots'
+        // and the arena scatter's, and none is big enough on screen for the steps to show.
+        importer.meshCompression = ModelImporterMeshCompression.Medium;
         importer.importCameras = false;
         importer.importLights = false;
         importer.importNormals = ModelImporterNormals.Calculate;
         importer.normalSmoothingAngle = SmoothingAngle;
         importer.normalCalculationMode = ModelImporterNormalCalculationMode.AreaAndAngleWeighted;
 
-        // Gen robot bots (YoBot / SpiderBot): textured Generic rigs with procedural clips.
+        // Gen robot bots (YoBot / SpiderBot): Generic rigs with procedural clips, drawn with the painted
+        // Resources/Models/Bots/*Skin.png (BotArt.SkinFor). Their FBXs embed two 1024 px textures each that nothing
+        // reads, so no materials are imported and none ship in the phone's first download.
         // Stand-in / Blender bird exports stay vertex-color, no animation.
         if (assetPath.StartsWith("Assets/Resources/Models/Bots/"))
         {
-            importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
+            importer.materialImportMode = ModelImporterMaterialImportMode.None;
             importer.animationType = ModelImporterAnimationType.Generic;
             importer.importAnimation = true;
             return;

@@ -1,0 +1,108 @@
+{
+  "id": "ch3_open_world",
+  "fallback": "ch3_open",
+  "seconds": 42,
+  "shots": [
+    {
+      "id": "s1_yard",
+      "seconds": 5.0,
+      "camMode": "dolly",
+      "camFromPolar": [200, 2, -8, 3.6],
+      "camToPolar": [200, 5, -6, 3.2],
+      "lookPolar": [200, 28, 0, 1.8],
+      "fov": 56,
+      "frame": ["wallit", "slice"],
+      "speaker": "W",
+      "line": "Every bot that's come at us. They're coming from down there.",
+      "actors": [
+        { "id": "wallit", "fromPolar": [200, 2, 1.0], "toPolar": [200, 8, 0.5], "yaw": 200, "anim": "walk" },
+        { "id": "slice", "atPolar": [200, 1.2, -1.0], "yaw": 200, "anim": "idle" }
+      ]
+    },
+    {
+      "id": "s2_halfbuilt",
+      "seconds": 5.0,
+      "camMode": "dolly",
+      "camFromPolar": [200, 24, 5, 2.8],
+      "camToPolar": [200, 28, 3.5, 2.5],
+      "lookPolar": [200, 36, -0.5, 1.5],
+      "fov": 46,
+      "frame": ["yobot", "wallit"],
+      "speaker": "Y",
+      "line": "Hello! I am... not finished! Uploading victory?",
+      "actors": [
+        { "id": "wallit", "fromPolar": [200, 8, 0.5], "toPolar": [200, 26, 1.2], "yaw": 200, "anim": "walk" },
+        { "id": "slice", "atPolar": [200, 1.2, -1.0], "yaw": 200, "anim": "idle" },
+        { "id": "yobot", "atPolar": [200, 36, -0.5], "yaw": 20, "anim": "idle" }
+      ]
+    },
+    {
+      "id": "s3_floor",
+      "seconds": 5.5,
+      "camMode": "dolly",
+      "camFromPolar": [200, 6, 5, 2.7],
+      "camToPolar": [200, 8, 4, 2.5],
+      "lookPolar": [200, 2, -0.6, 1.5],
+      "fov": 48,
+      "frame": ["slice", "wallit"],
+      "speaker": "S",
+      "line": "The Clearing Floor. The chirpy ones are stamped out there, one batch for every unfiled thing in the Hollow.",
+      "actors": [
+        { "id": "wallit", "fromPolar": [200, 26, 1.2], "toPolar": [200, 10, 0.8], "yaw": 20, "anim": "walk" },
+        { "id": "slice", "fromPolar": [200, 1.2, -1.0], "toPolar": [200, 2.5, -0.6], "yaw": 200, "anim": "turn" },
+        { "id": "yobot", "atPolar": [200, 36, -0.5], "yaw": 20, "anim": "idle" }
+      ]
+    },
+    {
+      "id": "s4_crew",
+      "seconds": 5.0,
+      "camMode": "dolly",
+      "camFromPolar": [200, 4, -5.5, 2.6],
+      "camToPolar": [200, 6, -4.5, 2.4],
+      "lookPolar": [200, 8, 0.4, 1.5],
+      "fov": 48,
+      "frame": ["wallit", "slice"],
+      "speaker": "W",
+      "line": "Stamped out. So they're the Department's. Employees.",
+      "actors": [
+        { "id": "wallit", "fromPolar": [200, 10, 0.8], "toPolar": [200, 12, 0.4], "yaw": 200, "anim": "walk" },
+        { "id": "slice", "atPolar": [200, 2.5, -0.6], "yaw": 200, "anim": "idle" }
+      ]
+    },
+    {
+      "id": "s5_belt",
+      "seconds": 6.5,
+      "camMode": "dolly",
+      "camFromPolar": [205, 62, -12, 3.6],
+      "camToPolar": [205, 70, -14, 3.2],
+      "lookPolar": [205, 72, -17, 1.0],
+      "fov": 48,
+      "frame": ["wallit"],
+      "speaker": "S",
+      "line": "Crew. They chirp because every job closes with a report. \"Uploading victory\" means \"filed as cleared.\"",
+      "sfx": "paper_slide",
+      "belt": true,
+      "actors": [
+        { "id": "wallit", "fromPolar": [205, 55, -8, 0], "toPolar": [205, 62, -10, 0], "yaw": 250, "anim": "walk" },
+        { "id": "slice", "atPolar": [200, 2.5, -0.6], "yaw": 205, "anim": "idle" }
+      ]
+    },
+    {
+      "id": "s6_ring",
+      "seconds": 5.5,
+      "camMode": "orbit",
+      "camFromPolar": [200, 10, -7, 3.4],
+      "camToPolar": [200, 8, -5.5, 3.1],
+      "lookPolar": [200, 2, 0, 1.4],
+      "fov": 52,
+      "frame": ["wallit", "slice"],
+      "speaker": "S",
+      "line": "I'll hold a second ring here, staked in the floor. Go out, break the belt, and come back.",
+      "handoff": true,
+      "actors": [
+        { "id": "wallit", "fromPolar": [205, 62, -10, 0], "toPolar": [200, 5, 1.0], "yaw": 20, "anim": "walk" },
+        { "id": "slice", "atPolar": [200, 2.0, -0.8], "yaw": 180, "anim": "idle" }
+      ]
+    }
+  ]
+}

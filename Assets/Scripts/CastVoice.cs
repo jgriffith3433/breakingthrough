@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -72,9 +73,16 @@ public class CastVoice : MonoBehaviour {
         if (instance != null && instance.source != null) {
             instance.source.Stop();
         }
+        MouthOpen = 0f;
     }
 
     public static bool Speaking { get { return instance != null && instance.source != null && instance.source.isPlaying; } }
+    // 0..1 loudness of the clip in play (ConversationStage jaw/body bob; Wallit still uses WallitVoice.MouthOpen).
+    public static float MouthOpen { get; private set; }
+
+    float[] liveBuf = new float[256];
+    float smooth;
+    float lineEnd;
 
     float Speak(string code, string text, string why) {
         // Wallit and Slice speak through their own live voices (mouth and gestures) where those exist. Where they don't (a
@@ -94,28 +102,54 @@ public class CastVoice : MonoBehaviour {
             return 0f;
         }
         string file = who + "_" + SliceVoice.LineId(text).Substring(6);
-        AudioClip clip = Resources.Load<AudioClip>("Voice/" + file);
+        AudioClip clip = OnDemand.Audio("Voice/" + file);
         float len;
+        // A line no chapter group named ahead (a lodger's, a boss's bark) is fetched now and plays when it is in, if the line is
+        // still being said: the subtitle runs meanwhile, so nothing waits and no line is reported missing.
+        bool coming = clip == null && !OnDemand.Cached("Voice/" + file) && OnDemand.Indexed("Voice/" + file);
         if (clip != null && SoundSettings.EffectsLevel > 0f) {
             source.Stop();
             source.clip = clip;
-            source.volume = Mathf.Clamp01(SoundSettings.EffectsLevel);
+            source.volume = Mathf.Clamp01(SoundSettings.Voice);
             source.Play();
             len = clip.length;
         } else {
-            if (clip == null) {
+            if (clip == null && !coming) {
                 Missing++;
             }
             len = WallitVoice.EstimateSeconds(text);
+            if (coming) {
+                StartCoroutine(PlayWhenIn("Voice/" + file, Time.unscaledTime + len * 0.5f));
+            }
         }
         WallitVoice.Claim(who, len);
         VoiceDirector.Spoke(text, why, VoiceDirector.Priority.Key);
         Played++;
+        lineEnd = Time.unscaledTime + len;
         Events.Add("say|" + who + "|" + (clip != null ? "voice" : "subtitle") + "|" + len.ToString("0.00") + "|" + text.Replace('\n', ' '));
         return len;
     }
 
+    // The line's file is on its way: plays it when it lands, unless the line is mostly over by then.
+    IEnumerator PlayWhenIn(string key, float latest) {
+        AudioClip fetched = null;
+        bool arrived = false;
+        OnDemand.FetchKey(key, o => {
+            fetched = o as AudioClip;
+            arrived = true;
+        });
+        while (!arrived) {
+            yield return null;
+        }
+        if (fetched != null && source != null && Time.unscaledTime <= latest && SoundSettings.EffectsLevel > 0f && !source.isPlaying) {
+            source.clip = fetched;
+            source.volume = Mathf.Clamp01(SoundSettings.Voice);
+            source.Play();
+        }
+    }
+
     void Update() {
+        TickMouth();
         if (queue.Count == 0 || Cutscene.IsOpen || !WallitVoice.FloorFree) {
             return;
         }
@@ -126,5 +160,29 @@ public class CastVoice : MonoBehaviour {
             queue.RemoveAt(0);
         }
         Speak(p.Code, p.Text, p.Why);
+    }
+
+    void TickMouth() {
+        float target = 0f;
+        if (source != null && source.isPlaying) {
+            source.GetOutputData(liveBuf, 0);
+            float sum = 0f;
+            for (int i = 0; i < liveBuf.Length; i++) {
+                sum += liveBuf[i] * liveBuf[i];
+            }
+            float level = Mathf.Sqrt(sum / liveBuf.Length);
+            target = Mathf.Clamp01(level * 7f);
+            if (target < 0.08f && Time.unscaledTime < lineEnd) {
+                // Compressed imports often read quiet: keep a syllable rhythm under the line.
+                float beat = Time.unscaledTime * 5.2f;
+                target = Mathf.Max(target, Mathf.Abs(Mathf.Sin(beat * Mathf.PI)) * 0.45f);
+            }
+        } else if (Time.unscaledTime < lineEnd) {
+            float beat = Time.unscaledTime * 5.2f;
+            target = Mathf.Abs(Mathf.Sin(beat * Mathf.PI)) * 0.5f;
+        }
+        float rate = target > smooth ? 28f : 16f;
+        smooth = Mathf.MoveTowards(smooth, target, rate * Time.unscaledDeltaTime);
+        MouthOpen = smooth;
     }
 }

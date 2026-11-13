@@ -13,7 +13,7 @@ class TextureSizeRules : AssetPostprocessor
 
     public override uint GetVersion()
     {
-        return 1;
+        return 3;
     }
 
     public override int GetPostprocessOrder()
@@ -23,10 +23,11 @@ class TextureSizeRules : AssetPostprocessor
 
     void OnPreprocessTexture()
     {
-        if (!assetPath.StartsWith("Assets/") || assetPath.StartsWith("Assets/Kit/") || assetPath.StartsWith("Assets/Editor/"))
+        if (!assetPath.StartsWith("Assets/") || assetPath.StartsWith("Assets/Kit/") || assetPath.StartsWith("Assets/Resources/Pbr/") || assetPath.StartsWith("Assets/Editor/"))
             return;
         var importer = assetImporter as TextureImporter;
-        if (importer == null || importer.textureType != TextureImporterType.Default && importer.textureType != TextureImporterType.NormalMap)
+        bool sprite = importer != null && (importer.textureType == TextureImporterType.Sprite || importer.textureType == TextureImporterType.GUI);
+        if (importer == null || importer.textureType != TextureImporterType.Default && importer.textureType != TextureImporterType.NormalMap && !sprite)
             return;
         int cap = assetPath.StartsWith("Assets/Resources/Cinematics/Art/") ? StillCap : Cap;
         TextureImporterPlatformSettings web = importer.GetPlatformTextureSettings("WebGL");
@@ -37,7 +38,9 @@ class TextureSizeRules : AssetPostprocessor
         web.format = TextureImporterFormat.Automatic;
         web.textureCompression = TextureImporterCompression.Compressed;
         web.crunchedCompression = true;
-        web.compressionQuality = 60;
+        // UI art (sprites) keeps a higher crunch quality: flat colour and hard edges show blocks first. Before this rule a sprite
+        // texture shipped with whatever its .meta said (often uncompressed RGBA).
+        web.compressionQuality = sprite ? 75 : 60;
         importer.SetPlatformTextureSettings(web);
     }
 }

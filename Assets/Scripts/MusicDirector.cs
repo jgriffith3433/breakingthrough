@@ -57,6 +57,8 @@ public class MusicDirector : MonoBehaviour {
         recent.Clear();
         missing.Clear();
         waiting.Clear();
+        standIns.Clear();
+        Stingers = 0;
     }
 
     static MusicDirector Ensure() {
@@ -86,6 +88,12 @@ public class MusicDirector : MonoBehaviour {
 
     // Change the track. The same track again does nothing; "" fades the music out.
     public static void Play(string track) {
+        Play(track, "");
+    }
+
+    // As Play, but when the track has no file the fallback track plays instead (a leitmotif cue not made yet keeps the
+    // chapter's own score), so real cues drop in later with no code change.
+    public static void Play(string track, string fallback) {
         if (track == null) {
             track = "";
         }
@@ -96,6 +104,7 @@ public class MusicDirector : MonoBehaviour {
         Current = track;
         Changes++;
         Events.Add("track|" + track);
+        GameAudio.NoteOther(GameAudio.Bus.Music, track);
         d.active = 1 - d.active;
         AudioSource next = d.sources[d.active];
         next.Stop();
@@ -103,7 +112,13 @@ public class MusicDirector : MonoBehaviour {
         if (track.Length == 0) {
             return;
         }
-        Fetch(track, clip => {
+        Action<AudioClip> start = null;
+        start = clip => {
+            if (clip == null && !string.IsNullOrEmpty(fallback) && fallback != track && Current == track) {
+                Events.Add("fallback|" + track + "|" + fallback);
+                Fetch(fallback, c => { if (c != null && Current == track) start(c); });
+                return;
+            }
             // Still the track wanted, on the source it was meant for (a later Play may have moved on).
             if (clip == null || Current != track || instance == null || instance.sources[instance.active] != next) {
                 return;
@@ -113,7 +128,116 @@ public class MusicDirector : MonoBehaviour {
             }
             next.clip = clip;
             next.Play();
+        };
+        // A cue with no file yet goes straight to its fallback: asking the server for it only 404s (a console error).
+        if (!string.IsNullOrEmpty(fallback) && fallback != track && !MadeCues.Contains(track)) {
+            start(null);
+            return;
+        }
+        Fetch(track, start);
+    }
+
+    // Leitmotif cues that have a real file in StreamingAssets/Music (hub_wallit, ch6_both, ending_both, credits_full). Add a
+    // name here in the same change that adds its mp3; until then Play(cue, fallback) never requests the cue.
+    static readonly HashSet<string> MadeCues = new HashSet<string>();
+
+    // A short one-shot of a lead's motif over the score: "wallit", "slice" or "both" (StreamingAssets/Music/stinger_<name>.mp3,
+    // under 150 KB). With no file a short stand-in is synthesised (StandIn), so the moment is still heard.
+    public static int Stingers { get; private set; }
+    AudioSource stinger;
+    static readonly Dictionary<string, AudioClip> standIns = new Dictionary<string, AudioClip>();
+
+    public static void Stinger(string name) {
+        if (string.IsNullOrEmpty(name)) {
+            return;
+        }
+        Stingers++;
+        Events.Add("stinger|" + name);
+        GameAudio.NoteOther(GameAudio.Bus.Music, "stinger_" + name);
+        Fetch("stinger_" + name, clip => {
+            if (clip == null) {
+                clip = StandIn(name);
+                Events.Add("stinger-standin|" + name);
+            }
+            MusicDirector d = Ensure();
+            if (d.stinger == null) {
+                d.stinger = d.gameObject.AddComponent<AudioSource>();
+                d.stinger.playOnAwake = false;
+                d.stinger.spatialBlend = 0f;
+                d.stinger.ignoreListenerPause = true;
+            }
+            d.stinger.volume = SoundSettings.On ? Mathf.Clamp01(SoundSettings.Music * 0.8f) : 0f;
+            d.stinger.PlayOneShot(clip);
         });
+    }
+
+    // Wallit: jaunty plucks with a stumble. Slice: slow low notes. Both: the two stacked.
+    static AudioClip StandIn(string name) {
+        AudioClip c;
+        if (standIns.TryGetValue(name, out c) && c != null) {
+            return c;
+        }
+        float[] wal = { 392f, 494f, 440f, 587f };
+        float[] sli = { 110f, 131f, 98f, 123f };
+        if (name.StartsWith("rank_")) {
+            return RankStandIn(name);
+        }
+        bool w = name != "slice", s = name != "wallit";
+        int rate = 22050;
+        float[] data = new float[(int)(rate * (s ? 3.2f : 2f))];
+        for (int n = 0; n < 4; n++) {
+            if (w) AddNote(data, rate, wal[n], n * (s ? 0.8f : 0.5f), s ? 0.5f : 0.35f, 0.22f);
+            if (s) AddNote(data, rate, sli[n], n * 0.8f, 0.75f, 0.3f);
+        }
+        c = AudioClip.Create("standin_" + name, data.Length, 1, rate, false);
+        c.SetData(data, 0);
+        standIns[name] = c;
+        return c;
+    }
+
+    // The Chapter Complete ceremony's rank stings (rank_c, rank_b, rank_a, rank_s): a brass line that grows with the rank. C is
+    // two low notes, B a rising third, A a major arpeggio, S the arpeggio with a held chord. Stand-ins until stinger_rank_*.mp3 lands.
+    static AudioClip RankStandIn(string name) {
+        AudioClip c;
+        if (standIns.TryGetValue(name, out c) && c != null) {
+            return c;
+        }
+        char r = name[name.Length - 1];
+        float[] notes = r == 's' ? new[] { 261.6f, 329.6f, 392f, 523.3f } : r == 'a' ? new[] { 261.6f, 329.6f, 392f } : r == 'b' ? new[] { 261.6f, 329.6f } : new[] { 196f, 174.6f };
+        float step = r == 'c' ? 0.45f : 0.22f;
+        float tail = r == 's' ? 1.6f : r == 'a' ? 1.0f : 0.6f;
+        int rate = 22050;
+        float[] data = new float[(int)(rate * (notes.Length * step + tail))];
+        for (int n = 0; n < notes.Length; n++) {
+            AddBrass(data, rate, notes[n], n * step, n == notes.Length - 1 ? tail : step * 1.6f, r == 'c' ? 0.2f : 0.26f);
+        }
+        if (r == 's') {
+            // The held chord under the last note.
+            AddBrass(data, rate, 329.6f, (notes.Length - 1) * step, tail, 0.18f);
+            AddBrass(data, rate, 392f, (notes.Length - 1) * step, tail, 0.18f);
+        }
+        c = AudioClip.Create("standin_" + name, data.Length, 1, rate, false);
+        c.SetData(data, 0);
+        standIns[name] = c;
+        return c;
+    }
+
+    // A brass-ish note: the first harmonics with a quick swell and a decay.
+    static void AddBrass(float[] data, int rate, float hz, float start, float length, float gain) {
+        int a = (int)(start * rate), n = (int)(length * rate);
+        for (int i = 0; i < n && a + i < data.Length; i++) {
+            float t = (float)i / n, ph = 2f * Mathf.PI * hz * i / rate;
+            float v = Mathf.Sin(ph) + 0.5f * Mathf.Sin(2f * ph) + 0.3f * Mathf.Sin(3f * ph);
+            data[a + i] += v * Mathf.Min(1f, i / 700f) * Mathf.Exp(-2.5f * t) * gain * 0.7f;
+        }
+    }
+
+    static void AddNote(float[] data, int rate, float hz, float start, float length, float gain) {
+        int a = (int)(start * rate), n = (int)(length * rate);
+        for (int i = 0; i < n && a + i < data.Length; i++) {
+            float t = (float)i / n;
+            data[a + i] += Mathf.Sin(2f * Mathf.PI * hz * i / rate) * Mathf.Exp(-4f * t) * Mathf.Min(1f, i / 200f) * gain;
+        }
     }
 
     // The ambience of a place: "amb_hub", "amb_ch1".."amb_ch6", or "" for none. The same bed again does nothing; the old one
@@ -318,10 +442,10 @@ public class MusicDirector : MonoBehaviour {
     void Update() {
         float dt = Time.unscaledDeltaTime;
         bool voice = !WallitVoice.FloorFree || CastVoice.Speaking;
-        duck = Mathf.MoveTowards(duck, voice ? DuckLevel : 1f, dt * (voice ? 4f : 0.8f));
+        duck = AudioMix.MusicDuck * AudioMix.CrackDuck;
         LowestDuck = Mathf.Min(LowestDuck, duck);
         bool reelBed = Cutscene.IsOpen && Cutscene.Instance != null && Cutscene.Instance.BedPlaying;
-        float want = SoundSettings.On && !reelBed ? SoundSettings.Music * BedLevel * duck : 0f;
+        float want = SoundSettings.On && !reelBed ? SoundSettings.Music * AudioMix.MusicGain * BedLevel * duck : 0f;
         for (int i = 0; i < 2; i++) {
             AudioSource s = sources[i];
             if (s == null || !s.isPlaying) {
@@ -337,7 +461,7 @@ public class MusicDirector : MonoBehaviour {
         if (ambience != null && ambience.isPlaying) {
             // Under the score, ducked a little harder under a voice, and gone with Sound off; a bed that was replaced fades out.
             float wantAmb = SoundSettings.On && !reelBed && AmbienceCurrent.Length > 0 && ambience.clip != null && ambience.clip.name == AmbienceCurrent
-                ? SoundSettings.Music * AmbienceLevel * (voice ? 0.5f : 1f) : 0f;
+                ? SoundSettings.Music * AmbienceLevel * (AudioMix.AmbienceDuck * AudioMix.CrackDuck) : 0f;
             ambience.volume = Mathf.MoveTowards(ambience.volume, wantAmb, dt / FadeSeconds);
             ambVolume = ambience.volume;
             if (wantAmb <= 0f && ambience.volume <= 0.001f && AmbienceCurrent.Length == 0) {

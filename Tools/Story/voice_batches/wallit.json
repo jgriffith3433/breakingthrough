@@ -1,0 +1,93 @@
+{
+ "ids": [
+  "wallit_they_are_fast_i_ll_give_them_that_pay_up",
+  "wallit_i_know_how_to_hit_a_thing_slice",
+  "wallit_i_saw_it",
+  "wallit_it_reads_it_like_a_bill_of_lading",
+  "wallit_refused_still_refused",
+  "wallit_two_three_don_t_count_with_me",
+  "wallit_five_i_read_it",
+  "wallit_i_keep_receipts",
+  "wallit_frightened_bots_that_s_new",
+  "wallit_signature_required_i_ll_sign_it_for_you",
+  "wallit_received_in_full",
+  "wallit_two_numbers_one_bill_pay_up",
+  "wallit_paid_in_full_nobody_else_s_name_on_it",
+  "wallit_the_whole_hollow_somebody_is_paying_for_the_lamps_me"
+ ],
+ "cast": {
+  "wallit": "CwhRBWXzGAHq8TQ4Fs17"
+ },
+ "lines": [
+  {
+   "who": "wallit",
+   "text": "They are fast, I'll give them that. Pay up.",
+   "direction": "brash, angry, money-minded"
+  },
+  {
+   "who": "wallit",
+   "text": "I know how to hit a thing, Slice.",
+   "direction": "brash, angry, money-minded"
+  },
+  {
+   "who": "wallit",
+   "text": "I saw it.",
+   "direction": "brash, angry, money-minded"
+  },
+  {
+   "who": "wallit",
+   "text": "It reads it like a bill of lading.",
+   "direction": "brash, angry, money-minded"
+  },
+  {
+   "who": "wallit",
+   "text": "Refused. Still refused.",
+   "direction": "brash, angry, money-minded"
+  },
+  {
+   "who": "wallit",
+   "text": "Two. Three. Don't count with me.",
+   "direction": "brash, angry, money-minded"
+  },
+  {
+   "who": "wallit",
+   "text": "Five. I read it.",
+   "direction": "brash, angry, money-minded"
+  },
+  {
+   "who": "wallit",
+   "text": "I keep receipts.",
+   "direction": "brash, angry, money-minded"
+  },
+  {
+   "who": "wallit",
+   "text": "Frightened bots. That's new.",
+   "direction": "brash, angry, money-minded"
+  },
+  {
+   "who": "wallit",
+   "text": "Signature required. I'll sign it for you.",
+   "direction": "brash, angry, money-minded"
+  },
+  {
+   "who": "wallit",
+   "text": "Received. In full.",
+   "direction": "brash, angry, money-minded"
+  },
+  {
+   "who": "wallit",
+   "text": "Two numbers. One bill. Pay up.",
+   "direction": "brash, angry, money-minded"
+  },
+  {
+   "who": "wallit",
+   "text": "Paid in full. Nobody else's name on it.",
+   "direction": "brash, angry, money-minded"
+  },
+  {
+   "who": "wallit",
+   "text": "The whole Hollow. Somebody is paying for the lamps. Me.",
+   "direction": "brash, angry, money-minded"
+  }
+ ]
+}

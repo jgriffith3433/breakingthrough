@@ -595,7 +595,7 @@ Status: built; text extended here as proposed. Emotion: Release. The order is an
 > **THE ORDER-BEARER:** Signature... required... uploading... nothing?  
 
 **Scene 6.4: Filed** (The circle) [canon]  
-*The order drops; DENIED; Slice writes the door number.*
+*The order drops; DENIED; Wallit carries the stamp to Slice's ring with his own hands.*
 
 > **NARRATION:** The Spider Bot comes apart. The order drops.  
 > **WALLIT:** 'Strike this address.' Stamped DENIED. Ha.  
@@ -604,9 +604,13 @@ Status: built; text extended here as proposed. Emotion: Release. The order is an
 > **SLICE:** Clean. Good swing, Wallit.  
 > **WALLIT:** Pay up.  
 
-### Scripted set piece: The Door Number [built (Filed scene) + proposed beat]
+### Scripted set piece: The Door Number [built — playable finale carry]
 
-The ring becomes a line of writing, then a door number. Slice writes it with her scalpel; the camera pulls back to ADDRESS FILED. Proposed: the number is Wallit's first coin counted.
+After DENIED, the camera settles on Slice's ring. The player **holds swing** to carry the stamp to her circle while three of the
+Order-Bearer's last notices rain down (timing icons; a miss knocks Wallit back, never ends the beat). On release the stamp prints
+ADDRESS on the ring, lamps around the ring light one by one (≥4), Slice's closing line plays, and the Chapter 6 theme swells into
+ADDRESS FILED. Interaction 20–40 s; keys, gamepad and touch. RECEIVED after the card is unchanged. Code: `CinematicDirector`
+`finaleCarry` on `ending_filed_world`; proof playtest `finale-carry`.
 
 ### Choices
 

@@ -61,7 +61,7 @@ public class ChapterScene : MonoBehaviour {
         Time.timeScale = 1f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        font = UiSkin.Font(UiSkin.FontRole.Body);
         if (CampaignSave.Active < 0) {
             // Opened straight from the editor: use the last file, or the first.
             CampaignSave.Open(Mathf.Max(0, CampaignSave.Last));
@@ -87,6 +87,7 @@ public class ChapterScene : MonoBehaviour {
             events.AddComponent<EventSystem>();
             events.AddComponent<StandaloneInputModule>();
         }
+        OnDemand.Need(new[] { OnDemand.Core }, "Pulling the case file", null);   // already in when a case file was chosen
         if (hub) {
             Hub = ChapterHub.Open(this);
             RunAnalytics.Screen("hub");
@@ -184,11 +185,16 @@ public class ChapterScene : MonoBehaviour {
         Leave();
         GameAudio.Play("stamp", 0.6f);
         RunAnalytics.Screen("chapter_start_" + (Chapter + 1));
-        if (LevelScene.Replaces(Chapter)) {
-            LevelScene.Enter(Chapter);   // its own scene (Level*.cs), no chapter run
-            return;
-        }
-        ChapterRun.Begin(Chapter);
+        // The chapter's stills, reels' voices, script lines and boss bodies are fetched now, on Begin, with the progress line
+        // up at the bottom; the card stays alive meanwhile. With nothing to fetch this runs at once.
+        int chapter = Chapter;
+        OnDemand.Need(OnDemand.ForChapter(chapter), "Filing Chapter " + (chapter + 1), () => {
+            if (LevelScene.Replaces(chapter)) {
+                LevelScene.Enter(chapter);   // its own scene (Level*.cs), no chapter run
+                return;
+            }
+            ChapterRun.Begin(chapter);
+        });
     }
 
     // Standard <-> Hard on a filed file (CampaignSave.SetHard).
@@ -217,7 +223,7 @@ public class ChapterScene : MonoBehaviour {
     void ToMenu() {
         Leave();
         RunAnalytics.Screen("menu");
-        SceneManager.LoadScene(MetaProgress.MenuScene);
+        ScreenTransition.Load(ScreenTransition.Kind.Returned, MetaProgress.MenuScene);
     }
 
     void Build(Story.Chapter chapter) {

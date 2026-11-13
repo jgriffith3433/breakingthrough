@@ -1,1 +1,2 @@
-- convention: a sleeping (`Enemy.Dormant`) bot is never lock-on material (`ZeldaStyleCamera.AcquireTarget` skips it); playtest bots walk to sleepers to wake them by proximity and release Lock when nothing is awake.
+- canon: Bot sound identity — Yo Bots whir and whine before a swipe, Spider Bots skitter and hiss before a stab, Mega Yo Bots and bosses tread heavily and ratchet before a slam; Dispatch/Clerk bots carry a paper rustle, Returned/Sealed a stamp clack, Reissue/Queue-Skip a ticket printer.
+- Gen audio.sfx (stable-audio-3) ignores the "0.7 seconds" asked for: wind-up clips come back about 4 s long, so cut a window from the rising part. Its loop check failed for skitter clicks, so crossfade the seam yourself.

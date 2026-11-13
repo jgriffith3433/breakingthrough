@@ -1,0 +1,212 @@
+{
+  "id": "ch1_open_world",
+  "fallback": "ch1_open",
+  "seconds": 7,
+  "shots": [
+    {
+      "id": "s1_arrive",
+      "seconds": 2.2,
+      "camMode": "dolly",
+      "camFrom": [
+        -16,
+        3.2,
+        -14
+      ],
+      "camTo": [
+        -11,
+        3.0,
+        -13
+      ],
+      "lookAt": [
+        -8,
+        1.4,
+        -9
+      ],
+      "fov": 55,
+      "frame": [
+        "wallit",
+        "slice"
+      ],
+      "actors": [
+        {
+          "id": "wallit",
+          "from": [
+            -16,
+            0,
+            -6
+          ],
+          "to": [
+            -8,
+            0,
+            -10
+          ],
+          "yaw": 140,
+          "anim": "walk"
+        },
+        {
+          "id": "slice",
+          "at": [
+            0,
+            0,
+            -9
+          ],
+          "yaw": 180,
+          "anim": "idle"
+        }
+      ],
+      "speaker": "S",
+      "line": "You're inside. Inside, you exist."
+    },
+    {
+      "id": "s2_courier",
+      "seconds": 2.6,
+      "camMode": "dolly",
+      "camFrom": [
+        14,
+        3.4,
+        -6
+      ],
+      "camTo": [
+        8,
+        3.0,
+        -8
+      ],
+      "lookAt": [
+        6,
+        1.6,
+        -8
+      ],
+      "fov": 52,
+      "frame": [
+        "courier",
+        "slice"
+      ],
+      "speaker": "K",
+      "line": "Hello! Uploading victory! Striking this address now!",
+      "sfx": "clipboard_raise",
+      "actors": [
+        {
+          "id": "wallit",
+          "from": [
+            -8,
+            0,
+            -10
+          ],
+          "to": [
+            -5,
+            0,
+            -12
+          ],
+          "yaw": 40,
+          "anim": "walk"
+        },
+        {
+          "id": "slice",
+          "from": [
+            0,
+            0,
+            -9
+          ],
+          "to": [
+            0.8,
+            0,
+            -9.2
+          ],
+          "yaw": 90,
+          "anim": "turn"
+        },
+        {
+          "id": "courier",
+          "from": [
+            14,
+            0,
+            -6
+          ],
+          "to": [
+            9,
+            0,
+            -8
+          ],
+          "yaw": 240,
+          "anim": "walk",
+          "tell": true
+        }
+      ]
+    },
+    {
+      "id": "s3_swing",
+      "seconds": 2.2,
+      "camMode": "dolly",
+      "camFrom": [
+        -9,
+        3.4,
+        -20
+      ],
+      "camTo": [
+        -7,
+        3.0,
+        -19
+      ],
+      "lookAt": [
+        -3,
+        1.2,
+        -13
+      ],
+      "fov": 55,
+      "frame": [
+        "wallit",
+        "slice"
+      ],
+      "handoff": true,
+      "actors": [
+        {
+          "id": "wallit",
+          "from": [
+            -5,
+            0,
+            -12
+          ],
+          "to": [
+            -3,
+            0,
+            -14
+          ],
+          "yaw": 0,
+          "anim": "walk"
+        },
+        {
+          "id": "slice",
+          "from": [
+            0,
+            0,
+            -9
+          ],
+          "to": [
+            0,
+            0,
+            -9
+          ],
+          "yaw": 180,
+          "anim": "turn"
+        },
+        {
+          "id": "courier",
+          "from": [
+            9,
+            0,
+            -8
+          ],
+          "to": [
+            16,
+            0,
+            -2
+          ],
+          "yaw": 40,
+          "anim": "walk"
+        }
+      ],
+      "speaker": "W",
+      "line": "Return to sender."
+    }
+  ]
+}

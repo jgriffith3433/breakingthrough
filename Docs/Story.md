@@ -22,7 +22,9 @@ any more.
 
 The circle is the only address in the Hollow. Wallit has none, so while he is inside it he is on the books: he exists,
 he can be hurt, he can be paid. If Slice falls, the circle is struck off and everything in it is cleared with her. The
-run ends when Slice falls. That is the whole game: Wallit swings, Slice holds the ring. The game-over panel says so: **Address struck off**.
+run ends when Slice falls. That is the whole game: Wallit swings, Slice holds the ring. The run-end screen still says
+**Address struck off**, then counts the waves and coins, stamps a new best, shows the next goal on the ladder, and lets
+Wallit and Slice trade one short voiced line about how it went before **Retry** starts the next run.
 
 ## Who comes
 
@@ -35,30 +37,118 @@ The creature behind the order is never seen and never named.
 Every wave start gets a short beat. A beat is one to three lines, one speaker each, shown for about two seconds.
 Boss waves (10, 20 and 30) get a title card and a longer beat.
 
-- **Act one, waves 1 to 9: the arrangement.** Wallit is here for the coins, Slice is here for the circle. The Yo Bots are
-  cheerful about erasing them. Wallit works out that the bolts the bots drop are a wage, and Slice admits she needs him.
-- **Act two, waves 10 to 19: the plating.** The Plated Yo Bot arrives on wave 10. Slice is hurt for the first time and says
-  so. Wallit stops talking about himself and starts talking about her debt ("I'm covering you").
-- **Act three, waves 20 to 29: the order.** The Mega Yo Bot arrives on wave 20 and the Yo Bots stop chirping and read the
-  order aloud. Wave 30 is the first Spider Bot, the one that carries the order itself.
+- **Act one / Night Shift, waves 1 to 10: the arrangement.** Wallit is here for the coins, Slice is here for the circle. The
+  Yo Bots are cheerful about erasing them. Wallit works out that the bolts the bots drop are a wage, and Slice admits she
+  needs him. She starts calling threats in one word ("Left." "Behind." "Mine.") so he can see what she sees (`SliceCallouts`).
+- **Act two / Cold Hour, waves 11 to 20: the plating.** The Plated Yo Bot arrives on wave 10; Cold Hour opens at 11. Slice is
+  hurt and says so. Wallit stops talking about himself and starts talking about her debt ("I'm covering you"). She can
+  parry one bot per wave that reaches her circle or flanks him: a block pose, a metallic clink, the bot knocked back 2 m.
+  The first Cold Hour wave she shows the parry on camera once.
+- **Act three / Last Light, waves 21 to 30: the order.** The Mega Yo Bot arrives on wave 20; Last Light opens at 21. Yo Bots
+  stop chirping and read the order aloud. Wave 30 is the Spider Bot that carries the order. She stamps the ground once per
+  wave and stuns nearby bots for 1.5 s; the first Last Light wave she shows the stamp on camera once.
+
+### Slice as partner (callouts and guard)
+
+Slice is not only what Wallit protects. In Arcade and in chapters where she walks with him (`Companion`), she names the
+bot that is about to reach her circle or flank him: one clipped word through `VoiceDirector` at bark priority (never
+stacked), a short-lived ring marker in her accent colour on that bot, and an off-screen edge arrow. Wallit answers some
+of those with money lines ("On it." "Billable."). Guard moves unlock by Arcade act (Night Shift callouts only; Cold Hour
+adds the parry; Last Light adds the stamp). Code: `SliceCallouts.cs`. The `slice-partner` playtest proves three voiced
+callouts and one Act 2 parry.
+
+### Arcade boss set pieces (waves 10, 20, 30)
+
+Each decade boss is a short set piece, not only a title card. The Alpha is drawn from the campaign roster so the fight
+matches the story's weight: **wave 10 The Plated Alpha**, **wave 20 The Foreman**, **wave 30 The Order**. On spawn the
+lights dim, the camera dollies out to the boss for about four seconds (skippable with one key or tap), and Wallit and
+Slice trade a voiced line through the cutscene voice key (wave 10 is Slice's first crack and Wallit's debt; wave 20 the
+order read aloud with Yo Bots joining in; wave 30 the sealed scroll). The boss bar carries the pale phase notch; half
+health is the shared red-wash phase-two tell (`BossPhases` / `BossSetPiece`). On defeat: hit-stop, half a second of slow
+motion, a bolt burst and Slice's line; wave 30 also drops the order on the grass with a red DENIED blotch (Wallit's
+DENIED read stays on the finale card so it is not said twice). The wave clear and next act banner wait until the
+payoff ends (`BossSetPiece.PayingOff`). Code: `BossSetPiece.cs`, hooked from `WaveDirector.SpawnOne` and
+`Combat.OnKill`. The `boss-set-pieces` playtest walks 10/20/30 with the wave key.
+
+### Boss entrances
+
+Every named boss arrives as an event, 4 to 8 seconds on the `CinematicDirector` (`CinematicBoss.cs`). Time slows, the camera
+leaves Wallit's shoulder and swings to the boss arriving, the boss plays its rig's signature move (the rear-up tell, then the
+slam), its name and title are stamped across the upper third in the Department's typewriter face, a stinger hits on the slam
+and the boss track follows it, the boss says its taunt (the first of its existing lines, in its own voice file), and the play
+camera comes back in 0.3 s. Any tap, click or Enter/Space skips; the music still turns. Boss health, phases and tells are
+untouched: the boss is held while it plays and put back as it was. Once per Arcade run, once per case file (a replay of a
+cleared chapter plays it again).
+
+| Boss | Card | Arrives | Taunt |
+|---|---|---|---|
+| The Courier (ch1) | THE COURIER / Notice of striking | rises out of the drop-box ring | "Special delivery! Notice of striking!" |
+| The Plated Alpha (ch2, wave 10) | THE PLATED ALPHA / Plate 0010: INVALID | drops in | "Notice! This plate is stamped: INVALID!" |
+| The Foreman (ch3, wave 20) | THE FOREMAN / Work order 0031 | unfolds off the belt | "Order, read aloud: STRIKE. THIS. ADDRESS." |
+| The Half-Built (ch3 mini) | THE HALF-BUILT / Still on its hook | swings down off its hook | "I am... not finished! Finish me?" |
+| The Server (ch4) | THE SERVER / Signature required | climbs over the wall | "Order delivery! Signature required!" |
+| The Registrar (ch5) | THE REGISTRAR / Page ten, filing | unfolds | "Registrar on the floor! Please remain seated!" |
+| The Order-Bearer (ch6, wave 30) | THE ORDER-BEARER / Sealed. Carried. Unsigned. | climbs over the wall | "Order delivery! Signature required!" |
+
+After the taunt, Slice's and Wallit's replies (the rest of the chapter's boss lines) follow in the field as before. At wave
+10 the entrance's slam is also Slice's first crack. Each boss has its own stinger root so no two entrances play the same
+sound. The `boss-entrances` playtest plays all nine (three Arcade, seven campaign cards including the Registrar).
 
 ## The finale: wave 30
 
-Wave 30's boss is the Spider Bot. When the last bot of wave 30 falls, the order drops, and Wallit reads it: "Strike this
-address", stamped DENIED. Slice files the circle herself. The ending screen reads **ADDRESS FILED**, and gives the run:
+Wave 30's boss is **The Order** (the Spider Bot that carries the sealed order). When the last bot of wave 30 falls, the
+order drops, and Wallit reads it: "Strike this address", stamped DENIED. Slice files the circle herself. The ending
+screen reads **ADDRESS FILED**, and gives the run:
 waves, level, streak, coins. Any key goes back to the menu; **Enter keeps going** into overtime, where the waves
 continue and the run still ends when Slice falls.
 
 ## The intro
 
-Shown once at the start of a run that begins at wave 1, over the frozen Hollow. Five pages, any key or tap for the next,
-**Skip** (or Enter) leaves at once.
+There is no text intro. An Arcade run that begins at wave 1 opens with a **cold open** of about 4 s (never over 8 s), played
+in the game scene with the real Wallit, Slice and a Yo Bot (`ColdOpen.cs`, no stills, no pages):
 
-1. The tagline and the place.
-2. Wallit says who he is.
-3. Slice says what the circle is.
-4. Slice says why it matters.
-5. A Yo Bot arrives. Wallit says what to do.
+1. The RETURN TO SENDER stamp (`stamp_heavy`) drops onto Wallit from above the circle.
+2. He lands in the circle and the ring lights: soft rings out from Slice's feet, no sparks.
+3. Slice says one line that is already in her bank, "Stay close." Its subtitle is the only text, in the caption band (the top
+   band on phones, clear of the pads).
+4. The first Yo Bot is already rushing in. Wallit speaks no line here; wave 1 adds no beat text and no second voice.
+
+Control is never taken. Any key, tap, stick push or swing ends it on that frame, and Wallit is put where he would have
+landed. It plays once per browser (`hawkes.coldopen`, PlayerPrefs, so localStorage on the web) and Enter or a tap skips it.
+The player is swinging at a Yo Bot within about 10 s of pressing Play and has read nothing.
+
+What the six pages used to say now lives in the lore log (Lore.cs, "The First Night", open from the start of a case file): the tagline,
+Wallit's "One wallet, one bat, no refunds", Slice's "This is the circle: the one address in the Hollow that's filed. Inside it,
+things exist. Outside, they're cleared. If I fall, the circle goes, and everything in it. Don't let me fall.", the Yo Bot's
+"Hello! Uploading victory!" and "Guard Slice. Swing at anything chirpy. Pay up." Campaign chapters keep their own openings.
+
+## Run-end exchanges (Arcade)
+
+When Slice falls in Arcade, the run-end screen (`RunEndScreen.cs`) keeps the title **Address struck off**. Waves reached and
+coins count up with sound; a new best gets a heavy stamp. A short goals ladder (`Resources/Data/run_goals.json`, twelve
+rungs: reach waves 5/10/20/30, clear each act boss, career home runs and more) shows the next goal with progress and stamps
+any goal just finished; unlocks are coins or a bat look/trail in `UpgradeLook` / `BatMarks`. Then Wallit and Slice trade
+**one** short voiced exchange picked from facts about that run. The same exchange does not repeat within five runs
+(`RunEndTalk`). Retry is one tap and starts the next Arcade run at once. Voices: Wallit money, Slice clipped. Data lives in
+`Story.RunEnds` (change a line here and there). Conditions are checked in priority order; the first match that is not in the
+last five plays.
+
+| Id | When | Wallit | Slice |
+|---|---|---|---|
+| early | fell before wave 5 | Short shift. No tip. | Again. |
+| yo_bot | a Yo Bot landed the last blow (not a boss) | Chirpy took the ring. | Noted. |
+| spider | a Spider Bot landed the last blow (not a boss) | Six legs. One bill. | Bigger next. |
+| boss | a boss landed the last blow | Big one cashed out. | Hold. |
+| new_best | this run set a new best wave | New high. Still short. | Closer. |
+| nearly | Slice was on the brink (≤30 HP) earlier in the run | You almost fell. | I didn't. |
+| near_decade | wave ends in 8 or 9 (one stamp from a decade) | One stamp from the next. | Then take it. |
+| act2 | fell in act two (waves 10–19) | Plates cost extra. | Cover me. |
+| act3 | fell in act three or overtime (wave 20+) | Order's still out. | Denied later. |
+| payday | fifteen or more coins this run | Purse is fat. Ring's gone. | Spend it right. |
+| longball | three or more home runs this run | Returned a few. | Keep swinging. |
+| default | fallback | No refunds. | Clean. Again. |
+
+The subtitle on the screen is one line: `WALLIT  …` then `SLICE  …`, never both at once. Playtest: `run-end`.
 
 ## Wallit talks
 
@@ -204,6 +294,16 @@ unread..." / "Paid in full." / "Clean." The file then moves to Chapter 4. Flow: 
 `chapter3` playtest plays it. Slice stays at the circle and does not follow (her second ring holds it); the Foreman reads the order
 only in its lines, with no special attack yet.
 
+### Boss barks
+
+Each campaign boss talks back in its own eleven_v4 voice during the fight (`BossVoice.cs`), never over Wallit or Slice
+(`VoiceDirector` reasons `boss-phase`, `boss-homerun`, `boss-win`). Three short paperwork lines each (under ten words),
+one at phase two, one when a home run lands on it, one when Wallit goes down (or Slice falls with that boss live). Captions
+sit in the upper third on a phone. Yo-family bosses (Courier, Plated Alpha, Foreman) get a light robotic high-pass in the
+mixer, not baked into the file. Voices: Courier chirpy postal clerk; Plated Alpha clipped metallic; Foreman gravelly site
+boss; Server polite and insistent; Registrar dry and final; Order-Bearer slow and ceremonial. The `boss-barks` playtest
+checks distinct voice ids and at least two barks per fight.
+
 ### Boss phases
 
 Every chapter boss has two phases. The boss bar carries a pale notch where the second begins (half health; 0.4 for the Server),
@@ -286,12 +386,16 @@ uploading... nothing?" / "Struck from the record." / "Clean." The Done card: the
 The Moonlit Hollow, changed: the wall is gone, a path of pale slabs leads out and stops at nothing, and the circle breathes a soft gold
 ring. The opening scene has Slice say "The wall is gone. The circle is brighter." and Wallit "Then let's file it. Pay up." The chapter is
 **three waves** of four bots (Yo Bots, Plated, Mega) at the circle, then **The Order**, the Spider Bot that carries the order (wave 30's
-Alpha, a scroll with a red seal across its back). Defeat beat: "Signature... required... uploading... nothing?" / "Clean." Then *Filed*:
-the ring becomes a line of writing, then a door number, which Slice writes with her scalpel; then the **Finale pages, verbatim from
-`Story.Finale`** ("The Spider Bot comes apart. The order drops." ... "Pay up."), the **ADDRESS FILED** ending card, and a credits card
-(`Story.Credits`). The case file is marked complete (6 cleared) and reads "(filed)" in the Campaign panel. There is no Next chapter.
+Alpha, a scroll with a red seal across its back). Defeat beat: "Signature... required... uploading... nothing?" / "Clean." Then *Filed*
+as a short **playable beat** on the live Hollow (`CinematicDirector`, `ending_filed_world`, `finaleCarry`): the camera settles on Slice's
+ring; Wallit **holds swing** (hold the Swing pad on touch) to carry the stamp to her circle while the Order-Bearer's last notices rain
+down; he bats away **three** with timing prompts (a miss only knocks him back — the beat cannot fail). On release the stamp prints her
+address on the ring, four or more lamps around the ring light one by one, Slice says her existing closing line ("Clean. Good swing,
+Wallit.") in her voice, and the Chapter 6 theme swells into the **ADDRESS FILED** ending card and credits (`Story.Credits`). The beat
+lasts about 20 to 40 s; existing Finale lines only, no new voice. The **RECEIVED** path after ADDRESS FILED is unchanged. The case file
+is marked complete (6 cleared) and reads "(filed)" in the Campaign panel. There is no Next chapter.
 Flow: `HoldThenBoss` with `Final` in `ChapterRun.cs` (`CompleteFinal`, `ShowCredits`, `BuildChangedHollow`), lines in `Story.Chapters[5]`,
-the boss `Enemy.MakeOrderBearer`; the `chapter6` playtest plays it.
+the boss `Enemy.MakeOrderBearer`; playtests `chapter6` and `finale-carry`.
 
 ## New Game+ and the secret ending
 
@@ -319,7 +423,13 @@ the `ch6_close` reel and before the ending notes and the ADDRESS FILED card (the
   stamp (6.c1) and asking for two numbers (6.c2). Slice writes the number twice; the second door sits beside the first.
 - **The Open Door** (`ending_open`): otherwise, 6 or more of the hub's side slips and favours done (`HubLife.SideCount`). Every lodger is on the books.
 - **The Ledger** (`ending_ledger`): everything else. Wallit's stamp, his door, one name. Slice keeps the ring.
-Voices stay as ever: Wallit money, Slice clipped ("Clean.", "Numbered."), Yo Bots chirpy. The reels are data (`Tools/Cinematics/make_endings.py`) on stand-in stills; real keyframes named `ending_<variant>_<n>_back` replace them when they exist.
+Voices stay as ever: Wallit money, Slice clipped ("Clean.", "Numbered."), Yo Bots chirpy. The three variant reels stay data
+(`Tools/Cinematics/make_endings.py`); real keyframes named `ending_<variant>_<n>_back` replace stand-ins when they exist.
+**Chapters 4–6 openings and the main ADDRESS FILED / RECEIVED payoffs are in-engine** (`CinematicDirector`,
+`ch4_open_world` / `ch5_open_world` / `ch6_open_world`, `ending_filed_world`, `ending_received_world`): the Server offers its
+paper on the causeway; ADDRESS FILED's stamp is **carried by the player** (hold swing, bat three falling notices, release to print
+ADDRESS and light the ring lamps) before the ending card; six doors rise for RECEIVED; credits scroll over Wallit and Slice with
+the credits score (still reels remain as fallback / load-card art only).
 
 **Ratings and the chapter select.** The hub's chapter board lists each filed chapter with its best rank (and Hard rank); the case files list shows all six ranks per file.
 
@@ -437,7 +547,17 @@ Code: `HubLife.cs`, `ChapterHub.cs`, `OfficeMap.Dress`; the `hub-life` playtest 
 
 Voices and sound: the lodgers each have their own voice (Tick a measured wound-clock, Brim a muffled, wistful hat, Spare a small chirpy half-built Yo Bot, Chime a clear, ringing bell), spoken through `CastVoice` for every `Story.Lodgers` line and every `L|` chat line; the hub and each chapter carry a quiet ambience under the score (hub a ticking room, the Hollow wind, the belt yard's rumble, the Long Walk's lamp-buzz, the Reading Room's paper hush).
 
+## Arcade's three acts
+
+The long night has three hours. **Act I, Night Shift** (waves 1-10): moon-blue, the Yo Bots come chirping up the hill, "Uploading victory." **Act II, Cold Hour** (11-20): the light turns teal and the Spider Bots come down the wall; Slice: "Legs. Count them." **Act III, Last Light** (21-30): a bruised dusk, orange at the rim, and no crew is plain any more: Plated, Mega and Spider Bots wear elite crests. Wallit: "Pay up." After wave 30 the clock will not clock out: **Overtime** is the same three hours in red ink, and the banner says so. Light and sky only: no weather, no sparks, nothing solid in the playfield.
+
+### The act changes
+
+When the wave 10 and wave 20 bosses fall, the night does not cut to the next hour: it turns, in front of Wallit and Slice (once per run per act, about 6 s, a tap skips it). The camera lifts over the whole Hollow with both of them in frame, the sky and light blend to the next hour and the score follows. **Cold Hour:** the lamp posts go dark and flare back on one by one, fog rolls in over the hedges; Slice: "Legs. Count them." Wallit: "Pay up." **Last Light:** the ruin's red beacon lights and starts to sweep the lawn, and paper begins to burn at the edges; Wallit: "Nobody touches her." Slice: "Clean." The card is stamped in the Department typeface, ACT II / COLD HOUR or ACT III / LAST LIGHT, on a bar of the score. Light, smoke and big soft glows only: no sparks, no shake, nothing solid on the lawn. `CinematicAct.cs`; playtest `act-change`.
+
 ## Canon established here
+
+- Arcade's acts: Night Shift (1-10), Cold Hour (11-20), Last Light (21-30), then Overtime in red ink; Spider Bots arrive in act II and elites of every kind in act III.
 
 - The lodgers: Tick (clock), Brim (hat), Spare (half-built Yo Bot) and Chime (bell) live in the hub; their lines change after each chapter. Chime's errands pay XP and a kept lost thing.
 - The lodgers' arcs: Tick keeps his own hour (a Winding Key), Brim wants an address (a Hatband, then an Address Label), Spare is a spare kept in case somebody needs it, Chime rings for the right address. Their favours and the loose notices change the ending's lines.
@@ -512,6 +632,25 @@ open and the Dead Letter gone; the reward is never paid twice. Wallit: "Returned
 (`BackRooms.All`, the `BackRoom` component on the chapter run, `ChapterRun.Events` lines `secret|...`), `CampaignProgress.RefundFull`,
 `WaveDirector.SpawnMiniAt`; the `secrets` playtest plays all six rooms and the Dead Letter.
 
+## The stakes
+
+Losing Slice is losing the game, and the game never says so. When a bot reaches her the circle's ring (a soft gold ring on the ground
+round her, `StakesFeel.cs`) stutters and dims toward grey, and the screen's edges drain of colour in proportion to the health she has
+lost (`NightGrade.Stakes`, read by `BTPost.shader`). Under 30% a low heartbeat layer rises under the music. The first time a bot
+reaches her in a run Wallit says one short key line about her, in his money voice, and never over another line: "That's my account!
+Hands off!", "Touch her, you pay double!" or "She's not for sale. Back off!" (`WallitVoice.Stakes`, reason `stakes-line`). No text
+explains the circle in wave 1. `stakes` playtest logs `slice-hit`, `slice-low`, `stakes-line`.
+
+## The fee
+
+Slice's pay is a pile of gold coins at the edge of the circle: **the fee**, the filing fee the Department set aside to keep the
+address open, and the thing Wallit is paid to guard ("I'm covering you"). It is the stakes made into something you can count.
+The pile's height is her health (24 coins, `CoinPile.cs`). When a Yo Bot or Spider Bot's blow lands on Slice, the top coins come
+off the pile, arc through the air to the bot that struck her and vanish in a soft gold ring with a coin clink: the bot takes its
+cut. Wallit's barks ("Touch her, you pay double!") only back this up. When she heals, the coins drop back one at a time. The
+pile is chunky turned discs, no sparks, inside the ring and clear of the playfield's bots. No text. `stakes` playtest logs
+`coin-pile`, `coins-taken` and the metrics `coinPileTaken`, `coinPileAfterHit`.
+
 ## The cast file
 
 Every voice in a dialogue box is a row in `Assets/Resources/Cast/cast.json`: Wallit, Slice, the Yo Bots (Yo Bot, Mega Yo Bot,
@@ -527,11 +666,22 @@ the cast: Wallit money, Slice clipped, Yo Bots chirpy; Slice and Wallit lines go
 Reels live in `Assets/Resources/Cinematics/<id>.json` and play with `Cutscene.PlayShots(id, done)` (`CutsceneShots.cs`);
 `sample` is the Chapter 1 opening (the stamp, "Ow! That's extra!", the ring, "You're inside. Inside, you exist.") on placeholder art
 from `Tools/Cinematics/make_placeholders.py`. Space or a click goes to the next shot; Enter, Escape or Skip leaves at any point.
-Chapters 1-3 now open and close with reels (`ch1_open` .. `ch3_close`, written by `Tools/Cinematics/make_reels.py` from the shot lists
-in `CampaignBible.md`; `ChapterRun.Start` and `Complete` play them before the page scenes, which remain for chapters 4-6). Each shot names its final
-art (`Art/<reel>_<n>_back|front`) and an `alt` placeholder shown until Hawkes Gen's stills are in. Courier (K), Plated Alpha (P), Half-Built (H),
-Foreman (F) and Yo Bot (Y) lines play from `Resources/Voice/cinema/<reel>_<shot>.mp3` when present. `Tools/Cinematics/gen_manifest.json` lists
-every sheet, still, clip, voice and sound still to make. Wallit and Slice keep their voice systems.
+
+**In-engine openings (Chapters 1–3).** Directed scenes on `CinematicDirector` (`Resources/Cinematics/chN_open_world.json`):
+- **Chapter 1 (Sorting Yard):** Wallit walks in on the west trail, Slice turns in her ring, the Courier raises its clipboard, and
+  the RETURN TO SENDER stamp lands on Wallit at the circle. Eight shots. Playtest: `opening-scene`.
+- **Chapter 2 (Hollow edge):** Wallit and Slice walk the chalk road toward the blank gate; a torn postmark slams onto the gate
+  (RETURN TO SENDER); Slice stakes the ring and walks with him. Six shots under 60 s. Still reel `ch2_open` is fallback / load-card art only.
+- **Chapter 3 (Clearing Floor):** the sunken yard and a half-built Yo Bot on a hook; Slice names the Clearing Crew; the belt
+  carries cleared things (hat, clock, bell) toward the shredder; she stakes a second ring at the circle. Six shots under 60 s.
+  Still reel `ch3_open` is fallback / load-card art only.
+
+Existing voice lines and stamp/paper SFX only; Esc, Enter or the touch Skip pill ends the scene; the camera blends onto the
+follow camera in under a second with no black frame. Playtest: `opening-ch23` (Chapters 2 and 3, including 390x844 touch).
+
+Chapters 1–3 still close with reels (`ch1_close` .. `ch3_close`, written by `Tools/Cinematics/make_reels.py`). Chapters 4–6 keep
+opening and closing still reels. Courier (K), Plated Alpha (P), Half-Built (H), Foreman (F) and Yo Bot (Y) lines play from
+`Resources/Voice/cinema/<reel>_<shot>.mp3` when present. Wallit and Slice keep their voice systems.
 
 Part two (chapters 4-6): `ch4_open` .. `ch6_close` complete the set, so every chapter opens and closes with a reel (`ChapterRun.Start`, `Complete`). The four named
 bosses with their own fight get an intro reel as they arrive, over the frozen field (`boss_courier`, `boss_foreman`, `boss_server`, `boss_order`;
@@ -539,3 +689,15 @@ bosses with their own fight get an intro reel as they arrive, over the frozen fi
 the title card) and plays before the ADDRESS FILED card (`StoryScreen.ShowEndCard`); then the RECEIVED reel `ending_received` when the secret is earned, then the
 `credits` reel, then the credits card. All are skippable (Enter, Escape, Skip). New speaker voices: Server (V), Registrar (R), Order-Bearer (O), Mega Yo Bot (M),
 from `Resources/Voice/cinema/<reel>_<shot>.mp3` once made. Page scenes remain as fallback when a reel is missing.
+
+## Barks: who talks mid-fight
+
+Wallit and Slice answer the moment: Wallit on the first blow of a run, a home run, a wave cleared and a boss's second phase; Slice on a new kind of bot and when she runs low. Each of those lines is said once in five minutes. The Yo Bots chorus in chirps (waking, spotting Wallit, hit, launched, falling: "Uploading victory.", "Wheeeee!") and the Spider Bots are polite ("You have been served."), each from the bot's own place, one voice at a time, a line no more than once a minute. Code: `BotChorus.cs`, `VoiceDirector` (reasons `first-hit`, `boss-phase`, `new-type`, `wave-clear`, `bot-*`).
+
+## Turning the page (transitions and loading cards)
+
+The Department files everything, so nothing in the game cuts. Every change of place is a sheet of file paper sliding over the
+screen with a rubber stamp slammed on it, then peeling away: **ENTER** into a run or a chapter, **FILED** back to the hub (and
+on a win), **STRUCK OFF** when Slice falls, **RETURNED** to the menu or on a retry. A chapter's or the hub's load ends on its case-file
+card: the place's name, one line from Wallit or Slice about it (existing voice lines, nothing new) and a paper strip that fills as the
+place truly loads. Code: `ScreenTransition.cs`, `LoadScreen.cs`; art `Resources/LoadCards/`.

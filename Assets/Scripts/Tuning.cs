@@ -48,6 +48,9 @@ public static class Tuning {
     public const float MetalKnock = 1.3f;
     public const float MetalBlastDamage = 0.65f;
 
+    // The first minute of Arcade keeps the HUD to a few words (WaveDirector.QuietOpening): first-five allows 40 on screen.
+    public const float QuietOpeningSeconds = 60f;
+
     // Breaks between waves. Space or Enter skips both.
     public const float BreakSeconds = 5f;
     public const float BuildSeconds = 30f;
@@ -57,6 +60,8 @@ public static class Tuning {
     public const float LevelStep = 4f;
     public const float LevelCurve = 0.5f;
     public const int StartRerolls = 1;
+    // Arcade: a free pick-one-of-three card at each wave clear up to this wave, so the build variety shows in the first minute.
+    public const int WaveCardsUntil = 3;
 
     // Bolts each bot drops when it is destroyed. Bigger bots are worth more.
     public static int BoltsFor(BotKind kind, bool elite) {
@@ -111,6 +116,13 @@ public static class Tuning {
     public static int CoinsForWave(int wave) {
         return 1 + wave / 10;
     }
+    // Wave 1 opens with this many Yo Bots (the first three spawn within half a second).
+    public const int OpeningBots = 6;
+    // Every kill in the first waves drops a coin that flies to the HUD; after that one in CoinKillEvery.
+    public const int CoinKillWaves = 3;
+    public const int CoinKillEvery = 5;
+    // Hit-stop on every kill (seconds): 3 frames at 60 fps, over the 40 ms floor.
+    public const float KillHitStop = 0.05f;
     public const int CoinsForBoss = 6;
     public const int CoinsForGolden = 3;
 
@@ -119,5 +131,32 @@ public static class Tuning {
     public static float HealthScale(int wave) {
         float late = Mathf.Max(0, wave - 20);
         return 1f + Mathf.Max(0, wave - 1) * 0.02f + late * late * 0.0015f;
+    }
+
+    // Arcade acts (docs/world-bible.md, A): waves 1-10, 11-20, 21-30, then the loop under an overtime tint (wave 31 on).
+    public const float ActFadeSeconds = 1.5f;
+    public const float ActBannerSeconds = 3.4f;
+    public const float OvertimeTint = 0.5f;
+    public const float ActMusicLevel = 0.4f;
+    public const float ActSpiderHealth = 0.2f;
+    public const float MixEliteChance = 0.4f;
+    public const float MixEliteToughness = 1.3f;
+
+    public static int ActOf(int wave) {
+        return ((Mathf.Max(1, wave) - 1) / 10) % 3;
+    }
+
+    public static bool IsOvertime(int wave) {
+        return wave > 30;
+    }
+
+    // Act 2 brings Spider Bots early (a pair at wave 11, more as it goes); from wave 30 they come by the normal roster.
+    public static int ActSpiders(int wave) {
+        return wave < 11 || wave >= 30 ? 0 : Mathf.Min(6, 2 + (wave - 11) / 3);
+    }
+
+    // Act 3's mixed elite crews: every kind but the Yo Bot rolls a trait too.
+    public static float MixElite(int wave) {
+        return ActOf(wave) == 2 ? MixEliteChance : 0f;
     }
 }

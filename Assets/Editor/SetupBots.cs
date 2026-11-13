@@ -150,7 +150,7 @@ static class SetupBots
         bool ok = importer.isReadable
             && importer.animationType == ModelImporterAnimationType.Generic
             && importer.importAnimation
-            && importer.materialImportMode != ModelImporterMaterialImportMode.None;
+            && importer.materialImportMode == ModelImporterMaterialImportMode.None;
 
         foreach (TextureImporter tex in FindModelTextures(fbxPath))
         {
@@ -170,7 +170,9 @@ static class SetupBots
         importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
         importer.importAnimation = true;
         importer.animationCompression = ModelImporterAnimationCompression.Optimal;
-        importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
+        // None: the game paints these with its own skin materials (Resources/.../*Skin.png), so the FBX's embedded textures
+        // (2048 px twice on Slice, 2048 + 1024 on Wallit, 1024 twice on each bot: several MB of the phone's first download) must not ship.
+        importer.materialImportMode = ModelImporterMaterialImportMode.None;
         importer.importNormals = ModelImporterNormals.Calculate;
         importer.normalSmoothingAngle = 60f;
         importer.SaveAndReimport();

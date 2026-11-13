@@ -7,12 +7,12 @@ using UnityEngine.UI;
 // layout, scaled down to fit a phone, with 88-unit buttons and a slider knob as big.
 public class SettingsPanel : MonoBehaviour {
     const float PanelWidth = 680f;
-    const float PanelHeight = 1000f;
+    const float PanelHeight = 1100f;
 
     static SettingsPanel instance;
 
     public static bool IsOpen {
-        get { return instance != null && instance.root != null && instance.root.activeSelf; }
+        get { return instance != null && instance.root != null && instance.root.activeSelf && !PanelFx.Closing(instance.root); }
     }
 
     // The frame Settings closed, so the Escape that closed it doesn't also close the pause menu under it.
@@ -25,6 +25,8 @@ public class SettingsPanel : MonoBehaviour {
     public Button SoundButton { get; private set; }
     public Slider MusicSlider { get; private set; }
     public Slider EffectsSlider { get; private set; }
+    public Slider VoiceSlider { get; private set; }
+    Text voiceValue;
     public Button DoneButton { get; private set; }
     public Button VoiceButton { get; private set; }
     public Button SubtitleButton { get; private set; }
@@ -58,6 +60,7 @@ public class SettingsPanel : MonoBehaviour {
         instance.root.SetActive(true);
         instance.Fill();
         instance.Layout();
+        PanelFx.Show(instance.root, "settings", instance.panel);
         RunAnalytics.Screen("settings");
     }
 
@@ -65,7 +68,7 @@ public class SettingsPanel : MonoBehaviour {
         if (!IsOpen) {
             return;
         }
-        instance.root.SetActive(false);
+        PanelFx.Hide(instance.root, "settings");
         ClosedFrame = Time.frameCount;
         SoundSettings.Flush();
         RunAnalytics.SettingsClosed(PauseMenu.IsOpen ? "pause" : "menu");
@@ -77,7 +80,7 @@ public class SettingsPanel : MonoBehaviour {
 
     void Awake() {
         instance = this;
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        font = UiSkin.Font(UiSkin.FontRole.Body);
         if (FindAnyObjectByType<EventSystem>() == null) {
             var events = new GameObject("Event System");
             events.AddComponent<EventSystem>();
@@ -117,6 +120,8 @@ public class SettingsPanel : MonoBehaviour {
         EffectsSlider.value = SoundSettings.Sfx;
         musicValue.text = Percent(SoundSettings.Music);
         effectsValue.text = Percent(SoundSettings.Sfx);
+        VoiceSlider.value = SoundSettings.VoiceSlider;
+        voiceValue.text = Percent(SoundSettings.VoiceSlider);
         voiceLabel.text = SoundSettings.ChatterName(SoundSettings.Chatter);
         subtitleLabel.text = ComfortOptions.SizeName(ComfortOptions.SubtitleSize);
         contrastLabel.text = ComfortOptions.HighContrast ? "On" : "Off";
@@ -173,6 +178,14 @@ public class SettingsPanel : MonoBehaviour {
         Fill();
     }
 
+    void VoiceChanged(float value) {
+        if (filling) {
+            return;
+        }
+        SoundSettings.SetVoice(value);
+        Fill();
+    }
+
     void EffectsChanged(float value) {
         if (filling) {
             return;
@@ -188,7 +201,7 @@ public class SettingsPanel : MonoBehaviour {
             return;
         }
         lastBlip = Time.unscaledTime;
-        GameAudio.Play("shot", 0.6f, 1.2f);
+        GameAudio.PlayUI("shot", 0.6f, 1.2f);
     }
 
     void Build() {
@@ -235,30 +248,34 @@ public class SettingsPanel : MonoBehaviour {
         EffectsSlider = MakeSlider("Effects", -350f, EffectsChanged);
         effectsValue = ValueLabel(-350f);
 
-        RowLabel("Voices", -450f);
+        RowLabel("Voice", -450f);
+        VoiceSlider = MakeSlider("Voice", -450f, VoiceChanged);
+        voiceValue = ValueLabel(-450f);
+
+        RowLabel("Chatter", -550f);
         VoiceButton = MakeButton(panel, "Voices", "Normal", new Vector2(300f, 88f), CycleVoices);
         voiceLabel = VoiceButton.GetComponentInChildren<Text>();
-        Place((RectTransform)VoiceButton.transform, new Vector2(240f, -450f), new Vector2(300f, 88f), new Vector2(0f, 1f), true);
+        Place((RectTransform)VoiceButton.transform, new Vector2(240f, -550f), new Vector2(300f, 88f), new Vector2(0f, 1f), true);
 
-        RowLabel("Subtitles", -550f);
+        RowLabel("Subtitles", -650f);
         SubtitleButton = MakeButton(panel, "Subtitles", "Normal", new Vector2(300f, 88f), CycleSubtitles);
         subtitleLabel = SubtitleButton.GetComponentInChildren<Text>();
-        Place((RectTransform)SubtitleButton.transform, new Vector2(240f, -550f), new Vector2(300f, 88f), new Vector2(0f, 1f), true);
+        Place((RectTransform)SubtitleButton.transform, new Vector2(240f, -650f), new Vector2(300f, 88f), new Vector2(0f, 1f), true);
 
-        RowLabel("Contrast", -650f);
+        RowLabel("Contrast", -750f);
         ContrastButton = MakeButton(panel, "Contrast", "Off", new Vector2(220f, 88f), ToggleContrast);
         contrastLabel = ContrastButton.GetComponentInChildren<Text>();
-        Place((RectTransform)ContrastButton.transform, new Vector2(240f, -650f), new Vector2(220f, 88f), new Vector2(0f, 1f), true);
+        Place((RectTransform)ContrastButton.transform, new Vector2(240f, -750f), new Vector2(220f, 88f), new Vector2(0f, 1f), true);
 
-        RowLabel("Camera", -750f);
+        RowLabel("Camera", -850f);
         MotionButton = MakeButton(panel, "Camera", "Full", new Vector2(220f, 88f), ToggleMotion);
         motionLabel = MotionButton.GetComponentInChildren<Text>();
-        Place((RectTransform)MotionButton.transform, new Vector2(240f, -750f), new Vector2(220f, 88f), new Vector2(0f, 1f), true);
+        Place((RectTransform)MotionButton.transform, new Vector2(240f, -850f), new Vector2(220f, 88f), new Vector2(0f, 1f), true);
 
         // What Hawkes Analytics (RunAnalytics) collects, said where a player of the game page can read it.
         Text privacy = MakeText(panel, "Anonymous gameplay statistics help improve the game.\nNo cookies, no personal data, no IP stored.", 22, FontStyle.Normal, TextAnchor.MiddleCenter);
         privacy.color = new Color(1f, 0.97f, 0.9f, 0.62f);
-        Place(privacy.rectTransform, new Vector2(0f, -808f), new Vector2(PanelWidth - 60f, 60f), new Vector2(0.5f, 1f));
+        Place(privacy.rectTransform, new Vector2(0f, -908f), new Vector2(PanelWidth - 60f, 60f), new Vector2(0.5f, 1f));
 
         DoneButton = MakeButton(panel, "Done", "Done", new Vector2(260f, 88f), Close);
         DoneButton.GetComponent<Image>().color = new Color(0.22f, 0.38f, 0.22f, 1f);

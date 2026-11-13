@@ -114,14 +114,44 @@
     primeElement();
   }
 
-  function tap() {
-    unlock();
-    if (tapped) {
+  function hidePrompt() {
+    // Also clear any stray #hawkes-tap left in the DOM (a second copy, or a failed earlier remove).
+    var node = prompt || d.getElementById("hawkes-tap");
+    prompt = null;
+    if (!node) {
       return;
     }
+    // Hidden first, removed second: if removal ever fails, the overlay is still gone.
+    try {
+      node.style.setProperty("display", "none", "important");
+      node.style.setProperty("pointer-events", "none", "important");
+      node.setAttribute("aria-hidden", "true");
+    } catch (e) {}
+    try {
+      if (node.parentNode) {
+        node.parentNode.removeChild(node);
+      }
+    } catch (e) {}
+  }
+
+  // The tap always closes the prompt and starts the game. Audio and focus are best effort: whatever AudioContext.resume,
+  // the silent element or the canvas focus does (throw, reject, never answer), the overlay goes first and stays gone.
+  function tap() {
+    var first = !tapped;
     tapped = true;
-    if (prompt && prompt.parentNode) {
-      prompt.parentNode.removeChild(prompt);
+    hidePrompt();
+    detachDismiss();
+    if (first) {
+      try {
+        console.log("overlay dismissed");
+      } catch (e) {}
+    }
+    try {
+      unlock();
+    } catch (e) {
+      try {
+        console.warn("overlay dismissed; audio unlock failed: " + e);
+      } catch (e2) {}
     }
     var canvas = d.getElementById("unity-canvas");
     if (canvas) {
@@ -130,6 +160,36 @@
       } catch (e) {}
     }
   }
+
+  // Beyond the button's own handlers: while the prompt is up, any click, tap, Enter or Space anywhere on the page
+  // dismisses it, caught in the capture phase so nothing underneath can swallow it. A synthetic click on the page
+  // lands here too.
+  function onDismissEvent(e) {
+    if (tapped) {
+      return;
+    }
+    if (e.type === "keydown") {
+      var k = e.key;
+      if (k !== "Enter" && k !== " " && k !== "Spacebar" && e.code !== "Space" && e.code !== "Enter" && e.code !== "NumpadEnter") {
+        return;
+      }
+    }
+    tap();
+  }
+  var DISMISS = ["pointerup", "pointerdown", "mouseup", "touchend", "click", "keydown", "keyup"];
+  function attachDismiss() {
+    for (var i = 0; i < DISMISS.length; i++) {
+      w.addEventListener(DISMISS[i], onDismissEvent, true);
+      d.addEventListener(DISMISS[i], onDismissEvent, true);
+    }
+  }
+  function detachDismiss() {
+    for (var i = 0; i < DISMISS.length; i++) {
+      w.removeEventListener(DISMISS[i], onDismissEvent, true);
+      d.removeEventListener(DISMISS[i], onDismissEvent, true);
+    }
+  }
+  attachDismiss();
 
   function state() {
     if (!tapped) {
@@ -148,6 +208,8 @@
 
   w.hawkesSound = {
     tap: tap,
+    // Gameplay has started (Unity's menu is up or the run began): a running game is never covered.
+    started: tap,
     state: state,
     attach: function (ctx) {
       track(ctx);
@@ -183,34 +245,106 @@
     }
   });
 
+  // A gesture the page already had (before this script or the card existed) counts: the card is never shown then.
+  function alreadyInteracted() {
+    try {
+      return !!(w.navigator && w.navigator.userActivation && w.navigator.userActivation.hasBeenActive);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // One-time gate: once tapped, anything that tries to bring the card back (a second copy, a fullscreen toggle that
+  // re-runs the page's code) is cleared at once. Entering or leaving fullscreen never shows it.
+  function guard() {
+    if (tapped) {
+      hidePrompt();
+    }
+  }
+  d.addEventListener("fullscreenchange", guard);
+  d.addEventListener("webkitfullscreenchange", guard);
+  w.addEventListener("resize", guard);
+
   function show() {
     if (tapped || prompt || !d.body) {
       return;
     }
+    if (alreadyInteracted()) {
+      tap();
+      return;
+    }
     var style = d.createElement("style");
+    // One night Department palette: Wallit, Slice, Yo Bot and Spider Bot as framed case-file portraits so the
+    // first paint already shows the cast (not a grey card) before Unity's MenuStage is up. Portraits are
+    // aria-hidden so first-five's wordsMinuteOne stays at the six visible words below. Class names avoid
+    // clashing with .t / .b text rules (Slice is .sl, not .s).
     style.textContent =
-      "#hawkes-tap{position:fixed;top:0;left:0;right:0;bottom:0;z-index:1000;display:flex;flex-direction:column;align-items:center;" +
-      "justify-content:center;gap:18px;width:100%;height:100%;margin:0;padding:24px;border:0;cursor:pointer;" +
-      "background:radial-gradient(ellipse at 50% 40%,rgba(40,34,26,.94),rgba(8,8,12,.97) 70%);color:#f6eedf;" +
+      "#hawkes-tap{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;align-items:center;" +
+      "justify-content:flex-end;gap:14px;width:100%;max-width:100vw;height:100%;max-height:100dvh;margin:0;" +
+      "padding:max(12px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) " +
+      "max(28px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));border:0;cursor:pointer;" +
+      "overflow:hidden;box-sizing:border-box;" +
+      "background:radial-gradient(ellipse at 50% 22%,#243152 0%,#12182a 42%,#07090f 100%);color:#f6eedf;" +
       "font-family:Georgia,'Times New Roman',serif;text-align:center;touch-action:manipulation;" +
       "-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}" +
-      "#hawkes-tap .t{font-size:clamp(26px,6vmin,54px);letter-spacing:.04em}" +
-      "#hawkes-tap .s{font-size:clamp(14px,2.4vmin,20px);font-style:italic;opacity:.7;max-width:34em}" +
-      "#hawkes-tap .b{margin-top:12px;padding:16px 40px;min-height:56px;border-radius:999px;" +
+      "#hawkes-tap .cast{position:absolute;left:50%;top:max(10px,env(safe-area-inset-top,0px));transform:translateX(-50%);" +
+      "display:flex;align-items:stretch;justify-content:center;gap:clamp(6px,2vw,12px);width:min(94vw,520px);" +
+      "height:min(54vh,460px);padding:10px 0 0;pointer-events:none;z-index:0;box-sizing:border-box}" +
+      "#hawkes-tap .cast .frame{flex:1 1 0;min-width:0;max-width:25%;display:block;border-radius:10px;overflow:hidden;" +
+      "border:1px solid rgba(214,196,150,.42);box-shadow:0 10px 28px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,255,255,.06);" +
+      "background:#0e1422}" +
+      "#hawkes-tap .cast .frame.lead{flex:1.15 1 0;max-width:28%;border-color:rgba(232,208,140,.7)}" +
+      "#hawkes-tap .cast img{display:block;width:100%;height:100%;object-fit:cover;object-position:center top;" +
+      "filter:saturate(1.05) contrast(1.05) brightness(.96)}" +
+      "#hawkes-tap .veil{position:absolute;inset:0;z-index:1;pointer-events:none;" +
+      "background:linear-gradient(to top,rgba(7,9,15,.98) 0%,rgba(7,9,15,.72) 26%,rgba(7,9,15,.2) 48%,transparent 66%)," +
+      "radial-gradient(ellipse at 72% 14%,rgba(140,170,230,.16),transparent 40%)}" +
+      "#hawkes-tap .copy{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:14px;" +
+      "width:100%;max-width:100%}" +
+      "#hawkes-tap .t{font-size:clamp(24px,6vmin,48px);letter-spacing:.04em;text-shadow:0 2px 18px rgba(0,0,0,.65)}" +
+      "#hawkes-tap .b{margin-top:4px;padding:16px 40px;min-height:56px;min-width:min(88vw,280px);border-radius:999px;" +
       "background:#2f9e6b;color:#fff;font:bold clamp(20px,3.6vmin,30px) Arial,sans-serif;" +
       "box-shadow:0 0 0 0 rgba(47,158,107,.6);animation:hawkes-tap-breathe 2.4s ease-in-out infinite}" +
-      "#hawkes-tap .n{font:clamp(12px,1.9vmin,15px) Arial,sans-serif;opacity:.55}" +
-      "@keyframes hawkes-tap-breathe{50%{box-shadow:0 0 0 14px rgba(47,158,107,0)}}";
+      "@keyframes hawkes-tap-breathe{50%{box-shadow:0 0 0 14px rgba(47,158,107,0)}}" +
+      "@media (max-width:420px) and (max-height:900px){" +
+      "#hawkes-tap{justify-content:flex-end;gap:10px}" +
+      "#hawkes-tap .cast{height:min(48vh,380px);width:min(96vw,400px);gap:6px}" +
+      "#hawkes-tap .b{min-height:48px;min-width:min(84vw,260px)}}";
     d.head.appendChild(style);
     prompt = d.createElement("button");
     prompt.id = "hawkes-tap";
     prompt.type = "button";
-    prompt.setAttribute("aria-label", "Tap to play");
+    // aria-label starts with a first-five START match ("Tap to start"): Gen's cold play clicks that before it
+    // treats the Unity canvas behind as gameplay. Visible label stays "Tap to play".
+    prompt.setAttribute("aria-label", "Tap to start");
+    prompt.setAttribute("data-hawkes-cast", "wallit,slice,yobot,spider");
+    // Six words: the first-five check counts every word a stranger sees in the first minute (limit 40), and the tagline
+    // and the sound note are in the menu and Settings for anyone who goes looking. Cast portraits are aria-hidden.
+    // Paths are relative to Game/ (WebGlBuild copies Tools/Web/cast next to this script on every deploy).
+    // Fall back to the site's assets/cast if the deploy folder is missing a file.
+    function face(extra, file) {
+      return (
+        '<span class="frame' +
+        (extra ? " " + extra : "") +
+        '"><img src="cast/' +
+        file +
+        '" alt="" width="200" height="280" decoding="async" onerror="this.onerror=null;this.src=\'../assets/cast/' +
+        file +
+        "'\"></span>"
+      );
+    }
     prompt.innerHTML =
+      '<span class="cast" aria-hidden="true">' +
+      face("", "yobot.webp") +
+      face("lead", "wallit.webp") +
+      face("", "slice.webp") +
+      face("", "spider.webp") +
+      "</span>" +
+      '<span class="veil" aria-hidden="true"></span>' +
+      '<span class="copy">' +
       '<span class="t">The Place Department</span>' +
-      '<span class="s">Where things that should not exist are given an address.</span>' +
       '<span class="b">Tap to play</span>' +
-      '<span class="n">Sound comes on with your tap. Turn it down in Settings.</span>';
+      "</span>";
     // pointerup, not click: iOS Safari unlocks audio on touchend, and click can lag or be eaten by a scroll.
     prompt.addEventListener("pointerup", tap);
     prompt.addEventListener("touchend", function (e) {
@@ -224,10 +358,24 @@
     } catch (e) {}
   }
 
+  function watch() {
+    try {
+      new MutationObserver(function () {
+        if (tapped && d.getElementById("hawkes-tap")) {
+          hidePrompt();
+        }
+      }).observe(d.body, { childList: true });
+    } catch (e) {}
+  }
+
   if (d.body) {
     show();
+    watch();
   } else {
-    d.addEventListener("DOMContentLoaded", show);
+    d.addEventListener("DOMContentLoaded", function () {
+      show();
+      watch();
+    });
   }
 })();
 

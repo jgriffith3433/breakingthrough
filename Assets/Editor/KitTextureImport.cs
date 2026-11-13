@@ -13,6 +13,12 @@ public class KitTextureImport : AssetPostprocessor {
         ti.sRGBTexture = !normal;
         ti.wrapMode = TextureWrapMode.Repeat;
         ti.mipmapEnabled = true;
-        ti.textureCompression = TextureImporterCompression.Uncompressed;
+        ti.textureCompression = TextureImporterCompression.Compressed;
+        ti.crunchedCompression = false;
+        // ASTC 6x6 on web and phones keeps a 512 set near 0.4 MB with mips; the phone tier drops the top mip (MobileQuality).
+        var ps = new TextureImporterPlatformSettings { name = "WebGL", overridden = true, maxTextureSize = 1024, format = normal ? TextureImporterFormat.ASTC_5x5 : TextureImporterFormat.ASTC_6x6, textureCompression = TextureImporterCompression.Compressed };
+        ti.SetPlatformTextureSettings(ps);
+        ps.name = "Android"; ps.format = normal ? TextureImporterFormat.ASTC_5x5 : TextureImporterFormat.ASTC_6x6; ti.SetPlatformTextureSettings(ps);
+        ps.name = "iPhone"; ti.SetPlatformTextureSettings(ps);
     }
 }

@@ -42,6 +42,8 @@ public static class MetaProgress {
 
     public static int Coins { get; private set; }
     public static int BestWave { get; private set; }
+    // Runs that ended (the musician fell), saved: the menu offers the Shop only after the first.
+    public static int RunsFinished { get; private set; }
     public static int ReachedWave { get; private set; }
     public static int HensToward { get; private set; }
     public static int NextCoinAt { get; private set; }
@@ -53,6 +55,12 @@ public static class MetaProgress {
     static bool loaded;
     static float toastUntil;
     static int armedStart = 1;
+
+    public static void NoteRunFinished() {
+        Ensure();
+        RunsFinished++;
+        Save();
+    }
 
     public static void BeginRun() {
         Ensure();
@@ -189,7 +197,7 @@ public static class MetaProgress {
         Toast = pay == 1 ? "+1 coin" : "+" + pay + " coins";
         toastUntil = Time.unscaledTime + 2.4f;
         Save();
-        GameAudio.Play("coin", 0.55f);
+        GameAudio.PlayUI("coin", 0.55f);
         return pay;
     }
 
@@ -241,7 +249,20 @@ public static class MetaProgress {
         if (at != Vector3.zero) {
             UpgradeLook.Coins(at, Mathf.Min(amount, 6));
         }
-        GameAudio.Play("coin", 0.55f);
+        GameAudio.PlayUI("coin", 0.55f);
+    }
+
+    // Coins from a finished goals-ladder reward: the purse only, not this run's tally.
+    public static void GrantCoins(int amount) {
+        if (amount <= 0) {
+            return;
+        }
+        Ensure();
+        Coins += amount;
+        PurseFlash = 1f;
+        Toast = amount == 1 ? "+1 coin" : "+" + amount + " coins";
+        toastUntil = Time.unscaledTime + 2.4f;
+        Save();
     }
 
     public static bool TrySpend(int cost) {
@@ -381,6 +402,7 @@ public static class MetaProgress {
         loaded = true;
         Coins = PlayerPrefs.GetInt("bt_coins", 0);
         BestWave = PlayerPrefs.GetInt("bt_best", 0);
+        RunsFinished = PlayerPrefs.GetInt("bt_runs", 0);
         ReachedWave = PlayerPrefs.HasKey("bt_reached") ? PlayerPrefs.GetInt("bt_reached", 0) : BestWave;
         HensToward = PlayerPrefs.GetInt("bt_hens", 0);
         NextCoinAt = PlayerPrefs.GetInt("bt_next", 0);
@@ -425,6 +447,8 @@ public static class MetaProgress {
             for (int i = 0; i < ranks.Length; i++) {
                 ranks[i] = 0;
             }
+            RunGoals.EnterSandboxFresh();
+            RunEndTalk.ClearRecent();
         }
     }
 
@@ -434,6 +458,7 @@ public static class MetaProgress {
         }
         PlayerPrefs.SetInt("bt_coins", Coins);
         PlayerPrefs.SetInt("bt_best", BestWave);
+        PlayerPrefs.SetInt("bt_runs", RunsFinished);
         PlayerPrefs.SetInt("bt_reached", ReachedWave);
         PlayerPrefs.SetInt("bt_hens", HensToward);
         PlayerPrefs.SetInt("bt_next", NextCoinAt);

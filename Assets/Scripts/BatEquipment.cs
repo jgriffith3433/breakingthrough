@@ -79,6 +79,7 @@ public class BatEquipment : MonoBehaviour {
     float charge;
     bool chargeFull;
     float homeRunCharge;
+    public static bool OpeningAuto;   // Chapter 1's first Yo Bot: the bat swings by itself until it falls (LevelYard.FirstBlow)
     float autoIn;
     int swingCount;
 
@@ -151,6 +152,7 @@ public class BatEquipment : MonoBehaviour {
             trail.minVertexDistance = 0.04f;
             trail.widthCurve = new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(1f, 0f));
             trail.material = new Material(trailShader);
+            trail.material.mainTexture = DeptFx.Smear();   // a soft white smear, not a hard ribbon
             trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             trail.receiveShadows = false;
             trail.emitting = false;
@@ -165,8 +167,9 @@ public class BatEquipment : MonoBehaviour {
         }
         trailWasOn = on;
         trail.emitting = on;
-        trail.widthMultiplier = big ? 0.75f : move == Move.Swing3 || move == Move.Smash ? 0.5f : 0.34f;
-        Color head = big ? new Color(1f, 0.8f, 0.3f, 0.95f) : new Color(1f, 0.96f, 0.82f, 0.8f);
+        trail.widthMultiplier = big ? 0.95f : move == Move.Swing3 || move == Move.Smash ? 0.55f : 0.36f;
+        trail.time = big ? 0.34f : 0.22f;   // a charged swing smears longer and stronger
+        Color head = big ? new Color(1f, 0.92f, 0.55f, 1f) : new Color(1f, 1f, 0.97f, 0.7f);
         trail.startColor = head;
         trail.endColor = new Color(head.r, head.g * 0.8f, head.b * 0.5f, 0f);
     }
@@ -371,7 +374,7 @@ public class BatEquipment : MonoBehaviour {
         }
 
         autoIn -= dt;
-        bool auto = canAct && !pressing && move == Move.None && queued == Move.None && WaveDirector.Wave >= MetaProgress.AutoWave();
+        bool auto = canAct && !pressing && move == Move.None && queued == Move.None && (OpeningAuto || WaveDirector.Wave >= MetaProgress.AutoWave());
         if (auto && autoIn <= 0f && Nearest(Reach * 1.05f, 180f) != null) {
             float grown = PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f;
             autoIn = Mathf.Lerp(0.5f, 0.28f, Mathf.Clamp01((grown - 1f) / 4f)) * MetaProgress.DrawHaste() / RunBoons.DrawSpeed;
@@ -601,8 +604,7 @@ public class BatEquipment : MonoBehaviour {
             Say("ground smash (target " + Size(faceTarget) + " under " + Tuning.SmashBelow.ToString("0.00") + " of yours): " + struck + " bot" + (struck == 1 ? "" : "s") + " hit");
             if (struck > 0) {
                 WallitVoice.OnBigHit("smash");
-                Juice.HitStop(0.05f);
-                ZeldaStyleCamera.Shake(0.08f, 0.16f);
+                Juice.Contact(Juice.Weight.Finisher, forward);
             }
             LongBall(reach);
             return;
@@ -645,8 +647,7 @@ public class BatEquipment : MonoBehaviour {
         }
         if (count > 0) {
             Crack(finisher ? 1f : 0.75f, distinct ? feel.Pitch : finisher ? 0.9f : Random.Range(0.98f, 1.1f));
-            Juice.HitStop(distinct ? feel.HitStop : finisher ? 0.07f : 0.035f);
-            ZeldaStyleCamera.Shake(finisher ? 0.11f : 0.05f, finisher ? 0.2f : 0.12f);
+            Juice.Contact(finisher ? Juice.Weight.Finisher : Juice.Weight.Light, forward);
             if (finisher && MetaProgress.MetalBat()) {
                 MetalBlast(hits[0].transform.position, hits[0]);
             }
@@ -658,12 +659,18 @@ public class BatEquipment : MonoBehaviour {
         LongBall(reach);
     }
 
+    System.Collections.IEnumerator Landing(Vector3 at, float after) {
+        yield return new WaitForSeconds(after);
+        GameAudio.PlayAt("homerun_clang", at, 0.8f, 1f);
+    }
+
     // The crack of a hit. The metal bat rings higher and louder.
-    static void Crack(float volume, float pitch) {
+    void Crack(float volume, float pitch) {
+        Vector3 at = transform.position + Flat(transform.forward) * 1.5f + Vector3.up;
         if (MetaProgress.MetalBat()) {
-            GameAudio.Play("batcrack", Mathf.Min(1f, volume * 1.25f), pitch * 1.3f);
+            GameAudio.PlayAt("batcrack", at, Mathf.Min(1f, volume * 1.25f), pitch * 1.3f);
         } else {
-            GameAudio.Play("batcrack", volume, pitch);
+            GameAudio.PlayAt("batcrack", at, volume, pitch);
         }
     }
 
@@ -687,14 +694,16 @@ public class BatEquipment : MonoBehaviour {
             Vector3 away = Flat(enemy.transform.position - transform.position);
             bool tip = away.magnitude - enemy.BodyScale * 0.3f >= sweetFrom;
             // Every bot the bat lands on gets its own flash; the second and later also get a thud (the crack is once a swing).
-            Fx.Impact(enemy.transform.position + Vector3.up * (0.7f * Mathf.Max(1f, enemy.BodyScale)), Mathf.Sqrt(Mathf.Max(1f, enemy.BodyScale)), scale >= Tuning.BatDamageFinisher || tip);
+            Fx.Impact(enemy.transform.position + Vector3.up * (0.7f * Mathf.Max(1f, enemy.BodyScale)), Mathf.Sqrt(Mathf.Max(1f, enemy.BodyScale)), scale >= Tuning.BatDamageFinisher || tip, away);
             Impacts++;
             if (count > 1) {
-                GameAudio.Play("hit", 0.5f, Random.Range(0.9f, 1.05f));
+                GameAudio.PlayAt("hit", enemy.transform.position, 0.5f, Random.Range(0.9f, 1.05f));
             }
             bool dropped = Combat.BatHit(enemy, scale, power, true, tip);
             if (!dropped && enemy != null) {
-                enemy.Knock(KnockOf(enemy, away, knock, lift));
+                // Every hit bot rocks back and slides off, light hits too (at least 2.5 m/s).
+                enemy.Flinch(scale >= Tuning.BatDamageFinisher ? 1.2f : 0.8f);
+                enemy.Knock(KnockOf(enemy, away, Mathf.Max(knock, 2.5f), lift));
                 KnockedBack++;
                 if (lineDrive > 0) {
                     Track(enemy, 0.6f, lineDrive, 0.6f + 0.15f * lineDrive, false);
@@ -709,6 +718,7 @@ public class BatEquipment : MonoBehaviour {
     }
 
     void HomeRun(Vector3 forward, float reach, float grown) {
+        AudioMix.HomeRunCrack();
         Enemy target = faceTarget;
         if (target == null || !target.Alive || Flat(target.transform.position - transform.position).magnitude - target.BodyScale * 0.3f > reach * 1.2f) {
             Gather(reach, ArcFor(Move.Swing1) * 0.5f, forward, hits);
@@ -743,15 +753,26 @@ public class BatEquipment : MonoBehaviour {
             }
         }
         Track(target, 2.2f, 8, 0.9f * power, true);
-        GameAudio.Play("homerun", 0.95f, Random.Range(0.97f, 1.03f));
+        GameAudio.PlayAt("homerun", launchFrom, 0.95f, Random.Range(0.97f, 1.03f));
+        // Layered: the crack, a whoosh as it flies, then a distant clang where it lands.
+        GameAudio.PlayAt("homerun_whoosh", launchFrom + away * 4f, 0.7f, 1f);
+        float flight = Mathf.Clamp(2f * launch.y / 9.8f, 0.8f, 2.2f);
+        StartCoroutine(Landing(launchFrom + away * (Vector3.ProjectOnPlane(launch, Vector3.up).magnitude * flight) - Vector3.up, flight));
         Fx.Ring(target.transform.position, 3f * Mathf.Sqrt(Mathf.Max(1f, target.BodyScale)), new Color(1f, 0.9f, 0.55f, 0.85f), 0.4f);
         Impacts++;
         Fx.HomeRun(target != null ? target.transform.position + Vector3.up : launchFrom, Mathf.Sqrt(Mathf.Max(1f, target != null ? target.BodyScale : 1f)));
-        Juice.HitStop(0.07f);
+        DeptFx.HomeRunLaunch(target != null ? target.transform.position + Vector3.up : launchFrom, Mathf.Sqrt(Mathf.Max(1f, target != null ? target.BodyScale : 1f)), away);
+        if (target != null) {
+            target.HomeRunLaunch(flight);
+        }
+        Juice.Contact(Juice.Weight.HomeRun, away);
         Juice.SlowBeat(0.35f, 0.4f);
-        ZeldaStyleCamera.Shake(0.2f, 0.28f);
         Say("home run (charge " + Mathf.RoundToInt(homeRunCharge * 100f) + "%): " + kind + " launched at " + launch.magnitude.ToString("0") + " m/s" + (dropped ? ", dropped" : ""));
         UpgradeLook.Say("HOME RUN!", 1.2f, -40f);
+        // Boss talks back first (Sekiro-style); Wallit's money bark waits for the floor.
+        if (target != null && target.Boss) {
+            BossVoice.OnHomeRun(target);
+        }
         WallitVoice.OnHomeRun();
     }
 
@@ -851,8 +872,7 @@ public class BatEquipment : MonoBehaviour {
         }
         if (count > 0) {
             Crack(1f, 0.85f);
-            Juice.HitStop(0.06f);
-            ZeldaStyleCamera.Shake(0.1f, 0.18f);
+            Juice.Contact(Juice.Weight.Finisher, Flat(transform.forward));
         }
         Say("grand slam spin (360 degrees, " + radius.ToString("0.0") + " m): " + count + " bot" + (count == 1 ? "" : "s") + " hit" + (thunder ? ", lightning called down" : ""));
         UpgradeLook.Say("GRAND SLAM!", 0.9f, -40f);

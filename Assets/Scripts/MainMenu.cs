@@ -40,11 +40,15 @@ public class MainMenu : MonoBehaviour {
     float buttonHeight;
 
     Text coinText;
-    Text bestText;
-    Text nextText;
     Text startText;
     Text statusText;
-    Text quoteText;
+    GameObject shopLayer;
+    bool shopOpen;
+    bool leaving;
+    // Cold start / ?mode=arcade: wait for the page's Tap to play card before loading the game scene, so the
+    // overlay never sits over a running wave (first-five@local played blind under it when Start raced ahead).
+    bool waitTapThenArcade;
+    static bool modeHandled;
     Text pageText;
     string hint = "";
     float statusUntil;
@@ -85,12 +89,11 @@ public class MainMenu : MonoBehaviour {
     RawImage art;
     float artFocus = 0.5f;
     float artWide = 1f;
+    public MenuStage Stage { get; private set; }
     float artTall = 1f;
     RectTransform moon;
     RectTransform mistLow;
     RectTransform mistHigh;
-    int quoteIndex;
-    float quoteAt;
 
     // After hours at the Department: night ink, moonlight, brass fittings, manila folders and red stamp ink.
     static readonly Color Night = new Color(0.03f, 0.04f, 0.07f, 1f);
@@ -113,31 +116,28 @@ public class MainMenu : MonoBehaviour {
         new Color(0.86f, 0.3f, 0.24f), new Color(0.32f, 0.52f, 0.86f), new Color(0.38f, 0.7f, 0.4f), new Color(0.95f, 0.66f, 0.22f), new Color(0.68f, 0.46f, 0.82f)
     };
 
-    // Who talks at the front desk, in turn. Wallit talks money, Slice is clipped, the Yo Bots chirp.
-    static readonly string[,] Quotes = {
-        { "Wallit", "Pay up." },
-        { "Slice", "Clean." },
-        { "Yo Bot", "Uploading victory." },
-        { "Wallit", "Coins first. Questions never." },
-        { "Slice", "Keep them out of the ring." },
-        { "Yo Bot", "Please take a number!" }
-    };
-
     // The Play and Settings buttons, for the playtest's touch and settings scenarios.
     public Button PlayButton { get; private set; }
     public Button SettingsButton { get; private set; }
     // The two modes: Campaign opens the case files, Arcade starts today's wave defense (PlayButton is the same button).
     public Button CampaignButton { get; private set; }
+    // Shop is offered only after a first finished run (null before that).
+    public Button ShopButton { get; private set; }
+    public bool ShopUnlocked { get { return MetaProgress.RunsFinished > 0 || MetaProgress.BestWave > 0 || !string.IsNullOrEmpty(WaveDirector.LastRun); } }
+    public bool ShopIsOpen { get { return shopOpen; } }
     public Button ArcadeButton { get { return PlayButton; } }
 
     // What the playtest reads: the hint, the start-wave stepper, and which button is the primary one.
     // True once Start ran to its end (menu built, coins and shop filled, menu music asked for): an exception in Start leaves it false.
     public bool Ready { get; private set; }
+    // True when Start sent the player straight into Arcade (a cold page load or ?mode=arcade) and built no menu.
+    public bool SkippedMenu { get; private set; }
     public string HintText { get { return statusText != null ? statusText.text : ""; } }
     public bool HintTruncated { get { return statusText != null && statusText.preferredHeight > statusText.rectTransform.rect.height + 1f && statusText.fontSize <= statusText.resizeTextMinSize; } }
     public bool StepperVisible { get { return startText != null && startText.gameObject.activeInHierarchy; } }
     public string StepperText { get { return startText != null ? startText.text : ""; } }
-    public bool CampaignIsPrimary { get { return CampaignButton != null && PlayButton != null && CampaignButton.GetComponent<RectTransform>().rect.width > PlayButton.GetComponent<RectTransform>().rect.width && CampaignButton.GetComponent<RectTransform>().anchoredPosition.y <= PlayButton.GetComponent<RectTransform>().anchoredPosition.y; } }
+    // Play is the largest button on the first screen.
+    public bool PlayIsPrimary { get { return PlayButton != null && CampaignButton != null && PlayButton.GetComponent<RectTransform>().rect.size.x * PlayButton.GetComponent<RectTransform>().rect.size.y > CampaignButton.GetComponent<RectTransform>().rect.size.x * CampaignButton.GetComponent<RectTransform>().rect.size.y; } }
 
     void Awake() {
         Time.timeScale = 1f;
@@ -148,11 +148,40 @@ public class MainMenu : MonoBehaviour {
     }
 
     void Start() {
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        font = UiSkin.Font(UiSkin.FontRole.Body);
         if (FindAnyObjectByType<EventSystem>() == null) {
             var events = new GameObject("Event System");
             events.AddComponent<EventSystem>();
             events.AddComponent<StandaloneInputModule>();
+        }
+        // A link from the website (?mode=arcade or ?mode=campaign) skips the menu once.
+        bool firstLoad = !modeHandled;
+        string mode = modeHandled ? "" : UrlMode();
+        modeHandled = true;
+        // A cold page load plays at once: after the "Tap to play" card the bat is in hand on wave 1, with no menu and
+        // no sign-in in between (the first five minutes must not start on a wall). Quit to menu still shows the menu,
+        // and the playtest scenarios (?playtest=) and the editor keep the menu they check.
+        if (mode == "" && firstLoad && ColdStartPlays()) {
+            mode = "arcade";
+        }
+        // A playtest is about to press this menu's buttons (it may have been started by a runner before Unity loaded, so
+        // Playtest.Running is still false): never skip the menu for it, by a cold start or by a ?mode=arcade link.
+        if (mode == "arcade" && Playtest.Wanted) {
+            mode = "";
+        }
+        if (mode == "arcade") {
+            SkippedMenu = true;
+            // Skipping the menu on purpose is a Start that ran to its end: Ready only stays false when Build or Refresh threw.
+            Ready = true;
+            startWave = 1;
+            // Do not load the game under the Tap to play card: wait until it is gone (or was never on this page).
+            if (SoundSettings.TapPromptUp) {
+                waitTapThenArcade = true;
+                return;
+            }
+            leaving = true;
+            Play();
+            return;
         }
         Build();
         Refresh();
@@ -160,9 +189,59 @@ public class MainMenu : MonoBehaviour {
         MusicDirector.Play("theme_wallit");
         RunAnalytics.Menu();
         Ready = true;
+        if (mode == "campaign") {
+            OpenCampaign();
+        }
+    }
+
+    // True for a real player's first page load of the WebGL build (not the editor, not a ?playtest= or ?menu=1 address).
+    static bool ColdStartPlays() {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        string url = Application.absoluteURL ?? "";
+        return !Playtest.Wanted && url.IndexOf("menu=1", System.StringComparison.OrdinalIgnoreCase) < 0;
+#else
+        return false;
+#endif
+    }
+
+    // The ?mode= value of the page address, lower case ("arcade", "campaign" or "").
+    public static string UrlMode() {
+        return ParseMode(Application.absoluteURL);
+    }
+
+    // The same, for any address (the playtest checks it on samples).
+    public static string ParseMode(string url) {
+        if (string.IsNullOrEmpty(url)) {
+            return "";
+        }
+        int q = url.IndexOf('?');
+        if (q < 0) {
+            return "";
+        }
+        int hash = url.IndexOf('#', q);
+        string query = hash < 0 ? url.Substring(q + 1) : url.Substring(q + 1, hash - q - 1);
+        foreach (string pair in query.Split('&')) {
+            if (pair.StartsWith("mode=")) {
+                string value = pair.Substring(5).ToLowerInvariant();
+                return value == "arcade" || value == "campaign" ? value : "";
+            }
+        }
+        return "";
     }
 
     void Update() {
+        if (waitTapThenArcade) {
+            if (SoundSettings.TapPromptUp) {
+                return;
+            }
+            waitTapThenArcade = false;
+            leaving = true;
+            Play();
+            return;
+        }
+        if (leaving || canvasRoot == null) {
+            return;
+        }
         UiFit.Notice();
         if (canvasRoot != null && (builtStamp != UiFit.Stamp || builtSafe != UnityEngine.Screen.safeArea)) {
             // The phone turned, its toolbar moved or the window was resized: lay the menu out again for the new
@@ -189,28 +268,40 @@ public class MainMenu : MonoBehaviour {
         if (SettingsPanel.IsOpen || SettingsPanel.ClosedFrame == Time.frameCount || CampaignPanel.IsOpen || CampaignPanel.ClosedFrame == Time.frameCount) {
             return;
         }
-        // Gamepad and keyboard for the mode select: X or C opens the case files, Y or S Settings, A or Enter plays.
-        if (PlayInput.GetKeyDown(KeyCode.C) || PlayInput.GetKeyDown(KeyCode.JoystickButton2)) {
-            OpenCampaign();
+        if (shopOpen) {
+            if (MenuNav.Back || PlayInput.GetKeyDown(KeyCode.JoystickButton1)) {
+                CloseShop();
+                return;
+            }
+            if (PlayInput.GetKeyDown(KeyCode.RightArrow) || PlayInput.GetKeyDown(KeyCode.PageDown)) {
+                Flip(1);
+            } else if (PlayInput.GetKeyDown(KeyCode.LeftArrow) || PlayInput.GetKeyDown(KeyCode.PageUp)) {
+                Flip(-1);
+            }
+            // The wheel turns pages instead of scrolling.
+            float wheel = Input.mouseScrollDelta.y;
+            if (Mathf.Abs(wheel) > 0.1f && Time.unscaledTime >= flipReadyAt) {
+                flipReadyAt = Time.unscaledTime + 0.3f;
+                Flip(wheel < 0f ? 1 : -1);
+            }
             return;
         }
-        if (PlayInput.GetKeyDown(KeyCode.S) || PlayInput.GetKeyDown(KeyCode.JoystickButton3)) {
-            OpenSettings();
+        // Keyboard and gamepad drive the same buttons: Enter, Space or A plays; C or X opens the case files; S or Y Settings; U or B the shop.
+        if (Time.unscaledTime < playReadyAt) {
             return;
         }
-        if (PlayInput.GetKeyDown(KeyCode.RightArrow) || PlayInput.GetKeyDown(KeyCode.PageDown)) {
-            Flip(1);
-        } else if (PlayInput.GetKeyDown(KeyCode.LeftArrow) || PlayInput.GetKeyDown(KeyCode.PageUp)) {
-            Flip(-1);
-        }
-        // The wheel turns pages instead of scrolling.
-        float wheel = Input.mouseScrollDelta.y;
-        if (Mathf.Abs(wheel) > 0.1f && Time.unscaledTime >= flipReadyAt) {
-            flipReadyAt = Time.unscaledTime + 0.3f;
-            Flip(wheel < 0f ? 1 : -1);
-        }
-        if (Time.unscaledTime >= playReadyAt && (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.Space) || PlayInput.GetKeyDown(KeyCode.JoystickButton0))) {
+        if (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter) || PlayInput.GetKeyDown(KeyCode.Space) || PlayInput.GetKeyDown(KeyCode.JoystickButton0)) {
+            MenuSfx.Thunk(0.5f);
             Play();
+        } else if (PlayInput.GetKeyDown(KeyCode.C) || PlayInput.GetKeyDown(KeyCode.JoystickButton2)) {
+            MenuSfx.Thunk(0.5f);
+            OpenCampaign();
+        } else if (PlayInput.GetKeyDown(KeyCode.S) || PlayInput.GetKeyDown(KeyCode.JoystickButton3)) {
+            MenuSfx.Thunk(0.5f);
+            OpenSettings();
+        } else if (ShopButton != null && (PlayInput.GetKeyDown(KeyCode.U) || PlayInput.GetKeyDown(KeyCode.JoystickButton1))) {
+            MenuSfx.Thunk(0.5f);
+            OpenShop();
         }
     }
 
@@ -219,10 +310,51 @@ public class MainMenu : MonoBehaviour {
             Refresh();
             return;
         }
+        leaving = true;
         if (startWave > 1) {
-            GameAudio.Play("coin", 0.55f);
+            GameAudio.PlayUI("coin", 0.55f);
         }
-        SceneManager.LoadScene(MetaProgress.GameScene);
+        if (Stage != null && Stage.ModelsShown >= 2 && canvasRoot != null) {
+            StartCoroutine(FlyIn());
+            return;
+        }
+        ScreenTransition.Load(ScreenTransition.Kind.Enter, MetaProgress.GameScene);
+    }
+
+    // Play: the camera pushes in toward Slice's ring while the run loads behind it, then the run takes over from that
+    // very frame (the last picture dissolves away over the first frames), so the title is the opening shot with no black.
+    System.Collections.IEnumerator FlyIn() {
+        float seconds = Stage.PushIn();
+        var layers = new System.Collections.Generic.List<CanvasGroup>();
+        foreach (Transform child in canvasRoot.transform) {
+            if (child.gameObject == Stage.gameObject || child == Stage.Image.transform) {
+                continue;
+            }
+            var group = child.GetComponent<CanvasGroup>() ?? child.gameObject.AddComponent<CanvasGroup>();
+            group.blocksRaycasts = false;
+            layers.Add(group);
+        }
+        AsyncOperation load = SceneManager.LoadSceneAsync(MetaProgress.GameScene);
+        load.allowSceneActivation = false;
+        float start = Time.unscaledTime;
+        while (Time.unscaledTime - start < seconds || load.progress < 0.9f) {
+            float fade = 1f - Mathf.Clamp01((Time.unscaledTime - start) / 0.3f);
+            for (int i = 0; i < layers.Count; i++) {
+                if (layers[i] != null) {
+                    layers[i].alpha = fade;
+                }
+            }
+            if (Time.unscaledTime - start > 20f) {
+                break;
+            }
+            yield return null;
+        }
+        // The paper sheet and ENTER stamp cover the hand-over, so the run opens from the page turning, not a cut.
+        RenderTexture picture = Stage.TakePicture();
+        ScreenTransition.Go(ScreenTransition.Kind.Enter, () => {
+            MenuHandoff.Begin(picture);
+            load.allowSceneActivation = true;
+        }, true);
     }
 
     void OpenCampaign() {
@@ -231,6 +363,24 @@ public class MainMenu : MonoBehaviour {
 
     void OpenSettings() {
         SettingsPanel.Open(null);
+    }
+
+    void OpenShop() {
+        if (shopLayer == null) {
+            return;
+        }
+        shopOpen = true;
+        shopLayer.SetActive(true);
+        tab = TabUpgrades;
+        page = 0;
+        Refresh();
+    }
+
+    void CloseShop() {
+        shopOpen = false;
+        if (shopLayer != null) {
+            shopLayer.SetActive(false);
+        }
     }
 
     void LowerStart() {
@@ -273,17 +423,19 @@ public class MainMenu : MonoBehaviour {
             blocks[t].Clear();
         }
         // Pieces only some layouts have: forget the last build's.
-        quoteText = null;
         art = null;
+        Stage = null;
         flashRow = -1;
+        shopOpen = false;
+        ShopButton = null;
 
         // The entrance plays once; turning a phone rebuilds the menu without replaying it.
         builtAt = builtOnce ? -10f : Time.unscaledTime;
         builtOnce = true;
         cuePaper = builtAt < 0f;
-        quoteAt = Time.unscaledTime + 5.5f;
 
-        Texture2D artTexture = Resources.Load<Texture2D>("UI/MenuArt");
+        // The painted key art is retired: the first screen is the live render of the 3D cast (MenuStage), one look with the night field.
+        Texture2D artTexture = null;
         BuildBackdrop(canvasGo.transform, artTexture);
 
         // Everything else sits inside the screen's safe area, with a margin.
@@ -298,124 +450,103 @@ public class MainMenu : MonoBehaviour {
         float h = size.y - inset.z - inset.w - margin * 2f;
 
         laterShown = MetaProgress.MaxStartWave() >= 10;
-        hint = UiFit.Touch ? "Campaign tells the story. Arcade is the wave defense. Swipe the case file to turn pages." : "Campaign (C) is the story; Arcade (Enter) is the wave defense. Arrows turn the pages; Settings is S.";
-        if (builtMode == UiMode.Tall) {
-            BuildTall(desk, w, h);
-        } else {
-            BuildSide(desk, w, h);
-        }
+        BuildHome(desk, w, h);
+
+        // The shop sits over the home screen, built whole but hidden until Shop is pressed (and Shop is only offered after a first run).
+        var layer = Node(canvasGo.transform, "Shop Layer");
+        Stretch(layer);
+        var dim = Fill(layer, new Color(Night.r, Night.g, Night.b, 0.86f));
+        dim.raycastTarget = true;
+        Stretch(dim.rectTransform);
+        var shopDesk = Node(layer, "Shop Desk");
+        shopDesk.anchorMin = Vector2.zero;
+        shopDesk.anchorMax = Vector2.one;
+        shopDesk.offsetMin = desk.offsetMin;
+        shopDesk.offsetMax = desk.offsetMax;
+        BuildShop(shopDesk, w, h);
+        shopLayer = layer.gameObject;
+        shopLayer.SetActive(false);
     }
 
-    // Desktop and phones held sideways: the run setup on the left, the case file on the right.
-    void BuildSide(RectTransform desk, float w, float h) {
+    // The first screen: the logo, one big Play (Arcade from wave 1), Campaign, and small Settings and Shop. Nothing to read.
+    void BuildHome(RectTransform desk, float w, float h) {
         bool desktop = !compact;
-        float gap = desktop ? 60f : 16f;
-        float left = desktop ? Mathf.Clamp(w * 0.36f, 520f, 660f) : Mathf.Clamp(w * 0.4f, 420f, 560f);
-        float card = desktop ? Mathf.Clamp(w - left - gap, 640f, 880f) : w - left - gap;
-        card = Mathf.Min(card, w - left - gap);
+        bool tall = builtMode == UiMode.Tall;
+        float colW = tall ? Mathf.Min(w, 640f) : desktop ? Mathf.Clamp(w * 0.36f, 520f, 620f) : Mathf.Clamp(w * 0.42f, 420f, 560f);
+        float x0 = tall ? (w - colW) * 0.5f : 0f;
 
-        // Shade behind the left column so its words read over the art.
-        var shade = Shade(desk.parent, new Color(Night.r, Night.g, Night.b, 0.82f), new Color(Night.r, Night.g, Night.b, 0f), true);
-        shade.anchorMin = Vector2.zero;
-        shade.anchorMax = new Vector2(0f, 1f);
-        shade.pivot = new Vector2(0f, 0.5f);
-        shade.anchoredPosition = Vector2.zero;
-        shade.sizeDelta = new Vector2(left + (desktop ? 340f : 120f), 0f);
+        // Shade behind the column so the logo and buttons read over the art.
+        RectTransform shade;
+        if (tall) {
+            shade = Shade(desk.parent, new Color(Night.r, Night.g, Night.b, 0.85f), new Color(Night.r, Night.g, Night.b, 0f), false);
+            shade.anchorMin = Vector2.zero;
+            shade.anchorMax = new Vector2(1f, 0f);
+            shade.pivot = new Vector2(0.5f, 0f);
+            shade.anchoredPosition = Vector2.zero;
+            shade.sizeDelta = new Vector2(0f, size.y * 0.7f);
+        } else {
+            shade = Shade(desk.parent, new Color(Night.r, Night.g, Night.b, 0.82f), new Color(Night.r, Night.g, Night.b, 0f), true);
+            shade.anchorMin = Vector2.zero;
+            shade.anchorMax = new Vector2(0f, 1f);
+            shade.pivot = new Vector2(0f, 0.5f);
+            shade.anchoredPosition = Vector2.zero;
+            shade.sizeDelta = new Vector2(colW + (desktop ? 340f : 160f), 0f);
+        }
         shade.SetSiblingIndex(desk.GetSiblingIndex());
 
-        var column = Node(desk, "Run Setup");
-        Place(column, 0f, 0f, left, h);
-        float y = 0f;
-        y = BuildHeader(column, left, desktop ? 330f : (h >= 760f ? 200f : 168f), desktop, y);
-        y += desktop ? 26f : 12f;
-        float chipHeight = desktop ? 120f : 92f;
-        BuildChips(column, 0f, y, left, chipHeight);
-        y += chipHeight;
+        var column = Node(desk, "Front Desk");
+        Place(column, x0, 0f, colW, h);
+        float gap = compact ? 14f : 18f;
+        float playHeight = desktop ? 190f : tall ? 190f : 140f;
+        float campaignHeight = desktop ? 84f : 88f;
+        float iconHeight = desktop ? 64f : 88f;
 
-        // From the bottom up: Play and Settings, the later start, the status line.
-        float playHeight = desktop ? 170f : 150f;
-        float laterHeight = desktop ? 72f : 88f;
-        float statusHeight = desktop ? 64f : 52f;
-        float bottom = h;
-        bottom -= playHeight;
-        BuildPlayRow(column, 0f, bottom, left, playHeight);
-        if (laterShown) {
-            bottom -= (desktop ? 18f : 12f) + laterHeight;
-            BuildLater(column, 0f, bottom, left, laterHeight);
+        float bottom = h - iconHeight;
+        float iconY = bottom;
+        bottom -= gap + campaignHeight;
+        float campaignY = bottom;
+        bottom -= gap + playHeight;
+        float playY = bottom;
+
+        // The logo takes the room above Play.
+        float room = Mathf.Max(100f, playY - gap);
+        // Never bigger than Play, so Play is the largest thing on the screen.
+        float logoHeight = Mathf.Min(room, playHeight - 10f);
+        var header = Node(column, "Logo");
+        Place(header, 0f, Mathf.Max(0f, (room - logoHeight) * (tall ? 0.45f : 0.25f)), colW, logoHeight);
+        BuildHeader(header, colW, logoHeight, desktop, tall);
+        // A layout rebuild (the page's pixel ratio or size settling at start) can destroy the stamp before it lands:
+        // the rebuilt menu then stamps again, sooner, instead of showing a logo that never slammed in.
+        if (builtAt >= 0f) {
+            header.gameObject.AddComponent<MenuLogoStamp>().Setup(0.55f, StampRed);
+        } else if (!MenuLogoStamp.Landed) {
+            header.gameObject.AddComponent<MenuLogoStamp>().Setup(0.15f, StampRed);
         }
-        bottom -= (desktop ? 14f : 10f) + statusHeight;
-        statusText = Label(column, hint, (int)textSmall, FontStyle.Italic, MoonSoft, 0f, bottom, left, statusHeight, TextAnchor.MiddleLeft);
-        statusText.horizontalOverflow = HorizontalWrapMode.Wrap;
-        statusText.verticalOverflow = VerticalWrapMode.Truncate;
-        statusText.resizeTextForBestFit = true;
-        statusText.resizeTextMinSize = (int)textSmall;
-        statusText.resizeTextMaxSize = (int)textBody;
 
-        // The front desk's voices, where there's room for them.
-        float spare = bottom - y;
-        if (spare >= 64f) {
-            float quoteHeight = Mathf.Min(desktop ? 110f : 70f, spare - 24f);
-            quoteText = Label(column, "", desktop ? 34 : 26, FontStyle.BoldAndItalic, Moon, 0f, y + (spare - quoteHeight) * 0.5f, left, quoteHeight, TextAnchor.MiddleLeft);
-            quoteText.verticalOverflow = VerticalWrapMode.Truncate;
-            quoteText.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.6f);
-            ShowQuote(quoteIndex);
+        PlayButton = MakeButton(column, "Play", 0f, playY, colW, playHeight, desktop ? 64 : 48, Play, true);
+        CampaignButton = MakeButton(column, "Campaign", 0f, campaignY, colW, campaignHeight, desktop ? 32 : 30, OpenCampaign);
+        float iconWidth = compact ? 200f : 190f;
+        SettingsButton = MakeButton(column, "Settings", 0f, iconY, iconWidth, iconHeight, compact ? 26 : 24, OpenSettings);
+        if (ShopUnlocked) {
+            ShopButton = MakeButton(column, "Shop", iconWidth + gap, iconY, iconWidth, iconHeight, compact ? 26 : 24, OpenShop);
         }
-        Enter(column, new Vector2(-50f, 0f), 0f);
-
-        var file = BuildCaseFile(desk, w - card, 0f, card, h);
-        Enter(file, new Vector2(60f, 0f), 0.12f);
+        Enter(PlayButton.GetComponent<RectTransform>(), new Vector2(0f, -24f), 1.05f);
+        Enter(CampaignButton.GetComponent<RectTransform>(), new Vector2(0f, -24f), 1.12f);
+        Enter(SettingsButton.GetComponent<RectTransform>(), new Vector2(0f, -24f), 1.18f);
+        if (ShopButton != null) {
+            Enter(ShopButton.GetComponent<RectTransform>(), new Vector2(0f, -24f), 1.18f);
+        }
     }
 
-    // A phone held upright: the title and numbers on top, the case file in the middle, Play at the bottom.
-    void BuildTall(RectTransform desk, float w, float h) {
-        var shade = Shade(desk.parent, new Color(Night.r, Night.g, Night.b, 0f), new Color(Night.r, Night.g, Night.b, 0.75f), false);
-        shade.anchorMin = new Vector2(0f, 1f);
-        shade.anchorMax = Vector2.one;
-        shade.pivot = new Vector2(0.5f, 1f);
-        shade.anchoredPosition = Vector2.zero;
-        shade.sizeDelta = new Vector2(0f, 560f);
-        shade.SetSiblingIndex(desk.GetSiblingIndex());
-
-        var top = Node(desk, "Run Setup");
-        Place(top, 0f, 0f, w, h);
-        float y = BuildHeader(top, w, h >= 1300f ? 230f : 168f, false, 0f);
-        y += 14f;
-        BuildChips(top, 0f, y, w, 92f);
-        y += 92f + 14f;
-
-        float bottom = h;
-        bottom -= 150f;
-        BuildPlayRow(top, 0f, bottom, w, 150f);
-        if (laterShown) {
-            bottom -= 12f + 88f;
-            BuildLater(top, 0f, bottom, w, 88f);
-        }
-        bottom -= 8f + 52f;
-        statusText = Label(top, hint, (int)textSmall, FontStyle.Italic, MoonSoft, 0f, bottom, w, 52f, TextAnchor.MiddleCenter);
-        statusText.horizontalOverflow = HorizontalWrapMode.Wrap;
-        statusText.verticalOverflow = VerticalWrapMode.Truncate;
-        statusText.resizeTextForBestFit = true;
-        statusText.resizeTextMinSize = (int)textSmall;
-        statusText.resizeTextMaxSize = (int)textBody;
-        bottom -= 12f;
-        Enter(top, new Vector2(0f, 40f), 0f);
-
-        var file = BuildCaseFile(desk, 0f, y, w, Mathf.Max(300f, bottom - y));
-        Enter(file, new Vector2(0f, -50f), 0.12f);
-    }
-
-    // The department's name, the game's title in gold leaf, and the tagline. Returns where it ends.
-    float BuildHeader(RectTransform parent, float w, float height, bool desktop, float y) {
-        float kicker = desktop ? 26f : 24f;
-        var dept = Label(parent, "THE  PLACE  DEPARTMENT", (int)kicker, FontStyle.Bold, Moon, 0f, y, w, kicker + 8f, TextAnchor.UpperLeft);
-        dept.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.7f);
-        var rule = Fill(parent, new Color(StampRed.r, StampRed.g, StampRed.b, 0.95f));
-        Place(rule.rectTransform, 0f, y + kicker + 12f, desktop ? 150f : 110f, 4f);
-        y += kicker + 22f;
-
-        float tagHeight = desktop ? 64f : 52f;
-        float titleBox = Mathf.Max(70f, height - (kicker + 22f) - tagHeight);
-        var title = Label(parent, "BREAKING THROUGH", desktop ? 120 : 96, FontStyle.Bold, Color.white, 0f, y, w, titleBox, TextAnchor.UpperLeft);
+    // The game's title in gold leaf, or the generated logo. It fills the box it is given.
+    void BuildHeader(RectTransform parent, float w, float height, bool desktop, bool centered) {
+        var anchor = centered ? TextAnchor.MiddleCenter : TextAnchor.MiddleLeft;
+        var dept = Label(parent, "THE PLACE DEPARTMENT", desktop ? 40 : 34, FontStyle.Bold, Moon, 0f, 0f, w, height * 0.2f, anchor);
+        dept.resizeTextForBestFit = true;
+        dept.resizeTextMinSize = 20;
+        dept.resizeTextMaxSize = desktop ? 40 : 34;
+        dept.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.8f);
+        var title = Label(parent, "BREAKING THROUGH", desktop ? 120 : 96, FontStyle.Bold, Color.white, 0f, height * 0.2f, w, height * 0.8f, anchor);
         title.verticalOverflow = VerticalWrapMode.Truncate;
         title.resizeTextForBestFit = true;
         title.resizeTextMinSize = 36;
@@ -430,74 +561,35 @@ public class MainMenu : MonoBehaviour {
         var drop = title.gameObject.AddComponent<Shadow>();
         drop.effectColor = new Color(0f, 0f, 0f, 0.65f);
         drop.effectDistance = new Vector2(4f, -6f);
-        Sprite logoArt = UiArt.Logo;
-        if (logoArt != null) {
-            // The generated logo (Docs/UiArt.md) takes the title's box; the text stays (hidden) as the fallback and for readers.
-            title.enabled = false;
-            var logo = Fill(parent, Color.white);
-            UiArt.Show(logo, logoArt);
-            logo.rectTransform.anchorMin = new Vector2(0f, 1f);
-            logo.rectTransform.anchorMax = new Vector2(0f, 1f);
-            logo.rectTransform.pivot = new Vector2(0f, 1f);
-            logo.rectTransform.anchoredPosition = new Vector2(0f, -y);
-            logo.rectTransform.sizeDelta = new Vector2(w, titleBox);
-        }
-        y += titleBox;
-
-        var tag = Label(parent, "Where things that should not exist are given an address.", desktop ? 26 : 22, FontStyle.Italic, Gold, 0f, y, w, tagHeight, TextAnchor.UpperLeft);
-        tag.verticalOverflow = VerticalWrapMode.Truncate;
-        tag.resizeTextForBestFit = true;
-        tag.resizeTextMinSize = (int)textSmall;
-        tag.resizeTextMaxSize = desktop ? 26 : 22;
-        tag.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.7f);
-        y += tagHeight;
-
-        if (desktop) {
-            // Stamped beside the department's name, clear of the title.
-            var open = Stamp(parent, "NOW OPEN", 30, StampRed, new Vector2(w - 110f, -22f), new Vector2(190f, 50f), -9f, 0.9f);
-            open.Slam(builtAt < 0f ? -1f : 1.3f, builtAt < 0f);
-        }
-        return y;
+        // The title is set in the typewriter face the rest of the UI uses; the painted logo no longer replaces it.
+        dept.font = UiSkin.Font(UiSkin.FontRole.Label);
+        title.font = UiSkin.Font(UiSkin.FontRole.Label);
     }
 
-    // Three counters under the title: coins, the best wave and the ticket now serving.
-    void BuildChips(RectTransform parent, float x, float y, float w, float h) {
+    // The shop: coins and the best wave on top with Close, the later start, then the case file with the upgrades, the briefing and the last run.
+    void BuildShop(RectTransform desk, float w, float h) {
+        float panelW = compact ? w : Mathf.Min(w, 1000f);
+        float x0 = (w - panelW) * 0.5f;
         float gap = compact ? 10f : 14f;
-        float chip = (w - gap * 2f) / 3f;
-        coinText = Chip(parent, "COINS", Gold, x, y, chip, h);
-        bestText = Chip(parent, "BEST", Glass, x + chip + gap, y, chip, h);
-        nextText = Chip(parent, "TICKET", Moon, x + (chip + gap) * 2f, y, chip, h);
-        nextText.text = "No. " + (MetaProgress.BestWave + 1).ToString("000");
-    }
-
-    Text Chip(RectTransform parent, string caption, Color tint, float x, float y, float w, float h) {
-        var chip = Framed(parent, ChipFill, BrassDim, x, y, w, h);
-        float captionSize = 20f;
-        Label(chip, caption, (int)captionSize, FontStyle.Bold, MoonSoft, 14f, 10f, w - 28f, captionSize + 6f, TextAnchor.UpperLeft);
-        var value = Label(chip, "", compact ? 36 : 48, FontStyle.Bold, tint, 14f, captionSize + 14f, w - 28f, h - captionSize - 22f, TextAnchor.MiddleLeft);
-        value.verticalOverflow = VerticalWrapMode.Truncate;
-        value.horizontalOverflow = HorizontalWrapMode.Wrap;
-        value.resizeTextForBestFit = true;
-        value.resizeTextMinSize = 22;
-        value.resizeTextMaxSize = compact ? 36 : 48;
-        return value;
-    }
-
-    // The mode select: Campaign (the case files) and Arcade (today's wave defense, the big red stamp), then Settings.
-    void BuildPlayRow(RectTransform parent, float x, float y, float w, float h) {
-        float gap = compact ? 10f : 14f;
-        float bigHeight = Mathf.Round((h - gap) * 0.58f);
-        float smallHeight = h - gap - bigHeight;
-        float smallY = y + bigHeight + gap;
-        float arcadeWidth = Mathf.Round((w - gap) * 0.64f);
-        int size = compact ? 30 : 36;
-        // Campaign is the front door: the big red stamp on its own row. Arcade and Settings sit under it.
-        CampaignButton = MakeButton(parent, "Campaign", x, y, w, bigHeight, size + 4, OpenCampaign, true);
-        var play = MakeButton(parent, "Arcade", x, smallY, arcadeWidth, smallHeight, compact ? 28 : 30, Play, false);
-        PlayButton = play;
-        SettingsButton = MakeButton(parent, "Settings", x + arcadeWidth + gap, smallY, w - arcadeWidth - gap, smallHeight, compact ? 24 : 26, OpenSettings);
-        Enter(CampaignButton.GetComponent<RectTransform>(), new Vector2(0f, -24f), 0.4f);
-        Enter(play.GetComponent<RectTransform>(), new Vector2(0f, -24f), 0.45f);
+        float strip = compact ? 88f : 64f;
+        float closeWidth = compact ? 170f : 150f;
+        float y = 0f;
+        statusText = Label(desk, "", compact ? 24 : 28, FontStyle.Bold, Gold, x0, y, panelW - closeWidth - gap, strip, TextAnchor.MiddleLeft);
+        statusText.horizontalOverflow = HorizontalWrapMode.Wrap;
+        statusText.verticalOverflow = VerticalWrapMode.Truncate;
+        statusText.resizeTextForBestFit = true;
+        statusText.resizeTextMinSize = (int)textSmall;
+        statusText.resizeTextMaxSize = compact ? 24 : 28;
+        statusText.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.6f);
+        coinText = statusText;
+        MakeButton(desk, "Close", x0 + panelW - closeWidth, y, closeWidth, strip, compact ? 26 : 24, CloseShop, true);
+        y += strip + gap;
+        if (laterShown) {
+            float laterHeight = compact ? 88f : 64f;
+            BuildLater(desk, x0, y, panelW, laterHeight);
+            y += laterHeight + gap;
+        }
+        BuildCaseFile(desk, x0, y, panelW, Mathf.Max(300f, h - y));
     }
 
     // The later start: -10, +10 and what the run will cost.
@@ -753,6 +845,9 @@ public class MainMenu : MonoBehaviour {
         if (body == null) {
             return;
         }
+        if (!shopOpen) {
+            OpenShop();
+        }
         tab = TabUpgrades;
         page = Mathf.Clamp(index, 0, PagesOf(TabUpgrades) - 1);
         ShowPage(0);
@@ -836,7 +931,7 @@ public class MainMenu : MonoBehaviour {
         int cost = MetaProgress.Cost(info.Id);
         if (MetaProgress.TryBuy(info.Id)) {
             RunAnalytics.ShopBuy(info, cost);
-            GameAudio.Play("coin", 0.55f);
+            GameAudio.PlayUI("coin", 0.55f);
             flashRow = index;
             flash = 1f;
             if (stamps[index] != null) {
@@ -882,8 +977,10 @@ public class MainMenu : MonoBehaviour {
             raiseStart.interactable = startWave + 10 <= maxStart && MetaProgress.Coins >= startWave + 10;
         }
 
-        coinText.text = MetaProgress.Coins.ToString();
-        bestText.text = MetaProgress.BestWave > 0 ? MetaProgress.BestWave.ToString() : "None";
+        hint = "Coins " + MetaProgress.Coins + "   ·   Best wave " + (MetaProgress.BestWave > 0 ? MetaProgress.BestWave.ToString() : "none");
+        if (statusText != null && statusUntil <= 0f) {
+            statusText.text = hint;
+        }
 
         for (int i = 0; i < MetaProgress.Catalog.Length; i++) {
             UpgradeInfo info = MetaProgress.Catalog[i];
@@ -910,7 +1007,14 @@ public class MainMenu : MonoBehaviour {
     void BuildBackdrop(Transform canvas, Texture2D texture) {
         var night = Fill(canvas, Night);
         Stretch(night.rectTransform);
-        if (texture != null) {
+        // The live Hollow fills the screen behind the menu: Wallit, Slice and the bots, the same models the run uses.
+        Stage = MenuStage.Make(canvas, Vector2.zero, Vector2.one, size.x / Mathf.Max(1f, size.y));
+        if (Stage != null && Stage.ModelsShown < 2) {
+            // The cast could not be built: fall back to the key art if the file is there.
+            Destroy(Stage.gameObject);
+            Stage = null;
+        }
+        if (Stage == null && texture != null) {
             var artGo = new GameObject("Key Art", typeof(RectTransform));
             artGo.transform.SetParent(canvas, false);
             art = artGo.AddComponent<RawImage>();
@@ -921,7 +1025,6 @@ public class MainMenu : MonoBehaviour {
             float aspect = size.x / Mathf.Max(1f, size.y);
             artWide = aspect >= artAspect ? 1f : aspect / artAspect;
             artTall = aspect >= artAspect ? artAspect / aspect : 1f;
-            // Upright phones see a slice of it: keep Wallit and Slice in it.
             artFocus = builtMode == UiMode.Tall ? 0.36f : 0.5f;
         }
         moon = Glow(canvas, new Color(0.62f, 0.74f, 1f, 0.12f), Mathf.Max(size.x, size.y) * 0.8f);
@@ -993,23 +1096,6 @@ public class MainMenu : MonoBehaviour {
         if (mistHigh != null) {
             mistHigh.anchoredPosition = new Vector2(Mathf.Sin(t * 0.03f + 2f) * size.x * 0.15f, 0f);
         }
-        if (nextText != null && builtAt > 0f && t - builtAt < 1.6f) {
-            float count = Mathf.Clamp01((t - builtAt - 0.5f) / 0.9f);
-            int shown = Mathf.RoundToInt((MetaProgress.BestWave + 1) * Mathf.SmoothStep(0f, 1f, count));
-            nextText.text = "No. " + Mathf.Max(1, shown).ToString("000");
-        }
-        if (quoteText != null && t >= quoteAt) {
-            quoteAt = t + 5.5f;
-            ShowQuote(quoteIndex + 1);
-            quoteText.gameObject.AddComponent<MenuPop>();
-        }
-    }
-
-    void ShowQuote(int index) {
-        quoteIndex = index % (Quotes.Length / 2);
-        if (quoteText != null) {
-            quoteText.text = "\"" + Quotes[quoteIndex, 1] + "\"  " + Quotes[quoteIndex, 0];
-        }
     }
 
     // ---------------------------------------------------------------- pieces
@@ -1073,6 +1159,11 @@ public class MainMenu : MonoBehaviour {
     void Enter(RectTransform rect, Vector2 offset, float delay, float scaleFrom = 1f) {
         if (builtAt < 0f) {
             return;
+        }
+        if (ComfortOptions.ReducedMotion) {
+            // Calm: a fade only.
+            offset = Vector2.zero;
+            scaleFrom = 1f;
         }
         rect.gameObject.AddComponent<MenuEntrance>().Setup(offset, delay, scaleFrom);
     }
@@ -1309,7 +1400,7 @@ public class MenuButtonFx : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
     public void OnPointerEnter(PointerEventData eventData) {
         over = true;
         if (button != null && button.interactable) {
-            GameAudio.Play("hit", 0.06f, 2f);
+            GameAudio.PlayUI("hit", 0.06f, 2f);
         }
     }
 
@@ -1362,7 +1453,8 @@ public class MenuButtonFx : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
 
 // Fades a panel or button up while it slides from an offset to where it was built.
 public class MenuEntrance : MonoBehaviour {
-    const float Length = 0.55f;
+    // A quarter second or less, on unscaled time, so the buttons are there almost at once.
+    const float Length = 0.2f;
     RectTransform rect;
     CanvasGroup group;
     Vector2 home;
@@ -1372,6 +1464,10 @@ public class MenuEntrance : MonoBehaviour {
 
     public void Setup(Vector2 from, float delay, float scaleFrom = 1f) {
         rect = (RectTransform)transform;
+        if (ComfortOptions.ReducedMotion) {
+            from = Vector2.zero;
+            scaleFrom = 1f;
+        }
         scaleStart = scaleFrom;
         group = gameObject.AddComponent<CanvasGroup>();
         group.alpha = 0f;
@@ -1506,15 +1602,122 @@ public static class MenuSfx {
 
     public static void Thunk(float volume) {
         if (Has("stamp", ref stampClip)) {
-            GameAudio.Play("stamp", volume);
+            GameAudio.PlayUI("stamp", volume);
         } else {
-            GameAudio.Play("stomp", volume * 0.5f, 1.6f);
+            GameAudio.PlayUI("stomp", volume * 0.5f, 1.6f);
         }
     }
 
     public static void Paper(float volume) {
         if (Has("paper", ref paperClip)) {
-            GameAudio.Play("paper", volume);
+            GameAudio.PlayUI("paper", volume);
+        }
+    }
+}
+
+
+// The logo slams in like a rubber stamp: it drops large, lands with a thud and an ink splat that stays behind the words.
+public class MenuLogoStamp : MonoBehaviour {
+    const float Drop = 0.16f;
+    RectTransform rect;
+    CanvasGroup group;
+    Image splat;
+    float startAt;
+    bool landed;
+    Color ink;
+    public static bool Landed { get; private set; }
+    public static float LandedAt { get; private set; }
+
+    public void Setup(float delay, Color inkColor) {
+        rect = (RectTransform)transform;
+        group = gameObject.AddComponent<CanvasGroup>();
+        group.alpha = 0f;
+        group.blocksRaycasts = false;
+        startAt = Time.unscaledTime + (ComfortOptions.ReducedMotion ? 0.2f : delay);
+        ink = inkColor;
+        Landed = false;
+        var go = new GameObject("Ink Splat", typeof(RectTransform));
+        go.transform.SetParent(transform, false);
+        go.transform.SetAsFirstSibling();
+        splat = go.AddComponent<Image>();
+        splat.raycastTarget = false;
+        splat.sprite = SplatSprite();
+        splat.color = new Color(ink.r, ink.g, ink.b, 0f);
+        var r = splat.rectTransform;
+        r.anchorMin = new Vector2(0.5f, 0.5f);
+        r.anchorMax = new Vector2(0.5f, 0.5f);
+        float size = Mathf.Max(Mathf.Max(rect.rect.width, rect.sizeDelta.x), Mathf.Max(rect.rect.height, rect.sizeDelta.y)) * 1.15f;
+        r.sizeDelta = new Vector2(size, size * 0.75f);
+        r.anchoredPosition = Vector2.zero;
+    }
+
+    static Sprite splatSprite;
+
+    // A blot with ragged edges and a few flung drops, drawn once from a radial formula (no art file).
+    static Sprite SplatSprite() {
+        if (splatSprite != null) {
+            return splatSprite;
+        }
+        const int n = 128;
+        var tex = new Texture2D(n, n, TextureFormat.RGBA32, false);
+        tex.wrapMode = TextureWrapMode.Clamp;
+        var px = new Color32[n * n];
+        for (int y = 0; y < n; y++) {
+            for (int x = 0; x < n; x++) {
+                float dx = (x - n * 0.5f) / (n * 0.5f);
+                float dy = (y - n * 0.5f) / (n * 0.5f);
+                float r = Mathf.Sqrt(dx * dx + dy * dy);
+                float a = Mathf.Atan2(dy, dx);
+                float edge = 0.5f + 0.16f * Mathf.Sin(a * 5f + 1f) + 0.1f * Mathf.Sin(a * 9f + 2f) + 0.07f * Mathf.Sin(a * 17f);
+                float alpha = Mathf.Clamp01((edge - r) / 0.05f);
+                // Flung drops out past the edge.
+                for (int k = 0; k < 7; k++) {
+                    float ka = k * 0.9f + 0.4f;
+                    float kr = 0.7f + 0.2f * Mathf.Sin(k * 3.1f);
+                    float ddx = dx - Mathf.Cos(ka) * kr;
+                    float ddy = dy - Mathf.Sin(ka) * kr;
+                    float d = Mathf.Sqrt(ddx * ddx + ddy * ddy);
+                    alpha = Mathf.Max(alpha, Mathf.Clamp01((0.06f + 0.02f * (k % 3) - d) / 0.02f));
+                }
+                px[y * n + x] = new Color32(255, 255, 255, (byte)(alpha * 255f));
+            }
+        }
+        tex.SetPixels32(px);
+        tex.Apply(false, true);
+        splatSprite = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 100f);
+        return splatSprite;
+    }
+
+    void Update() {
+        float k = (Time.unscaledTime - startAt) / Drop;
+        if (k < 0f) {
+            group.alpha = 0f;
+            return;
+        }
+        if (k < 1f) {
+            float s = Mathf.Lerp(2.6f, 1f, k * k);
+            rect.localScale = new Vector3(s, s, 1f);
+            group.alpha = Mathf.Clamp01(k * 2.5f);
+            return;
+        }
+        if (!landed) {
+            landed = true;
+            Landed = true;
+            LandedAt = Time.unscaledTime;
+            MenuSfx.Thunk(0.9f);
+            MenuSfx.Paper(0.35f);
+        }
+        float since = Time.unscaledTime - startAt - Drop;
+        float squash = 1f + Mathf.Max(0f, 0.09f * (1f - since / 0.14f));
+        rect.localScale = new Vector3(squash, squash, 1f);
+        group.alpha = 1f;
+        // The splat bursts out past the logo and settles to a stain.
+        float burst = Mathf.Clamp01(since / 0.12f);
+        splat.color = new Color(ink.r, ink.g, ink.b, Mathf.Lerp(0.85f, 0.5f, Mathf.Clamp01(since / 1.2f)) * burst);
+        splat.rectTransform.localScale = Vector3.one * Mathf.Lerp(0.6f, 1f, burst);
+        if (since > 1.3f) {
+            rect.localScale = Vector3.one;
+            enabled = false;
         }
     }
 }

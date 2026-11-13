@@ -47,6 +47,7 @@ public class Fx : MonoBehaviour {
         Make(FxKind.Note, "note", true, 60, 2.4f, -0.08f, false);
         Make(FxKind.Dust, "smoke", false, 200, 0.7f, -0.05f, false);
         Make(FxKind.Debris, "plate", false, 200, 1.3f, 0.9f, false);
+        DeptFx.Attach(gameObject);   // paper, ink, stamp and coin effects share this object
     }
 
     void OnDestroy() {
@@ -216,8 +217,9 @@ public class Fx : MonoBehaviour {
     public static int HomeRunBursts { get; private set; }
 
     // The bat landing: a soft warm flash on the bot and a small flat ring. Big for a finisher or a smash.
-    public static void Impact(Vector3 at, float scale, bool big) {
+    public static void Impact(Vector3 at, float scale, bool big, Vector3 away = default(Vector3)) {
         Impacts++;
+        DeptFx.Impact(at, scale, big ? 1 : 0, away);
         float s = Mathf.Clamp(scale, 0.6f, 4f);
         Emit(FxKind.Flash, at, 1, big ? new Color(1f, 0.86f, 0.5f, 0.95f) : new Color(1f, 0.95f, 0.8f, 0.8f), (big ? 1.5f : 0.95f) * s, 0f);
         Ring(at, (big ? 3.2f : 1.8f) * Mathf.Sqrt(s), big ? new Color(1f, 0.85f, 0.45f, 0.8f) : new Color(1f, 0.95f, 0.8f, 0.6f), big ? 0.35f : 0.25f);

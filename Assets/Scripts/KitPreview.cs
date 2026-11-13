@@ -46,7 +46,7 @@ public class KitPreview : MonoBehaviour {
 
     void Awake() {
         Instance = this;
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        font = UiSkin.Font(UiSkin.FontRole.Label);
         Report = KitValidation.Run();
         Timeline.Add("kit-report|" + Report.Summary());
         BuildLights();

@@ -88,6 +88,9 @@ public class Courier : MonoBehaviour {
     // The level puts it back at the drop, asleep, after Wallit goes down: no notice up, the next one starts from the walk.
     public void Rest() {
         DropMark();
+        if (enemy != null) {
+            enemy.EndTell(false);
+        }
         step = Step.Approach;
         clock = 0f;
     }
@@ -115,10 +118,12 @@ public class Courier : MonoBehaviour {
         if (!Angry && enemy.Health01 <= 0.5f) {
             Angry = true;
             enemy.EnterPhase2(new Color(1.45f, 0.75f, 0.3f));
+            enemy.Stagger(1.2f);   // phase two arrives on the body (after the tell, if one is running)
             Events.Add("phase2");
             BossPhases.Announce(enemy, "faster notices, it calls the crew");
+            BossVoice.OnPhase(enemy);
             Fx.Ring(transform.position, 7f, new Color(1f, 0.3f, 0.22f, 0.9f), 0.6f);
-            GameAudio.Play("stamp_heavy", 0.7f, 1.1f);
+            GameAudio.PlayAt("stamp_heavy", transform.position, 0.7f, 1.1f);
             Line(Story.CourierSecond, "courier-second");
         }
         switch (step) {
@@ -165,15 +170,17 @@ public class Courier : MonoBehaviour {
         markAt = at;
         clock = 0f;
         windTime = Angry ? WindAngry : (InLevel && Winds == 0 ? WindOpening : WindFirst);
+        BotSound.TellIn(enemy, windTime);
         healthAtWind = enemy.Health01;
         Winds++;
         Events.Add("wind|" + Winds + "|" + windTime.ToString("0.0") + "|" + (who == Aim.Wallit ? "wallit" : "slice"));
         MakeMark(at);
         enemy.Hold(windTime + 0.3f);
+        enemy.BeginTell();   // the clipboard goes up and the body rears back until the notice lands
         nextRing = 0f;
-        GameAudio.Play("clipboard_raise", 0.8f);
-        GameAudio.Play("stomp", 0.7f, 1.4f);
-        GameAudio.Play("paper", 0.6f, 1.1f);
+        GameAudio.PlayAt("clipboard_raise", transform.position, 0.8f);
+        GameAudio.PlayAt("stomp", transform.position, 0.7f, 1.4f);
+        GameAudio.PlayAt("paper", transform.position, 0.6f, 1.1f);
         if (!toldTip) {
             toldTip = true;
             // Slice names it (a banked clip); the screen only names the verbs.
@@ -212,6 +219,7 @@ public class Courier : MonoBehaviour {
             return;
         }
         if (clock >= windTime) {
+            BotSound.Hit(enemy);
             Land(slice);
         }
     }
@@ -223,11 +231,13 @@ public class Courier : MonoBehaviour {
         DropMark();
         step = Step.Recover;
         clock = DazeSeconds;
+        enemy.EndTell(false);
+        enemy.Stagger(DazeSeconds * 0.6f);
         enemy.Hold(DazeSeconds);
         Fx.Ring(transform.position, 6f, new Color(1f, 1f, 1f, 0.8f), 0.5f);
         Fx.Emit(FxKind.Flash, transform.position + Vector3.up * 1.2f, 1, new Color(1f, 0.95f, 0.8f, 0.7f), 2.2f, 0f);
-        GameAudio.Play("batcrack", 0.8f, 0.8f);
-        GameAudio.Play("paper_slide", 0.6f, 0.9f);
+        GameAudio.PlayAt("batcrack", transform.position, 0.8f, 0.8f);
+        GameAudio.PlayAt("paper_slide", transform.position, 0.6f, 0.9f);
         UpgradeLook.Say("Notice dropped!", 1.8f, 160f);
         if (!toldBroken && InLevel) {
             toldBroken = Line(Story.CourierBroken, "courier-broken");
@@ -235,7 +245,7 @@ public class Courier : MonoBehaviour {
     }
 
     void Land(Musician slice) {
-        GameAudio.Play("paper_flutter", 0.8f);
+        GameAudio.PlayAt("paper_flutter", transform.position, 0.8f);
         Vector3 at = markAt;
         bool wallitIn = false;
         PlayerGrowth player = PlayerGrowth.Instance;
@@ -244,7 +254,7 @@ public class Courier : MonoBehaviour {
         }
         Fx.Ring(at, MarkRadius * 2.4f, new Color(1f, 0.35f, 0.2f, 0.9f), 0.5f);
         Fx.Emit(FxKind.Dust, at + Vector3.up * 0.3f, 14, new Color(0.6f, 0.55f, 0.48f, 0.6f), 1.4f, 2.4f, 2f);
-        GameAudio.Play("stamp", 0.9f, 0.9f);
+        GameAudio.PlayAt("stamp", transform.position, 0.9f, 0.9f);
         switch (aim) {
             case Aim.Circle:
                 if (wallitIn) {
@@ -278,6 +288,7 @@ public class Courier : MonoBehaviour {
                 break;
         }
         DropMark();
+        enemy.EndTell(true);
         step = Step.Recover;
         clock = Angry ? RecoverSeconds * 0.7f : RecoverSeconds;
         enemy.Hold(clock);

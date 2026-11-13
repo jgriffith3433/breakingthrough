@@ -24,6 +24,11 @@ public class WaveDirector : MonoBehaviour {
     // Shown on the menu after a run ends. Lives only until the game closes.
     public static string LastRun { get; private set; }
 
+    // = and - skip waves in a debug build. The playtest bot's named setup shortcut uses them too, except while the
+    // first-screen scenario proves a release build ignores them (ReleaseKeysProbe).
+    public static bool ReleaseKeysProbe;
+    public static bool WaveKeysAllowed { get { return !ReleaseKeysProbe && (Debug.isDebugBuild || Playtest.Running); } }
+
     public static string EventName {
         get { return EventLine(Event); }
     }
@@ -78,6 +83,7 @@ public class WaveDirector : MonoBehaviour {
     bool pausedGame;
     bool record;
     float returnReadyAt;
+    float leavingAt;
     bool bossPending;
     float goldenIn = -1f;
     StoryScreen story;
@@ -92,6 +98,8 @@ public class WaveDirector : MonoBehaviour {
     GameObject lostPanel;
     RectTransform lostRect;
     Text lostBody;
+    RunEndScreen runEnd;
+    bool runEndRetry;
     CanvasScaler hudScaler;
     RectTransform hudPurse;
     UiMode hudMode;
@@ -110,6 +118,7 @@ public class WaveDirector : MonoBehaviour {
         Waiting = false;
         Event = WaveEvent.None;
         MetaProgress.BeginRun();
+        CinematicDirector.NewRun();   // Arcade's boss entrances play again this run
         FortStock.BeginRun();
         Combo.BeginRun();
         Combat.BeginRun();
@@ -134,7 +143,18 @@ public class WaveDirector : MonoBehaviour {
         BeginIntro();
         if (Wave == 1 && !introShown) {
             introShown = true;
-            story.ShowIntro(null);
+            // No text pages: the first seconds are the cold open (ColdOpen.cs), once per browser. The first Yo Bot is
+            // held until Wallit lands, or until any input ends the open (ColdOpenReleased).
+            if (ColdOpen.TryBegin()) {
+                phaseLeft = ColdOpen.MaxSeconds;
+            }
+        }
+    }
+
+    // The cold open lets the first Yo Bot go: the intro beat shrinks to the usual short wave-1 pause.
+    public void ColdOpenReleased() {
+        if (phase == Phase.Intro) {
+            phaseLeft = Mathf.Min(phaseLeft, 0.35f);
         }
     }
 
@@ -156,15 +176,31 @@ public class WaveDirector : MonoBehaviour {
             LayoutHud();
         }
         if (phase == Phase.Lost) {
-            if (Time.unscaledTime >= returnReadyAt && PlayInput.AnyKeyDown) {
+            if (leavingAt <= 0f && runEnd != null) {
+                runEnd.TickLeave();
+            }
+            if (leavingAt > 0f) {
+                if (Time.unscaledTime < leavingAt) {
+                    return;
+                }
+                leavingAt = 0f;
                 Time.timeScale = 1f;
                 pausedGame = false;
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
+                if (runEndRetry) {
+                    runEndRetry = false;
+                    ScreenTransition.Load(ScreenTransition.Kind.Returned, MetaProgress.GameScene);
+                    return;
+                }
+                if (ChapterRun.Instance != null) {
+                    ChapterRun.Instance.ToMenu();
+                    return;
+                }
                 string scene = Application.CanStreamedLevelBeLoaded(MetaProgress.MenuScene)
                     ? MetaProgress.MenuScene
                     : MetaProgress.GameScene;
-                SceneManager.LoadScene(scene);
+                ScreenTransition.Load(ScreenTransition.Kind.StruckOff, scene);
             }
             return;
         }
@@ -178,13 +214,16 @@ public class WaveDirector : MonoBehaviour {
             return;
         }
 
-        if (PlayInput.GetKeyDown(KeyCode.KeypadPlus) || PlayInput.GetKeyDown(KeyCode.Equals)) {
-            GoToWave(Wave + 1);
-            return;
-        }
-        if (PlayInput.GetKeyDown(KeyCode.KeypadMinus) || PlayInput.GetKeyDown(KeyCode.Minus)) {
-            GoToWave(Mathf.Max(1, Wave - 1));
-            return;
+        // The wave-skip keys are a testing tool: a release build ignores them.
+        if (WaveKeysAllowed) {
+            if (PlayInput.GetKeyDown(KeyCode.KeypadPlus) || PlayInput.GetKeyDown(KeyCode.Equals)) {
+                GoToWave(Wave + 1);
+                return;
+            }
+            if (PlayInput.GetKeyDown(KeyCode.KeypadMinus) || PlayInput.GetKeyDown(KeyCode.Minus)) {
+                GoToWave(Mathf.Max(1, Wave - 1));
+                return;
+            }
         }
 
         if (phase == Phase.Intro) {
@@ -213,7 +252,8 @@ public class WaveDirector : MonoBehaviour {
 
     void BeginIntro() {
         phase = Phase.Intro;
-        phaseLeft = Wave == 1 ? 1.0f : 1.35f;
+        // Wave 1: short beat so the first Yo Bot is rushing in within a few seconds of Arcade start.
+        phaseLeft = Wave == 1 ? 0.35f : 1.35f;
         pending.Clear();
         IsBuilding = false;
         spawnAngle = Random.Range(0f, 360f);
@@ -226,7 +266,7 @@ public class WaveDirector : MonoBehaviour {
         phase = Phase.Combat;
         RollEvent();
         FillPending(Wave);
-        spawnIn = 0.2f;
+        spawnIn = Wave == 1 ? 0f : 0.2f;
         spawnSerial = 0;
         debutAnnounced = false;
         IsBuilding = false;
@@ -236,10 +276,14 @@ public class WaveDirector : MonoBehaviour {
             : -1f;
         RunLog.BeginWave();
         RunAnalytics.WaveStart(Wave, Event, pending.Count);
-        SliceVoice.OnWave(Wave);
-        WallitVoice.OnWave(Wave);
-        story.StartWave(Wave);
-        if (Event != WaveEvent.None) {
+        if (Wave == 1 && ColdOpen.PlayedThisRun) {
+            // The cold open already spent the one voiced line; wave 1 adds no beat text and no second voice.
+        } else {
+            SliceVoice.OnWave(Wave);
+            WallitVoice.OnWave(Wave);
+            story.StartWave(Wave);
+        }
+        if (Event != WaveEvent.None && Wave % 10 != 0) {   // a boss wave's entrance owns the screen; the HUD still lists the event
             UpgradeLook.Say(EventName, 2.6f, 230f);
             GameAudio.Play("launch", 0.4f, 0.7f);
         }
@@ -305,13 +349,25 @@ public class WaveDirector : MonoBehaviour {
         Enemy enemy = go.AddComponent<Enemy>();
         enemy.ApplyBot(def);
         enemy.HitsToDrop = CampaignGrade.Health(Mathf.Max(1, Mathf.RoundToInt(enemy.HitsToDrop * HealthMult)));
+        if (def.Kind == BotKind.SpiderBot && Wave < 30) {
+            enemy.HitsToDrop = Mathf.Max(1, Mathf.RoundToInt(enemy.HitsToDrop * Tuning.ActSpiderHealth));
+        }
         if (rollElite && def.Kind == BotKind.YoBot) {
             float chance = Tuning.EliteChance(Wave) * (Event == WaveEvent.EliteSurge ? 3f : 1f);
             if (Random.value < chance) {
                 enemy.MakeElite(PickTrait());
             }
+        } else if (rollElite && def.Kind != BotKind.YoBot && Random.value < Tuning.MixElite(Wave)) {
+            enemy.MakeElite(PickMixTrait());
+            enemy.HitsToDrop = Mathf.Max(1, Mathf.RoundToInt(enemy.HitsToDrop * Tuning.MixEliteToughness));
         }
         return enemy;
+    }
+
+    // Act 3's plated, mega and Spider Bot elites keep to traits that only change how they move and hit.
+    BotTrait PickMixTrait() {
+        BotTrait[] traits = { BotTrait.Sprinter, BotTrait.Bruiser, BotTrait.Charger };
+        return traits[Random.Range(0, traits.Length)];
     }
 
     BotTrait PickTrait() {
@@ -348,13 +404,19 @@ public class WaveDirector : MonoBehaviour {
             }
         }
 
-        if (pending.Count == 0 && goldenIn < 0f && !AnyAlive() && (Musician.Instance == null || Musician.Instance.Alive)) {
+        // Hold the wave clear (and the next act banner / finale) until an Arcade boss payoff finishes.
+        if (pending.Count == 0 && goldenIn < 0f && !AnyAlive() && !BossSetPiece.PayingOff
+            && (Musician.Instance == null || Musician.Instance.Alive)) {
             cleared = Wave;
             UpgradeLook.WaveCleared(cleared);
+            WallitVoice.OnWaveCleared(cleared);
             RunLog.EndWave(Wave, "cleared");
             RunAnalytics.WaveEnd(Wave, "complete");
             MetaProgress.AddCoins(Tuning.CoinsForWave(Wave), Vector3.zero);
             Pickups.Vacuum();
+            if (ChapterRun.Instance == null && cleared <= Tuning.WaveCardsUntil) {
+                RunBoons.AddWaveCard();
+            }
             if (Musician.Instance != null) {
                 Musician.Instance.Heal(6 * RunBoons.Rank(BoonId.Ovation));
             }
@@ -404,7 +466,7 @@ public class WaveDirector : MonoBehaviour {
         string scene = Application.CanStreamedLevelBeLoaded(MetaProgress.MenuScene)
             ? MetaProgress.MenuScene
             : MetaProgress.GameScene;
-        SceneManager.LoadScene(scene);
+        ScreenTransition.Load(ScreenTransition.Kind.Filed, scene);
     }
 
     // Playtest setup only: drops the wave's waiting bots except the boss kind, so the finale scenario reaches the boss.
@@ -423,6 +485,10 @@ public class WaveDirector : MonoBehaviour {
         if (phase == Phase.Lost) {
             return;
         }
+        Enemy boss = BossVoice.LiveBoss();
+        if (boss != null) {
+            BossVoice.OnWallitDown(boss);
+        }
         Lose();
     }
 
@@ -431,8 +497,9 @@ public class WaveDirector : MonoBehaviour {
         Time.timeScale = 1f;
         pausedGame = false;
         IsLost = false;
+        leavingAt = 0f;
         if (lostPanel != null) {
-            lostPanel.SetActive(false);
+            PanelFx.Hide(lostPanel, "gameover");
         }
         if (Musician.Instance != null) {
             Musician.Instance.ReviveForWave();
@@ -462,6 +529,20 @@ public class WaveDirector : MonoBehaviour {
         return wave >= 5 && (wave - 5) % 10 == 0;
     }
 
+    // The playtest's shortcut to the game-over panel (a named setup event; the real way is Slice's bar emptying).
+    public void DevLose() {
+        if (!IsLost) {
+            Lose();
+        }
+    }
+
+    // RunEndScreen asked to leave: ease the panel out, then Retry reloads the game scene or Menu goes back.
+    public void BeginRunEndLeave(bool retry) {
+        runEndRetry = retry;
+        leavingAt = Time.unscaledTime + PanelFx.CloseSeconds;
+        PanelFx.Hide(lostPanel, "gameover");
+    }
+
     void Lose() {
         if (phase == Phase.Chapter) {
             LoseChapter();
@@ -476,24 +557,35 @@ public class WaveDirector : MonoBehaviour {
         }
         pausedGame = true;
         Time.timeScale = 0f;
-        lostPanel.SetActive(true);
-        returnReadyAt = Time.unscaledTime + 0.4f;
-        string waves = cleared <= 0
-            ? "No waves cleared."
-            : cleared == 1 ? "Cleared 1 wave." : "Cleared " + cleared + " waves.";
-        string bestLine = record
-            ? "New best: " + MetaProgress.BestWave + "."
-            : MetaProgress.BestWave > 0 ? "Best cleared: " + MetaProgress.BestWave + "." : "No best yet.";
-        string earned = MetaProgress.CoinsThisRun == 0
-            ? "No new coins."
-            : "+" + MetaProgress.CoinsThisRun + (MetaProgress.CoinsThisRun == 1 ? " coin this run." : " coins this run.");
-        string purse = MetaProgress.Coins == 1 ? "1 coin to spend." : MetaProgress.Coins + " coins to spend.";
-        string run = "Level " + RunBoons.Level + "   ·   Best streak " + Combo.Best;
+        returnReadyAt = Time.unscaledTime + ScreenTransition.CoverSeconds + 0.4f;
         string boons = RunBoons.Summary();
+        MetaProgress.NoteRunFinished();
         LastRun = "Fell on wave " + Wave + ", level " + RunBoons.Level + ", streak " + Combo.Best + ", +" + MetaProgress.CoinsThisRun + " coins.\n" + boons;
         RunAnalytics.MusicianDown(Wave);
-        lostBody.text = waves + "\n" + bestLine + "\n" + run + "\n\n" + earned + "\n" + purse
-            + (string.IsNullOrEmpty(boons) ? "" : "\n\n<size=22>" + boons + "</size>") + (UiFit.Touch ? "\n\nTap to go on" : "\n\nPress any key");
+        bool nearly = Musician.Instance != null && Musician.Instance.NearlyFell;
+        // The sheet and a STRUCK OFF stamp turn the page; the run-end panel opens under it and the peel shows it.
+        ScreenTransition.Go(ScreenTransition.Kind.StruckOff, () => ShowRunEnd(nearly));
+    }
+
+    void ShowRunEnd(bool nearly) {
+        PanelFx.Show(lostPanel, "gameover", lostRect);
+        if (lostBody != null) {
+            lostBody.gameObject.SetActive(false);
+        }
+        if (runEnd == null) {
+            runEnd = RunEndScreen.Ensure(lostPanel.transform);
+        }
+        runEnd.OpenArcade(
+            Wave,
+            cleared,
+            MetaProgress.CoinsThisRun,
+            record,
+            nearly,
+            RunAnalytics.LastKilledBoss,
+            RunAnalytics.LastKilledBy,
+            BatEquipment.HomeRuns,
+            RunLog.RunKills,
+            BatEquipment.SmashHits);
     }
 
     // A Campaign chapter's bot, placed on a ring round the circle (the same ground check and drop as a wave's bots).
@@ -580,22 +672,31 @@ public class WaveDirector : MonoBehaviour {
         }
         pausedGame = true;
         Time.timeScale = 0f;
-        lostPanel.SetActive(true);
-        returnReadyAt = Time.unscaledTime + 0.4f;
+        returnReadyAt = Time.unscaledTime + ScreenTransition.CoverSeconds + 0.4f;
         ChapterRun.Instance.OnLost();
-        lostBody.text = "Slice fell.\n" + ChapterRun.Instance.Title + " is still open.\nThe file keeps its place."
-            + (UiFit.Touch ? "\n\nTap to go on" : "\n\nPress any key");
+        string lostWords = "Slice fell.\n" + ChapterRun.Instance.Title + " is still open.\nThe file keeps its place.";
+        ScreenTransition.Go(ScreenTransition.Kind.StruckOff, () => {
+            PanelFx.Show(lostPanel, "gameover", lostRect);
+            if (lostBody != null) {
+                lostBody.gameObject.SetActive(false);
+            }
+            if (runEnd == null) {
+                runEnd = RunEndScreen.Ensure(lostPanel.transform);
+            }
+            runEnd.OpenChapter(lostWords);
+        });
     }
 
     float SpawnOne(int index) {
+        // Wave 1 opens on Wallit so the first Yo Bot rushes into his view; later waves still ring Slice.
         Transform player = null;
-        if (Musician.Instance != null) {
+        GameObject playerGo = GameObject.FindGameObjectWithTag("Player");
+        if (Wave == 1 && playerGo != null) {
+            player = playerGo.transform;
+        } else if (Musician.Instance != null) {
             player = Musician.Instance.transform;
-        } else {
-            GameObject playerGo = GameObject.FindGameObjectWithTag("Player");
-            if (playerGo != null) {
-                player = playerGo.transform;
-            }
+        } else if (playerGo != null) {
+            player = playerGo.transform;
         }
 
         Vector3 origin = player != null ? player.position : Vector3.zero;
@@ -615,18 +716,46 @@ public class WaveDirector : MonoBehaviour {
         float outer = Mathf.Min(inner + band, 150f);
         inner = Mathf.Min(inner, outer - 10f);
         if (Wave == 1) {
-            // Opening: the first bot is almost at the bench, the rest a short walk out, so the first swing comes in seconds.
-            inner = spawnSerial <= 1 ? 6f : 12f + spawnSerial * 1.5f;
-            outer = inner + (spawnSerial <= 1 ? 1.5f : 8f);
+            // Opening: first Yo Bot almost in swing range of Wallit, the next ones a short rush away.
+            inner = spawnSerial <= 1 ? 3.5f : spawnSerial <= 3 ? 7f + spawnSerial : Mathf.Min(11f + spawnSerial * 1.2f, 14f);
+            outer = inner + (spawnSerial <= 1 ? 1.2f : spawnSerial <= 3 ? 3f : 6f);
         }
-        float jitter = small ? 110f : 80f;
+        float jitter = Wave == 1 && spawnSerial <= 1 ? 35f : (small ? 110f : 80f);
         float gap = small ? 8f + waveT * 0.08f : Mathf.Max(7f, def.Scale * 0.85f);
+        if (Wave == 1) {
+            gap = Mathf.Min(gap, 2.5f);   // wave 1: a bot every couple of seconds, so the lawn is never empty
+        }
         Vector3 spot = origin;
         float bestClear = -1f;
+        // First wave-1 bot: drop it in front of Wallit / the camera so it is on screen and rushing in.
+        Vector3 face = Vector3.forward;
+        if (Wave == 1 && spawnSerial <= 1) {
+            Camera cam = Camera.main;
+            if (cam != null) {
+                face = cam.transform.forward;
+                face.y = 0f;
+            }
+            if (face.sqrMagnitude < 0.01f && player != null) {
+                face = player.forward;
+                face.y = 0f;
+            }
+            if (face.sqrMagnitude < 0.01f) {
+                face = Vector3.forward;
+            }
+            face.Normalize();
+        }
         for (int attempt = 0; attempt < 18; attempt++) {
-            float spread = (spawnAngle + spawnSerial * 137.5f + Random.Range(-jitter, jitter)) * Mathf.Deg2Rad;
+            float spread;
             float radius = Random.Range(inner, outer);
-            Vector3 trySpot = origin + new Vector3(Mathf.Sin(spread), 0f, Mathf.Cos(spread)) * radius;
+            Vector3 trySpot;
+            if (Wave == 1 && spawnSerial <= 1) {
+                float yaw = attempt == 0 ? 0f : Random.Range(-jitter, jitter);
+                Vector3 dir = Quaternion.Euler(0f, yaw, 0f) * face;
+                trySpot = origin + dir.normalized * radius;
+            } else {
+                spread = (spawnAngle + spawnSerial * 137.5f + Random.Range(-jitter, jitter)) * Mathf.Deg2Rad;
+                trySpot = origin + new Vector3(Mathf.Sin(spread), 0f, Mathf.Cos(spread)) * radius;
+            }
             float clear = FlockClearance(trySpot);
             if (clear > bestClear) {
                 bestClear = clear;
@@ -641,12 +770,26 @@ public class WaveDirector : MonoBehaviour {
         Enemy enemy = Spawn(def, spot, true);
         if (makeBoss) {
             bossPending = false;
-            enemy.MakeBoss();
+            // Arcade decade bosses 10/20/30 reuse the campaign roster (Plated Alpha, Foreman, The Order) as set pieces.
+            int hits = Mathf.RoundToInt(enemy.HitsToDrop * Tuning.BossHealthScale);
+            if (ChapterRun.Instance == null && Wave == 10 && kind == BotKind.PlatedYoBot) {
+                enemy.MakePlatedAlpha("The Plated Alpha", hits);
+            } else if (ChapterRun.Instance == null && Wave == 20 && kind == BotKind.MegaYoBot) {
+                enemy.MakeForeman("The Foreman", hits);
+            } else if (ChapterRun.Instance == null && Wave == 30 && kind == BotKind.SpiderBot) {
+                enemy.MakeOrderBearer("The Order", hits);
+            } else {
+                enemy.MakeBoss();
+            }
             UpgradeLook.Say(enemy.Title + " approaches!", 2.8f, 160f);
             GameAudio.Play("stomp", 1f, 0.6f);
+            BossSetPiece.Begin(enemy, Wave);
         } else if (!debutAnnounced && def.UnlockWave == Wave && Wave % 10 == 0) {
             debutAnnounced = true;
             UpgradeLook.Arrive(def.Name);
+        }
+        if (Wave == 1 && spawnSerial <= 3) {
+            return 0.18f + Random.Range(0f, 0.08f);
         }
         return PaceAfter(kind);
     }
@@ -731,6 +874,10 @@ public class WaveDirector : MonoBehaviour {
             int ramp = 2 + (wave - tier) * 2;
             counts[(int)kind] = Mathf.Min(Mathf.Max(2, slots * 2), Mathf.Max(2, ramp));
         }
+        int spiders = Tuning.ActSpiders(wave);
+        if (spiders > 0 && caps[(int)BotKind.SpiderBot] > 0) {
+            counts[(int)BotKind.SpiderBot] = spiders;
+        }
         if (counts.Length > (int)BotKind.YoBot) {
             counts[(int)BotKind.YoBot] = YoBotCount(wave) * (Event == WaveEvent.Feast ? 2 : 1);
         }
@@ -748,6 +895,12 @@ public class WaveDirector : MonoBehaviour {
             int count = quota[(int)kind];
             for (int i = 0; i < count; i++) {
                 pending.Add(kind);
+            }
+        }
+        // Act 2's early Spider Bots (the tier loop only reaches them at wave 30).
+        if (Tuning.ActSpiders(wave) > 0) {
+            for (int i = 0; i < quota[(int)BotKind.SpiderBot]; i++) {
+                pending.Add(BotKind.SpiderBot);
             }
         }
         int yoBots = quota[(int)BotKind.YoBot];
@@ -811,6 +964,9 @@ public class WaveDirector : MonoBehaviour {
             given += share;
         }
         maxAlive[(int)BotKind.YoBot] += Mathf.Max(0, left - given);
+        if (Tuning.ActSpiders(wave) > 0) {
+            maxAlive[(int)BotKind.SpiderBot] = Mathf.Min(3, 1 + Tuning.ActSpiders(wave) / 2);
+        }
     }
 
     static void CountAlive(int[] alive) {
@@ -851,6 +1007,9 @@ public class WaveDirector : MonoBehaviour {
     }
 
     static int YoBotCount(int wave) {
+        if (wave <= 1) {
+            return Tuning.OpeningBots;   // the opening ring: 3-4 are on the field at once, so the first swing hits
+        }
         if (wave < 20) {
             return Mathf.RoundToInt(2f + wave * 1.5f);
         }
@@ -914,11 +1073,23 @@ public class WaveDirector : MonoBehaviour {
         return found ? y : preferY;
     }
 
+    bool paperLaid;
+
     void RefreshHud() {
         timerText.text = "";
+        if (BossSetPiece.EntranceUp) {
+            // The boss's name card owns the screen: no wave line, flavour or banner under it.
+            waveText.text = "";
+            detailText.text = "";
+            return;
+        }
+        if (paperLaid != HudPaper.Active) {
+            paperLaid = HudPaper.Active;
+            LayoutHud();   // the paper HUD owns the top middle: move the wave line under its card
+        }
 
         if (phase == Phase.Intro) {
-            waveText.text = WaveLine();
+            waveText.text = HudPaper.Active ? "" : WaveLine();
             detailText.text = Flavor(Wave);
         } else if (phase == Phase.Build) {
             waveText.text = "Build  ·  " + Mathf.CeilToInt(Mathf.Max(phaseLeft, 0f)) + "s   ·   " + StartHint();
@@ -937,20 +1108,23 @@ public class WaveDirector : MonoBehaviour {
             waveText.text = "Slice fell";
             detailText.text = "";
         } else if (!string.IsNullOrEmpty(PlayerGrowth.Banner)) {
-            waveText.text = WaveLine();
+            waveText.text = HudPaper.Active ? "" : WaveLine();
             detailText.text = PlayerGrowth.Banner;
         } else {
-            waveText.text = WaveLine();
+            waveText.text = HudPaper.Active ? "" : WaveLine();
             detailText.text = Flavor(Wave);
         }
 
         detailText.color = new Color(1f, 0.96f, 0.88f, 0.92f);
         if (coinText != null) {
-            coinText.text = MetaProgress.StatusLine();
+            coinText.text = QuietOpening || HudPaper.Active ? "" : MetaProgress.StatusLine();
             float pulse = MetaProgress.PurseFlash;
             coinText.color = pulse > 0.05f
                 ? Color.Lerp(new Color(1f, 0.86f, 0.4f, 0.95f), Color.white, pulse)
                 : new Color(1f, 0.86f, 0.4f, 0.95f);
+        }
+        if (HudPaper.Active && hudPurse != null && hudPurse.gameObject.activeSelf) {
+            hudPurse.gameObject.SetActive(false);
         }
         if (purseFill != null && MetaProgress.NextCoinAt > 0) {
             float ratio = Mathf.Clamp01(MetaProgress.HensToward / (float)MetaProgress.NextCoinAt);
@@ -961,13 +1135,19 @@ public class WaveDirector : MonoBehaviour {
         }
     }
 
+    // A stranger's first minute of Arcade (wave 1, not a chapter): the HUD keeps to the wave line, so the words on screen
+    // are the few that teach the swing. Size, bat damage and the coin purse come in with the second minute or wave 2.
+    public static bool QuietOpening {
+        get { return Wave <= 1 && ChapterRun.Instance == null && Time.timeSinceLevelLoad < Tuning.QuietOpeningSeconds; }
+    }
+
     static string StartHint() {
         return UiFit.Touch ? "tap Next wave" : "Enter to start";
     }
 
     string WaveLine() {
         string size = "";
-        if (PlayerGrowth.Instance != null) {
+        if (PlayerGrowth.Instance != null && !QuietOpening) {
             size = "   ·   Size " + PlayerGrowth.Instance.Scale.ToString("0.00") + "   ·   Bat " + PlayerGrowth.Instance.ArrowDamage;
         }
         if (phase == Phase.Intro) {
@@ -999,7 +1179,7 @@ public class WaveDirector : MonoBehaviour {
         scaler.referenceResolution = new Vector2(1920, 1080);
         canvasGo.AddComponent<GraphicRaycaster>();
 
-        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        Font font = UiSkin.Font(UiSkin.FontRole.Label);
         timerText = MakeText(canvasGo.transform, font, "22", 84, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(420f, 100f));
         waveText = MakeText(canvasGo.transform, font, "Wave 1", 32, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -108f), new Vector2(1500f, 46f));
         detailText = MakeText(canvasGo.transform, font, "", 24, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -154f), new Vector2(1400f, 72f));
@@ -1046,7 +1226,11 @@ public class WaveDirector : MonoBehaviour {
 
         var title = MakeText(lostPanel.transform, font, "Address struck off", 58, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -36f), new Vector2(680f, 90f));
         title.color = new Color(1f, 0.45f, 0.35f);
+        title.gameObject.SetActive(false);
         lostBody = MakeText(lostPanel.transform, font, "", 30, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -140f), new Vector2(820f, 520f));
+        lostBody.gameObject.SetActive(false);
+        lostPanel.GetComponent<Image>().raycastTarget = true;
+        runEnd = RunEndScreen.Ensure(lostPanel.transform);
         lostPanel.SetActive(false);
         hudScaler = scaler;
         hudPurse = purseRect;
@@ -1064,8 +1248,8 @@ public class WaveDirector : MonoBehaviour {
         UiFit.Apply(hudScaler);
         Vector2 size = UiFit.Size;
         if (hudMode == UiMode.Desktop) {
-            Fit(waveText, 32, new Vector2(0f, -108f), new Vector2(1500f, 46f));
-            Fit(detailText, 24, new Vector2(0f, -154f), new Vector2(1400f, 72f));
+            Fit(waveText, 32, new Vector2(0f, HudPaper.Active ? -130f : -108f), new Vector2(1500f, 46f));
+            Fit(detailText, 24, new Vector2(0f, HudPaper.Active ? -174f : -154f), new Vector2(1400f, 72f));
             Fit(coinText, 26, new Vector2(36f, -24f), new Vector2(860f, 40f));
             hudPurse.anchoredPosition = new Vector2(36f, -68f);
             lostPanel.transform.localScale = Vector3.one;
@@ -1077,8 +1261,8 @@ public class WaveDirector : MonoBehaviour {
         float middle = tall ? size.x - 48f : Mathf.Max(360f, size.x - 800f);
         hudPurse.anchoredPosition = new Vector2(24f, tall ? -80f : -18f);
         Fit(coinText, 22, new Vector2(24f, tall ? -92f : -34f), new Vector2(tall ? size.x - 48f : 360f, 56f));
-        Fit(waveText, 28, new Vector2(0f, tall ? -126f : -66f), new Vector2(middle, 70f));
-        Fit(detailText, 22, new Vector2(0f, tall ? -196f : -136f), new Vector2(middle, 56f));
+        Fit(waveText, 28, new Vector2(0f, tall ? -126f : HudPaper.Active ? -108f : -66f), new Vector2(middle, 70f));
+        Fit(detailText, 22, new Vector2(0f, tall ? -196f : HudPaper.Active ? -168f : -136f), new Vector2(middle, 56f));
         float fit = Mathf.Min(1f, (size.x - 40f) / 900f, (size.y - 40f) / 700f);
         lostPanel.transform.localScale = new Vector3(fit, fit, 1f);
         // Portrait: sit the panel in the upper half, so the page's "How was that run?" card has the bottom to itself.

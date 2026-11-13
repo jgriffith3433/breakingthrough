@@ -7,13 +7,32 @@ public static class Story {
     // Wave 30 is the first Spider Bot and carries the order. Clearing it plays the finale.
     public const int FinalWave = 30;
 
-    public static readonly string[] Intro = {
-        "N|THE PLACE DEPARTMENT\nWhere things that should not exist are given an address.",
-        "W|Wallit. One wallet, one bat, no refunds. They stamped me \"Return to sender\" and threw me in here.",
-        "S|Slice. This is the circle: the one address in the Hollow that's filed. Inside it, things exist.",
-        "S|Outside, they're cleared. If I fall, the circle goes, and everything in it. Don't let me fall.",
-        "Y|Hello! Uploading victory! Striking this address now!",
-        "W|Guard Slice. Swing at anything chirpy. Pay up.",
+    // The first seconds of an Arcade run are not text: ColdOpen.cs plays them (Docs/Story.md, "The intro"). What the old
+    // six pages said now lives in the lore log (Lore.cs, "The First Night").
+
+    // Arcade run-end: Wallit and Slice trade one short exchange when Slice falls (Docs/Story.md, "Run-end exchanges").
+    // Id, condition key (RunEndTalk), Wallit's line, Slice's line. Order is priority: first matching id not used in the
+    // last five runs plays. Voices: Wallit money, Slice clipped. Never reorder without updating RunEndTalk.
+    public class RunEnd {
+        public string Id;
+        public string When;
+        public string Wallit;
+        public string Slice;
+    }
+
+    public static readonly RunEnd[] RunEnds = {
+        new RunEnd { Id = "early", When = "early", Wallit = "Short shift. No tip.", Slice = "Again." },
+        new RunEnd { Id = "yo_bot", When = "yo_bot", Wallit = "Chirpy took the ring.", Slice = "Noted." },
+        new RunEnd { Id = "spider", When = "spider", Wallit = "Six legs. One bill.", Slice = "Bigger next." },
+        new RunEnd { Id = "boss", When = "boss", Wallit = "Big one cashed out.", Slice = "Hold." },
+        new RunEnd { Id = "new_best", When = "new_best", Wallit = "New high. Still short.", Slice = "Closer." },
+        new RunEnd { Id = "nearly", When = "nearly", Wallit = "You almost fell.", Slice = "I didn't." },
+        new RunEnd { Id = "near_decade", When = "near_decade", Wallit = "One stamp from the next.", Slice = "Then take it." },
+        new RunEnd { Id = "act2", When = "act2", Wallit = "Plates cost extra.", Slice = "Cover me." },
+        new RunEnd { Id = "act3", When = "act3", Wallit = "Order's still out.", Slice = "Denied later." },
+        new RunEnd { Id = "payday", When = "payday", Wallit = "Purse is fat. Ring's gone.", Slice = "Spend it right." },
+        new RunEnd { Id = "longball", When = "longball", Wallit = "Returned a few.", Slice = "Keep swinging." },
+        new RunEnd { Id = "default", When = "default", Wallit = "No refunds.", Slice = "Clean. Again." },
     };
 
     // The hub: the circle between chapters (Docs/Story.md, "The hub"). Said on arrival, by chapters cleared (index 0 is one
@@ -846,7 +865,6 @@ public static class Story {
     }
 
     public static IEnumerable<string> All() {
-        foreach (string line in Intro) yield return line;
         foreach (string line in Finale) yield return line;
         foreach (string[] beat in Beats) foreach (string line in beat) yield return line;
         foreach (string line in Overtime) yield return line;

@@ -88,6 +88,9 @@ public static class RunBoons {
     public static int Feathers { get; private set; }
     public static int NextAt { get; private set; }
     public static int PendingLevels { get; private set; }
+    // Of the pending cards, how many are wave-clear cards (no level gained), and whether the card just taken was one.
+    static int pendingWaveCards;
+    public static bool LastCardWasWave { get; private set; }
     public static int Rerolls { get; private set; }
     public static int Picks { get; private set; }
     public static int PendingChests { get; private set; }
@@ -103,6 +106,8 @@ public static class RunBoons {
         Feathers = 0;
         featherCarry = 0f;
         PendingLevels = 0;
+        pendingWaveCards = 0;
+        LastCardWasWave = false;
         PendingChests = 0;
         Picks = 0;
         LastPick = null;
@@ -141,6 +146,12 @@ public static class RunBoons {
         }
     }
 
+    // A card for clearing an early wave: one pick of three, no level gained.
+    public static void AddWaveCard() {
+        PendingLevels++;
+        pendingWaveCards++;
+    }
+
     public static void AddChest() {
         PendingChests++;
     }
@@ -148,6 +159,11 @@ public static class RunBoons {
     public static bool TakePendingLevel() {
         if (PendingLevels <= 0) {
             return false;
+        }
+        // Level cards come first; the wave-clear cards (no level) are what is left over.
+        LastCardWasWave = pendingWaveCards > 0 && PendingLevels <= pendingWaveCards;
+        if (LastCardWasWave) {
+            pendingWaveCards--;
         }
         PendingLevels--;
         return true;

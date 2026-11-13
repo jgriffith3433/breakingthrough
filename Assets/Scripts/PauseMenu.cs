@@ -105,7 +105,7 @@ public class PauseMenu : MonoBehaviour {
     }
 
     void Start() {
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        font = UiSkin.Font(UiSkin.FontRole.Body);
         Build();
         root.SetActive(false);
     }
@@ -130,8 +130,8 @@ public class PauseMenu : MonoBehaviour {
         instance.hint.text = UiFit.Touch ? "" : "P, Esc or pad Start resumes.";
         instance.DisarmQuit();
         instance.ArrangeButtons();
+        PanelFx.Show(instance.root, "pause", instance.deck);
         RunAnalytics.Screen("pause");
-        GameAudio.Play("shot", 0.35f, 0.7f);
     }
 
     public static void Resume() {
@@ -143,7 +143,7 @@ public class PauseMenu : MonoBehaviour {
         ClosedFrame = Time.frameCount;
         HoldFire = true;
         if (instance != null) {
-            instance.root.SetActive(false);
+            PanelFx.Hide(instance.root, "pause");
         }
         Time.timeScale = WaveDirector.IsLost ? 0f : 1f;
         RunAnalytics.Screen(WaveDirector.IsLost ? "game_over" : "wave");
@@ -158,8 +158,8 @@ public class PauseMenu : MonoBehaviour {
 
     void ArrangeButtons() {
         bool chapter = ChapterRun.Instance != null && CampaignSave.Active >= 0;
-        // Resume, then (in a chapter) Skip scene while a scene plays, Journal, Restart chapter, then Settings and Quit.
-        SkipSceneButton.gameObject.SetActive(chapter && Cutscene.IsOpen);
+        // Resume, then Skip scene while a page reel or the in-engine Chapter 1 opening plays, Journal, Restart, Settings, Quit.
+        SkipSceneButton.gameObject.SetActive((chapter && Cutscene.PageOpen) || (InLevel && CinematicDirector.IsOpen));
         JournalButton.gameObject.SetActive(chapter);
         RestartButton.gameObject.SetActive(chapter && !ChapterRun.Instance.Completed);
         DisarmRestart();
@@ -196,7 +196,13 @@ public class PauseMenu : MonoBehaviour {
 
     // The scene under the pause is over: the same as its Skip button, then play goes on.
     void SkipScene() {
-        if (Cutscene.Instance == null || !Cutscene.IsOpen) {
+        if (CinematicDirector.IsOpen) {
+            SceneSkips++;
+            Resume();
+            CinematicDirector.Instance.Skip();
+            return;
+        }
+        if (Cutscene.Instance == null || !Cutscene.PageOpen) {
             return;
         }
         SceneSkips++;
@@ -251,7 +257,7 @@ public class PauseMenu : MonoBehaviour {
         } else if (ChapterHub.Instance != null && ChapterScene.Instance != null) {
             ChapterScene.Instance.LeaveToMenu();
         } else {
-            SceneManager.LoadScene(MetaProgress.MenuScene);
+            ScreenTransition.Load(ScreenTransition.Kind.Returned, MetaProgress.MenuScene);
         }
     }
 

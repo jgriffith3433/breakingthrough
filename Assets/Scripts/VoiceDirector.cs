@@ -24,6 +24,24 @@ public static class VoiceDirector {
     // One reason ("kill", "hurt", "idle"...) may not bark again inside this many seconds.
     public static float ReasonCooldown = 30f;
 
+    // The event barks (first hit, home run, Slice low, boss phase two, a new kind of bot, a wave cleared): each line is said at
+    // most once in this many seconds.
+    public static float EventCooldown = 300f;
+    // The bots' chorus (reasons "bot-..."): its own, shorter gaps, measured from the last bot line, so it never starves
+    // Wallit and Slice, and a line (60 s, LineCooldown) is not heard twice.
+    public static float BotGap = 7f;
+    public static float BotReasonCooldown = 8f;
+
+    public static bool IsEvent(string why) {
+        switch (why) {
+            case "first-hit": case "home-run": case "slice-low": case "low": case "boss-phase": case "new-type": case "wave-clear":
+            case "boss-homerun": case "boss-win":
+                return true;
+            default:
+                return false;
+        }
+    }
+
     // True while Cutscene.cs is on screen: only its own lines ("cutscene") may speak, so no bark talks over a scene.
     public static bool Scene;
 
@@ -32,6 +50,7 @@ public static class VoiceDirector {
     public static int Denied { get; private set; }
     public static int KeyPlayed { get; private set; }
     public static float LastLineAt { get; private set; } = -999f;
+    static float lastCastAt = -999f;   // the last line that was not a bot's
     public static float SmallestGap { get; private set; } = 999f;
     public static float SmallestBarkGap { get; private set; } = 999f;
     public static readonly List<string> Events = new List<string>();
@@ -46,6 +65,7 @@ public static class VoiceDirector {
         Denied = 0;
         KeyPlayed = 0;
         LastLineAt = -999f;
+        lastCastAt = -999f;
         SmallestGap = 999f;
         SmallestBarkGap = 999f;
         Events.Clear();
@@ -58,16 +78,24 @@ public static class VoiceDirector {
         switch (why) {
             case "beat":
             case "boss-wave":
+            case "boss-phase":
+            case "boss-win":
             case "low":
             case "slice-low":
+            case "stakes-line":
             case "cutscene":
                 return Priority.Key;
             case "wave":
             case "level-up":
             case "chest":
             case "home-run":
+            case "boss-homerun":
+            case "first-hit":
+            case "new-type":
+            case "wave-clear":
             case "golden":
             case "setup":
+            case "callout-reply":
                 return Priority.Normal;
             default:
                 return Priority.Bark;
@@ -78,6 +106,18 @@ public static class VoiceDirector {
     // beats, cutscenes, Slice low) always play. "Key lines" drops every Bark and Normal line.
     public static float GapScale(int chatter) {
         return chatter <= 1 ? 2.5f : chatter == 2 ? 1f : 0.5f;
+    }
+
+    // True when the cast gap for this priority has cooled (Key always ready). Used to hold a queued Normal reply
+    // without burning a Deny each frame.
+    public static bool GapReady(Priority priority) {
+        if (priority == Priority.Key) {
+            return true;
+        }
+        float scale = GapScale(SoundSettings.Chatter);
+        float since = Time.unscaledTime - lastCastAt;
+        float need = (priority == Priority.Bark ? BarkGap : NormalGap) * scale;
+        return since >= need;
     }
 
     // True when a line may be said right now. Every priority needs a free floor (Key lines wait for it, they are not
@@ -98,15 +138,17 @@ public static class VoiceDirector {
             return Deny(why, "voices-off");
         }
         float scale = GapScale(chatter);
-        float since = now - LastLineAt;
-        if (since < (priority == Priority.Bark ? BarkGap : NormalGap) * scale) {
+        bool bot = why.StartsWith("bot-");
+        float since = now - (bot ? LastLineAt : lastCastAt);
+        if (since < (bot ? BotGap : priority == Priority.Bark ? BarkGap : NormalGap) * scale) {
             return Deny(why, "gap");
         }
         float at;
-        if (lineAt.TryGetValue(line, out at) && now - at < LineCooldown * scale) {
+        float cooldown = IsEvent(why) ? EventCooldown : LineCooldown;
+        if (lineAt.TryGetValue(line, out at) && now - at < cooldown * scale) {
             return Deny(why, "line-cooldown");
         }
-        if (priority == Priority.Bark && reasonAt.TryGetValue(why, out at) && now - at < ReasonCooldown * scale) {
+        if (priority == Priority.Bark && reasonAt.TryGetValue(why, out at) && now - at < (bot ? BotReasonCooldown : ReasonCooldown) * scale) {
             return Deny(why, "reason-cooldown");
         }
         return true;
@@ -129,6 +171,9 @@ public static class VoiceDirector {
             }
         }
         LastLineAt = now;
+        if (!why.StartsWith("bot-")) {
+            lastCastAt = now;
+        }
         lineAt[line] = now;
         reasonAt[why] = now;
         Played++;
@@ -136,5 +181,6 @@ public static class VoiceDirector {
             KeyPlayed++;
         }
         Events.Add("play|" + why + "|" + priority + "|" + line);
+        GameAudio.NoteOther(GameAudio.Bus.Voice, line);
     }
 }

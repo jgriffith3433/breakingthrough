@@ -31,6 +31,8 @@ public class Musician : MonoBehaviour {
     public int MaxHealth { get; private set; } = BaseHealth;
     public int Health { get; private set; } = BaseHealth;
     public int DamageTaken { get; private set; }
+    // True once this run if her bar dipped to SliceVoice.LowHealth or below while she was still up (run-end "nearly").
+    public bool NearlyFell { get; private set; }
     public float HitFlash { get; private set; }
     public bool Alive { get { return Health > 0; } }
 
@@ -224,6 +226,8 @@ public class Musician : MonoBehaviour {
         Instance = this;
         MaxHealth = BaseHealth + MetaProgress.StageHealth();
         Health = MaxHealth;
+        NearlyFell = false;
+        DamageTaken = 0;
         flare = gameObject.AddComponent<Light>();
         flare.type = LightType.Point;
         flare.color = new Color(1f, 0.25f, 0.18f);
@@ -237,6 +241,46 @@ public class Musician : MonoBehaviour {
         BuildBar();
         FindSlice();
         SliceVoice.Ensure(this);
+        StakesFeel.Ensure(this);
+        SliceCallouts.Ensure(this);
+    }
+
+    // SliceCallouts Act 2: a visible block pose, then the bot is knocked back. Uses the slash clip as the block beat.
+    public void BeginParry(Enemy foe, Vector3 dir) {
+        if (!Alive || Away || defeating) {
+            return;
+        }
+        if (dir.sqrMagnitude > 0.01f) {
+            threatDir = dir.normalized;
+        }
+        strikeTarget = foe;
+        strikeHitDone = true;
+        strikeLeft = 0.55f;
+        strikeHitIn = 99f;
+        stabIn = StabCooldown * 0.6f;
+        hurtLeft = 0f;
+        lunge = 0.6f;
+        PlayClip(CLIP_SLASH, true);
+        if (SliceVoice.Instance != null) {
+            SliceVoice.Instance.BeginBlock();
+        }
+    }
+
+    // SliceCallouts Act 3: stamp the ground; pose holds a beat while bots are stunned.
+    public void BeginStamp() {
+        if (!Alive || Away || defeating) {
+            return;
+        }
+        strikeHitDone = true;
+        strikeLeft = 0.7f;
+        strikeHitIn = 99f;
+        stabIn = StabCooldown;
+        hurtLeft = 0f;
+        lunge = 0.35f;
+        PlayClip(CLIP_STAB, true);
+        if (SliceVoice.Instance != null) {
+            SliceVoice.Instance.BeginStampPose();
+        }
     }
 
     void OnDestroy() {
@@ -253,6 +297,9 @@ public class Musician : MonoBehaviour {
         amount = CampaignGrade.Blow(amount);   // Hard (Campaign, a filed file) doubles every blow
         Health = Mathf.Max(0, Health - amount);
         DamageTaken += amount;
+        if (Health > 0 && Health <= SliceVoice.LowHealth) {
+            NearlyFell = true;
+        }
         RunAnalytics.NoteHurt(by, amount);
         HitFlash = 1f;
         if (flinch <= 0f) {
@@ -260,7 +307,9 @@ public class Musician : MonoBehaviour {
         }
         flinch = 1f;
         GameAudio.Play("hit", 0.45f);
+        DeptFx.CircleRipple(transform.position, 12f);   // her circle ripples
         RefreshBar();
+        StakesFeel.OnSliceHit(this, amount, by);
         if (Alive) {
             OnHurtFlinch();
         } else {
@@ -398,7 +447,7 @@ public class Musician : MonoBehaviour {
         veilRect.offsetMin = Vector2.zero;
         veilRect.offsetMax = Vector2.zero;
 
-        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        Font font = UiSkin.Font(UiSkin.FontRole.Label);
         title = MakeText(canvasGo.transform, font, Name, 26, new Vector2(0f, -8f), new Vector2(640f, 32f));
         title.alignment = TextAnchor.MiddleCenter;
 
@@ -453,6 +502,16 @@ public class Musician : MonoBehaviour {
         back.rectTransform.sizeDelta = new Vector2(width, 26f);
         barFill = width - 6f;
         RefreshBar();
+    }
+
+    // The paper HUD draws Slice's health as her address card: the old plate steps aside (HudPaper).
+    public void SetBarHidden(bool hidden) {
+        if (back != null) {
+            back.gameObject.SetActive(!hidden);
+        }
+        if (title != null) {
+            title.gameObject.SetActive(!hidden);
+        }
     }
 
     void RefreshBar() {

@@ -123,8 +123,8 @@ public class Server : MonoBehaviour {
         Offering = true;
         Events.Add("offer|" + Offers);
         enemy.Hold(0.5f);
-        GameAudio.Play("stamp", 0.5f, 1.3f);
-        GameAudio.Play("paper_slide", 0.6f);
+        GameAudio.PlayAt("stamp", transform.position, 0.5f, 1.3f);
+        GameAudio.PlayAt("paper_slide", transform.position, 0.6f);
         Fx.Ring(transform.position, 4f, new Color(0.96f, 0.93f, 0.82f, 0.8f), 0.6f);
         // The Server says it; the screen only names the verb.
         if (Offers == 1) {
@@ -137,11 +137,12 @@ public class Server : MonoBehaviour {
         Refusals++;
         Offering = false;
         Events.Add("refuse|" + Refusals);
-        GameAudio.Play("batcrack", 0.8f, 0.8f);
+        GameAudio.PlayAt("batcrack", transform.position, 0.8f, 0.8f);
         Fx.Ring(transform.position, 6f, new Color(1f, 1f, 1f, 0.8f), 0.5f);
         UpgradeLook.Say("Refused " + Refusals + "/" + RefusalsNeeded, 1.8f, 160f);
         CastVoice.SayLater("W", "Refused.", "server-refuse");
         step = Step.BackOff;
+        enemy.Stagger(0.5f);   // a refusal rocks it back
         clock = BackOffSeconds;
         enemy.Hold(BackOffSeconds);
         Vector3 away = transform.position - (Musician.Instance != null ? Musician.Instance.transform.position : transform.position);
@@ -156,19 +157,23 @@ public class Server : MonoBehaviour {
         clock = 0f;
         Events.Add("strike-wind");
         enemy.Hold(StrikeWind + 0.3f);
-        GameAudio.Play("stomp", 0.8f, 0.7f);
+        enemy.BeginTell();   // the Server rears up on its front legs before it serves
+        BotSound.TellIn(enemy, StrikeWind);
+        GameAudio.PlayAt("stomp", transform.position, 0.8f, 0.7f);
         UpgradeLook.Say("The Server strikes!", 2.2f, 160f);
         if (RefusalsNeeded == DefaultRefusals) {
             CastVoice.SayLater("V", "Three knocks on record.", "server-strike");
         }
-        GameAudio.Play("knock_three", 0.8f);
+        GameAudio.PlayAt("knock_three", transform.position, 0.8f);
     }
 
     void Strike(Musician slice) {
         Struck = true;
+        BotSound.Hit(enemy);
+        enemy.EndTell(true);
         Events.Add("strike|slice");
         Fx.Ring(slice.transform.position, 8f, new Color(1f, 0.35f, 0.2f, 0.9f), 0.5f);
-        GameAudio.Play("stamp", 0.9f, 0.8f);
+        GameAudio.PlayAt("stamp", transform.position, 0.9f, 0.8f);
         slice.Hurt(StrikeDamage, enemy);
         enemy.Unleash();
         Events.Add("unleashed");

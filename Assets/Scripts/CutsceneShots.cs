@@ -151,6 +151,13 @@ public partial class Cutscene {
             }
             return;
         }
+        // A reel played on its own (a boss intro, the ending) whose stills and voices are not in yet is fetched first, with the
+        // progress line; the chapters fetch theirs on Begin, so this is a no-op there.
+        string group = "reel_" + r.id;
+        if (!OnDemand.GroupReady(group)) {
+            OnDemand.Need(new[] { group }, "Filing the reel", () => PlayShots(r, done));
+            return;
+        }
         if (instance == null) {
             instance = new GameObject("Cutscene").AddComponent<Cutscene>();
         }
@@ -203,6 +210,7 @@ public partial class Cutscene {
         WallitVoice.Silence();
         SliceVoice.Silence();
         CastVoice.Silence();
+        StopReelVoice();
         shotIndex++;
         if (shotIndex >= reel.shots.Length) {
             Close(false);
@@ -307,7 +315,7 @@ public partial class Cutscene {
         if (string.IsNullOrEmpty(name)) {
             return null;
         }
-        Texture2D tex = Resources.Load<Texture2D>("Cinematics/Art/" + name);
+        Texture2D tex = OnDemand.Texture("Cinematics/Art/" + name);
         if (tex == null) {
             Events.Add("missing-art|" + name);
             return null;
@@ -394,6 +402,7 @@ public partial class Cutscene {
         }
         videoSlot.back.texture = videoTexture;
         videoSlot.back.uvRect = new Rect(0f, 0f, 1f, 1f);
+        Cover(videoSlot.back);
         videoSlot.back.enabled = true;
         player.Play();
         VideoStreaming = true;
@@ -504,6 +513,13 @@ public partial class Cutscene {
     // The other speakers (Courier, Foreman, Alpha, Yo Bots, narration) speak from Resources/Voice/cinema/<reel>_<shot>.mp3 when
     // the file exists (made through Hawkes Gen audio.voice, one voice per character); with none the subtitle is the line.
     AudioSource castVoice;
+    // The reel's own voice source (Voice/cinema clips). Stopped at every shot change and when the reel closes or is skipped.
+    public static bool ReelVoiceHeard { get { return Instance != null && Instance.castVoice != null && Instance.castVoice.isPlaying; } }
+    public void StopReelVoice() {
+        if (castVoice != null) {
+            castVoice.Stop();
+        }
+    }
     float PlayCastVoice() {
         if (castVoice != null) {
             castVoice.Stop();
@@ -511,7 +527,7 @@ public partial class Cutscene {
         if (reel == null || shotIndex < 0 || shotIndex >= ShotCount) {
             return 0f;
         }
-        AudioClip clip = Resources.Load<AudioClip>("Voice/cinema/" + reel.id + "_" + reel.shots[shotIndex].id);
+        AudioClip clip = OnDemand.Audio("Voice/cinema/" + reel.id + "_" + reel.shots[shotIndex].id);
         if (clip == null) {
             return 0f;
         }
@@ -652,7 +668,7 @@ public partial class Cutscene {
         }
         foreach (Texture2D tex in loadedArt) {
             if (tex != null) {
-                Resources.UnloadAsset(tex);
+                OnDemand.Unload(tex);
             }
         }
         loadedArt.Clear();

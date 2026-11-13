@@ -16,6 +16,7 @@ public enum DamageKind {
 public static class Combat {
     static int killCount;
     static int bountyCount;
+    static int killCoinCount;
     static int bombDepth;
 
     // What the bat boons did this run, for the playtest.
@@ -29,6 +30,7 @@ public static class Combat {
     public static void BeginRun() {
         killCount = 0;
         bountyCount = 0;
+        killCoinCount = 0;
         bombDepth = 0;
         Burned = 0;
         Slowed = 0;
@@ -210,10 +212,19 @@ public static class Combat {
         Vector3 at = foe.transform.position;
 
         Pickups.DropBolts(at, Tuning.BoltsFor(foe.Kind, foe.Elite || foe.Boss) * (foe.Boss ? 5 : 1));
+        Juice.HitStop(Tuning.KillHitStop);
+        killCoinCount++;
+        if (!foe.Golden && !foe.Boss && ChapterRun.Instance == null
+            && (WaveDirector.Wave <= Tuning.CoinKillWaves || killCoinCount % Tuning.CoinKillEvery == 0)) {
+            MetaProgress.AddCoins(1, at);
+        }
         if (foe.Golden || foe.Boss) {
             Pickups.DropChest(at);
             MetaProgress.AddCoins(foe.Boss ? Tuning.CoinsForBoss : Tuning.CoinsForGolden, at);
             Juice.HitStop(0.12f);
+            if (foe.Boss) {
+                BossSetPiece.Defeated(foe, WaveDirector.Wave);
+            }
             UpgradeLook.Say(foe.Golden ? "Golden Yo Bot down!" : foe.Title + " falls!", 2.4f, 120f);
         } else if (foe.Elite && Random.value < 0.08f) {
             Pickups.DropChest(at);

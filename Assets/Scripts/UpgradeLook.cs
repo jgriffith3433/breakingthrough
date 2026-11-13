@@ -37,7 +37,7 @@ public class UpgradeLook : MonoBehaviour {
         var textGo = new GameObject("Line");
         textGo.transform.SetParent(go.transform, false);
         var text = textGo.AddComponent<Text>();
-        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        text.font = UiSkin.Font(UiSkin.FontRole.Label);
         text.fontSize = 32;
         text.fontStyle = FontStyle.Bold;
         text.alignment = TextAnchor.MiddleCenter;
@@ -232,7 +232,7 @@ public class UpgradeLook : MonoBehaviour {
         TextMesh mesh = go.AddComponent<TextMesh>();
         int shown = Mathf.Max(1, Mathf.RoundToInt(amount));
         mesh.text = crit ? shown + "!" : shown.ToString();
-        mesh.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        mesh.font = UiSkin.Font(UiSkin.FontRole.Label);
         mesh.fontSize = 64;
         mesh.fontStyle = crit ? FontStyle.Bold : FontStyle.Normal;
         float far = Camera.main != null ? Mathf.Clamp(Vector3.Distance(Camera.main.transform.position, point) / 14f, 1f, 4f) : 1f;
@@ -353,7 +353,64 @@ public class UpgradeLook : MonoBehaviour {
         Fx.Emit(FxKind.Dust, point + Vector3.up * 0.4f, 10, new Color(0.5f, 0.42f, 0.34f, 0.7f), 1.2f, 2.5f, 2f);
     }
 
+    // Announcements (the mid-screen slot, y >= 100) take turns: one on screen, the rest wait their turn, so two never print over
+    // each other. Small combat pops (home run, streak, a hit's name) stay immediate.
+    const float AnnounceY = 100f;
+    static readonly System.Collections.Generic.Queue<KeyValuePair<string, KeyValuePair<float, float>>> waiting =
+        new System.Collections.Generic.Queue<KeyValuePair<string, KeyValuePair<float, float>>>();
+    static LoadoutBanner announcing;
+
     public static void Say(string line, float seconds, float y = 80f) {
+        if (WaveDirector.IsLost) {
+            waiting.Clear();
+            return;
+        }
+        if (y >= AnnounceY) {
+            // The wave-cleared / level-up cards own the screen: an announcement (a boss's "approaches!") waits for them to close.
+            if (announcing != null || LevelUpScreen.IsOpen) {
+                foreach (var w in waiting) {
+                    if (w.Key == line) {
+                        return;
+                    }
+                }
+                if (waiting.Count < 4) {
+                    waiting.Enqueue(new KeyValuePair<string, KeyValuePair<float, float>>(line, new KeyValuePair<float, float>(seconds, y)));
+                }
+                return;
+            }
+            announcing = Show(line, seconds, y);
+            return;
+        }
+        Show(line, seconds, y);
+    }
+
+    // Called every frame by LevelUpScreen while no card is open: a waiting announcement takes the slot once the cards are gone.
+    public static void PumpAnnouncements() {
+        if (waiting.Count == 0 || announcing != null || LevelUpScreen.IsOpen) {
+            return;
+        }
+        if (WaveDirector.IsLost || WaveDirector.Instance == null) {
+            waiting.Clear();
+            return;
+        }
+        var next = waiting.Dequeue();
+        announcing = Show(next.Key, next.Value.Key, next.Value.Value);
+    }
+
+    // Called when an announcement ends: the next waiting one takes the slot.
+    public static void AnnouncementEnded(LoadoutBanner ended) {
+        if (announcing != ended) {
+            return;
+        }
+        announcing = null;
+        if (WaveDirector.IsLost || WaveDirector.Instance == null) {   // lost, or the scene is going away
+            waiting.Clear();
+            return;
+        }
+        PumpAnnouncements();
+    }
+
+    static LoadoutBanner Show(string line, float seconds, float y) {
         var go = new GameObject("Callout");
         var canvas = go.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -364,7 +421,7 @@ public class UpgradeLook : MonoBehaviour {
         var textGo = new GameObject("Line");
         textGo.transform.SetParent(go.transform, false);
         var text = textGo.AddComponent<Text>();
-        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        text.font = UiSkin.Font(UiSkin.FontRole.Label);
         text.fontSize = 42;
         text.fontStyle = FontStyle.Bold;
         text.alignment = TextAnchor.MiddleCenter;
@@ -383,6 +440,7 @@ public class UpgradeLook : MonoBehaviour {
         }
         LoadoutBanner banner = go.AddComponent<LoadoutBanner>();
         banner.SetLife(seconds);
+        return banner;
     }
 
     public static void Paint(GameObject go, Color color) {
@@ -468,14 +526,27 @@ public class FloatUp : MonoBehaviour {
 
 public class LoadoutBanner : MonoBehaviour {
     float left = 4.2f;
+    Canvas canvas;
 
     public void SetLife(float seconds) {
         left = seconds;
     }
 
+    void OnDestroy() {
+        UpgradeLook.AnnouncementEnded(this);
+    }
+
     void Update() {
+        // The card picker owns the screen while it is open (time is stopped, so the banner's life holds): hide it, show it after.
+        if (canvas == null) {
+            canvas = GetComponent<Canvas>();
+        }
+        if (canvas != null && canvas.enabled == LevelUpScreen.IsOpen) {
+            canvas.enabled = !LevelUpScreen.IsOpen;
+        }
+        // The run-end panel owns the screen: time stops on a loss, so a callout's timer would never run out under it.
         left -= Time.deltaTime;
-        if (left <= 0f) {
+        if (left <= 0f || WaveDirector.IsLost) {
             Destroy(gameObject);
         }
     }
@@ -565,6 +636,14 @@ public class BatMarks : MonoBehaviour {
         h = h * 5 + MetaProgress.Rank(UpgradeId.Keen);
         h = h * 5 + MetaProgress.Rank(UpgradeId.Blast);
         h = h * 3 + (Journal.GiltBat ? 1 : 0);
+        h = h * 3 + (RunGoals.HasLook("night_band") ? 1 : 0);
+        h = h * 3 + (RunGoals.HasLook("ink_tip") ? 1 : 0);
+        h = h * 3 + (RunGoals.HasLook("pale_wake") ? 1 : 0);
+        h = h * 3 + (RunGoals.HasLook("foreman_stripe") ? 1 : 0);
+        h = h * 3 + (RunGoals.HasLook("order_seal") ? 1 : 0);
+        h = h * 3 + (RunGoals.HasLook("longball_gold") ? 1 : 0);
+        h = h * 3 + (RunGoals.HasLook("crack_band") ? 1 : 0);
+        h = h * 3 + (RunGoals.HasLook("ledger_glow") ? 1 : 0);
         return h;
     }
 
@@ -652,6 +731,32 @@ public class BatMarks : MonoBehaviour {
             said.Add("Paid in Full: gilt bands");
         }
 
+        // Arcade goals ladder looks (RunGoals / Resources/Data/run_goals.json): soft marks only, no sparks.
+        if (RunGoals.HasLook("night_band")) {
+            Band(0.72f, r, 0.035f, new Color(0.12f, 0.14f, 0.22f));
+            said.Add("Night Band");
+        }
+        if (RunGoals.HasLook("ink_tip")) {
+            UpgradeLook.MarkPart(marks, PrimitiveType.Sphere, new Vector3(0f, 1.0f, 0f), Quaternion.identity, Vector3.one * (r * 1.6f), new Color(0.08f, 0.08f, 0.1f));
+            said.Add("Ink Tip");
+        }
+        if (RunGoals.HasLook("foreman_stripe")) {
+            UpgradeLook.MarkPart(marks, PrimitiveType.Cube, new Vector3(r * 0.9f, 0.7f, 0f), Quaternion.identity, new Vector3(0.014f, 0.38f, 0.03f), new Color(0.95f, 0.62f, 0.22f));
+            said.Add("Foreman Stripe");
+        }
+        if (RunGoals.HasLook("order_seal")) {
+            UpgradeLook.MarkPart(marks, PrimitiveType.Cylinder, new Vector3(0f, 0.55f, r * 1.05f), Quaternion.Euler(90f, 0f, 0f), new Vector3(0.07f, 0.01f, 0.07f), new Color(0.75f, 0.12f, 0.14f));
+            said.Add("Order Seal");
+        }
+        if (RunGoals.HasLook("longball_gold")) {
+            Band(0.48f, r, 0.04f, new Color(1f, 0.84f, 0.28f));
+            said.Add("Long Ball Gold");
+        }
+        if (RunGoals.HasLook("crack_band")) {
+            Band(0.38f, r, 0.028f, new Color(0.72f, 0.42f, 0.22f));
+            said.Add("Crack Band");
+        }
+
         // Corked Core (shop): a cork plug in the end of the barrel, wider each rank.
         int core = MetaProgress.Rank(UpgradeId.Keen);
         if (core > 0) {
@@ -707,10 +812,20 @@ public class BatMarks : MonoBehaviour {
         }
 
         // Wide Arc: the bat leaves a pale swoosh through the air, wider with rank.
+        // Goals ladder trails (Pale Wake, Ledger Glow) also leave a soft swoosh.
         int wide = RunBoons.Rank(BoonId.SplitShot);
-        Trail(wide, blizzard);
+        bool pale = RunGoals.HasLook("pale_wake");
+        bool ledger = RunGoals.HasLook("ledger_glow");
+        int trailRank = Mathf.Max(wide, pale || ledger ? 1 : 0);
+        Trail(trailRank, blizzard || pale, ledger);
         if (wide > 0) {
             said.Add("Wide Arc: swing trail");
+        }
+        if (pale) {
+            said.Add("Pale Wake trail");
+        }
+        if (ledger) {
+            said.Add("Ledger Glow trail");
         }
 
         // Pine Tar: flame tongues licking the barrel; Phoenix Bat makes them bigger and redder.
@@ -785,7 +900,7 @@ public class BatMarks : MonoBehaviour {
     }
 
     // A swoosh behind the tip while the bat moves.
-    void Trail(int wide, bool frost) {
+    void Trail(int wide, bool frost, bool ledger = false) {
         if (trailTip != null) {
             Destroy(trailTip.gameObject);
             trailTip = null;
@@ -808,7 +923,9 @@ public class BatMarks : MonoBehaviour {
         if (shader != null) {
             trail.material = new Material(shader);
         }
-        Color c = frost ? new Color(0.8f, 0.94f, 1f, 0.55f) : new Color(1f, 0.97f, 0.88f, 0.45f);
+        Color c = ledger ? new Color(0.55f, 0.95f, 0.7f, 0.5f)
+            : frost ? new Color(0.8f, 0.94f, 1f, 0.55f)
+            : new Color(1f, 0.97f, 0.88f, 0.45f);
         trail.startColor = c;
         trail.endColor = new Color(c.r, c.g, c.b, 0f);
     }

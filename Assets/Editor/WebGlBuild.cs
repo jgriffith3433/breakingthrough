@@ -212,6 +212,8 @@ public class WebGlDeployWindow : EditorWindow
         Log("Pointing " + WebGlBuild.GamePage + " at v" + newVersion);
         WebGlBuild.UpdateGamePageVersion(WebGlBuild.GamePage, newVersion);
         WebGlBuild.InstallSoundPrompt(WebGlBuild.GamePage, newVersion);
+        WebGlBuild.InstallLoadQuiet(WebGlBuild.GamePage, newVersion);
+        WebGlBuild.InstallPlaytestBridge(WebGlBuild.GamePage, newVersion);
         Log("Installing What's new (whatsnew.html, releases.json, js/hawkes-release.js and its links)");
         WebGlBuild.InstallWhatsNew(WebGlBuild.GamePage, newVersion);
         Log("Stamping the site footer onto the pages outside Game/");
@@ -315,6 +317,8 @@ public static class WebGlBuild
     const string DefaultSiteName = "theplacedepartmentwebsite";
     const string DefaultGameName = "PlaceDepartment";
     const string SoundScript = "hawkes-sound.js";
+    const string LoadQuietScript = "hawkes-load-quiet.js";
+    const string PlaytestBridgeScript = "hawkes-playtest-bridge.js";
 
     public static string ProjectRoot
     {
@@ -486,6 +490,8 @@ public static class WebGlBuild
             }
             UpdateGamePageVersion(GamePage, next);
             InstallSoundPrompt(GamePage, next);
+            InstallLoadQuiet(GamePage, next);
+            InstallPlaytestBridge(GamePage, next);
             InstallWhatsNew(GamePage, next);
             InstallSiteFooter();
 
@@ -620,14 +626,48 @@ public static class WebGlBuild
         }
 
         Directory.CreateDirectory(buildPath);
+        // Gzip, never Brotli. The build's address (Game/build.json's base on sites.hawkesgen.ai) sends the .unityweb files as
+        // application/octet-stream with no Content-Encoding, so the browser never unpacks them itself. The Game page's loader
+        // streams a gzip file through the browser's native DecompressionStream while it downloads; it cannot do that for
+        // Brotli, so a Brotli build reached Unity's JavaScript decoder, which unpacked the whole ~18 MB on the main thread
+        // after the last byte: a minute of frozen page on the phone twin (build 135), and gameplay never came. Gzip costs a
+        // few MB more on the wire and unpacks for free. The campaign's heavy files are not in the data file at all
+        // (OnDemandPack), so this is the menu and Arcade only. Engine modules nothing references are stripped from the player.
         PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
         PlayerSettings.WebGL.decompressionFallback = true;
+        PlayerSettings.WebGL.dataCaching = true;   // a returning player's browser keeps the data file
+        PlayerSettings.WebGL.debugSymbolMode = WebGLDebugSymbolMode.Off;
+        PlayerSettings.stripEngineCode = true;
+        // The wasm is the second-largest first download (7 MB): size-optimised IL2CPP, managed code stripped to what is used,
+        // and exception support only for exceptions the game throws itself (no implicit null/bounds checks wired through wasm).
+        PlayerSettings.SetIl2CppCodeGeneration(UnityEditor.Build.NamedBuildTarget.WebGL, UnityEditor.Build.Il2CppCodeGeneration.OptimizeSize);
+        // High strips the most managed code (build 128 had Medium). Exception support stays at explicitly thrown ones only: the
+        // save loader and the on-demand fetch catch exceptions, and with None a caught exception would end the page instead.
+        PlayerSettings.SetManagedStrippingLevel(UnityEditor.Build.NamedBuildTarget.WebGL, ManagedStrippingLevel.High);
+        PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly;
+        // No wasm trap checks on integer divide (the game never relies on one), and the emscripten pass that optimises for the
+        // smallest .wasm (-Oz, no LTO so the cloud build stays as fast as before) instead of runtime speed.
+        PlayerSettings.WebGL.wasmArithmeticExceptions = WebGLWasmArithmeticExceptions.Ignore;
+        UnityEditor.WebGL.UserBuildSettings.codeOptimization = UnityEditor.WebGL.WasmCodeOptimization.DiskSize;
         PlayerSettings.WebGL.initialMemorySize = 256;
         // Phones kill a tab that grows past about 1.5 GB: the heap may grow from 256 MB but not to 2 GB.
         PlayerSettings.WebGL.maximumMemorySize = 1536;
         PlayerSettings.WebGL.memoryGrowthMode = WebGLMemoryGrowthMode.Geometric;
+        // Unity's splash logo alone was ~2.7 MB in the data file (build 121); phones never need it.
+        PlayerSettings.SplashScreen.show = false;
+        PlayerSettings.SplashScreen.showUnityLogo = false;
 
-        BuildReport report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+        // Rebuild the Arena so the player ships instanced scatter (shared FBX meshes) instead of the old combined
+        // ArenaScatter_*.asset blobs (~40 MB of the data file on build 121), and clear retired bow model refs.
+        BuildArena.RebuildForPlayerBuild();
+
+        // The campaign's voices, stills, portraits, skies and boss meshes leave the data file for the build's StreamingAssets/OnDemand
+        // (OnDemandPack): the originals are moved aside for the build and always moved back.
+        BuildReport report;
+        try
+        {
+            OnDemandPack.Prepare();
+            report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
         {
             scenes = new[]
             {
@@ -641,12 +681,24 @@ public static class WebGlBuild
                 "Assets/Maps/Map_Reading.unity",
                 "Assets/Maps/Map_Filed.unity",
                 "Assets/Maps/Map_Office.unity",
-                "Assets/Maps/Level_1_Yard.unity",
-                "Assets/Maps/KitPreview.unity"
+                "Assets/Maps/Level_1_Yard.unity"
+                // KitPreview is an editor gallery, not part of the playable first download.
             },
             locationPathName = buildPath,
             target = BuildTarget.WebGL
         });
+        }
+        finally
+        {
+            OnDemandPack.Restore();
+        }
+
+        if (report.summary.result == BuildResult.Succeeded)
+        {
+            RequireGzip(buildPath);
+            OnDemandPack.Install(buildPath);
+            LogSizes(report, buildPath);
+        }
 
         if (report.summary.result != BuildResult.Succeeded)
         {
@@ -668,6 +720,135 @@ public static class WebGlBuild
 
             throw new Exception(details.ToString());
         }
+    }
+
+    // What the first download holds, by folder, and the biggest assets in it, from the build report: logged and written beside the
+    // build as build-report.txt. AGENTS.md ("Download size") keeps the before and after of the on-demand split.
+    // The Game page unpacks only gzip without the main thread (see the compression setting in BuildWebGLTo): a data, wasm or
+    // framework file in any other format would freeze a phone after the download, so the build fails here instead.
+    static void RequireGzip(string buildPath)
+    {
+        string buildDir = Path.Combine(buildPath, "Build");
+        foreach (string kind in new[] { ".data.unityweb", ".wasm.unityweb", ".framework.js.unityweb" })
+        {
+            string[] files = Directory.Exists(buildDir) ? Directory.GetFiles(buildDir, "*" + kind) : new string[0];
+            if (files.Length == 0)
+            {
+                throw new Exception("the build has no *" + kind + " (the Game page loads it)");
+            }
+            byte[] head = new byte[2];
+            using (FileStream stream = File.OpenRead(files[0]))
+            {
+                if (stream.Read(head, 0, 2) < 2 || head[0] != 0x1f || head[1] != 0x8b)
+                {
+                    throw new Exception(Path.GetFileName(files[0]) + " is not gzip: the Game page would hand it to Unity's JavaScript unpacker and freeze the page");
+                }
+            }
+        }
+    }
+
+    static void LogSizes(BuildReport report, string buildPath)
+    {
+        var text = new StringBuilder();
+        long data = 0, wasm = 0, onDemand = 0, other = 0;
+        string buildDir = Path.Combine(buildPath, "Build");
+        if (Directory.Exists(buildDir))
+        {
+            foreach (string file in Directory.GetFiles(buildDir))
+            {
+                long length = new FileInfo(file).Length;
+                string name = Path.GetFileName(file).ToLowerInvariant();
+                if (name.Contains(".data")) data += length;
+                else if (name.Contains(".wasm")) wasm += length;
+                else other += length;
+            }
+        }
+        string onDemandDir = Path.Combine(buildPath, "StreamingAssets", "OnDemand");
+        if (Directory.Exists(onDemandDir))
+        {
+            foreach (string file in Directory.GetFiles(onDemandDir))
+            {
+                onDemand += new FileInfo(file).Length;
+            }
+        }
+        text.AppendLine("first download (Build/): data " + Mb(data) + " MB, wasm " + Mb(wasm) + " MB, loader and framework " + Mb(other) + " MB");
+        text.AppendLine("on demand (StreamingAssets/OnDemand): " + Mb(onDemand) + " MB, fetched per chapter on the player's choice");
+        text.AppendLine("uncompressed build size by the report: " + Mb((long)report.summary.totalSize) + " MB");
+        var byFolder = new SortedDictionary<string, long>();
+        var big = new List<KeyValuePair<string, long>>();
+        foreach (PackedAssets packed in report.packedAssets)
+        {
+            foreach (PackedAssetInfo info in packed.contents)
+            {
+                string path = info.sourceAssetPath ?? "";
+                if (path.Length == 0)
+                {
+                    continue;
+                }
+                string[] parts = path.Split('/');
+                string folder = parts.Length > 3 ? parts[0] + "/" + parts[1] + "/" + parts[2] : parts.Length > 1 ? parts[0] + "/" + parts[1] : path;
+                long have;
+                byFolder.TryGetValue(folder, out have);
+                byFolder[folder] = have + (long)info.packedSize;
+                big.Add(new KeyValuePair<string, long>(path, (long)info.packedSize));
+            }
+        }
+        // By kind (the before/after table in the pull request reads these): the same packed sizes, grouped by what the asset is.
+        var byKind = new SortedDictionary<string, long>();
+        foreach (PackedAssets packed in report.packedAssets)
+        {
+            foreach (PackedAssetInfo info in packed.contents)
+            {
+                string kind = KindOf(info.type, info.sourceAssetPath ?? "");
+                long have;
+                byKind.TryGetValue(kind, out have);
+                byKind[kind] = have + (long)info.packedSize;
+            }
+        }
+        text.AppendLine("in the data file, by kind (before compression):");
+        foreach (var pair in byKind)
+        {
+            text.AppendLine("  " + pair.Key + ": " + Mb(pair.Value) + " MB");
+        }
+        text.AppendLine("in the data file, by folder:");
+        foreach (var pair in byFolder)
+        {
+            if (pair.Value > 262144)
+            {
+                text.AppendLine("  " + pair.Key + ": " + Mb(pair.Value) + " MB");
+            }
+        }
+        big.Sort((a, b) => b.Value.CompareTo(a.Value));
+        text.AppendLine("largest assets:");
+        for (int i = 0; i < big.Count && i < 25; i++)
+        {
+            text.AppendLine("  " + Mb(big[i].Value) + " MB  " + big[i].Key);
+        }
+        string result = text.ToString();
+        Debug.Log("[WebGlBuild] Download size\n" + OnDemandPack.Report + result);
+        File.WriteAllText(Path.Combine(buildPath, "build-report.txt"), OnDemandPack.Report + result);
+    }
+
+    static string Mb(long bytes)
+    {
+        return (bytes / 1048576.0).ToString("0.0");
+    }
+
+    // The build report's category for one packed asset: textures, audio, meshes (models), animation clips, shaders, scenes,
+    // fonts, scripts and the rest.
+    static string KindOf(Type type, string path)
+    {
+        if (type == typeof(Texture2D) || type == typeof(Cubemap) || type == typeof(RenderTexture)) return "textures";
+        if (type == typeof(AudioClip)) return "audio";
+        if (type == typeof(Mesh)) return "meshes";
+        if (type == typeof(AnimationClip) || type == typeof(Avatar)) return "animation";
+        if (type == typeof(Shader)) return "shaders";
+        if (type == typeof(Font)) return "fonts";
+        if (type == typeof(Material)) return "materials";
+        if (type == typeof(TextAsset)) return "text data";
+        if (type == typeof(MonoScript)) return "scripts";
+        if (path.EndsWith(".unity")) return "scenes";
+        return "other";
     }
 
     public static void UpdateGamePageVersion(string gamePage, int version)
@@ -700,7 +881,24 @@ public static class WebGlBuild
         }
 
         // LF, as the website repo keeps its files (this project's checkout can be CRLF on Windows).
-        File.WriteAllText(Path.Combine(Path.GetDirectoryName(gamePage), SoundScript), File.ReadAllText(source).Replace("\r\n", "\n"));
+        string gameDir = Path.GetDirectoryName(gamePage);
+        File.WriteAllText(Path.Combine(gameDir, SoundScript), File.ReadAllText(source).Replace("\r\n", "\n"));
+        // Cast portraits for the Tap card (Wallit, Slice, Yo Bot, Spider Bot) so first paint shows the game.
+        string castSrc = Path.Combine(ProjectRoot, "Tools", "Web", "cast");
+        if (Directory.Exists(castSrc))
+        {
+            string castDst = Path.Combine(gameDir, "cast");
+            Directory.CreateDirectory(castDst);
+            foreach (string file in Directory.GetFiles(castSrc))
+            {
+                string name = Path.GetFileName(file);
+                if (name.StartsWith("."))
+                {
+                    continue;
+                }
+                File.Copy(file, Path.Combine(castDst, name), true);
+            }
+        }
         string html = File.ReadAllText(gamePage);
         string tag = "<script src=\"" + SoundScript + "?v=v" + version + "\" data-hawkes-sound></script>";
         string updated = Regex.Replace(html, @"<script[^>]*data-hawkes-sound[^>]*></script>", tag);
@@ -713,6 +911,96 @@ public static class WebGlBuild
             }
             string newline = html.Contains("\r\n") ? "\r\n" : "\n";
             updated = html.Insert(head, "  " + tag + newline);
+        }
+
+        if (updated != html)
+        {
+            File.WriteAllText(gamePage, updated);
+        }
+    }
+
+    // Studio reads the Game page's window.hawkesPlaytest stand-in before Unity's bridge replaces it, so it only saw the
+    // stand-in's own ids. This writes every scenario id the build registers (read from the PlaytestScenario rows in
+    // Assets/Scripts/Playtest*.cs) to scenarios.json next to the page, installs Tools/Web/hawkes-playtest-bridge.js
+    // (which patches the stand-in to list them and forwards start to Unity, and dismisses the portrait gate) and tags
+    // the page. Runs on every deploy.
+    public static void InstallPlaytestBridge(string gamePage, int version)
+    {
+        string source = Path.Combine(ProjectRoot, "Tools", "Web", PlaytestBridgeScript);
+        if (!File.Exists(source))
+        {
+            throw new Exception("The playtest bridge script is missing: " + source);
+        }
+
+        var ids = new List<string>();
+        foreach (string file in Directory.GetFiles(Path.Combine(Application.dataPath, "Scripts"), "Playtest*.cs"))
+        {
+            foreach (Match m in Regex.Matches(File.ReadAllText(file), "new PlaytestScenario\\(\"([a-z0-9][a-z0-9-]*)\""))
+            {
+                if (!ids.Contains(m.Groups[1].Value))
+                {
+                    ids.Add(m.Groups[1].Value);
+                }
+            }
+        }
+
+        string folder = Path.GetDirectoryName(gamePage);
+        File.WriteAllText(Path.Combine(folder, "scenarios.json"), "{\"scenarios\":[\"" + string.Join("\",\"", ids.ToArray()) + "\"]}");
+        File.WriteAllText(Path.Combine(folder, PlaytestBridgeScript), File.ReadAllText(source).Replace("\r\n", "\n"));
+        string html = File.ReadAllText(gamePage);
+        string tag = "<script src=\"" + PlaytestBridgeScript + "?v=v" + version + "\" data-hawkes-playtest-bridge></script>";
+        string updated = Regex.Replace(html, @"<script[^>]*data-hawkes-playtest-bridge[^>]*></script>", tag);
+        if (updated == html && !html.Contains("data-hawkes-playtest-bridge"))
+        {
+            // First script in <head>, so it is in place before the page's stand-in is assigned.
+            Match head = Regex.Match(html, @"<head[^>]*>");
+            if (!head.Success)
+            {
+                throw new Exception("No <head> in " + gamePage + " for the playtest bridge script");
+            }
+            string newline = html.Contains("\r\n") ? "\r\n" : "\n";
+            updated = html.Insert(head.Index + head.Length, newline + "  " + tag);
+        }
+
+        if (updated != html)
+        {
+            File.WriteAllText(gamePage, updated);
+        }
+    }
+
+    // Keeps first-five's wordsMinuteOne under 40: progress %/MB and rotating load lines must not create distinct
+    // document.body.innerText lines. Tools/Web/hawkes-load-quiet.js pins those to data-* / one short line; the site's
+    // Game/index.html should already do the same (the-place-department PR for the loader). Install on every FullDeploy.
+    public static void InstallLoadQuiet(string gamePage, int version)
+    {
+        string source = Path.Combine(ProjectRoot, "Tools", "Web", LoadQuietScript);
+        if (!File.Exists(source))
+        {
+            throw new Exception("The load-quiet script is missing: " + source);
+        }
+
+        File.WriteAllText(Path.Combine(Path.GetDirectoryName(gamePage), LoadQuietScript), File.ReadAllText(source).Replace("\r\n", "\n"));
+        string html = File.ReadAllText(gamePage);
+        string tag = "<script src=\"" + LoadQuietScript + "?v=v" + version + "\" data-hawkes-load-quiet></script>";
+        string updated = Regex.Replace(html, @"<script[^>]*data-hawkes-load-quiet[^>]*></script>", tag);
+        if (updated == html && !html.Contains("data-hawkes-load-quiet"))
+        {
+            // Sit just before the sound prompt when present, else before </head>.
+            Match sound = Regex.Match(html, @"<script[^>]*data-hawkes-sound[^>]*></script>");
+            string newline = html.Contains("\r\n") ? "\r\n" : "\n";
+            if (sound.Success)
+            {
+                updated = html.Insert(sound.Index, "  " + tag + newline);
+            }
+            else
+            {
+                int head = html.IndexOf("</head>", StringComparison.OrdinalIgnoreCase);
+                if (head < 0)
+                {
+                    throw new Exception("No </head> in " + gamePage + " for the load-quiet script");
+                }
+                updated = html.Insert(head, "  " + tag + newline);
+            }
         }
 
         if (updated != html)

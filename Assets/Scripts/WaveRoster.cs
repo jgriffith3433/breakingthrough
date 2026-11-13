@@ -10,6 +10,7 @@ public class WaveRoster : MonoBehaviour {
     GameObject panel;
     RectTransform list;
     RectTransform headerRect;
+    Text headerText;
     CanvasScaler scaler;
     UiMode laidOut;
     int laidStamp = -1;
@@ -65,7 +66,7 @@ public class WaveRoster : MonoBehaviour {
         scaler.referenceResolution = new Vector2(1920, 1080);
         canvasGo.AddComponent<GraphicRaycaster>();
 
-        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        Font font = UiSkin.Font(UiSkin.FontRole.Label);
         var headerGo = new GameObject("Header");
         headerGo.transform.SetParent(canvasGo.transform, false);
         var header = headerGo.AddComponent<Text>();
@@ -74,6 +75,7 @@ public class WaveRoster : MonoBehaviour {
         header.alignment = TextAnchor.UpperRight;
         header.color = new Color(0.79f, 0.71f, 0.54f, 1f);
         header.text = "This wave";
+        headerText = header;
         header.raycastTarget = false;
         var outline = headerGo.AddComponent<Outline>();
         outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
@@ -185,7 +187,8 @@ public class WaveRoster : MonoBehaviour {
         if (laidStamp != UiFit.Stamp) {
             Layout();
         }
-        bool show = Time.timeScale > 0f && WaveDirector.Instance != null;
+        // A boss's name card owns the screen: the wave rows stay out from under it.
+        bool show = Time.timeScale > 0f && WaveDirector.Instance != null && !BossSetPiece.EntranceUp;
         if (panel != null && panel.activeSelf != show) {
             panel.SetActive(show);
         }
@@ -194,6 +197,11 @@ public class WaveRoster : MonoBehaviour {
         }
 
         WaveDirector.Instance.CopyRoster(total, left);
+        // The first minute shows the bars and names only: the wave line already says how many are left.
+        bool quiet = WaveDirector.QuietOpening;
+        if (headerText != null) {
+            headerText.text = quiet ? "" : "This wave";
+        }
         int shown = 0;
         for (int kind = rows.Length - 1; kind >= 0; kind--) {
             Row row = rows[kind];
@@ -210,7 +218,7 @@ public class WaveRoster : MonoBehaviour {
             int remain = Mathf.Max(0, left[kind]);
             bool done = remain == 0;
             row.Name.text = def.Name;
-            row.Count.text = remain + " left";
+            row.Count.text = quiet ? "" : remain + " left";
             Color ink = done ? new Color(0.55f, 0.52f, 0.46f, 0.7f) : new Color(1f, 0.97f, 0.9f, 0.96f);
             row.Name.color = ink;
             row.Count.color = ink;

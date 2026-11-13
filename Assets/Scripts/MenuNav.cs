@@ -239,7 +239,7 @@ public class MenuNav : MonoBehaviour {
         ring.effectDistance = new Vector2(5f, -5f);
         ring.useGraphicAlpha = false;
         ringOn = want;
-        GameAudio.Play("hit", 0.06f, 2f);
+        GameAudio.PlayUI("hit", 0.06f, 2f);
     }
 
     void Unring() {

@@ -173,32 +173,44 @@ public static class PlaytestBeats {
         yield return Wait(0.6f);
     }
 
-    public static IEnumerator Run(PlaytestRun r) {
+    // fromCard: Campaign already has Chapter 1's card up (campaign-full). finish: campaign-beats ends the run; campaign-full keeps going.
+    public static IEnumerator Run(PlaytestRun r, bool fromCard = false, bool finish = true) {
         run = r;
         drained = 0;
-        CampaignSave.EnterSandbox();
-        LevelBarks.Reset();
-        yield return Wait(1f);
-        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
-        if (menu == null || menu.CampaignButton == null) {
-            run.Problem(PlaytestSeverity.Bug, "campaign-beats: no Campaign button on the main menu");
-            run.Finish(PlaytestOutcome.Stuck);
-            yield break;
+        courierSeen = 0;
+        if (!fromCard) {
+            CampaignSave.EnterSandbox();
+            LevelBarks.Reset();
+            yield return Wait(1f);
+            MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+            if (menu == null || menu.CampaignButton == null) {
+                run.Problem(PlaytestSeverity.Bug, "campaign-beats: no Campaign button on the main menu");
+                run.Finish(PlaytestOutcome.Stuck);
+                yield break;
+            }
+            run.Event("mode-select", "Campaign");
+            Tap(menu.CampaignButton.gameObject);
+            yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files");
+            if (run.Done) {
+                yield break;
+            }
+            yield return Wait(1f);
+            Tap(CampaignPanel.Instance.SlotButtons[0].gameObject);
+            run.Event("tap", "case file 1 (sandbox)");
+            yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.CardUp && ChapterScene.Instance.BeginButton != null && SceneManager.GetActiveScene().name == CampaignSave.Scene, 45f, "Chapter 1's card");
+            if (run.Done) {
+                yield break;
+            }
+            yield return Wait(3.5f);
+        } else {
+            LevelBarks.Reset();
+            yield return Wait(1f);
+            if (ChapterScene.Instance == null || ChapterScene.Instance.BeginButton == null) {
+                run.Problem(PlaytestSeverity.Bug, "campaign-full: Chapter 1's card has no Begin button before the Sorting Yard");
+                run.Finish(PlaytestOutcome.Stuck);
+                yield break;
+            }
         }
-        run.Event("mode-select", "Campaign");
-        Tap(menu.CampaignButton.gameObject);
-        yield return run.Until(() => CampaignPanel.IsOpen, 10f, "the case files");
-        if (run.Done) {
-            yield break;
-        }
-        yield return Wait(1f);
-        Tap(CampaignPanel.Instance.SlotButtons[0].gameObject);
-        run.Event("tap", "case file 1 (sandbox)");
-        yield return run.Until(() => ChapterScene.Instance != null && ChapterScene.Instance.CardUp && ChapterScene.Instance.BeginButton != null && SceneManager.GetActiveScene().name == CampaignSave.Scene, 45f, "Chapter 1's card");
-        if (run.Done) {
-            yield break;
-        }
-        yield return Wait(3.5f);
         Tap(ChapterScene.Instance.BeginButton.gameObject);
         run.Event("tap", "Begin");
         yield return run.Until(() => LevelScene.Instance != null && LevelScene.Instance.Yard != null && SceneManager.GetActiveScene().name.StartsWith("Level_"), 45f, "the level scene");
@@ -484,6 +496,8 @@ public static class PlaytestBeats {
         if (barks < 12 || LevelBarks.Speakers.Count < 3 || LevelBarks.Overlaps > 0) {
             run.Problem(PlaytestSeverity.Polish, "campaign-beats: " + barks + " barks from " + LevelBarks.Speakers.Count + " speakers, " + LevelBarks.Overlaps + " overlaps (wanted 12, 3, 0)");
         }
-        run.Finish(PlaytestOutcome.Done);
+        if (finish) {
+            run.Finish(PlaytestOutcome.Done);
+        }
     }
 }
