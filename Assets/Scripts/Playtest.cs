@@ -4707,12 +4707,20 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         }
 
         // The phone: the same changes at 390x844 with touch forced.
+        // In a browser build Screen.SetResolution only stretches the canvas (a vertically smeared frame, a black bar and the
+        // touch pads over a desktop page), so the leg runs only where the viewport is already phone-sized (the phone twin).
         int w = Screen.width;
         int h = Screen.height;
-        UiFit.ForceTouch(true);
-        Screen.SetResolution(390, 844, false);
-        yield return new WaitForSecondsRealtime(1.5f);
-        if (Screen.width == 390) {
+        bool phoneViewport = Screen.height > Screen.width && Screen.width <= 500;
+        bool browser = Application.platform == RuntimePlatform.WebGLPlayer;
+        if (!browser) {
+            UiFit.ForceTouch(true);
+            Screen.SetResolution(390, 844, false);
+            yield return new WaitForSecondsRealtime(1.5f);
+        } else if (phoneViewport) {
+            UiFit.ForceTouch(true);
+        }
+        if (Screen.width == 390 || (browser && phoneViewport)) {
             yield return GoWave(1);
             yield return ActsPlay(player, 0.8f, null);
             ActBanner("phone wave 1");
@@ -4726,9 +4734,11 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             ActBanner("phone wave 21");
             ActLook(2);
         } else {
-            run.Event("screen-turn-skipped", "the window would not resize to 390x844 (it is " + Screen.width + "x" + Screen.height + ")");
+            run.Event("screen-turn-skipped", "the page is a desktop viewport and a browser canvas is never resized by the bot; run the phone twin for the phone view (it is " + Screen.width + "x" + Screen.height + ")");
         }
-        Screen.SetResolution(w, h, false);
+        if (!browser) {
+            Screen.SetResolution(w, h, false);
+        }
         UiFit.ForceTouch(false);
         yield return new WaitForSecondsRealtime(1f);
     }
