@@ -227,6 +227,10 @@ public static class PlaytestTransitions {
         if (p5 < 30f) {
             run.Problem(PlaytestSeverity.Bug, "transitions: fps p5 was " + Mathf.Round(p5) + " while a sheet was moving (want 30 or more)");
         }
+        run.Metric("transitionRecoveries", ScreenTransition.Recoveries);
+        if (ScreenTransition.Recoveries > 0) {
+            run.Problem(PlaytestSeverity.Bug, "transitions: the paper sheet had to be taken down by force " + ScreenTransition.Recoveries + " time(s) (a step threw or it stayed up too long)");
+        }
         if (ScreenTransition.Count < 10) {
             run.Problem(PlaytestSeverity.Bug, "transitions: only " + ScreenTransition.Count + " page turns were played");
         }
