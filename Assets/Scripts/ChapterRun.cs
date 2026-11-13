@@ -221,7 +221,40 @@ public class ChapterRun : MonoBehaviour {
         while ((ChapterMap.Current == null || ChapterMap.Current.Own == null) && Time.unscaledTime - t0 < 2.5f) {
             yield return null;
         }
-        CinematicDirector.PlayChapter(worldOpen, OpenDone);
+        bool handed = false;
+        CinematicDirector.PlayChapter(worldOpen, () => {
+            handed = true;
+            OpenDone();
+        });
+        // The opening never holds the chapter for good (a voice that never decodes, a shot that never ends, a fallback reel that
+        // never plays): past its own length plus a margin it is cut, and if nothing is left playing the chapter goes on to play.
+        CinematicDirector.Reel opening = CinematicDirector.Load(worldOpen);
+        float budget = 20f;
+        if (opening != null && opening.shots != null) {
+            foreach (CinematicDirector.Shot shot in opening.shots) {
+                budget += shot.seconds + 4f;
+            }
+        }
+        float started = Time.unscaledTime;
+        while (!handed && this != null) {
+            if (Time.unscaledTime - started > budget) {
+                Events.Add("opening-timeout|" + data.Id + "|" + worldOpen);
+                Debug.LogWarning("[ChapterRun] " + worldOpen + " did not hand over in " + budget.ToString("0") + " s: cut");
+                if (CinematicDirector.Instance != null && CinematicDirector.IsOpen) {
+                    CinematicDirector.Instance.Skip();
+                }
+                if (Cutscene.PageOpen && Cutscene.Instance != null) {
+                    Cutscene.Instance.SkipFromPause();   // the still-reel fallback
+                }
+                started = Time.unscaledTime;
+                if (!handed && !CinematicDirector.IsOpen && !Cutscene.IsOpen) {
+                    handed = true;
+                    VoiceDirector.Scene = false;
+                    OpenDone();
+                }
+            }
+            yield return null;
+        }
     }
 
     // The opening scene is over and play begins. On a New Game+ loop the chapter says one line about the playthrough before it.
