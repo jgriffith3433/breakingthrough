@@ -148,7 +148,7 @@ static class SetupSlice
 
         bool ok = importer.animationType == ModelImporterAnimationType.Human
             && importer.avatarSetup == ModelImporterAvatarSetup.CreateFromThisModel
-            && importer.materialImportMode != ModelImporterMaterialImportMode.None
+            && importer.materialImportMode == ModelImporterMaterialImportMode.None
             && ClipsConfigured(importer);
 
         // Keep textures at or under 2K for WebGL.
@@ -170,7 +170,9 @@ static class SetupSlice
         importer.animationType = ModelImporterAnimationType.Human;
         importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
         importer.animationCompression = ModelImporterAnimationCompression.Optimal;
-        importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
+        // None: the game paints these with its own skin materials (Resources/.../*Skin.png), so the FBX's embedded textures
+        // (2048 px twice on Slice, 2048 + 1024 on Wallit, 1024 twice on each bot: several MB of the phone's first download) must not ship.
+        importer.materialImportMode = ModelImporterMaterialImportMode.None;
 
         ModelImporterClipAnimation[] takes = importer.clipAnimations;
         if (takes == null || takes.Length == 0)
