@@ -474,40 +474,11 @@ public class WallitVoice : MonoBehaviour {
         if (envelopes.TryGetValue(id, out env)) {
             return env;
         }
-        env = null;
-        try {
-            // A clip kept compressed (fetched on demand) cannot be read: Unity logs an error per call. The mouth follows the
-            // speaker's output instead.
-            if (OnDemand.IsFetched(clip) || clip.loadType != AudioClipLoadType.DecompressOnLoad || clip.loadState != AudioDataLoadState.Loaded) {
-                envelopes[id] = null;
-                return null;
-            }
-            int channels = Mathf.Max(1, clip.channels);
-            var data = new float[clip.samples * channels];
-            if (clip.samples > 0 && clip.GetData(data, 0)) {
-                int step = Mathf.Max(1, clip.frequency / 50);
-                env = new float[clip.samples / step + 1];
-                float peak = 0.0001f;
-                for (int w = 0; w < env.Length; w++) {
-                    double sum = 0.0;
-                    int n = 0;
-                    for (int s = w * step; s < (w + 1) * step && s < clip.samples; s++) {
-                        float v = data[s * channels];
-                        sum += v * v;
-                        n++;
-                    }
-                    env[w] = n > 0 ? Mathf.Sqrt((float)(sum / n)) : 0f;
-                    peak = Mathf.Max(peak, env[w]);
-                }
-                for (int w = 0; w < env.Length; w++) {
-                    env[w] = Mathf.Clamp01(env[w] / (peak * 0.8f));
-                }
-            }
-        } catch (System.Exception) {
-            env = null;
-        }
-        envelopes[id] = env;
-        return env;
+        // Never AudioClip.GetData: a Voice clip may be compressed in memory (fetched on demand, or a Resources import that kept
+        // Vorbis on WebGL), and every read logs "Cannot get data on compressed samples" with no way to ask first. The mouth
+        // follows the speaker's output (Update) instead, so the line still plays and the mouth still moves.
+        envelopes[id] = null;
+        return null;
     }
 
     // ---------------------------------------------------------------- tick

@@ -31,8 +31,8 @@ class AudioImportRules : AssetPostprocessor
             settings.sampleRateSetting = AudioSampleRateSetting.OverrideSampleRate;
             settings.sampleRateOverride = 22050;
             settings.quality = 0.35f;
-            // WallitVoice.EnvelopeOf reads the samples (AudioClip.GetData) to drive the mouth; WebGL cannot read a clip
-            // that stays compressed in memory. Voice lines are short mono 22 kHz, so decoding on load is cheap.
+            // Nothing reads these clips' samples any more (the mouth follows the speaker output); decoding on load keeps
+            // playback instant. Not a size change: the download is the same compressed data.
             settings.loadType = AudioClipLoadType.DecompressOnLoad;
         }
         else
