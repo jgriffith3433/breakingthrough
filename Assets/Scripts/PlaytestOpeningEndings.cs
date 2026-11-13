@@ -103,6 +103,16 @@ public static class PlaytestOpeningEndings {
         CinematicDirector.Events.Clear();
         run.Event("setup", "opening-endings: ch4-6 world opens + filed/received + live credits; touch=" + UiFit.Touch + " size=" + Screen.width + "x" + Screen.height);
 
+        // Audio capture: the three sounds the sound critic asked for, played by name (setup) so the audio probe hears them.
+        int before = GameAudio.Played;
+        string[] sounds = { "batcrack", "bot_death_yo", "slice_hurt" };
+        foreach (string snd in sounds) {
+            GameAudio.Play(snd, 0.8f);
+            yield return Wait(0.5f);
+        }
+        run.Event("audio-capture", "bat-hit batcrack, kill bot_death_yo, Slice-hurt slice_hurt: " + (GameAudio.Played - before) + " sounds played; music '" + MusicDirector.Current + "'");
+        run.Metric("audioCaptureSounds", GameAudio.Played - before);
+
         yield return WatchOpen(3, "ch4_open_world", "paper");
         if (run.Done) {
             yield break;
@@ -163,6 +173,8 @@ public static class PlaytestOpeningEndings {
             yield break;
         }
 
+        run.Event("audio-capture", "end: " + GameAudio.Played + " sounds played in all; music '" + MusicDirector.Current + "'");
+        run.Metric("audioSoundsTotal", GameAudio.Played);
         run.Progress(1f);
         if (!run.Done) {
             run.Finish(PlaytestOutcome.Done);
