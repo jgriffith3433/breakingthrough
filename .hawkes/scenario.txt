@@ -1,2 +1,1 @@
-finale-carry
-{"mobile":true}
+bot-sound

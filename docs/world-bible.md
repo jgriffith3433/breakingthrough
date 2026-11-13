@@ -52,6 +52,14 @@ Eight places, each its own scene or map, plus six hidden rooms. Size is the walk
   phone, typewriters and radiator tick; the yard's lamp and sign, the gate's stamp press, the floor's crushers, the Long Walk's
   lamp stilts, the Reading Room's clock and chandeliers, the filed Hollow's doorframes. Wallit's wallet-flap steps change with the
   ground (grass, stone, wood, metal; 3 variants each, never the same twice in a row) and land with a heavier slap. `place-audio` playtest.
+- Built: **every bot family is heard before it is seen** (`BotSound.cs`, positional 3D): Yo Bots whirr (a chirpy servo loop, tiny metal
+  ticks underfoot), Spider Bots skitter (leg clicks whose pitch and level follow their speed), Mega Yo Bots and Alphas tread (heavy
+  hydraulic steps, a low rumble). A chapter's variant carries a small layer over its family: Dispatch and Clerk a paper rustle,
+  Returned and Sealed a stamp clack, Reissue and Queue-Skip a ticket printer. Every blow is told by ear 0.4-0.8 s before it lands: a
+  rising whine (Yo Bots, 0.45 s), a hiss (Spider Bots, 0.50 s), a ratchet (Mega Yo Bots and bosses, the last 0.6 s of their ground-mark
+  wind-up, in step with the rear-back pose). Deaths: Yo Bots pop and fizz, Spider Bots crumple and their legs scatter, bosses and Megas
+  collapse long and mechanically. Three or more takes of each, never the same twice in a row; at most 6 movement loops at once (nearest
+  first), so a phone speaker stays clear. `bot-sound` playtest (touch on a phone).
 - Built: **every change of place is a page turned in the Department's files** (`ScreenTransition.cs`): a sheet of file paper
   slides over, a red rubber stamp slams down on it (ENTER into a run or a chapter, FILED back to the hub or on a win, STRUCK OFF
   when Slice falls, RETURNED to the menu or a retry) with a paper-slide and a stamp thud, the swap happens under it and it peels

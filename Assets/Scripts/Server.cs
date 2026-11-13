@@ -158,6 +158,7 @@ public class Server : MonoBehaviour {
         Events.Add("strike-wind");
         enemy.Hold(StrikeWind + 0.3f);
         enemy.BeginTell();   // the Server rears up on its front legs before it serves
+        BotSound.TellIn(enemy, StrikeWind);
         GameAudio.PlayAt("stomp", transform.position, 0.8f, 0.7f);
         UpgradeLook.Say("The Server strikes!", 2.2f, 160f);
         if (RefusalsNeeded == DefaultRefusals) {
@@ -168,6 +169,7 @@ public class Server : MonoBehaviour {
 
     void Strike(Musician slice) {
         Struck = true;
+        BotSound.Hit(enemy);
         enemy.EndTell(true);
         Events.Add("strike|slice");
         Fx.Ring(slice.transform.position, 8f, new Color(1f, 0.35f, 0.2f, 0.9f), 0.5f);
