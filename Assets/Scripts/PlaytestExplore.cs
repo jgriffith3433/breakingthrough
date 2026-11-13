@@ -135,6 +135,7 @@ public static class PlaytestExplore {
         ZeldaStyleCamera.FeelPullInMeters = 0f;
         ZeldaStyleCamera.FeelRecentred = false;
 
+        run.Log("explore: waiting for Arcade wave 1");
         yield return run.Until(() => WaveDirector.Instance != null && Enemy.Roster.Count > 0, 20f, "Arcade wave");
         if (!run.Done) {
             yield return MapPass("arcade");
@@ -142,6 +143,7 @@ public static class PlaytestExplore {
 
         for (int index = 0; index < 6 && !run.Done; index++) {
             float leaveArcadeAt = Time.realtimeSinceStartup;
+            run.Log("explore: loading chapter " + (index + 1));
             yield return LoadChapter(index);
             if (run.Done) {
                 yield break;
@@ -187,6 +189,7 @@ public static class PlaytestExplore {
             feel.ResetCounts(map);
         }
         run.Event("map-enter", map);
+        run.Log("explore: walking " + map + " at " + SceneManager.GetActiveScene().name);
         run.Progress(map == "arcade" ? 0.1f : 0.3f);
         yield return Run(run, map, shortPass: true);
         if (run.Done) {
@@ -265,6 +268,14 @@ public static class PlaytestExplore {
                 if (ok) {
                     reached++;
                 }
+                // Write the map's numbers after every probe, not only at the end, so a run that is cut short (a stall, a page
+                // that stops answering) still reports stuck cells, falls and reachability so far, and the bot counts as moving.
+                r.Metric("explore.stuckCells." + map, stuck.Count);
+                r.Metric("explore.falls." + map, falls);
+                r.Metric("explore.reachablePct." + map, 100f * reached / probes);
+                r.Metric("explore.probes." + map, probes);
+                r.Event("probe", map + " heading " + k + " ring " + radii[ri].ToString("0") + " m: " + (ok ? "reached" : "short") + ", stuck " + stuck.Count + ", falls " + falls);
+                r.Progress(r.CurrentProgress);
                 float back = Time.realtimeSinceStartup;
                 float backBudget = shortPass ? 5f : 12f;
                 while (Time.realtimeSinceStartup - back < backBudget && Flat(t.position - origin).magnitude > 3f) {
@@ -463,6 +474,7 @@ public static class PlaytestExplore {
                 }
                 if (Time.frameCount % 30 == 0) {
                     Publish(run);
+                    run.Progress(0.2f);   // the load is bounded by ch1Budget below, which reports its own stuck reason
                 }
                 yield return null;
             }
