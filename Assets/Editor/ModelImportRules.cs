@@ -8,12 +8,20 @@ class ModelImportRules : AssetPostprocessor
 {
     const float SmoothingAngle = 60f;
 
+    public override uint GetVersion()
+    {
+        return 2;
+    }
+
     void OnPreprocessModel()
     {
         if (!assetPath.StartsWith("Assets/Resources/Models/") && !assetPath.StartsWith("Assets/Art/Arena/"))
             return;
         var importer = (ModelImporter)assetImporter;
         importer.isReadable = true;
+        // Quantised vertex data (16-bit positions, UVs and normals): the phone's first download holds these meshes, the bots'
+        // and the arena scatter's, and none is big enough on screen for the steps to show.
+        importer.meshCompression = ModelImporterMeshCompression.Medium;
         importer.importCameras = false;
         importer.importLights = false;
         importer.importNormals = ModelImporterNormals.Calculate;

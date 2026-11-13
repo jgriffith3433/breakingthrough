@@ -637,8 +637,14 @@ public static class WebGlBuild
         // The wasm is the second-largest first download (7 MB): size-optimised IL2CPP, managed code stripped to what is used,
         // and exception support only for exceptions the game throws itself (no implicit null/bounds checks wired through wasm).
         PlayerSettings.SetIl2CppCodeGeneration(UnityEditor.Build.NamedBuildTarget.WebGL, UnityEditor.Build.Il2CppCodeGeneration.OptimizeSize);
-        PlayerSettings.SetManagedStrippingLevel(UnityEditor.Build.NamedBuildTarget.WebGL, ManagedStrippingLevel.Medium);
+        // High strips the most managed code (build 128 had Medium). Exception support stays at explicitly thrown ones only: the
+        // save loader and the on-demand fetch catch exceptions, and with None a caught exception would end the page instead.
+        PlayerSettings.SetManagedStrippingLevel(UnityEditor.Build.NamedBuildTarget.WebGL, ManagedStrippingLevel.High);
         PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly;
+        // No wasm trap checks on integer divide (the game never relies on one), and the emscripten pass that optimises for the
+        // smallest .wasm (-Oz, no LTO so the cloud build stays as fast as before) instead of runtime speed.
+        PlayerSettings.WebGL.wasmArithmeticExceptions = WebGLWasmArithmeticExceptions.Ignore;
+        UnityEditor.WebGL.UserBuildSettings.codeOptimization = UnityEditor.WebGL.WasmCodeOptimization.DiskSize;
         PlayerSettings.WebGL.initialMemorySize = 256;
         // Phones kill a tab that grows past about 1.5 GB: the heap may grow from 256 MB but not to 2 GB.
         PlayerSettings.WebGL.maximumMemorySize = 1536;
@@ -759,6 +765,23 @@ public static class WebGlBuild
                 big.Add(new KeyValuePair<string, long>(path, (long)info.packedSize));
             }
         }
+        // By kind (the before/after table in the pull request reads these): the same packed sizes, grouped by what the asset is.
+        var byKind = new SortedDictionary<string, long>();
+        foreach (PackedAssets packed in report.packedAssets)
+        {
+            foreach (PackedAssetInfo info in packed.contents)
+            {
+                string kind = KindOf(info.type, info.sourceAssetPath ?? "");
+                long have;
+                byKind.TryGetValue(kind, out have);
+                byKind[kind] = have + (long)info.packedSize;
+            }
+        }
+        text.AppendLine("in the data file, by kind (before compression):");
+        foreach (var pair in byKind)
+        {
+            text.AppendLine("  " + pair.Key + ": " + Mb(pair.Value) + " MB");
+        }
         text.AppendLine("in the data file, by folder:");
         foreach (var pair in byFolder)
         {
@@ -781,6 +804,23 @@ public static class WebGlBuild
     static string Mb(long bytes)
     {
         return (bytes / 1048576.0).ToString("0.0");
+    }
+
+    // The build report's category for one packed asset: textures, audio, meshes (models), animation clips, shaders, scenes,
+    // fonts, scripts and the rest.
+    static string KindOf(Type type, string path)
+    {
+        if (type == typeof(Texture2D) || type == typeof(Cubemap) || type == typeof(RenderTexture)) return "textures";
+        if (type == typeof(AudioClip)) return "audio";
+        if (type == typeof(Mesh)) return "meshes";
+        if (type == typeof(AnimationClip) || type == typeof(Avatar)) return "animation";
+        if (type == typeof(Shader)) return "shaders";
+        if (type == typeof(Font)) return "fonts";
+        if (type == typeof(Material)) return "materials";
+        if (type == typeof(TextAsset)) return "text data";
+        if (type == typeof(MonoScript)) return "scripts";
+        if (path.EndsWith(".unity")) return "scenes";
+        return "other";
     }
 
     public static void UpdateGamePageVersion(string gamePage, int version)
