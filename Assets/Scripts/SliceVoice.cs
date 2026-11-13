@@ -276,6 +276,13 @@ public class SliceVoice : MonoBehaviour {
         }
     }
 
+    // Wallit answered something Slice just said (a callout, a hurt or low line): that is an exchange too, not only the
+    // idle banter, which needs a quiet minute that a real fight rarely gives.
+    public void CountReply(string why, string line) {
+        Exchanges++;
+        Note("banter", "exchange " + Exchanges + " (reply " + why + ": " + line + ")");
+    }
+
     System.Collections.IEnumerator TradeLines() {
         banterRunning = true;
         string[] pair = Banter[Random.Range(0, Banter.Length)];
