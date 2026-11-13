@@ -39,7 +39,8 @@ public class RunEndScreen : MonoBehaviour {
         if (Instance != null) {
             return Instance;
         }
-        var go = new GameObject("RunEnd");
+        // A RectTransform from the start: a plain Transform made the stretch below a no-op and every child anchored to a point.
+        var go = new GameObject("RunEnd", typeof(RectTransform));
         go.transform.SetParent(lostPanel, false);
         var screen = go.AddComponent<RunEndScreen>();
         screen.Build(lostPanel as RectTransform);
