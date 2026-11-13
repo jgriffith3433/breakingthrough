@@ -1,3 +1,2 @@
-1. Open the beta site, play Campaign Chapter 6 and beat the Order-Bearer.
-2. Hold Swing (hold the big pad on a phone) to carry the stamp to Slice's ring; bat the 3 falling notices on the timing prompts (a miss only knocks Wallit back).
-3. Release: ADDRESS prints on the ring, lamps light one by one, Slice speaks her closing line, then ADDRESS FILED.
+1. Open the beta Game page on a phone held upright (390x844) and tap Play: no "reads better sideways" wall, you reach the game.
+2. In the browser console run `hawkesPlaytest.scenarios()`: it lists finale-carry, hub-two-shot, boss-entrances and the rest.
