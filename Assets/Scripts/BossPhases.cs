@@ -208,6 +208,7 @@ public class BossPhases : MonoBehaviour {
         Events.Add("tell|" + enemy.Title + "|" + phase + "|" + attackName + "|" + windTime.ToString("0.0"));
         enemy.Hold(windTime + 0.3f);
         enemy.BeginTell();   // the body rears back and holds until the blow lands
+        BotSound.TellIn(enemy, windTime);
         MarkUp = true;
         nextRing = 0f;
         GameAudio.PlayAt("stomp", transform.position, 0.7f, phase == 1 ? 1.2f : 0.9f);
@@ -252,6 +253,7 @@ public class BossPhases : MonoBehaviour {
             return;
         }
         if (clock >= windTime) {
+            BotSound.Hit(enemy);
             Land(slice);
         }
     }

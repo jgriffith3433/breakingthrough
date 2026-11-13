@@ -170,6 +170,7 @@ public class Courier : MonoBehaviour {
         markAt = at;
         clock = 0f;
         windTime = Angry ? WindAngry : (InLevel && Winds == 0 ? WindOpening : WindFirst);
+        BotSound.TellIn(enemy, windTime);
         healthAtWind = enemy.Health01;
         Winds++;
         Events.Add("wind|" + Winds + "|" + windTime.ToString("0.0") + "|" + (who == Aim.Wallit ? "wallit" : "slice"));
@@ -218,6 +219,7 @@ public class Courier : MonoBehaviour {
             return;
         }
         if (clock >= windTime) {
+            BotSound.Hit(enemy);
             Land(slice);
         }
     }

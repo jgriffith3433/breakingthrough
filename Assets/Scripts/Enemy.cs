@@ -983,6 +983,7 @@ public class Enemy : MonoBehaviour
                 // A claw swipe from a Yo Bot, a stab of a front leg from a Spider Bot.
                 if (rig != null)
                     rig.BeginStrike();
+                BotSound.Hit(this);
                 GameAudio.PlayAt("batswing", transform.position + Vector3.up, 0.4f, spider ? 0.85f : 1.5f);
                 if (wall != null && wall.Alive)
                     wall.Stop(this);
@@ -1797,7 +1798,7 @@ public class Enemy : MonoBehaviour
         if (stepSign != lastStepSign && walk > 0.3f && bodyScale > 2.5f && grounded)
             Fx.Footstep(transform.position, bodyScale * 0.6f);
         if (stepSign != lastStepSign && walk > 0.3f && grounded)
-            GameAudio.PlayAt("botstep", transform.position, Mathf.Clamp(0.12f + bodyScale * 0.05f, 0.12f, 0.6f), spider ? 0.8f : 1f / Mathf.Sqrt(Mathf.Max(1f, bodyScale)));
+            BotSound.Step(this, Mathf.Clamp(0.5f + bodyScale * 0.25f, 0.6f, 1.6f));
         lastStepSign = stepSign;
 
         float wind = rig.Wind;
