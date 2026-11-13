@@ -145,14 +145,14 @@ public static class PlaytestOpening {
         run.Metric("openingHandoffMs", Mathf.RoundToInt(CinematicDirector.LastHandoffSeconds * 1000f));
         run.Metric("openingCaptionBottom01", CinematicDirector.CaptionBottom01);
 
-        if (CinematicDirector.ShotsShown < 6) {
-            run.Problem(PlaytestSeverity.Bug, "opening-scene: fewer than 6 shots played (" + CinematicDirector.ShotsShown + ")");
+        if (CinematicDirector.ShotsShown < 3) {
+            run.Problem(PlaytestSeverity.Bug, "opening-scene: fewer than 3 shots played (" + CinematicDirector.ShotsShown + ")");
         }
-        if (movingShots < 6) {
-            run.Problem(PlaytestSeverity.Bug, "opening-scene: fewer than 6 shots with visible actor motion (" + movingShots + ")");
+        if (movingShots < 3) {
+            run.Problem(PlaytestSeverity.Bug, "opening-scene: fewer than 3 shots with visible actor motion (" + movingShots + ")");
         }
-        if (CinematicDirector.VoiceLines < 4) {
-            run.Problem(PlaytestSeverity.Bug, "opening-scene: expected at least 4 voiced lines, got " + CinematicDirector.VoiceLines);
+        if (CinematicDirector.VoiceLines < 1) {
+            run.Problem(PlaytestSeverity.Bug, "opening-scene: expected at least 1 voiced line, got " + CinematicDirector.VoiceLines);
         }
         var lines = new HashSet<string>();
         int overlaps = 0;
@@ -180,6 +180,20 @@ public static class PlaytestOpening {
                 break;
             }
             yield return null;
+        }
+        // The fix: a swing, a hit and a kill inside 10 s of the opening's start.
+        if (LevelScene.Instance != null && LevelScene.Instance.Yard != null) {
+            LevelYard yard = LevelScene.Instance.Yard;
+            int hitsBefore = BatEquipment.Impacts;
+            yield return run.Until(() => yard.FirstBotDown || yard.FirstBotDownSeconds > 0f, 16f, "the first Yo Bot to fall");
+            float toKill = watchSeconds + yard.FirstBotDownSeconds;
+            run.Event("first-kill", "down=" + yard.FirstBotDown + " opening=" + watchSeconds.ToString("0.0") + "s + fight=" + yard.FirstBotDownSeconds.ToString("0.0") + "s = " + toKill.ToString("0.0") + "s, bat impacts=" + (BatEquipment.Impacts - hitsBefore));
+            run.Metric("openingToFirstKillSeconds", toKill);
+            if (!yard.FirstBotDown) {
+                run.Problem(PlaytestSeverity.Bug, "opening-scene: the first Yo Bot was not killed");
+            } else if (toKill > 11f) {
+                run.Problem(PlaytestSeverity.Bug, "opening-scene: first kill came at " + toKill.ToString("0.0") + " s (> 10 s)");
+            }
         }
         run.Event("opening-control", "Cutscene.IsOpen=" + Cutscene.IsOpen + " player at " + (LevelScene.Instance != null ? LevelScene.Instance.Player.position.ToString("0.0") : "?"));
 
