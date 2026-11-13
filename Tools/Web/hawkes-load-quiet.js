@@ -16,6 +16,7 @@
     s.textContent =
       "#load-percent::after{content:attr(data-pct)}" +
       "#load-bytes::after{content:attr(data-bytes)}" +
+      "[data-hawkes-quiet]::after{content:attr(data-hawkes-quiet)}" +
       "@media (max-width:420px){.shift-pick{display:none!important}}";
     (document.head || document.documentElement).appendChild(s);
   }
@@ -45,8 +46,28 @@
     } catch (e) {}
   }
 
+  // The fullscreen toggle's label is a control's name, not something to read: it moves to aria-label and a CSS
+  // ::after, so it stays on screen and stays announced but is not one more line in innerText.
+  var FULLSCREEN = /^(enter|exit)\s+full\s?screen$/i;
+  function quietControls() {
+    var list = document.querySelectorAll("button,a,[role=button],#unity-fullscreen-button,.fullscreen");
+    for (var i = 0; i < list.length; i++) {
+      var el = list[i];
+      if (el.children.length) continue;
+      var t = (el.textContent || "").trim();
+      if (!FULLSCREEN.test(t)) continue;
+      el.setAttribute("aria-label", t);
+      el.setAttribute("data-hawkes-quiet", t);
+      el.textContent = "";
+    }
+  }
+
   function run() {
     css();
+    quietControls();
+    try {
+      if (document.body) new MutationObserver(quietControls).observe(document.body, { childList: true, subtree: true, characterData: true });
+    } catch (e) {}
     pin(document.getElementById("load-percent"), "data-pct");
     pin(document.getElementById("load-bytes"), "data-bytes");
     pinLine(document.getElementById("load-line"));
