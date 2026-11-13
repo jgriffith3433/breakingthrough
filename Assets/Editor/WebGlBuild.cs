@@ -631,6 +631,11 @@ public static class WebGlBuild
         PlayerSettings.WebGL.dataCaching = true;   // a returning player's browser keeps the data file
         PlayerSettings.WebGL.debugSymbolMode = WebGLDebugSymbolMode.Off;
         PlayerSettings.stripEngineCode = true;
+        // The wasm is the second-largest first download (7 MB): size-optimised IL2CPP, managed code stripped to what is used,
+        // and exception support only for exceptions the game throws itself (no implicit null/bounds checks wired through wasm).
+        PlayerSettings.SetIl2CppCodeGeneration(UnityEditor.Build.NamedBuildTarget.WebGL, UnityEditor.Build.Il2CppCodeGeneration.OptimizeSize);
+        PlayerSettings.SetManagedStrippingLevel(UnityEditor.Build.NamedBuildTarget.WebGL, ManagedStrippingLevel.Medium);
+        PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly;
         PlayerSettings.WebGL.initialMemorySize = 256;
         // Phones kill a tab that grows past about 1.5 GB: the heap may grow from 256 MB but not to 2 GB.
         PlayerSettings.WebGL.maximumMemorySize = 1536;
