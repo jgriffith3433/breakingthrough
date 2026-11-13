@@ -379,6 +379,10 @@ public class WallitVoice : MonoBehaviour {
         ByReason[why] = count + 1;
 
         lineClip = LoadClip(line);
+        // A clip that never decoded (length 0, NaN) is no file: the subtitle and the line's estimate carry it.
+        if (lineClip != null && (float.IsNaN(lineClip.length) || lineClip.length <= 0.05f || lineClip.loadState == AudioDataLoadState.Failed)) {
+            lineClip = null;
+        }
         lineHasFile = lineClip != null;
         lineLength = lineHasFile ? lineClip.length : EstimateSeconds(line);
         envelope = lineHasFile ? EnvelopeOf(line, lineClip) : null;
@@ -466,6 +470,12 @@ public class WallitVoice : MonoBehaviour {
         }
         env = null;
         try {
+            // A clip kept compressed (fetched on demand) cannot be read: Unity logs an error per call. The mouth follows the
+            // speaker's output instead.
+            if (clip.loadType != AudioClipLoadType.DecompressOnLoad || clip.loadState != AudioDataLoadState.Loaded) {
+                envelopes[id] = null;
+                return null;
+            }
             int channels = Mathf.Max(1, clip.channels);
             var data = new float[clip.samples * channels];
             if (clip.samples > 0 && clip.GetData(data, 0)) {

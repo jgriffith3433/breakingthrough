@@ -639,7 +639,25 @@ public class LevelYard : MonoBehaviour {
         nextStampAt = Time.time + 40f;
         bool done = false;
         CinematicDirector.Play("ch1_open_world", this, () => done = true);
+        // The opening never holds the chapter for good: if it has not handed over well after its own length (a voice clip
+        // that never decodes, a shot that never ends), it is cut and the player gets the stick.
+        CinematicDirector.Reel opening = CinematicDirector.Load("ch1_open_world");
+        float budget = 20f;
+        if (opening != null && opening.shots != null) {
+            foreach (CinematicDirector.Shot shot in opening.shots) {
+                budget += shot.seconds + 4f;
+            }
+        }
+        float started = Time.unscaledTime;
         while (!done) {
+            if (Time.unscaledTime - started > budget && CinematicDirector.Instance != null) {
+                Note("opening-timeout", "ch1_open_world cut after " + (Time.unscaledTime - started).ToString("0.0") + " s");
+                CinematicDirector.Instance.Skip();
+                started = Time.unscaledTime;
+                if (!CinematicDirector.IsOpen && !Cutscene.IsOpen) {
+                    done = true;   // nothing is playing any more: stop waiting
+                }
+            }
             yield return null;
         }
         nextStampAt = Time.time + 9f;
