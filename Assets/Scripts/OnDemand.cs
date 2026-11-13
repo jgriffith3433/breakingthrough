@@ -339,7 +339,9 @@ public class OnDemand : MonoBehaviour {
                 var handler = req.downloadHandler as DownloadHandlerAudioClip;
                 if (handler != null) {
                     handler.streamAudio = false;
-                    handler.compressed = true;
+                    // Decoded PCM, not compressed: WallitVoice.EnvelopeOf reads the samples (GetData) to drive the mouth,
+                    // and WebGL refuses GetData on a compressed clip. Voice lines are short, so the memory is small.
+                    handler.compressed = false;
                 }
             }
             AsyncOperation op = req.SendWebRequest();
