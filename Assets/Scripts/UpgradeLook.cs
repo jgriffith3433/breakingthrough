@@ -353,10 +353,53 @@ public class UpgradeLook : MonoBehaviour {
         Fx.Emit(FxKind.Dust, point + Vector3.up * 0.4f, 10, new Color(0.5f, 0.42f, 0.34f, 0.7f), 1.2f, 2.5f, 2f);
     }
 
+    // Announcements (the mid-screen slot, y >= 100) take turns: one on screen, the rest wait their turn, so two never print over
+    // each other. Small combat pops (home run, streak, a hit's name) stay immediate.
+    const float AnnounceY = 100f;
+    static readonly System.Collections.Generic.Queue<KeyValuePair<string, KeyValuePair<float, float>>> waiting =
+        new System.Collections.Generic.Queue<KeyValuePair<string, KeyValuePair<float, float>>>();
+    static LoadoutBanner announcing;
+
     public static void Say(string line, float seconds, float y = 80f) {
         if (WaveDirector.IsLost) {
+            waiting.Clear();
             return;
         }
+        if (y >= AnnounceY) {
+            if (announcing != null) {
+                foreach (var w in waiting) {
+                    if (w.Key == line) {
+                        return;
+                    }
+                }
+                if (waiting.Count < 4) {
+                    waiting.Enqueue(new KeyValuePair<string, KeyValuePair<float, float>>(line, new KeyValuePair<float, float>(seconds, y)));
+                }
+                return;
+            }
+            announcing = Show(line, seconds, y);
+            return;
+        }
+        Show(line, seconds, y);
+    }
+
+    // Called when an announcement ends: the next waiting one takes the slot.
+    public static void AnnouncementEnded(LoadoutBanner ended) {
+        if (announcing != ended) {
+            return;
+        }
+        announcing = null;
+        if (WaveDirector.IsLost || WaveDirector.Instance == null) {   // lost, or the scene is going away
+            waiting.Clear();
+            return;
+        }
+        if (waiting.Count > 0) {
+            var next = waiting.Dequeue();
+            announcing = Show(next.Key, next.Value.Key, next.Value.Value);
+        }
+    }
+
+    static LoadoutBanner Show(string line, float seconds, float y) {
         var go = new GameObject("Callout");
         var canvas = go.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -386,6 +429,7 @@ public class UpgradeLook : MonoBehaviour {
         }
         LoadoutBanner banner = go.AddComponent<LoadoutBanner>();
         banner.SetLife(seconds);
+        return banner;
     }
 
     public static void Paint(GameObject go, Color color) {
@@ -474,6 +518,10 @@ public class LoadoutBanner : MonoBehaviour {
 
     public void SetLife(float seconds) {
         left = seconds;
+    }
+
+    void OnDestroy() {
+        UpgradeLook.AnnouncementEnded(this);
     }
 
     void Update() {

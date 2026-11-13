@@ -187,7 +187,8 @@ public class WaveRoster : MonoBehaviour {
         if (laidStamp != UiFit.Stamp) {
             Layout();
         }
-        bool show = Time.timeScale > 0f && WaveDirector.Instance != null;
+        // A boss's name card owns the screen: the wave rows stay out from under it.
+        bool show = Time.timeScale > 0f && WaveDirector.Instance != null && !BossSetPiece.EntranceUp;
         if (panel != null && panel.activeSelf != show) {
             panel.SetActive(show);
         }
