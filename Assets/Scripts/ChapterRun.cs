@@ -290,7 +290,7 @@ public class ChapterRun : MonoBehaviour {
         }
         SavePlayTime();
         Companion.Despawn();
-        ChapterMap.Unload();
+        ChapterMap.Forget();   // Next, ToMenu and Restart unload before the switch; here the scene is already going (ChapterMap.Forget)
         if (!toNext) {
             CampaignSave.Close();
         }

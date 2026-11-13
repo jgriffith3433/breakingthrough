@@ -117,7 +117,8 @@ public class ChapterMap : MonoBehaviour {
         return map;
     }
 
-    // Leaves the map: lighting back, scene unloaded, unused assets released.
+    // Leaves the map: lighting back, scene unloaded, unused assets released. Call it BEFORE a scene change (ChapterRun.Next,
+    // ToMenu, Restart), never from an OnDestroy: that is Forget.
     public static void Unload() {
         if (Current == null) {
             return;
@@ -125,6 +126,47 @@ public class ChapterMap : MonoBehaviour {
         ChapterMap map = Current;
         Current = null;
         map.Finish();
+    }
+
+    // How the last map left: "unload" (Unload, before a scene change) or "with-scene" (Forget, the scene change took it).
+    public static int Forgets { get; private set; }
+    public static string LastLeave { get; private set; } = "";
+
+    // The scene that owns the map is being torn down by a single scene load (this runs from an OnDestroy: ChapterHub's when
+    // the hub is left for the menu or a chapter, ChapterRun's). The map's additive scene goes with that load and the load
+    // releases unused assets itself, so nothing is queued here. Unload did both from inside the teardown (UnloadSceneAsync on
+    // a scene already being closed and Resources.UnloadUnusedAssets in the middle of the switch), and on WebGL the switch
+    // then waited on work queued behind itself: leaving the office after Chapter 2 froze the page for a minute or for good.
+    public static void Forget() {
+        if (Current == null) {
+            return;
+        }
+        ChapterMap map = Current;
+        Current = null;
+        map.Drop();
+    }
+
+    void Drop() {
+        foreach (Object o in made) {
+            if (o != null) {
+                Destroy(o);
+            }
+        }
+        made.Clear();
+        if (OwnScene && loading != null && !loading.isDone) {
+            // Still loading when the switch came: close it the moment it has arrived (after the switch, not inside it).
+            string leftover = Applied.Scene;
+            loading.completed += _ => {
+                Scene late = SceneManager.GetSceneByName(leftover);
+                if (late.isLoaded) {
+                    SceneManager.UnloadSceneAsync(late);
+                }
+            };
+        }
+        Unloads++;
+        Forgets++;
+        LastLeave = "with-scene|" + MapName;
+        Debug.Log("[ChapterMap] Map_" + MapName + " goes with the scene change");
     }
 
     void Begin(Look def) {
@@ -280,6 +322,7 @@ public class ChapterMap : MonoBehaviour {
             }
         }
         Unloads++;
+        LastLeave = "unload|" + MapName;
         Debug.Log("[ChapterMap] unloaded Map_" + MapName);
         Destroy(gameObject);
         Resources.UnloadUnusedAssets();
@@ -289,7 +332,7 @@ public class ChapterMap : MonoBehaviour {
         // The game scene is going away (a single scene load): the map's scene goes with it; just forget it.
         if (Current == this) {
             Current = null;
-            Unloads++;
+            Drop();
         }
     }
 

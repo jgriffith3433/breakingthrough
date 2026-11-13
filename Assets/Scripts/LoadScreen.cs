@@ -216,7 +216,12 @@ public class LoadScreen : MonoBehaviour {
     // How far the place has really come: scene in, run built, map filled in. Never a timer.
     float Readiness() {
         if (cardIndex == HubCard) {
-            return ChapterHub.Instance != null ? 1f : (ChapterScene.Instance != null ? 0.6f : 0.15f);
+            // The office is up, or (a file with no chapter cleared yet has no hub) its chapter card is: either way the place
+            // is there. Waiting for a hub that never comes held this card over the chapter card for MaxSeconds.
+            if (ChapterHub.Instance != null || (ChapterScene.Instance != null && ChapterScene.Instance.CardUp)) {
+                return 1f;
+            }
+            return ChapterScene.Instance != null ? 0.6f : 0.15f;
         }
         if (LevelScene.Instance != null) {
             return 1f;

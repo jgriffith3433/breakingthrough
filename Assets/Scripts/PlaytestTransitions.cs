@@ -24,6 +24,9 @@ public static class PlaytestTransitions {
     static int seenTransitions;
     static float minAnim = 99f;
     static float maxAnim;
+    static int hubExits;
+    static float hubExitWorstFrame;
+    static float hubExitSlowest;
 
     static void Tap(GameObject target) {
         var data = new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left };
@@ -139,6 +142,9 @@ public static class PlaytestTransitions {
 
     public static IEnumerator Run(PlaytestRun r) {
         run = r;
+        hubExits = 0;
+        hubExitWorstFrame = 0f;
+        hubExitSlowest = 0f;
         UiFit.ForceTouch(true);
         MetaProgress.EnterSandbox(true);
         CampaignSave.EnterSandbox();
@@ -222,13 +228,48 @@ public static class PlaytestTransitions {
             if (run.Done) {
                 yield break;
             }
-            yield return Watch(() => ChapterHub.Instance != null && !ScreenTransition.Busy, 40f, "the hub");
+            if (CampaignSave.Get(0).cleared > 0) {
+                yield return Watch(() => ChapterHub.Instance != null && !ScreenTransition.Busy, 40f, "the hub");
+            } else {
+                // No chapter cleared yet: the file has no hub, so the trip back lands on the chapter card (ChapterScene).
+                yield return Watch(() => ChapterScene.Instance != null && ChapterScene.Instance.CardUp && !ScreenTransition.Busy, 40f, "the chapter card (no hub before a chapter is cleared)");
+                run.Event("hub-skip", "chapter " + (chapter + 1) + ": no chapter cleared, so the chapter card, not the hub; the hub card left after " + LoadScreen.LastSeconds.ToString("0.0") + " s");
+            }
             if (run.Done) {
                 yield break;
             }
             yield return new WaitForSecondsRealtime(2f);
+            // Leaving a built hub (the first time is after Chapter 2: with no chapter cleared there is no hub, only the card) is
+            // where the page used to stop answering: the office map was unloaded from inside the scene switch. Every frame of
+            // the way back to the menu is timed, and how the office's map left is read.
+            bool hubBuilt = ChapterHub.Instance != null;
+            int forgets = ChapterMap.Forgets;
+            float leftAt = Time.realtimeSinceStartup;
+            float lastFrame = leftAt;
+            float worstFrame = 0f;
             ChapterScene.Instance.LeaveToMenu();   // RETURNED
-            yield return Watch(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && !ScreenTransition.Busy, 40f, "the menu");
+            yield return Watch(() => {
+                float now = Time.realtimeSinceStartup;
+                worstFrame = Mathf.Max(worstFrame, now - lastFrame);
+                lastFrame = now;
+                return SceneManager.GetActiveScene().name == MetaProgress.MenuScene && !ScreenTransition.Busy;
+            }, 40f, "the menu");
+            if (hubBuilt && !run.Done) {
+                float took = Time.realtimeSinceStartup - leftAt;
+                hubExits++;
+                hubExitWorstFrame = Mathf.Max(hubExitWorstFrame, worstFrame);
+                hubExitSlowest = Mathf.Max(hubExitSlowest, took);
+                bool withScene = ChapterMap.Forgets > forgets && ChapterMap.LastLeave.StartsWith("with-scene");
+                run.Event("hub-exit", "after chapter " + (chapter + 1) + ": the menu in " + took.ToString("0.00") + " s, longest frame "
+                    + Mathf.Round(worstFrame * 1000f) + " ms, office map left " + (withScene ? "with the scene change (nothing queued mid-switch)" : "by \"" + ChapterMap.LastLeave + "\""));
+                // A scene load's own first frame may take a second or two; the old freeze was a minute.
+                if (worstFrame > 10f) {
+                    run.Problem(PlaytestSeverity.Bug, "transitions: a " + worstFrame.ToString("0.0") + " s frame while leaving the hub after chapter " + (chapter + 1) + " (the page stopped answering)");
+                }
+                if (!withScene) {
+                    run.Problem(PlaytestSeverity.Bug, "transitions: the office map was unloaded inside the scene switch (" + ChapterMap.LastLeave + "), not left to the scene change");
+                }
+            }
         }
         if (run.Done) {
             yield break;
@@ -255,6 +296,12 @@ public static class PlaytestTransitions {
             + ScreenTransition.LongestCoveredSeconds.ToString("0.00") + " s, cards with art " + cardsArt + " voiced " + cardsVoice + ", smallest card text " + minText.ToString("0.0") + " px");
         if (p5 < 30f) {
             run.Problem(PlaytestSeverity.Bug, "transitions: fps p5 was " + Mathf.Round(p5) + " while a sheet was moving (want 30 or more)");
+        }
+        run.Metric("hubExits", hubExits);
+        run.Metric("hubExitLongestFrameMs", Mathf.Round(hubExitWorstFrame * 1000f));
+        run.Metric("hubExitSlowestSeconds", Mathf.Round(hubExitSlowest * 100f) / 100f);
+        if (hubExits == 0) {
+            run.Problem(PlaytestSeverity.Bug, "transitions: the hub was never left (the hub after Chapter 2 is the step that froze the page)");
         }
         run.Metric("transitionRecoveries", ScreenTransition.Recoveries);
         run.Metric("levelUpCardsPicked", cardsPicked);
