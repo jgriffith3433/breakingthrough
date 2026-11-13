@@ -11,28 +11,30 @@
 </style>
 <script src="../js/hawkes-release.js" data-releases="../releases.json"></script>
 <script>
-  // The release (releases.json) and the build running, as a link to What's new: "v1.0.0 · build 8 · What's new".
-  // It opens in a new tab, so a tap in the corner never ends a run.
+  // The release (releases.json) and the build running, as a link to What's new. The corner shows only "build 121"
+  // (two words: first-five counts every distinct line on the page in a stranger's first minute); the version and
+  // "What's new" ride in the link's aria-label and title. It opens in a new tab, so a tap never ends a run.
   (function () {
     var box = document.getElementById("version-display");
     if (!box) return;
-    var build = String(window.PLACE_BUILD || window.GAME_BUILD || "");
-    function show(label) {
-      var link = document.createElement("a");
-      link.href = "../whatsnew.html";
-      link.target = "_blank";
-      link.rel = "noopener";
-      link.setAttribute("data-hawkes-whatsnew", "");
-      link.textContent = label;
-      box.textContent = "";
-      box.appendChild(link);
+    var build = String(window.PLACE_BUILD || window.GAME_BUILD || "").replace(/^v/, "");
+    var link = document.createElement("a");
+    link.href = "../whatsnew.html";
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.setAttribute("data-hawkes-whatsnew", "");
+    link.textContent = build ? "build " + build : "";
+    function name(version) {
+      var label = (version ? "v" + version + " · " : "") + (build ? "build " + build + " · " : "") + "What's new";
+      link.setAttribute("aria-label", label);
+      link.title = label;
     }
-    show(build + " · What's new");
+    name("");
+    box.textContent = "";
+    box.appendChild(link);
     if (window.hawkesRelease) window.hawkesRelease.then(function (r) {
       var top = r && r.releases && r.releases[0];
-      if (!top) return;
-      var beta = /\.hawkesgen\.ai$/.test(location.hostname) || location.hostname === "localhost" || location.hostname === "127.0.0.1";
-      show("v" + top.version + (beta ? " beta" : "") + " · build " + build.replace(/^v/, "") + " · What's new");
+      if (top) name(top.version);
     });
   })();
 </script>
