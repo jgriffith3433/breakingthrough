@@ -1,28 +1,77 @@
-# Fix for The Place Department (Unity)
+# Content for The Place Department (Unity)
 
-You are fixing a problem Hawkes Studio's automated playtest found in The Place Department (Unity) (The Place Department (repo breakingthrough), a Unity 6000.3.7f1 roguelike wave-defense game: Wallit with a bat guards Slice from Yo Bots and Spider Bots. Unity project at the repo root. Built as WebGL in Hawkes Gen's cloud and published into the-place-department website at Game/ (its own deploy, WebGlBuild.Build, writes theplacedepartmentwebsite/Game/v<n>/PlaceDepartment).).
+You are making content for The Place Department (Unity) (The Place Department (repo breakingthrough), a Unity 6000.3.7f1 roguelike wave-defense game: Wallit with a bat guards Slice from Yo Bots and Spider Bots. Unity project at the repo root. Built as WebGL in Hawkes Gen's cloud and published into the-place-department website at Game/ (its own deploy, WebGlBuild.Build, writes theplacedepartmentwebsite/Game/v<n>/PlaceDepartment).): story, places, characters, dialogue or art.
 
 
-## The finding
+## Player goal
 
-### [bug] Phone load budget missed: 45.6 MB before gameplay (limit 20); 234.7 s to gameplay (limit 20 s)
-- Area: performance · scenario: first-five@local:phone · seen 1 time(s)
-- What's wrong: In first-five (390x844, 4x CPU, slow-4g, DPR 2): 45.6 MB before gameplay (limit 20); 234.7 s to gameplay (limit 20 s). Five largest pre-gameplay assets by transferred size: /builds/o/j-studio-4f12/place-department-unity/b/web/121/PlaceDepartment/Build/PlaceDepartment.data.unityweb?v=v121 (38.5 MB); /builds/o/j-studio-4f12/place-department-unity/b/web/121/PlaceDepartment/Build/PlaceDepartment.wasm.unityweb?v=v121 (6.8 MB); /builds/o/j-studio-4f12/place-department-unity/b/web/121/PlaceDepartment/Build/PlaceDepartment.framework.js.unityweb?v=v (0.1 MB); /s/fraunces/v38/6NU58FyLNQOQZAnv9ZwNjucMHVn85Ni7emAe9lKqZTnbB-gzTK0K1ChjeveQ7ZXk8g.woff2 (0.1 MB); /builds/o/j-studio-4f12/place-department-unity/b/web/121/PlaceDepartment/Build/PlaceDepartment.loader.js?v=v121 (0.1 MB).
-- Suggested fix: Cut what loads before gameplay: defer non-critical assets, compress textures and audio, code-split, and keep the first playable payload at most 20 MB (CrazyGames mobile homepage bar).
-- Screenshots: none
+The story's payoff is something the player does with their own hands, not a cutscene they watch.
 
-## This kind of work (fix)
+Reference (a best-in-class game, and the moment to match): Brothers: A Tale of Two Sons: the final scene where the player's own input carries the emotional beat
+Critic axis (what the critics will judge this on): story
+On a phone (390x844, touch): At 390x844 the hold prompt is a large thumb target in the lower third, timing prompts are icons not words, and no other HUD is shown.
 
-- Find the root cause and fix it where it starts. Prove it: the replay place or the scenario that hit it before now
-  passes, and say how in the summary.
-- Never make a check pass instead of fixing the game: don't loosen a test, a timeout, a threshold, a tolerance or a
-  playtest scenario, don't skip or retry a step until it passes, and don't hide the symptom (an invisible wall over a
-  hole, a catch that swallows the error, a longer wait). That is a failed fix, however green it looks.
-- If the real fix is bigger than one change, fix what you can properly and say what's left.
+The work is done when a player sees this on beta, not when the code compiles.
 
-## Skills to load (fix)
+## What J asked for
 
-Load these skills (the Skill tool) before you plan or build; they are this studio's craft for fix work:
+Turn the finale's emotional beat (Slice's address was struck before Wallit; she needs him; Docs/Story.md finale) into a short playable moment on the CinematicDirector from k_43f0497c67ff: after the Chapter 6 boss, the camera settles on Slice's ring; the player holds the swing input (hold on touch) to carry the stamp to her ring while the Order-Bearer's last notices rain down and Wallit bats away 3 of them with simple timing prompts; on release the stamp prints her address on the ring, lamps around the ring light one by one, Slice says her existing closing line in her voice, and the Chapter 6 theme swells into the ADDRESS FILED ending. Interaction is short (20 to 40 s), cannot fail permanently (a missed notice just knocks Wallit back), and works with keys, gamepad and touch. Uses existing lines only; no new voice generation. Respect the secret-ending condition (m_d1c673919574) by leaving the RECEIVED path intact after this beat.
+Player goal: The story's payoff is something the player does with their own hands, not a cutscene they watch.
+Reference: Brothers: A Tale of Two Sons: the final scene where the player's own input carries the emotional beat.
+Critic axis: story
+Phone: At 390x844 the hold prompt is a large thumb target in the lower third, timing prompts are icons not words, and nothing else of the HUD is shown.
+Outcome: The finale includes a 20 to 40 s interactive beat that ends with Slice's address printed on the ring.
+
+From the PM (an earlier attempt): Beta's build failed after your change c_0e22a5366cf1 merged into beta: beta's build failed (run r_9ea1fbb31570): build web: the build of beta 140cd19 failed (web 125): This studio is out of credits: unity.build needs 50 and 1 is left. Add credits or upgrade your plan in Settings → Plan and credits.
+
+Your change is already on beta (this branch starts from it). Make beta build again (for Unity: fix the compile errors), keep what the task asks for, and run the checks.
+
+Work out what that means in this project (read the story doc and AGENTS.md), make it well, and keep it consistent with
+the product's tone and style. If it's too big for one change, do a solid first part and say what's left in the summary.
+
+## GPU budget: none
+
+Nothing here was approved for GPU generation (images, video, music, 3D on the fleet). Do everything that needs no GPU
+(design, data, specs, Claude-only steps, voice and sound effects are fine: cents each), price the GPU part with
+`hawkesgen_estimate`, and end with that estimate in your summary so J can approve it. Never start a GPU server.
+
+## Acceptance criteria (how this is judged)
+
+The change is ready once your checks pass and its pull request is open; after it is merged into beta, beta's playtest
+judges these, and the work is done only when every one of them passes there:
+1. After the Chapter 6 boss the player holds the swing input to carry the stamp, and the beat lasts 20 to 40 s
+2. Wallit bats away 3 falling notices with timing prompts, and a miss knocks him back without ending the beat
+3. On release the ring shows Slice's address and at least 4 lamps light one by one before ADDRESS FILED
+4. [phone] At 390x844 the hold prompt sits in the lower third and is at least 88 px wide
+
+Criteria starting with "[phone]" are judged on a 390x844 touch playtest (beta plays them apart from the rest), so the
+scenario must play them through touch input (taps and drags, no mouse or keyboard), and the layout must work at that size.
+
+Where the game implements the playtest contract (`window.hawkesPlaytest`: see this project's AGENTS.md, and the spec
+at `hawkesstudio/docs/playtest.md` next to this repository), add or extend a scenario that plays to what the criteria
+describe (through real input, no teleporting; named setup shortcuts are fine) and logs events or checks that show each
+one, so the review can judge them from the footage and the timeline. Write that scenario's name (one line, e.g.
+`checkout`) in `.hawkes/scenario.txt`: beta's playtest plays it (and this change's, when J asks for one). To play specific content
+(a new stage, level or enemy), add a second line with the scenario's options as JSON, e.g. `{"stage":"neon-pit"}`. Without a contract, make
+sure each criterion can be seen when the page is played.
+
+
+
+
+
+## This kind of work (content)
+
+- Canon first: read the story doc and `docs/world-bible.md`; names, tone and facts match them, and what you add goes
+  into the world bible.
+- Dense, not sparse: every area you touch is dressed, has a landmark, life and ambient sound, and a player never goes
+  more than about 10 seconds without something to see, hear or do.
+- Tell it through play: events, in-game cutscenes, Hawkes Gen voice lines and sound effects. On-screen text is a last
+  resort, one line at most.
+
+## Skills to load (content)
+
+Load these skills (the Skill tool) before you plan or build; they are this studio's craft for content work:
+- `studio:story-through-play`: every named character has a want, an arc, the gameplay moment that shows it, three personality words, a Gen voice id and an idle, walk and talk animation set; story told by events and voice, not text
 - `studio:level-design`: build gaps, ledges and corridors from the measured numbers in docs/metrics.json (jump height and distance, run speed, corridor widths)
 - `studio:game-feel`: coyote time and jump buffer of at least 80 ms, hit-stop of at least 40 ms, a short screen shake
 
@@ -148,24 +197,24 @@ It takes files from this Studio's own Gen library and from its owners' own hawke
 Shallow clones of the other projects' repositories, to read (not to change: a change there is that project's own task).
 They are cloned in the background after you start, a few at a time, so each appears as it lands: read one only once its folder has a `.ready` file
 (`ls <folder>/.ready`); a folder with none is still being cloned, and a repo that never appears could not be copied (carry on without it):
-- `jgriffith3433/hawkesstudio`: `../c_eb4f0e80e5bb.repos/hawkesstudio` (ready when `../c_eb4f0e80e5bb.repos/hawkesstudio/.ready` exists)
-- `jgriffith3433/icanbeaiwebsite`: `../c_eb4f0e80e5bb.repos/icanbeaiwebsite` (ready when `../c_eb4f0e80e5bb.repos/icanbeaiwebsite/.ready` exists)
-- `jgriffith3433/hawkesbiomedical`: `../c_eb4f0e80e5bb.repos/hawkesbiomedical` (ready when `../c_eb4f0e80e5bb.repos/hawkesbiomedical/.ready` exists)
-- `jgriffith3433/imaginelivetvwebsite`: `../c_eb4f0e80e5bb.repos/imaginelivetvwebsite` (ready when `../c_eb4f0e80e5bb.repos/imaginelivetvwebsite/.ready` exists)
-- `jgriffith3433/doseofdestructionwebsite`: `../c_eb4f0e80e5bb.repos/doseofdestructionwebsite` (ready when `../c_eb4f0e80e5bb.repos/doseofdestructionwebsite/.ready` exists)
-- `jgriffith3433/sickofitgame-unity`: `../c_eb4f0e80e5bb.repos/sickofitgame-unity` (ready when `../c_eb4f0e80e5bb.repos/sickofitgame-unity/.ready` exists)
-- `jgriffith3433/hawkesnet`: `../c_eb4f0e80e5bb.repos/hawkesnet` (ready when `../c_eb4f0e80e5bb.repos/hawkesnet/.ready` exists)
-- `jgriffith3433/hawkesnet-js`: `../c_eb4f0e80e5bb.repos/hawkesnet-js` (ready when `../c_eb4f0e80e5bb.repos/hawkesnet-js/.ready` exists)
-- `jgriffith3433/hawkesnet-babylon`: `../c_eb4f0e80e5bb.repos/hawkesnet-babylon` (ready when `../c_eb4f0e80e5bb.repos/hawkesnet-babylon/.ready` exists)
-- `jgriffith3433/hawkesnet-unity`: `../c_eb4f0e80e5bb.repos/hawkesnet-unity` (ready when `../c_eb4f0e80e5bb.repos/hawkesnet-unity/.ready` exists)
-- `jgriffith3433/sickofitgamewebsite`: `../c_eb4f0e80e5bb.repos/sickofitgamewebsite` (ready when `../c_eb4f0e80e5bb.repos/sickofitgamewebsite/.ready` exists)
-- `jgriffith3433/hawkesgen`: `../c_eb4f0e80e5bb.repos/hawkesgen` (ready when `../c_eb4f0e80e5bb.repos/hawkesgen/.ready` exists)
-- `jgriffith3433/YoobaLand`: `../c_eb4f0e80e5bb.repos/YoobaLand` (ready when `../c_eb4f0e80e5bb.repos/YoobaLand/.ready` exists)
-- `jgriffith3433/hawkesgenwebsite`: `../c_eb4f0e80e5bb.repos/hawkesgenwebsite` (ready when `../c_eb4f0e80e5bb.repos/hawkesgenwebsite/.ready` exists)
-- `jgriffith3433/phoriginswebsite`: `../c_eb4f0e80e5bb.repos/phoriginswebsite` (ready when `../c_eb4f0e80e5bb.repos/phoriginswebsite/.ready` exists)
-- `jgriffith3433/YoobaLandGame`: `../c_eb4f0e80e5bb.repos/YoobaLandGame` (ready when `../c_eb4f0e80e5bb.repos/YoobaLandGame/.ready` exists)
-- `jgriffith3433/theplacedepartmentwebsite`: `../c_eb4f0e80e5bb.repos/theplacedepartmentwebsite` (ready when `../c_eb4f0e80e5bb.repos/theplacedepartmentwebsite/.ready` exists)
-- `jgriffith3433/hawkes-analytics`: `../c_eb4f0e80e5bb.repos/hawkes-analytics` (ready when `../c_eb4f0e80e5bb.repos/hawkes-analytics/.ready` exists)
+- `jgriffith3433/hawkesstudio`: `../c_4f6079fba94e.repos/hawkesstudio` (ready when `../c_4f6079fba94e.repos/hawkesstudio/.ready` exists)
+- `jgriffith3433/icanbeaiwebsite`: `../c_4f6079fba94e.repos/icanbeaiwebsite` (ready when `../c_4f6079fba94e.repos/icanbeaiwebsite/.ready` exists)
+- `jgriffith3433/hawkesbiomedical`: `../c_4f6079fba94e.repos/hawkesbiomedical` (ready when `../c_4f6079fba94e.repos/hawkesbiomedical/.ready` exists)
+- `jgriffith3433/imaginelivetvwebsite`: `../c_4f6079fba94e.repos/imaginelivetvwebsite` (ready when `../c_4f6079fba94e.repos/imaginelivetvwebsite/.ready` exists)
+- `jgriffith3433/doseofdestructionwebsite`: `../c_4f6079fba94e.repos/doseofdestructionwebsite` (ready when `../c_4f6079fba94e.repos/doseofdestructionwebsite/.ready` exists)
+- `jgriffith3433/sickofitgame-unity`: `../c_4f6079fba94e.repos/sickofitgame-unity` (ready when `../c_4f6079fba94e.repos/sickofitgame-unity/.ready` exists)
+- `jgriffith3433/hawkesnet`: `../c_4f6079fba94e.repos/hawkesnet` (ready when `../c_4f6079fba94e.repos/hawkesnet/.ready` exists)
+- `jgriffith3433/hawkesnet-js`: `../c_4f6079fba94e.repos/hawkesnet-js` (ready when `../c_4f6079fba94e.repos/hawkesnet-js/.ready` exists)
+- `jgriffith3433/hawkesnet-babylon`: `../c_4f6079fba94e.repos/hawkesnet-babylon` (ready when `../c_4f6079fba94e.repos/hawkesnet-babylon/.ready` exists)
+- `jgriffith3433/hawkesnet-unity`: `../c_4f6079fba94e.repos/hawkesnet-unity` (ready when `../c_4f6079fba94e.repos/hawkesnet-unity/.ready` exists)
+- `jgriffith3433/sickofitgamewebsite`: `../c_4f6079fba94e.repos/sickofitgamewebsite` (ready when `../c_4f6079fba94e.repos/sickofitgamewebsite/.ready` exists)
+- `jgriffith3433/hawkesgen`: `../c_4f6079fba94e.repos/hawkesgen` (ready when `../c_4f6079fba94e.repos/hawkesgen/.ready` exists)
+- `jgriffith3433/YoobaLand`: `../c_4f6079fba94e.repos/YoobaLand` (ready when `../c_4f6079fba94e.repos/YoobaLand/.ready` exists)
+- `jgriffith3433/hawkesgenwebsite`: `../c_4f6079fba94e.repos/hawkesgenwebsite` (ready when `../c_4f6079fba94e.repos/hawkesgenwebsite/.ready` exists)
+- `jgriffith3433/phoriginswebsite`: `../c_4f6079fba94e.repos/phoriginswebsite` (ready when `../c_4f6079fba94e.repos/phoriginswebsite/.ready` exists)
+- `jgriffith3433/YoobaLandGame`: `../c_4f6079fba94e.repos/YoobaLandGame` (ready when `../c_4f6079fba94e.repos/YoobaLandGame/.ready` exists)
+- `jgriffith3433/theplacedepartmentwebsite`: `../c_4f6079fba94e.repos/theplacedepartmentwebsite` (ready when `../c_4f6079fba94e.repos/theplacedepartmentwebsite/.ready` exists)
+- `jgriffith3433/hawkes-analytics`: `../c_4f6079fba94e.repos/hawkes-analytics` (ready when `../c_4f6079fba94e.repos/hawkes-analytics/.ready` exists)
 
 ## What the studio already knows (shared memory)
 
@@ -183,8 +232,8 @@ Earlier agents, J and Talk learned these; follow decisions and preferences, resp
 ## How to work
 
 1. Read `AGENTS.md` (and any docs it points to) before changing anything. Follow its rules.
-2. Look at the screenshots to see the problem. Find the cause in the code or data; prefer the smallest correct fix.
-3. Keep to this finding. Don't refactor unrelated code, don't touch generated output or build folders, don't change secrets, CI, or deploy scripts.
+2. Read the story doc and the world bible, then the scenes and data this touches. Plan what goes where, then make it.
+3. Keep to this request. Don't refactor unrelated code, don't touch generated output or build folders, don't change secrets, CI, or deploy scripts.
 4. Run the project's checks:
 - (none listed: at least make sure it builds or loads)
    If .hawkes/beta-build.md is in your worktree, beta's build was red when Studio last looked: read it first, keep your change from adding to those errors, and say in the PR what you saw.
@@ -192,8 +241,8 @@ Earlier agents, J and Talk learned these; follow decisions and preferences, resp
    Unity: Studio itself reads every .cs file you changed (syntax errors such as an unterminated string or a backslash before a closing quote, and a member defined twice in a type, partial classes included) before the pull request opens, and sends you back with file and line if it finds any; the full compile runs on the build server, not here. Before you open the PR, read the C# you changed for what it would reject:
    a member or type defined twice (error CS0102/CS0111: the same name in one class, partial classes in other files included; `grep -rn "<Name>" Assets` for every type or method you added or renamed),
    a missing `using`, a call whose signature you changed but not its callers, and any `error CS` text in the brief. If a Unity editor (`unity-editor`/`Unity -batchmode -quit`) is on this machine, compile with it; if not, say "Unity compile not run here" in the PR description.
-5. Commit your change with a clear message (`Fix: ...`). Don't push; Studio does. Studio stops a pass after
-   90 minutes: commit as you go (after each working piece or finished batch), so a stop loses nothing.
+5. Commit your change with a clear message (`Content: ...`). Don't push; Studio does. Studio stops a pass after
+   240 minutes: commit as you go (after each working piece or finished batch), so a stop loses nothing.
    A third-party error from a Gen job (ElevenLabs payment_issue, a 401 or 402) is not yours to retry: test ONE line
    first for voice work, and on that error stop at once, write `.hawkes/stuck.md` naming the service, and end.
 6. Write `.hawkes/summary.md`: what was wrong, what you changed (files), how you checked it, and anything J should
