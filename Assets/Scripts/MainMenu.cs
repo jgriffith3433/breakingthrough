@@ -163,6 +163,8 @@ public class MainMenu : MonoBehaviour {
             mode = "arcade";
         }
         if (mode == "arcade") {
+            // Skipping the menu on purpose is a Start that ran to its end: Ready only stays false when Build or Refresh threw.
+            Ready = true;
             startWave = 1;
             // Do not load the game under the Tap to play card: wait until it is gone (or was never on this page).
             if (SoundSettings.TapPromptUp) {
