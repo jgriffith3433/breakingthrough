@@ -66,6 +66,7 @@ public partial class CinematicDirector : MonoBehaviour {
     public static bool IsOpen { get { return Instance != null && (Instance.open || Instance.handingOff || Instance.bossRun || Instance.actRun || Instance.creditsOnly); } }
     // Other playtests turn the Chapter 1 opening off so their bot starts with control.
     public static bool SuppressOpening;
+    const float MaxVoiceSeconds = 12f;
     public static readonly List<string> Events = new List<string>();
     public static int ShotsShown { get; private set; }
     public static int VoiceLines { get; private set; }
@@ -601,7 +602,8 @@ public partial class CinematicDirector : MonoBehaviour {
         TickSkipInput();
         EaseBars(true);
         LayoutUi();
-        if (now - shotStart >= shotLength) {
+        // A shot never outlasts its own time plus the longest line it may wait for, whatever a voice clip reports.
+        if (now - shotStart >= shotLength || now - shotStart >= Mathf.Max(0.4f, s.seconds) + MaxVoiceSeconds + 0.5f) {
             NextShot();
         }
     }
@@ -655,6 +657,11 @@ public partial class CinematicDirector : MonoBehaviour {
         }
         VoiceLines++;
         Events.Add("voice|" + who + "|" + s.line);
+        // A clip that never decoded can report a nonsense length: the shot keeps its own time (or the line's estimate).
+        if (float.IsNaN(len) || float.IsInfinity(len) || len < 0f) {
+            len = WallitVoice.EstimateSeconds(s.line);
+        }
+        len = Mathf.Min(len, MaxVoiceSeconds);
         if (len > shotLength - (Time.unscaledTime - shotStart)) {
             shotLength = (Time.unscaledTime - shotStart) + len + 0.25f;
         }
