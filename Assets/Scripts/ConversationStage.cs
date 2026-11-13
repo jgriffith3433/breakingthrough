@@ -39,6 +39,7 @@ public class ConversationStage : MonoBehaviour {
     string kindB = "lodger";
     Vector3 savedCamPos;
     Quaternion savedCamRot;
+    float savedFov = 60f;
     Quaternion savedRotA;
     Quaternion savedRotB;
     Vector3 bobBaseA;
@@ -141,6 +142,7 @@ public class ConversationStage : MonoBehaviour {
         kindB = bKind;
         savedCamPos = cam.transform.position;
         savedCamRot = cam.transform.rotation;
+        savedFov = cam.fieldOfView;
         savedRotA = a.rotation;
         savedRotB = b.rotation;
         bobBaseA = a.localPosition;
@@ -197,6 +199,7 @@ public class ConversationStage : MonoBehaviour {
         if (cam != null) {
             cam.transform.position = savedCamPos;
             cam.transform.rotation = savedCamRot;
+            cam.fieldOfView = savedFov;
         }
         if (root != null) {
             root.SetActive(false);
@@ -286,33 +289,49 @@ public class ConversationStage : MonoBehaviour {
     }
 
     void PlaceTwoShot(float t) {
-        Vector3 mid = (speakerA.position + speakerB.position) * 0.5f + Vector3.up * 1.15f;
+        // Aim at the midpoint of the two bodies at head-and-chest height, not at the floor under them.
+        Vector3 focus = (speakerA.position + speakerB.position) * 0.5f + Vector3.up * 1.2f;
         Vector3 flat = speakerB.position - speakerA.position;
         flat.y = 0f;
         if (flat.sqrMagnitude < 0.01f) {
             flat = speakerA.forward;
+            flat.y = 0f;
         }
         flat.Normalize();
         Vector3 side = Vector3.Cross(Vector3.up, flat).normalized;
-        // Prefer the side that keeps the camera inside the room (hub: toward +Z / desk side when needed).
-        if (Vector3.Dot(side, Vector3.back) < 0f) {
+        // Shoot from the side that faces the gameplay camera: that is the open side of the room (the hub's front), never
+        // out past a wall where a speaker stands against it.
+        Vector3 toSaved = savedCamPos - focus;
+        toSaved.y = 0f;
+        if (Vector3.Dot(side, toSaved) < 0f) {
             side = -side;
         }
-        float span = Vector3.Distance(speakerA.position, speakerB.position);
         bool tall = UiFit.Mode == UiMode.Tall || (Screen.height > Screen.width && Screen.width <= 500);
-        float back = tall ? Mathf.Clamp(2.8f + span * 0.55f, 3.2f, 6.5f) : Mathf.Clamp(2.2f + span * 0.45f, 2.6f, 5.2f);
-        float lift = tall ? 1.55f : 1.15f;
-        Vector3 want = mid + side * back * 0.55f - flat * (back * 0.15f) + Vector3.up * lift;
-        // Keep a third-person near clip; never dive under 0.3.
         if (cam.nearClipPlane < 0.3f) {
             cam.nearClipPlane = 0.3f;
         }
-        cam.transform.position = Vector3.Lerp(savedCamPos, want, Smooth(t));
-        Quaternion look = Quaternion.LookRotation(mid - cam.transform.position);
-        cam.transform.rotation = Quaternion.Slerp(savedCamRot, look, Smooth(t));
-        if (tall) {
-            cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, 58f, 6f * Time.unscaledDeltaTime);
+        float fov = tall ? 58f : savedFov;
+        // Distance that fits both bodies: width from the pair's span (plus body room) at the horizontal FOV, height from
+        // feet to the top of the tallest lodger at the vertical FOV.
+        float span = Vector3.Distance(speakerA.position, speakerB.position);
+        float tanV = Mathf.Tan(fov * 0.5f * Mathf.Deg2Rad);
+        float tanH = tanV * Mathf.Max(0.3f, cam.aspect);
+        float dist = Mathf.Max((span * 0.5f + 0.9f) / tanH, 1.5f / tanV) * 1.1f;
+        dist = Mathf.Clamp(dist, 3f, 9f);
+        const float pitch = 14f * Mathf.Deg2Rad;
+        Vector3 dir = side * Mathf.Cos(pitch) + Vector3.up * Mathf.Sin(pitch);
+        // A little over-the-shoulder: slide back along the pair's axis so the listener's shoulder frames the speaker.
+        Vector3 want = focus + dir * dist - flat * (span * 0.12f);
+        float s = Smooth(t);
+        cam.transform.position = Vector3.Lerp(savedCamPos, want, s);
+        // Blend what the camera looks at, not its angles: the gameplay camera's gaze meets the shot's focus without
+        // sweeping through the floor.
+        Vector3 savedFocus = savedCamPos + savedCamRot * Vector3.forward * Vector3.Distance(savedCamPos, focus);
+        Vector3 aim = Vector3.Lerp(savedFocus, focus, s) - cam.transform.position;
+        if (aim.sqrMagnitude > 0.0001f) {
+            cam.transform.rotation = Quaternion.LookRotation(aim);
         }
+        cam.fieldOfView = Mathf.Lerp(savedFov, fov, s);
     }
 
     static float Smooth(float t) {
