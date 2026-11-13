@@ -5815,6 +5815,8 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             run.Event("hit-log", Juice.HitLog[h]);
         }
         run.Metric("feel.hitStopMs", Mathf.Max(Juice.LightHeld, Juice.FinisherHeld) * 1000 / 60);
+        run.Metric("warmupPasses", SceneWarmup.Passes);
+        run.Metric("warmupLongestStepMs", SceneWarmup.LongestWarmFrameMs);
         run.Metric("hitStopLightFrames", Juice.LightHeld);
         run.Metric("hitStopFinisherFrames", Juice.FinisherHeld);
         run.Metric("hitStopHomeRunFrames", Juice.HomeRunHeld);

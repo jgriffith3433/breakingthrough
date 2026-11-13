@@ -45,7 +45,12 @@ public class ZeldaStyleCamera : MonoBehaviour {
     private float UnlockDistance = 8.0f;
 
     float orbitYaw;
-    float orbitPitch = 18f;
+    float orbitPitch = 36f;
+    // The gameplay camera sits above the arena (a 3/4 view) so the bat, the bots and the ground read; the mouse
+    // only nudges it within a few degrees. Levels, with real walls, keep a lower view.
+    float HomePitch { get { return levelMode ? 22f : 36f; } }
+    float PitchMin { get { return levelMode ? 5f : 30f; } }
+    float PitchMax { get { return levelMode ? 58f : 46f; } }
     public float BodyScale = 1f;
     float aimPitch = 8f;
     bool resumeLock;
@@ -145,7 +150,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
             return;
         }
         orbitYaw = FollowXForm.eulerAngles.y;
-        orbitPitch = 18f;
+        orbitPitch = HomePitch;
         orbitReady = true;
         viewPrimed = false;
         float body = Mathf.Max(1f, BodyScale);
@@ -173,7 +178,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
         // Arm the follow orbit behind Wallit without jumping the transform; LateUpdate lerps onto it.
         if (FollowXForm != null) {
             orbitYaw = FollowXForm.eulerAngles.y;
-            orbitPitch = 18f;
+            orbitPitch = HomePitch;
             orbitReady = true;
             viewPrimed = false;
             VelocityCamSmooth = Vector3.zero;
@@ -322,7 +327,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
                         FeelRecentred = false;
                     }
                     orbitYaw += mx * 3.4f;
-                    orbitPitch = Mathf.Clamp(orbitPitch - my * 2.1f, 5f, Mathf.Lerp(58f, 84f, Mathf.Clamp01((BodyScale - 1f) / 5f)));
+                    orbitPitch = Mathf.Clamp(orbitPitch - my * 2.1f, PitchMin, Mathf.Max(PitchMax, Mathf.Lerp(PitchMax, 84f, Mathf.Clamp01((BodyScale - 1f) / 5f))));
                 }
                 if (CurrentCameraDistance < MinDistance) {
                     CurrentCameraDistance = MaxDistance;
@@ -493,8 +498,8 @@ public class ZeldaStyleCamera : MonoBehaviour {
         float wantYaw = FollowXForm.eulerAngles.y;
         float before = orbitYaw;
         orbitYaw = LimitYaw(orbitYaw, Mathf.LerpAngle(orbitYaw, wantYaw, 1f - Mathf.Exp(-3.2f * Mathf.Min(Time.unscaledDeltaTime, 0.05f))));
-        orbitPitch = Mathf.Lerp(orbitPitch, 18f, 1f - Mathf.Exp(-2.4f * Time.unscaledDeltaTime));
-        if (Mathf.Abs(Mathf.DeltaAngle(orbitYaw, wantYaw)) < 2.5f && Mathf.Abs(orbitPitch - 18f) < 2f) {
+        orbitPitch = Mathf.Lerp(orbitPitch, HomePitch, 1f - Mathf.Exp(-2.4f * Time.unscaledDeltaTime));
+        if (Mathf.Abs(Mathf.DeltaAngle(orbitYaw, wantYaw)) < 2.5f && Mathf.Abs(orbitPitch - HomePitch) < 2f) {
             FeelRecentred = true;
         }
         // Keep TimeStoppedMoving so we stay in the recentre until the player looks again.
