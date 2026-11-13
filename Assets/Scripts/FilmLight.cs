@@ -198,7 +198,7 @@ public class FilmLight : MonoBehaviour {
         vel.space = ParticleSystemSimulationSpace.World;
         vel.x = new ParticleSystem.MinMaxCurve(0.5f, 1.3f);   // they drift across the lawn
         vel.z = new ParticleSystem.MinMaxCurve(-0.35f, 0.35f);
-        vel.y = 0f;
+        vel.y = new ParticleSystem.MinMaxCurve(0f, 0f);   // same mode as x and z: Unity rejects mixed modes
         var col = fogCards.colorOverLifetime;
         col.enabled = true;
         var g = new Gradient();
