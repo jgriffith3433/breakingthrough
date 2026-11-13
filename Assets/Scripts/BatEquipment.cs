@@ -79,6 +79,7 @@ public class BatEquipment : MonoBehaviour {
     float charge;
     bool chargeFull;
     float homeRunCharge;
+    public static bool OpeningAuto;   // Chapter 1's first Yo Bot: the bat swings by itself until it falls (LevelYard.FirstBlow)
     float autoIn;
     int swingCount;
 
@@ -373,7 +374,7 @@ public class BatEquipment : MonoBehaviour {
         }
 
         autoIn -= dt;
-        bool auto = canAct && !pressing && move == Move.None && queued == Move.None && WaveDirector.Wave >= MetaProgress.AutoWave();
+        bool auto = canAct && !pressing && move == Move.None && queued == Move.None && (OpeningAuto || WaveDirector.Wave >= MetaProgress.AutoWave());
         if (auto && autoIn <= 0f && Nearest(Reach * 1.05f, 180f) != null) {
             float grown = PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f;
             autoIn = Mathf.Lerp(0.5f, 0.28f, Mathf.Clamp01((grown - 1f) / 4f)) * MetaProgress.DrawHaste() / RunBoons.DrawSpeed;

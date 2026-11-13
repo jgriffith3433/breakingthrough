@@ -662,6 +662,45 @@ public class LevelYard : MonoBehaviour {
         }
         nextStampAt = Time.time + 9f;
         Note("opening-scene", "ch1_open_world done, shots=" + CinematicDirector.ShotsShown + " skipped=" + CinematicDirector.Skipped);
+        StartCoroutine(FirstBlow());
+    }
+
+    public bool FirstBotDown { get; private set; }
+    public float FirstBotDownSeconds { get; private set; }   // seconds from the bot's arrival to its fall
+
+    // The first blow: the opening is about 7 s, then one Yo Bot of the Clearing Crew's post already runs at Wallit inside the ring.
+    // The bat swings by itself at it (BatEquipment.OpeningAuto) so a stranger sees a hit, a puff of plates and a kill before
+    // any text. It is not part of the crew: the encounter counts, the Courier and the notices stay as they were.
+    IEnumerator FirstBlow() {
+        if (scene == null || scene.Player == null) {
+            yield break;
+        }
+        Vector3 w = scene.Player.position;
+        Vector3 toRing = LevelKit.Flat(SlicePos - w);
+        Vector3 dir = toRing.sqrMagnitude > 0.01f ? toRing.normalized : Vector3.forward;
+        Vector3 side = Vector3.Cross(Vector3.up, dir);
+        BotDef def = BotRoster.ForSpawn(BotKind.YoBot, 1);
+        var go = new GameObject("First Yo Bot");
+        go.tag = "enemy";
+        Vector3 p = w + dir * 1f + side * 4.5f;
+        p.y = 0.55f + def.Scale * 0.08f;
+        go.transform.position = p;
+        go.transform.rotation = Quaternion.LookRotation(LevelKit.Flat(w - p));
+        Enemy e = go.AddComponent<Enemy>();
+        e.ApplyBot(def);
+        float spawned = Time.time;
+        BatEquipment.OpeningAuto = true;
+        Note("first-blow-start", "a Yo Bot runs in from " + p.ToString("0.0") + "; the bat swings by itself");
+        while (e != null && e.Alive && Time.time - spawned < 14f) {
+            yield return null;
+        }
+        BatEquipment.OpeningAuto = false;
+        FirstBotDown = e == null || !e.Alive;
+        FirstBotDownSeconds = Time.time - spawned;
+        Note("first-blow-kill", (FirstBotDown ? "down" : "still up") + " after " + FirstBotDownSeconds.ToString("0.0") + " s");
+        if (!FirstBotDown && e != null) {
+            Destroy(e.gameObject);
+        }
     }
 
     string Objective() {
