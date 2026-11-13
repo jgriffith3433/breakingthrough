@@ -249,6 +249,9 @@ public class WallitVoice : MonoBehaviour {
         }
         if (why == "low") {
             Instance.Queue(Instance.Pick(SliceLow), "slice-low", 4f);
+        } else if (why == "hurt" || why == "wave") {
+            // She spoke to him: he answers short and in money ("On it." / "Billable.").
+            Instance.Queue(Instance.Pick(CalloutReply), "callout-reply", 10f);
         }
     }
 
@@ -407,6 +410,9 @@ public class WallitVoice : MonoBehaviour {
             StakesFeel.Note("stakes-line", line + "|" + lineLength.ToString("0.00") + "|overlaps " + Overlaps);
         }
         Events.Add("line|" + why + "|" + line + "|" + lineLength.ToString("0.00") + (lineHasFile ? "|voice" : "|subtitle"));
+        if ((why == "callout-reply" || why == "slice-low") && SliceVoice.Instance != null) {
+            SliceVoice.Instance.CountReply(why, line);
+        }
         return lineLength;
     }
 
