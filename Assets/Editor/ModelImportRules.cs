@@ -10,7 +10,7 @@ class ModelImportRules : AssetPostprocessor
 
     public override uint GetVersion()
     {
-        return 2;
+        return 3;
     }
 
     void OnPreprocessModel()
@@ -28,11 +28,13 @@ class ModelImportRules : AssetPostprocessor
         importer.normalSmoothingAngle = SmoothingAngle;
         importer.normalCalculationMode = ModelImporterNormalCalculationMode.AreaAndAngleWeighted;
 
-        // Gen robot bots (YoBot / SpiderBot): textured Generic rigs with procedural clips.
+        // Gen robot bots (YoBot / SpiderBot): Generic rigs with procedural clips, drawn with the painted
+        // Resources/Models/Bots/*Skin.png (BotArt.SkinFor). Their FBXs embed two 1024 px textures each that nothing
+        // reads, so no materials are imported and none ship in the phone's first download.
         // Stand-in / Blender bird exports stay vertex-color, no animation.
         if (assetPath.StartsWith("Assets/Resources/Models/Bots/"))
         {
-            importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
+            importer.materialImportMode = ModelImporterMaterialImportMode.None;
             importer.animationType = ModelImporterAnimationType.Generic;
             importer.importAnimation = true;
             return;
