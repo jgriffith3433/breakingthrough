@@ -366,7 +366,8 @@ public class UpgradeLook : MonoBehaviour {
             return;
         }
         if (y >= AnnounceY) {
-            if (announcing != null) {
+            // The wave-cleared / level-up cards own the screen: an announcement (a boss's "approaches!") waits for them to close.
+            if (announcing != null || LevelUpScreen.IsOpen) {
                 foreach (var w in waiting) {
                     if (w.Key == line) {
                         return;
@@ -383,6 +384,19 @@ public class UpgradeLook : MonoBehaviour {
         Show(line, seconds, y);
     }
 
+    // Called every frame by LevelUpScreen while no card is open: a waiting announcement takes the slot once the cards are gone.
+    public static void PumpAnnouncements() {
+        if (waiting.Count == 0 || announcing != null || LevelUpScreen.IsOpen) {
+            return;
+        }
+        if (WaveDirector.IsLost || WaveDirector.Instance == null) {
+            waiting.Clear();
+            return;
+        }
+        var next = waiting.Dequeue();
+        announcing = Show(next.Key, next.Value.Key, next.Value.Value);
+    }
+
     // Called when an announcement ends: the next waiting one takes the slot.
     public static void AnnouncementEnded(LoadoutBanner ended) {
         if (announcing != ended) {
@@ -393,10 +407,7 @@ public class UpgradeLook : MonoBehaviour {
             waiting.Clear();
             return;
         }
-        if (waiting.Count > 0) {
-            var next = waiting.Dequeue();
-            announcing = Show(next.Key, next.Value.Key, next.Value.Value);
-        }
+        PumpAnnouncements();
     }
 
     static LoadoutBanner Show(string line, float seconds, float y) {
@@ -515,6 +526,7 @@ public class FloatUp : MonoBehaviour {
 
 public class LoadoutBanner : MonoBehaviour {
     float left = 4.2f;
+    Canvas canvas;
 
     public void SetLife(float seconds) {
         left = seconds;
@@ -525,6 +537,13 @@ public class LoadoutBanner : MonoBehaviour {
     }
 
     void Update() {
+        // The card picker owns the screen while it is open (time is stopped, so the banner's life holds): hide it, show it after.
+        if (canvas == null) {
+            canvas = GetComponent<Canvas>();
+        }
+        if (canvas != null && canvas.enabled == LevelUpScreen.IsOpen) {
+            canvas.enabled = !LevelUpScreen.IsOpen;
+        }
         // The run-end panel owns the screen: time stops on a loss, so a callout's timer would never run out under it.
         left -= Time.deltaTime;
         if (left <= 0f || WaveDirector.IsLost) {

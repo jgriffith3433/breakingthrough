@@ -37,7 +37,22 @@ public static partial class Playtest {
             run.Event("setup", "testing wave key to wave " + waves[i]);
             yield return GoWave(waves[i]);
             WaveDirector.Instance.TrimForPlaytest();
-            yield return run.Until(() => CinematicDirector.BossIntros > before, 30f, "the wave " + waves[i] + " boss entrance");
+            // A wave-cleared card the bot has not picked holds the entrance until the pick (it never draws over the cards): pick it.
+            float waited = 0f;
+            while (CinematicDirector.BossIntros <= before && waited < 30f && !run.Done) {
+                if (LevelUpScreen.IsOpen && waited > 1.2f) {
+                    PlayInput.Tap(KeyCode.Alpha1);
+                    yield return new WaitForSecondsRealtime(0.8f);
+                    waited += 0.8f;
+                } else {
+                    yield return null;
+                    waited += Time.unscaledDeltaTime;
+                }
+            }
+            if (CinematicDirector.BossIntros <= before && !run.Done) {
+                run.Problem(PlaytestSeverity.Bug, "boss-entrances: the wave " + waves[i] + " boss entrance never started");
+                run.Finish(PlaytestOutcome.Stuck);
+            }
             if (run.Done) {
                 yield break;
             }
@@ -54,6 +69,7 @@ public static partial class Playtest {
         CinematicDirector.IgnoreSeen = true;
         string[] names = { "The Courier", "The Plated Alpha", "The Foreman", "The Half-Built", "The Server", "The Registrar", "The Order" };
         for (int i = 0; i < names.Length && !run.Done; i++) {
+            yield return ClosePicker();
             ClearField();
             yield return new WaitForSecondsRealtime(0.3f);
             Enemy boss = SpawnForEntrance(names[i]);
@@ -77,6 +93,9 @@ public static partial class Playtest {
                 Object.Destroy(boss.gameObject);
             }
         }
+        if (!run.Done) {
+            yield return BossOverCards(phone);
+        }
         CinematicDirector.IgnoreSeen = false;
         run.Metric("bossEntrances", count);
         run.Metric("bossEntranceCardTopFrac", Mathf.Round(bossCardTopMax * 100f) / 100f);
@@ -95,6 +114,88 @@ public static partial class Playtest {
         if (count < 10) {
             run.Problem(PlaytestSeverity.Bug, "boss-entrances: only " + count + " of 10 entrances played");
         }
+    }
+
+    // A boss that spawns while the wave-cleared card picker is open: its "approaches!" banner and its name card wait for the pick
+    // and never draw over the cards. Setup: AddWaveCard opens the picker (the wave key's own card), the boss is placed on the field
+    // and its entrance asked for; the pick is a real key press.
+    static IEnumerator BossOverCards(bool phone) {
+        run.Scene("Boss entrance over the card picker");
+        yield return ClosePicker();
+        ClearField();
+        RunBoons.AddWaveCard();
+        yield return run.Until(() => LevelUpScreen.IsOpen, 10f, "the wave-cleared card picker");
+        if (run.Done) {
+            yield break;
+        }
+        Enemy boss = SpawnForEntrance("The Registrar");
+        if (boss == null) {
+            run.Problem(PlaytestSeverity.Bug, "boss-entrances: could not place the Registrar over the card picker");
+            yield break;
+        }
+        run.Event("setup", "The Registrar placed on the field while the wave-cleared cards are open");
+        bool ended = false;
+        CinematicDirector.BossResult res = CinematicDirector.PlayBoss(boss, 4, -1, () => ended = true);
+        if (res != CinematicDirector.BossResult.Played) {
+            run.Problem(PlaytestSeverity.Bug, "boss-entrances: the Registrar has no entrance over the card picker (" + res + ")");
+            Object.Destroy(boss.gameObject);
+            yield break;
+        }
+        float t0 = Time.unscaledTime;
+        bool overlap = false;
+        while (Time.unscaledTime - t0 < 1.6f && LevelUpScreen.IsOpen && !run.Done) {
+            if (CinematicDirector.BossCardUp || CinematicDirector.BossOpen || VisibleCallouts() > 0) {
+                overlap = true;
+            }
+            yield return null;
+        }
+        run.Event("boss-over-cards", "cards open for 1.6 s with the Registrar waiting: name card or banner drawn over them = " + overlap);
+        if (overlap) {
+            run.Problem(PlaytestSeverity.Bug, "boss-entrances: a boss name card or 'approaches!' banner drew over the wave-cleared card picker");
+        }
+        if (LevelUpScreen.IsOpen) {
+            PlayInput.Tap(KeyCode.Alpha1);   // the player's pick
+        }
+        yield return run.Until(() => !LevelUpScreen.IsOpen, 5f, "the card picker to close after the pick");
+        if (run.Done) {
+            yield break;
+        }
+        yield return run.Until(() => CinematicDirector.BossOpen, 3f, "the Registrar's entrance after the pick");
+        if (run.Done) {
+            yield break;
+        }
+        yield return BossEntranceWatch("Registrar after the card pick", phone, false);
+        if (!ended) {
+            run.Problem(PlaytestSeverity.Bug, "boss-entrances: the entrance that waited for the cards never called its done");
+        }
+        if (boss != null) {
+            Object.Destroy(boss.gameObject);
+        }
+    }
+
+    // Setup: pick any wave-cleared or level-up card still open from the earlier waves (a real key press), so the next boss is
+    // placed on a clear screen.
+    static IEnumerator ClosePicker() {
+        float until = Time.unscaledTime + 12f;
+        while ((LevelUpScreen.IsOpen || RunBoons.PendingLevels > 0 || RunBoons.PendingChests > 0) && Time.unscaledTime < until && !run.Done) {
+            if (LevelUpScreen.IsOpen) {
+                PlayInput.Tap(KeyCode.Alpha1);
+                yield return new WaitForSecondsRealtime(0.8f);
+            } else {
+                yield return null;
+            }
+        }
+    }
+
+    static int VisibleCallouts() {
+        int n = 0;
+        foreach (LoadoutBanner b in Object.FindObjectsByType<LoadoutBanner>(FindObjectsSortMode.None)) {
+            Canvas c = b != null ? b.GetComponent<Canvas>() : null;
+            if (c != null && c.enabled) {
+                n++;
+            }
+        }
+        return n;
     }
 
     static List<float> bossEntranceStats;
