@@ -626,10 +626,14 @@ public static class WebGlBuild
         }
 
         Directory.CreateDirectory(buildPath);
-        // Brotli: the smallest first download. Studio's hosts send the .br files with their Content-Encoding, and the loader's
-        // decompression fallback covers a static host that does not. The campaign's heavy files are not in the data file at all
+        // Gzip, never Brotli. The build's address (Game/build.json's base on sites.hawkesgen.ai) sends the .unityweb files as
+        // application/octet-stream with no Content-Encoding, so the browser never unpacks them itself. The Game page's loader
+        // streams a gzip file through the browser's native DecompressionStream while it downloads; it cannot do that for
+        // Brotli, so a Brotli build reached Unity's JavaScript decoder, which unpacked the whole ~18 MB on the main thread
+        // after the last byte: a minute of frozen page on the phone twin (build 135), and gameplay never came. Gzip costs a
+        // few MB more on the wire and unpacks for free. The campaign's heavy files are not in the data file at all
         // (OnDemandPack), so this is the menu and Arcade only. Engine modules nothing references are stripped from the player.
-        PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Brotli;
+        PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
         PlayerSettings.WebGL.decompressionFallback = true;
         PlayerSettings.WebGL.dataCaching = true;   // a returning player's browser keeps the data file
         PlayerSettings.WebGL.debugSymbolMode = WebGLDebugSymbolMode.Off;
@@ -691,6 +695,7 @@ public static class WebGlBuild
 
         if (report.summary.result == BuildResult.Succeeded)
         {
+            RequireGzip(buildPath);
             OnDemandPack.Install(buildPath);
             LogSizes(report, buildPath);
         }
@@ -719,6 +724,29 @@ public static class WebGlBuild
 
     // What the first download holds, by folder, and the biggest assets in it, from the build report: logged and written beside the
     // build as build-report.txt. AGENTS.md ("Download size") keeps the before and after of the on-demand split.
+    // The Game page unpacks only gzip without the main thread (see the compression setting in BuildWebGLTo): a data, wasm or
+    // framework file in any other format would freeze a phone after the download, so the build fails here instead.
+    static void RequireGzip(string buildPath)
+    {
+        string buildDir = Path.Combine(buildPath, "Build");
+        foreach (string kind in new[] { ".data.unityweb", ".wasm.unityweb", ".framework.js.unityweb" })
+        {
+            string[] files = Directory.Exists(buildDir) ? Directory.GetFiles(buildDir, "*" + kind) : new string[0];
+            if (files.Length == 0)
+            {
+                throw new Exception("the build has no *" + kind + " (the Game page loads it)");
+            }
+            byte[] head = new byte[2];
+            using (FileStream stream = File.OpenRead(files[0]))
+            {
+                if (stream.Read(head, 0, 2) < 2 || head[0] != 0x1f || head[1] != 0x8b)
+                {
+                    throw new Exception(Path.GetFileName(files[0]) + " is not gzip: the Game page would hand it to Unity's JavaScript unpacker and freeze the page");
+                }
+            }
+        }
+    }
+
     static void LogSizes(BuildReport report, string buildPath)
     {
         var text = new StringBuilder();
