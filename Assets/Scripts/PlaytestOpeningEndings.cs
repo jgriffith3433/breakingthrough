@@ -350,12 +350,11 @@ public static class PlaytestOpeningEndings {
             lastPos[key + "|moved"] = Vector3.zero;
             return;
         }
+        // Displacement since the shot began (origin stored at the first sample), not per frame:
+        // a walk at 1 m/s is 0.02 m a frame and would never read as moving.
         float moved = Flat(w - lastPos[key + "|w"]).magnitude
             + Flat(s - lastPos[key + "|s"]).magnitude
             + Flat(b - lastPos[key + "|b"]).magnitude;
-        lastPos[key + "|w"] = w;
-        lastPos[key + "|s"] = s;
-        lastPos[key + "|b"] = b;
         if (moved > 0.35f && lastPos[key + "|moved"].x < 0.5f) {
             lastPos[key + "|moved"] = Vector3.one;
             movingShots++;
