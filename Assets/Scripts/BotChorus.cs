@@ -236,7 +236,7 @@ public class BotChorus : MonoBehaviour {
         text.fontSize = 28;
         text.fontStyle = FontStyle.Bold;
         text.alignment = TextAnchor.MiddleCenter;
-        text.color = new Color(0.6f, 0.9f, 1f);
+        text.color = DeptPalette.CreamSoft;
         text.raycastTarget = false;
         text.enabled = false;
         // One line, always: a long one shrinks to fit the band instead of wrapping.

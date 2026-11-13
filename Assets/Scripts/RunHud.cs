@@ -49,7 +49,7 @@ public class RunHud : MonoBehaviour {
     }
 
     void Start() {
-        font = UiSkin.Font(UiSkin.FontRole.Label);
+        font = UiSkin.Font(UiSkin.FontRole.Body);
         var canvasGo = new GameObject("Run Canvas");
         canvasGo.transform.SetParent(transform, false);
         var canvas = canvasGo.AddComponent<Canvas>();
@@ -60,12 +60,12 @@ public class RunHud : MonoBehaviour {
         scaler.referenceResolution = new Vector2(1920, 1080);
         Transform top = canvasGo.transform;
 
-        xpBack = Bar(top, new Vector2(0.5f, 0f), new Vector2(0f, 10f), new Vector2(1240f, 14f), new Color(0.05f, 0.08f, 0.12f, 0.85f));
-        xpFill = Bar(xpBack.transform, new Vector2(0f, 0.5f), new Vector2(2f, 0f), new Vector2(0f, 10f), new Color(0.45f, 0.92f, 1f, 1f));
+        xpBack = Bar(top, new Vector2(0.5f, 0f), new Vector2(0f, 10f), new Vector2(1240f, 14f), DeptPalette.Ink);
+        xpFill = Bar(xpBack.transform, new Vector2(0f, 0.5f), new Vector2(2f, 0f), new Vector2(0f, 10f), DeptPalette.Brass);
         xpFill.rectTransform.pivot = new Vector2(0f, 0.5f);
         levelText = Label(top, "", 26, FontStyle.Bold, TextAnchor.LowerRight, new Vector2(0.5f, 0f), new Vector2(-640f, 4f), new Vector2(240f, 34f));
         levelText.rectTransform.pivot = new Vector2(1f, 0f);
-        levelText.color = new Color(0.6f, 0.95f, 1f);
+        levelText.color = DeptPalette.Cream;
 
         comboText = Label(top, "", 40, FontStyle.Bold, TextAnchor.MiddleLeft, new Vector2(0.5f, 0.5f), new Vector2(150f, 40f), new Vector2(400f, 60f));
         comboText.rectTransform.pivot = new Vector2(0f, 0.5f);
@@ -78,16 +78,16 @@ public class RunHud : MonoBehaviour {
         bossRect.offsetMin = Vector2.zero;
         bossRect.offsetMax = Vector2.zero;
         bossName = Label(bossRoot.transform, "", 28, FontStyle.Bold, TextAnchor.LowerCenter, new Vector2(0.5f, 1f), new Vector2(0f, -196f), new Vector2(900f, 36f));
-        bossName.color = new Color(1f, 0.55f, 0.45f);
+        bossName.color = DeptPalette.RedLight;
         bossBack = Bar(bossRoot.transform, new Vector2(0.5f, 1f), new Vector2(0f, -236f), new Vector2(820f, 22f), new Color(0.12f, 0.04f, 0.04f, 0.92f));
-        bossFill = Bar(bossBack.transform, new Vector2(0f, 0.5f), new Vector2(3f, 0f), new Vector2(814f, 16f), new Color(0.9f, 0.18f, 0.12f));
+        bossFill = Bar(bossBack.transform, new Vector2(0f, 0.5f), new Vector2(3f, 0f), new Vector2(814f, 16f), DeptPalette.Red);
         bossFill.rectTransform.pivot = new Vector2(0f, 0.5f);
         bossNotch = Bar(bossBack.transform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(5f, 30f), new Color(1f, 0.93f, 0.7f, 0.95f));
         bossNotch.gameObject.SetActive(false);
         bossRoot.SetActive(false);
 
         goldenText = Label(top, "", 28, FontStyle.Bold, TextAnchor.MiddleCenter, new Vector2(0.5f, 1f), new Vector2(0f, -268f), new Vector2(900f, 40f));
-        goldenText.color = new Color(1f, 0.85f, 0.3f);
+        goldenText.color = DeptPalette.Brass;
 
         eventText = Label(top, "", 24, FontStyle.Bold, TextAnchor.UpperLeft, new Vector2(0f, 1f), new Vector2(36f, -84f), new Vector2(600f, 30f));
         eventText.rectTransform.pivot = new Vector2(0f, 1f);
@@ -325,7 +325,7 @@ public class RunHud : MonoBehaviour {
         text.fontSize = size;
         text.fontStyle = style;
         text.alignment = align;
-        text.color = new Color(1f, 0.97f, 0.9f);
+        text.color = DeptPalette.Cream;
         text.raycastTarget = false;
         text.horizontalOverflow = HorizontalWrapMode.Overflow;
         text.verticalOverflow = VerticalWrapMode.Overflow;
