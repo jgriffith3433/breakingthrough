@@ -629,7 +629,7 @@ public partial class CinematicDirector : MonoBehaviour {
     }
 
     void TickVoice(Shot s, float u) {
-        if (shotSpoke || string.IsNullOrEmpty(s.line) || u < 0.08f) {
+        if (shotSpoke || string.IsNullOrEmpty(s.line) || u < 0.03f) {
             return;
         }
         shotSpoke = true;
@@ -664,7 +664,7 @@ public partial class CinematicDirector : MonoBehaviour {
         }
         len = Mathf.Min(len, MaxVoiceSeconds);
         if (len > shotLength - (Time.unscaledTime - shotStart)) {
-            shotLength = (Time.unscaledTime - shotStart) + len + 0.25f;
+            shotLength = (Time.unscaledTime - shotStart) + len + 0.05f;
         }
     }
 
