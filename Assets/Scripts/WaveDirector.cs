@@ -283,7 +283,7 @@ public class WaveDirector : MonoBehaviour {
             WallitVoice.OnWave(Wave);
             story.StartWave(Wave);
         }
-        if (Event != WaveEvent.None) {
+        if (Event != WaveEvent.None && Wave % 10 != 0) {   // a boss wave's entrance owns the screen; the HUD still lists the event
             UpgradeLook.Say(EventName, 2.6f, 230f);
             GameAudio.Play("launch", 0.4f, 0.7f);
         }
@@ -1077,6 +1077,12 @@ public class WaveDirector : MonoBehaviour {
 
     void RefreshHud() {
         timerText.text = "";
+        if (BossSetPiece.EntranceUp) {
+            // The boss's name card owns the screen: no wave line, flavour or banner under it.
+            waveText.text = "";
+            detailText.text = "";
+            return;
+        }
         if (paperLaid != HudPaper.Active) {
             paperLaid = HudPaper.Active;
             LayoutHud();   // the paper HUD owns the top middle: move the wave line under its card

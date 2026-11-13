@@ -176,7 +176,7 @@ public class RunHud : MonoBehaviour {
         if (laidStamp != UiFit.Stamp) {
             Layout();
         }
-        bool hidden = WaveDirector.IsLost;
+        bool hidden = WaveDirector.IsLost || BossSetPiece.EntranceUp;
         if (HudPaper.Active && xpBack.gameObject.activeSelf) {
             xpBack.gameObject.SetActive(false);   // the level is the paper HUD's ink stamp now
         }
