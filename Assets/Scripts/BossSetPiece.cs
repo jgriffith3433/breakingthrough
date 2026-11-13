@@ -16,6 +16,8 @@ public class BossSetPiece : MonoBehaviour {
     public static bool Active { get; private set; }
     // True while the defeat payoff coroutine runs: WaveDirector holds the wave clear / act banner until it ends.
     public static bool PayingOff { get; private set; }
+    // True while a boss entrance (the director's name card or the old dolly) is on screen: regular HUD text stands down.
+    public static bool EntranceUp { get { return Active || CinematicDirector.BossOpen; } }
     public static int Intros, Skips, Payoffs;
     public static float LastSlowSeconds;
 
