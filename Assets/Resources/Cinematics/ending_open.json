@@ -107,6 +107,7 @@
     {
       "id": "s6",
       "back": "ending_open_6_back",
+      "video": "ending_open_6.mp4",
       "speaker": "N",
       "seconds": 4.4,
       "fade": 0.7,
