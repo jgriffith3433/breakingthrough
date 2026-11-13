@@ -30,15 +30,18 @@ public static partial class Playtest {
 
         int[] waves = { 10, 20, 30 };
         for (int i = 0; i < waves.Length && !run.Done && !WaveDirector.IsLost; i++) {
+            // Counted before the wave key: the boss can spawn and start its entrance while GoWave is still settling, and a count
+            // taken after that would wait for a second entrance that never comes.
+            int before = CinematicDirector.BossIntros;
+            int eventsBefore = CinematicDirector.BossEvents.Count;
             run.Event("setup", "testing wave key to wave " + waves[i]);
             yield return GoWave(waves[i]);
             WaveDirector.Instance.TrimForPlaytest();
-            int before = CinematicDirector.BossIntros;
             yield return run.Until(() => CinematicDirector.BossIntros > before, 30f, "the wave " + waves[i] + " boss entrance");
             if (run.Done) {
                 yield break;
             }
-            yield return BossEntranceWatch("Arcade wave " + waves[i], phone, false);
+            yield return BossEntranceWatch("Arcade wave " + waves[i], phone, false, eventsBefore);
             count++;
             if (WaveDirector.IsLost && Musician.Instance != null) {
                 break;
@@ -121,9 +124,9 @@ public static partial class Playtest {
     }
 
     // Watches one entrance from its first frame to its end and checks every part of it.
-    static IEnumerator BossEntranceWatch(string label, bool phone, bool skip) {
+    static IEnumerator BossEntranceWatch(string label, bool phone, bool skip, int fromEvent = -1) {
         run.Scene("Boss entrance: " + label);
-        int eventsFrom = Mathf.Max(0, CinematicDirector.BossEvents.Count - 1);
+        int eventsFrom = fromEvent >= 0 ? fromEvent : Mathf.Max(0, CinematicDirector.BossEvents.Count - 1);
         float t0 = Time.unscaledTime;
         bool cardSeen = false, padsDuring = false, skipped = false;
         float cardY = -1f;
