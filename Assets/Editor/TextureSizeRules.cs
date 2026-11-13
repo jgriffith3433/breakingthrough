@@ -13,7 +13,7 @@ class TextureSizeRules : AssetPostprocessor
 
     public override uint GetVersion()
     {
-        return 2;
+        return 3;
     }
 
     public override int GetPostprocessOrder()
@@ -23,7 +23,7 @@ class TextureSizeRules : AssetPostprocessor
 
     void OnPreprocessTexture()
     {
-        if (!assetPath.StartsWith("Assets/") || assetPath.StartsWith("Assets/Kit/") || assetPath.StartsWith("Assets/Editor/"))
+        if (!assetPath.StartsWith("Assets/") || assetPath.StartsWith("Assets/Kit/") || assetPath.StartsWith("Assets/Resources/Pbr/") || assetPath.StartsWith("Assets/Editor/"))
             return;
         var importer = assetImporter as TextureImporter;
         bool sprite = importer != null && (importer.textureType == TextureImporterType.Sprite || importer.textureType == TextureImporterType.GUI);

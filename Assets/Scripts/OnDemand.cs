@@ -339,7 +339,7 @@ public class OnDemand : MonoBehaviour {
         bool picture = lower.EndsWith(".jpg") || lower.EndsWith(".png");
         for (int attempt = 0; attempt < 2; attempt++) {
             UnityWebRequest req = audio ? UnityWebRequestMultimedia.GetAudioClip(url, AudioType.MPEG)
-                : picture ? UnityWebRequestTexture.GetTexture(url, true)
+                : picture ? UnityWebRequestTexture.GetTexture(url, !e.k.StartsWith("Pbr/"))   // a PBR set is readable once, to be rebuilt with mips (PbrKit.WithMips)
                 : UnityWebRequest.Get(url);
             req.timeout = (int)RequestSeconds;
             if (audio) {
@@ -369,6 +369,9 @@ public class OnDemand : MonoBehaviour {
                         made = clip;
                     } else if (picture) {
                         Texture2D tex = DownloadHandlerTexture.GetContent(req);
+                        if (tex != null && e.k.StartsWith("Pbr/")) {
+                            tex = PbrKit.WithMips(tex, e.k.EndsWith("_n"));
+                        }
                         if (tex != null) {
                             tex.name = e.k;
                             tex.wrapMode = TextureWrapMode.Clamp;

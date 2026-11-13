@@ -400,3 +400,11 @@ boss theme. Spec and card table: Docs/Story.md, "Boss entrances". Code `Cinemati
 - Gen art replacement of stand-ins: priced separately under the approved item (GPU estimate follows in the summary).
 - The Arcade wall press and light arc: J asked for the vertical slice (2026-11-10) and they are built as `HollowLandmark.cs`; the stamp sfx is still to be made (cents, `audio.sfx`).
 - Whether Arcade gets the wall stamp press and light arc: proposed here, J's call.
+
+---
+
+## Materials (painted PBR)
+
+The Moonlit Hollow's ground is moonlit lawn grass with four worn dirt lanes that lead to Slice's circle, where they turn to cobble; the hub
+office has brick walls, painted boards and linoleum under the feet, a carpet in front of the six doors and rusted metal cabinets. Eight Gen-painted
+sets in the game's storybook style (`Docs/Materials.md`).

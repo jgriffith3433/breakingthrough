@@ -200,6 +200,10 @@ public static class OnDemandPack {
             item.key = rel.Substring(0, rel.Length - ext.Length);
             return item;
         }
+        if (lower.StartsWith("pbr/hub/") && ext == ".png") {
+            item.key = rel.Substring(0, rel.Length - ext.Length);   // the hub's PBR sets: bytes as painted (normals and roughness must not go lossy)
+            return item;
+        }
         if (lower.StartsWith("baked/") && name.EndsWith(".mesh.txt")) {
             item.key = rel.Substring(0, rel.Length - ".txt".Length);   // Baked/<id>.mesh, what BakedMesh asks Resources for
             return item;
@@ -215,6 +219,9 @@ public static class OnDemandPack {
         if (item.key.StartsWith("Voice/")) {
             item.bytes = src;
             item.ext = ".mp3";
+        } else if (item.key.StartsWith("Pbr/")) {
+            item.bytes = src;
+            item.ext = ".png";
         } else if (item.key.StartsWith("Baked/")) {
             item.bytes = src;
             item.ext = ".txt";
@@ -352,7 +359,7 @@ public static class OnDemandPack {
         }
         // core: portraits, skies, the hub's and office's meshes
         foreach (Item i in items) {
-            if (i.key.StartsWith("Portraits/") || i.key.StartsWith("Skies/")) {
+            if (i.key.StartsWith("Portraits/") || i.key.StartsWith("Skies/") || i.key.StartsWith("Pbr/hub/")) {
                 i.groups.Add("core");
             } else if (i.key.StartsWith("LoadCards/")) {
                 // a chapter's loading card comes with that chapter (card_ch3 -> ch3); the hub's is core
