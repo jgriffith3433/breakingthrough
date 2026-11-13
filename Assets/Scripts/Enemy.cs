@@ -1103,7 +1103,28 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    // The probe is the costliest per-bot call in a crowd, so each bot re-asks about every 0.1 s (staggered by its id)
+    // and reuses the answer between; the ray buffer is shared so the cast allocates nothing.
+    static readonly RaycastHit[] ProbeHits = new RaycastHit[16];
+    float probeNext = -1f;
+    DefencePiece probeWall;
+    bool probeScenery;
+
     void ProbeAhead(Vector3 toTarget, float distance, out DefencePiece wall, out bool sceneryBlock)
+    {
+        if (Time.time < probeNext)
+        {
+            wall = probeWall != null && probeWall.Alive && probeWall.Blocks ? probeWall : null;
+            sceneryBlock = probeScenery;
+            return;
+        }
+        probeNext = Time.time + 0.1f + (GetInstanceID() & 7) * 0.004f;
+        ProbeAheadNow(toTarget, distance, out wall, out sceneryBlock);
+        probeWall = wall;
+        probeScenery = sceneryBlock;
+    }
+
+    void ProbeAheadNow(Vector3 toTarget, float distance, out DefencePiece wall, out bool sceneryBlock)
     {
         wall = null;
         sceneryBlock = false;
@@ -1113,10 +1134,11 @@ public class Enemy : MonoBehaviour
         Vector3 wish = toTarget.normalized;
         float probe = 0.65f + bodyScale * 0.24f;
         Vector3 origin = transform.position + Vector3.up * 0.42f;
-        RaycastHit[] ahead = Physics.RaycastAll(origin, wish, probe, ~0, QueryTriggerInteraction.Ignore);
+        int aheadCount = Physics.RaycastNonAlloc(origin, wish, ProbeHits, probe, ~0, QueryTriggerInteraction.Ignore);
         float best = probe + 1f;
-        foreach (RaycastHit hit in ahead)
+        for (int h = 0; h < aheadCount; h++)
         {
+            RaycastHit hit = ProbeHits[h];
             if (hit.collider == null || hit.distance > best)
                 continue;
             if (hit.collider.transform == transform || hit.collider.transform.IsChildOf(transform))
