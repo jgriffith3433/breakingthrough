@@ -64,9 +64,7 @@ public static class PlaytestOpeningCh23 {
         }
         run.Event("mode-select", "Campaign chapter " + (chapter + 1));
         if (Phone) {
-            TouchControls.BotFinger(8, RectScreen(menu.CampaignButton.GetComponent<RectTransform>()), true);
-            yield return Wait(0.05f);
-            TouchControls.BotFinger(8, Vector2.zero, false);
+            yield return PlaytestUiFinger.Tap(RectScreen(menu.CampaignButton.GetComponent<RectTransform>()), "PlaytestOpeningCh23");
         } else {
             Tap(menu.CampaignButton.gameObject);
         }
@@ -77,9 +75,7 @@ public static class PlaytestOpeningCh23 {
         yield return Wait(0.8f);
         Button slot = CampaignPanel.Instance.SlotButtons[0];
         if (Phone) {
-            TouchControls.BotFinger(8, RectScreen(slot.GetComponent<RectTransform>()), true);
-            yield return Wait(0.05f);
-            TouchControls.BotFinger(8, Vector2.zero, false);
+            yield return PlaytestUiFinger.Tap(RectScreen(slot.GetComponent<RectTransform>()), "PlaytestOpeningCh23");
         } else {
             Tap(slot.gameObject);
         }
@@ -95,9 +91,7 @@ public static class PlaytestOpeningCh23 {
             yield break;
         }
         if (Phone) {
-            TouchControls.BotFinger(8, RectScreen(ChapterScene.Instance.BeginButton.GetComponent<RectTransform>()), true);
-            yield return Wait(0.05f);
-            TouchControls.BotFinger(8, Vector2.zero, false);
+            yield return PlaytestUiFinger.Tap(RectScreen(ChapterScene.Instance.BeginButton.GetComponent<RectTransform>()), "PlaytestOpeningCh23");
         } else {
             Tap(ChapterScene.Instance.BeginButton.gameObject);
         }
