@@ -40,13 +40,19 @@ public class HollowLandmark : MonoBehaviour {
         transform.position = at;
         transform.rotation = Quaternion.LookRotation(center - at);
 
+        // Cast iron and a brick plinth in tones the dusk and fog lift off the dark far ground and sky: the first version was
+        // near-black on near-black, so its frame read as a floating, unlit black rectangle above the horizon.
         Material dark = new Material(SafeShader.Find("Unlit/Color"));
-        dark.color = new Color(0.03f, 0.035f, 0.06f);
+        dark.color = new Color(0.34f, 0.25f, 0.27f);
+        Material plinth = new Material(SafeShader.Find("Unlit/Color"));
+        plinth.color = new Color(0.42f, 0.27f, 0.22f);
         Material red = new Material(SafeShader.Find("Unlit/Color"));
-        red.color = new Color(0.55f, 0.08f, 0.1f);
-        Box("Press Frame L", new Vector3(-9f, 14f, 0f), new Vector3(3f, 28f, 3f), dark);
-        Box("Press Frame R", new Vector3(9f, 14f, 0f), new Vector3(3f, 28f, 3f), dark);
-        Box("Press Bed", new Vector3(0f, 1.5f, 0f), new Vector3(24f, 3f, 8f), dark);
+        red.color = new Color(0.8f, 0.16f, 0.14f);
+        // The legs run 8 m below the base point so they meet the ground on any slope; the plinth shows where they stand.
+        Box("Press Frame L", new Vector3(-9f, 10f, 0f), new Vector3(3f, 36f, 3f), dark);
+        Box("Press Frame R", new Vector3(9f, 10f, 0f), new Vector3(3f, 36f, 3f), dark);
+        Box("Press Plinth", new Vector3(0f, -1f, 0f), new Vector3(30f, 6f, 12f), plinth);
+        Box("Press Bed", new Vector3(0f, 3f, 0f), new Vector3(24f, 3f, 8f), dark);
         head = Box("Press Head", new Vector3(0f, 22f, 0f), new Vector3(15f, 5f, 6f), dark).transform;
         Box("Press Face", new Vector3(0f, -3f, 0f), new Vector3(13f, 0.6f, 5f), red).transform.SetParent(head, false);
         head.GetChild(0).localPosition = new Vector3(0f, -2.8f, 0f);
