@@ -96,7 +96,7 @@ public class AbilityList : MonoBehaviour {
         if (laidStamp != UiFit.Stamp) {
             Layout();
         }
-        if (Time.timeScale == 0f) {
+        if (Time.timeScale == 0f || BossSetPiece.EntranceUp) {   // a boss's name card owns the screen
             if (body.text.Length > 0) {
                 body.text = "";
                 cachedWave = -2;
