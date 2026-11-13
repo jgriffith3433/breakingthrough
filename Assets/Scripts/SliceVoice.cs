@@ -186,6 +186,17 @@ public class SliceVoice : MonoBehaviour {
     // ---------------------------------------------------------------- tick
 
     void Update() {
+        if (WaveDirector.IsLost) {
+            // Time is stopped on the run-end panel, so the shown timers below never run out: clear the lines here.
+            sliceShown = 0f;
+            wallitShown = 0f;
+            if (sliceText != null) {
+                sliceText.enabled = false;
+            }
+            if (wallitText != null) {
+                wallitText.enabled = false;
+            }
+        }
         Musician slice = Musician.Instance;
         if (slice == null || Time.deltaTime <= 0f) {
             return;
