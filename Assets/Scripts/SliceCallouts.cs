@@ -18,6 +18,9 @@ public class SliceCallouts : MonoBehaviour {
     public const float CircleWarn = 7.5f;
     public const float FlankReach = 11f;
     public const float MarkerSeconds = 2.6f;
+    // Phone caption band: Wallit/boss/chorus lines take slot 0, Slice's subtitle slot 1, so the callout word gets slot 2
+    // and never prints over a subtitle ("Blocked." over "Billable.").
+    const int CaptionSlot = 2;
     public const float ParryKnock = 2f;
     public const float StampStun = 1.5f;
     public const float StampRadius = 6.5f;
@@ -149,7 +152,7 @@ public class SliceCallouts : MonoBehaviour {
             layoutStamp = UiFit.CaptionStamp;
             UiFit.Apply(scaler);
             if (caption != null) {
-                UiFit.PlaceCaption(caption.rectTransform, 240f, 0);
+                UiFit.PlaceCaption(caption.rectTransform, 240f, CaptionSlot);
             }
         }
         TickMarker(Time.deltaTime);
@@ -609,7 +612,7 @@ public class SliceCallouts : MonoBehaviour {
         outline.effectColor = new Color(0f, 0f, 0f, 0.85f);
         outline.effectDistance = new Vector2(1.5f, -1.5f);
         UiFit.Apply(scaler);
-        UiFit.PlaceCaption(caption.rectTransform, 240f, 0);
+        UiFit.PlaceCaption(caption.rectTransform, 240f, CaptionSlot);
 
         var arrowGo = new GameObject("Callout Arrow");
         arrowGo.transform.SetParent(canvasGo.transform, false);
