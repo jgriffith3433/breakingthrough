@@ -157,7 +157,9 @@ public class ChapterHub : MonoBehaviour {
     void OnDestroy() {
         if (Instance == this) {
             Instance = null;
-            ChapterMap.Unload();
+            // The hub only goes away with the Campaign scene (the menu, a chapter): the office's scene goes with that load.
+            // Never Unload here, in the middle of the switch (ChapterMap.Forget says why).
+            ChapterMap.Forget();
         }
     }
 
