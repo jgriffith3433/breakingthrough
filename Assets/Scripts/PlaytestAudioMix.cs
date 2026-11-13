@@ -14,7 +14,27 @@ public static class PlaytestAudioMix {
         ExecuteEvents.Execute(target, data, ExecuteEvents.pointerClickHandler);
     }
 
+    static int listenerErrors;
+    static string listenerErrorText;
+
+    static void OnLog(string message, string stack, LogType type) {
+        if (message != null && message.Contains("AudioListener.cpp")) {
+            listenerErrors++;
+            listenerErrorText = message;
+        }
+    }
+
     public static IEnumerator Run(PlaytestRun run) {
+        listenerErrors = 0;
+        Application.logMessageReceived += OnLog;
+        try {
+            yield return RunInner(run);
+        } finally {
+            Application.logMessageReceived -= OnLog;
+        }
+    }
+
+    static IEnumerator RunInner(PlaytestRun run) {
         yield return Playtest.ToMenuPublic();
         MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
         if (menu == null || menu.SettingsButton == null) {
@@ -64,5 +84,16 @@ public static class PlaytestAudioMix {
         float during = AudioMix.MusicDuck;
         run.Metric("musicDuckDb", 20f * Mathf.Log10(Mathf.Max(0.001f, during / before)));
         run.Event("duck", "music " + (20f * Mathf.Log10(during / before)).ToString("0.0") + " dB under a line");
+
+        // The listener limiter must only go on once audio is really running (the tap has been pressed), through Wave 1.
+        yield return Playtest.StartArcadePublic();
+        yield return new WaitForSecondsRealtime(4f);
+        var l = Object.FindAnyObjectByType<AudioListener>();
+        bool limiter = l != null && l.GetComponent<AudioMix.AudioLimiter>() != null;
+        run.Event("limiter", "on listener " + limiter + ", audio running " + (AudioSettings.dspTime > 0.0));
+        run.Metric("audioListenerErrors", listenerErrors);
+        if (listenerErrors > 0) {
+            run.Problem(PlaytestSeverity.Bug, "audio-mix: AudioListener.cpp error logged " + listenerErrors + "x: " + listenerErrorText);
+        }
     }
 }

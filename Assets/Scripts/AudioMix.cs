@@ -133,9 +133,32 @@ public class AudioMix : MonoBehaviour {
         settleUntil = Time.unscaledTime + 1f;
     }
 
+    // Audio is really running only when the audio clock moves. On WebGL the AudioContext stays suspended until the tap-to-play
+    // prompt is pressed: outputSampleRate is > 0 and timers pass, but the FMOD FX group is not valid and dspTime stands still.
+    double dspSeen = -1, dspRunningSince = -1;
+    float dspStallSince;
+
+    bool AudioRunning() {
+        double now = AudioSettings.dspTime;
+        if (dspSeen < 0) {
+            dspSeen = now;
+            dspStallSince = Time.unscaledTime;
+            return false;
+        }
+        if (now > dspSeen) {
+            if (dspRunningSince < 0) dspRunningSince = dspSeen;
+            dspSeen = now;
+            dspStallSince = Time.unscaledTime;
+        } else if (Time.unscaledTime - dspStallSince > 0.5f) {
+            dspRunningSince = -1;
+        }
+        return dspRunningSince >= 0 && now - dspRunningSince >= 1.0;
+    }
+
     void EnsureLimiter() {
+        bool running = AudioRunning();
         if (Time.unscaledTime < settleUntil || Time.unscaledTime < 1f) return;
-        if (AudioSettings.outputSampleRate <= 0) return;
+        if (AudioSettings.outputSampleRate <= 0 || !running) return;
         AudioListener l = Object.FindAnyObjectByType<AudioListener>();
         if (l != null && l.isActiveAndEnabled && l.GetComponent<AudioLimiter>() == null) {
             l.gameObject.AddComponent<AudioLimiter>();
