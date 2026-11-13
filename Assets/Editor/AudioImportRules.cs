@@ -13,7 +13,7 @@ class AudioImportRules : AssetPostprocessor
 
     public override uint GetVersion()
     {
-        return 1;
+        return 2;
     }
 
     void OnPreprocessAudio()
@@ -34,7 +34,11 @@ class AudioImportRules : AssetPostprocessor
         }
         else
         {
-            settings.quality = 0.5f;
+            // Sound effects stay stereo (their level and pan are unchanged), at 32 kHz and a lower Vorbis quality: short
+            // hits and swishes, the first download's second-biggest sound folder after the bark keep-set.
+            settings.sampleRateSetting = AudioSampleRateSetting.OverrideSampleRate;
+            settings.sampleRateOverride = 32000;
+            settings.quality = 0.4f;
         }
         importer.defaultSampleSettings = settings;
     }
