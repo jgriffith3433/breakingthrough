@@ -51,6 +51,7 @@ public class BossVoice : MonoBehaviour {
         Spoken = 0;
         Heard.Clear();
         Events.Clear();
+        waiting.Clear();
         CaptionTopFracTimes100 = 0;
     }
 
@@ -111,10 +112,57 @@ public class BossVoice : MonoBehaviour {
         }
         string line = bank[0];
         if (!VoiceDirector.Allow(line, why, priority) || !WallitVoice.FloorFree) {
-            Events.Add("drop|" + code + "|" + why + "|" + line);
+            // A busy floor (Wallit, Slice or the last boss still talking) must not cost the boss its line: hold it and
+            // say it the moment the floor is free (a scene or the voices-off setting still drops it).
+            Events.Add("hold|" + code + "|" + why + "|" + line);
+            Ensure().Hold(boss, why, priority);
             return;
         }
+        waiting.Remove(why);
         Ensure().Play(code, line, why, priority, YoFamily(code));
+    }
+
+    struct Waiting {
+        public Enemy Boss;
+        public VoiceDirector.Priority Priority;
+        public float Until;
+    }
+
+    static readonly Dictionary<string, Waiting> waiting = new Dictionary<string, Waiting>();
+    static readonly List<string> waitKeys = new List<string>();
+
+    void Hold(Enemy boss, string why, VoiceDirector.Priority priority) {
+        if (waiting.ContainsKey(why)) {
+            return;   // already waiting: the first deadline stands
+        }
+        Waiting w;
+        w.Boss = boss;
+        w.Priority = priority;
+        w.Until = Time.unscaledTime + (priority == VoiceDirector.Priority.Key ? 6f : 3f);
+        waiting[why] = w;
+    }
+
+    void TickWaiting() {
+        if (waiting.Count == 0) {
+            return;
+        }
+        waitKeys.Clear();
+        foreach (string k in waiting.Keys) {
+            waitKeys.Add(k);
+        }
+        for (int i = 0; i < waitKeys.Count; i++) {
+            string why = waitKeys[i];
+            Waiting w = waiting[why];
+            if (w.Boss == null || !w.Boss.Alive || Time.unscaledTime > w.Until) {
+                waiting.Remove(why);
+                continue;
+            }
+            if (VoiceDirector.Scene || !WallitVoice.FloorFree) {
+                continue;
+            }
+            waiting.Remove(why);
+            SpeakFor(w.Boss, why, w.Priority);
+        }
     }
 
     public static string CodeOf(Enemy boss) {
@@ -230,6 +278,7 @@ public class BossVoice : MonoBehaviour {
     }
 
     void Update() {
+        TickWaiting();
         if (stamp != UiFit.CaptionStamp && scaler != null && text != null) {
             stamp = UiFit.CaptionStamp;
             UiFit.Apply(scaler);
