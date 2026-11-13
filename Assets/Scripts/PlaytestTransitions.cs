@@ -32,6 +32,34 @@ public static class PlaytestTransitions {
         ExecuteEvents.Execute(target, data, ExecuteEvents.pointerClickHandler);
     }
 
+    static int cardsPicked;
+    static float cardSince = -1f;
+
+    // A wave card or level-up that opens while the scenario waits is picked the way a player does: a finger on the first card,
+    // once the cards have flipped. The heading must not read "Level 0".
+    static void PickCard() {
+        if (!LevelUpScreen.IsOpen || LevelUpScreen.CardCount == 0) {
+            cardSince = -1f;
+            return;
+        }
+        if (cardSince < 0f) {
+            cardSince = Time.unscaledTime;
+            run.Event("level-up-card", "open: " + LevelUpScreen.Heading + " (" + LevelUpScreen.CardCount + " cards)");
+            if (LevelUpScreen.Heading.StartsWith("Level 0")) {
+                run.Problem(PlaytestSeverity.Bug, "transitions: the card says \"" + LevelUpScreen.Heading + "\" (a card that gains no level must not read Level 0)");
+            }
+        }
+        if (Time.unscaledTime - cardSince > 1.6f && !LevelUpScreen.Stamping) {
+            GameObject card = LevelUpScreen.CardObject(0);
+            if (card != null) {
+                Tap(card);
+                cardsPicked++;
+                run.Event("level-up-pick", "tapped card 1; closed after the stamp: " + !LevelUpScreen.IsOpen);
+                cardSince = -1f;
+            }
+        }
+    }
+
     // Frames pass until done() or the limit; frame times are kept while a sheet is moving, and each new transition and card is judged.
     static IEnumerator Watch(System.Func<bool> done, float seconds, string what) {
         float start = Time.realtimeSinceStartup;
@@ -40,6 +68,7 @@ public static class PlaytestTransitions {
                 frames.Add(Time.unscaledDeltaTime);
             }
             Judge();
+            PickCard();
             yield return null;
         }
         Judge();
@@ -228,6 +257,7 @@ public static class PlaytestTransitions {
             run.Problem(PlaytestSeverity.Bug, "transitions: fps p5 was " + Mathf.Round(p5) + " while a sheet was moving (want 30 or more)");
         }
         run.Metric("transitionRecoveries", ScreenTransition.Recoveries);
+        run.Metric("levelUpCardsPicked", cardsPicked);
         if (ScreenTransition.Recoveries > 0) {
             run.Problem(PlaytestSeverity.Bug, "transitions: the paper sheet had to be taken down by force " + ScreenTransition.Recoveries + " time(s) (a step threw or it stayed up too long)");
         }

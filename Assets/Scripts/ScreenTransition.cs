@@ -110,7 +110,16 @@ public class ScreenTransition : MonoBehaviour {
     // Runs the page turn step by step so an exception in any step (a sound, the swap, a card) ends the turn instead of killing
     // the coroutine with the paper still up: a dead coroutine used to leave the sheet over the screen for the whole session.
     IEnumerator Run(Kind kind, Action swap, bool loadsScene) {
-        var steps = Steps(kind, swap, loadsScene);
+        // The swap is the point of the turn (a scene load, a panel change): it runs once, even when a step before it throws,
+        // or the player would be left in the scene they asked to leave.
+        bool swapStarted = false;
+        Action once = swap == null ? null : (Action)(() => {
+            if (!swapStarted) {
+                swapStarted = true;
+                swap();
+            }
+        });
+        var steps = Steps(kind, once, loadsScene);
         while (true) {
             bool more;
             try {
@@ -119,6 +128,13 @@ public class ScreenTransition : MonoBehaviour {
                 Debug.LogException(e);
                 Recoveries++;
                 more = false;
+                if (once != null && !swapStarted) {
+                    try {
+                        once();
+                    } catch (Exception swapError) {
+                        Debug.LogException(swapError);
+                    }
+                }
             }
             if (!more) {
                 break;

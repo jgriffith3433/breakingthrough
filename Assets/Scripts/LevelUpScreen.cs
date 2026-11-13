@@ -132,6 +132,7 @@ public class LevelUpScreen : MonoBehaviour {
     public static GameObject CardObject(int index) {
         return current != null && index >= 0 && index < current.cards.Length ? current.cards[index].Go : null;
     }
+    public static string Heading { get { return current != null && current.heading != null ? current.heading.text : ""; } }
     public static int CardCount { get { return current != null ? current.offer.Count : 0; } }
     public static bool RarestLast { get; private set; }
     // Boxes inside card i that must not overlap: (what, text or icon rect).
@@ -374,19 +375,22 @@ public class LevelUpScreen : MonoBehaviour {
         if (EventSystem.current != null) {
             EventSystem.current.SetSelectedGameObject(null);
         }
-        RunAnalytics.CardsOpen(chest);
-        WallitVoice.OnLevelUp(chest);
         root.SetActive(true);
-        heading.text = chest ? "Treasure!  Pick one" : "Level " + RunBoons.Level + "!  Pick one";
+        // A wave-clear card gains no level: it must not read "Level 0" (or repeat the level just reached).
+        bool waveCard = !chest && RunBoons.LastCardWasWave;
+        heading.text = chest ? "Treasure!  Pick one" : (waveCard ? "Wave cleared!  Pick one" : "Level " + RunBoons.Level + "!  Pick one");
         heading.color = chest ? new Color(1f, 0.82f, 0.3f) : new Color(0.55f, 0.95f, 1f);
         if (laidStamp != UiFit.Stamp) {
             Layout();
         }
         Fill();
         BeginDeal(0.1f);
-        UiSound.BuildUp();
         TickCards(Time.unscaledTime);
-        Log("open " + (chest ? "chest" : "level " + RunBoons.Level) + ", world easing to a stop, build-up sound, cards dealt face down");
+        Log("open " + (chest ? "chest" : (waveCard ? "wave card" : "level " + RunBoons.Level)) + ", world easing to a stop, build-up sound, cards dealt face down");
+        // Analytics, voice and sound come last: the cards are up and pickable whatever they do.
+        UiSound.BuildUp();
+        RunAnalytics.CardsOpen(chest);
+        WallitVoice.OnLevelUp(chest);
     }
 
     void Fill() {
@@ -462,8 +466,9 @@ public class LevelUpScreen : MonoBehaviour {
         }
         index = Mathf.Clamp(index, 0, offer.Count - 1);
         BoonInfo info = RunBoons.Info(offer[index]);
-        RunBoons.Take(offer[index]);
-        RunAnalytics.CardTaken(fromChest, offer, index);
+        // The card is committed first: the stamp timer then closes the screen and play resumes even if applying the boon or
+        // reporting it throws (it used to leave the picker up, frozen, with every tap throwing again).
+        BoonId taken = offer[index];
         inputReady = false;
         HoldFire = true;
         pickedIndex = index;
@@ -471,6 +476,8 @@ public class LevelUpScreen : MonoBehaviour {
         stamping = true;
         stampAt = Time.unscaledTime;
         Time.timeScale = 0f;
+        RunBoons.Take(taken);
+        RunAnalytics.CardTaken(fromChest, offer, index);
         // The picked card turns up if it was still face down, and is stamped APPROVED.
         StampOn(cards[index], "APPROVED", new Color(0.9f, 0.16f, 0.14f), -11f);
         UiSound.Stamp(0.95f, info.Evolution ? 0.75f : 1f);
