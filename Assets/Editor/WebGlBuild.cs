@@ -213,6 +213,7 @@ public class WebGlDeployWindow : EditorWindow
         WebGlBuild.UpdateGamePageVersion(WebGlBuild.GamePage, newVersion);
         WebGlBuild.InstallSoundPrompt(WebGlBuild.GamePage, newVersion);
         WebGlBuild.InstallLoadQuiet(WebGlBuild.GamePage, newVersion);
+        WebGlBuild.InstallPlaytestBridge(WebGlBuild.GamePage, newVersion);
         Log("Installing What's new (whatsnew.html, releases.json, js/hawkes-release.js and its links)");
         WebGlBuild.InstallWhatsNew(WebGlBuild.GamePage, newVersion);
         Log("Stamping the site footer onto the pages outside Game/");
@@ -317,6 +318,7 @@ public static class WebGlBuild
     const string DefaultGameName = "PlaceDepartment";
     const string SoundScript = "hawkes-sound.js";
     const string LoadQuietScript = "hawkes-load-quiet.js";
+    const string PlaytestBridgeScript = "hawkes-playtest-bridge.js";
 
     public static string ProjectRoot
     {
@@ -489,6 +491,7 @@ public static class WebGlBuild
             UpdateGamePageVersion(GamePage, next);
             InstallSoundPrompt(GamePage, next);
             InstallLoadQuiet(GamePage, next);
+            InstallPlaytestBridge(GamePage, next);
             InstallWhatsNew(GamePage, next);
             InstallSiteFooter();
 
@@ -840,6 +843,55 @@ public static class WebGlBuild
             }
             string newline = html.Contains("\r\n") ? "\r\n" : "\n";
             updated = html.Insert(head, "  " + tag + newline);
+        }
+
+        if (updated != html)
+        {
+            File.WriteAllText(gamePage, updated);
+        }
+    }
+
+    // Studio reads the Game page's window.hawkesPlaytest stand-in before Unity's bridge replaces it, so it only saw the
+    // stand-in's own ids. This writes every scenario id the build registers (read from the PlaytestScenario rows in
+    // Assets/Scripts/Playtest*.cs) to scenarios.json next to the page, installs Tools/Web/hawkes-playtest-bridge.js
+    // (which patches the stand-in to list them and forwards start to Unity, and dismisses the portrait gate) and tags
+    // the page. Runs on every deploy.
+    public static void InstallPlaytestBridge(string gamePage, int version)
+    {
+        string source = Path.Combine(ProjectRoot, "Tools", "Web", PlaytestBridgeScript);
+        if (!File.Exists(source))
+        {
+            throw new Exception("The playtest bridge script is missing: " + source);
+        }
+
+        var ids = new List<string>();
+        foreach (string file in Directory.GetFiles(Path.Combine(Application.dataPath, "Scripts"), "Playtest*.cs"))
+        {
+            foreach (Match m in Regex.Matches(File.ReadAllText(file), "new PlaytestScenario\\(\"([a-z0-9][a-z0-9-]*)\""))
+            {
+                if (!ids.Contains(m.Groups[1].Value))
+                {
+                    ids.Add(m.Groups[1].Value);
+                }
+            }
+        }
+
+        string folder = Path.GetDirectoryName(gamePage);
+        File.WriteAllText(Path.Combine(folder, "scenarios.json"), "{\"scenarios\":[\"" + string.Join("\",\"", ids.ToArray()) + "\"]}");
+        File.WriteAllText(Path.Combine(folder, PlaytestBridgeScript), File.ReadAllText(source).Replace("\r\n", "\n"));
+        string html = File.ReadAllText(gamePage);
+        string tag = "<script src=\"" + PlaytestBridgeScript + "?v=v" + version + "\" data-hawkes-playtest-bridge></script>";
+        string updated = Regex.Replace(html, @"<script[^>]*data-hawkes-playtest-bridge[^>]*></script>", tag);
+        if (updated == html && !html.Contains("data-hawkes-playtest-bridge"))
+        {
+            // First script in <head>, so it is in place before the page's stand-in is assigned.
+            Match head = Regex.Match(html, @"<head[^>]*>");
+            if (!head.Success)
+            {
+                throw new Exception("No <head> in " + gamePage + " for the playtest bridge script");
+            }
+            string newline = html.Contains("\r\n") ? "\r\n" : "\n";
+            updated = html.Insert(head.Index + head.Length, newline + "  " + tag);
         }
 
         if (updated != html)
