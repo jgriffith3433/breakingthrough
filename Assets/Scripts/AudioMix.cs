@@ -110,9 +110,34 @@ public class AudioMix : MonoBehaviour {
         f.hfReference = Place == "floor" ? 8000f : 5000f;
     }
 
+    // A component with OnAudioFilterRead makes the engine attach a DSP to the FX channel group (AudioListener.cpp). While a scene
+    // is loading or just swapped in, that group can be invalid ("An invalid object handle was used"), so the limiter goes on
+    // only once audio has been running and the new scene has settled for a second.
+    float settleUntil;
+
+    void Awake() {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneSettled;
+        UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneGone;
+    }
+
+    void OnDestroy() {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneSettled;
+        UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= OnSceneGone;
+    }
+
+    void OnSceneSettled(UnityEngine.SceneManagement.Scene s, UnityEngine.SceneManagement.LoadSceneMode m) {
+        settleUntil = Time.unscaledTime + 1f;
+    }
+
+    void OnSceneGone(UnityEngine.SceneManagement.Scene s) {
+        settleUntil = Time.unscaledTime + 1f;
+    }
+
     void EnsureLimiter() {
+        if (Time.unscaledTime < settleUntil || Time.unscaledTime < 1f) return;
+        if (AudioSettings.outputSampleRate <= 0) return;
         AudioListener l = Object.FindAnyObjectByType<AudioListener>();
-        if (l != null && l.GetComponent<AudioLimiter>() == null) {
+        if (l != null && l.isActiveAndEnabled && l.GetComponent<AudioLimiter>() == null) {
             l.gameObject.AddComponent<AudioLimiter>();
         }
     }
