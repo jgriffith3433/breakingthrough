@@ -347,7 +347,7 @@ public class OnDemand : MonoBehaviour {
                 if (handler != null) {
                     handler.streamAudio = false;
                     // Kept compressed: decoding every line of a chapter to PCM at once stalled and bloated the WebGL heap (Chapter 5's
-                    // load froze). WallitVoice.EnvelopeOf skips a compressed clip and the mouth follows the speaker's output instead.
+                    // load froze). WallitVoice.EnvelopeOf never reads samples and the mouth follows the speaker's output instead.
                     handler.compressed = true;
                 }
             }
