@@ -26,6 +26,9 @@ public class ScreenTransition : MonoBehaviour {
     // From the call to the swap: the slide, the slam and the hold.
     public const float CoverSeconds = SlideIn + Slam + Hold;
     const float LoadWait = 30f;     // a scene that never reports in is let go after this
+    // The sheet is never allowed to stay up past this (LoadWait plus the slide, stamp and peel with a wide margin): if the
+    // page turn has not finished by then, or its coroutine died, the sheet is taken down so the screen under it is seen.
+    const float MaxCover = 45f;
 
     static ScreenTransition instance;
     static bool sceneArrived;
@@ -33,6 +36,8 @@ public class ScreenTransition : MonoBehaviour {
     public static bool Busy { get; private set; }
     public static int Count { get; private set; }
     public static int Stamps { get; private set; }
+    // Times the sheet had to be taken down by force (a step threw, or it stayed up past MaxCover). Should stay 0.
+    public static int Recoveries { get; private set; }
     public static Kind LastKind { get; private set; }
     // Cover to peeled, minus the time the scene load itself held the thread (that is the load, not the animation).
     public static float LastSeconds { get; private set; }
@@ -51,6 +56,7 @@ public class ScreenTransition : MonoBehaviour {
     Image flash;
     Text header;
     int stampFrame = -1;
+    float coverBegan = -1f;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void ResetStatics() {
@@ -59,6 +65,7 @@ public class ScreenTransition : MonoBehaviour {
         Busy = false;
         Count = 0;
         Stamps = 0;
+        Recoveries = 0;
         LastSeconds = 0f;
         LastTotalSeconds = 0f;
         LastCoveredSeconds = 0f;
@@ -100,7 +107,37 @@ public class ScreenTransition : MonoBehaviour {
         instance.StartCoroutine(instance.Run(kind, swap, loadsScene));
     }
 
+    // Runs the page turn step by step so an exception in any step (a sound, the swap, a card) ends the turn instead of killing
+    // the coroutine with the paper still up: a dead coroutine used to leave the sheet over the screen for the whole session.
     IEnumerator Run(Kind kind, Action swap, bool loadsScene) {
+        var steps = Steps(kind, swap, loadsScene);
+        while (true) {
+            bool more;
+            try {
+                more = steps.MoveNext();
+            } catch (Exception e) {
+                Debug.LogException(e);
+                Recoveries++;
+                more = false;
+            }
+            if (!more) {
+                break;
+            }
+            yield return steps.Current;
+        }
+        Release();
+    }
+
+    // The sheet comes down and the next turn may start (also the end of a normal turn).
+    void Release() {
+        coverBegan = -1f;
+        if (canvasGo != null) {
+            canvasGo.SetActive(false);
+        }
+        Busy = false;
+    }
+
+    IEnumerator Steps(Kind kind, Action swap, bool loadsScene) {
         if (canvasGo == null) {
             Build();
         }
@@ -111,6 +148,7 @@ public class ScreenTransition : MonoBehaviour {
         flash.color = new Color(1f, 1f, 1f, 0f);
         SetSheet(0f);
         canvasGo.SetActive(true);
+        coverBegan = Time.unscaledTime;
         LayoutStamp();
         float started = Time.realtimeSinceStartup;
         GameAudio.PlayUI("paper_slide", 0.8f);
@@ -180,7 +218,6 @@ public class ScreenTransition : MonoBehaviour {
             SetSheet(1f + k);
             yield return null;
         }
-        canvasGo.SetActive(false);
         float end = Time.realtimeSinceStartup;
 
         Count++;
@@ -193,7 +230,6 @@ public class ScreenTransition : MonoBehaviour {
         LastSeconds = (coverStart - started) + (end - peelStart);
         Events.Add(word + "|total=" + LastTotalSeconds.ToString("0.00") + "|covered=" + covered.ToString("0.00")
             + "|swap=" + load.ToString("0.00") + "|peel=" + (end - peelStart).ToString("0.00"));
-        Busy = false;
     }
 
     // 0 = off to the right, 1 = covering, 2 = gone off to the left.
@@ -210,6 +246,14 @@ public class ScreenTransition : MonoBehaviour {
     }
 
     void Update() {
+        // Watchdog: a page turn that has not finished in MaxCover seconds is let go, so the player never sits on a blank sheet.
+        if (canvasGo != null && canvasGo.activeSelf && coverBegan >= 0f && Time.unscaledTime - coverBegan > MaxCover) {
+            StopAllCoroutines();
+            Recoveries++;
+            Debug.LogWarning("[ScreenTransition] the sheet was still up after " + MaxCover + " s; taking it down.");
+            Release();
+            return;
+        }
         if (canvasGo != null && canvasGo.activeSelf && stampFrame != UiFit.Stamp) {
             UiFit.Apply(scaler, 0.5f);
             LayoutStamp();
