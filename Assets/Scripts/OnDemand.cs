@@ -146,6 +146,13 @@ public class OnDemand : MonoBehaviour {
         return Resources.Load<AudioClip>(key);
     }
 
+    // True for a clip downloaded by this class: it stays compressed (Unity still reports its loadType as DecompressOnLoad),
+    // so GetData on it logs "Cannot get data on compressed samples".
+    public static bool IsFetched(AudioClip clip) {
+        UnityEngine.Object o;
+        return clip != null && !string.IsNullOrEmpty(clip.name) && cache.TryGetValue(clip.name, out o) && o == clip;
+    }
+
     public static Texture2D Texture(string key) {
         UnityEngine.Object o;
         if (cache.TryGetValue(key, out o)) {
