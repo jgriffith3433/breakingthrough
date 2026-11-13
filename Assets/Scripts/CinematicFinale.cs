@@ -354,6 +354,11 @@ public partial class CinematicDirector {
             // Start dark: dim the lamp material and keep its light off until the print.
             LevelDress.Tint(lamp, 1, new Color(0.12f, 0.12f, 0.16f, 1f));
             Light lit = LevelDress.PointLight(lamp.transform, new Vector3(0f, 1.4f, 0f), new Color(1f, 0.85f, 0.55f), 5f, 0f);
+            // Dark until the print: a disabled light costs no pass; on a phone the lit ones are vertex lights (no extra forward pass per object).
+            lit.enabled = false;
+            if (Phone()) {
+                lit.renderMode = LightRenderMode.ForceVertex;
+            }
             carryLamps.Add(lamp);
             carryLampLights.Add(lit);
         }
@@ -551,6 +556,7 @@ public partial class CinematicDirector {
             if (L == null) {
                 continue;
             }
+            L.enabled = true;
             L.intensity = 1.6f;
             if (i + 1 < carryLamps.Count && carryLamps[i + 1] != null) {
                 LevelDress.Tint(carryLamps[i + 1], 1, new Color(1f, 0.88f, 0.55f, 1f));
