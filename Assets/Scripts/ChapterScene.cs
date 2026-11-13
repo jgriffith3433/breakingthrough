@@ -258,7 +258,7 @@ public class ChapterScene : MonoBehaviour {
         RankText = best == 0 && bestHard == 0 ? "" : "Best rank " + CampaignGrade.Letter(best) + (bestHard > 0 ? "   Hard " + CampaignGrade.Letter(bestHard) : "");
         Label(column, "CASE FILE " + (CampaignSave.Active + 1) + (RankText.Length > 0 ? "    " + RankText : "") + (filed && file.hard ? "    HARD" : "") + (file.plus > 0 ? "    NEW GAME+ " + file.plus : ""), 26, FontStyle.Bold, new Color(0.66f, 0.72f, 0.84f), 0f, 0f, 36f);
         Label(column, chapter.Title, 64, FontStyle.Bold, new Color(1f, 0.82f, 0.38f), 0f, 44f, 90f);
-        Label(column, chapter.Place, 30, FontStyle.Italic, new Color(0.87f, 0.91f, 1f), 0f, 140f, 44f);
+        Label(column, chapter.Place, 30, FontStyle.Italic, DeptPalette.Cream, 0f, 140f, 44f);
 
         lines = new Text[chapter.Lines.Length];
         for (int i = 0; i < lines.Length; i++) {
@@ -266,7 +266,7 @@ public class ChapterScene : MonoBehaviour {
             char who = raw[0];
             string body = raw.Substring(2);
             string name = who == 'W' ? "Wallit" : who == 'S' ? "Slice" : who == 'Y' ? "Yo Bot" : "";
-            Color tint = who == 'W' ? new Color(1f, 0.82f, 0.38f) : who == 'S' ? new Color(0.62f, 0.95f, 0.86f) : new Color(0.87f, 0.91f, 1f);
+            Color tint = who == 'W' ? new Color(1f, 0.82f, 0.38f) : who == 'S' ? new Color(0.62f, 0.95f, 0.86f) : DeptPalette.Cream;
             lines[i] = Label(column, name.Length > 0 ? name + ": \"" + body + "\"" : body, 32, FontStyle.BoldAndItalic, tint, 0f, 200f + i * 62f, 56f);
             lines[i].gameObject.SetActive(false);
         }

@@ -173,7 +173,7 @@ public class LevelHud : MonoBehaviour {
         hud.Objective = hud.MakeText("Objective", 28, TextAnchor.UpperLeft, new Color(0.95f, 0.9f, 0.75f), out hud.objectiveRect);
         hud.Health = hud.MakeText("Health", 30, TextAnchor.UpperRight, new Color(0.95f, 0.45f, 0.4f), out hud.healthRect);
         hud.Prompt = hud.MakeText("Prompt", 34, TextAnchor.MiddleCenter, new Color(1f, 0.93f, 0.7f), out hud.promptRect);
-        hud.Receipt = hud.MakeText("Receipt", 30, TextAnchor.MiddleCenter, new Color(0.8f, 0.92f, 1f), out hud.receiptRect);
+        hud.Receipt = hud.MakeText("Receipt", 30, TextAnchor.MiddleCenter, DeptPalette.Cream, out hud.receiptRect);
         var tap = new GameObject("PromptTap");
         tap.transform.SetParent(go.transform, false);
         var img = tap.AddComponent<Image>();
@@ -189,7 +189,7 @@ public class LevelHud : MonoBehaviour {
         var go = new GameObject(name);
         go.transform.SetParent(transform, false);
         var t = go.AddComponent<Text>();
-        t.font = UiSkin.Font(UiSkin.FontRole.Label);
+        t.font = UiSkin.Font(UiSkin.FontRole.Body);
         t.fontSize = size;
         t.fontStyle = FontStyle.Bold;
         t.alignment = anchor;

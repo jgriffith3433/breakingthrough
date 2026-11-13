@@ -15,9 +15,9 @@ public class NightGrade : MonoBehaviour {
     [Range(0.5f, 1.6f)] public float Contrast = 1.12f;
     [Range(0f, 2f)] public float Saturation = 0.9f;
     [Range(0f, 2f)] public float Vignette = 0.85f;
-    public Color Shadows = new Color(0.8f, 0.9f, 1.16f);
-    public Color Highlights = new Color(1.08f, 1.0f, 0.9f);
-    public Color Lift = new Color(0.0f, 0.012f, 0.03f);
+    public Color Shadows = DeptPalette.GradeShadows;
+    public Color Highlights = DeptPalette.GradeHighlights;
+    public Color Lift = DeptPalette.GradeLift;
 
     // Colour-grading LUT strips (256x16) of the two looks being blended, set by FilmLight. LutAmount 0 = off.
     [HideInInspector] public Texture2D LutA, LutB;
