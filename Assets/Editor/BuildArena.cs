@@ -72,6 +72,13 @@ static class BuildArena
             Debug.LogWarning("Arena: KnollLit material is missing.");
             return;
         }
+        // The scatter is drawn with DrawMeshInstanced: without this flag at build time the player strips the instancing
+        // shader variant and every grass tuft, flower, rock and tree vanishes (bare dark plane).
+        if (!material.enableInstancing)
+        {
+            material.enableInstancing = true;
+            EditorUtility.SetDirty(material);
+        }
 
         ClearOldMap();
         Directory.CreateDirectory(GeneratedFolder);
