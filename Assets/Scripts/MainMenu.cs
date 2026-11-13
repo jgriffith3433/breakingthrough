@@ -515,8 +515,12 @@ public class MainMenu : MonoBehaviour {
         var header = Node(column, "Logo");
         Place(header, 0f, Mathf.Max(0f, (room - logoHeight) * (tall ? 0.45f : 0.25f)), colW, logoHeight);
         BuildHeader(header, colW, logoHeight, desktop, tall);
+        // A layout rebuild (the page's pixel ratio or size settling at start) can destroy the stamp before it lands:
+        // the rebuilt menu then stamps again, sooner, instead of showing a logo that never slammed in.
         if (builtAt >= 0f) {
             header.gameObject.AddComponent<MenuLogoStamp>().Setup(0.55f, StampRed);
+        } else if (!MenuLogoStamp.Landed) {
+            header.gameObject.AddComponent<MenuLogoStamp>().Setup(0.15f, StampRed);
         }
 
         PlayButton = MakeButton(column, "Play", 0f, playY, colW, playHeight, desktop ? 64 : 48, Play, true);
