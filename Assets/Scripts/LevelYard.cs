@@ -650,6 +650,12 @@ public class LevelYard : MonoBehaviour {
         }
         float started = Time.unscaledTime;
         while (!done) {
+            // The first Yo Bot is placed (held) while the last shot plays, so it is already at the ring when the stick returns.
+            if (firstBot == null && CinematicDirector.Instance != null && CinematicDirector.IsOpen
+                && CinematicDirector.Instance.ShotCount > 0 && CinematicDirector.Instance.ShotIndex >= CinematicDirector.Instance.ShotCount - 1) {
+                firstBot = PlaceFirstBot(PlayerStart);
+                firstBot.Scripted = true;
+            }
             if (Time.unscaledTime - started > budget && CinematicDirector.Instance != null) {
                 Note("opening-timeout", "ch1_open_world cut after " + (Time.unscaledTime - started).ToString("0.0") + " s");
                 CinematicDirector.Instance.Skip();
@@ -671,26 +677,34 @@ public class LevelYard : MonoBehaviour {
     // The first blow: the opening is about 7 s, then one Yo Bot of the Clearing Crew's post already runs at Wallit inside the ring.
     // The bat swings by itself at it (BatEquipment.OpeningAuto) so a stranger sees a hit, a puff of plates and a kill before
     // any text. It is not part of the crew: the encounter counts, the Courier and the notices stay as they were.
-    IEnumerator FirstBlow() {
-        if (scene == null || scene.Player == null) {
-            yield break;
-        }
-        Vector3 w = scene.Player.position;
+    Enemy firstBot;
+
+    Enemy PlaceFirstBot(Vector3 w) {
         Vector3 toRing = LevelKit.Flat(SlicePos - w);
         Vector3 dir = toRing.sqrMagnitude > 0.01f ? toRing.normalized : Vector3.forward;
         Vector3 side = Vector3.Cross(Vector3.up, dir);
         BotDef def = BotRoster.ForSpawn(BotKind.YoBot, 1);
         var go = new GameObject("First Yo Bot");
         go.tag = "enemy";
-        Vector3 p = w + dir * 1f + side * 4.5f;
+        Vector3 p = w + dir * 1f + side * 3f;
         p.y = 0.55f + def.Scale * 0.08f;
         go.transform.position = p;
         go.transform.rotation = Quaternion.LookRotation(LevelKit.Flat(w - p));
         Enemy e = go.AddComponent<Enemy>();
         e.ApplyBot(def);
-        float spawned = Time.time;
+        return e;
+    }
+
+    IEnumerator FirstBlow() {
+        if (scene == null || scene.Player == null) {
+            yield break;
+        }
+        Enemy e = firstBot != null ? firstBot : PlaceFirstBot(scene.Player.position);
+        firstBot = null;
+        e.Scripted = false;
+        float spawned = Time.time;   // control starts now: the fight is timed from here
         BatEquipment.OpeningAuto = true;
-        Note("first-blow-start", "a Yo Bot runs in from " + p.ToString("0.0") + "; the bat swings by itself");
+        Note("first-blow-start", "a Yo Bot runs in from " + e.transform.position.ToString("0.0") + "; the bat swings by itself");
         while (e != null && e.Alive && Time.time - spawned < 14f) {
             yield return null;
         }
