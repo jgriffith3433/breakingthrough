@@ -116,6 +116,13 @@ public static class Tuning {
     public static int CoinsForWave(int wave) {
         return 1 + wave / 10;
     }
+    // Wave 1 opens with this many Yo Bots (the first three spawn within half a second).
+    public const int OpeningBots = 6;
+    // Every kill in the first waves drops a coin that flies to the HUD; after that one in CoinKillEvery.
+    public const int CoinKillWaves = 3;
+    public const int CoinKillEvery = 5;
+    // Hit-stop on every kill (seconds): 3 frames at 60 fps, over the 40 ms floor.
+    public const float KillHitStop = 0.05f;
     public const int CoinsForBoss = 6;
     public const int CoinsForGolden = 3;
 

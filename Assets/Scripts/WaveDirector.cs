@@ -1007,6 +1007,9 @@ public class WaveDirector : MonoBehaviour {
     }
 
     static int YoBotCount(int wave) {
+        if (wave <= 1) {
+            return Tuning.OpeningBots;   // the opening ring: 3-4 are on the field at once, so the first swing hits
+        }
         if (wave < 20) {
             return Mathf.RoundToInt(2f + wave * 1.5f);
         }
