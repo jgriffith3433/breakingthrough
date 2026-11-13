@@ -478,7 +478,7 @@ public class WallitVoice : MonoBehaviour {
         try {
             // A clip kept compressed (fetched on demand) cannot be read: Unity logs an error per call. The mouth follows the
             // speaker's output instead.
-            if (clip.loadType != AudioClipLoadType.DecompressOnLoad || clip.loadState != AudioDataLoadState.Loaded) {
+            if (OnDemand.IsFetched(clip) || clip.loadType != AudioClipLoadType.DecompressOnLoad || clip.loadState != AudioDataLoadState.Loaded) {
                 envelopes[id] = null;
                 return null;
             }
