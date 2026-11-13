@@ -2,7 +2,7 @@
 // 1. The page's stand-in window.hawkesPlaytest answers before Unity's bridge replaces it, so Studio read the
 //    stand-in's four ids. This patches whatever object is assigned there: scenarios() returns every id the build
 //    registers (scenarios.json, written by WebGlBuild next to this file) and start(id) waits for Unity's own bridge.
-// 2. The "reads better sideways" portrait gate must never wall a player or a playtest in: it is dismissed by itself.
+// 2. The "Turn sideways" portrait gate ("Play anyway" link) must never wall a player or a playtest in: it is dismissed by itself.
 (function () {
   if (window.__hawkesPlaytestBridge) return;
   window.__hawkesPlaytestBridge = true;
@@ -79,7 +79,7 @@
     current = patch(current);
   } catch (e) {}
 
-  // The portrait gate: press "Play in portrait anyway" as soon as it shows (any visitor, playtest or not).
+  // The portrait gate: press "Play anyway" (or "Play in portrait anyway") as soon as it shows (any visitor, playtest or not).
   // The page may build the gate late, or show it again by flipping a class or style on a node that is already there
   // (resize, orientationchange), so the watcher also reads attribute changes, and the resize/orientation events.
   // Whatever stays on screen is a real 44 px target, not a 20 px underlined link.
@@ -126,13 +126,15 @@
     }
     return g;
   }
+  // The page words the link "Play anyway" (older builds: "Play in portrait anyway"); match both.
+  var PLAY_ANYWAY = /^\s*play\s+(in\s+portrait(\s+anyway)?|anyway)\s*$/i;
   function dismissGate() {
     var list = document.querySelectorAll("button,a,[role=button]");
     var found = false;
     for (var i = 0; i < list.length; i++) {
       var el = list[i];
       var t = (el.textContent || el.getAttribute("aria-label") || "").trim();
-      if (!/play in portrait( anyway)?/i.test(t)) continue;
+      if (!PLAY_ANYWAY.test(t)) continue;
       found = true;
       var shown = visible(el);
       if (shown) bigTarget(el);
