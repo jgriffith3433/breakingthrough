@@ -640,7 +640,7 @@ public partial class CinematicDirector : MonoBehaviour {
         SubtitleSpeaker = who;
         if (namePlate != null) {
             namePlate.text = who == "W" ? "Wallit" : who == "S" ? "Slice" : who == "K" ? "The Courier" : who == "Y" ? "Yo Bot" : who == "M" ? "Mega Yo Bot" : who == "V" ? "The Server" : "";
-            namePlate.color = who == "W" ? new Color(0.95f, 0.82f, 0.4f) : who == "S" ? new Color(0.75f, 0.7f, 0.95f) : new Color(0.7f, 0.9f, 1f);
+            namePlate.color = who == "W" ? new Color(0.95f, 0.82f, 0.4f) : who == "S" ? new Color(0.75f, 0.7f, 0.95f) : DeptPalette.Cream;
         }
         if (caption != null) {
             caption.text = s.line;

@@ -380,7 +380,7 @@ public class LevelUpScreen : MonoBehaviour {
         // A wave-clear card gains no level: it must not read "Level 0" (or repeat the level just reached).
         bool waveCard = !chest && RunBoons.LastCardWasWave;
         heading.text = chest ? "Treasure!  Pick one" : (waveCard ? "Wave cleared!  Pick one" : "Level " + RunBoons.Level + "!  Pick one");
-        heading.color = chest ? new Color(1f, 0.82f, 0.3f) : new Color(0.55f, 0.95f, 1f);
+        heading.color = chest ? new Color(1f, 0.82f, 0.3f) : DeptPalette.Cream;
         if (laidStamp != UiFit.Stamp) {
             Layout();
         }

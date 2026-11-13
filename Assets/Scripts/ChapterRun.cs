@@ -1443,7 +1443,7 @@ public class ChapterRun : MonoBehaviour {
         objective.rectTransform.offsetMin = Vector2.zero;
         objective.rectTransform.offsetMax = Vector2.zero;
 
-        extraText = Label(canvasGo.GetComponent<RectTransform>(), "", 22, FontStyle.Italic, new Color(0.85f, 0.9f, 1f));
+        extraText = Label(canvasGo.GetComponent<RectTransform>(), "", 22, FontStyle.Italic, DeptPalette.CreamSoft);
         var erect = extraText.rectTransform;
         erect.anchorMin = new Vector2(0.5f, 0f);
         erect.anchorMax = new Vector2(0.5f, 0f);
@@ -1494,7 +1494,7 @@ public class ChapterRun : MonoBehaviour {
         column.sizeDelta = new Vector2(1400f, 900f);
         cardTitle = Label(column, "CHAPTER COMPLETE", 72, FontStyle.Bold, new Color(1f, 0.82f, 0.38f));
         Anchor(cardTitle.rectTransform, 0f, 0f, 1300f, 100f);
-        cardBody = Label(column, "", 32, FontStyle.BoldAndItalic, new Color(0.87f, 0.91f, 1f));
+        cardBody = Label(column, "", 32, FontStyle.BoldAndItalic, DeptPalette.Cream);
         Anchor(cardBody.rectTransform, 0f, 120f, 1300f, 580f);
         NextButton = MakeButton(column, "To the hub", 380f, 88f, 760f, Next);
         MenuButton = MakeButton(column, "Menu", 260f, 88f, 760f, ToMenu);

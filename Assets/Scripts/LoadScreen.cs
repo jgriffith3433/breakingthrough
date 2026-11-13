@@ -358,7 +358,7 @@ public class LoadScreen : MonoBehaviour {
         // Everything is placed by fractions of the screen so a portrait phone and a wide desktop both read: the name up high,
         // the line low, the strip under it. Sizes are in canvas units (26+ is 15 px or more on a phone).
         Font label = UiSkin.Font(UiSkin.FontRole.Label);
-        place = Words(label, "Place", 30, FontStyle.Normal, new Color(0.87f, 0.91f, 1f), 0.8f, 0.86f);
+        place = Words(label, "Place", 30, FontStyle.Normal, DeptPalette.Cream, 0.8f, 0.86f);
         title = Words(label, "Title", 60, FontStyle.Bold, new Color(1f, 0.82f, 0.38f), 0.66f, 0.8f);
         words = Words(font, "Line", 32, FontStyle.Italic, new Color(1f, 0.97f, 0.9f), 0.3f, 0.42f);
         note = Words(label, "Note", 26, FontStyle.Normal, new Color(1f, 0.97f, 0.9f, 0.8f), 0.13f, 0.19f);
