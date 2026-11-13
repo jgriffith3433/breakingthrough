@@ -140,6 +140,26 @@ public static class PlaytestOpeningEndings {
             yield break;
         }
 
+        // The payoff as play events (setup shortcut: the last Yo Bot of a wave falls, then the wall breaks): the door opens and the circle brightens.
+        run.Event("setup", "wave 1's last Yo Bot falls in Chapter 6 (WorldPayoff.LastFell), then the wall breaks");
+        WorldPayoff.LastFell(1);
+        yield return Wait(0.5f);
+        float glow0 = WorldPayoff.Glow;
+        yield return Wait(1.6f);
+        run.Event("door-open", "opens=" + WorldPayoff.DoorOpens + " openness=" + WorldPayoff.DoorOpenness.ToString("0.00"));
+        run.Event("circle-brighten", "glow " + glow0.ToString("0.00") + " -> " + WorldPayoff.Glow.ToString("0.00"));
+        WorldPayoff.LastFell(2);
+        yield return Wait(2.8f);
+        run.Event("circle-brighten", "glow now " + WorldPayoff.Glow.ToString("0.00") + " steps=" + WorldPayoff.GlowSteps);
+        run.Metric("payoffDoorOpens", WorldPayoff.DoorOpens);
+        run.Metric("payoffGlow", WorldPayoff.Glow);
+        if (WorldPayoff.DoorOpens < 2 || WorldPayoff.DoorOpenness < 0.5f) {
+            run.Problem(PlaytestSeverity.Bug, "opening-endings: the wall's door did not open when the last Yo Bot fell (opens=" + WorldPayoff.DoorOpens + ")");
+        }
+        if (WorldPayoff.Glow <= glow0) {
+            run.Problem(PlaytestSeverity.Bug, "opening-endings: the circle did not brighten after a wave was cleared");
+        }
+
         // Stay on the filed Hollow and play the endings in engine (setup shortcut: no full boss fight).
         run.Event("setup", "ending_filed_world + ending_received_world + credits-live on Chapter 6's map");
         yield return Wait(0.8f);
