@@ -354,6 +354,9 @@ public class UpgradeLook : MonoBehaviour {
     }
 
     public static void Say(string line, float seconds, float y = 80f) {
+        if (WaveDirector.IsLost) {
+            return;
+        }
         var go = new GameObject("Callout");
         var canvas = go.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -474,8 +477,9 @@ public class LoadoutBanner : MonoBehaviour {
     }
 
     void Update() {
+        // The run-end panel owns the screen: time stops on a loss, so a callout's timer would never run out under it.
         left -= Time.deltaTime;
-        if (left <= 0f) {
+        if (left <= 0f || WaveDirector.IsLost) {
             Destroy(gameObject);
         }
     }

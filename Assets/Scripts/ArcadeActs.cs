@@ -403,6 +403,9 @@ public class ArcadeActs : MonoBehaviour {
         if (bannerCanvas == null) {
             return;
         }
+        if (WaveDirector.IsLost) {
+            bannerLeft = 0f;   // the run-end panel takes the screen
+        }
         bannerLeft -= Time.unscaledDeltaTime;
         float a = Mathf.Clamp01(Mathf.Min(bannerLeft / 0.6f, (Tuning.ActBannerSeconds - bannerLeft) / 0.4f));
         SetAlpha(bannerTitle, a);
