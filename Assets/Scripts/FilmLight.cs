@@ -50,6 +50,9 @@ public class FilmLight : MonoBehaviour {
     static readonly int FilmRimId = Shader.PropertyToID("_FilmRim");
 
     Light sun, rimLight, beacon;
+    GameObject fogPlayer;
+    Color lastLamp = new Color(-1f, -1f, -1f, -1f), lastFog = new Color(-1f, -1f, -1f, -1f);
+    float lastLampPool = -1f, lastAshRate = -1f;
     NightGrade grade;
     Camera cam;
     Texture2D[] luts;
@@ -463,7 +466,11 @@ public class FilmLight : MonoBehaviour {
         NightAtmosphere.LampMul = s.LampMul;
         NightAtmosphere.LampStutter = s.Stutter;
         IList<Light> lamps = NightAtmosphere.Lamps;
-        if (lamps != null) {
+        // Lamp colour and range only move during a blend: skip the loop (and the light-state writes) once nothing changed.
+        bool lampChanged = s.Lamp != lastLamp || !Mathf.Approximately(s.Pool, lastLampPool);
+        if (lamps != null && lampChanged) {
+            lastLamp = s.Lamp;
+            lastLampPool = s.Pool;
             foreach (Light l in lamps) {
                 if (l != null) {
                     l.color = s.Lamp;
@@ -475,7 +482,7 @@ public class FilmLight : MonoBehaviour {
             BuildPools();
         }
         PoolNow = s.Pool;
-        if (poolMesh != null) {
+        if (poolMesh != null && lampChanged) {
             Color c = new Color(s.Lamp.r, s.Lamp.g, s.Lamp.b, s.Pool);
             poolColors[0] = poolColors[1] = poolColors[2] = poolColors[3] = c;
             poolMesh.colors = poolColors;
@@ -487,8 +494,11 @@ public class FilmLight : MonoBehaviour {
         if (fogCards == null) {
             return;
         }
-        Transform follow = Camera.main != null ? Camera.main.transform : null;
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        Transform follow = cam != null ? cam.transform : null;
+        if (fogPlayer == null) {
+            fogPlayer = GameObject.FindGameObjectWithTag("Player");
+        }
+        GameObject player = fogPlayer;
         if (player != null) {
             Vector3 p = player.transform.position;
             fogCards.transform.position = new Vector3(p.x, p.y - 0.4f, p.z);
@@ -497,20 +507,30 @@ public class FilmLight : MonoBehaviour {
             fogCards.transform.position = new Vector3(follow.position.x, 0f, follow.position.z);
         }
         // Retint every live card each frame, so a blend moves the fog already in the air, not only new cards.
-        int max = fogCards.main.maxParticles;
-        if (buffer == null || buffer.Length < max) {
-            buffer = new ParticleSystem.Particle[max];
-        }
-        int n = fogCards.GetParticles(buffer);
+        // Only while the look moves (a blend): a settled act has the same colour on every card, new ones included.
         Color c = new Color(s.Fog.r, s.Fog.g, s.Fog.b, s.FogAlpha);
-        for (int i = 0; i < n; i++) {
-            buffer[i].startColor = c;
+        if (c != lastFog) {
+            lastFog = c;
+            int max = fogCards.main.maxParticles;
+            if (buffer == null || buffer.Length < max) {
+                buffer = new ParticleSystem.Particle[max];
+            }
+            int n = fogCards.GetParticles(buffer);
+            for (int i = 0; i < n; i++) {
+                buffer[i].startColor = c;
+            }
+            fogCards.SetParticles(buffer, n);
+            var fogMain = fogCards.main;
+            fogMain.startColor = c;   // cards born after the blend ends start in the settled colour
+            var emission = fogCards.emission;
+            emission.rateOverTime = (Phone ? 0.6f : 1.3f) + s.FogAlpha * (Phone ? 6f : 12f);
         }
-        fogCards.SetParticles(buffer, n);
-        var emission = fogCards.emission;
-        emission.rateOverTime = (Phone ? 0.6f : 1.3f) + s.FogAlpha * (Phone ? 6f : 12f);
-        var ae = ash.emission;
-        ae.rateOverTime = w2 * (Phone ? 1.6f : 4.2f);
+        float ash5 = w2 * (Phone ? 1.6f : 4.2f);
+        if (!Mathf.Approximately(ash5, lastAshRate)) {
+            lastAshRate = ash5;
+            var ae = ash.emission;
+            ae.rateOverTime = ash5;
+        }
     }
 
     // The beacon sweeps a ring of lawn round the circle; its glow sits on the ruin.
