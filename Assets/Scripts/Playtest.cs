@@ -8723,7 +8723,9 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             int before = MusicDirector.Events.Count;
             float t0 = Time.realtimeSinceStartup;
             MusicDirector.Stinger(n);
-            yield return AwaitTrack("stinger_" + n);
+            if (MusicDirector.HasStingerFile(n)) {
+                yield return AwaitTrack("stinger_" + n);
+            }
             float latency = Time.realtimeSinceStartup - t0;
             bool standIn = MusicDirector.Events.IndexOf("stinger-standin|" + n, before) >= 0;
             run.Event("leitmotif-stinger", n + ": " + (standIn ? "stand-in" : "file") + ", started in " + latency.ToString("0.00") + " s");
