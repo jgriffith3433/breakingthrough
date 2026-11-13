@@ -130,6 +130,8 @@ public class MainMenu : MonoBehaviour {
     // What the playtest reads: the hint, the start-wave stepper, and which button is the primary one.
     // True once Start ran to its end (menu built, coins and shop filled, menu music asked for): an exception in Start leaves it false.
     public bool Ready { get; private set; }
+    // True when Start sent the player straight into Arcade (a cold page load or ?mode=arcade) and built no menu.
+    public bool SkippedMenu { get; private set; }
     public string HintText { get { return statusText != null ? statusText.text : ""; } }
     public bool HintTruncated { get { return statusText != null && statusText.preferredHeight > statusText.rectTransform.rect.height + 1f && statusText.fontSize <= statusText.resizeTextMinSize; } }
     public bool StepperVisible { get { return startText != null && startText.gameObject.activeInHierarchy; } }
@@ -162,7 +164,13 @@ public class MainMenu : MonoBehaviour {
         if (mode == "" && firstLoad && ColdStartPlays()) {
             mode = "arcade";
         }
+        // A playtest is about to press this menu's buttons (it may have been started by a runner before Unity loaded, so
+        // Playtest.Running is still false): never skip the menu for it, by a cold start or by a ?mode=arcade link.
+        if (mode == "arcade" && Playtest.Wanted) {
+            mode = "";
+        }
         if (mode == "arcade") {
+            SkippedMenu = true;
             // Skipping the menu on purpose is a Start that ran to its end: Ready only stays false when Build or Refresh threw.
             Ready = true;
             startWave = 1;
@@ -190,8 +198,7 @@ public class MainMenu : MonoBehaviour {
     static bool ColdStartPlays() {
 #if UNITY_WEBGL && !UNITY_EDITOR
         string url = Application.absoluteURL ?? "";
-        return !Playtest.Running && url.IndexOf("playtest=", System.StringComparison.OrdinalIgnoreCase) < 0
-            && url.IndexOf("menu=1", System.StringComparison.OrdinalIgnoreCase) < 0;
+        return !Playtest.Wanted && url.IndexOf("menu=1", System.StringComparison.OrdinalIgnoreCase) < 0;
 #else
         return false;
 #endif
