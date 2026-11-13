@@ -402,6 +402,7 @@ public partial class Cutscene {
         }
         videoSlot.back.texture = videoTexture;
         videoSlot.back.uvRect = new Rect(0f, 0f, 1f, 1f);
+        Cover(videoSlot.back);
         videoSlot.back.enabled = true;
         player.Play();
         VideoStreaming = true;
