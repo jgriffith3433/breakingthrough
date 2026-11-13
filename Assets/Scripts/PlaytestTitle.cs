@@ -25,6 +25,24 @@ public static class PlaytestTitle {
             UiFit.ForceTouch(true);
         }
         run.Scene("Main Menu");
+        // The scenario can start before the menu scene has built its stage (or while a cold start is carrying the page into Arcade):
+        // get to the menu scene and wait until the menu has finished building before reading it.
+        if (SceneManager.GetActiveScene().name != MetaProgress.MenuScene) {
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(MetaProgress.MenuScene);
+        }
+        yield return run.Until(() => SceneManager.GetActiveScene().name == MetaProgress.MenuScene && Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the main menu");
+        MainMenu early = Object.FindAnyObjectByType<MainMenu>();
+        if (early != null && early.SkippedMenu) {
+            yield return run.Until(() => SceneManager.GetActiveScene().name != MetaProgress.MenuScene, 30f, "the cold-start run");
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(MetaProgress.MenuScene);
+            yield return run.Until(() => { MainMenu m = Object.FindAnyObjectByType<MainMenu>(); return m != null && !m.SkippedMenu; }, 30f, "the main menu");
+        }
+        yield return run.Until(() => { MainMenu m = Object.FindAnyObjectByType<MainMenu>(); return m != null && m.Ready && m.PlayButton != null; }, 30f, "the menu to finish building");
+        if (run.Done) {
+            yield break;
+        }
         MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
         if (menu == null || menu.PlayButton == null || menu.Stage == null) {
             run.Problem(PlaytestSeverity.Bug, "title-scene: the menu has no live stage behind it");
