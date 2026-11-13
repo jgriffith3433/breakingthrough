@@ -27,6 +27,7 @@ public static class MobileQuality {
         QualitySettings.realtimeReflectionProbes = false;
         QualitySettings.lodBias = Mathf.Min(QualitySettings.lodBias, 0.7f);
         QualitySettings.globalTextureMipmapLimit = Mathf.Max(QualitySettings.globalTextureMipmapLimit, 1);
+        QualitySettings.pixelLightCount = Mathf.Min(QualitySettings.pixelLightCount, 1);   // each pixel light is another forward pass over every object it touches
         QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = 60;
     }
