@@ -62,6 +62,53 @@
     }
   }
 
+
+  // Once the game is up the page's loader card ("Opening your file...") and any web menu left under the canvas must
+  // go, or the first frame reads as a stuck loader. The card is the nearest ancestor of #load-line that does not
+  // hold the canvas. Ready = the canvas is drawn and the main loop has run 40 frames since it appeared (counted on
+  // requestAnimationFrame, no timers, no network), or the page calls window.hawkesGameReady().
+  var hidden = false;
+  function canvas() {
+    return document.querySelector("#unity-canvas, canvas");
+  }
+  function hideLoader() {
+    if (hidden) return;
+    hidden = true;
+    var cv = canvas();
+    var ids = ["load-line", "load-percent", "load-bytes", "unity-loading-bar", "loader", "loading", "load-card", "web-menu"];
+    for (var i = 0; i < ids.length; i++) {
+      var el = document.getElementById(ids[i]);
+      while (el && el !== document.body && el.parentElement && el.parentElement !== document.body && (!cv || !el.parentElement.contains(cv))) {
+        el = el.parentElement;
+      }
+      if (!el || el === document.body || (cv && el.contains(cv))) continue;
+      el.style.setProperty("display", "none", "important");
+      el.setAttribute("aria-hidden", "true");
+    }
+    var menus = document.querySelectorAll(".web-menu,.load-card,.loader,.mode-cards,.shift-pick");
+    for (var j = 0; j < menus.length; j++) {
+      if (cv && menus[j].contains(cv)) continue;
+      menus[j].style.setProperty("display", "none", "important");
+    }
+    try { document.documentElement.setAttribute("data-hawkes-game-ready", "1"); } catch (e) {}
+  }
+  window.hawkesGameReady = hideLoader;
+
+  var frames = 0;
+  var raf = window.requestAnimationFrame;
+  if (raf) {
+    window.requestAnimationFrame = function (cb) {
+      if (!hidden) {
+        var cv = canvas();
+        if (cv && cv.width > 0 && cv.clientWidth > 0 && ++frames >= 40) {
+          // After the current frame, so the loop is not disturbed.
+          Promise.resolve().then(hideLoader);
+        }
+      }
+      return raf.call(window, cb);
+    };
+  }
+
   function run() {
     css();
     quietControls();
