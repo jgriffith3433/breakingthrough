@@ -49,9 +49,9 @@ public class ArcadeActs : MonoBehaviour {
         // Act II deep night: a cold blue moon key from behind the post office, rim light on everyone, warm lamp pools, ground fog.
         new Look { Sun = new Color(0.4f, 0.58f, 1f), SunIntensity = 0.95f, Fog = new Color(0.04f, 0.08f, 0.2f), FogDensity = 0.0072f,
             SkyTop = new Color(0.01f, 0.02f, 0.09f), SkyHorizon = new Color(0.07f, 0.15f, 0.4f), SkyGround = new Color(0.02f, 0.03f, 0.07f),
-            AmbSky = new Color(0.16f, 0.26f, 0.5f), AmbEq = new Color(0.09f, 0.14f, 0.28f), AmbGround = new Color(0.04f, 0.05f, 0.1f),
+            AmbSky = new Color(0.22f, 0.34f, 0.6f), AmbEq = new Color(0.13f, 0.19f, 0.34f), AmbGround = new Color(0.04f, 0.05f, 0.1f),
             Disc = new Color(0.7f, 0.85f, 1f), DiscDir = new Vector3(0.45f, 0.35f, -0.8f), DiscSize = 0.05f, Haze = 0.8f,
-            Exposure = 1.04f, Contrast = 1.2f, Saturation = 0.95f, Vignette = 1f,
+            Exposure = 1.18f, Contrast = 1.2f, Saturation = 0.95f, Vignette = 1f,
             Shadows = new Color(0.72f, 0.88f, 1.2f), Highlights = new Color(0.95f, 1.02f, 1.08f), Lift = new Color(0f, 0.012f, 0.045f) },
         // Act III the Department's red alert: a red key, a beacon sweeping the lawn, ash in the air, higher contrast.
         new Look { Sun = new Color(1f, 0.2f, 0.16f), SunIntensity = 0.95f, Fog = new Color(0.26f, 0.03f, 0.05f), FogDensity = 0.0062f,
@@ -204,7 +204,9 @@ public class ArcadeActs : MonoBehaviour {
         if (Act < 0) {
             return;
         }
-        float dt = Time.unscaledDeltaTime;
+        // A hitch (the first Spider Bots of act II load on this frame) must not eat the blend: one step is at most 0.1 s,
+        // so the change always plays out over about FadeSeconds instead of cutting.
+        float dt = Mathf.Min(Time.unscaledDeltaTime, 0.1f);
         if (fade < 1f) {
             fade = Mathf.Min(1f, fade + dt / FadeSeconds);
             cur = Look.Lerp(from, target, Mathf.SmoothStep(0f, 1f, fade));
