@@ -9,32 +9,40 @@ public static class PlaytestSlicePartner {
         MetaProgress.EnterSandbox(true);
         int wasW = Screen.width, wasH = Screen.height;
         bool wasTouch = UiFit.Touch;
-        UiFit.ForceTouch(true);
-        Screen.SetResolution(390, 844, false);
+        // In a browser build Screen.SetResolution only stretches the canvas (smeared frame, black bar, clipped HUD), so
+        // the bot never resizes it there: the phone twin already is 390x844, a desktop page stays a desktop page.
+        bool browser = Application.platform == RuntimePlatform.WebGLPlayer;
+        bool phoneViewport = Screen.height > Screen.width && Screen.width <= 500;
+        if (!browser) {
+            UiFit.ForceTouch(true);
+            Screen.SetResolution(390, 844, false);
+        } else if (phoneViewport) {
+            UiFit.ForceTouch(true);
+        }
         yield return null;
         yield return null;
         ColdOpen.Suppress = true;
         SoundSettings.SetChatter(3); // Often: shorter bark gaps so callouts show in the hold
         yield return Playtest.ToMenuPublic();
         if (run.Done) {
-            Screen.SetResolution(wasW, wasH, false);
+            if (!browser) { Screen.SetResolution(wasW, wasH, false); }
             UiFit.ForceTouch(wasTouch);
             yield break;
         }
         yield return Playtest.StartArcadePublic();
         if (run.Done) {
-            Screen.SetResolution(wasW, wasH, false);
+            if (!browser) { Screen.SetResolution(wasW, wasH, false); }
             UiFit.ForceTouch(wasTouch);
             yield break;
         }
         run.Scene("Arcade partner");
         run.Event("phone-viewport", Screen.width + "x" + Screen.height + " touch=" + UiFit.Touch);
-        if (Screen.width != 390) {
+        if (Screen.width != 390 && !browser) {
             run.Event("phone-viewport-soft", "wanted 390x844, got " + Screen.width + "x" + Screen.height + " (layout still ForcedTouch)");
         }
         yield return run.Until(() => Musician.Instance != null && SliceCallouts.Instance != null && Enemy.Roster.Count > 0, 45f, "Slice callouts and wave 1 bots");
         if (run.Done) {
-            Screen.SetResolution(wasW, wasH, false);
+            if (!browser) { Screen.SetResolution(wasW, wasH, false); }
             UiFit.ForceTouch(wasTouch);
             yield break;
         }
@@ -141,7 +149,7 @@ public static class PlaytestSlicePartner {
 
         run.Metric("quality.textOnlyBeats", 0);
         yield return new WaitForSecondsRealtime(1f);
-        Screen.SetResolution(wasW, wasH, false);
+        if (!browser) { Screen.SetResolution(wasW, wasH, false); }
         UiFit.ForceTouch(wasTouch);
     }
 
