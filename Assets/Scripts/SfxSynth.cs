@@ -6,7 +6,7 @@ public static class SfxSynth {
     const int Rate = 44100;
 
     public static bool Has(string name) {
-        return name.StartsWith("step_") || name.StartsWith("land_") || name.StartsWith("spot_") || name == "botstep" || name.StartsWith("bot_") || name == "wallitstep" || name == "homerun_whoosh" || name == "homerun_clang";
+        return name.StartsWith("step_") || name.StartsWith("land_") || name.StartsWith("spot_") || name == "botstep" || name.StartsWith("bot_") || name == "wallitstep" || name == "homerun_whoosh" || name == "slice_hurt" || name == "homerun_clang";
     }
 
     // Variant i (0 based) of a synthesised sound, or null.
@@ -23,6 +23,7 @@ public static class SfxSynth {
         switch (name) {
             case "botstep": return Step("botstep" + i, 0.16f, 95f - i * 14f, 1400f + i * 500f, 0.55f + i * 0.1f, 11 + i * 7);
             case "wallitstep": return Step("wallitstep" + i, 0.13f, 150f + i * 22f, 2600f + i * 400f, 0.4f, 31 + i * 5);
+            case "slice_hurt": return SliceHurt(i);
             case "homerun_whoosh": return Whoosh();
             case "homerun_clang": return Clang();
         }
@@ -51,6 +52,21 @@ public static class SfxSynth {
             float noise = (float)(rng.NextDouble() * 2.0 - 1.0);
             lp += (noise - lp) * k;
             return (body * (1f - gritMix * 0.5f) + lp * Mathf.Exp(-t * 70f) * gritMix * 1.4f) * 0.8f;
+        });
+    }
+
+    // Slice taking a blow: a short breathy, clipped "hnh" (formant-ish pitched buzz dropping, with a breath of noise) over a dull
+    // leather thud. Higher and lower takes by variant; distinct from the bat's crack and the bots' hits.
+    static AudioClip SliceHurt(int i) {
+        var rng = new System.Random(900 + i * 17);
+        float lp = 0f;
+        float f0 = 210f - i * 22f;
+        return Build("slice_hurt" + i, 0.32f, (s, t) => {
+            float voiced = Mathf.Sin(2f * Mathf.PI * (f0 - 70f * t) * t) + 0.5f * Mathf.Sin(2f * Mathf.PI * (f0 - 70f * t) * 2.1f * t);
+            lp += ((float)(rng.NextDouble() * 2.0 - 1.0) - lp) * 0.22f;
+            float voice = (voiced * 0.35f + lp * 0.9f) * Mathf.Exp(-t * 11f) * Mathf.Min(1f, t * 300f);
+            float thud = Mathf.Sin(2f * Mathf.PI * (90f + 40f * Mathf.Exp(-t * 30f)) * t) * Mathf.Exp(-t * 26f) * 0.7f;
+            return (voice + thud) * 0.8f;
         });
     }
 
