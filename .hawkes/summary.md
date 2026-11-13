@@ -1,9 +1,5 @@
-# Finale carry beat: beta build
-
-**What was wrong:** the failed beta build (run r_9ea1fbb31570) was not a code error. Studio's message was "out of credits: unity.build needs 50 and 1 is left". The only compile error since then, CS0019 in `ConversationStage.cs`, was already fixed on beta by a007a51 (#272), which this branch starts from.
-
-**What I checked:** `Assets/Scripts/CinematicFinale.cs` (the hold-to-carry beat, 3 notices, lamps, RECEIVED path) and the `finale-carry` scenario in `Playtest.cs` are both present and unchanged. I read through them and found nothing to fix. Unity compile was not run here (no editor on this machine).
-
-**What I changed:** nothing in code. `.hawkes/scenario.txt` names `finale-carry`.
-
-**For J:** the build needs credits topped up in Settings → Plan and credits before beta can build. No GPU work in this change, so no estimate.
+Beta's build failure (r_33654e4420e4) was "Hawkes Gen /files/a_519ead563fdcb392: HTTP 502": the build server could not fetch a file from Gen. No file in this repo names that asset id, and there is no compile error to fix (no .hawkes/beta-build.md). I read the already-merged code and found it complete:
+- `Tools/Web/hawkes-playtest-bridge.js` patches the stand-in `window.hawkesPlaytest` to list every id in `scenarios.json`, forwards `start` to Unity's bridge, and presses "Play in portrait anyway" by itself.
+- `WebGlBuild.InstallPlaytestBridge` writes `scenarios.json` from the `PlaytestScenario` rows, installs the bridge and tags the page, on both deploy paths (lines 216 and 494).
+- Change in this pass: `.hawkes/scenario.txt` now holds `finale-carry` and `{"mobile":true}` (item 3 of the task).
+Not run: Unity compile and playtests (no editor here, and I may not start builds). Retrying the build is the next step; a repeat 502 is a Gen/server problem, not this code.

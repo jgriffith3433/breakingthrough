@@ -1,5 +1,1 @@
-- canon: ADDRESS FILED finale carry — after the Order-Bearer, the player holds swing to carry the stamp to Slice’s ring, bats three raining notices, and on release ADDRESS prints and ring lamps light before the ending card; RECEIVED after ADDRESS FILED is unchanged.
-- canon: Boss in-fight barks — each of the six campaign bosses has three short paperwork lines (phase / home-run / Wallit-down) via BossVoice; Yo-family gets a mixer high-pass, not a baked filter.
-- convention: CinematicDirector interactive shots — `Shot.finaleCarry` pauses reel advance in `Update`; Esc/Enter calls `FinishFinaleCarry` instead of `End`; metrics live as statics on `CinematicDirector`.
-- convention: Boss voices — cast.json / audio.json hold distinct eleven_v4 voice ids per boss (`boss-phase` / `boss-win` Key, `boss-homerun` Normal in `VoiceDirector`).
-- lesson: phone playtests during cinematics — `Cutscene.IsOpen` hides touch pads, so drive hold/bat with `PlayInput.PadHold`/`PadTap` and divide world-corner width by `UiFit.PixelRatio` for CSS px.
+- lesson: Beta build 502 from Gen — 'Hawkes Gen /files/a_...: HTTP 502' is the build server failing to fetch a Gen asset, not a compile error; check the repo for the id, then retry the build.
