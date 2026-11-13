@@ -215,6 +215,38 @@ public static class PlaytestOpeningCh23 {
         if (CinematicDirector.LastHandoffSeconds > 1f) {
             run.Problem(PlaytestSeverity.Bug, "opening-ch23: handoff took " + CinematicDirector.LastHandoffSeconds.ToString("0.00") + " s");
         }
+        if (chapter == 1) {
+            yield return FirstBlowCheck();
+        }
+    }
+
+    // The first 10 s of Chapter 2 once the stick is back: a Yo Bot runs in, the bat's one swing drops it (hit-stop, plates, ring),
+    // and only then does the objective line (the 70-79 m gate counter) appear. The bat swings by itself: no input, so it holds on touch.
+    static IEnumerator FirstBlowCheck() {
+        ChapterRun chapter = ChapterRun.Instance;
+        if (chapter == null) {
+            run.Problem(PlaytestSeverity.Bug, "opening-ch23: no ChapterRun after the Chapter 2 opening");
+            yield break;
+        }
+        float t0 = Time.realtimeSinceStartup;
+        bool lineEarly = false;
+        int impacts0 = BatEquipment.Impacts;
+        while (!run.Done && Time.realtimeSinceStartup - t0 < 12f && !chapter.FirstBotDown) {
+            lineEarly |= !string.IsNullOrEmpty(chapter.ObjectiveLine);
+            yield return null;
+        }
+        float took = Time.realtimeSinceStartup - t0;
+        run.Event("first-kill", "chapter 2: down=" + chapter.FirstBotDown + " " + took.ToString("0.0") + " s after the stick returned, bat impacts="
+            + (BatEquipment.Impacts - impacts0) + ", objective line before the kill=" + lineEarly);
+        run.Metric("ch2FirstKillSeconds", took);
+        yield return Wait(0.3f);
+        run.Event("objective", "after the first kill: \"" + chapter.ObjectiveLine + "\"");
+        if (!chapter.FirstBotDown || took > 10f) {
+            run.Problem(PlaytestSeverity.Bug, "opening-ch23: Chapter 2's first Yo Bot was not down within 10 s (" + took.ToString("0.0") + " s)");
+        }
+        if (lineEarly) {
+            run.Problem(PlaytestSeverity.Bug, "opening-ch23: Chapter 2's objective line showed before the first kill");
+        }
     }
 
     static IEnumerator SkipPass(int chapter) {

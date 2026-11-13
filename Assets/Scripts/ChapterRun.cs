@@ -237,6 +237,11 @@ public class ChapterRun : MonoBehaviour {
         }
         float started = Time.unscaledTime;
         while (!handed && this != null) {
+            // The first Yo Bot is placed (held) while the last shot plays, so it is at Wallit's side when the stick returns.
+            if (HasFirstBlow && firstBot == null && CinematicDirector.Instance != null && CinematicDirector.IsOpen
+                && CinematicDirector.Instance.ShotCount > 0 && CinematicDirector.Instance.ShotIndex >= CinematicDirector.Instance.ShotCount - 1) {
+                PlaceFirstBot();
+            }
             if (Time.unscaledTime - started > budget) {
                 Events.Add("opening-timeout|" + data.Id + "|" + worldOpen);
                 Debug.LogWarning("[ChapterRun] " + worldOpen + " did not hand over in " + budget.ToString("0") + " s: cut");
@@ -260,6 +265,9 @@ public class ChapterRun : MonoBehaviour {
     // The opening scene is over and play begins. On a New Game+ loop the chapter says one line about the playthrough before it.
     void OpenDone() {
         Events.Add("play|" + data.Id);
+        if (HasFirstBlow) {
+            StartCoroutine(FirstBlow());
+        }
         if (Pacing != null) {
             Pacing.Talked("the opening scene");
         }
@@ -714,7 +722,75 @@ public class ChapterRun : MonoBehaviour {
         return n;
     }
 
+    // The first blow (chapters 2-5, the walking ones): J's critic found no fight in the first minute. When the opening hands over,
+    // one Yo Bot is already at Wallit's side and the bat swings by itself (BatEquipment.OpeningAuto); one blow drops it, with the
+    // kill's hit-stop, the plates and a ring. The objective line ("Reach the gate: 79 m") stays blank until it is down.
+    Enemy firstBot;
+    bool firstBlowOver;
+    public bool FirstBotDown { get; private set; }
+    public float FirstBotDownSeconds { get; private set; }
+    bool HasFirstBlow { get { return Chapter >= 1 && Chapter <= 4 && !firstBlowOver; } }
+
+    void PlaceFirstBot() {
+        if (firstBot != null || WaveDirector.Instance == null) {
+            return;
+        }
+        Transform w = player != null ? player : (PlayerGrowth.Instance != null ? PlayerGrowth.Instance.transform : null);
+        if (w == null) {
+            return;
+        }
+        Vector3 dir = HasMarker ? Marker - w.position : w.forward;
+        dir.y = 0f;
+        dir = dir.sqrMagnitude > 0.01f ? dir.normalized : Vector3.forward;
+        Vector3 side = Vector3.Cross(Vector3.up, dir);
+        firstBot = WaveDirector.Instance.SpawnPlaced(BotKind.YoBot, w.position + dir * 5f + side * 2.5f);
+        if (firstBot == null) {
+            return;
+        }
+        firstBot.Dormant = false;
+        firstBot.Scripted = true;   // held until the stick is back
+        firstBot.HitsToDrop = 1;    // one bat swing
+        Events.Add("first-bot-placed|" + data.Id + "|held at Wallit's side");
+    }
+
+    System.Collections.IEnumerator FirstBlow() {
+        float t0 = Time.time;
+        while (player == null && Time.time - t0 < 2f) {
+            yield return null;
+        }
+        PlaceFirstBot();
+        Enemy e = firstBot;
+        if (e == null) {
+            firstBlowOver = true;
+            yield break;
+        }
+        e.Scripted = false;
+        float spawned = Time.time;
+        BatEquipment.OpeningAuto = true;
+        Events.Add("first-blow-start|" + data.Id + "|a Yo Bot runs in; the bat swings by itself");
+        while (e != null && e.Alive && Time.time - spawned < 12f) {
+            yield return null;
+        }
+        BatEquipment.OpeningAuto = false;
+        FirstBotDown = e == null || !e.Alive;
+        FirstBotDownSeconds = Time.time - spawned;
+        if (FirstBotDown) {
+            Vector3 at = e != null ? e.transform.position : (player != null ? player.position : Vector3.zero);
+            Juice.HitStop(0.08f);
+            Fx.Ring(at + Vector3.up * 0.5f, 5f, new Color(1f, 0.88f, 0.5f, 0.8f), 0.6f);
+            GameAudio.Play("coin", 0.6f, 1.4f);
+        } else if (e != null) {
+            Destroy(e.gameObject);
+        }
+        firstBot = null;
+        firstBlowOver = true;
+        Events.Add("first-blow-kill|" + data.Id + "|" + (FirstBotDown ? "down" : "still up") + " after " + FirstBotDownSeconds.ToString("0.0") + " s|objective line shown after");
+    }
+
     string Line() {
+        if (Chapter >= 1 && Chapter <= 4 && !firstBlowOver && PlaySeconds < 30f) {
+            return "";
+        }
         string pace = Pacing != null ? Pacing.Line() : null;
         if (pace != null) {
             return pace;
