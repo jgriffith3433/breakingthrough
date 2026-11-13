@@ -425,7 +425,8 @@ public class MainMenu : MonoBehaviour {
         builtOnce = true;
         cuePaper = builtAt < 0f;
 
-        Texture2D artTexture = Resources.Load<Texture2D>("UI/MenuArt");
+        // The painted key art is retired: the first screen is the live render of the 3D cast (MenuStage), one look with the night field.
+        Texture2D artTexture = null;
         BuildBackdrop(canvasGo.transform, artTexture);
 
         // Everything else sits inside the screen's safe area, with a margin.
@@ -547,14 +548,9 @@ public class MainMenu : MonoBehaviour {
         var drop = title.gameObject.AddComponent<Shadow>();
         drop.effectColor = new Color(0f, 0f, 0f, 0.65f);
         drop.effectDistance = new Vector2(4f, -6f);
-        Sprite logoArt = UiArt.Logo;
-        if (logoArt != null) {
-            // The generated logo (Docs/UiArt.md) takes the title's box; the text stays (hidden) as the fallback and for readers.
-            title.enabled = false;
-            var logo = Fill(parent, Color.white);
-            UiArt.Show(logo, logoArt);
-            Place(logo.rectTransform, 0f, 0f, w, height);
-        }
+        // The title is set in the typewriter face the rest of the UI uses; the painted logo no longer replaces it.
+        dept.font = UiSkin.Font(UiSkin.FontRole.Label);
+        title.font = UiSkin.Font(UiSkin.FontRole.Label);
     }
 
     // The shop: coins and the best wave on top with Close, the later start, then the case file with the upgrades, the briefing and the last run.
