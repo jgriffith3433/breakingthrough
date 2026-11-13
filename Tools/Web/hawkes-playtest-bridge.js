@@ -33,6 +33,10 @@
   var standIns = [];
   function patch(obj) {
     if (!obj || obj.__hawkesBridged || !ids || !ids.length) return obj;
+    // Unity's own bridge (jslib HawkesPlaytest_Install, engine "unity") replaces the page's stand-in: it already lists
+    // every scenario and runs them, so it is left as it is. Patching it too marked it bridged, and the stand-in's
+    // wait loop below skips bridged objects, so start() never handed over ("Unity playtest bridge never loaded").
+    if (standIns.length && obj.engine === "unity") return obj;
     var orig = obj.scenarios, start = obj.start;
     if (typeof orig !== "function") return obj;
     obj.__hawkesBridged = true;
@@ -57,7 +61,7 @@
           var t0 = Date.now();
           (function wait() {
             var cur = window.hawkesPlaytest;
-            if (cur && cur !== obj && !cur.__hawkesBridged && typeof cur.start === "function") {
+            if (cur && standIns.indexOf(cur) < 0 && typeof cur.start === "function") {
               try { resolve(cur.start.apply(cur, args)); } catch (e) { reject(e); }
             } else if (Date.now() - t0 > 180000) {
               reject(new Error("Unity playtest bridge never loaded for " + id));
