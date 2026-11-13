@@ -176,6 +176,20 @@ public static partial class Playtest {
     static PlaytestRun run;
     // True from the moment a scenario starts (WaveDirector.WaveKeysAllowed: the bot's setup shortcut may use the wave keys).
     public static bool Running { get; private set; }
+    // A runner started a scenario on the page's stand-in bridge before Unity loaded (Install adopts it): the scenario is wanted
+    // even though Running is only true once its bot has begun.
+    static bool adoptedPending;
+    // True when a playtest drives this page: running, adopted from the stand-in bridge, or named in the address (?playtest=).
+    // The main menu reads it so a cold page load does not skip the menu the scenario is about to press.
+    public static bool Wanted {
+        get {
+            if (Running || adoptedPending) {
+                return true;
+            }
+            string url = Application.absoluteURL;
+            return !string.IsNullOrEmpty(url) && url.IndexOf("playtest=", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+    }
     static int levelUps;
     static int lastWave;
     static float fpsSum;
@@ -219,6 +233,7 @@ public static partial class Playtest {
         // The page's stand-in bridge is replaced by Register. A run a runner already started on it (before Unity had
         // loaded) would be dropped and the prompt never pressed, so read it first and start it again here.
         string adopted = HawkesPlaytestStubScenario();
+        adoptedPending = !string.IsNullOrEmpty(adopted);
         HawkesPlaytest.Register(Product, Scenarios, Bot, IsReady, Stop);
         if (!string.IsNullOrEmpty(adopted)) {
             foreach (PlaytestScenario scenario in Scenarios) {
@@ -959,6 +974,16 @@ public static partial class Playtest {
             SceneManager.LoadScene(MetaProgress.MenuScene);
         }
         yield return run.Until(() => Object.FindAnyObjectByType<MainMenu>() != null, 30f, "the main menu");
+        MainMenu early = Object.FindAnyObjectByType<MainMenu>();
+        if (early != null && early.SkippedMenu) {
+            // The page was loaded cold before this scenario was known (a runner started it late): Start sent the player into
+            // Arcade and built no menu. Let that run's scene arrive, then come back to the menu the scenario presses.
+            run.Log("the page started Arcade before the scenario began; returning to the menu (setup)");
+            yield return run.Until(() => SceneManager.GetActiveScene().name != MetaProgress.MenuScene, 30f, "the cold-start run");
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(MetaProgress.MenuScene);
+            yield return run.Until(() => { MainMenu m = Object.FindAnyObjectByType<MainMenu>(); return m != null && !m.SkippedMenu; }, 30f, "the main menu");
+        }
         if (Resources.Load<Texture2D>("UI/MenuArt") == null && Object.FindAnyObjectByType<MainMenu>()?.Stage == null) {
             run.Problem(PlaytestSeverity.Polish, "menu key art Resources/UI/MenuArt is missing and no live stage stands in");
         }
