@@ -286,6 +286,7 @@ public static partial class Playtest {
 
     static void Stop() {
         Running = false;
+        HitchMeter.End();
         WaveDirector.ReleaseKeysProbe = false;
         SettingsPanel.Close();
         PauseMenu.Resume();
@@ -312,6 +313,7 @@ public static partial class Playtest {
         stallFrames = 0;
         worstFrameMs = 0f;
         worstFps = 999f;
+        HitchMeter.Begin(run);
         holdFireFrom = 0;
         analyticsRun = id == "analytics";
         analyticsSeq = -1;

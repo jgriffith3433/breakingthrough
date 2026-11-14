@@ -9,6 +9,8 @@ using UnityEngine.SceneManagement;
 public class SceneWarmup : MonoBehaviour {
     static bool shadersDone;
     public static int Passes { get; private set; }
+    // True while the warm-up runs behind the load card; HitchMeter counts those frames as load stutter.
+    public static bool Active { get; private set; }
     public static float LongestWarmFrameMs { get; private set; }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -26,6 +28,7 @@ public class SceneWarmup : MonoBehaviour {
 
     IEnumerator Start() {
         // Let the load screen draw a frame first, then pay the cost behind it.
+        Active = true;
         yield return null;
         if (!shadersDone) {
             shadersDone = true;
@@ -47,7 +50,31 @@ public class SceneWarmup : MonoBehaviour {
         }
         Fx.Impact(new Vector3(0f, -400f, 0f), 1f, true, Vector3.forward);
         yield return null;
+        // Every authored boss body (Courier, Foreman, Server, Order-Bearer, Plated Alpha...) is built from lathes and
+        // extrusions the first time it appears; build each once here, one per frame, so its entrance is not a hitch.
+        foreach (CharacterKit.Def def in CharacterKit.Defs) {
+            WarmBody(def.Id);
+            yield return null;
+        }
+        Active = false;
         Destroy(gameObject);
+    }
+
+    void OnDestroy() {
+        Active = false;
+    }
+
+    static void WarmBody(string id) {
+        float t = Time.realtimeSinceStartup;
+        try {
+            var go = CharacterKit.Make(id);
+            if (go != null) {
+                go.transform.position = new Vector3(0f, -400f, 0f);
+                Destroy(go);
+            }
+        } catch (System.Exception) {
+        }
+        LongestWarmFrameMs = Mathf.Max(LongestWarmFrameMs, (Time.realtimeSinceStartup - t) * 1000f);
     }
 
     static void Warm(BotKind kind) {
