@@ -168,6 +168,60 @@ public static class PlaytestTwoShot {
         }
         run.Event("two-shot-done", "lines=" + ConversationStage.LinesShown + " open=" + ConversationStage.IsOpen);
         run.Metric("twoShotLines", ConversationStage.LinesShown);
+        // Every other lodger with a conversation still to hear: the first frame of each must show both speakers.
+        for (int other = 1; other < Story.Lodgers.Length && !run.Done; other++) {
+            CampaignSave.Get(0).chats = 0;
+            hub.Refresh();
+            if (hub.PendingChatOf(other) < 0) {
+                run.Event("hub-chat-none", Story.Lodgers[other].Name + " has no conversation to play");
+                continue;
+            }
+            yield return Walk(hub, hub.LodgerAt(other) + new Vector3(0f, 0f, -1.5f), 25f, () => hub.NearLodger == other);
+            if (run.Done) {
+                break;
+            }
+            int firstBefore = ConversationStage.FirstFramesFramed;
+            int openedBefore = ConversationStage.ConversationsOpened;
+            yield return TapTalk(hub);
+            float until = Time.realtimeSinceStartup + 8f;
+            while (!ConversationStage.IsOpen && Time.realtimeSinceStartup < until && !run.Done) {
+                yield return null;
+            }
+            if (!ConversationStage.IsOpen) {
+                run.Problem(PlaytestSeverity.Bug, "hub-two-shot: ConversationStage did not open for " + Story.Lodgers[other].Name);
+                continue;
+            }
+            float end = Time.realtimeSinceStartup + 20f;
+            while (ConversationStage.IsOpen && Time.realtimeSinceStartup < end && !run.Done) {
+                PlayInput.Tap(KeyCode.E);
+                yield return new WaitForSecondsRealtime(0.35f);
+            }
+            int opened = ConversationStage.ConversationsOpened - openedBefore;
+            int framedFirst = ConversationStage.FirstFramesFramed - firstBefore;
+            run.Event("two-shot-first-frame", Story.Lodgers[other].Name + ": " + framedFirst + " of " + opened + " opening frames held both speakers");
+        }
+        // Framing totals across every conversation played (Tick, then the others, Slice's cut-ins included).
+        float framedPct = ConversationStage.FramedPct;
+        float headPct = ConversationStage.HeadScreenPct;
+        float headMin = ConversationStage.HeadScreenPctMin > 99f ? headPct : ConversationStage.HeadScreenPctMin;
+        run.Event("talk-framing", "framedPct=" + framedPct.ToString("0.0") + " headScreenPct=" + headPct.ToString("0.0")
+            + " (smallest settled " + headMin.ToString("0.0") + ") firstFramesFramed=" + ConversationStage.FirstFramesFramed
+            + "/" + ConversationStage.ConversationsOpened + " shotDistance=" + ConversationStage.ShotDistance.ToString("0.0"));
+        run.Metric("talk.framedPct", framedPct);
+        run.Metric("talk.headScreenPct", headPct);
+        run.Metric("talk.headScreenPctMin", headMin);
+        run.Metric("talk.firstFramesFramed", ConversationStage.FirstFramesFramed);
+        run.Metric("talk.conversations", ConversationStage.ConversationsOpened);
+        if (framedPct < 95f) {
+            run.Problem(PlaytestSeverity.Bug, "hub-two-shot: both heads on screen in only " + framedPct.ToString("0.0") + "% of conversation frames (want 95)");
+        }
+        if (ConversationStage.FirstFramesFramed < ConversationStage.ConversationsOpened) {
+            run.Problem(PlaytestSeverity.Bug, "hub-two-shot: a conversation opened on a frame without both speakers ("
+                + ConversationStage.FirstFramesFramed + "/" + ConversationStage.ConversationsOpened + ")");
+        }
+        if (headMin < 8f) {
+            run.Problem(PlaytestSeverity.Bug, "hub-two-shot: a speaker's head is " + headMin.ToString("0.0") + "% of the screen height (want 8)");
+        }
         Restore(wasW, wasH, wasTouch);
         if (!run.Done) {
             run.Finish(PlaytestOutcome.Done);
