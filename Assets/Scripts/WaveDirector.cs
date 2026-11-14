@@ -139,7 +139,15 @@ public class WaveDirector : MonoBehaviour {
             }
             return;
         }
+        RunSave.BeginRun();
         Wave = MetaProgress.TakeStartWave();
+        int resumed = RunSave.Restore();
+        if (resumed > 1) {
+            Wave = resumed;
+            if (PlayerGrowth.Instance != null) {
+                PlayerGrowth.Instance.SyncToWave(Wave);
+            }
+        }
         MetaProgress.NoteReached(Wave);
         RunAnalytics.RunStart(Wave);
         RecordsCard.Opened("run");
@@ -440,6 +448,7 @@ public class WaveDirector : MonoBehaviour {
             }
             Wave++;
             MetaProgress.NoteReached(Wave);
+            RunSave.Snapshot(Wave);
             if (IsFortWave(Wave)) {
                 phase = Phase.Build;
                 phaseLeft = Tuning.BuildSeconds;
@@ -472,6 +481,7 @@ public class WaveDirector : MonoBehaviour {
             return;
         }
         RunAnalytics.RunWon(cleared);
+        RunSave.Clear();
         Time.timeScale = 1f;
         pausedGame = false;
         Cursor.lockState = CursorLockMode.None;
@@ -570,6 +580,7 @@ public class WaveDirector : MonoBehaviour {
             return;
         }
         RunLog.EndWave(Wave, "lost");
+        RunSave.Clear();
         phase = Phase.Lost;
         IsLost = true;
         IsBuilding = false;

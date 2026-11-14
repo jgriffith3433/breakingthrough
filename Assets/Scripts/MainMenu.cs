@@ -121,6 +121,8 @@ public class MainMenu : MonoBehaviour {
     public Button SettingsButton { get; private set; }
     // The two modes: Campaign opens the case files, Arcade starts today's wave defense (PlayButton is the same button).
     public Button CampaignButton { get; private set; }
+    // A saved Arcade run (RunSave): present only while a snapshot exists.
+    public Button ContinueButton { get; private set; }
     // Shop is offered only after a first finished run (null before that).
     public Button ShopButton { get; private set; }
     public bool ShopUnlocked { get { return MetaProgress.RunsFinished > 0 || MetaProgress.BestWave > 0 || !string.IsNullOrEmpty(WaveDirector.LastRun); } }
@@ -162,7 +164,7 @@ public class MainMenu : MonoBehaviour {
         // A cold page load plays at once: after the "Tap to play" card the bat is in hand on wave 1, with no menu and
         // no sign-in in between (the first five minutes must not start on a wall). Quit to menu still shows the menu,
         // and the playtest scenarios (?playtest=) and the editor keep the menu they check.
-        if (mode == "" && firstLoad && ColdStartPlays()) {
+        if (mode == "" && firstLoad && ColdStartPlays() && !RunSave.Exists) {
             mode = "arcade";
         }
         // A playtest is about to press this menu's buttons (it may have been started by a runner before Unity loaded, so
@@ -304,6 +306,15 @@ public class MainMenu : MonoBehaviour {
             MenuSfx.Thunk(0.5f);
             OpenShop();
         }
+    }
+
+    // Continue run: the saved wave starts again from its start with the boons, health and bolts the run had.
+    void ContinueRun() {
+        if (leaving || !RunSave.ArmResume()) {
+            return;
+        }
+        startWave = 1;
+        Play();
     }
 
     void Play() {
@@ -508,9 +519,16 @@ public class MainMenu : MonoBehaviour {
         float campaignY = bottom;
         bottom -= gap + playHeight;
         float playY = bottom;
+        // A saved run sits right above Play: low on the screen, in thumb reach, never under 88 units (about 44 px on a phone).
+        float continueHeight = RunSave.Exists ? (desktop ? 84f : 100f) : 0f;
+        float continueY = playY;
+        if (continueHeight > 0f) {
+            continueY = playY - gap - continueHeight;
+            bottom = continueY;
+        }
 
         // The logo takes the room above Play.
-        float room = Mathf.Max(100f, playY - gap);
+        float room = Mathf.Max(100f, (continueHeight > 0f ? continueY : playY) - gap);
         // Never bigger than Play, so Play is the largest thing on the screen.
         float logoHeight = Mathf.Min(room, playHeight - 10f);
         var header = Node(column, "Logo");
@@ -525,6 +543,10 @@ public class MainMenu : MonoBehaviour {
         }
 
         PlayButton = MakeButton(column, "Play", 0f, playY, colW, playHeight, desktop ? 64 : 48, Play, true);
+        if (continueHeight > 0f) {
+            ContinueButton = MakeButton(column, "Continue run (wave " + RunSave.Wave + ")", 0f, continueY, colW, continueHeight, desktop ? 34 : 32, ContinueRun, false, new Color(0.2f, 0.17f, 0.1f, 1f));
+            Enter(ContinueButton.GetComponent<RectTransform>(), new Vector2(0f, -24f), 1.02f);
+        }
         CampaignButton = MakeButton(column, "Campaign", 0f, campaignY, colW, campaignHeight, desktop ? 32 : 30, OpenCampaign);
         float iconWidth = compact ? 200f : 190f;
         SettingsButton = MakeButton(column, "Settings", 0f, iconY, iconWidth, iconHeight, compact ? 26 : 24, OpenSettings);
