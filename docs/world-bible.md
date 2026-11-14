@@ -80,7 +80,7 @@ The circle is the one filed address; everything else in the Hollow can be cleare
 the first time a bot reaches the ring in a run she turns on it, knife up, and says why it matters ("That's the address. Nobody
 takes it."); later arrivals get a short bark ("Off the circle.", "Not here.", "Mine.", "Back."), at most one per 9 s through
 `VoiceDirector`. Hook: `AttackTell.ReachedCircle` -> `SliceVoice.Reached`. Her want: keep the one filed thing filed. Her arc in
-Arcade: clipped and bored at wave 1, thin and stubborn when low. Voice files are optional (`slice_<line>.mp3`); the subtitle plays without one.
+Arcade: clipped and bored at wave 1, thin and stubborn when low. Voice files are optional (`slice_<line>.mp3`); the subtitle plays without one. Each blow that lands also leaves a red strike mark on the ring on the bot's side (the claim being struck off); they fade as she heals (`StakesFeel` marks).
 
 ## Landmarks
 

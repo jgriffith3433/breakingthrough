@@ -641,6 +641,10 @@ reaches her in a run Wallit says one short key line about her, in his money voic
 Hands off!", "Touch her, you pay double!" or "She's not for sale. Back off!" (`WallitVoice.Stakes`, reason `stakes-line`). No text
 explains the circle in wave 1. `stakes` playtest logs `slice-hit`, `slice-low`, `stakes-line`.
 
+Strike marks: each blow that lands also leaves a red ink smear on the ground at the ring, on the side the bot struck from
+(`StakesFeel.AddMark`, up to eight, `slice-marked` event). They are the Department striking its claim off, seen in the world:
+one mark per eighth of her health lost, scrubbed oldest first as she heals. No text, no particles.
+
 ## The fee
 
 Slice's pay is a pile of gold coins at the edge of the circle: **the fee**, the filing fee the Department set aside to keep the
