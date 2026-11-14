@@ -35,7 +35,7 @@ public static class VoiceDirector {
     public static bool IsEvent(string why) {
         switch (why) {
             case "first-hit": case "home-run": case "slice-low": case "low": case "boss-phase": case "new-type": case "wave-clear":
-            case "boss-homerun": case "boss-win":
+            case "boss-homerun": case "boss-win": case "boss-low":
                 return true;
             default:
                 return false;
@@ -90,6 +90,7 @@ public static class VoiceDirector {
             case "chest":
             case "home-run":
             case "boss-homerun":
+            case "boss-low":
             case "first-hit":
             case "new-type":
             case "wave-clear":

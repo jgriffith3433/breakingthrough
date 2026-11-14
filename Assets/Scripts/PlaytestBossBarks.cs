@@ -58,6 +58,7 @@ public static partial class Playtest {
         int phaseBarks = 0;
         int homeBarks = 0;
         int overlaps = 0;
+        var introCodes = new HashSet<string>();
         int captionsUpper = 0;
         var player = Object.FindAnyObjectByType<CharacterMovement>();
 
@@ -72,6 +73,11 @@ public static partial class Playtest {
                 continue;
             }
             run.Event("setup", names[i] + " placed for in-fight barks");
+            string introCode = CinematicDirector.IntroCode(boss);
+            run.Event("boss-intro-voice", names[i] + " intro speaks as " + introCode);
+            if (introCode == null || introCode == "Y" || !introCodes.Add(introCode)) {
+                run.Problem(PlaytestSeverity.Bug, "boss-barks: " + names[i] + " entrance voice is " + introCode + " (not its own)");
+            }
             run.Scene(names[i]);
 
             // Phase bark: drop health past the notch.
@@ -160,6 +166,7 @@ public static partial class Playtest {
             yield return new WaitForSecondsRealtime(0.35f);
         }
 
+        run.Metric("bossIntroVoicesDistinct", introCodes.Count);
         run.Metric("bossFightsWithTwoBarks", fightsWithTwo);
         run.Metric("bossPhaseBarks", phaseBarks);
         run.Metric("bossHomeBarks", homeBarks);

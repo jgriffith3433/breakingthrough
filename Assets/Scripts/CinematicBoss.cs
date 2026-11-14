@@ -19,20 +19,20 @@ public partial class CinematicDirector {
         public string Title;     // stamped on the card
         public string Sub;       // the work-order line under it
         public string Entry;     // drop, hang, rise, unfold, climb
-        public string Code;      // speaker code of the taunt (the cast voice that has the file)
+        public string Code;      // speaker code of the taunt: the boss's own cast voice (K P F V R O; the Half-Built is a Yo Bot, Y). Its line is one the boss already has recorded (BossVoice banks); a boss with no intro recording of its own borrows its closest existing line, and the file name is <castid>_<slug>
         public string Line;      // the existing taunt line
         public float Root;       // the stinger's root note, Hz
         public bool Mini;        // a mid-chapter mini-boss: its own save bit
     }
 
     static readonly BossCard[] Cards = {
-        new BossCard { Match = "courier", Title = "THE COURIER", Sub = "Notice of striking", Entry = "rise", Code = "Y", Line = "Special delivery! Notice of striking!", Root = 98f },
-        new BossCard { Match = "plated", Title = "THE PLATED ALPHA", Sub = "Plate 0010: INVALID", Entry = "drop", Code = "Y", Line = "Notice! This plate is stamped: INVALID!", Root = 110f },
-        new BossCard { Match = "foreman", Title = "THE FOREMAN", Sub = "Work order 0031", Entry = "unfold", Code = "Y", Line = "Order, read aloud: STRIKE. THIS. ADDRESS.", Root = 87f },
+        new BossCard { Match = "courier", Title = "THE COURIER", Sub = "Notice of striking", Entry = "rise", Code = "K", Line = "Special delivery! Notice of striking!", Root = 98f },
+        new BossCard { Match = "plated", Title = "THE PLATED ALPHA", Sub = "Plate 0010: INVALID", Entry = "drop", Code = "P", Line = "Address: INVALID.", Root = 110f },
+        new BossCard { Match = "foreman", Title = "THE FOREMAN", Sub = "Work order 0031", Entry = "unfold", Code = "F", Line = "Overtime. Read louder.", Root = 87f },
         new BossCard { Match = "half-built", Title = "THE HALF-BUILT", Sub = "Still on its hook", Entry = "hang", Code = "Y", Line = "I am... not finished! Finish me?", Root = 131f, Mini = true },
-        new BossCard { Match = "server", Title = "THE SERVER", Sub = "Signature required", Entry = "climb", Code = "Y", Line = "Order delivery! Signature required!", Root = 104f },
-        new BossCard { Match = "registrar", Title = "THE REGISTRAR", Sub = "Page ten, filing", Entry = "unfold", Code = "Y", Line = "Registrar on the floor! Please remain seated!", Root = 92f },
-        new BossCard { Match = "order", Title = "THE ORDER-BEARER", Sub = "Sealed. Carried. Unsigned.", Entry = "climb", Code = "Y", Line = "Order delivery! Signature required!", Root = 73f },
+        new BossCard { Match = "server", Title = "THE SERVER", Sub = "Signature required", Entry = "climb", Code = "V", Line = "Served. Kindly remain.", Root = 104f },
+        new BossCard { Match = "registrar", Title = "THE REGISTRAR", Sub = "Page ten, filing", Entry = "unfold", Code = "R", Line = "Page two. Initial here.", Root = 92f },
+        new BossCard { Match = "order", Title = "THE ORDER-BEARER", Sub = "Sealed. Carried. Unsigned.", Entry = "climb", Code = "O", Line = "The seal turns.", Root = 73f },
     };
 
     // Timeline, in unscaled seconds from the start.
@@ -107,6 +107,12 @@ public partial class CinematicDirector {
             }
         }
         return null;
+    }
+
+    // The cast code the boss's entrance speaks in (the playtest checks each boss has its own), or null with no card.
+    public static string IntroCode(Enemy boss) {
+        BossCard c = CardFor(boss != null ? boss.Title : null, IsMini(boss));
+        return c != null ? c.Code : null;
     }
 
     static bool IsMini(Enemy e) {
