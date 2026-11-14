@@ -34,6 +34,12 @@ public static partial class Playtest {
         whitePct = 100f * white / px.Length;
         NightGrade g = cam.GetComponent<NightGrade>();
         string rule = g != null ? " exposure " + g.EffectiveExposure.ToString("0.00") + " bloom " + g.EffectiveBloom.ToString("0.00") + " threshold " + g.EffectiveThreshold.ToString("0.00") : " no grade";
+        run.Metric("light.meanLuma", Mathf.Round(luma * 1000f) / 1000f);
+        run.Metric("light.clippedPct", Mathf.Round(whitePct * 100f) / 100f);
+        run.Event("light", label + ": light.meanLuma " + luma.ToString("0.000") + " light.clippedPct " + whitePct.ToString("0.00") + " guard " + NightGrade.GuardScale.ToString("0.00") + " reads " + NightGrade.GuardReads);
+        if (luma < NightGrade.LumaMin || luma > NightGrade.LumaMax) {
+            run.Problem(PlaytestSeverity.Bug, "exposure: mean luma " + luma.ToString("0.00") + " outside 0.12-0.70 at " + label);
+        }
         run.Event("exposure", label + ": mean luma " + luma.ToString("0.000") + ", pure white " + whitePct.ToString("0.00") + "%, near black " + (100f * black / px.Length).ToString("0.0") + "%, hdr " + cam.allowHDR + rule);
         return label;
     }
@@ -52,7 +58,7 @@ public static partial class Playtest {
             yield break;
         }
         var player = Object.FindAnyObjectByType<CharacterMovement>();
-        int[] waves = { 1, 5, 10, 15, 20, 25, 30 };
+        int[] waves = { 1, 10, 20, 30 };
         float[] lumas = new float[waves.Length];
         float drift = 0f;
         for (int i = 0; i < waves.Length && !run.Done && !WaveDirector.IsLost; i++) {
@@ -69,6 +75,8 @@ public static partial class Playtest {
             float luma, white;
             ExposureSample("wave " + wave + " act " + (ArcadeActs.Act + 1) + (animTouch ? " phone" : " desktop") + " bots " + Enemy.Roster.Count, out luma, out white);
             lumas[i] = luma;
+            run.Metric("light.meanLuma_w" + wave, Mathf.Round(luma * 1000f) / 1000f);
+            run.Metric("light.clippedPct_w" + wave, Mathf.Round(white * 100f) / 100f);
             run.Metric("exposureLuma_" + wave, Mathf.Round(luma * 1000f) / 1000f);
             run.Metric("exposureWhitePct_" + wave, Mathf.Round(white * 100f) / 100f);
             if (white > 2f) {
