@@ -135,6 +135,7 @@ public class ChapterRun : MonoBehaviour {
     Vector3 findAt;
     float findRing;
     Text extraText;
+    bool coldBlowPending;   // the cold blow has not run yet: no caption may sit under its camera
     int baseHomeRuns, baseSmash, baseFinishers;
     int xpAtStart;
     public bool FindKept { get; private set; }
@@ -219,6 +220,7 @@ public class ChapterRun : MonoBehaviour {
     // The chapter map scene fills in a frame or two after Load; wait so polar marks and the postmark/belt land on real pieces.
     System.Collections.IEnumerator OpenWorldWhenReady(string worldOpen) {
         VoiceDirector.Scene = true;   // hold the voice floor so a bark cannot speak before the opening
+        coldBlowPending = Chapter >= 1 && Chapter <= 5 && !firstBlowOver;   // queued lines wait for the cold blow
         float t0 = Time.unscaledTime;
         while ((ChapterMap.Current == null || ChapterMap.Current.Own == null) && Time.unscaledTime - t0 < 2.5f) {
             yield return null;
@@ -240,6 +242,7 @@ public class ChapterRun : MonoBehaviour {
                 FirstBotDownSeconds = ChapterColdBlow.KillSeconds;
             }
         }
+        coldBlowPending = false;
         bool handed = false;
         CinematicDirector.PlayChapter(worldOpen, () => {
             handed = true;
@@ -1260,7 +1263,7 @@ public class ChapterRun : MonoBehaviour {
     }
 
     void TickQueue() {
-        if (queue.Count == 0) {
+        if (queue.Count == 0 || coldBlowPending || ChapterColdBlow.Active) {   // the cold blow owns the screen: lines wait for it
             return;
         }
         queueIn -= Time.unscaledDeltaTime;
@@ -1395,7 +1398,7 @@ public class ChapterRun : MonoBehaviour {
             }
         }
         if (extraText != null) {
-            extraText.text = GoalMet ? "Extra met: " + Journal.Goals[Chapter].Name : "Extra: " + Journal.Goals[Chapter].Name + " (" + Journal.Goals[Chapter].Ask + ")  " + (UiFit.Touch ? "Journal button" : "J: journal");
+            extraText.text = coldBlowPending || ChapterColdBlow.Active ? "" : GoalMet ? "Extra met: " + Journal.Goals[Chapter].Name : "Extra: " + Journal.Goals[Chapter].Name + " (" + Journal.Goals[Chapter].Ask + ")  " + (UiFit.Touch ? "Journal button" : "J: journal");
         }
         if (PlayInput.GetKeyDown(KeyCode.J)) {
             PauseMenu.Open();
