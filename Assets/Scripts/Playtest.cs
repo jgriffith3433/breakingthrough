@@ -305,6 +305,7 @@ public static partial class Playtest {
     static IEnumerator Bot(string id, PlaytestOptions options, PlaytestRun current) {
         run = current;
         Running = true;
+        LightBudget.Sink = line => run.Event("phone-budget", line);   // lights, casters and visible renderers per scene, phone tier only
         WaveDirector.ReleaseKeysProbe = false;
         if (id == "ch1") {
             id = "campaign-beats";
