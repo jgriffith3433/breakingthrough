@@ -116,6 +116,11 @@ public class Enemy : MonoBehaviour
     bool atCircleWas;
     // Within reach of Slice this frame (AttackTell pulses her circle while any bot has this set).
     public bool AtCircle { get; private set; }
+    // BotThreat (the ground ring and the edge arrows) reads these: winding up now, how long is left of it, the wait for the next blow.
+    public bool Winding { get { return winding; } }
+    public float WindRemaining { get { return windLeft; } }
+    public float NextBlowIn { get { return Mathf.Max(0f, peckIn); } }
+    public bool IsCharger { get { return charger; } }
 
     public Transform StrikingLimb() { return AttackLimb(); }
 

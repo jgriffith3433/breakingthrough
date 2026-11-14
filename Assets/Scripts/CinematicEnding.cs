@@ -22,6 +22,11 @@ public partial class CinematicDirector {
         CreditsLive = true;
         done = onDone;
         creditsStart = Time.unscaledTime;
+        capStart = creditsStart;
+        capLength = CreditsSeconds + CapSlack;
+        capped = false;
+        closedId = "credits";
+        CreditsReachedEnd = false;
         CreditsSkipMs = 0f;
         open = false;
         handingOff = false;
@@ -92,11 +97,14 @@ public partial class CinematicDirector {
         ApplyCreditsCamera(0f);
     }
 
+    const float CreditsSeconds = 22f;
+
     void TickCreditsOnly() {
         if (PauseMenu.IsOpen) {
+            HoldClocks();
             return;
         }
-        float u = Mathf.Clamp01((Time.unscaledTime - creditsStart) / 22f);
+        float u = Mathf.Clamp01((Time.unscaledTime - creditsStart) / CreditsSeconds);
         ApplyCreditsCamera(u);
         TickCreditsScroll(u);
         TickSkipInput();
@@ -104,7 +112,7 @@ public partial class CinematicDirector {
         LayoutUi();
         LayoutCredits();
         // Auto-finish after a full scroll (~22 s) so a silent player still reaches the card.
-        if (u >= 1f) {
+        if (u >= 1f || Time.unscaledTime - capStart >= capLength) {
             EndCreditsLive(false);
         }
     }
@@ -218,10 +226,12 @@ public partial class CinematicDirector {
             Skipped++;
         } else {
             Events.Add("credits-done");
+            CreditsReachedEnd = true;
             Finished++;
         }
         creditsOnly = false;
         CreditsLive = false;
+        Close(skipped);
         VoiceDirector.Scene = false;
         WallitVoice.Silence();
         SliceVoice.Silence();

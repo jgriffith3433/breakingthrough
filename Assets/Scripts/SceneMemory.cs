@@ -106,6 +106,7 @@ public class SceneMemory : MonoBehaviour {
             s.Released = OnDemand.ReleaseChapters();
         }
         AttackTell.Prune();
+        BotThreat.Prune();
         BotSound.Prune();
         Enemy.Roster.RemoveAll(e => e == null);
         yield return Resources.UnloadUnusedAssets();

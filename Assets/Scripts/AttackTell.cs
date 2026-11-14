@@ -175,6 +175,7 @@ public class AttackTell : MonoBehaviour {
         if (by == null) {
             return;
         }
+        BotThreat.Hit(by);
         float at;
         if (toldAt.TryGetValue(by, out at) && Time.time - at <= 0.25f) {
             return;

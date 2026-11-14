@@ -258,6 +258,7 @@ public static class PlaytestOpeningEndings {
             run.Problem(PlaytestSeverity.Bug, "opening-endings: expected " + expectId + ", got " + reel);
         }
 
+        int closedBefore = CinematicDirector.ClosedCount;
         int movingShots = 0;
         var lastPos = new Dictionary<string, Vector3>();
         float started = Time.realtimeSinceStartup;
@@ -291,6 +292,18 @@ public static class PlaytestOpeningEndings {
         }
         if (movingShots < 5) {
             run.Problem(PlaytestSeverity.Bug, "opening-endings: Chapter " + (chapter + 1) + " fewer than 5 moving shots (" + movingShots + ")");
+        }
+        yield return run.Until(() => CinematicDirector.ClosedCount > closedBefore && !CinematicDirector.IsOpen, 3f, "cinematic closed");
+        bool closedNow = CinematicDirector.ClosedCount > closedBefore;
+        run.Event("cinematic.closed", "opening-endings chapter=" + (chapter + 1) + " reel=" + CinematicDirector.LastClosedReel + " closed=" + closedNow
+            + " cap=" + CinematicDirector.LastClosedByCap + " seconds=" + CinematicDirector.LastClosedAfterSeconds.ToString("0.00") + " handoff=" + CinematicDirector.LastHandoffSeconds.ToString("0.00")
+            + " touch=" + UiFit.Touch + " size=" + Screen.width + "x" + Screen.height);
+        run.Metric("cinematic.closed.ch" + (chapter + 1), closedNow ? 1 : 0);
+        if (!closedNow) {
+            run.Problem(PlaytestSeverity.Bug, "opening-endings: Chapter " + (chapter + 1) + " opening never reported closed");
+        }
+        if (CinematicDirector.LastHandoffSeconds > 0.3f) {
+            run.Problem(PlaytestSeverity.Bug, "opening-endings: control returned " + CinematicDirector.LastHandoffSeconds.ToString("0.00") + " s after the last shot (> 0.3)");
         }
     }
 
@@ -386,6 +399,27 @@ public static class PlaytestOpeningEndings {
         }
         // The end card is what PlayCreditsLive hands to; here the callback just marks done.
         run.Event("credits-card", done ? "callback" : "missing");
+
+        // Second pass: let the credits run on their own clock with the mouse leaving the game mid-scroll.
+        bool done2 = false;
+        int ignoredBefore = PauseMenu.MouseLeftIgnored;
+        CinematicDirector.PlayCreditsLive(() => done2 = true, true);
+        yield return run.Until(() => CinematicDirector.CreditsLive || done2, 5f, "live credits (full scroll)");
+        yield return Wait(3f);
+        PauseMenu.MouseLeftProbe = true;
+        yield return Wait(0.5f);
+        run.Event("credits-mouse-left", "paused=" + PauseMenu.IsOpen + " ignored=" + (PauseMenu.MouseLeftIgnored - ignoredBefore));
+        if (PauseMenu.IsOpen) {
+            run.Problem(PlaytestSeverity.Bug, "opening-endings: the mouse leaving the game paused the credits");
+        }
+        float fullStart = Time.realtimeSinceStartup;
+        yield return run.Until(() => done2, 30f, "credits end card");
+        float fullSeconds = Time.realtimeSinceStartup - fullStart;
+        run.Event("credits.reachedEnd", "reached=" + CinematicDirector.CreditsReachedEnd + " card=" + done2 + " seconds=" + fullSeconds.ToString("0.0"));
+        run.Metric("credits.reachedEnd", CinematicDirector.CreditsReachedEnd && done2 ? 1 : 0);
+        if (!CinematicDirector.CreditsReachedEnd || !done2) {
+            run.Problem(PlaytestSeverity.Bug, "opening-endings: the credits never reached the end card on their own");
+        }
     }
 
     static void SampleMotion(ref int movingShots, Dictionary<string, Vector3> lastPos) {
