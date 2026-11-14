@@ -20,7 +20,21 @@ public static class MobileQuality {
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Boot() {
+        NoShadowMapOnWebGl();
         Apply();
+    }
+
+    // The browser build never draws a real-time shadow map, touch or not. The project's quality level is Ultra (4 cascades,
+    // 150 m) and a phone is only known to be a phone once touch is seen (a playtest forces it after boot), so the menu used to
+    // be drawn with that map: the depth texture is read by a float sampler on WebGL ("GL_INVALID_OPERATION: glDrawArrays:
+    // Mismatch between texture format and sampler type" every frame) and four cascades stalled a throttled phone's page for
+    // a minute. FilmLight already goes without it in a run; this covers the menu and every other scene from the first frame.
+    static void NoShadowMapOnWebGl() {
+        if (Application.platform != RuntimePlatform.WebGLPlayer) {
+            return;
+        }
+        QualitySettings.shadows = ShadowQuality.Disable;
+        QualitySettings.shadowDistance = 0f;
     }
 
     // Safe to call every scene: it only acts once, and only on a touch device.
