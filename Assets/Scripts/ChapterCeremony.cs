@@ -43,7 +43,7 @@ public class ChapterCeremony : MonoBehaviour {
     }
 
     // Seconds of the wait before each step, scaled by tap fast-forward.
-    const float CharSeconds = 0.035f;
+    const float CharSeconds = 0.022f;
 
     Font typewriter, serif;
     RectTransform panel, stampBox, rowsRoot, buttons;
@@ -271,7 +271,7 @@ public class ChapterCeremony : MonoBehaviour {
         float homeY = -15f;
         float startY = -size.y;
         // 1. The dossier slides in.
-        yield return Step(0.55f, t => {
+        yield return Step(0.45f, t => {
             float e = 1f - Mathf.Pow(1f - t, 3f);
             panel.anchoredPosition = new Vector2(0f, Mathf.Lerp(startY, homeY, e));
         });
@@ -280,7 +280,7 @@ public class ChapterCeremony : MonoBehaviour {
 
         // 2. Each stat types onto the form, label then value, a tick every second letter.
         for (int i = 0; i < stats.Length; i++) {
-            float speed = i >= XpRow ? 0.5f : 1f;   // the ledger rows type twice as fast
+            float speed = i >= XpRow ? 0.3f : 1f;   // the ledger rows type three times as fast
             yield return Type(rowLabels[i], stats[i].Label, 2, speed);
             yield return Type(rowValues[i], stats[i].Value, 2, speed);
             if (i == XpRow) {
@@ -288,9 +288,9 @@ public class ChapterCeremony : MonoBehaviour {
             }
             StatsTyped++;
             ChapterRun.Events.Add("ceremony|stat|" + stats[i].Label + "|" + stats[i].Value);
-            yield return Wait(0.22f);
+            yield return Wait(0.12f);
         }
-        yield return Wait(0.3f);
+        yield return Wait(0.2f);
 
         // 3. The rank stamp comes down.
         rankCaption.gameObject.SetActive(true);
@@ -318,7 +318,7 @@ public class ChapterCeremony : MonoBehaviour {
             splat.color = new Color(splatInk.r, splatInk.g, splatInk.b, Mathf.Lerp(0.55f, 0.3f, t));
         });
         // The stamp holds while its sting rings: longer for a better rank.
-        yield return Wait(rank == CampaignGrade.S ? 1.1f : rank == CampaignGrade.A ? 0.9f : 0.6f);
+        yield return Wait(rank == CampaignGrade.S ? 0.9f : rank == CampaignGrade.A ? 0.7f : 0.45f);
 
         // 4. FILED across the sheet.
         filed.gameObject.SetActive(true);
@@ -339,7 +339,7 @@ public class ChapterCeremony : MonoBehaviour {
         float spoken = WallitVoice.Cutscene(line);
         LineSaid = line;
         ChapterRun.Events.Add("ceremony|wallit|" + CampaignGrade.Letter(rank) + "|" + line);
-        yield return Wait(Mathf.Clamp(spoken, 0.8f, 2.2f));
+        yield return Wait(Mathf.Clamp(spoken, 0.8f, 1.6f));
         footer.gameObject.SetActive(true);
         yield return Wait(0.2f);
         ShowContinue();
@@ -348,7 +348,7 @@ public class ChapterCeremony : MonoBehaviour {
     // The bar climbs from where the chapter found it to where it left it, ticking as it goes.
     IEnumerator FillBar() {
         float lastTick = 0f;
-        yield return Step(0.5f + Mathf.Abs(barTo - barFrom), t => {
+        yield return Step(0.35f + Mathf.Abs(barTo - barFrom) * 0.5f, t => {
             float v = Mathf.Lerp(barFrom, barTo, 1f - Mathf.Pow(1f - t, 2f));
             barFill.rectTransform.anchorMax = new Vector2(Mathf.Clamp01(v), 1f);
             BarShown = v;
