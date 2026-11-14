@@ -378,10 +378,40 @@ public class MenuStage : MonoBehaviour {
         return target;
     }
 
+    // The stage is drawn into a texture that fills the screen, so a window of another shape would stretch it (round things
+    // oval). When the screen's aspect leaves the texture's, the texture is made again at the screen's own aspect.
+    void FitTarget() {
+        if (handedOff || target == null || UnityEngine.Screen.width <= 0 || UnityEngine.Screen.height <= 0) {
+            return;
+        }
+        float aspect = (float)UnityEngine.Screen.width / UnityEngine.Screen.height;
+        if (Mathf.Abs((float)target.width / target.height / aspect - 1f) < 0.01f) {
+            return;
+        }
+        bool narrow = aspect < 1f;
+        int h = narrow ? Mathf.Clamp(Mathf.RoundToInt(540f / aspect), 540, 1100) : 720;
+        int w = narrow ? 540 : Mathf.Clamp(Mathf.RoundToInt(h * aspect), 360, 1280);
+        if (!narrow && w == 1280) {
+            // A very wide window: keep the aspect by trading height, not by stretching.
+            h = Mathf.Clamp(Mathf.RoundToInt(w / aspect), 240, 720);
+        }
+        var next = new RenderTexture(w, h, 16, RenderTextureFormat.ARGB32);
+        next.name = "Menu Stage";
+        next.antiAliasing = 1;
+        cam.targetTexture = next;
+        if (Image != null) {
+            Image.texture = next;
+        }
+        target.Release();
+        Destroy(target);
+        target = next;
+    }
+
     void Update() {
         if (cam == null) {
             return;
         }
+        FitTarget();
         float t = Time.unscaledTime - born;
         float ease = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / 0.6f));
         if (Image != null) {
