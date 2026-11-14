@@ -38,6 +38,7 @@ public class OnDemand : MonoBehaviour {
     const int Workers = 6;
     const float RequestSeconds = 25f;
     const float DecodeSeconds = 3f;
+    const float NeedSeconds = 45f;   // a Need never waits longer: what is missing falls back (subtitle, stand-in disc, code-built mesh)
 
     public static string ChapterGroup(int chapter) {
         return "ch" + (chapter + 1);
@@ -299,8 +300,27 @@ public class OnDemand : MonoBehaviour {
             running++;
             StartCoroutine(Worker(todo, () => running--));
         }
-        while (running > 0) {
+        float deadline = Time.realtimeSinceStartup + NeedSeconds;
+        while (running > 0 && Time.realtimeSinceStartup < deadline) {
             yield return null;
+        }
+        if (running > 0) {
+            // A worker is stuck (a request that never ends, a decode that never lands): stop the queue, mark what is not in as
+            // failed so its readers use the fallback, and let the chapter begin instead of freezing on the card.
+            todo.Clear();
+            foreach (string id in ids) {
+                List<Entry> list;
+                if (groups.TryGetValue(id, out list)) {
+                    foreach (Entry e in list) {
+                        if (!Cached(e.k)) {
+                            failed.Add(e.k);
+                        }
+                    }
+                }
+            }
+            partial.Clear();
+            Events.Add("timeout|" + string.Join("+", ids));
+            Debug.LogWarning("[OnDemand] " + label + " timed out; going on with fallbacks");
         }
         busy--;
         if (busy == 0) {
@@ -327,7 +347,8 @@ public class OnDemand : MonoBehaviour {
     // One file, once: a second asker waits for the first.
     IEnumerator Get(Entry e) {
         if (inflight.Contains(e.k)) {
-            while (inflight.Contains(e.k)) {
+            float waitUntil = Time.realtimeSinceStartup + RequestSeconds * 2f;
+            while (inflight.Contains(e.k) && Time.realtimeSinceStartup < waitUntil) {
                 yield return null;
             }
             yield break;
