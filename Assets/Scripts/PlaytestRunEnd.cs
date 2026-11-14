@@ -341,6 +341,7 @@ public static class PlaytestRunEnd {
         run.Event("run-end-layout", "overlaps " + overlaps + ", Retry largest " + (retryArea >= otherMax - 1f)
             + ", subtitle one line " + subtitleOne + ", fits " + fits);
         run.Metric("runEndOverlaps", overlaps);
+        run.Metric("endOverlaps", overlaps);
         run.Metric("runEndRetryLargest", retryArea >= otherMax - 1f ? 1 : 0);
         run.Metric("runEndSubtitleOneLine", subtitleOne ? 1 : 0);
         run.Metric("runEndFits", fits ? 1 : 0);

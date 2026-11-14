@@ -1268,6 +1268,7 @@ public class WaveDirector : MonoBehaviour {
             Fit(coinText, 26, new Vector2(36f, -24f), new Vector2(860f, 40f));
             hudPurse.anchoredPosition = new Vector2(36f, -68f);
             lostPanel.transform.localScale = Vector3.one;
+            lostRect.sizeDelta = new Vector2(900f, 700f);
             lostRect.anchoredPosition = Vector2.zero;
             return;
         }
@@ -1278,10 +1279,14 @@ public class WaveDirector : MonoBehaviour {
         Fit(coinText, 22, new Vector2(24f, tall ? -92f : -34f), new Vector2(tall ? size.x - 48f : 360f, 56f));
         Fit(waveText, 28, new Vector2(0f, tall ? -126f : HudPaper.Active ? -108f : -66f), new Vector2(middle, 70f));
         Fit(detailText, 22, new Vector2(0f, tall ? -196f : HudPaper.Active ? -168f : -136f), new Vector2(middle, 56f));
-        float fit = Mathf.Min(1f, (size.x - 40f) / 900f, (size.y - 40f) / 700f);
-        lostPanel.transform.localScale = new Vector3(fit, fit, 1f);
-        // Portrait: sit the panel in the upper half, so the page's "How was that run?" card has the bottom to itself.
-        lostRect.anchoredPosition = new Vector2(0f, tall ? Mathf.Max(0f, (size.y - 700f * fit) * 0.5f - 40f) : 0f);
+        // The sheet is laid out in real canvas units (no shrinking), so its 26-unit rows stay 14 px or more on a phone:
+        // the panel takes the canvas width and RunEndScreen stacks its bands inside it.
+        lostPanel.transform.localScale = Vector3.one;
+        float panelW = Mathf.Min(size.x - 40f, 1300f);
+        float panelH = tall ? Mathf.Min(size.y - 40f - 200f, 1100f) : size.y - 30f;
+        lostRect.sizeDelta = new Vector2(panelW, panelH);
+        // Portrait: sit the panel in the upper part, so the page's "How was that run?" card has the bottom to itself.
+        lostRect.anchoredPosition = new Vector2(0f, tall ? Mathf.Max(0f, (size.y - panelH) * 0.5f - 20f) : 0f);
     }
 
     static void Fit(Text text, int fontSize, Vector2 position, Vector2 box) {
