@@ -10708,6 +10708,8 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         run.Metric("level", RunBoons.Level);
         run.Metric("levelUps", levelUps);
         run.Metric("botsAlive", Enemy.Roster.Count);
+        run.Metric("hurt.directionShown", HitDirection.WallitHits > 0 ? Mathf.Round(100f * HitDirection.ShownWallit / HitDirection.WallitHits) : 100f);
+        run.Metric("hurt.hits", HitDirection.WallitHits);
         run.Metric("bestStreak", Combo.Best);
         run.Metric("coinsRun", MetaProgress.CoinsThisRun);
         run.Metric("runSeconds", Mathf.Round(elapsed));

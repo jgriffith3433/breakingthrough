@@ -356,7 +356,8 @@ public class PlayerGrowth : MonoBehaviour {
 
     public static System.Action<Enemy> Struck;
 
-    public void OnHit(Enemy by = null) {
+    // source: where a blow with no bot came from (a stamp mark, a surge, a shot); the arc and the shove use it.
+    public void OnHit(Enemy by = null, Vector3? source = null) {
         AttackTell.NoteBlow(by);
         // Campaign's dodge: a blow inside the window finds nothing.
         if (CampaignMoves.Invulnerable) {
@@ -364,12 +365,11 @@ public class PlayerGrowth : MonoBehaviour {
             return;
         }
         // A blow inside the 0.6 s after the last one finds nothing; a fresh one shoves, flashes, flinches and grunts.
-        if (!WallitHurt.Strike(this, by)) {
+        if (!WallitHurt.Strike(this, by, source)) {
             return;
         }
-        if (by != null) {
-            HitDirection.Hit(by.transform.position, true);   // a red wedge toward the attacker
-        }
+        // A red arc toward the attacker, a bot or a point (projectile, hazard); no source falls back to behind him.
+        HitDirection.HitWallit(by != null ? by.transform.position : source, transform);
         if (Struck != null) {
             Struck(by);   // a campaign level counts Wallit's own health (Level*.cs); Arcade never sets it
         }
