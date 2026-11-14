@@ -213,8 +213,11 @@ public class NightAtmosphere : MonoBehaviour {
         renderer.maxParticleSize = 3f;
     }
 
+    float stageDim = 1f;
+
     void Update() {
         float t = Time.time;
+        stageDim = Mathf.MoveTowards(stageDim, StageReveal >= 0f ? 0.55f : 1f, Time.unscaledDeltaTime * 0.45f);
         for (int i = 0; i < lanterns.Count; i++) {
             if (lanterns[i] == null) {
                 continue;
@@ -222,8 +225,10 @@ public class NightAtmosphere : MonoBehaviour {
             float flicker = Mathf.PerlinNoise(lanternSeeds[i], t * 3.2f);
             float on = Mathf.Clamp01((Time.timeSinceLevelLoad - 0.8f * (i + 1)) / 0.6f);   // the posts come on one after another
             if (StageReveal >= 0f) {
-                float k = StageReveal * (lanterns.Count + 2) - i;   // lamp i flares at k = 0 and settles over 1.5
-                on = k < 0f ? 0.2f : Mathf.Lerp(3.2f, 1f, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(k / 1.5f)));
+                // The posts dim to 0.55 over about a second (never a cut to near dark: the frame stays lit through the change), then
+                // lamp i flares at k = 0 and settles over 1.5.
+                float k = StageReveal * (lanterns.Count + 2) - i;
+                on = k < 0f ? stageDim : Mathf.Lerp(3.2f, 1f, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(k / 1.5f)));
             }
             float stutter = LampStutter > 0f && Mathf.PerlinNoise(lanternSeeds[i] + 40f, t * 7f) < 0.16f * LampStutter ? 0.4f : 1f;
             lanterns[i].intensity = (1.45f + flicker * 0.5f) * LampMul * on * stutter;

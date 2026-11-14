@@ -14,12 +14,19 @@ public static partial class Playtest {
     struct FilmFrame { public float Luma; public Color Mean; }
 
     static FilmFrame FilmSample(Camera cam, out Texture2D tex) {
-        const int W = 192, H = 108;
+        // The sample has the screen's own shape, and the camera's aspect is put back after it: a 16:9 sample of a phone camera used to
+        // leave it stretched until RenderFit's next half-second pass.
+        int W = 192, H = Mathf.Clamp(Mathf.RoundToInt(192f * Screen.height / Mathf.Max(1, Screen.width)), 64, 400);
         var rt = RenderTexture.GetTemporary(W, H, 24, RenderTextureFormat.ARGB32);
         RenderTexture old = cam.targetTexture, active = RenderTexture.active;
         cam.targetTexture = rt;
+        NightGrade.Sampling = true;
         cam.Render();
+        NightGrade.Sampling = false;
         cam.targetTexture = old;
+        if (old == null) {
+            cam.ResetAspect();
+        }
         RenderTexture.active = rt;
         tex = new Texture2D(W, H, TextureFormat.RGB24, false);
         tex.ReadPixels(new Rect(0, 0, W, H), 0, 0);

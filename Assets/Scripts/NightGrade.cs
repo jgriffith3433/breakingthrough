@@ -133,8 +133,11 @@ public class NightGrade : MonoBehaviour {
         RenderTexture.ReleaseTemporary(current);
     }
 
+    // A playtest's own sampling render of the camera must not steer the exposure guard (it is a second, smaller frame).
+    public static bool Sampling;
+
     void ReadLight(RenderTexture source) {
-        if (Time.unscaledTime < nextRead) {
+        if (Sampling || Time.unscaledTime < nextRead) {
             return;
         }
         nextRead = Time.unscaledTime + 0.5f;
@@ -177,7 +180,8 @@ public class NightGrade : MonoBehaviour {
             target = Mathf.Min(target, GuardScale * 0.9f);
         }
         target = Mathf.Clamp(target, GuardMinScale, GuardMaxLift);
-        float k = target < GuardScale ? 0.6f : 0.15f;   // darken fast, lift slowly
+        // Darken fast, lift slowly, except a frame under the floor (an act change passing through a dark blend) which lifts fast.
+        float k = target < GuardScale ? 0.6f : (raw * baseExp * GuardScale < LumaMin ? 0.5f : 0.15f);
         GuardScale = Mathf.Lerp(GuardScale, target, k);
     }
 
