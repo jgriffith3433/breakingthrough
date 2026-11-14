@@ -429,6 +429,11 @@ public class Enemy : MonoBehaviour
         spider = BotRoster.IsSpider(def.Kind);
         DebutWave = def.Kind == BotKind.YoBot ? 0 : def.UnlockWave;
         HitsToDrop = Mathf.Max(1, Mathf.RoundToInt(def.Hits * Tuning.HealthScale(WaveDirector.Wave)));
+        if (def.Kind == BotKind.YoBot && ChapterRun.Instance == null && WaveDirector.Wave <= Tuning.OneHitWaves)
+        {
+            // Wave 1's Yo Bots fall to the first swing, so the first success and its coin and bolt burst come at once.
+            HitsToDrop = 1;
+        }
         Title = def.Name;
         walkSpeed = def.Walk * Random.Range(0.86f, 1.18f) * 1.5f;
         chaseSpeed = def.Chase * Random.Range(0.9f, 1.16f) * 1.5f;
