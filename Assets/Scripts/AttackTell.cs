@@ -170,6 +170,7 @@ public class AttackTell : MonoBehaviour {
     // A bot has come within reach of Slice (Enemy.Update, once per arrival).
     public static void ReachedCircle(Enemy e) {
         CircleReached++;
+        SliceVoice.Reached(e);
         if (Log.Count < 200) {
             Log.Add(Time.unscaledTime.ToString("0.00") + "|circle|" + (e != null ? e.Title : "?"));
         }
