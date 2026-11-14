@@ -232,6 +232,8 @@ public static partial class Playtest {
         }
     }
     static int levelUps;
+    // Of those picks, the wave-clear cards: they gain no level, so run.levelUps (RunBoons) is picks minus these.
+    static int waveCardPicks;
     static int lastWave;
     static float fpsSum;
     static int fpsFrames;
@@ -316,6 +318,7 @@ public static partial class Playtest {
             id = "campaign-beats";
         }
         levelUps = 0;
+        waveCardPicks = 0;
         lastWave = 0;
         fpsSum = 0f;
         fpsFrames = 0;
@@ -5191,6 +5194,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                             }
                         }
                         levelUps++;
+                        if (RunBoons.LastCardWasWave) { waveCardPicks++; }
                         run.Add("levelUps");
                         run.Log("picked card " + (pick + 1) + " (picks " + picksBefore + " -> " + RunBoons.Picks + ")");
                         cardSeenAt = -1f;
@@ -5679,6 +5683,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             }
         }
         levelUps++;
+        if (RunBoons.LastCardWasWave) { waveCardPicks++; }
         run.Add("levelUps");
     }
 
@@ -9663,6 +9668,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                         }
                     }
                     levelUps++;
+                    if (RunBoons.LastCardWasWave) { waveCardPicks++; }
                     run.Add("levelUps");
                     run.Log("tapped " + card.name);
                     cardSeenAt = -1f;
@@ -10769,7 +10775,9 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         run.Metric("level", RunBoons.Level);
         run.Metric("run.level", RunBoons.Level);
         run.Metric("run.levelUps", RunBoons.LevelUps);
-        run.Metric("levelUps", levelUps);
+        run.Metric("levelUps", levelUps - waveCardPicks);
+        run.Metric("waveCardPicks", waveCardPicks);
+        run.Metric("cardPicks", levelUps);
         run.Metric("botsAlive", Enemy.Roster.Count);
         run.Metric("hurt.directionShown", HitDirection.WallitHits > 0 ? Mathf.Round(100f * HitDirection.ShownWallit / HitDirection.WallitHits) : 100f);
         run.Metric("hurt.hits", HitDirection.WallitHits);
