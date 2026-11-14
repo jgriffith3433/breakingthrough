@@ -332,7 +332,8 @@ public class ControlsHelp : MonoBehaviour {
         hintAlpha = Mathf.MoveTowards(hintAlpha, fading ? 0f : 1f, Time.unscaledDeltaTime / 0.6f);
         HintVisible = hintAlpha > 0.05f && !WaveDirector.IsLost;
         // Never over the game-over panel.
-        line.enabled = hintAlpha > 0.01f && !WaveDirector.IsLost;
+        // And never behind the upgrade cards.
+        line.enabled = hintAlpha > 0.01f && !WaveDirector.IsLost && !LevelUpScreen.IsOpen;
         if (next != shown) {
             shown = next;
             line.text = next;

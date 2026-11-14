@@ -248,6 +248,18 @@ public class SliceVoice : MonoBehaviour {
                 wallitText.enabled = false;
             }
         }
+        if (LevelUpScreen.IsOpen) {
+            // The upgrade cards own the screen: no caption prints through behind them (time is stopped, so the
+            // timers would never run out on their own). A line still speaking is dropped, not queued.
+            sliceShown = 0f;
+            wallitShown = 0f;
+            if (sliceText != null) {
+                sliceText.enabled = false;
+            }
+            if (wallitText != null) {
+                wallitText.enabled = false;
+            }
+        }
         Musician slice = Musician.Instance;
         if (slice == null || Time.deltaTime <= 0f) {
             return;
