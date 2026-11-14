@@ -21,6 +21,8 @@ public class WaveDirector : MonoBehaviour {
     // A break or the build window, which Enter (or Next wave) ends early.
     public static bool Waiting { get; private set; }
     public static WaveEvent Event { get; private set; }
+    // Unscaled time until which the event's mid-screen announcement is up; the Abilities panel shows the event line only after it.
+    public static float EventAnnouncedUntil { get; private set; }
     // Shown on the menu after a run ends. Lives only until the game closes.
     public static string LastRun { get; private set; }
 
@@ -305,6 +307,7 @@ public class WaveDirector : MonoBehaviour {
         }
         if (Event != WaveEvent.None && Wave % 10 != 0) {   // a boss wave's entrance owns the screen; the HUD still lists the event
             UpgradeLook.Say(EventName, 2.6f, 230f);
+            EventAnnouncedUntil = Time.unscaledTime + 3.4f;   // the HUD's event line waits for the mid-screen copy to leave
             GameAudio.Play("launch", 0.4f, 0.7f);
         }
         if (PlayerGrowth.Instance != null) {
