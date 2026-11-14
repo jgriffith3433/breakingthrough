@@ -751,6 +751,8 @@ public partial class CinematicDirector : MonoBehaviour {
         // Upright on the gate face, readable from the circle (never LookAt / never negative scale).
         TextMesh words = LevelKit.Text(postmarkGo.transform, "RETURN\nTO SENDER", new Vector3(0f, 0f, 0.05f), 0.055f, new Color(1f, 0.85f, 0.85f, 0.95f), false);
         words.name = "Words";
+        // The parent faces the circle, so its +Z points at the reader; TextMesh reads only along its own +Z, so turn the words round.
+        words.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
         GameObject head = LevelDress.Put(postmarkGo.transform, "gt_press_head", face + Vector3.up * 6f, yaw, 0.45f);
         if (head != null) {
             head.name = "PostmarkHead";

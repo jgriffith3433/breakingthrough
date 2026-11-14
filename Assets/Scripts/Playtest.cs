@@ -287,6 +287,7 @@ public static partial class Playtest {
     static void Stop() {
         Running = false;
         HitchMeter.End();
+        SignAudit.Meter.End();
         WaveDirector.ReleaseKeysProbe = false;
         SettingsPanel.Close();
         PauseMenu.Resume();
@@ -314,6 +315,7 @@ public static partial class Playtest {
         worstFrameMs = 0f;
         worstFps = 999f;
         HitchMeter.Begin(run);
+        SignAudit.Meter.Begin(run);
         holdFireFrom = 0;
         analyticsRun = id == "analytics";
         analyticsSeq = -1;
@@ -423,6 +425,7 @@ public static partial class Playtest {
                 run.Metric("meshInsideOut", (float)audit.Inside);
                 run.Metric("meshZeroNormals", (float)audit.ZeroNormals);
                 run.Metric("meshNegativeScale", (float)audit.NegativeScales);
+                run.Metric("quality.mirroredText", (float)audit.MirroredText);
                 foreach (string f in audit.Failures) {
                     run.Problem(PlaytestSeverity.Bug, "mesh-audit: " + f);
                 }
