@@ -80,7 +80,7 @@ public class MenuStage : MonoBehaviour {
         ground.transform.SetParent(root, false);
         ground.transform.localScale = new Vector3(40f, 0.05f, 40f);
         ground.transform.localPosition = new Vector3(0f, -0.05f, 6f);
-        ground.GetComponent<MeshRenderer>().sharedMaterial = Matte(new Color(0.1f, 0.14f, 0.2f));
+        ground.GetComponent<MeshRenderer>().sharedMaterial = Matte(new Color(0.1f, 0.2f, 0.15f));
 
         // The circle Slice guards: a ring of paler stone around her.
         var ring = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
@@ -89,7 +89,7 @@ public class MenuStage : MonoBehaviour {
         ring.transform.SetParent(root, false);
         ring.transform.localScale = new Vector3(5.6f, 0.02f, 5.6f);
         ring.transform.localPosition = new Vector3(0.4f, 0.01f, 3.0f);
-        ring.GetComponent<MeshRenderer>().sharedMaterial = Matte(new Color(0.22f, 0.22f, 0.33f));
+        ring.GetComponent<MeshRenderer>().sharedMaterial = Matte(new Color(0.34f, 0.3f, 0.3f));
 
         // Slice behind, Wallit in front.
         GameObject s = MakeSlice();
@@ -120,6 +120,8 @@ public class MenuStage : MonoBehaviour {
 
         MakeLamp(root, new Vector3(3.6f, 0f, 5.6f));
         MakeMoon(root);
+        MakeSky(root);
+        MakeStringLights(root);
         for (int i = 0; i < 9; i++) {
             var paper = GameObject.CreatePrimitive(PrimitiveType.Cube);
             Destroy(paper.GetComponent<Collider>());
@@ -225,7 +227,46 @@ public class MenuStage : MonoBehaviour {
         lampLight.cullingMask = 1 << StageLayer;
     }
 
+    // A vertical gradient behind the cast (deep night blue to the warm lamplit horizon), the game's sky and not a flat colour.
+    static void MakeSky(Transform root) {
+        var tex = new Texture2D(1, 64, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+        Color top = new Color(0.05f, 0.07f, 0.17f), low = new Color(0.34f, 0.24f, 0.3f);
+        for (int y = 0; y < 64; y++) {
+            tex.SetPixel(0, y, Color.Lerp(low, top, Mathf.SmoothStep(0f, 1f, y / 63f)));
+        }
+        tex.Apply();
+        var sky = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        Destroy(sky.GetComponent<Collider>());
+        sky.name = "Stage Sky";
+        sky.transform.SetParent(root, false);
+        sky.transform.localScale = new Vector3(200f, 90f, 1f);
+        sky.transform.localPosition = new Vector3(0f, 22f, 70f);
+        sky.GetComponent<MeshRenderer>().sharedMaterial = new Material(Shader.Find("Sprites/Default")) { mainTexture = tex };
+    }
+
+    // The same warm string lights that hang over the cobbles in the game, swagged between two posts behind the circle.
+    static void MakeStringLights(Transform root) {
+        Material bulb = new Material(Shader.Find("Sprites/Default")) { color = new Color(1f, 0.84f, 0.5f) };
+        for (int i = 0; i < 15; i++) {
+            float t = i / 14f;
+            var b = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            Destroy(b.GetComponent<Collider>());
+            b.name = "String Light";
+            b.transform.SetParent(root, false);
+            b.transform.localScale = Vector3.one * 0.16f;
+            b.transform.localPosition = new Vector3(Mathf.Lerp(-8f, 8f, t), 3.6f - 0.7f * Mathf.Sin(t * Mathf.PI), 7.2f);
+            b.GetComponent<MeshRenderer>().sharedMaterial = bulb;
+        }
+    }
+
     static void MakeMoon(Transform root) {
+        var halo = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        Destroy(halo.GetComponent<Collider>());
+        halo.name = "Moon Halo";
+        halo.transform.SetParent(root, false);
+        halo.transform.localScale = Vector3.one * 11f;
+        halo.transform.localPosition = new Vector3(-8f, 15f, 62f);
+        halo.GetComponent<MeshRenderer>().sharedMaterial = new Material(Shader.Find("Sprites/Default")) { color = new Color(0.45f, 0.55f, 0.85f, 0.35f) };
         var moon = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         Destroy(moon.GetComponent<Collider>());
         moon.name = "Moon";

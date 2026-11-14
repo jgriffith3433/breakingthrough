@@ -13,10 +13,10 @@ Shader "Knoll/BotSkin"
         _RimStrength ("Moon Rim Strength", Range(0, 2)) = 0.45
         _Glow ("Glow", Range(0, 4)) = 1.6
         _Flash ("Hit Flash", Color) = (0, 0, 0, 0)
-        _RampLow ("Ramp Shade", Range(0, 1)) = 0.62
+        _RampLow ("Ramp Shade", Range(0, 1)) = 0.7
         _RampEdge ("Ramp Edge", Range(0, 0.5)) = 0.04
-        _InkColor ("Ink Outline", Color) = (0.03, 0.04, 0.08, 1)
-        _OutlinePx ("Outline Pixels", Range(0, 4)) = 1.6
+        _InkColor ("Ink Outline", Color) = (0.07, 0.06, 0.12, 1)
+        _OutlinePx ("Outline Pixels", Range(0, 4)) = 2.2
     }
     SubShader
     {
@@ -48,7 +48,8 @@ Shader "Knoll/BotSkin"
             half step2 = smoothstep(0.5h - _RampEdge, 0.5h + _RampEdge, nl);
             half ramp = lerp(_RampLow, 1.0h, step2);
             half4 c;
-            c.rgb = s.Albedo * _LightColor0.rgb * ramp * atten;
+            half3 shade = lerp(half3(0.62h, 0.58h, 0.85h), half3(1.0h, 1.0h, 1.0h), step2);
+            c.rgb = s.Albedo * _LightColor0.rgb * ramp * atten * shade;
             c.a = s.Alpha;
             return c;
         }
@@ -88,7 +89,10 @@ Shader "Knoll/BotSkin"
             // Capped so a bright texel can never burn to a flat white shape or bleed past the silhouette.
             // The rim alone is capped well under white and tinted by the skin, so it never reads as a bright outline.
             rimLight = min(rimLight * lerp(0.6, 1.0, saturate(dot(albedo, float3(0.33, 0.33, 0.33)) * 2.0)), float3(0.38, 0.45, 0.6));
-            float3 lit = albedo * skin.a * _Glow + albedo * _AmbientBoost * 0.35 + rimLight;
+            // Warm lantern bounce off the cobbles on the underside, the same light the ground gives the scenery.
+            float bounce = saturate(-normal.y * 0.6 + 0.25);
+            float3 warmBounce = float3(1.0, 0.72, 0.4) * albedo * bounce * 0.22;
+            float3 lit = albedo * skin.a * _Glow + albedo * _AmbientBoost * 0.35 + rimLight + warmBounce;
             o.Emission = min(lit, float3(0.85, 0.9, 0.95)) + _Flash.rgb * _Flash.a;
         }
         ENDCG
