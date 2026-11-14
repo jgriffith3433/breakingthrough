@@ -24,6 +24,11 @@ public class RunHud : MonoBehaviour {
     float xpWidth = 1236f;
     float bossWidth = 814f;
     int boonLines;
+    // The evolved boons, a row of gold-framed icons above the boon list (up to four exist).
+    readonly Image[] evoDiscs = new Image[4];
+    readonly Image[] evoIcons = new Image[4];
+    float evoSize = 52f;
+    float evoY = -244f;
     UiMode laidOut;
     int laidStamp = -1;
 
@@ -95,7 +100,53 @@ public class RunHud : MonoBehaviour {
         boonText = Label(top, "", 22, FontStyle.Normal, TextAnchor.UpperLeft, new Vector2(0f, 1f), new Vector2(36f, -300f), new Vector2(420f, 520f));
         boonText.rectTransform.pivot = new Vector2(0f, 1f);
         boonText.supportRichText = true;
+        for (int i = 0; i < evoDiscs.Length; i++) {
+            var disc = new GameObject("Evolved " + (i + 1)).AddComponent<Image>();
+            disc.transform.SetParent(top, false);
+            UiSkin.Round(disc, 0.6f);
+            disc.color = new Color(1f, 0.8f, 0.25f, 0.95f);
+            disc.raycastTarget = false;
+            var rect = disc.rectTransform;
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            var icon = new GameObject("Icon").AddComponent<Image>();
+            icon.transform.SetParent(disc.transform, false);
+            icon.raycastTarget = false;
+            icon.rectTransform.anchorMin = Vector2.zero;
+            icon.rectTransform.anchorMax = Vector2.one;
+            icon.rectTransform.offsetMin = new Vector2(6f, 6f);
+            icon.rectTransform.offsetMax = new Vector2(-6f, -6f);
+            icon.enabled = false;
+            disc.gameObject.SetActive(false);
+            evoDiscs[i] = disc;
+            evoIcons[i] = icon;
+        }
         Layout();
+    }
+
+    // The evolved boons, drawn once per pick (and after a layout): gold discs with the boon's icon, left to right.
+    // Public for the playtest: how many are up and the smallest side in canvas units.
+    public static int EvolvedShown { get; private set; }
+    public static float EvolvedMinSize { get; private set; }
+    void ShowEvolved() {
+        int shown = 0;
+        for (int i = 0; i < evoDiscs.Length; i++) {
+            bool on = i < RunBoons.Evolved.Count && !WaveDirector.IsLost;
+            if (evoDiscs[i].gameObject.activeSelf != on) {
+                evoDiscs[i].gameObject.SetActive(on);
+            }
+            if (!on) {
+                continue;
+            }
+            UiArt.Show(evoIcons[i], UiArt.Boon(RunBoons.Evolved[i]));
+            var rect = evoDiscs[i].rectTransform;
+            rect.sizeDelta = new Vector2(evoSize, evoSize);
+            rect.anchoredPosition = new Vector2(36f + shown * (evoSize + 10f), evoY);
+            shown++;
+        }
+        EvolvedShown = shown;
+        EvolvedMinSize = shown > 0 ? evoSize : 0f;
     }
 
     // Desktop is the layout above. Phones: the level bar between the touch stick and buttons (Wide) or above
@@ -116,6 +167,8 @@ public class RunHud : MonoBehaviour {
             Place(goldenText, 28, new Vector2(0f, -268f), new Vector2(900f, 40f));
             Place(eventText, 24, new Vector2(36f, -84f), new Vector2(600f, 30f));
             Place(boonText, 22, new Vector2(36f, -300f), new Vector2(420f, 520f));
+            evoSize = 52f;
+            evoY = -240f;
         } else if (laidOut == UiMode.Wide) {
             Vector2 size = UiFit.Size;
             float bar = Mathf.Max(300f, size.x - 660f);
@@ -129,7 +182,9 @@ public class RunHud : MonoBehaviour {
             Place(bossBack.rectTransform, new Vector2(0f, -236f), new Vector2(bossWidth + 6f, 22f));
             Place(goldenText, 28, new Vector2(0f, -262f), new Vector2(middle, 36f));
             Place(eventText, 28, new Vector2(24f, -96f), new Vector2(360f, 36f));
-            Place(boonText, 28, new Vector2(24f, -210f), new Vector2(360f, 190f));
+            Place(boonText, 28, new Vector2(24f, -214f), new Vector2(360f, 190f));
+            evoSize = 52f;
+            evoY = -146f;
         } else {
             Vector2 size = UiFit.Size;
             float bar = size.x - 140f;
@@ -143,7 +198,10 @@ public class RunHud : MonoBehaviour {
             Place(goldenText, 28, new Vector2(0f, -316f), new Vector2(size.x - 48f, 36f));
             Place(eventText, 28, new Vector2(24f, -340f), new Vector2(300f, 36f));
             Place(boonText, 28, new Vector2(24f, -484f), new Vector2(300f, 290f));
+            evoSize = 52f;
+            evoY = -424f;
         }
+        ShowEvolved();
         bossFill.rectTransform.sizeDelta = new Vector2(bossWidth, 16f);
         eventText.horizontalOverflow = laidOut == UiMode.Desktop ? HorizontalWrapMode.Overflow : HorizontalWrapMode.Wrap;
         boonText.horizontalOverflow = eventText.horizontalOverflow;
@@ -261,6 +319,7 @@ public class RunHud : MonoBehaviour {
         if (stamp != boonStamp) {
             boonStamp = stamp;
             boonText.text = BoonLines(boonLines);
+            ShowEvolved();
         }
     }
 
@@ -269,10 +328,22 @@ public class RunHud : MonoBehaviour {
         var lines = new StringBuilder();
         int listed = 0;
         int more = 0;
-        for (int i = 0; i < RunBoons.All.Length; i++) {
-            BoonInfo info = RunBoons.All[i];
+        // Evolved boons first (gold, starred), so a phone's short list never cuts them off.
+        for (int n = 0; n < RunBoons.All.Length * 2; n++) {
+            BoonInfo info = RunBoons.All[n % RunBoons.All.Length];
+            if (info.Evolution != (n < RunBoons.All.Length)) {
+                continue;
+            }
             int rank = RunBoons.Rank(info.Id);
             if (rank <= 0) {
+                continue;
+            }
+            if (info.Evolution) {
+                if (lines.Length == 0) {
+                    lines.Append("<color=#8FD8FF>Boons</color>");
+                }
+                listed++;
+                lines.Append("\n<color=#FFD24D>★ ").Append(info.Name).Append("</color>");
                 continue;
             }
             if (lines.Length == 0) {
