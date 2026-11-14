@@ -287,6 +287,9 @@ public class ChapterRun : MonoBehaviour {
     // The opening scene is over and play begins. On a New Game+ loop the chapter says one line about the playthrough before it.
     void OpenDone() {
         Events.Add("play|" + data.Id);
+        if (CardMatch.Instance != null) {
+            CardMatch.Instance.Recalibrate();   // the camera is on the play view now: grade it to the chapter's card
+        }
         if (HasFirstBlow) {
             StartCoroutine(FirstBlow());
         }
