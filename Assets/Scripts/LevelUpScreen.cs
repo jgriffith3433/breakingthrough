@@ -355,7 +355,7 @@ public class LevelUpScreen : MonoBehaviour {
 
     void Open(bool chest) {
         fromChest = chest;
-        offer = !chest && RunBoons.LastCardWasWave ? RunBoons.RollFamilies() : RunBoons.Roll(3, chest);
+        offer = Deal(chest, null);
         if (offer.Count == 0) {
             // Everything is maxed. Pay out instead.
             IsOpen = false;
@@ -395,6 +395,22 @@ public class LevelUpScreen : MonoBehaviour {
         WallitVoice.OnLevelUp(chest);
     }
 
+    // One offer: a wave-clear card spans three families, any other spans at least two; a boon that can't help is never in it.
+    // `replacing` is the offer a reroll throws away, so the new three differ from it where the pool allows. Every offer is
+    // read into RunBoons.Audit (picks.families, picks.deadOffers).
+    static List<BoonId> Deal(bool chest, List<BoonId> replacing) {
+        List<BoonId> dealt = !chest && RunBoons.LastCardWasWave ? RunBoons.RollFamilies(replacing) : RunBoons.Roll(3, chest, replacing);
+        if (dealt.Count > 0) {
+            RunBoons.Audit(dealt);
+        }
+        return dealt;
+    }
+
+    // For the playtest: the Reroll button and whether it can still be pressed.
+    public static GameObject RerollObject { get { return current != null ? current.reroll : null; } }
+    public static bool RerollUsable { get { return current != null && current.reroll != null && current.reroll.GetComponent<Button>().interactable; } }
+    public static string RerollText { get { return current != null && current.rerollLabel != null ? current.rerollLabel.text : ""; } }
+
     void Fill() {
         bool touch = UiFit.Touch;
         for (int i = 0; i < cards.Length; i++) {
@@ -425,14 +441,19 @@ BoonFamily family = RunBoons.FamilyOf(info.Id);
             card.Key.text = touch ? "Tap to pick" : "[" + (i + 1) + "]";
             card.BackNumber.text = "FORM B-" + (7 + i * 3 + RunBoons.Level % 3);
         }
+        // The button is always there: it greys out once the run's reroll is spent.
+        bool canReroll = RunBoons.Rerolls > 0;
+        reroll.SetActive(true);
+        var rerollButton = reroll.GetComponent<Button>();
+        rerollButton.interactable = canReroll;
+        reroll.GetComponent<Image>().color = canReroll ? new Color(0.28f, 0.22f, 0.12f, 1f) : new Color(0.13f, 0.12f, 0.12f, 0.9f);
+        rerollLabel.color = canReroll ? Color.white : new Color(0.5f, 0.5f, 0.5f, 1f);
+        rerollLabel.text = canReroll ? "Reroll (" + RunBoons.Rerolls + " left)" : "Reroll used";
         if (touch) {
             footer.text = "Tap a card to choose.";
-            reroll.SetActive(RunBoons.Rerolls > 0);
-            rerollLabel.text = "Reroll (" + RunBoons.Rerolls + " left)";
             return;
         }
-        reroll.SetActive(false);
-        footer.text = RunBoons.Rerolls > 0
+        footer.text = canReroll
             ? "1 2 3 or click to choose.   R rerolls (" + RunBoons.Rerolls + " left)"
             : "1 2 3 or click to choose.";
     }
@@ -448,7 +469,7 @@ BoonFamily family = RunBoons.FamilyOf(info.Id);
             return;
         }
         RunAnalytics.Reroll();
-        offer = !fromChest && RunBoons.LastCardWasWave ? RunBoons.RollFamilies() : RunBoons.Roll(3, fromChest);
+        offer = Deal(fromChest, offer);
         if (offer.Count == 0) {
             IsOpen = false;
             inputReady = false;
