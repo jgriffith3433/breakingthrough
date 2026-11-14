@@ -440,8 +440,8 @@ public class FilmLight : MonoBehaviour {
         toCircle.y = 0f;
         float yaw = toCircle.sqrMagnitude > 0.01f ? Mathf.Atan2(toCircle.x, toCircle.z) * Mathf.Rad2Deg : 180f;
         q0 = Quaternion.Euler(13f, yaw + 105f, 0f);
-        q1 = Quaternion.Euler(34f, yaw, 0f);
-        q2 = Quaternion.Euler(18f, yaw - 75f, 0f);
+        q1 = Quaternion.Euler(44f, yaw, 0f);
+        q2 = Quaternion.Euler(36f, yaw - 75f, 0f);
         Quaternion q = Quaternion.Slerp(q0, q1, w1 / Mathf.Max(0.0001f, w0 + w1));
         q = Quaternion.Slerp(q, q2, w2);
         sun.transform.rotation = q;
