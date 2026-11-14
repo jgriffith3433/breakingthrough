@@ -1831,7 +1831,7 @@ public class Enemy : MonoBehaviour
     }
 
     const float BarCssPhone = 44f;
-    const float BarCssDesktop = 72f;
+    const float BarCssDesktop = 56f;
 
     void FaceBar()
     {
@@ -1858,17 +1858,26 @@ public class Enemy : MonoBehaviour
         }
         if (!barRoot.gameObject.activeSelf)
             barRoot.gameObject.SetActive(true);
-        // Sized in screen pixels: a phone bar is 44 CSS px, a desktop one 72, whatever the bot's size or distance.
-        float cssWidth = UiFit.Touch ? BarCssPhone : BarCssDesktop;
-        float pixels = cssWidth * UiFit.PixelRatio;
-        float worldPerPixel = 2f * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad) * depth / Mathf.Max(1f, Screen.height);
-        float barWorld = pixels * worldPerPixel;
-        // Under its bot, inside the screen: pull the anchor back in along the camera's own axes.
-        float halfW = pixels * 0.5f / Mathf.Max(1f, Screen.width);
-        float halfH = pixels * 0.06f / Mathf.Max(1f, Screen.height);
+        // A bot off the screen has no bar: clamping it to the edge left a bar fragment pinned there.
         Vector3 vp = cam.WorldToViewportPoint(anchor);
+        if (vp.x < 0.02f || vp.x > 0.98f || vp.y < 0.12f || vp.y > 0.98f)
+        {
+            if (barRoot.gameObject.activeSelf)
+                barRoot.gameObject.SetActive(false);
+            return;
+        }
+        if (!barRoot.gameObject.activeSelf)
+            barRoot.gameObject.SetActive(true);
+        // Sized in screen pixels (44 CSS px on a phone, at most 56 on desktop) and never wider than the bot itself on screen.
+        float worldPerPixel = 2f * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad) * depth / Mathf.Max(1f, Screen.height);
+        float cssWidth = UiFit.Touch ? BarCssPhone : BarCssDesktop;
+        float botPixels = Mathf.Max(1f, topY * Mathf.Abs(transform.lossyScale.y) * 0.7f / worldPerPixel);
+        float pixels = Mathf.Min(cssWidth * UiFit.PixelRatio, Mathf.Max(botPixels, 20f * UiFit.PixelRatio));
+        float barWorld = pixels * worldPerPixel;
+        // Keep the bar's whole width on screen, above the touch pads' band.
+        float halfW = pixels * 0.5f / Mathf.Max(1f, Screen.width);
         float cx = Mathf.Clamp(vp.x, halfW + 0.01f, 1f - halfW - 0.01f);
-        float cy = Mathf.Clamp(vp.y, halfH + 0.12f, 1f - halfH - 0.02f);   // above the touch pads' band, below the top bars
+        float cy = Mathf.Clamp(vp.y, 0.12f, 0.98f);
         if (cx != vp.x || cy != vp.y)
             anchor = cam.ViewportToWorldPoint(new Vector3(cx, cy, depth));
         barRoot.position = anchor;
