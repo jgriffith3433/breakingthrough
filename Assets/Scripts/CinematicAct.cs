@@ -21,7 +21,8 @@ public partial class CinematicDirector {
     const float ActSkipAfter = 0.5f;
 
     public static bool ActScenesOn;   // a playtest opts in
-    public static bool ActScenesAllowed { get { return !Playtest.Running || ActScenesOn; } }
+    // The camera scene is a playtest opt-in only; the live act change is the in-world ActBeat (control never taken).
+    public static bool ActScenesAllowed { get { return Playtest.Running && ActScenesOn; } }
     public static bool ActOpen { get { return Instance != null && Instance.actRun; } }
     public static bool ActCardUp { get; private set; }
     public static float ActCardCenterFromTop { get; private set; }

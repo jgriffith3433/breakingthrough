@@ -4855,8 +4855,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
 
         ActChangeWatch(9f);
         yield return GoWave(11);
-        yield return ActsPlay(player, 1f, null);
-        ActBanner("wave 11");
+        yield return ActBeatShot(player, "Act II desktop", "wave 11");
         yield return ActsPlay(player, 2f, null);
         var (h2, s2) = ActLook(1);
         yield return ActsPlay(player, 40f, () => HasKind(BotKind.SpiderBot));
@@ -4869,8 +4868,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
 
         ActChangeWatch(9f);
         yield return GoWave(21);
-        yield return ActsPlay(player, 1f, null);
-        ActBanner("wave 21");
+        yield return ActBeatShot(player, "Act III desktop", "wave 21");
         yield return ActsPlay(player, 2f, null);
         var (h3, s3) = ActLook(2);
         yield return ActsPlay(player, 40f, () => MixedElites() > 0);
@@ -4881,6 +4879,13 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             run.Problem(PlaytestSeverity.Bug, "arcade-acts: act 3 showed no elite beyond the Yo Bots");
         }
 
+        run.Metric("quality.textOnlyBeats", ActBeat.TextOnly);
+        run.Metric("actBeats", ActBeat.Beats);
+        run.Metric("actBeatControlLostSeconds", ActBeat.ControlLostSeconds);
+        run.Event("act-beats", ActBeat.Beats + " in-world beats (spiders broke through " + ActBeat.SpidersBroke + ", lamps put out or flared " + ActBeat.LampsOut + "), text-only " + ActBeat.TextOnly + ": " + string.Join("; ", ActBeat.Log));
+        if (ActBeat.Beats < 2 || ActBeat.TextOnly > 0) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: " + ActBeat.Beats + " act beats played, " + ActBeat.TextOnly + " of them text-only (want both acts staged in the world)");
+        }
         float d12 = ArcadeActs.SignatureDistance(h1, h2) + ArcadeActs.SignatureDistance(s1, s2);
         float d23 = ArcadeActs.SignatureDistance(h2, h3) + ArcadeActs.SignatureDistance(s2, s3);
         run.Metric("actLookDistance_1_11", Mathf.Round(d12 * 100f) / 100f);
@@ -4910,19 +4915,18 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         }
         if (Screen.width == 390 || (browser && phoneViewport)) {
             yield return GoWave(1);
+            ArcadeActs.ForgetStaged();   // setup: the beats may play again on the phone
             yield return ActsPlay(player, 0.8f, null);
             ActBanner("phone wave 1");
             ActLook(0);
             ActChangeWatch(9f);
             yield return GoWave(11);
-            yield return ActsPlay(player, 0.8f, null);
-            ActBanner("phone wave 11");
+            yield return ActBeatShot(player, "Act II phone", "phone wave 11");
             ActLook(1);
             yield return ActsPlay(player, 7f, null);
             ActChangeWatch(9f);
             yield return GoWave(21);
-            yield return ActsPlay(player, 0.8f, null);
-            ActBanner("phone wave 21");
+            yield return ActBeatShot(player, "Act III phone", "phone wave 21");
             ActLook(2);
             yield return ActsPlay(player, 7f, null);
         } else {
@@ -4936,6 +4940,31 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         ScreenSlots.StopProbe();
         UiFit.ForceTouch(false);
         yield return new WaitForSecondsRealtime(1f);
+    }
+
+    // The act's in-world beat plays over live play: wait for it, photograph it mid-way (the bot keeps fighting through it),
+    // and check it ran under 4 s and never took control.
+    static IEnumerator ActBeatShot(CharacterMovement player, string label, string bannerWhere) {
+        yield return run.Until(() => ActBeat.Open, 6f, label + " beat");
+        if (run.Done || !ActBeat.Open) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: no in-world beat at " + label);
+            yield break;
+        }
+        ActBanner(bannerWhere);   // the banner is up for the first seconds of the beat
+        float t0 = Time.unscaledTime;
+        bool blocked = false;
+        yield return ActsPlay(player, 1.6f, null);
+        blocked |= Cutscene.IsOpen || CinematicDirector.IsOpen || LevelUpScreen.IsOpen;
+        run.Scene("Act beat: " + label + " mid-way (" + ActBeat.Log.Count + " beat events)");
+        while (ActBeat.Open && Time.unscaledTime - t0 < 6f && !run.Done) {
+            blocked |= Cutscene.IsOpen || CinematicDirector.IsOpen;
+            yield return ActsPlay(player, 0.2f, null);
+        }
+        run.Event("act-beat", label + ": " + ActBeat.LastSeconds.ToString("0.0") + " s, controls taken " + blocked + ", look " + ArcadeActs.Describe());
+        if (blocked || ActBeat.LastSeconds > 4f) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: the " + label + " beat took control or ran over 4 s (" + ActBeat.LastSeconds.ToString("0.0") + " s)");
+        }
+        yield return ActsPlay(player, 0.5f, null);
     }
 
     static bool HasKind(BotKind kind) {
