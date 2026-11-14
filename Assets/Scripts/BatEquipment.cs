@@ -63,7 +63,7 @@ public class BatEquipment : MonoBehaviour {
             charging = false;
             charge = 0f;
             pressing = false;
-            Feel.CancelledSwings++;
+            Feel.Cancelled();
             return true;
         }
         if (move == Move.None || !contactDone) {
@@ -73,7 +73,7 @@ public class BatEquipment : MonoBehaviour {
         queued = Move.None;
         idleTime = 0f;
         wasReady = true;
-        Feel.CancelledSwings++;
+        Feel.Cancelled();
         return true;
     }
 
