@@ -468,7 +468,7 @@ public class ArcadeActs : MonoBehaviour {
             bannerLeft = 0f;   // the run-end panel takes the screen
         }
         bannerLeft -= Time.unscaledDeltaTime;
-        float a = Mathf.Clamp01(Mathf.Min(bannerLeft / 0.6f, (Tuning.ActBannerSeconds - bannerLeft) / 0.4f));
+        float a = Mathf.Clamp01(Mathf.Min(bannerLeft / 0.3f, (Tuning.ActBannerSeconds - bannerLeft) / 0.2f));
         SetAlpha(bannerTitle, a);
         SetAlpha(bannerLine, a);
         if (bannerLeft <= 0f) {
