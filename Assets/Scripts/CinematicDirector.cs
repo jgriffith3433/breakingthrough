@@ -72,6 +72,17 @@ public partial class CinematicDirector : MonoBehaviour {
     public static int VoiceLines { get; private set; }
     public static int Skipped { get; private set; }
     public static int Finished { get; private set; }
+    // Closed once per sequence, after the hand-back to the follow camera (the touch pads and control are live again).
+    public static int ClosedCount { get; private set; }
+    public static string LastClosedReel { get; private set; }
+    public static bool LastClosedByCap { get; private set; }
+    public static float LastClosedAfterSeconds { get; private set; }
+    public static bool CreditsReachedEnd { get; private set; }
+    public static int CapHits { get; private set; }
+    const float CapSlack = 2f;          // a sequence never outlasts its own length plus this, in unscaled seconds
+    const float FinaleCarryAllowance = 45f;
+    const float HandoffSeconds = 0.25f;
+    const float HandoffCapSeconds = 0.6f;
     public static float LastHandoffSeconds { get; private set; }
     public static float CaptionBottom01 { get; private set; }
     public static int DoorsShown { get; private set; }
@@ -105,6 +116,9 @@ public partial class CinematicDirector : MonoBehaviour {
     int shotIndex = -1;
     float shotStart;
     float shotLength;
+    float capStart;            // unscaled start of the sequence, pushed forward while the pause menu holds it
+    float capLength;           // reel length + CapSlack
+    string closedId = "";
     bool shotSpoke;
     bool shotSfx;
     bool shotStamp;
@@ -177,6 +191,12 @@ public partial class CinematicDirector : MonoBehaviour {
         VoiceLines = 0;
         Skipped = 0;
         Finished = 0;
+        ClosedCount = 0;
+        LastClosedReel = "";
+        LastClosedByCap = false;
+        LastClosedAfterSeconds = 0f;
+        CreditsReachedEnd = false;
+        CapHits = 0;
         LastHandoffSeconds = 0f;
         CaptionBottom01 = 0f;
         DoorsShown = 0;
@@ -260,6 +280,7 @@ public partial class CinematicDirector : MonoBehaviour {
         done = onDone;
         shotIndex = -1;
         open = true;
+        StartCap(r);
         handingOff = false;
         skipRevealed = false;
         viewSet = false;
@@ -307,6 +328,7 @@ public partial class CinematicDirector : MonoBehaviour {
         done = onDone;
         shotIndex = -1;
         open = true;
+        StartCap(r);
         handingOff = false;
         skipRevealed = false;
         viewSet = false;
@@ -380,6 +402,7 @@ public partial class CinematicDirector : MonoBehaviour {
         VoiceDirector.Scene = false;
         string fb = string.IsNullOrEmpty(r.fallback) ? "ch1_open" : r.fallback;
         Cutscene.PlayShots(fb, () => {
+            Close(false);
             done?.Invoke();
             done = null;
         });
@@ -577,9 +600,21 @@ public partial class CinematicDirector : MonoBehaviour {
             return;
         }
         if (PauseMenu.IsOpen) {
+            HoldClocks();
             return;
         }
         float now = Time.unscaledTime;
+        if (reel == null || shotIndex < 0 || shotIndex >= reel.shots.Length) {
+            End(false);
+            return;
+        }
+        if (now - capStart >= capLength) {
+            CapHits++;
+            Events.Add("cap|" + ReelId);
+            capped = true;
+            End(false);
+            return;
+        }
         Shot s = reel.shots[shotIndex];
         if (FinaleCarryActive) {
             TickFinaleCarry();
@@ -607,6 +642,43 @@ public partial class CinematicDirector : MonoBehaviour {
         if (now - shotStart >= shotLength || now - shotStart >= Mathf.Max(0.4f, s.seconds) + MaxVoiceSeconds + 0.5f) {
             NextShot();
         }
+    }
+
+    bool capped;
+
+    void StartCap(Reel r) {
+        float total = 0f;
+        foreach (Shot sh in r.shots) {
+            total += Mathf.Max(0.4f, sh.seconds);
+        }
+        capStart = Time.unscaledTime;
+        capLength = total + CapSlack;
+        capped = false;
+        closedId = r.id;
+    }
+
+    // The pause menu freezes the sequence itself: every unscaled clock waits with it.
+    void HoldClocks() {
+        float dt = Time.unscaledDeltaTime;
+        shotStart += dt;
+        capStart += dt;
+        if (creditsStart > 0f) {
+            creditsStart += dt;
+        }
+        if (carryStart >= 0f) {
+            carryStart += dt;
+        }
+    }
+
+    void Close(bool skipped, string id = null) {
+        if (id == null) {
+            id = closedId;
+        }
+        ClosedCount++;
+        LastClosedReel = id;
+        LastClosedByCap = capped;
+        LastClosedAfterSeconds = Time.unscaledTime - capStart;
+        Events.Add("closed|" + id + "|" + (skipped ? "skipped" : capped ? "cap" : "done") + "|" + LastClosedAfterSeconds.ToString("0.00"));
     }
 
     void LateUpdate() {
@@ -970,8 +1042,8 @@ public partial class CinematicDirector : MonoBehaviour {
         }
         if (zelda != null) {
             // Blend from the live cinematic view onto the follow camera (do not SnapBehind first).
-            zelda.BeginHandoff(0.6f);
-            StartCoroutine(FinishHandoff(handoffStart, skipped, done));
+            zelda.BeginHandoff(HandoffSeconds);
+            StartCoroutine(FinishHandoff(handoffStart, skipped, done, closedId));
             done = null;
             reel = null;
             shotIndex = -1;
@@ -984,6 +1056,7 @@ public partial class CinematicDirector : MonoBehaviour {
         if (!skipped) {
             Finished++;
         }
+        Close(skipped);
         Action cb = done;
         done = null;
         reel = null;
@@ -991,8 +1064,8 @@ public partial class CinematicDirector : MonoBehaviour {
         cb?.Invoke();
     }
 
-    System.Collections.IEnumerator FinishHandoff(float handoffStart, bool skipped, Action cb) {
-        while (zelda != null && zelda.HandoffBusy) {
+    System.Collections.IEnumerator FinishHandoff(float handoffStart, bool skipped, Action cb, string id) {
+        while (zelda != null && zelda.HandoffBusy && Time.unscaledTime - handoffStart < HandoffCapSeconds) {
             yield return null;
         }
         handingOff = false;
@@ -1002,6 +1075,7 @@ public partial class CinematicDirector : MonoBehaviour {
         if (!skipped) {
             Finished++;
         }
+        Close(skipped, id);
         cb?.Invoke();
     }
 
