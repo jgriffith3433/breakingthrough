@@ -26,6 +26,16 @@ public static partial class Playtest {
         if (run.Done) {
             yield break;
         }
+        if (PauseMenu.Instance != null && PauseMenu.Instance.PauseButton != null) {
+            Rect pauseHit = UiRects.HitRect(PauseMenu.Instance.PauseButton);
+            float ppp = UiRects.PixelsPerPoint;
+            float pw = pauseHit.width / ppp;
+            float ph = pauseHit.height / ppp;
+            run.Event("pause-target", "II on Pause Button Canvas: " + pw.ToString("0.0") + "x" + ph.ToString("0.0") + " px");
+            if (pw < 44f || ph < 44f) {
+                run.Problem(PlaytestSeverity.Bug, "Pause button II hit area is " + pw.ToString("0.0") + "x" + ph.ToString("0.0") + " px (need 44x44)");
+            }
+        }
         var player = Object.FindAnyObjectByType<CharacterMovement>();
 
         run.Scene("Hit VFX: swings, hits and deaths");
