@@ -71,6 +71,11 @@ public class StakesFeel : MonoBehaviour {
         if (ring != null) {
             Destroy(ring.gameObject);
         }
+        foreach (Transform t in marks) {
+            if (t != null) {
+                Destroy(t.gameObject);
+            }
+        }
     }
 
     // A bot's blow landed on Slice (Musician.Hurt, after her health changed).
@@ -85,6 +90,7 @@ public class StakesFeel : MonoBehaviour {
         Hits++;
         hitPulse = 1f;
         CoinPile.OnSliceHit(by);
+        AddMark(m, by);
         int pct = Mathf.RoundToInt(100f * m.Health / Mathf.Max(1, m.MaxHealth));
         if (Hits <= 60) {
             Note("slice-hit", "-" + amount + " -> " + m.Health + "/" + m.MaxHealth + " (" + pct + "%)" + (by != null ? " by " + by.name : ""));
@@ -122,6 +128,62 @@ public class StakesFeel : MonoBehaviour {
 
         TickRing(lost);
         TickLow(isLow);
+        TickMarks(lost);
+    }
+
+    // ---------------------------------------------------------------- strike marks
+
+    // Red ink smears on the ground at the ring, one where each blow landed, so the circle carries what happened to her: the
+    // Department striking its claim off. They stay while she is hurt and fade as she heals (a mark per eighth of health lost).
+    public static int MarksShown { get { return Instance != null ? Instance.marks.Count : 0; } }
+    const int MaxMarks = 8;
+    readonly List<Transform> marks = new List<Transform>();
+    Mesh markMesh;
+    Material markMat;
+
+    void AddMark(Musician m, Enemy by) {
+        Shader shader = SafeShader.Find("Sprites/Default");
+        if (shader == null) {
+            return;
+        }
+        if (markMat == null) {
+            markMat = new Material(shader);
+            markMat.mainTexture = DeptFx.Smear();
+            markMat.color = new Color(0.78f, 0.1f, 0.1f, 0.8f);
+            markMat.renderQueue = 2990;
+            markMesh = new Mesh { name = "Strike Mark" };
+            markMesh.SetVertices(new[] { new Vector3(-0.5f, 0f, -0.5f), new Vector3(-0.5f, 0f, 0.5f), new Vector3(0.5f, 0f, 0.5f), new Vector3(0.5f, 0f, -0.5f) });
+            markMesh.SetUVs(0, new[] { new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0) });
+            markMesh.SetTriangles(new[] { 0, 1, 2, 0, 2, 3 }, 0);   // faces up
+            markMesh.RecalculateBounds();
+        }
+        Vector3 at = m.transform.position;
+        float ang = by != null ? Mathf.Atan2(by.transform.position.z - at.z, by.transform.position.x - at.x) : Random.value * 6.2832f;
+        var go = new GameObject("Strike Mark");
+        go.AddComponent<MeshFilter>().sharedMesh = markMesh;
+        var mr = go.AddComponent<MeshRenderer>();
+        mr.sharedMaterial = markMat;
+        mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        mr.receiveShadows = false;
+        Vector3 p = new Vector3(at.x + Mathf.Cos(ang) * RingRadius, 0f, at.z + Mathf.Sin(ang) * RingRadius);
+        p.y = GroundY(p) + 0.05f;
+        go.transform.position = p;
+        go.transform.rotation = Quaternion.Euler(0f, -ang * Mathf.Rad2Deg + 90f, 0f);   // lies across the ring
+        go.transform.localScale = new Vector3(2.4f, 1f, 1.1f);
+        marks.Add(go.transform);
+        while (marks.Count > MaxMarks) {
+            Destroy(marks[0].gameObject);
+            marks.RemoveAt(0);
+        }
+        Note("slice-marked", marks.Count + " strike marks on the ring");
+    }
+
+    void TickMarks(float lost) {
+        int want = lost <= 0.001f ? 0 : Mathf.Clamp(Mathf.CeilToInt(lost * MaxMarks), 1, MaxMarks);
+        while (marks.Count > want) {
+            Destroy(marks[0].gameObject);   // the oldest is scrubbed first as she heals
+            marks.RemoveAt(0);
+        }
     }
 
     // ---------------------------------------------------------------- the ring

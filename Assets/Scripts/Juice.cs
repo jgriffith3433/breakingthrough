@@ -41,13 +41,13 @@ public class Juice : MonoBehaviour {
     }
 
     // Hit-stop is counted in frames, not seconds, so it reads the same at any frame rate. By weight: a light combo
-    // hit 3 frames (50 ms), a finisher 5, a home run 6. Other big moments ask in seconds and stay at 4 or under.
+    // hit 3 frames (50 ms), a finisher and a home run 4 (about 60 ms, the feel target). Other big moments ask in seconds and stay at 4 or under.
     public const int MinStopFrames = 2;
-    public const int MaxStopFrames = 6;
+    public const int MaxStopFrames = 4;
     public const int OtherMaxFrames = 4;
     public enum Weight { Light, Finisher, HomeRun }
     public static int FramesFor(Weight w) {
-        return w == Weight.HomeRun ? 6 : w == Weight.Finisher ? 5 : 3;
+        return w == Weight.HomeRun ? 4 : w == Weight.Finisher ? 4 : 3;
     }
     // The longest freeze a heavy hit asks for, in ms (reported as feel.hitStopMs).
     public static float HeaviestStopMs { get { return FramesFor(Weight.HomeRun) * 1000f / 60f; } }

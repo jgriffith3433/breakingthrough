@@ -248,8 +248,11 @@ public class Fx : MonoBehaviour {
         float root = Mathf.Sqrt(s);
         Vector3 core = at + Vector3.up * 0.4f * s;
         Emit(FxKind.Flash, core, 1, new Color(0.6f, 0.85f, 1f, 0.7f), (big ? 1.6f : 1f) * root, 0f);
-        Emit(FxKind.Smoke, core, big ? 4 : 2, new Color(0.2f, 0.2f, 0.22f, 0.5f), 0.7f * root, 0.8f, 1.2f);
-        Color dark = new Color(paint.r * 0.45f, paint.g * 0.45f, paint.b * 0.45f, 1f);
+        Emit(FxKind.Smoke, core, big ? 4 : 2, new Color(0.62f, 0.63f, 0.68f, 0.45f), 0.7f * root, 0.8f, 1.2f);
+        // Never a dark plate: on the night lawn a navy or black scrap reads as a black shard around the bot. The second
+        // batch is just a shade under the first, and both are lifted toward white.
+        paint = Color.Lerp(paint, Color.white, 0.3f);
+        Color dark = new Color(paint.r * 0.8f, paint.g * 0.8f, paint.b * 0.8f, 1f);
         int plates = big ? 8 : 4;
         Emit(FxKind.Debris, core, plates - plates / 3, paint, 0.32f * root, 3.4f * root, 1.5f);
         Emit(FxKind.Debris, core, plates / 3, dark, 0.26f * root, 3f * root, 1.5f);
