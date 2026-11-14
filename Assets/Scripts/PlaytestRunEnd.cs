@@ -275,7 +275,7 @@ public static class PlaytestRunEnd {
         return enemy;
     }
 
-    static void CheckPhoneLayout(PlaytestRun run) {
+    public static void CheckPhoneLayout(PlaytestRun run) {
         int overlaps = 0;
         float retryArea = 0f;
         float otherMax = 0f;
@@ -359,7 +359,7 @@ public static class PlaytestRunEnd {
         }
     }
 
-    static void TapButton(GameObject target) {
+    public static void TapButton(GameObject target) {
         var data = new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left };
         ExecuteEvents.Execute(target, data, ExecuteEvents.pointerDownHandler);
         ExecuteEvents.Execute(target, data, ExecuteEvents.pointerClickHandler);

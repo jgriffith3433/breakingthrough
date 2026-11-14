@@ -439,3 +439,10 @@ sets in the game's storybook style (`Docs/Materials.md`).
 
 ## Reading a bot (traits and rings)
 A player should know a bot before it acts. Every trait has one marker made in code (`TraitMark.cs`): a badge over the head with its own shape and colour (Sprinter double chevron, Hopper up arrow, Bruiser frame, Juker diamond, Jump-Jet triangle over a flame, Splitter cracked disc, Blinker eye, Heavy hexagon, Charger down arrowhead, Swarmer three dots, Juggernaut star), plus a Sprinter's speed streaks, a Splitter's crack line across its body and a Blinker's flicker for 0.7 s before it jumps. Every bot kind has its own ground-ring colour and size (`BotThreat.KindColour`/`KindSize`). The first bot with a trait she has not met in a run makes Slice say one of her existing new-bot lines ("That one's new.", "Different. Watch it."). No new art or audio.
+
+### The build, on the table and on the sheet (built)
+
+Pause in Arcade gains a **Build** button once the run holds a boon: a scrolling list, one row per boon (card icon, name, level
+`rank/max` or `EVO`, the card's own one-line effect). On the run-end sheet the same boons sit as an icon band with their levels,
+in its own band between the goal lines and the cast subtitle, so it never overprints them. Slice's line stays clipped; the
+panel adds no new voice. Code: `BuildPanel.cs` (`BuildList` is the shared data). Playtest: `build-panel`.
