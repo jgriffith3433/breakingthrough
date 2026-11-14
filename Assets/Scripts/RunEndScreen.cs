@@ -22,6 +22,9 @@ public class RunEndScreen : MonoBehaviour {
     Text waveLabel;
     Text coinLabel;
     Text bestLabel;
+    Text rankLabel;
+    public static string RankLine = "";
+    public static string RankLetter = "";
     Text goalLabel;
     Text goalStamp;
     Text subtitle;
@@ -78,6 +81,12 @@ public class RunEndScreen : MonoBehaviour {
         if (title != null) {
             title.text = "Address struck off";
         }
+        RankLine = "";
+        RankLetter = "";
+        if (rankLabel != null) {
+            rankLabel.text = "";
+            rankLabel.gameObject.SetActive(false);
+        }
         if (bestLabel != null) {
             bestLabel.text = "";
             bestLabel.gameObject.SetActive(false);
@@ -130,6 +139,9 @@ public class RunEndScreen : MonoBehaviour {
         }
         if (goalLabel != null) {
             goalLabel.text = "";
+        }
+        if (rankLabel != null) {
+            rankLabel.gameObject.SetActive(false);
         }
         if (bestLabel != null) {
             bestLabel.gameObject.SetActive(false);
@@ -265,6 +277,7 @@ public class RunEndScreen : MonoBehaviour {
             y = PlaceRow(waveLabel, fsWave, y, textW, fsWave * 1.3f) + 4f;
             y = PlaceRow(coinLabel, fsCoin, y, textW, fsCoin * 1.3f) + 4f;
             y = PlaceRow(bestLabel, fsBest, y, textW, fsBest * 1.3f) + 8f;
+            y = PlaceRow(rankLabel, phone ? 24 : 26, y, textW, (phone ? 24 : 26) * 1.3f * (textW >= 1000f ? 1 : 2) + 6f) + 6f;
             y = PlaceRow(goalStamp, fsGoal, y, textW, goalH) + 4f;
             y = PlaceRow(goalLabel, fsGoal, y, textW, goalH) + 4f;
             PlaceBottomRow(subtitle, fsSub, bandTop, textW, subH);
@@ -274,6 +287,7 @@ public class RunEndScreen : MonoBehaviour {
             PlaceRow(waveLabel, 30, y, textW, room);
             PlaceRow(coinLabel, fsCoin, y, 0f, 0f);
             PlaceRow(bestLabel, fsBest, y, 0f, 0f);
+            PlaceRow(rankLabel, fsBest, y, 0f, 0f);
             PlaceRow(goalStamp, fsGoal, y, 0f, 0f);
             PlaceRow(goalLabel, fsGoal, y, 0f, 0f);
             PlaceBottomRow(subtitle, fsSub, bandTop, 0f, 0f);
@@ -370,6 +384,14 @@ public class RunEndScreen : MonoBehaviour {
             bestLabel.gameObject.SetActive(true);
             bestLabel.text = MetaProgress.BestWave > 0 ? "Best cleared: " + MetaProgress.BestWave : "";
         }
+
+        RankLine = ArcadeRank.Line(cleared, kills, Combo.Best, ArcadeRank.BestClean, out RankLetter);
+        if (rankLabel != null) {
+            rankLabel.gameObject.SetActive(true);
+            rankLabel.text = RankLine;
+        }
+        GameAudio.PlayUI("stamp", 0.7f, 1.1f);
+        yield return new WaitForSecondsRealtime(0.35f);
 
         RunGoals.Progress[] finished = RunGoals.SettleRun(showWave, cleared, showCoins, homers, kills, smashes);
         for (int i = 0; i < finished.Length; i++) {
@@ -489,6 +511,10 @@ public class RunEndScreen : MonoBehaviour {
         title.color = new Color(1f, 0.45f, 0.35f);
         waveLabel = MakeText(transform, "", 34, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -110f), new Vector2(780f, 48f));
         coinLabel = MakeText(transform, "", 30, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -162f), new Vector2(780f, 42f));
+        rankLabel = MakeText(transform, "", 26, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -214f), new Vector2(800f, 70f));
+        rankLabel.color = new Color(0.98f, 0.9f, 0.62f);
+        rankLabel.horizontalOverflow = HorizontalWrapMode.Wrap;
+        rankLabel.gameObject.SetActive(false);
         bestLabel = MakeText(transform, "", 28, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -214f), new Vector2(780f, 40f));
         bestLabel.color = new Color(1f, 0.86f, 0.35f);
         bestLabel.gameObject.SetActive(false);

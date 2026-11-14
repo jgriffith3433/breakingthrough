@@ -135,6 +135,7 @@ public class LevelUpScreen : MonoBehaviour {
     public static string Heading { get { return current != null && current.heading != null ? current.heading.text : ""; } }
     public static int CardCount { get { return current != null ? current.offer.Count : 0; } }
     public static bool RarestLast { get; private set; }
+    public static List<BoonId> Offered { get { return current != null ? current.offer : new List<BoonId>(); } }
     // Boxes inside card i that must not overlap: (what, text or icon rect).
     public static List<KeyValuePair<string, RectTransform>> CardParts(int index) {
         var parts = new List<KeyValuePair<string, RectTransform>>();
@@ -354,7 +355,7 @@ public class LevelUpScreen : MonoBehaviour {
 
     void Open(bool chest) {
         fromChest = chest;
-        offer = RunBoons.Roll(3, chest);
+        offer = !chest && RunBoons.LastCardWasWave ? RunBoons.RollFamilies() : RunBoons.Roll(3, chest);
         if (offer.Count == 0) {
             // Everything is maxed. Pay out instead.
             IsOpen = false;
@@ -416,7 +417,10 @@ public class LevelUpScreen : MonoBehaviour {
             card.Rank.text = "";
             card.About.text = OneLine(info.About);
             UiArt.Show(card.Icon, UiArt.Boon(info.Id));
-            card.Tag.text = info.Evolution ? "EVOLUTION" : info.Rarity.ToString().ToUpper() + "  ·  " + RunBoons.RankText(info.Id);
+BoonFamily family = RunBoons.FamilyOf(info.Id);
+            card.Tag.text = info.Evolution ? "EVOLUTION" : (!fromChest && RunBoons.LastCardWasWave && family != BoonFamily.None
+                ? RunBoons.FamilyName(family) + "  ·  " + RunBoons.RankText(info.Id)
+                : info.Rarity.ToString().ToUpper() + "  ·  " + RunBoons.RankText(info.Id));
             card.Tag.color = tint;
             card.Key.text = touch ? "Tap to pick" : "[" + (i + 1) + "]";
             card.BackNumber.text = "FORM B-" + (7 + i * 3 + RunBoons.Level % 3);
@@ -444,7 +448,7 @@ public class LevelUpScreen : MonoBehaviour {
             return;
         }
         RunAnalytics.Reroll();
-        offer = RunBoons.Roll(3, fromChest);
+        offer = !fromChest && RunBoons.LastCardWasWave ? RunBoons.RollFamilies() : RunBoons.Roll(3, fromChest);
         if (offer.Count == 0) {
             IsOpen = false;
             inputReady = false;
