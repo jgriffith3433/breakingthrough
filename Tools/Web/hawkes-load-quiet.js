@@ -93,6 +93,19 @@
     try { document.documentElement.setAttribute("data-hawkes-game-ready", "1"); } catch (e) {}
   }
   window.hawkesGameReady = hideLoader;
+  // Never let the card hold the screen: 5 s after the canvas first draws, it goes whatever Unity is doing (a save read,
+  // a file-system sync, a slow step). One timer, set once; no polling.
+  var armed = false;
+  function arm() {
+    if (armed) return;
+    armed = true;
+    setTimeout(function () {
+      if (!hidden) {
+        try { console.log("[Records] card dropped by the page after 5 s"); } catch (e) {}
+        hideLoader();
+      }
+    }, 5000);
+  }
 
   var frames = 0;
   var raf = window.requestAnimationFrame;
@@ -100,6 +113,7 @@
     window.requestAnimationFrame = function (cb) {
       if (!hidden) {
         var cv = canvas();
+        if (cv && cv.width > 0 && cv.clientWidth > 0 && frames === 0) arm();
         if (cv && cv.width > 0 && cv.clientWidth > 0 && ++frames >= 40) {
           // After the current frame, so the loop is not disturbed.
           Promise.resolve().then(hideLoader);

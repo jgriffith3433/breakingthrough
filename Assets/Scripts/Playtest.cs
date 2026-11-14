@@ -193,6 +193,18 @@ public static partial class Playtest {
         run.Metric("milestone." + name, seconds);
     }
 
+    // The Records card cleared (RecordsCard): records.openSeconds, seconds from the page opening; over 5 s is a bug.
+    public static void RecordsOpen(float seconds, string where) {
+        if (run == null || run.Done) {
+            return;
+        }
+        run.Event("records-open", "the Records card cleared " + seconds.ToString("0.0") + " s after the page opened (" + where + ")");
+        run.Metric("records.openSeconds", seconds);
+        if (seconds > RecordsCard.LimitSeconds) {
+            run.Problem(PlaytestSeverity.Bug, "records.openSeconds " + seconds.ToString("0.0") + " is over " + RecordsCard.LimitSeconds + " s");
+        }
+    }
+
     // True from the moment a scenario starts (WaveDirector.WaveKeysAllowed: the bot's setup shortcut may use the wave keys).
     public static bool Running { get; private set; }
     // A runner started a scenario on the page's stand-in bridge before Unity loaded (Install adopts it): the scenario is wanted
