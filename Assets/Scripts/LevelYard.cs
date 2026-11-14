@@ -1244,7 +1244,7 @@ public class LevelYard : MonoBehaviour {
             noticeItem = null;
         }
         Choices.Pick("1.c1", 1);
-        Mark(LevelCheckpoint.Clear);   // the keepsake is part of the file's state
+        Mark(LevelCheckpoint.AllClear);   // the keepsake is part of the file's state
         GameAudio.Play("paper_slide", 0.7f, 1.1f);
         Fx.Ring(NoticeAt + Vector3.up * 0.2f, 3.5f, new Color(0.96f, 0.93f, 0.82f, 0.8f), 0.8f);
         scene.Hud.ShowReceipt("Kept: the notice.", 2.6f);
@@ -1271,7 +1271,7 @@ public class LevelYard : MonoBehaviour {
         GameAudio.Play("slot_shutter", 0.9f);
         Fx.Ring(On(ExitPos.x, ExitPos.z) + Vector3.up * 0.2f, 7f, new Color(1f, 0.75f, 0.35f, 0.8f), 1f);
         Note("exit-open", "the return slot's shutter lifts");
-        Mark(LevelCheckpoint.Clear);
+        Mark(LevelCheckpoint.AllClear);
         StartCoroutine(AfterClear());
     }
 

@@ -10,9 +10,9 @@ public static class LevelCheckpoint {
     public const string Flag = "flag";          // lifted the Mailbox Flag
     public const string Fight = "fight";        // the Clearing Crew is awake at the drop
     public const string Courier = "courier";    // the Courier is awake
-    public const string Clear = "clear";        // the drop is cleared, the return slot is open
+    public const string AllClear = "clear";        // the drop is cleared, the return slot is open
 
-    static readonly string[] Order = { Ring, Trail, Flag, Fight, Courier, Clear };
+    static readonly string[] Order = { Ring, Trail, Flag, Fight, Courier, AllClear };
     static readonly string[] Names = { "The Ring", "The west trail", "The Mailbox Flag", "The drop: the Clearing Crew", "The drop: the Courier", "The return slot" };
 
     // Bits in Slot.cpFlags: what the file had done at that checkpoint.
