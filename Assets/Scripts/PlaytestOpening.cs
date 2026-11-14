@@ -115,6 +115,7 @@ public static class PlaytestOpening {
 
         // Watch the whole scene: sample each shot for actor motion and captions.
         int movingShots = 0;
+        int movingBase = CinematicDirector.MovingShots;
         int framedOk = 0;
         var lastPos = new Dictionary<string, Vector3>();
         float started = Time.realtimeSinceStartup;
@@ -138,6 +139,8 @@ public static class PlaytestOpening {
             yield return null;
         }
         float watchSeconds = Time.realtimeSinceStartup - started;
+        movingShots = CinematicDirector.MovingShots - movingBase;
+        run.Metric("cinematic.movingShots", movingShots);
         run.Event("opening-end", "shotsShown=" + CinematicDirector.ShotsShown + " voice=" + CinematicDirector.VoiceLines + " moving=" + movingShots + " handoff=" + CinematicDirector.LastHandoffSeconds.ToString("0.000") + "s watch=" + watchSeconds.ToString("0.0"));
         run.Metric("openingShots", CinematicDirector.ShotsShown);
         run.Metric("openingVoiceLines", CinematicDirector.VoiceLines);
@@ -145,11 +148,11 @@ public static class PlaytestOpening {
         run.Metric("openingHandoffMs", Mathf.RoundToInt(CinematicDirector.LastHandoffSeconds * 1000f));
         run.Metric("openingCaptionBottom01", CinematicDirector.CaptionBottom01);
 
-        if (CinematicDirector.ShotsShown < 3) {
-            run.Problem(PlaytestSeverity.Bug, "opening-scene: fewer than 3 shots played (" + CinematicDirector.ShotsShown + ")");
+        if (CinematicDirector.ShotsShown < 6) {
+            run.Problem(PlaytestSeverity.Bug, "opening-scene: fewer than 6 shots played (" + CinematicDirector.ShotsShown + ")");
         }
-        if (movingShots < 3) {
-            run.Problem(PlaytestSeverity.Bug, "opening-scene: fewer than 3 shots with visible actor motion (" + movingShots + ")");
+        if (movingShots < 4) {
+            run.Problem(PlaytestSeverity.Bug, "opening-scene: fewer than 4 moving shots (" + movingShots + ")");
         }
         if (CinematicDirector.VoiceLines < 1) {
             run.Problem(PlaytestSeverity.Bug, "opening-scene: expected at least 1 voiced line, got " + CinematicDirector.VoiceLines);

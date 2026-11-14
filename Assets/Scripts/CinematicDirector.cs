@@ -69,6 +69,12 @@ public partial class CinematicDirector : MonoBehaviour {
     const float MaxVoiceSeconds = 12f;
     public static readonly List<string> Events = new List<string>();
     public static int ShotsShown { get; private set; }
+    // Shots in this sequence whose camera really travelled (MoveMinMetres or MoveMinDegrees) while they played: measured
+    // from the frames drawn, so a short shot or the phone tier cannot skip a move unseen. Reported as cinematic.movingShots.
+    public static int MovingShots { get; private set; }
+    const float MoveMinMetres = 0.8f;
+    const float MoveMinDegrees = 4f;
+    const float MinPushMetres = 1.5f;   // a shot with no planned move gets this slow push toward its subject
     public static int VoiceLines { get; private set; }
     public static int Skipped { get; private set; }
     public static int Finished { get; private set; }
@@ -188,6 +194,7 @@ public partial class CinematicDirector : MonoBehaviour {
         SuppressOpening = false;
         Events.Clear();
         ShotsShown = 0;
+        MovingShots = 0;
         VoiceLines = 0;
         Skipped = 0;
         Finished = 0;
@@ -565,6 +572,10 @@ public partial class CinematicDirector : MonoBehaviour {
         shotKeepsakes = false;
         shotCredits = false;
         ShotsShown++;
+        moveCounted = false;
+        movePath = 0f;
+        moveDegrees = 0f;
+        moveHave = false;
         Events.Add("shot|" + s.id + "|" + shotIndex);
         PlaceActors(s, 0f);
         ApplyCamera(s, 0f);
@@ -625,6 +636,7 @@ public partial class CinematicDirector : MonoBehaviour {
         float u = Mathf.Clamp01((now - shotStart) / shotLength);
         PlaceActors(s, Ease(u));
         ApplyCamera(s, Ease(u));
+        TrackMove(s);
         TickVoice(s, u);
         TickSfx(s, u);
         TickStamp(s, u);
@@ -1239,6 +1251,30 @@ public partial class CinematicDirector : MonoBehaviour {
         return null;
     }
 
+    bool moveCounted, moveHave;
+    float movePath, moveDegrees;
+    Vector3 movePrevPos;
+    Quaternion movePrevRot;
+
+    // Adds the camera's travel this frame to the shot's total; the shot counts once it has moved enough.
+    void TrackMove(Shot s) {
+        if (!viewSet) {
+            return;
+        }
+        if (moveHave) {
+            movePath += Vector3.Distance(viewPos, movePrevPos);
+            moveDegrees += Quaternion.Angle(viewRot, movePrevRot);
+            if (!moveCounted && (movePath >= MoveMinMetres || moveDegrees >= MoveMinDegrees)) {
+                moveCounted = true;
+                MovingShots++;
+                Events.Add("move|" + s.id + "|" + movePath.ToString("0.00") + "m " + moveDegrees.ToString("0.0") + "deg");
+            }
+        }
+        movePrevPos = viewPos;
+        movePrevRot = viewRot;
+        moveHave = true;
+    }
+
     void ApplyCamera(Shot s, float u) {
         if (cam == null) {
             return;
@@ -1246,6 +1282,16 @@ public partial class CinematicDirector : MonoBehaviour {
         Vector3 from = CamPoint(s.camFromPolar, s.camFrom, cam.transform.position);
         Vector3 to = CamPoint(s.camToPolar, s.camTo, from);
         Vector3 look = CamLook(s.lookPolar, s.lookAt, s);
+        // Every directed shot keeps moving: with no planned travel the camera pushes slowly toward what it looks at.
+        if (s.camMode != "cut" && s.camMode != "orbit" && Vector3.Distance(from, to) < MinPushMetres) {
+            Vector3 toward = look - from;
+            toward.y = 0f;
+            if (toward.sqrMagnitude > 0.01f) {
+                to = from + toward.normalized * MinPushMetres;
+            } else {
+                to = from + Vector3.up * MinPushMetres * 0.5f;
+            }
+        }
         float k = s.camMode == "cut" ? 1f : Ease(u);
         if (s.camMode == "orbit") {
             Vector3 pivot = look;
