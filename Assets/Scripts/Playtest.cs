@@ -4671,20 +4671,10 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                 off++;
             }
             foreach (Text t in Object.FindObjectsByType<Text>(FindObjectsSortMode.None)) {
-                if (t == null || !t.isActiveAndEnabled || string.IsNullOrEmpty(t.text) || t.GetComponentInParent<Canvas>() == null) {
+                if (!ScreenSlots.Visible(t) || t.GetComponentInParent<Canvas>().gameObject.name == "Act Banner") {
                     continue;
                 }
-                if (t.GetComponentInParent<Canvas>().gameObject.name == "Act Banner") {
-                    continue;
-                }
-                var c = new Vector3[4];
-                t.rectTransform.GetWorldCorners(c);
-                var tr = new Rect(c[0].x, c[0].y, c[2].x - c[0].x, c[2].y - c[0].y);
-                // Only text that is really drawn counts; the layout rect is looser than the glyphs.
-                float w = Mathf.Min(tr.width, t.preferredWidth);
-                float h = Mathf.Min(tr.height, t.preferredHeight);
-                var glyphs = new Rect(tr.center.x - w * 0.5f, tr.center.y - h * 0.5f, w, h);
-                if (t.color.a > 0.1f && glyphs.Overlaps(r)) {
+                if (ScreenSlots.GlyphRect(t).Overlaps(r)) {
                     overlap++;
                     run.Event("act-banner-overlap", where + ": '" + t.text + "' under the banner");
                 }
@@ -4693,6 +4683,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         run.Event("act-banner", where + ": '" + ArcadeActs.BannerTitle + "' " + rects.Count + " texts, off screen " + off + ", over other text " + overlap + " (screen " + Screen.width + "x" + Screen.height + ")");
         run.Metric("actBannerOff", off);
         run.Metric("actBannerOverlap", overlap);
+        ReportTextOverlaps(where);
         if (off > 0) {
             run.Problem(PlaytestSeverity.Bug, "arcade-acts: the act banner runs off the screen at " + where);
         }
@@ -4701,8 +4692,23 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         }
     }
 
+    // ui.textOverlaps: the worst count, over every frame since the probe started, of visible text rects from different screen
+    // canvases that intersect (ScreenSlots.Count). A text inside its own canvas stacked on another (a HUD's layers) is
+    // ui.textOverlapsSameCanvas, reported but not a fail.
+    static void ReportTextOverlaps(string where) {
+        run.Metric("ui.textOverlaps", ScreenSlots.OverlapMax);
+        run.Metric("ui.textOverlapsSameCanvas", ScreenSlots.OverlapSameCanvasMax);
+        run.Event("ui-text-overlaps", where + ": worst " + ScreenSlots.OverlapMax + " pairs over " + ScreenSlots.ProbeFrames + " frames"
+            + (ScreenSlots.OverlapMax > 0 ? " (" + ScreenSlots.OverlapWorst + ")" : "") + ", inside one canvas " + ScreenSlots.OverlapSameCanvasMax
+            + ", banner spot " + (ArcadeActs.BannerClear ? "clear" : "none free"));
+        if (ScreenSlots.OverlapMax > 0) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: " + ScreenSlots.OverlapMax + " pairs of text overlap at " + where + ": " + ScreenSlots.OverlapWorst);
+        }
+    }
+
     static IEnumerator ActsRun(PlaytestOptions options) {
         var player = Object.FindAnyObjectByType<CharacterMovement>();
+        ScreenSlots.StartProbe();
         yield return run.Until(() => WaveDirector.Instance != null && Enemy.Roster.Count > 0 && ControlsHelp.PlayedSeconds > 0f, 20f, "Arcade wave 1 bots");
         yield return run.Until(() => ArcadeActs.Instance != null && ArcadeActs.Act == 0, 5f, "act 1 to start");
         if (run.Done) {
@@ -4784,6 +4790,8 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         if (!browser) {
             Screen.SetResolution(w, h, false);
         }
+        ReportTextOverlaps("end of arcade-acts");
+        ScreenSlots.StopProbe();
         UiFit.ForceTouch(false);
         yield return new WaitForSecondsRealtime(1f);
     }
