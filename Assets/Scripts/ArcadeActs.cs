@@ -212,6 +212,12 @@ public class ArcadeActs : MonoBehaviour {
             cur = Look.Lerp(from, target, Mathf.SmoothStep(0f, 1f, fade));
         }
         Apply(cur);
+        // The film-light layer reads these weights, so they move whether or not the score is up (they used to step inside
+        // TickMusic, which returns early without it, leaving the old act's lamps, rim and LUT stacked on the new look).
+        float wStep = dt / FadeSeconds;
+        for (int i = 0; i < weights.Length; i++) {
+            weights[i] = Mathf.MoveTowards(weights[i], weightGoal[i], wStep);
+        }
         TickMusic(dt);
     }
 
@@ -468,10 +474,8 @@ public class ArcadeActs : MonoBehaviour {
             return;
         }
         float level = SoundSettings.On ? SoundSettings.Music * Tuning.ActMusicLevel * (BossTheme ? 0.2f : 1f) * ArcadeScore.Dip : 0f;
-        float step = dt / FadeSeconds;
         float mix = 0f;
         for (int i = 0; i < layers.Length; i++) {
-            weights[i] = Mathf.MoveTowards(weights[i], weightGoal[i], step);
             // Equal-power: the two layers of a crossfade never dip below one layer's level.
             float gain = Mathf.Sqrt(weights[i]);
             mix += gain;
