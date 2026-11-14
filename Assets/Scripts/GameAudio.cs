@@ -88,7 +88,7 @@ public class GameAudio : MonoBehaviour {
 
     // The voice snapshot: effects and UI sink under a line, then come back. Phones get a deeper dip.
     const float DuckNormal = 1f;
-    const float DuckVoice = 0.5f;
+    const float DuckVoice = 0.45f;
     const float DuckVoicePhone = 0.38f;
     float duck = 1f;
 

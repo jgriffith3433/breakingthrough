@@ -156,6 +156,19 @@ public class SliceVoice : MonoBehaviour {
         }
     }
 
+    // Her calls for a kill streak and a cleared wave: her own existing short lines, then Wallit answers (WallitVoice.OnSliceSaid).
+    // Returns true when she spoke, so his own streak or wave-clear bark becomes the reply instead of a second solo line.
+    static readonly string[] StreakCall = { "Clean.", "Tidy.", "One less." };
+    static readonly string[] ClearCall = { "Done.", "Clean.", "Next." };
+
+    public static bool OnStreak() {
+        return Instance != null && Musician.Instance != null && Musician.Instance.Alive && Instance.Say(StreakCall, "slice-streak");
+    }
+
+    public static bool OnWaveCleared() {
+        return Instance != null && Musician.Instance != null && Musician.Instance.Alive && Instance.Say(ClearCall, "slice-clear");
+    }
+
     void Ready(int wave) {
         if (Time.time - lastReadyAt < 2f) {
             return;
@@ -335,13 +348,13 @@ public class SliceVoice : MonoBehaviour {
     string keyWhy;
     float keyUntil;
 
-    void Say(string[] bank, string why) {
+    bool Say(string[] bank, string why) {
         VoiceDirector.Priority priority = VoiceDirector.PriorityOf(why);
         if (banterRunning) {
-            return;
+            return false;
         }
         if (priority == VoiceDirector.Priority.Bark && Time.time < nextLineAt) {
-            return;
+            return false;
         }
         // One voice at a time, nobody over anybody (Wallit's included).
         if (!WallitVoice.FloorFree) {
@@ -350,7 +363,7 @@ public class SliceVoice : MonoBehaviour {
                 keyWhy = why;
                 keyUntil = Time.time + 5f;
             }
-            return;
+            return false;
         }
         string line = bank[Random.Range(0, bank.Length)];
         int guard = 0;
@@ -358,10 +371,11 @@ public class SliceVoice : MonoBehaviour {
             line = bank[Random.Range(0, bank.Length)];
         }
         if (line == LastLine || !VoiceDirector.Allow(line, why, priority)) {
-            return;
+            return false;
         }
         nextLineAt = Time.time + 3.2f;
         Show(false, line, why);
+        return true;
     }
 
     // The cold open's one line (ColdOpen.cs): her voice file and her subtitle, the floor for its length. It counts as her wave-1

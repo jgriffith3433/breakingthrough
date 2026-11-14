@@ -45,6 +45,9 @@ public class WallitVoice : MonoBehaviour {
     public static int LinesSpoken { get; private set; }
     public static int BackToBack { get; private set; }
     public static int Overlaps { get; private set; }
+    // Slice lines he answered inside two seconds of her line starting (playtest: at least 3 in a 5-wave run).
+    public static int RepliesInTime { get; private set; }
+    static float lastSliceSaidAt = -99f;
     public static int Dropped { get; private set; }
     public static string LastLine { get; private set; } = "";
     public static readonly Dictionary<string, int> ByReason = new Dictionary<string, int>();
@@ -197,6 +200,9 @@ public class WallitVoice : MonoBehaviour {
 
     public static void OnWaveCleared(int wave) {
         if (Instance != null && wave > 1) {
+            if (SliceVoice.OnWaveCleared()) {
+                return;   // she calls it, his WaveClear line is the reply (OnSliceSaid)
+            }
             Instance.Queue(Instance.Pick(WaveClear), "wave-clear", 4f);
         }
     }
@@ -252,9 +258,17 @@ public class WallitVoice : MonoBehaviour {
         }
         if (why == "low") {
             Instance.Queue(Instance.Pick(SliceLow), "slice-low", 4f);
+        } else if (why == "slice-streak") {
+            // She called the streak: he answers from his own streak lines, inside two seconds.
+            lastSliceSaidAt = Time.unscaledTime;
+            Instance.Queue(Instance.Pick(Streak), "callout-reply", 2.5f);
+        } else if (why == "slice-clear") {
+            lastSliceSaidAt = Time.unscaledTime;
+            Instance.Queue(Instance.Pick(WaveClear), "callout-reply", 2.5f);
         } else if (why == "hurt" || why == "wave") {
+            lastSliceSaidAt = Time.unscaledTime;
             // She spoke to him: he answers short and in money ("On it." / "Billable.").
-            Instance.Queue(Instance.Pick(CalloutReply), "callout-reply", 10f);
+            Instance.Queue(Instance.Pick(CalloutReply), "callout-reply", 2.5f);
         }
     }
 
@@ -263,7 +277,8 @@ public class WallitVoice : MonoBehaviour {
         if (Instance == null) {
             return;
         }
-        Instance.Queue(Instance.Pick(CalloutReply), "callout-reply", 10f);
+        lastSliceSaidAt = Time.unscaledTime;
+        Instance.Queue(Instance.Pick(CalloutReply), "callout-reply", 2.5f);
     }
 
     public static void OnStakes() {
@@ -321,6 +336,9 @@ public class WallitVoice : MonoBehaviour {
         }
         if (combo >= 5 && combo % 5 == 0 && now >= nextStreakAt) {
             nextStreakAt = now + 8f;
+            if (SliceVoice.OnStreak()) {
+                return;   // she calls it, his Streak line is the reply (OnSliceSaid)
+            }
             Queue(Pick(Streak), "streak", 1.5f);
             return;
         }
@@ -413,6 +431,9 @@ public class WallitVoice : MonoBehaviour {
             StakesFeel.Note("stakes-line", line + "|" + lineLength.ToString("0.00") + "|overlaps " + Overlaps);
         }
         Events.Add("line|" + why + "|" + line + "|" + lineLength.ToString("0.00") + (lineHasFile ? "|voice" : "|subtitle"));
+        if (why == "callout-reply" && Time.unscaledTime - lastSliceSaidAt <= 2.0f) {
+            RepliesInTime++;
+        }
         if ((why == "callout-reply" || why == "slice-low") && SliceVoice.Instance != null) {
             SliceVoice.Instance.CountReply(why, line);
         }
