@@ -125,6 +125,9 @@ public static class Tuning {
     public const int CoinKillEvery = 5;
     // Hit-stop on every kill (seconds): 3 frames at 60 fps, over the 40 ms floor.
     public const float KillHitStop = 0.05f;
+    // The first kill of an Arcade run: a heavier stop (over the 50 ms heavy-hit floor) and a bolt burst on top of the drop.
+    public const float FirstKillHitStop = 0.09f;
+    public const int FirstKillBonusBolts = 9;
     public const int CoinsForBoss = 6;
     public const int CoinsForGolden = 3;
 
