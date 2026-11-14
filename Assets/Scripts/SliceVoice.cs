@@ -135,6 +135,9 @@ public class SliceVoice : MonoBehaviour {
     // ---------------------------------------------------------------- hooks
 
     public static void OnWave(int wave) {
+        if (wave <= 1) {
+            traitsSeen.Clear();
+        }
         if (Instance == null) {
             return;
         }
@@ -148,6 +151,20 @@ public class SliceVoice : MonoBehaviour {
             return;
         }
         Instance.Say(NewKind, "new-type");
+    }
+
+    // The first bot with a trait she has not met this run (Sprinter, Splitter, Blinker...): the same short new-bot lines. It is
+    // counted met only once she actually says it (her floor may be busy), so TraitMark asks again until it lands.
+    static readonly HashSet<BotTrait> traitsSeen = new HashSet<BotTrait>();
+    public static bool OnNewTrait(BotTrait trait) {
+        if (Instance == null || trait == BotTrait.None || traitsSeen.Contains(trait)) {
+            return false;
+        }
+        if (Musician.Instance == null || !Musician.Instance.Alive || !Instance.Say(NewKind, "new-type")) {
+            return false;
+        }
+        traitsSeen.Add(trait);
+        return true;
     }
 
     public static void OnKill(Enemy foe) {

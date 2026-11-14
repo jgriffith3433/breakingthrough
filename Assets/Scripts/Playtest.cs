@@ -36,6 +36,8 @@ public static partial class Playtest {
         new PlaytestScenario("bot-sound", "Each bot family's own sound (BotSound.cs): positional movement loops (at most 6 at once, nearest first), wind-up tells before blows, 3+ death variants never repeated. Metrics botLoopsPeak, botTells, botDeaths", 150, "full"),
         new PlaytestScenario("place-audio", "The Moonlit Hollow's own air (PlaceAudio.cs): the bed amb_hollow plays (event ambience), 3 spot emitters sit on real objects (spot), Wallit walks toward the nearest on the keys or, on a phone viewport (390x844), the stick finger, and its gain rises (spot-approach), his steps are counted per surface with no variant twice in a row, a landing is counted, and the bed dips under a voice line (bed-duck). Metrics placeSpotGainStart/End, placeSteps, placeLandings", 180, "full"),
         new PlaytestScenario("tells", "Every bot blow is seen coming (AttackTell.cs): Arcade waves 1 to 3 then the wave 10 boss. A red glow on the striking claw or leg and a ground marker under the target lead each blow by 0.4-0.8 s; Slice's circle pulses when a bot reaches her and the screen edge tints toward her when she is off screen (Wallit walks away by real input); the boss's heavy attacks mark the ground 0.6 s or more ahead. On a phone (mobile, 390x844) every move is a finger and the tint stays clear of the stick and Swing. Metrics combat.tellLeadMs (mean, .min, .max), combat.untelegraphedHits, boss.telegraphLeadMs", 330, "full"),
+        new PlaytestScenario("bot-marks", "Every trait has its own marker over the bot (TraitMark.cs: a badge shape and colour per trait, a Sprinter's streaks, a Splitter's crack, a Blinker's flicker before its jump) and every bot kind its own ground ring colour and size (BotThreat.KindColour/KindSize). Arcade to wave 20 by real input (fingers on a phone), then each trait and each kind put in front of the camera, held. Metrics marks.traitsSeen, marks.badgeMinPx, marks.kindPairsAlike", 240, "full"),
+        new PlaytestScenario("threats", "Every bot has a ground ring in its kind's colour, brighter while it winds up (BotThreat.cs), and a bot off screen within 2 s of a blow gets a screen-edge arrow (at most 4, inside the safe area and off the touch pads). Arcade waves 1-3 by real input with Wallit walking away from Slice, then wave 8. Metrics threats.offscreenMarked, threats.unmarkedHits, threats.ringMinPx", 240, "full"),
         new PlaytestScenario("hit-fx", "The Department hit effects (DeptFx): a soft smear trail on every swing, a spark, torn paper and stamp-ink burst on every hit, a red STRUCK OFF stamp slamming on a killed bot before it folds into paper (a Spider Bot scatters its legs), a charged home run with speed lines behind the bot, a shockwave ring and a flash and dust puff where it lands, coin glints arcing to the HUD, Slice's circle rippling when struck; then wave 10 (setup: the wave key) for a crowd of 10+ bots held against 30 fps with the effects on. On a phone (mobile, 390x844) every move, swing and charge is a finger. Metrics hitFxCrowdFpsAvg, hitFxPeakParticles, hitFxPaper, hitFxStamps, hitFxLandings", 300, "full"),
         new PlaytestScenario("menus", "Shop menu, start a run, a level-up card, reroll and pick", 120, "menus"),
         new PlaytestScenario("words", "Reads the menu, the shop, the help line, build tips, pause, level-up cards and the game-over screen for retired cast words. Setup: the testing wave key visits the tip waves, then wave 2 is held until Slice falls", 300, "menus"),
@@ -305,6 +307,7 @@ public static partial class Playtest {
     static IEnumerator Bot(string id, PlaytestOptions options, PlaytestRun current) {
         run = current;
         Running = true;
+        LightBudget.Sink = line => run.Event("phone-budget", line);   // lights, casters and visible renderers per scene, phone tier only
         WaveDirector.ReleaseKeysProbe = false;
         if (id == "ch1") {
             id = "campaign-beats";
@@ -766,6 +769,10 @@ public static partial class Playtest {
                 yield return PlaceAudioRun(options);
             } else if (id == "tells") {
                 yield return TellsRun(options);
+            } else if (id == "threats") {
+                yield return ThreatsRun(options);
+            } else if (id == "bot-marks") {
+                yield return BotMarksRun(options);
             } else if (id == "hit-fx") {
                 yield return HitFxRun(options);
             } else if (id == "fight-camera") {
@@ -4848,8 +4855,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
 
         ActChangeWatch(9f);
         yield return GoWave(11);
-        yield return ActsPlay(player, 1f, null);
-        ActBanner("wave 11");
+        yield return ActBeatShot(player, "Act II desktop", "wave 11");
         yield return ActsPlay(player, 2f, null);
         var (h2, s2) = ActLook(1);
         yield return ActsPlay(player, 40f, () => HasKind(BotKind.SpiderBot));
@@ -4862,8 +4868,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
 
         ActChangeWatch(9f);
         yield return GoWave(21);
-        yield return ActsPlay(player, 1f, null);
-        ActBanner("wave 21");
+        yield return ActBeatShot(player, "Act III desktop", "wave 21");
         yield return ActsPlay(player, 2f, null);
         var (h3, s3) = ActLook(2);
         yield return ActsPlay(player, 40f, () => MixedElites() > 0);
@@ -4874,6 +4879,13 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             run.Problem(PlaytestSeverity.Bug, "arcade-acts: act 3 showed no elite beyond the Yo Bots");
         }
 
+        run.Metric("quality.textOnlyBeats", ActBeat.TextOnly);
+        run.Metric("actBeats", ActBeat.Beats);
+        run.Metric("actBeatControlLostSeconds", ActBeat.ControlLostSeconds);
+        run.Event("act-beats", ActBeat.Beats + " in-world beats (spiders broke through " + ActBeat.SpidersBroke + ", lamps put out or flared " + ActBeat.LampsOut + "), text-only " + ActBeat.TextOnly + ": " + string.Join("; ", ActBeat.Log));
+        if (ActBeat.Beats < 2 || ActBeat.TextOnly > 0) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: " + ActBeat.Beats + " act beats played, " + ActBeat.TextOnly + " of them text-only (want both acts staged in the world)");
+        }
         float d12 = ArcadeActs.SignatureDistance(h1, h2) + ArcadeActs.SignatureDistance(s1, s2);
         float d23 = ArcadeActs.SignatureDistance(h2, h3) + ArcadeActs.SignatureDistance(s2, s3);
         run.Metric("actLookDistance_1_11", Mathf.Round(d12 * 100f) / 100f);
@@ -4903,19 +4915,18 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         }
         if (Screen.width == 390 || (browser && phoneViewport)) {
             yield return GoWave(1);
+            ArcadeActs.ForgetStaged();   // setup: the beats may play again on the phone
             yield return ActsPlay(player, 0.8f, null);
             ActBanner("phone wave 1");
             ActLook(0);
             ActChangeWatch(9f);
             yield return GoWave(11);
-            yield return ActsPlay(player, 0.8f, null);
-            ActBanner("phone wave 11");
+            yield return ActBeatShot(player, "Act II phone", "phone wave 11");
             ActLook(1);
             yield return ActsPlay(player, 7f, null);
             ActChangeWatch(9f);
             yield return GoWave(21);
-            yield return ActsPlay(player, 0.8f, null);
-            ActBanner("phone wave 21");
+            yield return ActBeatShot(player, "Act III phone", "phone wave 21");
             ActLook(2);
             yield return ActsPlay(player, 7f, null);
         } else {
@@ -4929,6 +4940,31 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         ScreenSlots.StopProbe();
         UiFit.ForceTouch(false);
         yield return new WaitForSecondsRealtime(1f);
+    }
+
+    // The act's in-world beat plays over live play: wait for it, photograph it mid-way (the bot keeps fighting through it),
+    // and check it ran under 4 s and never took control.
+    static IEnumerator ActBeatShot(CharacterMovement player, string label, string bannerWhere) {
+        yield return run.Until(() => ActBeat.Open, 6f, label + " beat");
+        if (run.Done || !ActBeat.Open) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: no in-world beat at " + label);
+            yield break;
+        }
+        ActBanner(bannerWhere);   // the banner is up for the first seconds of the beat
+        float t0 = Time.unscaledTime;
+        bool blocked = false;
+        yield return ActsPlay(player, 1.6f, null);
+        blocked |= Cutscene.IsOpen || CinematicDirector.IsOpen || LevelUpScreen.IsOpen;
+        run.Scene("Act beat: " + label + " mid-way (" + ActBeat.Log.Count + " beat events)");
+        while (ActBeat.Open && Time.unscaledTime - t0 < 6f && !run.Done) {
+            blocked |= Cutscene.IsOpen || CinematicDirector.IsOpen;
+            yield return ActsPlay(player, 0.2f, null);
+        }
+        run.Event("act-beat", label + ": " + ActBeat.LastSeconds.ToString("0.0") + " s, controls taken " + blocked + ", look " + ArcadeActs.Describe());
+        if (blocked || ActBeat.LastSeconds > 4f) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: the " + label + " beat took control or ran over 4 s (" + ActBeat.LastSeconds.ToString("0.0") + " s)");
+        }
+        yield return ActsPlay(player, 0.5f, null);
     }
 
     static bool HasKind(BotKind kind) {
@@ -10714,6 +10750,8 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         run.Metric("run.levelUps", RunBoons.LevelUps);
         run.Metric("levelUps", levelUps);
         run.Metric("botsAlive", Enemy.Roster.Count);
+        run.Metric("hurt.directionShown", HitDirection.WallitHits > 0 ? Mathf.Round(100f * HitDirection.ShownWallit / HitDirection.WallitHits) : 100f);
+        run.Metric("hurt.hits", HitDirection.WallitHits);
         run.Metric("bestStreak", Combo.Best);
         run.Metric("coinsRun", MetaProgress.CoinsThisRun);
         run.Metric("runSeconds", Mathf.Round(elapsed));

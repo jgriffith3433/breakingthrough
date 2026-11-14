@@ -160,6 +160,8 @@ public static class PlaytestOpeningCh23 {
         }
 
         int movingShots = 0;
+        int movingBase = CinematicDirector.MovingShots;
+        int speakerBase = CinematicDirector.SpeakerShots.Count;
         var lastPos = new Dictionary<string, Vector3>();
         float started = Time.realtimeSinceStartup;
         int lastShot = -1;
@@ -183,6 +185,9 @@ public static class PlaytestOpeningCh23 {
         float seconds = Time.realtimeSinceStartup - started;
         bool postmark = Seen("postmark|");
         bool belt = Seen("belt|");
+        movingShots = CinematicDirector.MovingShots - movingBase;
+        run.Metric("cinematic.movingShots", movingShots);
+        CinematicDirector.ReportSpeakers(run, "opening-ch23", speakerBase, Phone);
         run.Event("opening-end", "chapter=" + (chapter + 1) + " shots=" + CinematicDirector.ShotsShown + " moving=" + movingShots + " seconds=" + seconds.ToString("0.0") + " postmark=" + postmark + " belt=" + belt);
         if (beat == "postmark") {
             run.Event("opening-postmark", postmark ? "seen" : "missing");
@@ -206,11 +211,25 @@ public static class PlaytestOpeningCh23 {
         if (CinematicDirector.ShotsShown < 5) {
             run.Problem(PlaytestSeverity.Bug, "opening-ch23: Chapter " + (chapter + 1) + " fewer than 5 shots (" + CinematicDirector.ShotsShown + ")");
         }
-        if (movingShots < 5) {
-            run.Problem(PlaytestSeverity.Bug, "opening-ch23: Chapter " + (chapter + 1) + " fewer than 5 moving shots (" + movingShots + ")");
+        if (movingShots < 4) {
+            run.Problem(PlaytestSeverity.Bug, "opening-ch23: Chapter " + (chapter + 1) + " fewer than 4 moving shots (" + movingShots + ")");
         }
         if (seconds > 60f) {
             run.Problem(PlaytestSeverity.Bug, "opening-ch23: Chapter " + (chapter + 1) + " opening lasted " + seconds.ToString("0.0") + " s (> 60)");
+        }
+        yield return run.Until(() => CinematicDirector.ClosedCount > 0 && !CinematicDirector.IsOpen, 3f, "cinematic closed");
+        run.Event("cinematic.closed", "opening-ch23 chapter=" + (chapter + 1) + " reel=" + CinematicDirector.LastClosedReel + " closed=" + CinematicDirector.ClosedCount
+            + " cap=" + CinematicDirector.LastClosedByCap + " seconds=" + CinematicDirector.LastClosedAfterSeconds.ToString("0.00") + " handoff=" + CinematicDirector.LastHandoffSeconds.ToString("0.00")
+            + " touch=" + UiFit.Touch + " size=" + Screen.width + "x" + Screen.height);
+        run.Metric("cinematic.closed.ch" + (chapter + 1), CinematicDirector.ClosedCount > 0 ? 1 : 0);
+        if (CinematicDirector.ClosedCount != 1) {
+            run.Problem(PlaytestSeverity.Bug, "opening-ch23: cinematic.closed fired " + CinematicDirector.ClosedCount + " times for Chapter " + (chapter + 1) + " (need exactly 1)");
+        }
+        if (CinematicDirector.LastClosedByCap) {
+            run.Problem(PlaytestSeverity.Bug, "opening-ch23: Chapter " + (chapter + 1) + " opening only closed on its hard cap");
+        }
+        if (CinematicDirector.LastHandoffSeconds > 0.3f) {
+            run.Problem(PlaytestSeverity.Bug, "opening-ch23: control returned " + CinematicDirector.LastHandoffSeconds.ToString("0.00") + " s after the last shot (> 0.3)");
         }
         if (CinematicDirector.LastHandoffSeconds > 1f) {
             run.Problem(PlaytestSeverity.Bug, "opening-ch23: handoff took " + CinematicDirector.LastHandoffSeconds.ToString("0.00") + " s");

@@ -356,6 +356,15 @@ public class WaveDirector : MonoBehaviour {
         GameAudio.Play("coin", 0.8f, 1.5f);
     }
 
+    // The bot-marks playtest: one bot of a kind with a trait put at a spot (TraitMark and BotThreat draw what it is).
+    public Enemy SpawnMarked(BotKind kind, BotTrait trait, Vector3 spot) {
+        Enemy e = Spawn(BotRoster.ForSpawn(kind, Wave), spot, false);
+        if (trait != BotTrait.None) {
+            e.MakeElite(trait);
+        }
+        return e;
+    }
+
     Enemy Spawn(BotDef def, Vector3 spot, bool rollElite) {
         var go = new GameObject(def.Name);
         go.tag = "enemy";
@@ -656,6 +665,14 @@ public class WaveDirector : MonoBehaviour {
             GameAudio.Play("stomp", 1f, 0.6f);
         }
         return enemy;
+    }
+
+    // Arcade: a bot that breaks out of the ground at a spot (the act II beat, ActBeat.cs). It fights like any other bot.
+    public Enemy SpawnBurst(BotKind kind, Vector3 spot) {
+        Vector3 origin = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
+        BotDef def = BotRoster.ForSpawn(kind, Wave);
+        spot.y = GroundNear(spot, origin.y) + 0.55f + def.Scale * 0.08f;
+        return Spawn(def, spot, false);
     }
 
     // A Campaign encounter's bot, placed at a spot and asleep (Enemy.Dormant) until the encounter wakes it (ChapterPacing).

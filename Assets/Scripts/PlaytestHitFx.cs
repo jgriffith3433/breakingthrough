@@ -92,6 +92,21 @@ public static partial class Playtest {
             run.Problem(PlaytestSeverity.Warning, "desktop averaged " + avg.ToString("0.0") + " fps in a wave of " + crowd + " bots with the effects on");
         }
 
+        // The per-swing, per-hit counts the criteria read: a trail for every swing, a flash for every bat hit, the home run logged.
+        run.Metric("fx.swingTrails", BatEquipment.TrailSwings);
+        run.Metric("fx.swings", BatEquipment.Swings);
+        run.Metric("fx.homeRuns", BatEquipment.HomeRuns);
+        run.Metric("fx.hitFlashes", Enemy.BatFlashes);
+        run.Metric("fx.hits", Combat.BatHitsLanded);
+        run.Event("hit-fx-totals", "swing trails " + BatEquipment.TrailSwings + " of " + BatEquipment.Swings + " swings, hit flashes " + Enemy.BatFlashes
+            + " of " + Combat.BatHitsLanded + " bat hits, home runs " + BatEquipment.HomeRuns + ", knocked back " + BatEquipment.KnockedBack);
+        if (BatEquipment.TrailSwings != BatEquipment.Swings) {
+            run.Problem(PlaytestSeverity.Bug, "swing trails " + BatEquipment.TrailSwings + " but " + BatEquipment.Swings + " swings");
+        }
+        if (Enemy.BatFlashes != Combat.BatHitsLanded) {
+            run.Problem(PlaytestSeverity.Bug, "hit flashes " + Enemy.BatFlashes + " but " + Combat.BatHitsLanded + " bat hits");
+        }
+        BarProbe.Report(run);
         if (BatEquipment.TrailSwings == 0) {
             run.Problem(PlaytestSeverity.Bug, "no swing showed a trail on the bat");
         }
@@ -165,7 +180,7 @@ public static partial class Playtest {
 
     static void HitFxTell(string what) {
         run.Event("hit-fx-" + what, "swing trails " + BatEquipment.TrailSwings + ", impact bursts " + DeptFx.Bursts + " (paper " + DeptFx.PaperEmitted + ", ink " + DeptFx.InkEmitted
-            + "), stamps " + DeptFx.Stamps + " (" + DeptFx.StampsBeforeBreak + " then broke), leg scatters " + DeptFx.LegScatters + ", home runs " + BatEquipment.HomeRuns
+            + "), stamps " + DeptFx.Stamps + " (" + DeptFx.StampsBeforeBreak + " then broke), leg scatters " + DeptFx.LegScatters + ", home runs " + BatEquipment.HomeRuns + ", hit flashes " + Enemy.BatFlashes + "/" + Combat.BatHitsLanded
             + ", speed-line frames " + DeptFx.SpeedLineBursts + ", landings " + DeptFx.Landings + ", circle ripples " + DeptFx.Ripples
             + ", coin glints " + DeptFx.CoinGlints + " arcs " + DeptFx.CoinArcs);
     }

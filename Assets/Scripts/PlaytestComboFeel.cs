@@ -199,6 +199,23 @@ public static partial class Playtest {
             }
         }
 
+        // 4. A shot from Wallit's left (a hazard point, no bot): the arc must sit on the left edge of the screen.
+        yield return new WaitForSecondsRealtime(0.7f);
+        Camera cam = Camera.main;
+        if (cam != null && player != null) {
+            Vector3 left = player.transform.position - cam.transform.right * 6f;
+            int shownBefore = HitDirection.ShownWallit;
+            player.GetComponent<PlayerGrowth>().OnHit(null, left);
+            yield return null;
+            yield return new WaitForSecondsRealtime(0.12f);
+            run.Event("hit-direction", "a hit from the left (no bot): " + HitDirection.Last + ", arc shown " + (HitDirection.ShownWallit > shownBefore)
+                + ", angle " + HitDirection.LastAngle.ToString("0") + " (270 is the left edge)");
+            if (HitDirection.ShownWallit == shownBefore || Mathf.Abs(Mathf.DeltaAngle(HitDirection.LastAngle, 270f)) > 20f) {
+                run.Problem(PlaytestSeverity.Bug, "hurt: a hit from the left did not light the arc on the left edge (" + HitDirection.Last + ")");
+            }
+        }
+        run.Metric("hurt.directionShown", HitDirection.WallitHits > 0 ? Mathf.Round(100f * HitDirection.ShownWallit / HitDirection.WallitHits) : 0f);
+
         TouchControls.LiftBotFingers();
         PlayInput.Release();
         Feel.Report(run);

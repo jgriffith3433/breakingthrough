@@ -11,6 +11,9 @@ public class PauseMenu : MonoBehaviour {
     const float ButtonSize = 84f;
 
     public static bool IsOpen { get; private set; }
+    // Playtest hook: pretends the browser freed the mouse this frame. MouseLeftIgnored counts the ones a cinematic refused.
+    public static bool MouseLeftProbe;
+    public static int MouseLeftIgnored;
     // The click that resumed should not also loose an arrow.
     public static bool HoldFire { get; private set; }
 
@@ -275,6 +278,18 @@ public class PauseMenu : MonoBehaviour {
         // Escape in a browser frees a locked mouse without the game hearing the key: take that as a pause.
         int locked = HawkesPointerLocked();
         bool lostMouse = wasLocked && locked == 0 && Cursor.lockState == CursorLockMode.Locked;
+        if (MouseLeftProbe) {
+            MouseLeftProbe = false;
+            lostMouse = true;
+        }
+        // A cinematic or the credits owns the screen: the mouse leaving the page never pauses it (P and Start still do,
+        // and the sequence holds its own clocks while paused).
+        if (CinematicDirector.IsOpen || Cutscene.IsOpen) {
+            if (lostMouse) {
+                MouseLeftIgnored++;
+            }
+            lostMouse = false;
+        }
         wasLocked = locked == 1;
 
         bool settings = SettingsPanel.IsOpen || SettingsPanel.ClosedFrame == Time.frameCount || JournalPanel.IsOpen || JournalPanel.ClosedFrame == Time.frameCount;

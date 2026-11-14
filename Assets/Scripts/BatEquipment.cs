@@ -159,6 +159,7 @@ public class BatEquipment : MonoBehaviour {
         Smashes = 0;
         SmashHits = 0;
         HomeRuns = 0;
+        TrailSwings = 0;
         HomeRunKnocks = 0;
         KnockedBack = 0;
         WideSwings = 0;
@@ -180,6 +181,7 @@ public class BatEquipment : MonoBehaviour {
     public static Color TrailHead { get; private set; } = new Color(1f, 1f, 0.97f, 0.95f);
     TrailRenderer trail;
     bool trailWasOn;
+    int trailSerial;
 
     // The swing's trail: a soft cream ribbon off the bat's tip while a swing, smash or wind-up is out, gold and wider
     // for a home run. One trail renderer, no particles.
@@ -197,7 +199,9 @@ public class BatEquipment : MonoBehaviour {
             tip.localPosition = new Vector3(0f, 0.86f, 0f);
             trail = tip.gameObject.AddComponent<TrailRenderer>();
             trail.time = 0.22f;
-            trail.minVertexDistance = 0.04f;
+            trail.minVertexDistance = UiFit.Touch ? 0.1f : 0.04f;   // fewer, longer segments on the phone tier: no sliver wedges
+            trail.alignment = LineAlignment.View;
+            trail.numCapVertices = 0;
             trail.widthCurve = new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(1f, 0f));
             trail.material = new Material(trailShader);
             trail.material.mainTexture = DeptFx.Smear();   // a soft white smear, not a hard ribbon
@@ -207,14 +211,17 @@ public class BatEquipment : MonoBehaviour {
         }
         bool big = move == Move.HomeRun || (charging && charge >= Tuning.HomeRunMin);
         bool on = move != Move.None || charging;
-        if (on && !trailWasOn) {
+        // A new swing (even one chained straight off the last, while its smear is still fading) restarts the ribbon.
+        if ((on && !trailWasOn) || trailSerial != swingCount) {
             trail.Clear();
-            if (move != Move.None) {
-                TrailSwings++;
-            }
         }
+        trailSerial = swingCount;
         trailWasOn = on;
         trail.emitting = on;
+        if (BarProbe.Degenerate(trail)) {
+            BarProbe.ShardFrames++;
+            trail.Clear();   // two points on top of each other draw a black wedge
+        }
         // Wider, longer and brighter than before: the critic could barely see the swing from the high camera.
         trail.widthMultiplier = big ? 1.5f : move == Move.Swing3 || move == Move.Smash ? 0.95f : 0.7f;
         trail.time = big ? 0.42f : 0.3f;   // a charged swing smears longer and stronger
@@ -442,7 +449,7 @@ public class BatEquipment : MonoBehaviour {
             if (idleTime > Tuning.ComboGap) {
                 comboStep = 0;
             }
-            if (queued != Move.None) {
+            if (queued != Move.None && (!charging || queued == Move.HomeRun)) {
                 StartQueued();
             }
         }
@@ -481,6 +488,7 @@ public class BatEquipment : MonoBehaviour {
                     charge = 0f;
                     chargeFull = false;
                     move = Move.None;
+                    queued = Move.None;   // the press's own queued swing must not fire mid-charge and freeze the wind-up
                     actionClip = CharacterMovement.CLIP_HOMERUN_CHARGE;
                     CharacterMovement.PlayWallitClip(CharacterMovement.CLIP_HOMERUN_CHARGE);
                 } else if (anim != null) {
@@ -611,6 +619,7 @@ public class BatEquipment : MonoBehaviour {
 
         Swings++;
         swingCount++;
+        TrailSwings++;   // one trail per swing: the ribbon restarts on this serial in TickTrail, never skipped while one fades
         RunLog.NoteSwing();
         bool big = next == Move.HomeRun || next == Move.Swing3 || next == Move.Spin;
         GameAudio.Play("batswing", big ? 0.6f : 0.42f, Random.Range(0.92f, 1.08f) * (next == Move.Swing3 ? 0.85f : next == Move.Spin ? 0.75f : 1f));
