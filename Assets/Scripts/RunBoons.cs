@@ -190,6 +190,9 @@ public static class RunBoons {
         PendingChests++;
     }
 
+    // Level cards still waiting behind the one on screen (wave-clear cards gain no level and are not counted).
+    public static int QueuedLevelCards { get { return Mathf.Max(0, PendingLevels - pendingWaveCards); } }
+
     public static bool TakePendingLevel() {
         if (PendingLevels <= 0) {
             return false;
