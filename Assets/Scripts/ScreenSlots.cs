@@ -9,7 +9,8 @@ public enum Slot {
     BossCard,    // the boss name card
     Caption,     // Wallit's, Slice's and the bosses' subtitles
     Toast,       // short notices
-    RunEnd       // the run-end sheet's lines
+    RunEnd,      // the run-end sheet's lines
+    Announce     // the wave callouts and boss/Slice barks (UpgradeLook.Say), under the act banner
 }
 
 // One layout service for them. Each slot has a zone computed from the safe area (UiRects.SafeArea: Screen.safeArea with
@@ -33,6 +34,7 @@ public static class ScreenSlots {
                     case Slot.ActBanner: return new Vector2(0.57f, 0.72f);
                     case Slot.Toast: return new Vector2(0.73f, 0.78f);
                     case Slot.RunEnd: return new Vector2(0.25f, 0.75f);
+                    case Slot.Announce: return new Vector2(0.20f, 0.30f);
                 }
                 break;
             case UiMode.Wide:
@@ -42,6 +44,7 @@ public static class ScreenSlots {
                     case Slot.ActBanner: return new Vector2(0.66f, 0.84f);
                     case Slot.Toast: return new Vector2(0.86f, 0.92f);
                     case Slot.RunEnd: return new Vector2(0.2f, 0.8f);
+                    case Slot.Announce: return new Vector2(0.30f, 0.40f);
                 }
                 break;
             default:
@@ -51,6 +54,7 @@ public static class ScreenSlots {
                     case Slot.ActBanner: return new Vector2(0.15f, 0.30f);
                     case Slot.Toast: return new Vector2(0.31f, 0.36f);
                     case Slot.RunEnd: return new Vector2(0.2f, 0.8f);
+                    case Slot.Announce: return new Vector2(0.31f, 0.39f);
                 }
                 break;
         }
