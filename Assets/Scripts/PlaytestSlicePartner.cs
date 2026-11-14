@@ -36,6 +36,9 @@ public static class PlaytestSlicePartner {
             yield break;
         }
         run.Scene("Arcade partner");
+        // The cold start's mode picker (Play / Campaign / Settings) waits for the first kill: arm it as a cold page would and log when it appears.
+        ModePicker.Armed = true;
+        ModePicker.OnShown = note => run.Event("mode-picker", "picker up " + note + ", " + (Time.realtimeSinceStartup).ToString("0.0") + " s after the page opened; first kill seen=" + FirstMinute.SuccessSeen);
         ScreenSlots.StartProbe();   // ui.textOverlaps / ui.textOverflows over the whole run
         run.Event("phone-viewport", Screen.width + "x" + Screen.height + " touch=" + UiFit.Touch);
         if (Screen.width != 390 && !browser) {

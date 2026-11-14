@@ -269,6 +269,7 @@ public static class Combat {
             Juice.HitStop(Tuning.FirstKillHitStop);
             Fx.Ring(at + Vector3.up * 0.1f, 5f, new Color(1f, 0.9f, 0.5f, 0.8f), 0.5f);
             UpgradeLook.Say("Pay up.", 1.6f, 200f);
+            ModePicker.Offer();
         }
         killCoinCount++;
         if (!foe.Golden && !foe.Boss && ChapterRun.Instance == null
