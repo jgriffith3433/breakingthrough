@@ -370,8 +370,14 @@ public class LevelUpScreen : MonoBehaviour {
         card.Stamp.text = word;
         RectTransform sr = card.Stamp.rectTransform;
         if (word == "APPROVED") {
-            Place(sr, new Vector2(0.5f, 0.5f), new Vector2(0f, 10f), new Vector2(380f, 90f));
-            card.Stamp.fontSize = 56;
+            // On the bottom row where "Tap to pick" was (spent once picked), never across the name.
+            RectTransform kr = card.Key.rectTransform;
+            sr.anchorMin = sr.anchorMax = new Vector2(0.5f, 0f);
+            sr.pivot = new Vector2(0.5f, 0.5f);
+            sr.anchoredPosition = new Vector2(0f, kr.anchoredPosition.y + 20f);
+            sr.sizeDelta = new Vector2(300f, 60f);
+            card.Stamp.fontSize = 40;
+            card.Key.enabled = false;
         } else {
             // RARE / EVOLVED: beside the icon, never across the title.
             sr.anchorMin = sr.anchorMax = new Vector2(0.5f, 1f);
@@ -449,6 +455,7 @@ public class LevelUpScreen : MonoBehaviour {
         for (int i = 0; i < cards.Length; i++) {
             Card card = cards[i];
             card.Stamp.gameObject.SetActive(false);
+            card.Key.enabled = true;
             if (i >= offer.Count) {
                 card.Go.SetActive(false);
                 card.Halo.gameObject.SetActive(false);
