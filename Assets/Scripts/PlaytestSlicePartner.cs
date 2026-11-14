@@ -131,6 +131,8 @@ public static class PlaytestSlicePartner {
         int overlaps = WallitVoice.Overlaps;
         run.Event("voice-overlap", overlaps + " overlap(s) during partner run");
         run.Metric("slicePartnerVoiceOverlaps", overlaps);
+        run.Metric("sliceRepliesWithin2s", WallitVoice.RepliesInTime);
+        run.Event("slice-replies", WallitVoice.RepliesInTime + " Wallit replies within 2 s of a Slice line");
         if (overlaps > 0) {
             run.Problem(PlaytestSeverity.Bug, "voice lines overlapped during callouts (" + overlaps + ")");
         }

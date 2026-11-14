@@ -83,6 +83,7 @@ public static class VoiceDirector {
             case "low":
             case "slice-low":
             case "stakes-line":
+            case "callout-reply":   // Wallit answering Slice: waits for her line to end, ignores the gaps, drops after its patience
             case "cutscene":
                 return Priority.Key;
             case "wave":
@@ -96,7 +97,8 @@ public static class VoiceDirector {
             case "wave-clear":
             case "golden":
             case "setup":
-            case "callout-reply":
+            case "slice-streak":
+            case "slice-clear":
                 return Priority.Normal;
             default:
                 return Priority.Bark;
