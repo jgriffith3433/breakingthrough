@@ -193,6 +193,35 @@ public static class RunBoons {
         Rerolls++;
     }
 
+    public static int[] RanksCopy() {
+        return (int[])ranks.Clone();
+    }
+
+    public static int PendingWaveCards { get { return pendingWaveCards; } }
+
+    // A saved run comes back: ranks, level, bolts and what is still owed as cards. Side effects that live outside
+    // this class (the Turret's tower stock) are given again; Slice's health comes from her own snapshot.
+    public static void Restore(int[] saved, int level, int bolts, int rerolls, int picks, int pendingCards, int waveCards) {
+        for (int i = 0; i < ranks.Length; i++) {
+            ranks[i] = saved != null && i < saved.Length ? Mathf.Clamp(saved[i], 0, All[i].MaxRank) : 0;
+        }
+        Level = Mathf.Max(0, level);
+        NextAt = Need(Level);
+        Feathers = Mathf.Clamp(bolts, 0, Mathf.Max(0, NextAt - 1));
+        featherCarry = 0f;
+        Rerolls = Mathf.Max(0, rerolls);
+        Picks = Mathf.Max(0, picks);
+        PendingLevels = Mathf.Max(0, pendingCards);
+        pendingWaveCards = Mathf.Clamp(waveCards, 0, PendingLevels);
+        PendingChests = 0;
+        for (int i = 0; i < ranks[(int)BoonId.Turret]; i++) {
+            FortStock.Add(FortKind.Tower);
+        }
+        if (PlayerGrowth.Instance != null) {
+            PlayerGrowth.Instance.RefreshStats();
+        }
+    }
+
     public static int Rank(BoonId id) {
         return ranks[(int)id];
     }
@@ -227,6 +256,7 @@ public static class RunBoons {
             PlayerGrowth.Instance.RefreshStats();
         }
         RunLog.NotePick(info.Name);
+        RunSave.Touch();
     }
 
     static bool Offerable(BoonInfo info) {

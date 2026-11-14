@@ -385,6 +385,15 @@ public class Musician : MonoBehaviour {
         RefreshBar();
     }
 
+    // A saved run: the health bar as it stood at the wave clear.
+    public void Restore(int max, int health) {
+        if (max > 0) {
+            MaxHealth = max;
+            Health = Mathf.Clamp(health, 1, MaxHealth);
+            RefreshBar();
+        }
+    }
+
     public void RaiseMax(int amount) {
         MaxHealth += amount;
         Health += amount;
