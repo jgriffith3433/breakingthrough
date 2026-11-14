@@ -25,10 +25,10 @@ public class ScreenTransition : MonoBehaviour {
     const float SlideOut = 0.26f;   // the sheet peels away
     // From the call to the swap: the slide, the slam and the hold.
     public const float CoverSeconds = SlideIn + Slam + Hold;
-    const float LoadWait = 30f;     // a scene that never reports in is let go after this
-    // The sheet is never allowed to stay up past this (LoadWait plus the slide, stamp and peel with a wide margin): if the
+    const float LoadWait = 2f;      // a scene that never reports in is let go after this
+    // The sheet is never allowed to stay up past this, 3 s on unscaled time (J: no page may hold the player longer): if the
     // page turn has not finished by then, or its coroutine died, the sheet is taken down so the screen under it is seen.
-    const float MaxCover = 45f;
+    const float MaxCover = 3f;
 
     static ScreenTransition instance;
     static bool sceneArrived;

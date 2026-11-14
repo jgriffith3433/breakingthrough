@@ -549,7 +549,8 @@ public class MenuHandoff : MonoBehaviour {
         }
         // Hold for the first frames of the run so the camera has settled, then dissolve over half a second.
         float fade = upAt < 0f ? 0f : Mathf.Clamp01((now - upAt - 0.15f) / 0.5f);
-        if (upAt < 0f && now - born > 12f) {
+        // Never longer than 3 s on unscaled time, whatever the load does: the overlay takes no taps but it must not linger.
+        if (upAt < 0f && now - born > 3f) {
             fade = 1f;
         }
         image.color = new Color(1f, 1f, 1f, 1f - fade);
