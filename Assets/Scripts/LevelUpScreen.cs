@@ -512,7 +512,7 @@ public class LevelUpScreen : MonoBehaviour {
         if (info.Evolution) {
             card.Link.text = RunBoons.Info(evo.NeedA).Name + " + " + RunBoons.Info(evo.NeedB).Name;
         } else {
-            card.Link.text = (completes ? "★ Finishes " + evo.Name : "+ " + other.Name + "  →  " + evo.Name);
+            card.Link.text = (completes ? "★ Finishes " + evo.Name : "+ " + other.Name + "  =  " + evo.Name);
         }
         card.Link.color = completes || info.Evolution ? new Color(1f, 0.84f, 0.3f) : new Color(1f, 0.95f, 0.85f, 0.8f);
         if (completes) {
