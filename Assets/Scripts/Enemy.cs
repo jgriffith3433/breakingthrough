@@ -391,15 +391,21 @@ public class Enemy : MonoBehaviour
     void OnEnable()
     {
         Roster.Add(this);
+        if (barRoot != null && !down)
+            barRoot.gameObject.SetActive(true);
     }
 
     void OnDisable()
     {
         Roster.Remove(this);
+        if (barRoot != null)
+            barRoot.gameObject.SetActive(false);
     }
 
     void OnDestroy()
     {
+        if (barRoot != null)
+            Destroy(barRoot.gameObject);
         if (climbing)
         {
             climbing = false;
@@ -1720,8 +1726,9 @@ public class Enemy : MonoBehaviour
     void BuildHealthBar()
     {
         barRoot = new GameObject("Health").transform;
-        barRoot.SetParent(transform, false);
-        barRoot.localPosition = new Vector3(0f, 1.15f, 0f);
+        // Not a child of the bot: its scale is non-uniform (shape * size) and a camera-facing child of a non-uniform,
+        // yawed parent is sheared into black wedges and a bar far wider than the bot. FaceBar sizes it in world units.
+        barRoot.position = transform.position + Vector3.up * 1.15f;
 
         Shader shader = SafeShader.Find("Unlit/Color");
         if (shader == null)
@@ -1782,15 +1789,15 @@ public class Enemy : MonoBehaviour
         if (cam == null)
             return;
         Vector3 size = transform.lossyScale;
-        float wide = Mathf.Max(0.01f, size.x);
-        float tall = Mathf.Max(0.01f, size.y);
-        float deep = Mathf.Max(0.01f, size.z);
-        float barWorld = Mathf.Clamp(Mathf.Max(wide, tall) * 0.55f, 1.6f, 8f);
-        barRoot.localScale = new Vector3(barWorld / wide, barWorld / tall, barWorld / deep);
-        barRoot.localPosition = new Vector3(0f, topY + 0.12f, 0f);
+        float barWorld = Mathf.Clamp(Mathf.Max(size.x, size.y) * 0.55f, 1.6f, 8f);
+        barRoot.position = transform.TransformPoint(new Vector3(0f, topY + 0.12f, 0f));
         Vector3 away = barRoot.position - cam.transform.position;
         if (away.sqrMagnitude < 0.0001f)
             return;
+        // Never wider than a third of the screen, however near the camera is.
+        float viewWidth = 2f * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad) * away.magnitude * cam.aspect;
+        barWorld = Mathf.Min(barWorld, Mathf.Max(0.3f, viewWidth * 0.33f));
+        barRoot.localScale = Vector3.one * barWorld;
         barRoot.rotation = Quaternion.LookRotation(away, cam.transform.up);
     }
 
