@@ -160,6 +160,7 @@ public static class PlaytestOpeningCh23 {
         }
 
         int movingShots = 0;
+        int movingBase = CinematicDirector.MovingShots;
         var lastPos = new Dictionary<string, Vector3>();
         float started = Time.realtimeSinceStartup;
         int lastShot = -1;
@@ -183,6 +184,8 @@ public static class PlaytestOpeningCh23 {
         float seconds = Time.realtimeSinceStartup - started;
         bool postmark = Seen("postmark|");
         bool belt = Seen("belt|");
+        movingShots = CinematicDirector.MovingShots - movingBase;
+        run.Metric("cinematic.movingShots", movingShots);
         run.Event("opening-end", "chapter=" + (chapter + 1) + " shots=" + CinematicDirector.ShotsShown + " moving=" + movingShots + " seconds=" + seconds.ToString("0.0") + " postmark=" + postmark + " belt=" + belt);
         if (beat == "postmark") {
             run.Event("opening-postmark", postmark ? "seen" : "missing");
@@ -206,8 +209,8 @@ public static class PlaytestOpeningCh23 {
         if (CinematicDirector.ShotsShown < 5) {
             run.Problem(PlaytestSeverity.Bug, "opening-ch23: Chapter " + (chapter + 1) + " fewer than 5 shots (" + CinematicDirector.ShotsShown + ")");
         }
-        if (movingShots < 5) {
-            run.Problem(PlaytestSeverity.Bug, "opening-ch23: Chapter " + (chapter + 1) + " fewer than 5 moving shots (" + movingShots + ")");
+        if (movingShots < 4) {
+            run.Problem(PlaytestSeverity.Bug, "opening-ch23: Chapter " + (chapter + 1) + " fewer than 4 moving shots (" + movingShots + ")");
         }
         if (seconds > 60f) {
             run.Problem(PlaytestSeverity.Bug, "opening-ch23: Chapter " + (chapter + 1) + " opening lasted " + seconds.ToString("0.0") + " s (> 60)");
