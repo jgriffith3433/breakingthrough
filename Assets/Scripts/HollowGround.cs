@@ -81,6 +81,7 @@ public static class HollowGround {
             return false;
         }
         // The mask is in world space around the piano, and the shader reads the world position, so no UVs are needed.
+        m.SetFloat("_Calm", 1f);   // J: the ground is a calm, low-contrast backdrop so Wallit and the bots stand out
         rend.sharedMaterial = m;
         Material = m;
         Applied = true;
