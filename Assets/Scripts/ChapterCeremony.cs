@@ -59,8 +59,15 @@ public class ChapterCeremony : MonoBehaviour {
     int tapCount;
     bool fast;
     float canvasScale = 1f;
+    float barFrom, barTo;
+    Image barFill;
+    const int XpRow = 4;
+    public static bool BarFilled;
+    public static float BarShown;
+    // Row y on the dossier: the XP row has a bar under it, so later rows sit a little lower.
+    static float RowY(int i) { return 100f + i * 66f + (i > XpRow ? 26f : 0f); }
 
-    public static ChapterCeremony Begin(RectTransform card, string chapterTitle, int fileNumber, Stat[] rows, int rank, string footerText, Action onContinue, Action onMenu) {
+    public static ChapterCeremony Begin(RectTransform card, string chapterTitle, int fileNumber, Stat[] rows, int rank, string footerText, Action onContinue, Action onMenu, float barFrom = 0f, float barTo = 0f) {
         Reset();
         var go = new GameObject("Ceremony", typeof(RectTransform));
         go.transform.SetParent(card, false);
@@ -75,6 +82,8 @@ public class ChapterCeremony : MonoBehaviour {
         c.line = LineFor(rank);
         c.onContinue = onContinue;
         c.onMenu = onMenu;
+        c.barFrom = barFrom;
+        c.barTo = barTo;
         c.Build(chapterTitle, fileNumber, footerText);
         Instance = c;
         c.Running = true;
@@ -86,7 +95,7 @@ public class ChapterCeremony : MonoBehaviour {
     static void Reset() {
         StatsTyped = 0; Ticks = 0; Taps = 0; Stamps = 0;
         RankStamped = ""; LineSaid = ""; StingPlayed = "";
-        FiledShown = false; ContinueShown = false; Skipped = false;
+        FiledShown = false; ContinueShown = false; Skipped = false; BarFilled = false; BarShown = 0f;
         ContinueAt = 0f;
     }
 
@@ -121,7 +130,7 @@ public class ChapterCeremony : MonoBehaviour {
 
         Vector2 size = UiFit.Size;
         bool landscape = UiFit.Compact && size.x > size.y * 1.1f;
-        const float PanelW = 1000f, PanelH = 850f;
+        float PanelW = 1000f, PanelH = 1190f;
         float scale = landscape ? Mathf.Min(1f, (size.y - 30f) / PanelH) : 1f;
         float width = Mathf.Min(PanelW, (size.x - 30f) / Mathf.Max(0.01f, scale));
         float buttonsRoom = landscape ? 0f : 130f;
@@ -159,17 +168,33 @@ public class ChapterCeremony : MonoBehaviour {
         rowsRoot.SetParent(panel, false);
         PlaceTop(rowsRoot, 0f, 0f, width, PanelH);
         for (int i = 0; i < stats.Length; i++) {
-            float y = 100f + i * 66f;
+            float y = RowY(i);
             Text label = Make(rowsRoot, "", 28, typewriter, faded, TextAnchor.MiddleLeft, 24f, y, width * 0.38f, 56f);
             Text value = Make(rowsRoot, "", 30, typewriter, ink, TextAnchor.MiddleLeft, 24f + width * 0.38f, y, width * 0.62f - 48f, 56f);
             rowLabels.Add(label);
             rowValues.Add(value);
         }
 
+        // The XP bar sits under the XP row, empty until the row is typed.
+        var barBack = new GameObject("XP Bar", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
+        barBack.transform.SetParent(rowsRoot, false);
+        barBack.color = new Color(0.4f, 0.34f, 0.26f, 0.35f);
+        barBack.raycastTarget = false;
+        PlaceTop(barBack.rectTransform, 24f, RowY(XpRow) + 56f, width - 48f, 16f);
+        barFill = new GameObject("XP Fill", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
+        barFill.transform.SetParent(barBack.transform, false);
+        barFill.color = new Color(0.78f, 0.52f, 0.06f, 1f);
+        barFill.raycastTarget = false;
+        barFill.rectTransform.anchorMin = Vector2.zero;
+        barFill.rectTransform.anchorMax = new Vector2(Mathf.Clamp01(barFrom), 1f);
+        barFill.rectTransform.offsetMin = Vector2.zero;
+        barFill.rectTransform.offsetMax = Vector2.zero;
+        BarShown = barFrom;
+
         // The stamp: a soft ink splat under a huge letter.
         stampBox = new GameObject("Rank Stamp", typeof(RectTransform)).GetComponent<RectTransform>();
         stampBox.SetParent(panel, false);
-        PlaceTop(stampBox, (width - 340f) * 0.5f, 372f, 340f, 340f);
+        PlaceTop(stampBox, (width - 340f) * 0.5f, 706f, 340f, 340f);
         splat = new GameObject("Ink Splat", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
         splat.transform.SetParent(stampBox, false);
         splat.sprite = UiSkin.Glow;
@@ -186,12 +211,12 @@ public class ChapterCeremony : MonoBehaviour {
         letterEdge.effectColor = new Color(rankInk.r * 0.5f, rankInk.g * 0.5f, rankInk.b * 0.5f, 0.9f);
         letterEdge.effectDistance = new Vector2(4f, -4f);
         stampBox.localRotation = Quaternion.Euler(0f, 0f, -7f);
-        rankCaption = Make(panel, "RANK", 28, typewriter, faded, TextAnchor.MiddleCenter, (width - 300f) * 0.5f, 340f, 300f, 40f);
+        rankCaption = Make(panel, "RANK", 28, typewriter, faded, TextAnchor.MiddleCenter, (width - 300f) * 0.5f, 668f, 300f, 40f);
         stampBox.gameObject.SetActive(false);
         rankCaption.gameObject.SetActive(false);
 
         // FILED across the whole sheet.
-        filed = Make(panel, "FILED", 190, typewriter, new Color(0.13f, 0.25f, 0.62f, 0.88f), TextAnchor.MiddleCenter, 0f, 330f, width, 260f);
+        filed = Make(panel, "FILED", 190, typewriter, new Color(0.13f, 0.25f, 0.62f, 0.88f), TextAnchor.MiddleCenter, 0f, 640f, width, 260f);
         filed.resizeTextForBestFit = false;
         filed.horizontalOverflow = HorizontalWrapMode.Overflow;
         filed.verticalOverflow = VerticalWrapMode.Overflow;
@@ -202,9 +227,9 @@ public class ChapterCeremony : MonoBehaviour {
         filed.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 13f);
         filed.gameObject.SetActive(false);
 
-        wallitLine = Make(panel, "", 32, serif, ink, TextAnchor.MiddleCenter, 24f, 724f, width - 48f, 56f);
+        wallitLine = Make(panel, "", 32, serif, ink, TextAnchor.MiddleCenter, 24f, 1054f, width - 48f, 56f);
         wallitLine.fontStyle = FontStyle.Italic;
-        footer = Make(panel, footerText, 28, typewriter, faded, TextAnchor.MiddleCenter, 24f, 786f, width - 48f, 50f);
+        footer = Make(panel, footerText, 28, typewriter, faded, TextAnchor.MiddleCenter, 24f, 1118f, width - 48f, 50f);
         footer.gameObject.SetActive(false);
 
         // Continue and Menu: 88 units, a thumb target.
@@ -255,8 +280,12 @@ public class ChapterCeremony : MonoBehaviour {
 
         // 2. Each stat types onto the form, label then value, a tick every second letter.
         for (int i = 0; i < stats.Length; i++) {
-            yield return Type(rowLabels[i], stats[i].Label, 2);
-            yield return Type(rowValues[i], stats[i].Value, 2);
+            float speed = i >= XpRow ? 0.5f : 1f;   // the ledger rows type twice as fast
+            yield return Type(rowLabels[i], stats[i].Label, 2, speed);
+            yield return Type(rowValues[i], stats[i].Value, 2, speed);
+            if (i == XpRow) {
+                yield return FillBar();
+            }
             StatsTyped++;
             ChapterRun.Events.Add("ceremony|stat|" + stats[i].Label + "|" + stats[i].Value);
             yield return Wait(0.22f);
@@ -316,6 +345,22 @@ public class ChapterCeremony : MonoBehaviour {
         ShowContinue();
     }
 
+    // The bar climbs from where the chapter found it to where it left it, ticking as it goes.
+    IEnumerator FillBar() {
+        float lastTick = 0f;
+        yield return Step(0.5f + Mathf.Abs(barTo - barFrom), t => {
+            float v = Mathf.Lerp(barFrom, barTo, 1f - Mathf.Pow(1f - t, 2f));
+            barFill.rectTransform.anchorMax = new Vector2(Mathf.Clamp01(v), 1f);
+            BarShown = v;
+            if (t < 1f && v - lastTick > 0.12f) {
+                lastTick = v;
+                Tick();
+            }
+        });
+        BarFilled = true;
+        ChapterRun.Events.Add("ceremony|xp-bar|" + barFrom.ToString("0.00") + ">" + barTo.ToString("0.00"));
+    }
+
     void ShowContinue() {
         if (ContinueShown) {
             return;
@@ -326,6 +371,9 @@ public class ChapterCeremony : MonoBehaviour {
             rowValues[i].text = stats[i].Value;
         }
         StatsTyped = Mathf.Max(StatsTyped, stats.Length);
+        barFill.rectTransform.anchorMax = new Vector2(Mathf.Clamp01(barTo), 1f);
+        BarShown = barTo;
+        BarFilled = true;
         panel.anchoredPosition = new Vector2(0f, -15f);
         rankCaption.gameObject.SetActive(true);
         stampBox.gameObject.SetActive(true);
@@ -414,7 +462,7 @@ public class ChapterCeremony : MonoBehaviour {
         fast = false;
     }
 
-    IEnumerator Type(Text target, string full, int tickEvery) {
+    IEnumerator Type(Text target, string full, int tickEvery, float speed = 1f) {
         int shown = 0;
         float next = Time.unscaledTime;
         while (shown < full.Length) {
@@ -425,7 +473,7 @@ public class ChapterCeremony : MonoBehaviour {
             }
             if (Time.unscaledTime >= next) {
                 shown++;
-                next = Time.unscaledTime + CharSeconds;
+                next = Time.unscaledTime + CharSeconds * speed;
                 target.text = full.Substring(0, shown);
                 if (shown % tickEvery == 0 && full[shown - 1] != ' ') {
                     Tick();

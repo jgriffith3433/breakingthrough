@@ -16,12 +16,22 @@ public static partial class Playtest {
         }
         float t0 = ChapterCeremony.StartedAt;
         run.Event("ceremony-start", "rank " + CampaignGrade.Letter(chapter.Rank) + " on " + chapter.Title);
-        yield return run.Until(() => ChapterCeremony.StatsTyped >= 4, 14f, "four stats typed onto the dossier");
+        yield return run.Until(() => ChapterCeremony.StatsTyped >= 8, 20f, "eight rows typed onto the dossier (XP bar, Extra, Lore log, Ranks)");
         run.Event("ceremony-stats", ChapterCeremony.StatsTyped + " stats typed, " + ChapterCeremony.Ticks + " typewriter ticks, " + (Time.unscaledTime - t0).ToString("0.0") + " s in");
         run.Metric("ceremonyStatsTyped", ChapterCeremony.StatsTyped);
         run.Metric("ceremonyTicks", ChapterCeremony.Ticks);
-        if (ChapterCeremony.StatsTyped < 4 || ChapterCeremony.Ticks < 8) {
+        if (ChapterCeremony.StatsTyped < 8 || ChapterCeremony.Ticks < 8) {
             run.Problem(PlaytestSeverity.Bug, "ceremony: fewer than four stats typed or no typewriter ticks (" + ChapterCeremony.StatsTyped + ", " + ChapterCeremony.Ticks + ")");
+        }
+        run.Event("ceremony-xp-bar", "XP bar filled to " + ChapterCeremony.BarShown.ToString("0.00") + ", filled " + ChapterCeremony.BarFilled);
+        run.Metric("ceremonyXpBar", ChapterCeremony.BarFilled ? 1 : 0);
+        if (!ChapterCeremony.BarFilled) {
+            run.Problem(PlaytestSeverity.Bug, "ceremony: the XP bar never filled");
+        }
+        foreach (string e in ChapterRun.Events) {
+            if (e.StartsWith("ceremony|ledger|")) {
+                run.Event("ceremony-ledger", e.Substring(16));   // XP, the Extra's count, the lore log, the ranks so far
+            }
         }
         yield return run.Until(() => ChapterCeremony.RankStamped.Length > 0, 8f, "the rank stamp");
         run.Event("ceremony-rank", "stamp " + ChapterCeremony.RankStamped + ", sting " + ChapterCeremony.StingPlayed);
@@ -35,8 +45,8 @@ public static partial class Playtest {
         float seconds = ChapterCeremony.ContinueAt - t0;
         run.Event("ceremony-continue", "Continue after " + seconds.ToString("0.0") + " s");
         run.Metric("ceremonySeconds", Mathf.Round(seconds * 10f) / 10f);
-        if (seconds < 6f || seconds > 10.5f) {
-            run.Problem(PlaytestSeverity.Warning, "ceremony: it took " + seconds.ToString("0.0") + " s, wanted 6 to 10");
+        if (seconds < 6f || seconds > 15f) {
+            run.Problem(PlaytestSeverity.Warning, "ceremony: it took " + seconds.ToString("0.0") + " s, wanted 6 to 15");
         }
         if (continueBeforeLine) {
             run.Problem(PlaytestSeverity.Bug, "ceremony: Continue showed before Wallit spoke");

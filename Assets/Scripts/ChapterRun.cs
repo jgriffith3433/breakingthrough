@@ -136,6 +136,7 @@ public class ChapterRun : MonoBehaviour {
     float findRing;
     Text extraText;
     int baseHomeRuns, baseSmash, baseFinishers;
+    int xpAtStart;
     public bool FindKept { get; private set; }
     public bool GoalMet { get; private set; }
     public Vector3 FindAt { get { return findAt; } }
@@ -997,14 +998,33 @@ public class ChapterRun : MonoBehaviour {
         shade.color = new Color(0.02f, 0.03f, 0.06f, 0.5f);   // the field stays in view: Wallit and Slice at the chapter's end point
         CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
         float par = CampaignGrade.ParOf(Chapter);
+        Musician slice = Musician.Instance;
+        int xpNow = CampaignProgress.Xp;
+        int levelNow = CampaignProgress.LevelFor(xpNow);
+        int levelThen = CampaignProgress.LevelFor(xpAtStart);
+        string next = CampaignProgress.NextUnlock(levelNow);
+        string xpValue = "LV " + (levelNow > levelThen ? levelThen + " > " + levelNow : levelNow.ToString()) + "  +" + Mathf.Max(0, xpNow - xpAtStart) + " XP";
+        string extraValue = Journal.Goals[Chapter].Name + "  " + Journal.Progress(Chapter, slice != null ? slice.DamageTaken : 0, BatEquipment.HomeRuns - baseHomeRuns, BatEquipment.SmashHits - baseSmash, BatEquipment.Finishers - baseFinishers, PlaySeconds) + (GoalMet ? "  FILED" : "  not yet");
+        string loreValue = Lore.LastUnlocked.Length > 0 ? "+" + Lore.LastUnlocked.Length + " " + Lore.LastUnlocked[0] : Lore.UnlockedCount(slot) + " / " + Lore.All.Length + " read";
+        var ranks = new System.Text.StringBuilder();
+        for (int i = 0; i < CampaignSave.ChapterCount; i++) {
+            int r = CampaignSave.BestRank(slot, i, false);
+            ranks.Append(i > 0 ? " " : "").Append(r > 0 ? CampaignGrade.Letter(r) : "-");
+        }
         var rows = new[] {
             new ChapterCeremony.Stat("TIME", Clock(PlaySeconds) + "  (par " + Clock(par) + ")"),
             new ChapterCeremony.Stat("SLICE HURT", DamageTaken <= 0 ? "none" : DamageTaken.ToString()),
             new ChapterCeremony.Stat("LOST THING", FindKept ? Journal.Finds[Chapter].Name : "still out there"),
             new ChapterCeremony.Stat("COLLECTED", Journal.FindCount(slot) + " / " + Journal.Count + (GoalMet ? "  extra filed" : "")),
+            new ChapterCeremony.Stat("XP", xpValue),
+            new ChapterCeremony.Stat("EXTRA", extraValue),
+            new ChapterCeremony.Stat("LORE LOG", loreValue),
+            new ChapterCeremony.Stat("RANKS", ranks.ToString()),
         };
-        string footer = "LV " + CampaignProgress.Level + "   XP " + CampaignProgress.Xp + (more ? "   Next: " + Story.Chapters[Chapter + 1].Title : "");
-        Ceremony = ChapterCeremony.Begin(cardRect, data.Title, CampaignSave.Active + 1, rows, Rank, footer, Next, ToMenu);
+        string footer = (next.Length > 0 ? "Next unlock: " + next : "Every ability unlocked") + (more ? "   Next: " + Story.Chapters[Chapter + 1].Title : "");
+        float barFrom = levelNow > levelThen ? 0f : CampaignProgress.LevelFraction(xpAtStart);
+        Ceremony = ChapterCeremony.Begin(cardRect, data.Title, CampaignSave.Active + 1, rows, Rank, footer, Next, ToMenu, barFrom, CampaignProgress.LevelFraction(xpNow));
+        Events.Add("ceremony|ledger|" + xpValue + "|" + extraValue + "|" + loreValue + "|ranks " + ranks);
         Events.Add("ceremony|start|" + data.Id + "|rank " + CampaignGrade.Letter(Rank));
     }
 
@@ -1322,6 +1342,7 @@ public class ChapterRun : MonoBehaviour {
         baseHomeRuns = BatEquipment.HomeRuns;
         baseSmash = BatEquipment.SmashHits;
         baseFinishers = BatEquipment.Finishers;
+        xpAtStart = CampaignProgress.Xp;
         FindKept = Journal.HasFind(slot, Chapter);
         GoalMet = Journal.HasGoal(slot, Chapter);
         Vector3 origin = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;

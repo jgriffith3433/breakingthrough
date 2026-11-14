@@ -131,6 +131,26 @@ public static class CampaignProgress {
         return Mathf.Max(0f, readyAt[ability] - Time.time);
     }
 
+    // 0..1 through the current level (1 at the top level), for the results sheet's XP bar.
+    public static float LevelFraction(int xp) {
+        int level = LevelFor(xp);
+        if (level >= MaxLevel) {
+            return 1f;
+        }
+        return Mathf.Clamp01((xp - XpAt(level)) / (float)(XpAt(level + 1) - XpAt(level)));
+    }
+
+    // The next ability a level opens, as "LV 4 Receipt" (empty at the top level).
+    public static string NextUnlock(int level) {
+        int best = -1;
+        for (int i = 0; i < Abilities.Length; i++) {
+            if (Abilities[i].Level > level && (best < 0 || Abilities[i].Level < Abilities[best].Level)) {
+                best = i;
+            }
+        }
+        return best < 0 ? "" : "LV " + Abilities[best].Level + " " + Abilities[best].Name;
+    }
+
     public static int UnlockedCount(int xp) {
         int level = LevelFor(xp);
         int n = 0;
