@@ -223,6 +223,12 @@ public class ChapterRun : MonoBehaviour {
         while ((ChapterMap.Current == null || ChapterMap.Current.Own == null) && Time.unscaledTime - t0 < 2.5f) {
             yield return null;
         }
+        // A slow load can reach here before WaveDirector.Start (its Instance) or the player exist: the cold blow used to be skipped
+        // silently then (ChapterColdBlow.Run bails on a null director). Wait for both, counted in frames the scene is really running.
+        float t1 = Time.unscaledTime;
+        while ((WaveDirector.Instance == null || PlayerGrowth.Instance == null) && Time.unscaledTime - t1 < 15f) {
+            yield return null;
+        }
         // The cold blow: Wallit's bat drops a Yo Bot from a fixed 3/4 camera before the directed opening (ChapterColdBlow.cs).
         if (Chapter >= 1 && Chapter <= 5 && !firstBlowOver) {
             Transform w = player != null ? player : (PlayerGrowth.Instance != null ? PlayerGrowth.Instance.transform : null);
