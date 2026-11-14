@@ -149,7 +149,7 @@ static class SetupBots
 
         bool ok = importer.isReadable
             && importer.animationType == ModelImporterAnimationType.Generic
-            && importer.importAnimation
+            && !importer.importAnimation
             && importer.materialImportMode == ModelImporterMaterialImportMode.None;
 
         foreach (TextureImporter tex in FindModelTextures(fbxPath))
@@ -168,8 +168,10 @@ static class SetupBots
         importer.isReadable = true;
         importer.animationType = ModelImporterAnimationType.Generic;
         importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
-        importer.importAnimation = true;
-        importer.animationCompression = ModelImporterAnimationCompression.Optimal;
+        // No clips: the Gen FBXs carry eight (walk, run, idle, claw swipe, zap, hit react, death, hop: about 0.9 MB of raw curves
+        // each) that nothing plays. CharacterRig animates the parts from code and BotArt strips the Animator, so the clips only
+        // sat in the phone's first download. The bones and skin stay.
+        importer.importAnimation = false;
         // None: the game paints these with its own skin materials (Resources/.../*Skin.png), so the FBX's embedded textures
         // (2048 px twice on Slice, 2048 + 1024 on Wallit, 1024 twice on each bot: several MB of the phone's first download) must not ship.
         importer.materialImportMode = ModelImporterMaterialImportMode.None;
