@@ -191,9 +191,12 @@ public static class PlaytestOpening {
             run.Metric("openingToFirstKillSeconds", toKill);
             if (!yard.FirstBotDown) {
                 run.Problem(PlaytestSeverity.Bug, "opening-scene: the first Yo Bot was not killed");
-            } else if (toKill > 11f) {
-                run.Problem(PlaytestSeverity.Bug, "opening-scene: first kill came at " + toKill.ToString("0.0") + " s (> 10 s)");
+            } else if (yard.FirstBotDownSeconds > 6f) {
+                run.Problem(PlaytestSeverity.Bug, "opening-scene: first kill came " + yard.FirstBotDownSeconds.ToString("0.0") + " s after control (limit 10 s, aim 6 s)");
+            } else if (toKill > 14f) {
+                run.Problem(PlaytestSeverity.Bug, "opening-scene: first kill came at " + toKill.ToString("0.0") + " s after the opening began (> 14 s)");
             }
+            run.Metric("firstSuccessSeconds", Mathf.Round(yard.FirstBotDownSeconds * 10f) / 10f);
         }
         run.Event("opening-control", "Cutscene.IsOpen=" + Cutscene.IsOpen + " player at " + (LevelScene.Instance != null ? LevelScene.Instance.Player.position.ToString("0.0") : "?"));
 
