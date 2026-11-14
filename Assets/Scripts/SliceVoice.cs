@@ -21,6 +21,9 @@ public class SliceVoice : MonoBehaviour {
     static readonly string[] Hurt = { "Tch.", "Careful.", "A scratch.", "Rude.", "Not bad." };
     static readonly string[] Low = { "Getting thin.", "Still standing.", "Wallit. Now." };
     static readonly string[] NewKind = { "That one's new.", "What is that.", "Different. Watch it.", "Don't know that one." };
+    // A bot reaches the circle: the stakes, in her voice. The first one of a run says why the circle matters; later ones are short.
+    static readonly string[] ReachFirst = { "That's the address. Nobody takes it.", "Off my circle.", "Filed means mine. Back off." };
+    static readonly string[] Reach = { "Off the circle.", "Not here.", "Mine.", "Back." };
     static readonly string[] Near = { "Close.", "Too close.", "Noted.", "Barely." };
 
     // Banter: speaker (W Wallit, S Slice) and line. Wallit talks money; Slice answers short.
@@ -66,6 +69,9 @@ public class SliceVoice : MonoBehaviour {
     int killsSince;
     float lastKillLineAt = -99f;
     float lastNearAt = -99f;
+    float lastReachAt = -99f;
+    bool reachedOnce;
+    public static int ReachReactions;
     int lastHealth = -1;
     AudioSource audioOut;
 
@@ -158,6 +164,21 @@ public class SliceVoice : MonoBehaviour {
         Begin(BReady, 1.3f);
         string[] bank = wave % 10 == 0 ? BossWave : Wave;
         Say(bank, wave % 10 == 0 ? "boss-wave" : "wave");
+    }
+
+    // A bot has reached the circle (AttackTell.ReachedCircle): she turns on it, knife up, and says what is at stake.
+    public static void Reached(Enemy foe) {
+        SliceVoice v = Instance;
+        Musician slice = Musician.Instance;
+        if (v == null || slice == null || !slice.Alive || Time.time - v.lastReachAt < 9f) {
+            return;
+        }
+        v.lastReachAt = Time.time;
+        ReachReactions++;
+        v.Begin(BGlance, 1.2f);
+        v.Say(v.reachedOnce ? Reach : ReachFirst, "reach");
+        v.reachedOnce = true;
+        v.Note("reach", foe != null ? foe.Title : "bot");
     }
 
     void Killed(Enemy foe) {
@@ -449,7 +470,7 @@ public class SliceVoice : MonoBehaviour {
                 arcadeKeep.Add(LineId(bank[i]));
             }
         }
-        add(Idle); add(Wave); add(BossWave); add(Kill); add(Hurt); add(Low); add(NewKind); add(Near);
+        add(Idle); add(Wave); add(BossWave); add(Kill); add(Hurt); add(Low); add(NewKind); add(Near); add(ReachFirst); add(Reach);
         add(SliceCallouts.Callouts); add(SliceCallouts.ParryLine); add(SliceCallouts.StampLine);
         for (int b = 0; b < Banter.Length; b++) {
             for (int i = 0; i < Banter[b].Length; i++) {
