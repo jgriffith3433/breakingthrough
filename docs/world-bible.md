@@ -436,3 +436,6 @@ boss theme. Spec and card table: Docs/Story.md, "Boss entrances". Code `Cinemati
 The Moonlit Hollow's ground is moonlit lawn grass with four worn dirt lanes that lead to Slice's circle, where they turn to cobble; the hub
 office has brick walls, painted boards and linoleum under the feet, a carpet in front of the six doors and rusted metal cabinets. Eight Gen-painted
 sets in the game's storybook style (`Docs/Materials.md`).
+
+## Reading a bot (traits and rings)
+A player should know a bot before it acts. Every trait has one marker made in code (`TraitMark.cs`): a badge over the head with its own shape and colour (Sprinter double chevron, Hopper up arrow, Bruiser frame, Juker diamond, Jump-Jet triangle over a flame, Splitter cracked disc, Blinker eye, Heavy hexagon, Charger down arrowhead, Swarmer three dots, Juggernaut star), plus a Sprinter's speed streaks, a Splitter's crack line across its body and a Blinker's flicker for 0.7 s before it jumps. Every bot kind has its own ground-ring colour and size (`BotThreat.KindColour`/`KindSize`). The first bot with a trait she has not met in a run makes Slice say one of her existing new-bot lines ("That one's new.", "Different. Watch it."). No new art or audio.

@@ -161,6 +161,7 @@ public static class PlaytestOpeningCh23 {
 
         int movingShots = 0;
         int movingBase = CinematicDirector.MovingShots;
+        int speakerBase = CinematicDirector.SpeakerShots.Count;
         var lastPos = new Dictionary<string, Vector3>();
         float started = Time.realtimeSinceStartup;
         int lastShot = -1;
@@ -186,6 +187,7 @@ public static class PlaytestOpeningCh23 {
         bool belt = Seen("belt|");
         movingShots = CinematicDirector.MovingShots - movingBase;
         run.Metric("cinematic.movingShots", movingShots);
+        CinematicDirector.ReportSpeakers(run, "opening-ch23", speakerBase, Phone);
         run.Event("opening-end", "chapter=" + (chapter + 1) + " shots=" + CinematicDirector.ShotsShown + " moving=" + movingShots + " seconds=" + seconds.ToString("0.0") + " postmark=" + postmark + " belt=" + belt);
         if (beat == "postmark") {
             run.Event("opening-postmark", postmark ? "seen" : "missing");

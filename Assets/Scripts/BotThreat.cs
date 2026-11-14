@@ -133,21 +133,40 @@ public class BotThreat : MonoBehaviour {
         return vp.z > 0f && vp.x >= 0f && vp.x <= 1f && vp.y >= 0f && vp.y <= 1f;
     }
 
-    static Color KindColour(BotKind kind) {
+    // Eleven kinds, eleven colours that stay apart at a glance (Yo Bots cool or hot, Spider Bots greens, golds and violets), and a
+    // ring size per kind on top of the bot's own size, so the ring alone names the kind (the arcade-acts sweep reads both).
+    public static Color KindColour(BotKind kind) {
         switch (kind) {
             case BotKind.YoBot: return new Color(0.30f, 0.86f, 1.00f);
-            case BotKind.PlatedYoBot: return new Color(0.72f, 0.85f, 1.00f);
-            case BotKind.MegaYoBot: return new Color(1.00f, 0.42f, 0.30f);
-            case BotKind.SpiderBot: return new Color(0.25f, 1.00f, 0.72f);
-            case BotKind.StalkerSpiderBot: return new Color(0.86f, 0.80f, 1.00f);
-            case BotKind.RunnerSpiderBot: return new Color(1.00f, 0.74f, 0.22f);
-            case BotKind.RammerSpiderBot: return new Color(0.95f, 0.78f, 0.52f);
-            case BotKind.ShadowSpiderBot: return new Color(0.70f, 0.48f, 1.00f);
-            case BotKind.CrusherSpiderBot: return new Color(1.00f, 0.55f, 0.25f);
-            case BotKind.ColossusSpiderBot: return new Color(0.42f, 0.66f, 1.00f);
+            case BotKind.PlatedYoBot: return new Color(0.93f, 0.95f, 0.98f);
+            case BotKind.MegaYoBot: return new Color(1.00f, 0.22f, 0.25f);
+            case BotKind.SpiderBot: return new Color(0.20f, 0.92f, 0.32f);
+            case BotKind.StalkerSpiderBot: return new Color(1.00f, 0.50f, 0.88f);
+            case BotKind.RunnerSpiderBot: return new Color(0.82f, 1.00f, 0.18f);
+            case BotKind.RammerSpiderBot: return new Color(0.66f, 0.42f, 0.24f);
+            case BotKind.ShadowSpiderBot: return new Color(0.52f, 0.28f, 1.00f);
+            case BotKind.CrusherSpiderBot: return new Color(1.00f, 0.55f, 0.08f);
+            case BotKind.ColossusSpiderBot: return new Color(0.22f, 0.42f, 1.00f);
             case BotKind.TitanSpiderBot: return new Color(1.00f, 0.84f, 0.30f);
         }
         return new Color(0.9f, 0.9f, 0.9f);
+    }
+
+    public static float KindSize(BotKind kind) {
+        switch (kind) {
+            case BotKind.YoBot: return 0.9f;
+            case BotKind.PlatedYoBot: return 1.0f;
+            case BotKind.MegaYoBot: return 1.12f;
+            case BotKind.SpiderBot: return 0.95f;
+            case BotKind.StalkerSpiderBot: return 1.0f;
+            case BotKind.RunnerSpiderBot: return 0.88f;
+            case BotKind.RammerSpiderBot: return 1.05f;
+            case BotKind.ShadowSpiderBot: return 1.1f;
+            case BotKind.CrusherSpiderBot: return 1.18f;
+            case BotKind.ColossusSpiderBot: return 1.28f;
+            case BotKind.TitanSpiderBot: return 1.4f;
+        }
+        return 1f;
     }
 
     // ---- the frame
@@ -243,7 +262,7 @@ public class BotThreat : MonoBehaviour {
             r.groundAt = Time.time;
             r.groundY = Physics.Raycast(new Vector3(p.x, p.y + 4f, p.z), Vector3.down, out RaycastHit hit, 40f, 1 << 3, QueryTriggerInteraction.Ignore) ? hit.point.y : p.y;
         }
-        float baseD = Mathf.Clamp(0.45f + e.BodyScale * 0.16f, 0.9f, 4.5f) * 2f;
+        float baseD = Mathf.Clamp(0.45f + e.BodyScale * 0.16f, 0.9f, 4.5f) * 2f * KindSize(e.Kind);
         float dist = Mathf.Max(1f, Vector3.Distance(cam.transform.position, new Vector3(p.x, r.groundY, p.z)));
         float pxPerUnit = Screen.height / (2f * dist * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad));
         float d = baseD;

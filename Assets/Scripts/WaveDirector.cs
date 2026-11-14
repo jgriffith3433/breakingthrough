@@ -356,6 +356,15 @@ public class WaveDirector : MonoBehaviour {
         GameAudio.Play("coin", 0.8f, 1.5f);
     }
 
+    // The bot-marks playtest: one bot of a kind with a trait put at a spot (TraitMark and BotThreat draw what it is).
+    public Enemy SpawnMarked(BotKind kind, BotTrait trait, Vector3 spot) {
+        Enemy e = Spawn(BotRoster.ForSpawn(kind, Wave), spot, false);
+        if (trait != BotTrait.None) {
+            e.MakeElite(trait);
+        }
+        return e;
+    }
+
     Enemy Spawn(BotDef def, Vector3 spot, bool rollElite) {
         var go = new GameObject(def.Name);
         go.tag = "enemy";
