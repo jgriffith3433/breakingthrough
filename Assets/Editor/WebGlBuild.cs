@@ -213,6 +213,7 @@ public class WebGlDeployWindow : EditorWindow
         WebGlBuild.UpdateGamePageVersion(WebGlBuild.GamePage, newVersion);
         WebGlBuild.InstallSoundPrompt(WebGlBuild.GamePage, newVersion);
         WebGlBuild.InstallLoadQuiet(WebGlBuild.GamePage, newVersion);
+        WebGlBuild.InstallCanvasFit(WebGlBuild.GamePage, newVersion);
         WebGlBuild.InstallPlaytestBridge(WebGlBuild.GamePage, newVersion);
         Log("Installing What's new (whatsnew.html, releases.json, js/hawkes-release.js and its links)");
         WebGlBuild.InstallWhatsNew(WebGlBuild.GamePage, newVersion);
@@ -319,6 +320,7 @@ public static class WebGlBuild
     const string SoundScript = "hawkes-sound.js";
     const string LoadQuietScript = "hawkes-load-quiet.js";
     const string PlaytestBridgeScript = "hawkes-playtest-bridge.js";
+    const string CanvasFitScript = "hawkes-canvas-fit.js";
 
     public static string ProjectRoot
     {
@@ -491,6 +493,7 @@ public static class WebGlBuild
             UpdateGamePageVersion(GamePage, next);
             InstallSoundPrompt(GamePage, next);
             InstallLoadQuiet(GamePage, next);
+            InstallCanvasFit(GamePage, next);
             InstallPlaytestBridge(GamePage, next);
             InstallWhatsNew(GamePage, next);
             InstallSiteFooter();
@@ -958,6 +961,38 @@ public static class WebGlBuild
             if (!head.Success)
             {
                 throw new Exception("No <head> in " + gamePage + " for the playtest bridge script");
+            }
+            string newline = html.Contains("\r\n") ? "\r\n" : "\n";
+            updated = html.Insert(head.Index + head.Length, newline + "  " + tag);
+        }
+
+        if (updated != html)
+        {
+            File.WriteAllText(gamePage, updated);
+        }
+    }
+
+    // The canvas's CSS box is the viewport and its backing store is that times a capped pixel ratio (Tools/Web/hawkes-canvas-fit.js),
+    // so the picture is never stretched or cropped whatever the window or phone. First script in <head>, so it is in place
+    // before Unity's loader runs. Run on every deploy.
+    public static void InstallCanvasFit(string gamePage, int version)
+    {
+        string source = Path.Combine(ProjectRoot, "Tools", "Web", CanvasFitScript);
+        if (!File.Exists(source))
+        {
+            throw new Exception("The canvas fit script is missing: " + source);
+        }
+
+        File.WriteAllText(Path.Combine(Path.GetDirectoryName(gamePage), CanvasFitScript), File.ReadAllText(source).Replace("\r\n", "\n"));
+        string html = File.ReadAllText(gamePage);
+        string tag = "<script src=\"" + CanvasFitScript + "?v=v" + version + "\" data-hawkes-canvas-fit></script>";
+        string updated = Regex.Replace(html, @"<script[^>]*data-hawkes-canvas-fit[^>]*></script>", tag);
+        if (updated == html && !html.Contains("data-hawkes-canvas-fit"))
+        {
+            Match head = Regex.Match(html, @"<head[^>]*>");
+            if (!head.Success)
+            {
+                throw new Exception("No <head> in " + gamePage + " for the canvas fit script");
             }
             string newline = html.Contains("\r\n") ? "\r\n" : "\n";
             updated = html.Insert(head.Index + head.Length, newline + "  " + tag);
