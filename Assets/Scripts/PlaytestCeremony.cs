@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections;
 using Hawkes.Playtest;
 using UnityEngine;
@@ -81,6 +82,33 @@ public static partial class Playtest {
             run.Problem(PlaytestSeverity.Bug, "ceremony: Continue is " + contPx.ToString("0") + " px tall, wanted 48 or more");
         }
         CheckScreen("ceremony");
+
+        // Every written line of the dossier (stat rows, rank caption, Wallit's line, footer) must have its own rect:
+        // the FILED stamp and rank letter are the sheet's marks and are meant to sit over it.
+        var lines = new List<Rect>();
+        foreach (Text t in c.Panel.GetComponentsInChildren<Text>(true)) {
+            if (t == null || t.text.Length == 0 || !t.gameObject.activeInHierarchy || t.text == "FILED" || t.fontSize > 100) {
+                continue;
+            }
+            Vector3[] corners = new Vector3[4];
+            t.rectTransform.GetWorldCorners(corners);
+            lines.Add(Rect.MinMaxRect(corners[0].x, corners[0].y, corners[2].x, corners[2].y));
+        }
+        int endOverlaps = 0;
+        for (int i = 0; i < lines.Count; i++) {
+            for (int j = i + 1; j < lines.Count; j++) {
+                float w = Mathf.Min(lines[i].xMax, lines[j].xMax) - Mathf.Max(lines[i].xMin, lines[j].xMin);
+                float h = Mathf.Min(lines[i].yMax, lines[j].yMax) - Mathf.Max(lines[i].yMin, lines[j].yMin);
+                if (w > 2f && h > 2f && w * h / Mathf.Min(lines[i].width * lines[i].height, lines[j].width * lines[j].height) > 0.2f) {
+                    endOverlaps++;
+                }
+            }
+        }
+        run.Event("ceremony-lines", lines.Count + " lines on the dossier, overlaps " + endOverlaps + ", Wallit \"" + ChapterCeremony.LineSaid + "\"");
+        run.Metric("endOverlaps", endOverlaps);
+        if (endOverlaps > 0) {
+            run.Problem(PlaytestSeverity.Bug, "ceremony: " + endOverlaps + " written lines overlap");
+        }
 
         // Played again, two taps skip it to Continue.
         yield return new WaitForSecondsRealtime(1f);
