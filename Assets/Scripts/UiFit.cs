@@ -167,7 +167,7 @@ public static class UiFit {
         rect.anchorMax = new Vector2(0.5f, 1f);
         rect.pivot = new Vector2(0.5f, 1f);
         // Portrait: the wave bar's "Yo Bot / n left" row sits at about 390-420 units down, so the band starts below it.
-        float top = Mode == UiMode.Tall ? 450f : 300f;
+        float top = Mode == UiMode.Tall ? ScreenSlots.CaptionTopTall : ScreenSlots.CaptionTopWide;   // the Caption slot's top (ScreenSlots)
         Vector4 safe = SafeInsets();
         // The boss bar's own rectangle, when it is up, pushes the band down below it.
         top = Mathf.Max(top, reservedTop > 0f ? reservedTop + 14f - safe.z : 0f);
