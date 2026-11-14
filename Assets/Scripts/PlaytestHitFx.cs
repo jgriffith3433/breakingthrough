@@ -26,6 +26,10 @@ public static partial class Playtest {
         if (run.Done) {
             yield break;
         }
+        // Wave 1's opening crowd: Tuning.OpeningBots Yo Bots out inside the first 20 s of play.
+        yield return run.Until(() => Enemy.Roster.Count >= Tuning.OpeningBots - 2, 20f, "8+ Yo Bots out in the opening");
+        run.Event("opening-crowd", Enemy.Roster.Count + " bots alive early in wave 1");
+        run.Metric("openingCrowd", Enemy.Roster.Count);
         if (PauseMenu.Instance != null && PauseMenu.Instance.PauseButton != null) {
             Rect pauseHit = UiRects.HitRect(PauseMenu.Instance.PauseButton);
             float ppp = UiRects.PixelsPerPoint;
