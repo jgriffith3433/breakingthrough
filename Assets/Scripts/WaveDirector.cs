@@ -1339,8 +1339,9 @@ public class WaveDirector : MonoBehaviour {
         UiFit.Apply(hudScaler);
         Vector2 size = UiFit.Size;
         if (hudMode == UiMode.Desktop) {
-            Fit(waveText, 32, new Vector2(0f, HudPaper.Active ? -130f : -108f), new Vector2(1500f, 46f));
-            Fit(detailText, 24, new Vector2(0f, HudPaper.Active ? -174f : -154f), new Vector2(1400f, 72f));
+            // The middle column: clear of the left panel (coin ledger, Abilities, boons: to x 460) and the roster (from x 1584).
+            Fit(waveText, 32, new Vector2(0f, HudPaper.Active ? -130f : -108f), new Vector2(1000f, 46f));
+            Fit(detailText, 24, new Vector2(0f, HudPaper.Active ? -174f : -154f), new Vector2(1000f, 72f));
             Fit(coinText, 26, new Vector2(36f, -24f), new Vector2(860f, 40f));
             hudPurse.anchoredPosition = new Vector2(36f, -68f);
             lostPanel.transform.localScale = Vector3.one;

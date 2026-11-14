@@ -480,7 +480,7 @@ public class UpgradeLook : MonoBehaviour {
                 rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
                 rect.pivot = new Vector2(0.5f, 1f);
                 rect.sizeDelta = new Vector2(UiFit.Size.x - 48f, 64f);
-                rect.anchoredPosition = new Vector2(0f, -Mathf.Max(236f, UiFit.ReservedTop + 8f));
+                rect.anchoredPosition = new Vector2(0f, -Mathf.Max(262f, UiFit.ReservedTop + 8f));   // under the wave caption (WaveDirector's detail line ends at 252)
             }
         }
         LoadoutBanner banner = go.AddComponent<LoadoutBanner>();

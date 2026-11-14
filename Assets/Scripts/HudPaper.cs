@@ -238,7 +238,8 @@ public class HudPaper : MonoBehaviour {
         window.anchorMin = new Vector2(0.30f, 0.17f);
         window.anchorMax = new Vector2(0.975f, 0.89f);
         window.offsetMin = window.offsetMax = Vector2.zero;
-        Place(gainText.rectTransform, new Vector2(ledgerSize.x * 0.30f, -ledgerSize.y - 2f), new Vector2(ledgerSize.x, 34f));
+        // The "+n" pop sits beside the ledger (portrait has the room below it): under it, it printed over the Abilities panel.
+        Place(gainText.rectTransform, tall ? new Vector2(ledgerSize.x * 0.30f, -ledgerSize.y - 2f) : new Vector2(ledgerSize.x + 10f, ledgerSize.y * 0.5f + 17f), new Vector2(ledgerSize.x, 34f));
         gainText.rectTransform.anchorMin = gainText.rectTransform.anchorMax = new Vector2(0f, 0f);
         gainText.rectTransform.pivot = new Vector2(0f, 1f);
         gainText.fontSize = small;

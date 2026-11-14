@@ -84,8 +84,8 @@ public class AbilityList : MonoBehaviour {
         if (laidOut == UiMode.Desktop) {
             body.fontSize = 24;
             body.horizontalOverflow = HorizontalWrapMode.Overflow;
-            rect.anchoredPosition = new Vector2(36f, -84f);   // the event line (when there is one) is the first line
-            rect.sizeDelta = new Vector2(420f, 252f);
+            rect.anchoredPosition = new Vector2(36f, -92f);   // under the coin ledger (ends at -86); the event line (when there is one) is the first line
+            rect.sizeDelta = new Vector2(420f, 244f);
         } else {
             body.fontSize = 22;
             body.horizontalOverflow = HorizontalWrapMode.Wrap;
