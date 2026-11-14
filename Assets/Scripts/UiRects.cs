@@ -21,6 +21,9 @@ public class UiRects : MonoBehaviour {
     public static string LastJson { get; private set; }
     public static int Presses { get; private set; }
     public static int Reports { get; private set; }
+    public static string LastPressLabel { get; private set; } = "";
+    public static bool LastPressAnswered { get; private set; }
+    public static float LastPressMs { get; private set; }
 
     float nextScan;
     // Where each button stood at the last scan: a control is only moved in once it has held still (a panel sliding in is not).
@@ -79,11 +82,30 @@ public class UiRects : MonoBehaviour {
         Scan();
     }
 
+    public static string LabelFor(Button button) {
+        return LabelOf(button);
+    }
+
     static string LabelOf(Button button) {
         Text text = button.GetComponentInChildren<Text>(true);
         string label = text != null ? text.text : "";
         label = label.Replace("\n", " ").Trim();
         return label.Length > 0 ? label : button.name;
+    }
+
+    public static UiPressProbe EnsureProbe(Button button, string label = null) {
+        if (button == null) {
+            return null;
+        }
+        if (button.GetComponent<MenuButtonFx>() == null) {
+            MenuButtonFx.Add(button);
+        }
+        UiPressProbe probe = button.GetComponent<UiPressProbe>();
+        if (probe == null) {
+            probe = button.gameObject.AddComponent<UiPressProbe>();
+        }
+        probe.Label = !string.IsNullOrEmpty(label) ? label : LabelOf(button);
+        return probe;
     }
 
     // False for a button a player cannot press now: hidden, faded out, in a group that blocks, or off a world-space canvas.
@@ -119,12 +141,7 @@ public class UiRects : MonoBehaviour {
                 continue;
             }
             seen.Add(button);
-            if (button.GetComponent<MenuButtonFx>() == null) {
-                MenuButtonFx.Add(button);
-            }
-            if (button.GetComponent<UiPressProbe>() == null) {
-                button.gameObject.AddComponent<UiPressProbe>().Label = LabelOf(button);
-            }
+            EnsureProbe(button);
             RectTransform rt = button.targetGraphic.rectTransform;
             Rect r = ScreenRect(rt);
             if (r.width < 2f || r.height < 2f) {
@@ -237,23 +254,96 @@ public class UiRects : MonoBehaviour {
     }
 
     // One press: the game's own pressed state and sound answered (MenuButtonFx), so the probe counts it as answered.
-    public static void Pressed(string label, bool answered) {
+    public static void Pressed(string label, bool answered, float? ms = null) {
         Presses++;
-        HawkesUiRects.Press(label, answered, Time.unscaledDeltaTime * 1000f);
+        float elapsed = ms ?? (Time.unscaledDeltaTime * 1000f);
+        LastPressLabel = label ?? "";
+        LastPressAnswered = answered && elapsed <= HawkesUiRects.VisualMs;
+        LastPressMs = elapsed;
+        HawkesUiRects.Press(label, answered, elapsed);
     }
 }
 
 // A button's press, told to the probe. The pressed feel itself is `MenuButtonFx` (UiRects adds it to every button that lacks one),
-// which sinks the button and plays the stamp thunk on the same frame as the finger.
-public class UiPressProbe : MonoBehaviour, IPointerDownHandler {
+// which sinks the button and plays the stamp thunk on the same frame as the finger; this probe also applies and holds the pressed
+// visual state immediately on pointerdown (110 ms minimum, like HawkesUI.Press) and measures the same-frame visual response time
+// rather than the previous frame's deltaTime.
+public class UiPressProbe : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler {
+    const float PressHold = 0.11f;
     public string Label = "";
+    float lastPress = -10f;
+    float holdUntil = -10f;
+    bool holding;
+    bool down;
 
     public void OnPointerDown(PointerEventData eventData) {
         Button button = GetComponent<Button>();
         if (button == null || !button.interactable) {
             return;
         }
-        bool feel = GetComponent<MenuButtonFx>() != null;
-        UiRects.Pressed(Label, feel);
+        down = true;
+        if (Time.unscaledTime - lastPress < 0.03f) {
+            return;
+        }
+        lastPress = Time.unscaledTime;
+        float t0 = Time.realtimeSinceStartup;
+        MenuButtonFx fx = GetComponent<MenuButtonFx>();
+        if (fx == null) {
+            MenuButtonFx.Add(button);
+            fx = GetComponent<MenuButtonFx>();
+        }
+        bool feel = fx != null;
+        holding = true;
+        holdUntil = Time.unscaledTime + PressHold;
+        if (string.IsNullOrEmpty(Label)) {
+            Label = UiRects.LabelFor(button);
+        }
+        ApplyPressed(button, feel);
+        float ms = (Time.realtimeSinceStartup - t0) * 1000f;
+        UiRects.Pressed(Label, feel || button.targetGraphic != null, ms);
+    }
+
+    public void OnPointerUp(PointerEventData eventData) {
+        down = false;
+    }
+
+    public void OnPointerExit(PointerEventData eventData) {
+        down = false;
+    }
+
+    void LateUpdate() {
+        if (!holding) {
+            return;
+        }
+        Button button = GetComponent<Button>();
+        if (down || Time.unscaledTime < holdUntil) {
+            ApplyPressed(button, GetComponent<MenuButtonFx>() != null);
+            return;
+        }
+        ReleasePressed(button);
+    }
+
+    void OnDisable() {
+        down = false;
+        if (holding) {
+            ReleasePressed(GetComponent<Button>());
+        }
+    }
+
+    void ApplyPressed(Button button, bool feel) {
+        if (feel && !ComfortOptions.ReducedMotion) {
+            transform.localScale = new Vector3(0.915f, 0.915f, 1f);
+        }
+        if (button != null && button.targetGraphic != null) {
+            button.targetGraphic.canvasRenderer.SetColor(button.colors.pressedColor);
+        }
+    }
+
+    void ReleasePressed(Button button) {
+        holding = false;
+        transform.localScale = Vector3.one;
+        if (button != null && button.targetGraphic != null) {
+            button.targetGraphic.canvasRenderer.SetColor(button.colors.normalColor);
+        }
     }
 }

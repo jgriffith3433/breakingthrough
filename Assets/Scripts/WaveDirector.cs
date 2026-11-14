@@ -1154,6 +1154,12 @@ public class WaveDirector : MonoBehaviour {
             detailText.text = "";
             return;
         }
+        if (LevelUpScreen.IsOpen) {
+            // The upgrade cards own the screen: no wave line or flavour prints through behind them.
+            waveText.text = "";
+            detailText.text = "";
+            return;
+        }
         if (paperLaid != HudPaper.Active) {
             paperLaid = HudPaper.Active;
             LayoutHud();   // the paper HUD owns the top middle: move the wave line under its card
