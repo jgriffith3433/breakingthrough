@@ -294,6 +294,7 @@ public class Musician : MonoBehaviour {
         if (!Alive || amount <= 0) {
             return;
         }
+        AttackTell.NoteBlow(by);
         amount = CampaignGrade.Blow(amount);   // Hard (Campaign, a filed file) doubles every blow
         Health = Mathf.Max(0, Health - amount);
         DamageTaken += amount;
@@ -306,7 +307,8 @@ public class Musician : MonoBehaviour {
             basePos = transform.localPosition;
         }
         flinch = 1f;
-        GameAudio.Play("hit", 0.45f);
+        GameAudio.Play("slice_hurt", 0.7f);
+        GameAudio.Play("hit", 0.3f, 0.8f);
         DeptFx.CircleRipple(transform.position, 12f);   // her circle ripples
         RefreshBar();
         StakesFeel.OnSliceHit(this, amount, by);

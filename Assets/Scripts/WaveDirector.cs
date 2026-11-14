@@ -115,6 +115,7 @@ public class WaveDirector : MonoBehaviour {
         BuildHud();
         story = StoryScreen.Ensure();
         IsLost = false;
+        DownFlow.NoteControlBack(ChapterRun.Instance != null ? "chapter" : "arcade");
         Waiting = false;
         Event = WaveEvent.None;
         MetaProgress.BeginRun();
@@ -190,6 +191,10 @@ public class WaveDirector : MonoBehaviour {
                 Cursor.visible = true;
                 if (runEndRetry) {
                     runEndRetry = false;
+                    if (ChapterRun.Instance != null) {
+                        ChapterRun.Instance.Restart();   // a chapter's Retry: the same chapter from its opening, the file stays open
+                        return;
+                    }
                     ScreenTransition.Load(ScreenTransition.Kind.Returned, MetaProgress.GameScene);
                     return;
                 }
@@ -485,11 +490,17 @@ public class WaveDirector : MonoBehaviour {
         if (phase == Phase.Lost) {
             return;
         }
+        if (DownFlow.Active) {
+            return;   // her fall is already being staged; it ends in Lose
+        }
         Enemy boss = BossVoice.LiveBoss();
         if (boss != null) {
             BossVoice.OnWallitDown(boss);
         }
-        Lose();
+        // Slow motion, a camera hold, one voiced line and a music dip, then the run-end sheet (DownFlow).
+        if (!DownFlow.Begin(false, Lose)) {
+            Lose();
+        }
     }
 
     void GoToWave(int wave) {
@@ -532,7 +543,9 @@ public class WaveDirector : MonoBehaviour {
     // The playtest's shortcut to the game-over panel (a named setup event; the real way is Slice's bar emptying).
     public void DevLose() {
         if (!IsLost) {
-            Lose();
+            if (!DownFlow.Begin(false, Lose)) {
+                Lose();
+            }
         }
     }
 
@@ -569,6 +582,7 @@ public class WaveDirector : MonoBehaviour {
 
     void ShowRunEnd(bool nearly) {
         PanelFx.Show(lostPanel, "gameover", lostRect);
+        DownFlow.NoteSheet();
         if (lostBody != null) {
             lostBody.gameObject.SetActive(false);
         }
@@ -677,6 +691,7 @@ public class WaveDirector : MonoBehaviour {
         string lostWords = "Slice fell.\n" + ChapterRun.Instance.Title + " is still open.\nThe file keeps its place.";
         ScreenTransition.Go(ScreenTransition.Kind.StruckOff, () => {
             PanelFx.Show(lostPanel, "gameover", lostRect);
+            DownFlow.NoteSheet();
             if (lostBody != null) {
                 lostBody.gameObject.SetActive(false);
             }

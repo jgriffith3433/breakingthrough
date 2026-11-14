@@ -103,6 +103,16 @@ public static class PlaytestOpeningEndings {
         CinematicDirector.Events.Clear();
         run.Event("setup", "opening-endings: ch4-6 world opens + filed/received + live credits; touch=" + UiFit.Touch + " size=" + Screen.width + "x" + Screen.height);
 
+        // Audio capture: the three sounds the sound critic asked for, played by name (setup) so the audio probe hears them.
+        int before = GameAudio.Played;
+        string[] sounds = { "batcrack", "bot_death_yo", "slice_hurt" };
+        foreach (string snd in sounds) {
+            GameAudio.Play(snd, 0.8f);
+            yield return Wait(0.5f);
+        }
+        run.Event("audio-capture", "bat-hit batcrack, kill bot_death_yo, Slice-hurt slice_hurt: " + (GameAudio.Played - before) + " sounds played; music '" + MusicDirector.Current + "'");
+        run.Metric("audioCaptureSounds", GameAudio.Played - before);
+
         yield return WatchOpen(3, "ch4_open_world", "paper");
         if (run.Done) {
             yield break;
@@ -128,6 +138,26 @@ public static class PlaytestOpeningEndings {
         yield return WatchOpen(5, "ch6_open_world", null);
         if (run.Done) {
             yield break;
+        }
+
+        // The payoff as play events (setup shortcut: the last Yo Bot of a wave falls, then the wall breaks): the door opens and the circle brightens.
+        run.Event("setup", "wave 1's last Yo Bot falls in Chapter 6 (WorldPayoff.LastFell), then the wall breaks");
+        WorldPayoff.LastFell(1);
+        yield return Wait(0.5f);
+        float glow0 = WorldPayoff.Glow;
+        yield return Wait(1.6f);
+        run.Event("door-open", "opens=" + WorldPayoff.DoorOpens + " openness=" + WorldPayoff.DoorOpenness.ToString("0.00"));
+        run.Event("circle-brighten", "glow " + glow0.ToString("0.00") + " -> " + WorldPayoff.Glow.ToString("0.00"));
+        WorldPayoff.LastFell(2);
+        yield return Wait(2.8f);
+        run.Event("circle-brighten", "glow now " + WorldPayoff.Glow.ToString("0.00") + " steps=" + WorldPayoff.GlowSteps);
+        run.Metric("payoffDoorOpens", WorldPayoff.DoorOpens);
+        run.Metric("payoffGlow", WorldPayoff.Glow);
+        if (WorldPayoff.DoorOpens < 2 || WorldPayoff.DoorOpenness < 0.5f) {
+            run.Problem(PlaytestSeverity.Bug, "opening-endings: the wall's door did not open when the last Yo Bot fell (opens=" + WorldPayoff.DoorOpens + ")");
+        }
+        if (WorldPayoff.Glow <= glow0) {
+            run.Problem(PlaytestSeverity.Bug, "opening-endings: the circle did not brighten after a wave was cleared");
         }
 
         // Stay on the filed Hollow and play the endings in engine (setup shortcut: no full boss fight).
@@ -163,6 +193,8 @@ public static class PlaytestOpeningEndings {
             yield break;
         }
 
+        run.Event("audio-capture", "end: " + GameAudio.Played + " sounds played in all; music '" + MusicDirector.Current + "'");
+        run.Metric("audioSoundsTotal", GameAudio.Played);
         run.Progress(1f);
         if (!run.Done) {
             run.Finish(PlaytestOutcome.Done);
@@ -178,7 +210,26 @@ public static class PlaytestOpeningEndings {
         if (run.Done) {
             yield break;
         }
+        float begun = Time.realtimeSinceStartup;
         run.Scene(SceneManager.GetActiveScene().name);
+        // The cold blow comes first: a fixed 3/4 camera on the bat dropping a Yo Bot (hit-flash, damage number, kill count plate).
+        yield return run.Until(() => ChapterColdBlow.StartedAt > 0f || CinematicDirector.IsOpen, 20f, "Chapter " + (chapter + 1) + "'s cold blow");
+        if (ChapterColdBlow.StartedAt > 0f) {
+            float blowStart = ChapterColdBlow.StartedAt;
+            yield return run.Until(() => !ChapterColdBlow.Active, 12f, "the cold blow to end");
+            float sinceBegin = blowStart - begun;
+            run.Event("cold-blow", "chapter " + (chapter + 1) + ": camera=" + ChapterColdBlow.CameraKind + " down=" + ChapterColdBlow.Done
+                + " kill after " + ChapterColdBlow.KillSeconds.ToString("0.0") + " s, numbers=" + ChapterColdBlow.Numbers
+                + ", plate=\"" + ChapterColdBlow.PlateText + "\", fixed camera at " + sinceBegin.ToString("0.0") + " s, kill at "
+                + (sinceBegin + ChapterColdBlow.KillSeconds).ToString("0.0") + " s after Begin");
+            run.Metric("coldBlowCh" + (chapter + 1) + "KillSeconds", sinceBegin + ChapterColdBlow.KillSeconds);
+            if (!ChapterColdBlow.Done || ChapterColdBlow.Numbers < 1 || ChapterColdBlow.KillCount < 1 || sinceBegin + ChapterColdBlow.KillSeconds > 10f) {
+                run.Problem(PlaytestSeverity.Bug, "opening-endings: Chapter " + (chapter + 1) + "'s first Yo Bot was not down with a number and a count within 10 s ("
+                    + (sinceBegin + ChapterColdBlow.KillSeconds).ToString("0.0") + " s)");
+            }
+        } else {
+            run.Problem(PlaytestSeverity.Bug, "opening-endings: Chapter " + (chapter + 1) + " had no cold blow before its opening");
+        }
         yield return run.Until(() => CinematicDirector.IsOpen || Seen("fallback"), 20f, expectId + " to start");
         if (run.Done) {
             yield break;

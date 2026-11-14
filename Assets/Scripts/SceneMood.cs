@@ -23,9 +23,9 @@ public static class SceneMood {
     public static Look Yard() {
         return new Look {
             Name = "yard",
-            Exposure = 1.0f, Contrast = 1.16f, Saturation = 0.72f, Vignette = 1.25f, Bloom = 0.8f, Threshold = 0.84f,
-            Shadows = new Color(0.72f, 0.86f, 1.22f), Highlights = new Color(0.96f, 1.0f, 1.04f), Lift = new Color(0f, 0.014f, 0.04f),
-            Key = new Color(0.62f, 0.72f, 1f), KeyIntensity = 0.95f, BedVolume = 0.35f,
+            Exposure = 1.0f, Contrast = 1.16f, Saturation = 0.9f, Vignette = 1.25f, Bloom = 0.8f, Threshold = 0.84f,
+            Shadows = new Color(0.92f, 0.88f, 1.0f), Highlights = new Color(1.1f, 1.02f, 0.88f), Lift = new Color(0.012f, 0.008f, 0.02f),
+            Key = new Color(0.86f, 0.8f, 0.9f), KeyIntensity = 0.95f, BedVolume = 0.35f,
         };
     }
 

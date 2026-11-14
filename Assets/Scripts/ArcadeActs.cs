@@ -52,7 +52,7 @@ public class ArcadeActs : MonoBehaviour {
             AmbSky = new Color(0.22f, 0.34f, 0.6f), AmbEq = new Color(0.13f, 0.19f, 0.34f), AmbGround = new Color(0.04f, 0.05f, 0.1f),
             Disc = new Color(0.7f, 0.85f, 1f), DiscDir = new Vector3(0.45f, 0.35f, -0.8f), DiscSize = 0.05f, Haze = 0.8f,
             Exposure = 1.18f, Contrast = 1.2f, Saturation = 0.95f, Vignette = 1f,
-            Shadows = new Color(0.72f, 0.88f, 1.2f), Highlights = new Color(0.95f, 1.02f, 1.08f), Lift = new Color(0f, 0.012f, 0.045f) },
+            Shadows = new Color(0.92f, 0.88f, 1.0f), Highlights = new Color(1.1f, 1.0f, 0.86f), Lift = new Color(0.012f, 0.008f, 0.02f) },
         // Act III the Department's red alert: a red key, a beacon sweeping the lawn, ash in the air, higher contrast.
         new Look { Sun = new Color(1f, 0.2f, 0.16f), SunIntensity = 0.95f, Fog = new Color(0.26f, 0.03f, 0.05f), FogDensity = 0.0062f,
             SkyTop = new Color(0.14f, 0f, 0.04f), SkyHorizon = new Color(0.7f, 0.07f, 0.1f), SkyGround = new Color(0.08f, 0.01f, 0.02f),
@@ -212,6 +212,12 @@ public class ArcadeActs : MonoBehaviour {
             cur = Look.Lerp(from, target, Mathf.SmoothStep(0f, 1f, fade));
         }
         Apply(cur);
+        // The film-light layer reads these weights, so they move whether or not the score is up (they used to step inside
+        // TickMusic, which returns early without it, leaving the old act's lamps, rim and LUT stacked on the new look).
+        float wStep = dt / FadeSeconds;
+        for (int i = 0; i < weights.Length; i++) {
+            weights[i] = Mathf.MoveTowards(weights[i], weightGoal[i], wStep);
+        }
         TickMusic(dt);
     }
 
@@ -376,7 +382,7 @@ public class ArcadeActs : MonoBehaviour {
         float width = compact ? UiFit.Size.x - 48f : 1400f;
         float top = compact ? (UiFit.Mode == UiMode.Tall ? 330f : 140f) : 330f;
         bannerTitle = MakeText(go.transform, "Title", title, compact ? 36 : 60, FontStyle.Bold, new Color(1f, 0.92f, 0.72f), width, top, compact ? 56f : 90f);
-        bannerLine = MakeText(go.transform, "Line", line, compact ? 22 : 32, FontStyle.Normal, new Color(0.85f, 0.9f, 1f), width, top - (compact ? 52f : 80f), compact ? 36f : 50f);
+        bannerLine = MakeText(go.transform, "Line", line, compact ? 22 : 32, FontStyle.Normal, DeptPalette.CreamSoft, width, top - (compact ? 52f : 80f), compact ? 36f : 50f);
         bannerLeft = Tuning.ActBannerSeconds;
     }
 
@@ -468,10 +474,8 @@ public class ArcadeActs : MonoBehaviour {
             return;
         }
         float level = SoundSettings.On ? SoundSettings.Music * Tuning.ActMusicLevel * (BossTheme ? 0.2f : 1f) * ArcadeScore.Dip : 0f;
-        float step = dt / FadeSeconds;
         float mix = 0f;
         for (int i = 0; i < layers.Length; i++) {
-            weights[i] = Mathf.MoveTowards(weights[i], weightGoal[i], step);
             // Equal-power: the two layers of a crossfade never dip below one layer's level.
             float gain = Mathf.Sqrt(weights[i]);
             mix += gain;

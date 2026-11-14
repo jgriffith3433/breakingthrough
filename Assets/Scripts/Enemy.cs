@@ -113,6 +113,19 @@ public class Enemy : MonoBehaviour
     CharacterRig rig;
     bool winding;
     float windLeft;
+    bool atCircleWas;
+    // Within reach of Slice this frame (AttackTell pulses her circle while any bot has this set).
+    public bool AtCircle { get; private set; }
+
+    public Transform StrikingLimb() { return AttackLimb(); }
+
+    // The claw (Yo Bot) or front leg (Spider Bot) that strikes next: the part AttackTell glows.
+    Transform AttackLimb()
+    {
+        if (spider)
+            return swipeLeft ? spiderLegs[0] : spiderLegs[4];
+        return swipeLeft ? clawL : clawR;
+    }
     float slideExcuse;
     Vector3 modelScaleRest = Vector3.one;
     float holdLeft;
@@ -973,6 +986,10 @@ public class Enemy : MonoBehaviour
             atPlayer = toPlayer.magnitude <= PlayerGrowth.Instance.BodyRadius + 1.15f + bodyScale * 0.22f;
         }
         bool canAttack = !down && !IsCourier && (hunting || (musician != null && musician.Alive));
+        AtCircle = atMusician && canAttack && musician != null && musician.Alive;
+        if (AtCircle && !atCircleWas)
+            AttackTell.ReachedCircle(this);
+        atCircleWas = AtCircle;
         if (canAttack && winding)
         {
             // The tell: the claw goes up (or the front leg rears) for a beat before the blow, so the hit can be read and dodged.
@@ -984,6 +1001,7 @@ public class Enemy : MonoBehaviour
                 if (rig != null)
                     rig.BeginStrike();
                 BotSound.Hit(this);
+                AttackTell.Land(this);
                 GameAudio.PlayAt("batswing", transform.position + Vector3.up, 0.4f, spider ? 0.85f : 1.5f);
                 if (wall != null && wall.Alive)
                     wall.Stop(this);
@@ -1006,11 +1024,17 @@ public class Enemy : MonoBehaviour
                 if (rig != null)
                     rig.BeginWindup(windLeft);
                 BotSound.Tell(this);
+                // The tell you can see: the striking limb glows and the target's patch of ground fills red until the blow lands.
+                Vector3 blowAt = wall != null ? wall.transform.position
+                    : atMusician ? musician.transform.position
+                    : PlayerGrowth.Instance != null ? PlayerGrowth.Instance.transform.position : transform.position;
+                AttackTell.Begin(this, AttackLimb(), blowAt, Mathf.Clamp(0.85f + bodyScale * 0.22f, 1f, 2.4f), windLeft);
             }
         }
         else if (winding)
         {
             winding = false;
+            AttackTell.Cancel(this);
             if (rig != null)
                 rig.CancelWind();
         }
@@ -1569,10 +1593,11 @@ public class Enemy : MonoBehaviour
         if (flat.magnitude > ClimbReach())
             return;
         // A dodge in progress is not climbed: the bot tries again when the window closes.
-        if (CampaignMoves.Invulnerable)
+        if (CampaignMoves.Invulnerable || WallitHurt.Invulnerable)
             return;
 
         climbing = true;
+        AttackTell.Climb(this);   // a grab, not a swing: it has no wind-up
         SetSolid(false);
         Climbers++;
         climbHeight = Random.Range(0.35f, Mathf.Max(0.8f, growth.BodyHeight * 0.35f));

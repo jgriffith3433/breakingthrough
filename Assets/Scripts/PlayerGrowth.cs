@@ -357,9 +357,14 @@ public class PlayerGrowth : MonoBehaviour {
     public static System.Action<Enemy> Struck;
 
     public void OnHit(Enemy by = null) {
+        AttackTell.NoteBlow(by);
         // Campaign's dodge: a blow inside the window finds nothing.
         if (CampaignMoves.Invulnerable) {
             CampaignMoves.NoteAvoided(by);
+            return;
+        }
+        // A blow inside the 0.6 s after the last one finds nothing; a fresh one shoves, flashes, flinches and grunts.
+        if (!WallitHurt.Strike(this, by)) {
             return;
         }
         if (Struck != null) {
@@ -369,7 +374,7 @@ public class PlayerGrowth : MonoBehaviour {
         if (WaveDirector.IsLost || BatEquipment.IsAnimatingAction || Time.time < nextHitReactAt) {
             return;
         }
-        nextHitReactAt = Time.time + 1.5f;
+        nextHitReactAt = Time.time + WallitHurt.InvulnerableSeconds;
         HitReacts++;
         PlayActionClip(CharacterMovement.CLIP_HIT_REACT, 0.38f);
     }

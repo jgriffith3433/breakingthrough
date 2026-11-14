@@ -208,6 +208,7 @@ public class BossPhases : MonoBehaviour {
         Events.Add("tell|" + enemy.Title + "|" + phase + "|" + attackName + "|" + windTime.ToString("0.0"));
         enemy.Hold(windTime + 0.3f);
         enemy.BeginTell();   // the body rears back and holds until the blow lands
+        AttackTell.BossBegin(enemy, enemy.StrikingLimb(), windTime);   // the arm glows too; the lead is timed to the blow
         BotSound.TellIn(enemy, windTime);
         MarkUp = true;
         nextRing = 0f;
@@ -242,6 +243,7 @@ public class BossPhases : MonoBehaviour {
         }
         if (enemy.Phase == phase && healthAtWind - enemy.Health01 >= InterruptShare) {
             Interrupts++;
+            AttackTell.Cancel(enemy);
             Events.Add("interrupt|" + attackName);
             CancelWind();
             enemy.Stagger(1.0f);   // the broken wind-up shows: it reels
@@ -254,6 +256,7 @@ public class BossPhases : MonoBehaviour {
         }
         if (clock >= windTime) {
             BotSound.Hit(enemy);
+            AttackTell.Land(enemy, true);
             Land(slice);
         }
     }
@@ -330,8 +333,8 @@ public class BossPhases : MonoBehaviour {
         m.fill.transform.localScale = new Vector3(0.1f, 0.025f, 0.1f);
         m.fill.transform.localPosition = new Vector3(0f, 0.09f, 0f);
         if (shader != null) {
-            m.rimMat = new Material(shader) { color = new Color(1f, 0.2f, 0.15f, 0.22f) };
-            m.fillMat = new Material(shader) { color = new Color(1f, 0.3f, 0.2f, 0.4f) };
+            m.rimMat = new Material(shader) { color = Tinted(0.22f) };
+            m.fillMat = new Material(shader) { color = Tinted(0.4f) };
             rim.GetComponent<Renderer>().material = m.rimMat;
             m.fill.GetComponent<Renderer>().material = m.fillMat;
         }
@@ -341,14 +344,20 @@ public class BossPhases : MonoBehaviour {
         marks.Add(m);
     }
 
+    // The ground marks are Department red ink (DeptPalette.Red) at the given opacity.
+    static Color Tinted(float alpha) {
+        Color red = DeptPalette.Red;
+        return new Color(red.r + 0.16f, red.g + 0.06f, red.b + 0.04f, alpha);
+    }
+
     static void Paint(Mark m, float t) {
         float r = m.radius * 2f * Mathf.Lerp(0.08f, 1f, t);
         m.fill.transform.localScale = new Vector3(r, 0.025f, r);
         if (m.rimMat != null) {
-            m.rimMat.color = new Color(1f, 0.2f, 0.15f, 0.18f + 0.18f * Mathf.PingPong(Time.time * 3f, 1f));
+            m.rimMat.color = Tinted(0.18f + 0.18f * Mathf.PingPong(Time.time * 3f, 1f));
         }
         if (m.fillMat != null) {
-            m.fillMat.color = new Color(1f, 0.3f, 0.2f, 0.3f + 0.35f * t);
+            m.fillMat.color = Tinted(0.3f + 0.35f * t);
         }
     }
 

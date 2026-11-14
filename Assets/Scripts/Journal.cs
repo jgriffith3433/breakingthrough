@@ -168,6 +168,22 @@ public static class Journal {
         return false;
     }
 
+    // The objective's running count for the results sheet: "9 / 12", "2 / 2", "untouched", "9:40 / 9:00".
+    public static string Progress(int chapter, int sliceDamage, int homeRuns, int smashHits, int finishers, float seconds) {
+        Goal g = Goals[Mathf.Clamp(chapter, 0, Goals.Length - 1)];
+        switch (g.Kind) {
+            case GoalKind.SliceUntouched: return sliceDamage <= 0 ? "untouched" : "hurt " + sliceDamage;
+            case GoalKind.HomeRuns: return homeRuns + " / " + g.Target;
+            case GoalKind.SmashHits: return smashHits + " / " + g.Target;
+            case GoalKind.Finishers: return finishers + " / " + g.Target;
+            case GoalKind.Within: {
+                int a = Mathf.RoundToInt(seconds), b = g.Target;
+                return (a / 60) + ":" + (a % 60).ToString("00") + " / " + (b / 60) + ":" + (b % 60).ToString("00");
+            }
+        }
+        return "";
+    }
+
     // What the journal shows for one tab of a case file. Tabs: 0 Active, 1 Finished, 2 Collected.
     public static readonly string[] TabNames = { "Active", "Finished", "Collected" };
 

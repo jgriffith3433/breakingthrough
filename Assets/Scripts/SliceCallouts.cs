@@ -13,7 +13,7 @@ public class SliceCallouts : MonoBehaviour {
     public static SliceCallouts Instance { get; private set; }
 
     // Accent from Cast slice colour (#DBE6FF).
-    public static readonly Color Accent = new Color(0.86f, 0.90f, 1f, 1f);
+    public static readonly Color Accent = DeptPalette.Cream;
 
     public const float CircleWarn = 7.5f;
     public const float FlankReach = 11f;

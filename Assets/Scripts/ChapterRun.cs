@@ -136,6 +136,7 @@ public class ChapterRun : MonoBehaviour {
     float findRing;
     Text extraText;
     int baseHomeRuns, baseSmash, baseFinishers;
+    int xpAtStart;
     public bool FindKept { get; private set; }
     public bool GoalMet { get; private set; }
     public Vector3 FindAt { get { return findAt; } }
@@ -220,6 +221,17 @@ public class ChapterRun : MonoBehaviour {
         float t0 = Time.unscaledTime;
         while ((ChapterMap.Current == null || ChapterMap.Current.Own == null) && Time.unscaledTime - t0 < 2.5f) {
             yield return null;
+        }
+        // The cold blow: Wallit's bat drops a Yo Bot from a fixed 3/4 camera before the directed opening (ChapterColdBlow.cs).
+        if (Chapter >= 1 && Chapter <= 5 && !firstBlowOver) {
+            Transform w = player != null ? player : (PlayerGrowth.Instance != null ? PlayerGrowth.Instance.transform : null);
+            Vector3 dir = HasMarker && w != null ? Marker - w.position : Vector3.zero;
+            yield return ChapterColdBlow.Run(this, w, dir);
+            if (ChapterColdBlow.StartedAt > 0f) {
+                firstBlowOver = true;   // the objective line may show once the opening hands over
+                FirstBotDown = ChapterColdBlow.Done;
+                FirstBotDownSeconds = ChapterColdBlow.KillSeconds;
+            }
         }
         bool handed = false;
         CinematicDirector.PlayChapter(worldOpen, () => {
@@ -441,6 +453,9 @@ public class ChapterRun : MonoBehaviour {
                 } else if (waveNow < data.Waves && Kills() >= waveNow * Scaled(data.WaveSize)) {
                     if (IsReading) {
                         PageRead(waveNow);
+                    }
+                    if (data.Final && waveNow > 0) {
+                        WorldPayoff.LastFell(waveNow);   // the last Yo Bot of the wave falls: the wall's door opens, the circle brightens
                     }
                     StartWave(waveNow + 1);
                 }
@@ -983,14 +998,33 @@ public class ChapterRun : MonoBehaviour {
         shade.color = new Color(0.02f, 0.03f, 0.06f, 0.5f);   // the field stays in view: Wallit and Slice at the chapter's end point
         CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
         float par = CampaignGrade.ParOf(Chapter);
+        Musician slice = Musician.Instance;
+        int xpNow = CampaignProgress.Xp;
+        int levelNow = CampaignProgress.LevelFor(xpNow);
+        int levelThen = CampaignProgress.LevelFor(xpAtStart);
+        string next = CampaignProgress.NextUnlock(levelNow);
+        string xpValue = "LV " + (levelNow > levelThen ? levelThen + " > " + levelNow : levelNow.ToString()) + "  +" + Mathf.Max(0, xpNow - xpAtStart) + " XP";
+        string extraValue = Journal.Goals[Chapter].Name + "  " + Journal.Progress(Chapter, slice != null ? slice.DamageTaken : 0, BatEquipment.HomeRuns - baseHomeRuns, BatEquipment.SmashHits - baseSmash, BatEquipment.Finishers - baseFinishers, PlaySeconds) + (GoalMet ? "  FILED" : "  not yet");
+        string loreValue = Lore.LastUnlocked.Length > 0 ? "+" + Lore.LastUnlocked.Length + " " + Lore.LastUnlocked[0] : Lore.UnlockedCount(slot) + " / " + Lore.All.Length + " read";
+        var ranks = new System.Text.StringBuilder();
+        for (int i = 0; i < CampaignSave.ChapterCount; i++) {
+            int r = CampaignSave.BestRank(slot, i, false);
+            ranks.Append(i > 0 ? " " : "").Append(r > 0 ? CampaignGrade.Letter(r) : "-");
+        }
         var rows = new[] {
             new ChapterCeremony.Stat("TIME", Clock(PlaySeconds) + "  (par " + Clock(par) + ")"),
             new ChapterCeremony.Stat("SLICE HURT", DamageTaken <= 0 ? "none" : DamageTaken.ToString()),
             new ChapterCeremony.Stat("LOST THING", FindKept ? Journal.Finds[Chapter].Name : "still out there"),
             new ChapterCeremony.Stat("COLLECTED", Journal.FindCount(slot) + " / " + Journal.Count + (GoalMet ? "  extra filed" : "")),
+            new ChapterCeremony.Stat("XP", xpValue),
+            new ChapterCeremony.Stat("EXTRA", extraValue),
+            new ChapterCeremony.Stat("LORE LOG", loreValue),
+            new ChapterCeremony.Stat("RANKS", ranks.ToString()),
         };
-        string footer = "LV " + CampaignProgress.Level + "   XP " + CampaignProgress.Xp + (more ? "   Next: " + Story.Chapters[Chapter + 1].Title : "");
-        Ceremony = ChapterCeremony.Begin(cardRect, data.Title, CampaignSave.Active + 1, rows, Rank, footer, Next, ToMenu);
+        string footer = (next.Length > 0 ? "Next unlock: " + next : "Every ability unlocked") + (more ? "   Next: " + Story.Chapters[Chapter + 1].Title : "");
+        float barFrom = levelNow > levelThen ? 0f : CampaignProgress.LevelFraction(xpAtStart);
+        Ceremony = ChapterCeremony.Begin(cardRect, data.Title, CampaignSave.Active + 1, rows, Rank, footer, Next, ToMenu, barFrom, CampaignProgress.LevelFraction(xpNow));
+        Events.Add("ceremony|ledger|" + xpValue + "|" + extraValue + "|" + loreValue + "|ranks " + ranks);
         Events.Add("ceremony|start|" + data.Id + "|rank " + CampaignGrade.Letter(Rank));
     }
 
@@ -1308,6 +1342,7 @@ public class ChapterRun : MonoBehaviour {
         baseHomeRuns = BatEquipment.HomeRuns;
         baseSmash = BatEquipment.SmashHits;
         baseFinishers = BatEquipment.Finishers;
+        xpAtStart = CampaignProgress.Xp;
         FindKept = Journal.HasFind(slot, Chapter);
         GoalMet = Journal.HasGoal(slot, Chapter);
         Vector3 origin = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
@@ -1429,7 +1464,7 @@ public class ChapterRun : MonoBehaviour {
         objective.rectTransform.offsetMin = Vector2.zero;
         objective.rectTransform.offsetMax = Vector2.zero;
 
-        extraText = Label(canvasGo.GetComponent<RectTransform>(), "", 22, FontStyle.Italic, new Color(0.85f, 0.9f, 1f));
+        extraText = Label(canvasGo.GetComponent<RectTransform>(), "", 22, FontStyle.Italic, DeptPalette.CreamSoft);
         var erect = extraText.rectTransform;
         erect.anchorMin = new Vector2(0.5f, 0f);
         erect.anchorMax = new Vector2(0.5f, 0f);
@@ -1480,7 +1515,7 @@ public class ChapterRun : MonoBehaviour {
         column.sizeDelta = new Vector2(1400f, 900f);
         cardTitle = Label(column, "CHAPTER COMPLETE", 72, FontStyle.Bold, new Color(1f, 0.82f, 0.38f));
         Anchor(cardTitle.rectTransform, 0f, 0f, 1300f, 100f);
-        cardBody = Label(column, "", 32, FontStyle.BoldAndItalic, new Color(0.87f, 0.91f, 1f));
+        cardBody = Label(column, "", 32, FontStyle.BoldAndItalic, DeptPalette.Cream);
         Anchor(cardBody.rectTransform, 0f, 120f, 1300f, 580f);
         NextButton = MakeButton(column, "To the hub", 380f, 88f, 760f, Next);
         MenuButton = MakeButton(column, "Menu", 260f, 88f, 760f, ToMenu);

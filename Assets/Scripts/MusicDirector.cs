@@ -146,6 +146,10 @@ public class MusicDirector : MonoBehaviour {
     public static int Stingers { get; private set; }
     AudioSource stinger;
     static readonly Dictionary<string, AudioClip> standIns = new Dictionary<string, AudioClip>();
+    // Stingers that have a real file in StreamingAssets/Music. Add a name in the same change that adds its mp3; any other name plays
+    // its synthesised stand-in without a request (stinger_slice/wallit/both have no file, and asking for them was a 404 every run).
+    public static bool HasStingerFile(string name) { return MadeStingers.Contains(name); }
+    static readonly HashSet<string> MadeStingers = new HashSet<string> { "rank_c", "rank_b", "rank_a", "rank_s" };
 
     public static void Stinger(string name) {
         if (string.IsNullOrEmpty(name)) {
@@ -154,7 +158,7 @@ public class MusicDirector : MonoBehaviour {
         Stingers++;
         Events.Add("stinger|" + name);
         GameAudio.NoteOther(GameAudio.Bus.Music, "stinger_" + name);
-        Fetch("stinger_" + name, clip => {
+        Fetch(MadeStingers.Contains(name) ? "stinger_" + name : null, clip => {
             if (clip == null) {
                 clip = StandIn(name);
                 Events.Add("stinger-standin|" + name);

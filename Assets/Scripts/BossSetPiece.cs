@@ -171,6 +171,7 @@ public class BossSetPiece : MonoBehaviour {
         if (Musician.Instance == null || !Musician.Instance.Alive) {
             return;
         }
+        AttackTell.Told(boss);   // the story's crack, staged on camera, not a blow out of nowhere
         Musician.Instance.Hurt(1, boss);
         Events.Add("slice-crack|10");
         Fx.Ring(Musician.Instance.transform.position + Vector3.up * 0.4f, 3.5f, new Color(1f, 0.35f, 0.3f, 0.7f), 0.45f);

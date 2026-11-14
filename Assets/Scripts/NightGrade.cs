@@ -15,9 +15,9 @@ public class NightGrade : MonoBehaviour {
     [Range(0.5f, 1.6f)] public float Contrast = 1.12f;
     [Range(0f, 2f)] public float Saturation = 0.9f;
     [Range(0f, 2f)] public float Vignette = 0.85f;
-    public Color Shadows = new Color(0.8f, 0.9f, 1.16f);
-    public Color Highlights = new Color(1.08f, 1.0f, 0.9f);
-    public Color Lift = new Color(0.0f, 0.012f, 0.03f);
+    public Color Shadows = DeptPalette.GradeShadows;
+    public Color Highlights = DeptPalette.GradeHighlights;
+    public Color Lift = DeptPalette.GradeLift;
 
     // Colour-grading LUT strips (256x16) of the two looks being blended, set by FilmLight. LutAmount 0 = off.
     [HideInInspector] public Texture2D LutA, LutB;
@@ -25,6 +25,22 @@ public class NightGrade : MonoBehaviour {
 
     // 0..1: how much of Slice's health is gone (StakesFeel). The post pass drains the screen's edges toward grey by it.
     [HideInInspector] public float Stakes;
+
+    // The one exposure rule every place shares (Arcade acts, hub, chapters, finale): whatever a Look asks for, the pass never
+    // exposes above MaxExposure, never lets bloom exceed MaxBloom, and only blooms what is really bright (a threshold at or
+    // above BloomFloor). Phones render in 8-bit LDR, where 1.0 is already white, so they get a lower bloom, a higher floor, a
+    // later shoulder and a dither that breaks up banding in the vignette and fog gradients. Looks keep their colour and
+    // contrast; only the level is held. See Docs/FilmLight.md.
+    public const float MaxExposure = 1.04f;
+    public static float MaxBloom { get { return UiFit.Touch ? 0.3f : 0.5f; } }
+    public static float BloomFloor { get { return UiFit.Touch ? 0.92f : 1.0f; } }
+    public static float ShoulderStart { get { return UiFit.Touch ? 0.66f : 0.6f; } }
+    public static float BloomClamp { get { return UiFit.Touch ? 2f : 4f; } }   // one pixel feeds bloom at most this bright: a crowd of glows cannot pile up
+    public static float DitherAmount { get { return UiFit.Touch ? 1.5f : 0.75f; } }   // in 1/255 steps
+
+    public float EffectiveExposure { get { return Mathf.Min(Exposure, MaxExposure); } }
+    public float EffectiveBloom { get { return Mathf.Min(Intensity, MaxBloom); } }
+    public float EffectiveThreshold { get { return Mathf.Max(Threshold, BloomFloor); } }
 
     Material material;
     readonly RenderTexture[] levels = new RenderTexture[8];
@@ -39,6 +55,7 @@ public class NightGrade : MonoBehaviour {
     static readonly int LutAId = Shader.PropertyToID("_LutA");
     static readonly int LutBId = Shader.PropertyToID("_LutB");
     static readonly int LutId = Shader.PropertyToID("_Lut");
+    static readonly int ToneId = Shader.PropertyToID("_Tone");
     static readonly int LiftId = Shader.PropertyToID("_Lift");
 
     void OnRenderImage(RenderTexture source, RenderTexture destination) {
@@ -53,10 +70,12 @@ public class NightGrade : MonoBehaviour {
             material.hideFlags = HideFlags.HideAndDontSave;
         }
 
-        float knee = Threshold * Knee + 0.00001f;
-        material.SetVector(FilterId, new Vector4(Threshold, Threshold - knee, 2f * knee, 0.25f / knee));
-        material.SetFloat(IntensityId, Intensity);
-        material.SetVector(GradeId, new Vector4(Exposure, Contrast, Saturation, Vignette));
+        float threshold = EffectiveThreshold;
+        float knee = threshold * Knee + 0.00001f;
+        material.SetVector(FilterId, new Vector4(threshold, threshold - knee, 2f * knee, 0.25f / knee));
+        material.SetFloat(IntensityId, EffectiveBloom);
+        material.SetVector(GradeId, new Vector4(EffectiveExposure, Contrast, Saturation, Vignette));
+        material.SetVector(ToneId, new Vector4(ShoulderStart, BloomClamp, DitherAmount / 255f, 0f));
         material.SetColor(ShadowsId, Shadows);
         material.SetColor(HighlightsId, Highlights);
         material.SetColor(LiftId, Lift);

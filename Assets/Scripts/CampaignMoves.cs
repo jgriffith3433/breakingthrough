@@ -111,9 +111,16 @@ public static class CampaignMoves {
 public class CampaignDodge : MonoBehaviour {
     Vector3 heading;
     CharacterController body;
+    float pressAt;
+    bool fromSwing;
+    bool measured = true;
 
-    public void Go(Vector3 direction) {
+    // pressAt is the Feel.Now stamp of the press; fromSwing says a swing was cut short to start it.
+    public void Go(Vector3 direction, float press, bool cutSwing) {
         heading = direction;
+        pressAt = press;
+        fromSwing = cutSwing;
+        measured = false;
     }
 
     void Update() {
@@ -125,6 +132,10 @@ public class CampaignDodge : MonoBehaviour {
         }
         if (body != null && body.enabled) {
             body.Move(heading * (CampaignMoves.DodgeDistance / CampaignMoves.DodgeSeconds) * Time.deltaTime);
+            if (!measured) {
+                measured = true;
+                Feel.DodgeMoved(pressAt, fromSwing);
+            }
         }
     }
 

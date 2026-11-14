@@ -701,3 +701,10 @@ screen with a rubber stamp slammed on it, then peeling away: **ENTER** into a ru
 on a win), **STRUCK OFF** when Slice falls, **RETURNED** to the menu or on a retry. A chapter's or the hub's load ends on its case-file
 card: the place's name, one line from Wallit or Slice about it (existing voice lines, nothing new) and a paper strip that fills as the
 place truly loads. Code: `ScreenTransition.cs`, `LoadScreen.cs`; art `Resources/LoadCards/`.
+
+## The wall gives (played, not told)
+
+The Department's wall is the edge of the Hollow, and it is how the player sees the story move. Every wave cleared opens a door
+in it for the length of the break (warm light spills out, Slice's circle burns a step brighter); at waves 10, 20 and 30 the wall
+breaks and drops to stumps. Chapter 6 opens on those stumps ("The circle is brighter.") and opens the door again between its
+three waves. No line explains it: Wallit and Slice only react ("Clean."). Code: `WorldPayoff.cs`; bible beat 15.

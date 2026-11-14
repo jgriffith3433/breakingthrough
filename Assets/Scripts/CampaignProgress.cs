@@ -131,6 +131,26 @@ public static class CampaignProgress {
         return Mathf.Max(0f, readyAt[ability] - Time.time);
     }
 
+    // 0..1 through the current level (1 at the top level), for the results sheet's XP bar.
+    public static float LevelFraction(int xp) {
+        int level = LevelFor(xp);
+        if (level >= MaxLevel) {
+            return 1f;
+        }
+        return Mathf.Clamp01((xp - XpAt(level)) / (float)(XpAt(level + 1) - XpAt(level)));
+    }
+
+    // The next ability a level opens, as "LV 4 Receipt" (empty at the top level).
+    public static string NextUnlock(int level) {
+        int best = -1;
+        for (int i = 0; i < Abilities.Length; i++) {
+            if (Abilities[i].Level > level && (best < 0 || Abilities[i].Level < Abilities[best].Level)) {
+                best = i;
+            }
+        }
+        return best < 0 ? "" : "LV " + Abilities[best].Level + " " + Abilities[best].Name;
+    }
+
     public static int UnlockedCount(int xp) {
         int level = LevelFor(xp);
         int n = 0;
@@ -190,7 +210,10 @@ public static class CampaignProgress {
     }
 
     // A slot's key was pressed. True when its ability went off.
-    public static bool Use(int slot, Transform player) {
+    public static bool Use(int slot, Transform player, float pressStamp = -1f, bool cutSwing = false) {
+        if (pressStamp < 0f) {
+            pressStamp = Feel.Now;
+        }
         int fill = SlotFill[slot];
         if (fill == SlotDodge) {
             if (Enemy.Climbers > 0 || (PlayerGrowth.Instance != null && PlayerGrowth.Instance.Rooted)) {
@@ -205,7 +228,7 @@ public static class CampaignProgress {
                 dash = ChapterRun.Instance.GetComponent<CampaignDodge>();
             }
             if (dash != null) {
-                dash.Go(heading);
+                dash.Go(heading, pressStamp, cutSwing);
             }
             return true;
         }
@@ -456,9 +479,57 @@ public class CampaignAbilities : MonoBehaviour {
             return;
         }
         for (int i = 0; i < CampaignProgress.SlotCount; i++) {
-            if (PlayInput.GetKeyDown(CampaignProgress.SlotKeys[i])) {
+            if (!PlayInput.GetKeyDown(CampaignProgress.SlotKeys[i])) {
+                continue;
+            }
+            if (CampaignProgress.SlotFill[i] == CampaignProgress.SlotDodge) {
+                if (dodgeSlot >= 0) {
+                    Feel.Drop("dodge overwritten");
+                }
+                Feel.PressDodge();
+                dodgeSlot = i;
+                dodgeAt = Feel.Now;
+            } else {
                 CampaignProgress.Use(i, PlayerGrowth.Instance.transform);
             }
+        }
+        if (dodgeSlot >= 0) {
+            TickDodge();
+        }
+    }
+
+    // The dodge press is buffered for Feel.BufferSeconds: it goes off the moment Wallit can (not cooling down, and
+    // a swing past its contact), cutting a swing's recovery short. A swing before its contact holds it a beat.
+    int dodgeSlot = -1;
+    float dodgeAt;
+
+    void TickDodge() {
+        float age = Feel.Now - dodgeAt;
+        if (Enemy.Climbers > 0 || (PlayerGrowth.Instance != null && PlayerGrowth.Instance.Rooted)) {
+            dodgeSlot = -1;   // held fast: the dodge cannot go, and the swing is left alone
+            return;
+        }
+        bool cooling = !CampaignMoves.DodgeReady;
+        if (cooling && CampaignMoves.DodgeWait > Feel.BufferSeconds) {
+            dodgeSlot = -1;   // still cooling down: a plain refusal, not a lost press
+            return;
+        }
+        bool pre = BatEquipment.IsAnimatingAction && !BatEquipment.InRecovery && !BatEquipment.Charging;
+        if (!cooling && !pre) {
+            bool cut = BatEquipment.CancelForDodge();
+            int slot = dodgeSlot;
+            dodgeSlot = -1;
+            if (age > 0.02f) {
+                Feel.Waited(age);
+            }
+            if (!CampaignProgress.Use(slot, PlayerGrowth.Instance.transform, dodgeAt, cut) && cut) {
+                Feel.Drop("dodge refused");
+            }
+            return;
+        }
+        if (age > Feel.BufferSeconds) {
+            dodgeSlot = -1;
+            Feel.Drop("dodge expired");
         }
     }
 }

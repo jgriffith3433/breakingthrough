@@ -86,6 +86,26 @@ public static partial class Playtest {
                 Object.Destroy(boss.gameObject);
                 continue;
             }
+            // A level-up card can be open (bolts from the last boss): the entrance waits for the pick, so pick it (a real key press)
+            // and wait for THIS entrance to open before watching, or the watch reads the previous boss's title and timings.
+            float openWait = 0f;
+            while (CinematicDirector.BossIntros <= before && openWait < 20f && !run.Done) {
+                if (LevelUpScreen.IsOpen) {
+                    PlayInput.Tap(KeyCode.Alpha1);
+                    yield return new WaitForSecondsRealtime(0.8f);
+                    openWait += 0.8f;
+                } else {
+                    yield return null;
+                    openWait += Time.unscaledDeltaTime;
+                }
+            }
+            if (CinematicDirector.BossIntros <= before) {
+                run.Problem(PlaytestSeverity.Bug, "boss-entrances: " + names[i] + "'s entrance never started");
+                if (boss != null) {
+                    Object.Destroy(boss.gameObject);
+                }
+                continue;
+            }
             bool skip = i == names.Length - 1;
             yield return BossEntranceWatch(names[i], phone, skip);
             count++;

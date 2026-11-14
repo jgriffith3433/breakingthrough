@@ -375,6 +375,22 @@ and a playtest event name.
     `two-shot-amplitude`, `two-shot-portrait`, `two-shot-phone`; playtest `hub-two-shot`. Chapter cutscenes still use the portrait
     box until the same stage is wired there.
 
+15. **The wall gives, the circle brightens (built, `WorldPayoff.cs`).** Arcade and Chapter 6, at the rim (196 m, no collider). *Where / when:*
+    when the last Yo Bot of a wave falls, a door in the Department's wall swings open on warm light (`slot_shutter`) and the
+    circle's own light climbs a step with a soft ring across the grass; the door shuts when the next wave starts (Arcade) or after
+    9 s (Chapter 6, where it is called from `ChapterRun` between the three waves). At waves 10, 20 and 30 the wall itself breaks:
+    the lintel and the piers shed chunky brick plates (`stamp_heavy`, low) and drop to stumps, so by wave 30 the wall is the
+    stumps Chapter 6 opens on, and the filed Hollow is where the player has been heading. Told by light, a door and a thud,
+    no caption. Proof: events `door-open`, `circle-brighten`; metrics `payoffDoorOpens`, `payoffGlow`; playtest `opening-endings`.
+
+### The down beat (Arcade and chapters)
+
+**Where / When** — Slice's bar empties (Arcade, any chapter with the circle), or Wallit's last health point goes in Chapter 1's level. The
+world does not freeze: for 0.8 s it crawls at a fifth of its speed, the camera swings to the one who fell and holds, the music drops to
+a third, and one voiced line that already exists is said (Wallit, "Slice! Hold on!"; Slice, "Wallit. Now."). Then the STRUCK OFF sheet
+(Arcade, chapters) or Wallit's return to the last door (level). The sheet puts Retry first and focused, one press from the fight, with
+Menu beside it; the cast's run-end exchange still plays beside the buttons, it no longer holds them back. Code: `DownFlow.cs`.
+
 ### The act changes (Arcade)
 
 After the wave 10 and wave 20 bosses the hour turns as a staged 6.2 s event on the CinematicDirector (`CinematicAct.cs`), once per run per act, a tap skips it. Camera: pulls up and back over the whole Hollow with Wallit and Slice kept in frame (pushed back further on a portrait phone), the post-office ruin on the horizon, then returns to play (0.3 s hand-off). Light: sky, key, fog, grade and score blend to the next act's look over the scene. World change: **Cold Hour**, the lamp posts go dark and flare on one by one and fog rolls in over the hedges; **Last Light**, the ruin's red beacon lights and sweeps the lawn and paper burns at the edges (big soft glows and smoke, never sparks). Voice: one exchange of existing lines (Cold Hour: Slice "Legs. Count them." / Wallit "Pay up."; Last Light: Wallit "Nobody touches her." / Slice "Clean."). The card (ACT II / COLD HOUR, ACT III / LAST LIGHT) is stamped in the upper third in the Department typeface with the act's chime.
@@ -391,6 +407,7 @@ boss theme. Spec and card table: Docs/Story.md, "Boss entrances". Code `Cinemati
 | A Hollow | stamp press silhouette still open | Dead Letter Office ruin (built, `HollowPostOffice`); three acts with light, sky, score and mix (built, `arcade-acts`); wall stamp press silhouette still open; painted act skies and recorded stems would be GPU extras; the score reacts to danger (ArcadeScore: percussion and brass stems on bar lines, a boss phase layer, a 4 s cadence on each boss death, `arcade-score`) | code |
 | E Walk | stilts 25 m apart is too thin | skimming papers, far bell, stilt chirps | code + 2 sfx |
 | F Reading | long stretches between lecterns | flying forms, desk stamp tap | code + 1 sfx |
+| A/G wall and door | payoff was told in text and cards | `WorldPayoff`: door opens on a wave's last Yo Bot, circle brightens, wall breaks at waves 10/20/30 (built) |
 | G Filed | quiet by design | doorframes open on old chapter sounds | code, reuse sfx |
 | C Gate | tannoy voice not made | one `audio.voice` line | cents |
 | All | no measured gap clock | a playtest walk that times the gaps (see playtest-scenario skill) | code, later |
