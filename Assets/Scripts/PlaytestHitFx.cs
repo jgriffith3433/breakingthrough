@@ -27,7 +27,19 @@ public static partial class Playtest {
             yield break;
         }
         // Wave 1's opening crowd: Tuning.OpeningBots Yo Bots out inside the first 20 s of play.
-        yield return run.Until(() => Enemy.Roster.Count >= Tuning.OpeningBots - 2, 20f, "8+ Yo Bots out in the opening");
+        // The bot plays while it waits (it used to stand idle), so the opening never stalls the scenario.
+        var player = Object.FindAnyObjectByType<CharacterMovement>();
+        int openingPeak = 0;
+        yield return AnimFight(player, 20f, () => {
+            openingPeak = Mathf.Max(openingPeak, Enemy.Roster.Count);
+            return openingPeak >= Tuning.OpeningBots - 2;
+        });
+        if (run.Done) {
+            yield break;
+        }
+        if (openingPeak < Tuning.OpeningBots - 2) {
+            run.Problem(PlaytestSeverity.Warning, "only " + openingPeak + " Yo Bots were out at once in the first 20 s of wave 1 (want " + (Tuning.OpeningBots - 2) + "+)");
+        }
         run.Event("opening-crowd", Enemy.Roster.Count + " bots alive early in wave 1");
         run.Metric("openingCrowd", Enemy.Roster.Count);
         if (PauseMenu.Instance != null && PauseMenu.Instance.PauseButton != null) {
@@ -40,7 +52,6 @@ public static partial class Playtest {
                 run.Problem(PlaytestSeverity.Bug, "Pause button II hit area is " + pw.ToString("0.0") + "x" + ph.ToString("0.0") + " px (need 44x44)");
             }
         }
-        var player = Object.FindAnyObjectByType<CharacterMovement>();
 
         run.Scene("Hit VFX: swings, hits and deaths");
         yield return AnimFight(player, 30f, () => DeptFx.Stamps >= 2 && BatEquipment.TrailSwings >= 3 && DeptFx.Bursts >= 4);
