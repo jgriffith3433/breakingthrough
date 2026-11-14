@@ -37,7 +37,6 @@ class AudioImportRules : AssetPostprocessor
             // Short lines: preload so the first trigger plays at once, and never load in the background (a clip that is
             // still loading when a line fires is a silent gap). VoiceImportCheck fails the build when any of this drifts.
             settings.preloadAudioData = true;
-            importer.preloadAudioData = true;
             importer.loadInBackground = false;
             // The WebGL override is explicit so no per-platform setting on a stray .meta can win.
             importer.SetOverrideSampleSettings("WebGL", settings);

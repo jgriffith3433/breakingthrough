@@ -59,6 +59,8 @@ public class LevelScene : MonoBehaviour {
     public float SecondsSinceInput { get { return Time.time - lastInputAt; } }
     public Vector3 Checkpoint { get; set; }
     public int Shoves { get; private set; }
+    public bool Resumed { get; private set; }       // this load picked up a saved checkpoint
+    public static bool SkipResume;                   // the next load starts the chapter fresh (Start over, playtests)
 
     CharacterController body;
     Vector3 lastPos;
@@ -91,9 +93,23 @@ public class LevelScene : MonoBehaviour {
         Hud = LevelHud.Make(transform);
         Yard = gameObject.AddComponent<LevelYard>();
         Yard.Build(this);
-        MakeCamera();
-        MakePlayer(Yard.PlayerStart);
-        Checkpoint = Yard.PlayerStart;
+        // A checkpoint saved on this file for this chapter (LevelCheckpoint): Wallit stands there, the beats done stay done.
+        CampaignSave.Slot file = CampaignSave.Get(CampaignSave.Active);
+        Resumed = !SkipResume && LevelCheckpoint.Has(file, Chapter);
+        Vector3 start = Yard.PlayerStart;
+        if (Resumed) {
+            start = LevelCheckpoint.PositionOf(file);
+            start.y = Mathf.Max(start.y, LevelYard.H(start.x, start.z));
+        }
+        MakeCamera(start);
+        MakePlayer(start);
+        Checkpoint = start;
+        if (Resumed) {
+            Health = Mathf.Clamp(Mathf.Max(file.cpHealth, MaxHealth / 2), 1, MaxHealth);
+            Seconds = file.cpSeconds;
+            Yard.Restore(file);
+        }
+        SkipResume = false;
         Yard.Begin();
         MusicDirector.Play(MusicDirector.ChapterTrack(Chapter));
         MusicDirector.Ambience(MusicDirector.AmbienceFor(Chapter));
@@ -134,7 +150,7 @@ public class LevelScene : MonoBehaviour {
     }
 
     // The camera is scene2's: ZeldaStyleCamera with the numbers that scene serializes, a night grade over it.
-    void MakeCamera() {
+    void MakeCamera(Vector3 at) {
         var go = new GameObject("Main Camera");
         go.tag = "MainCamera";
         Cam = go.AddComponent<Camera>();
@@ -145,7 +161,7 @@ public class LevelScene : MonoBehaviour {
         Cam.farClipPlane = 520f;
         Cam.allowHDR = !UiFit.Touch;
         go.AddComponent<AudioListener>();
-        go.transform.position = Yard.PlayerStart + new Vector3(0f, 4f, -6f);
+        go.transform.position = at + new Vector3(0f, 4f, -6f);
         go.transform.rotation = Quaternion.Euler(18f, 0f, 0f);
         SceneMood.Apply(Cam, SceneMood.Yard(), false);
         go.AddComponent<ZeldaStyleCamera>();
