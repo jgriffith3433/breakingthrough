@@ -61,6 +61,11 @@ public static class Feel {
         SwingLatencyMs = Mathf.Max(SwingLatencyMs, ms);
     }
 
+    // A swing (or a charge) cut short for a dodge.
+    public static void Cancelled() {
+        CancelledSwings++;
+    }
+
     public static void DodgeMoved(float pressAt, bool outOfSwing) {
         float ms = Mathf.Max(0f, (Now - pressAt) * 1000f);
         DodgeLatencyMs = Mathf.Max(DodgeLatencyMs, ms);
