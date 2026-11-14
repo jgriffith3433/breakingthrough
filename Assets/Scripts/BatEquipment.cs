@@ -427,7 +427,7 @@ public class BatEquipment : MonoBehaviour {
         }
 
         autoIn -= dt;
-        bool auto = canAct && !pressing && move == Move.None && queued == Move.None && (OpeningAuto || WaveDirector.Wave >= MetaProgress.AutoWave());
+        bool auto = canAct && !pressing && move == Move.None && queued == Move.None && (OpeningAuto || WaveDirector.Wave >= MetaProgress.AutoWave() || (ChapterRun.Instance == null && MetaProgress.RunsFinished == 0 && WaveDirector.Wave <= Tuning.FirstRunAutoUntil));
         if (auto && autoIn <= 0f && Nearest(Reach * 1.05f, 180f) != null) {
             float grown = PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f;
             autoIn = Mathf.Lerp(0.5f, 0.28f, Mathf.Clamp01((grown - 1f) / 4f)) * MetaProgress.DrawHaste() / RunBoons.DrawSpeed;
