@@ -50,6 +50,15 @@ public static class PlaytestTwoShot {
         }
         Tap(CampaignPanel.Instance.SlotButtons[0].gameObject);
         run.Event("tap", "case file 1");
+        run.Event("case-file-press", "label=\"" + UiRects.LastPressLabel + "\" answered=" + UiRects.LastPressAnswered
+            + " ms=" + UiRects.LastPressMs.ToString("0.0")
+            + " scale=" + CampaignPanel.Instance.SlotButtons[0].transform.localScale.x.ToString("0.000")
+            + " sub=\"" + CampaignPanel.Instance.SubtitleShown + "\"");
+        run.Metric("caseFilePressMs", UiRects.LastPressMs);
+        if (!UiRects.LastPressAnswered || UiRects.LastPressMs > HawkesUiRects.VisualMs) {
+            run.Problem(PlaytestSeverity.Bug, "hub-two-shot: Case file 1 press was not visually answered within "
+                + HawkesUiRects.VisualMs + " ms (answered=" + UiRects.LastPressAnswered + ", ms=" + UiRects.LastPressMs.ToString("0.0") + ")");
+        }
         float limit = Time.realtimeSinceStartup + 45f;
         while (Time.realtimeSinceStartup < limit && !(ChapterScene.Instance != null && SceneManager.GetActiveScene().name == CampaignSave.Scene)) {
             yield return null;
