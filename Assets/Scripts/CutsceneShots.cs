@@ -576,6 +576,11 @@ public partial class Cutscene {
         if (string.IsNullOrEmpty(name)) {
             return;
         }
+        if (name == "pad") {   // the synthesised pad, not a file: never request it
+            bedWanted = true;
+            BedReady(null);
+            return;
+        }
         // The score is fetched from StreamingAssets (MusicDirector.Fetch); a clip in Resources/Cinematics also counts.
         AudioClip clip = MusicDirector.Cached(name) ?? Resources.Load<AudioClip>("Cinematics/" + name);
         if (clip != null || MusicDirector.Missing(name)) {

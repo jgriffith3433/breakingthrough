@@ -8784,7 +8784,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                 yield break;
             }
             MusicDirector.Play(c[0], c[1]);
-            yield return AwaitTrack(c[0]);
+            yield return AwaitTrack(MusicDirector.HasCueFile(c[0]) ? c[0] : c[1]);   // never ask the server for a cue with no file (a 404)
             yield return new WaitForSecondsRealtime(2f);
             run.Event("leitmotif-cue", c[0] + ": " + (MusicDirector.Cached(c[0]) != null ? "file" : "fallback " + c[1]) + ", playing " + MusicDirector.Current);
         }
