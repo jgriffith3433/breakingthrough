@@ -45,6 +45,11 @@ public class BatEquipment : MonoBehaviour {
         return Instance != null && Instance.CancelMove();
     }
 
+    // Seconds left in the swing now playing (0 when none): the playtest presses inside the last 150 ms.
+    public static float SwingRemaining {
+        get { return Instance != null && Instance.move != Move.None ? Mathf.Max(0f, Instance.moveLength - Instance.moveTime) : 0f; }
+    }
+
     public static bool Charging {
         get { return Instance != null && Instance.charging; }
     }
