@@ -236,6 +236,9 @@ public class CombatTells : MonoBehaviour {
     }
 
     void Awake() {
+        Tells.Clear();
+        Pool.Clear();   // the old scene took its marks with it
+        Reached.Clear();
         var go = new GameObject("Slice Edge Tint");
         go.transform.SetParent(transform, false);
         canvas = go.AddComponent<Canvas>();
