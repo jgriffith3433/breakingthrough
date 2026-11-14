@@ -211,6 +211,7 @@ public static class RunBoons {
             return false;
         }
         PendingChests--;
+        LastCardWasWave = false;
         return true;
     }
 
