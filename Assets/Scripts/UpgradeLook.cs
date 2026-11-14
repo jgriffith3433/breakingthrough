@@ -400,7 +400,7 @@ public class UpgradeLook : MonoBehaviour {
         }
         if (y >= AnnounceY) {
             // The wave-cleared / level-up cards own the screen: an announcement (a boss's "approaches!") waits for them to close.
-            if (announcing != null || LevelUpScreen.IsOpen || CinematicDirector.BossOpen) {
+            if (announcing != null || LevelUpScreen.IsOpen || CinematicDirector.BossOpen || ArcadeActs.BannerUp) {
                 foreach (var w in waiting) {
                     if (w.Key == line) {
                         return;
@@ -419,7 +419,7 @@ public class UpgradeLook : MonoBehaviour {
 
     // Called every frame by LevelUpScreen while no card is open: a waiting announcement takes the slot once the cards are gone.
     public static void PumpAnnouncements() {
-        if (waiting.Count == 0 || announcing != null || LevelUpScreen.IsOpen || CinematicDirector.BossOpen) {
+        if (waiting.Count == 0 || announcing != null || LevelUpScreen.IsOpen || CinematicDirector.BossOpen || ArcadeActs.BannerUp) {
             return;
         }
         if (WaveDirector.IsLost || WaveDirector.Instance == null) {
@@ -482,6 +482,13 @@ public class UpgradeLook : MonoBehaviour {
                 rect.sizeDelta = new Vector2(UiFit.Size.x - 48f, 64f);
                 rect.anchoredPosition = new Vector2(0f, -Mathf.Max(236f, UiFit.ReservedTop + 8f));
             }
+        }
+        if (y >= AnnounceY && UiFit.Mode != UiMode.Tall) {
+            // Its own slot under the HUD strip and the act banner (ScreenSlots.Announce), clear of any text already up.
+            float s = ScreenSlots.UnitScale();
+            bool clear;
+            float top = ScreenSlots.FitTop(Slot.Announce, Mathf.Min(rect.sizeDelta.x, text.preferredWidth + 24f) * s, rect.sizeDelta.y * s, go.transform, out clear);
+            rect.anchoredPosition = new Vector2(0f, (top - rect.sizeDelta.y * s * 0.5f - Screen.height * 0.5f) / s);
         }
         LoadoutBanner banner = go.AddComponent<LoadoutBanner>();
         banner.SetLife(seconds);
