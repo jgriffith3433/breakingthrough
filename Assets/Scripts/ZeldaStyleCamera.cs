@@ -97,6 +97,24 @@ public class ZeldaStyleCamera : MonoBehaviour {
     Vector3 cinePos;
     Quaternion cineRot = Quaternion.identity;
     public static float FeelFollowDist;
+    // Fight framing: a critically damped bias of the look target toward the middle of Wallit, Slice and the nearest threat,
+    // a distance pulled out (capped) when they spread, and a lock focus point that eases between targets.
+    public const float FightRange = 8f;          // a threat this near (m) joins the frame
+    public const float SliceFrameRange = 26f;    // Slice joins the frame while she is this near Wallit
+    public const float LockEaseSeconds = 0.3f;   // a lock swap eases over this long (0.2 to 0.4 s)
+    const float FightBiasCap = 5f;
+    const float FightPullCapDesktop = 5f;
+    const float FightPullCapTall = 8f;
+    Vector3 fightBias, fightBiasVel;
+    float fightExtra, fightExtraVel;
+    float fightDrop, fightDropVel;
+    GameObject focusOf;
+    Vector3 focusFrom, focusPos;
+    float focusT = 1f;
+    public static bool FeelFighting;
+    public static float FeelFightPull;
+    public static int FeelLockEases;
+    public static float FeelLastEaseSeconds;
     public static float FeelFov;
     public static bool FeelRecentred;
     public static float FeelMaxLockSnapDeg;
@@ -134,6 +152,9 @@ public class ZeldaStyleCamera : MonoBehaviour {
 
     // The cinematic director writes the view each LateUpdate; the follow camera still ticks underneath.
     public void CinematicHold(Vector3 pos, Quaternion rot) {
+        if (!cineHeld) {
+            CameraFeel.Cut("cinematic");
+        }
         cineHeld = true;
         cinePos = pos;
         cineRot = rot;
@@ -142,6 +163,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
 
     // Point the orbit behind Wallit and snap there so the handoff has a stable follow target.
     public void SnapBehind() {
+        CameraFeel.Cut("snap-behind");
         cineHeld = false;
         if (FollowXForm == null) {
             FollowXForm = GameObject.FindWithTag("Player") != null ? GameObject.FindWithTag("Player").transform : null;
@@ -170,6 +192,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
     // Ease from the current (cinematic) pose onto the follow camera over `seconds` (about 0.6 s).
     // Call while the directed view is still held so the blend starts from the last shot, not from a snap.
     public void BeginHandoff(float seconds) {
+        CameraFeel.Cut("handoff");
         handoffDur = Mathf.Max(0.05f, seconds);
         handoffLeft = handoffDur;
         handoffFromPos = cineHeld ? cinePos : transform.position;
@@ -220,6 +243,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
         followDist = MaxDistance;
         ClampFov();
         CameraFeel.Ensure(GetComponent<Camera>());
+        CameraFeel.Cut("scene-start");
         CamBlock.EnsureMatrix();
         LockMouse();
         Cursor.visible = false;
@@ -302,6 +326,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
         }
 
         AcquireTarget();
+        TickFocus();
         CamState = CamStates.Behind;
         if (WaveDirector.IsBuilding || LevelUpScreen.IsOpen || PauseMenu.IsOpen || Cutscene.IsOpen) {
             Cursor.lockState = CursorLockMode.None;
@@ -335,7 +360,9 @@ public class ZeldaStyleCamera : MonoBehaviour {
                 LookDir = Quaternion.Euler(0f, orbitYaw, 0f) * Vector3.forward;
                 float body = Mathf.Max(1f, BodyScale);
                 float camDist = CurrentCameraDistance * Mathf.Lerp(1f, body, 0.18f);
-                TargetPosition = FollowXForm.position + Vector3.up * (DistanceUp * body) + Quaternion.Euler(orbitPitch, orbitYaw, 0f) * new Vector3(0f, 0f, -camDist);
+                TickFight(camDist);
+                camDist += fightExtra;
+                TargetPosition = FollowXForm.position + fightBias + Vector3.up * (DistanceUp * body) + Quaternion.Euler(orbitPitch, orbitYaw, 0f) * new Vector3(0f, 0f, -camDist);
                 break;
             case CamStates.Target:
                 LookDir = FollowXForm.forward;
@@ -414,7 +441,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
         }
 
         CompensateForWalls(characterOffset, ref TargetPosition);
-        transform.LookAt(FollowXForm.position + Vector3.up * Mathf.Max(1f, DistanceUp * Mathf.Max(1f, BodyScale)));
+        transform.LookAt(FollowXForm.position + fightBias + Vector3.up * (Mathf.Max(1f, DistanceUp * Mathf.Max(1f, BodyScale)) - fightDrop));
         LimitViewTurn();
         ShowLockMarker();
         ApplyShake();
@@ -424,6 +451,128 @@ public class ZeldaStyleCamera : MonoBehaviour {
     // A lock the camera turns to (Shift on desktop); the touch soft lock only aims Wallit and the bat.
     bool HardLocked {
         get { return LockedOnGameObject != null && !softLock; }
+    }
+
+    // The lock's focus point: the locked bot's position, or while a swap is under way a smoothstep from where the focus was to
+    // the new bot over LockEaseSeconds, so neither the hard-lock yaw nor the framing jumps from one bot to the next.
+    void TickFocus() {
+        GameObject now = LockedOnGameObject;
+        if (now != focusOf) {
+            bool hadOne = focusOf != null && now != null;
+            focusFrom = focusT < 1f || hadOne ? focusPos : (FollowXForm != null ? FollowXForm.position : transform.position);
+            if (now != null) {
+                if (hadOne || focusT >= 1f) {
+                    focusT = 0f;
+                }
+                FeelLockEases++;
+                FeelLastEaseSeconds = LockEaseSeconds;
+            }
+            focusOf = now;
+            if (now == null) {
+                focusT = 1f;
+            }
+        }
+        if (focusOf == null) {
+            return;
+        }
+        focusT = Mathf.Min(1f, focusT + Mathf.Min(Time.unscaledDeltaTime, 0.05f) / LockEaseSeconds);
+        float k = focusT * focusT * (3f - 2f * focusT);
+        focusPos = Vector3.Lerp(focusFrom, focusOf.transform.position, k);
+    }
+
+    // Fight framing. While a bot is within FightRange of Wallit: the look target leans (capped) toward the middle of Wallit,
+    // Slice and that bot (the lock's eased focus when one is held); the camera backs off, capped, until all three sit inside the
+    // view for its real aspect; on a portrait phone the look target also drops so they ride in the upper two thirds, over the
+    // stick and Swing. Everything is critically damped, so a bot walking in or out never snaps the view.
+    void TickFight(float baseDist) {
+        Vector3 wantBias = Vector3.zero;
+        float wantExtra = 0f;
+        float wantDrop = 0f;
+        bool fighting = false;
+        Camera cam = GetComponent<Camera>();
+        bool still = WaveDirector.IsBuilding || LevelUpScreen.IsOpen || PauseMenu.IsOpen || Cutscene.IsOpen;
+        if (cam != null && !still && !HardLockedByCinema()) {
+            Vector3 w = FollowXForm.position;
+            Vector3 threat = Vector3.zero;
+            float nearSqr = FightRange * FightRange;
+            List<Enemy> roster = Enemy.Roster;
+            for (int i = 0; i < roster.Count; i++) {
+                Enemy e = roster[i];
+                if (e == null || !e.Alive || e.Dormant || e.Climbing) {
+                    continue;
+                }
+                Vector3 d = e.transform.position - w;
+                d.y = 0f;
+                if (d.sqrMagnitude < nearSqr) {
+                    nearSqr = d.sqrMagnitude;
+                    threat = e.transform.position;
+                    fighting = true;
+                }
+            }
+            if (fighting && focusOf != null && focusT < 1f + 0.0001f) {
+                Vector3 lf = focusPos - w;
+                lf.y = 0f;
+                if (lf.sqrMagnitude < 14f * 14f) {
+                    threat = focusPos;
+                }
+            }
+            if (fighting) {
+                Vector3[] pts = new Vector3[3];
+                int n = 0;
+                pts[n++] = w;
+                pts[n++] = threat;
+                Musician slice = Musician.Instance;
+                if (slice != null && slice.gameObject.activeInHierarchy) {
+                    Vector3 sd = slice.transform.position - w;
+                    sd.y = 0f;
+                    if (sd.sqrMagnitude < SliceFrameRange * SliceFrameRange) {
+                        pts[n++] = slice.transform.position;
+                    }
+                }
+                Vector3 mid = Vector3.zero;
+                for (int i = 0; i < n; i++) {
+                    mid += pts[i];
+                }
+                mid /= n;
+                wantBias = mid - w;
+                wantBias.y = 0f;
+                wantBias = Vector3.ClampMagnitude(wantBias * 0.9f, FightBiasCap);
+                Vector3 look = w + wantBias;
+                float yaw = orbitYaw * Mathf.Deg2Rad;
+                Vector3 fwd = new Vector3(Mathf.Sin(yaw), 0f, Mathf.Cos(yaw));
+                Vector3 right = new Vector3(fwd.z, 0f, -fwd.x);
+                float lateral = 0f;
+                float depth = 0f;
+                for (int i = 0; i < n; i++) {
+                    Vector3 d = pts[i] - look;
+                    lateral = Mathf.Max(lateral, Mathf.Abs(Vector3.Dot(d, right)));
+                    depth = Mathf.Max(depth, Mathf.Abs(Vector3.Dot(d, fwd)));
+                }
+                bool tall = UiFit.Mode == UiMode.Tall;
+                float vTan = Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad);
+                float hTan = vTan * Mathf.Max(0.3f, cam.aspect);
+                float needW = lateral + 1.6f;
+                float needH = depth * Mathf.Sin(Mathf.Clamp(orbitPitch, 20f, 80f) * Mathf.Deg2Rad) + 1.4f;
+                float usable = tall ? 0.6f : 0.85f;
+                float req = Mathf.Max(needW / (hTan * 0.9f), needH / (vTan * usable));
+                wantExtra = Mathf.Clamp(req - baseDist, 0f, tall ? FightPullCapTall : FightPullCapDesktop);
+                if (tall) {
+                    // Subjects ride about 0.13 of the screen above its middle: over the pads at the bottom.
+                    wantDrop = 0.26f * (baseDist + wantExtra) * vTan;
+                }
+            }
+        }
+        FeelFighting = fighting;
+        float dt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
+        float t = ComfortOptions.ReducedMotion ? 0.55f : 0.32f;
+        fightBias = Vector3.SmoothDamp(fightBias, wantBias, ref fightBiasVel, t, 12f, dt);
+        fightExtra = Mathf.SmoothDamp(fightExtra, wantExtra, ref fightExtraVel, t + 0.15f, 10f, dt);
+        fightDrop = Mathf.SmoothDamp(fightDrop, wantDrop, ref fightDropVel, t + 0.1f, 10f, dt);
+        FeelFightPull = fightExtra;
+    }
+
+    bool HardLockedByCinema() {
+        return cineHeld || handoffLeft > 0f;
     }
 
     // Touch: the camera swings behind the way the stick is pushed, damped and capped; a drag turns it and is left alone for a
@@ -462,6 +611,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
         Vector3 at = Target != null ? Target.transform.position : Vector3.zero;
         if (viewPrimed && (at - lastViewTarget).sqrMagnitude > 64f) {
             viewPrimed = false;
+            CameraFeel.Cut("moved");
         }
         lastViewTarget = at;
         if (viewPrimed) {
@@ -522,7 +672,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
         wasLocked = locked;
         if (locked) {
             unlockBlend = 0f;
-            Vector3 to = LockedOnGameObject.transform.position - FollowXForm.position;
+            Vector3 to = focusPos - FollowXForm.position;
             to.y = 0f;
             if (to.sqrMagnitude < 0.05f) {
                 return;
@@ -530,7 +680,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
             // Camera sits opposite the target so Wallit stands between camera and lock.
             float wantYaw = Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg + 180f;
             float before = orbitYaw;
-            orbitYaw = LimitYaw(orbitYaw, Mathf.SmoothDampAngle(orbitYaw, wantYaw, ref lockYawVel, 0.35f, MaxYawRate, Mathf.Min(Time.unscaledDeltaTime, 0.05f)));
+            orbitYaw = LimitYaw(orbitYaw, Mathf.SmoothDampAngle(orbitYaw, wantYaw, ref lockYawVel, 0.12f, MaxYawRate, Mathf.Min(Time.unscaledDeltaTime, 0.05f)));
             lastLockSnapDeg = Mathf.Abs(Mathf.DeltaAngle(before, orbitYaw));
             if (lastLockSnapDeg > FeelMaxLockSnapDeg) {
                 FeelMaxLockSnapDeg = lastLockSnapDeg;
@@ -556,7 +706,9 @@ public class ZeldaStyleCamera : MonoBehaviour {
     // close; right click (or Tab) moves it to the next nearest, round the list.
     void AcquireTarget() {
         bool holding = PlayInput.GetKey(KeyCode.LeftShift) || PlayInput.GetKey(KeyCode.RightShift);
-        if (UiFit.Touch && !holding) {
+        // A phone has no Lock button and the camera never turns to a target there: Shift held by a bot or a paired keyboard
+        // used to start the desktop hard lock, which spun the orbit under a stick that steers by it.
+        if (UiFit.Touch) {
             AcquireSoft();
             return;
         }
