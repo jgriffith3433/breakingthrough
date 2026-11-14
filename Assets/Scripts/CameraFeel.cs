@@ -12,6 +12,32 @@ public class CameraFeel : MonoBehaviour {
 
     public static CameraFeel Instance { get; private set; }
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+    [System.Runtime.InteropServices.DllImport("__Internal")]
+    static extern void HawkesCamCut();
+#endif
+    public static int Cuts { get; private set; }
+    static bool cutPending;
+
+    // An intended cut (cutscene, act change, respawn, scene start): the next frame's jump is not a snap. Also tells the
+    // page's playtest through hawkesPlaytest.cut().
+    public static void Cut(string why) {
+        Cuts++;
+        cutPending = true;
+#if UNITY_WEBGL && !UNITY_EDITOR
+        try { HawkesCamCut(); } catch (System.Exception) { }
+#endif
+    }
+
+    // Fight framing: a fight frame has a live bot within ZeldaStyleCamera.FightRange of Wallit; it is framed when Slice and
+    // that nearest bot are both on screen (on a portrait phone also above the touch pads).
+    public int FightFrames { get; private set; }
+    public int FramedFrames { get; private set; }
+    public float ClipSeconds { get; private set; }
+    public float FramedPct { get { return FightFrames > 0 ? 100f * FramedFrames / FightFrames : 100f; } }
+    public string LastUnframed { get; private set; }
+    ZeldaStyleCamera follow;
+
     public int InsideFrames { get; private set; }
     public int NearFrames { get; private set; }
     public int SnapFrames { get; private set; }
@@ -52,6 +78,9 @@ public class CameraFeel : MonoBehaviour {
         JitterFrames = 0;
         MaxSnapDeg = 0f;
         MinGeomDist = 999f;
+        FightFrames = 0;
+        FramedFrames = 0;
+        ClipSeconds = 0f;
         primed = false;
         armed = true;
     }
@@ -68,12 +97,22 @@ public class CameraFeel : MonoBehaviour {
             primed = false;
             return;
         }
-        // Intended cuts (photo rig, scene load) are not this camera; only the live follow cam is measured.
+        if (follow == null) {
+            follow = GetComponent<ZeldaStyleCamera>();
+        }
+        // Intended cuts (photo rig, scene load, a directed shot or its handoff) are not this camera.
+        if (cutPending || (follow != null && follow.HandoffBusy)) {
+            cutPending = false;
+            primed = false;
+            return;
+        }
         Vector3 pos = transform.position;
         Quaternion rot = transform.rotation;
         if (CamBlock.PointInsideSolid(pos, ignoreRoot, 0.04f)) {
             InsideFrames++;
+            ClipSeconds += Time.unscaledDeltaTime;
         }
+        SampleFraming();
         float dist = CamBlock.NearestSolidDistance(pos, ignoreRoot, 1.5f);
         if (dist < MinGeomDist) {
             MinGeomDist = dist;
@@ -106,6 +145,46 @@ public class CameraFeel : MonoBehaviour {
         primed = true;
     }
 
+    void SampleFraming() {
+        Camera cam = GetComponent<Camera>();
+        Musician slice = Musician.Instance;
+        if (cam == null || ignoreRoot == null || slice == null || !slice.gameObject.activeInHierarchy || WaveDirector.IsBuilding) {
+            return;
+        }
+        Enemy near = null;
+        float best = ZeldaStyleCamera.FightRange * ZeldaStyleCamera.FightRange;
+        var roster = Enemy.Roster;
+        for (int i = 0; i < roster.Count; i++) {
+            Enemy e = roster[i];
+            if (e == null || !e.Alive || e.Dormant || e.Climbing) {
+                continue;
+            }
+            Vector3 d = e.transform.position - ignoreRoot.position;
+            d.y = 0f;
+            if (d.sqrMagnitude < best) {
+                best = d.sqrMagnitude;
+                near = e;
+            }
+        }
+        if (near == null) {
+            return;
+        }
+        FightFrames++;
+        float floor = UiFit.Mode == UiMode.Tall ? 0.30f : 0.04f;
+        bool ok = OnScreen(cam, slice.transform.position + Vector3.up, floor) && OnScreen(cam, near.transform.position + Vector3.up * 0.8f, floor)
+            && OnScreen(cam, ignoreRoot.position + Vector3.up, floor);
+        if (ok) {
+            FramedFrames++;
+        } else {
+            LastUnframed = "slice " + Vector3.Distance(slice.transform.position, ignoreRoot.position).ToString("0.0") + " m, bot " + Mathf.Sqrt(best).ToString("0.0") + " m, pull " + ZeldaStyleCamera.FeelFightPull.ToString("0.0");
+        }
+    }
+
+    static bool OnScreen(Camera cam, Vector3 world, float yFloor) {
+        Vector3 v = cam.WorldToViewportPoint(world);
+        return v.z > 0f && v.x > 0.03f && v.x < 0.97f && v.y > yFloor && v.y < 0.97f;
+    }
+
     public void Report(PlaytestRun run) {
         if (run == null) {
             return;
@@ -116,6 +195,13 @@ public class CameraFeel : MonoBehaviour {
         run.Metric("feel.cameraSnapFrames." + m, SnapFrames);
         run.Metric("feel.cameraJitterFrames." + m, JitterFrames);
         run.Metric("feel.cameraMaxSnapDeg." + m, Mathf.Round(MaxSnapDeg * 10f) / 10f);
+        run.Metric("feel.cameraClipSeconds", Mathf.Round(ClipSeconds * 1000f) / 1000f);
+        run.Metric("feel.cameraSnaps", SnapFrames);
+        run.Metric("feel.cameraCuts", Cuts);
+        run.Metric("fight.framedPct", Mathf.Round(FramedPct * 10f) / 10f);
+        run.Metric("fight.frames", FightFrames);
+        run.Metric("feel.lockEases", ZeldaStyleCamera.FeelLockEases);
+        run.Metric("feel.lockEaseSeconds", ZeldaStyleCamera.FeelLastEaseSeconds);
         run.Metric("feel.cameraMinGeomDist." + m, Mathf.Round(MinGeomDist * 1000f) / 1000f);
         run.Event("camera-feel", m + ": inside " + InsideFrames + ", near " + NearFrames + ", snaps " + SnapFrames
             + ", jitter " + JitterFrames + ", maxSnap " + MaxSnapDeg.ToString("0.0") + " deg, minDist " + MinGeomDist.ToString("0.000") + " m");
