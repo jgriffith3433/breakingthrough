@@ -472,12 +472,34 @@ public class Enemy : MonoBehaviour
     {
         if (rig != null)
             rig.BeginTell();
+        CombatTells.BossBegin(this);
     }
 
     public void EndTell(bool slam)
     {
+        if (slam)
+            CombatTells.Landed(this);
+        else
+            CombatTells.Cancel(this);
         if (rig != null)
             rig.EndTell(slam);
+    }
+
+    // The limb that strikes this blow: the claw a Yo Bot swipes with, the front leg a Spider Bot stabs with (CombatTells glows it).
+    Transform AttackLimb()
+    {
+        if (!spider)
+            return swipeLeft ? clawL : clawR;
+        for (int i = 0; i < 8; i += 4)
+        {
+            Transform leg = spiderLegs[i];
+            if (leg == null)
+                continue;
+            float side = Mathf.Sign(leg.localPosition.x + 0.0001f);
+            if ((side < 0f ? swipeLeft : !swipeLeft))
+                return leg;
+        }
+        return spiderLegs[0] != null ? spiderLegs[0] : transform;
     }
 
     public void Stagger(float seconds)
@@ -980,6 +1002,7 @@ public class Enemy : MonoBehaviour
             if (windLeft <= 0f)
             {
                 winding = false;
+                CombatTells.Landed(this);
                 // A claw swipe from a Yo Bot, a stab of a front leg from a Spider Bot.
                 if (rig != null)
                     rig.BeginStrike();
@@ -1006,11 +1029,15 @@ public class Enemy : MonoBehaviour
                 if (rig != null)
                     rig.BeginWindup(windLeft);
                 BotSound.Tell(this);
+                CombatTells.Begin(this, windLeft, AttackLimb(),
+                    wall != null ? wall.transform : atMusician ? musician.transform : atPlayer && PlayerGrowth.Instance != null ? PlayerGrowth.Instance.transform : null,
+                    atMusician && wall == null);
             }
         }
         else if (winding)
         {
             winding = false;
+            CombatTells.Cancel(this);
             if (rig != null)
                 rig.CancelWind();
         }
@@ -1362,6 +1389,7 @@ public class Enemy : MonoBehaviour
             BotChorus.OnFall(this);
         flying = false;
         winding = false;
+        CombatTells.Cancel(this);
         if (rig != null)
             rig.BeginDeath();
         StopClimbing();
@@ -1577,7 +1605,9 @@ public class Enemy : MonoBehaviour
         Climbers++;
         climbHeight = Random.Range(0.35f, Mathf.Max(0.8f, growth.BodyHeight * 0.35f));
         flying = false;
+        CombatTells.Exempt = true;   // a grab on Wallit's legs is not a wind-up blow
         growth.OnHit(this);
+        CombatTells.Exempt = false;
     }
 
     void TickClimb(float dt)
