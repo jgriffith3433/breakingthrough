@@ -34,6 +34,8 @@ public class RunEndScreen : MonoBehaviour {
     bool leaving;
     float leaveAt;
     bool retry;
+    float readyAt;                 // Retry works this long after the sheet opens (a swing mashed through the fall must not press it)
+    public const float Grace = 0.45f;
 
     public static RunEndScreen Ensure(Transform lostPanel) {
         if (Instance != null) {
@@ -69,6 +71,7 @@ public class RunEndScreen : MonoBehaviour {
         RetryPressed = false;
         OpenedAt = Time.unscaledTime;
         ready = false;
+        readyAt = Time.unscaledTime + Grace;
         leaving = false;
         retry = false;
         gameObject.SetActive(true);
@@ -98,6 +101,7 @@ public class RunEndScreen : MonoBehaviour {
             MenuButton.interactable = false;
         }
         LayoutForPhone();
+        FocusRetry();
         if (play != null) {
             StopCoroutine(play);
         }
@@ -108,7 +112,8 @@ public class RunEndScreen : MonoBehaviour {
         arcade = false;
         IsOpen = true;
         CountingDone = true;
-        ready = true;
+        ready = false;
+        readyAt = Time.unscaledTime + Grace;
         leaving = false;
         retry = false;
         RetryPressed = false;
@@ -136,17 +141,19 @@ public class RunEndScreen : MonoBehaviour {
             subtitle.text = "";
         }
         if (RetryButton != null) {
-            RetryButton.gameObject.SetActive(false);
+            RetryButton.gameObject.SetActive(true);   // a chapter's Retry: the same chapter from its opening
+            RetryButton.interactable = false;
         }
         if (MenuButton != null) {
-            MenuButton.GetComponentInChildren<Text>().text = UiFit.Touch ? "Tap to go on" : "Menu";
+            MenuButton.GetComponentInChildren<Text>().text = "Menu";
             MenuButton.gameObject.SetActive(true);
-            MenuButton.interactable = true;
+            MenuButton.interactable = false;
         }
         if (hint != null) {
-            hint.text = UiFit.Touch ? "Tap to go on" : "Press any key";
+            hint.text = "";
         }
         LayoutForPhone();
+        FocusRetry();
     }
 
     // WaveDirector polls this while Lost: handles Retry / Menu / any-key, starts the panel close.
@@ -158,7 +165,7 @@ public class RunEndScreen : MonoBehaviour {
         if (!ready) {
             return false;
         }
-        if (arcade) {
+        {
             if (PlayInput.GetKeyDown(KeyCode.Return) || PlayInput.GetKeyDown(KeyCode.KeypadEnter)
                 || PlayInput.GetKeyDown(KeyCode.JoystickButton0)) {
                 BeginLeave(true);
@@ -171,14 +178,27 @@ public class RunEndScreen : MonoBehaviour {
             }
             return false;
         }
-        if (PlayInput.AnyKeyDown) {
-            BeginLeave(false);
-            return true;
+    }
+
+    // Retry is the first button and holds the focus ring, so Enter, Space or a pad A is one press.
+    void FocusRetry() {
+        if (RetryButton != null && UnityEngine.EventSystems.EventSystem.current != null) {
+            UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(RetryButton.gameObject);
         }
-        return false;
     }
 
     void Update() {
+        if (IsOpen && !ready && !leaving && Time.unscaledTime >= readyAt) {
+            // Retry and Menu work a moment after the sheet is up; the counting and the spoken lines go on beside them.
+            ready = true;
+            if (RetryButton != null) {
+                RetryButton.interactable = true;
+            }
+            if (MenuButton != null) {
+                MenuButton.interactable = true;
+            }
+            FocusRetry();
+        }
         if (IsOpen && panel != null && UiFit.Stamp != layoutStamp) {
             LayoutForPhone();
         }
@@ -200,10 +220,10 @@ public class RunEndScreen : MonoBehaviour {
         UiMode mode = UiFit.Mode;
         bool tall = mode == UiMode.Tall;
         bool phone = mode != UiMode.Desktop;
-        float retryH = phone ? (tall ? 100f : 88f) : 96f;
+        float retryH = phone ? 140f : 96f;   // 140 units is about 80 px on a 390 px phone: well over the 64 px a thumb needs
         float retryW = phone ? (tall ? 640f : 560f) : 420f;
         if (RetryButton != null && RetryButton.gameObject.activeSelf) {
-            PlaceButton(RetryButton, 0f, phone ? (28f + (tall ? 72f : 56f)) : 108f, retryW, retryH, phone ? 36 : 42);
+            PlaceButton(RetryButton, 0f, phone ? (20f + (tall ? 72f : 56f) + 16f) : 108f, retryW, retryH, phone ? 40 : 42);
         }
         if (MenuButton != null) {
             PlaceButton(MenuButton, 0f, phone ? 20f : 36f, phone ? Mathf.Min(260f, retryW * 0.55f) : 280f, phone ? (tall ? 72f : 56f) : 64f, phone ? 24 : 26);
@@ -340,7 +360,7 @@ public class RunEndScreen : MonoBehaviour {
     }
 
     void OnRetry() {
-        if (!ready || leaving || !arcade) {
+        if (!ready || leaving) {
             return;
         }
         BeginLeave(true);
@@ -360,6 +380,15 @@ public class RunEndScreen : MonoBehaviour {
         leaving = true;
         retry = doRetry;
         RetryPressed = doRetry;
+        if (doRetry) {
+            DownFlow.NoteRetryTap();
+        }
+        if (play != null) {
+            StopCoroutine(play);
+            play = null;
+        }
+        WallitVoice.Silence();
+        SliceVoice.Silence();
         IsOpen = false;
         leaveAt = Time.unscaledTime + PanelFx.CloseSeconds;
         if (WaveDirector.Instance != null) {

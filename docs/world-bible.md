@@ -383,6 +383,14 @@ and a playtest event name.
     stumps Chapter 6 opens on, and the filed Hollow is where the player has been heading. Told by light, a door and a thud,
     no caption. Proof: events `door-open`, `circle-brighten`; metrics `payoffDoorOpens`, `payoffGlow`; playtest `opening-endings`.
 
+### The down beat (Arcade and chapters)
+
+**Where / When** — Slice's bar empties (Arcade, any chapter with the circle), or Wallit's last health point goes in Chapter 1's level. The
+world does not freeze: for 0.8 s it crawls at a fifth of its speed, the camera swings to the one who fell and holds, the music drops to
+a third, and one voiced line that already exists is said (Wallit, "Slice! Hold on!"; Slice, "Wallit. Now."). Then the STRUCK OFF sheet
+(Arcade, chapters) or Wallit's return to the last door (level). The sheet puts Retry first and focused, one press from the fight, with
+Menu beside it; the cast's run-end exchange still plays beside the buttons, it no longer holds them back. Code: `DownFlow.cs`.
+
 ### The act changes (Arcade)
 
 After the wave 10 and wave 20 bosses the hour turns as a staged 6.2 s event on the CinematicDirector (`CinematicAct.cs`), once per run per act, a tap skips it. Camera: pulls up and back over the whole Hollow with Wallit and Slice kept in frame (pushed back further on a portrait phone), the post-office ruin on the horizon, then returns to play (0.3 s hand-off). Light: sky, key, fog, grade and score blend to the next act's look over the scene. World change: **Cold Hour**, the lamp posts go dark and flare on one by one and fog rolls in over the hedges; **Last Light**, the ruin's red beacon lights and sweeps the lawn and paper burns at the edges (big soft glows and smoke, never sparks). Voice: one exchange of existing lines (Cold Hour: Slice "Legs. Count them." / Wallit "Pay up."; Last Light: Wallit "Nobody touches her." / Slice "Clean."). The card (ACT II / COLD HOUR, ACT III / LAST LIGHT) is stamped in the upper third in the Department typeface with the act's chime.

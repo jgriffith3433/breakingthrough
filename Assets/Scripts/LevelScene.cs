@@ -229,10 +229,19 @@ public class LevelScene : MonoBehaviour {
         }
     }
 
+    // Playtest setup shortcut: the same fall a blow's last point of health causes.
+    public void DevDown() {
+        if (!Completed && respawnAt < 0f) {
+            Health = 0;
+            Defeated();
+        }
+    }
+
     // Wallit goes down: a beat on the floor, then back at the last checkpoint with pickups kept (Docs/CampaignDesign.md, 5.5).
     void Defeated() {
         Defeats++;
-        respawnAt = Time.time + 1.8f;
+        respawnAt = Time.time + 1.2f;   // the slow-motion beat (DownFlow) covers the first 0.8 s of real time at a fifth of the speed
+        DownFlow.Begin(true, null);
         Yard.Note("defeat", "Wallit is down (" + Defeats + ")");
         CharacterMovement.PlayWallitClip(CharacterMovement.CLIP_DEATH, 1.6f);
         Hud.ShowReceipt("RETURNED TO SENDER. Fee: one coin.", 2.4f);
@@ -265,6 +274,7 @@ public class LevelScene : MonoBehaviour {
         CharacterMovement.ClearActionClip();
         CharacterMovement.PlayWallitClip(CharacterMovement.CLIP_IDLE);
         Yard.Resumed();
+        DownFlow.NoteControlBack("level");
         Yard.Note("checkpoint-resume", "back at the last door, pickups kept");
     }
 
