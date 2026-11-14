@@ -26,6 +26,7 @@ public static partial class Playtest {
         bossEntranceStats = new List<float>();
         bossCardTopMax = 0f;
         bossTouchBackMax = 0f;
+        bossCardOverlaps = 0;
         CinematicHud.ResetCounters();
         int count = 0;
 
@@ -119,6 +120,10 @@ public static partial class Playtest {
         }
         CinematicDirector.IgnoreSeen = false;
         run.Metric("bossEntrances", count);
+        run.Metric("boss.cardOverlaps", bossCardOverlaps);
+        if (bossCardOverlaps > 0) {
+            run.Problem(PlaytestSeverity.Bug, "boss-entrances: boss.cardOverlaps " + bossCardOverlaps + " (a card or caption overlapped the picker or other text)");
+        }
         run.Metric("cinematic.hudVisibleFrames", CinematicHud.HudVisibleFrames);
         run.Metric("cinematic.framesObserved", CinematicHud.CinematicFrames);
         run.Metric("ftue.devUiVisible", DevUi.Visible);
@@ -178,6 +183,7 @@ public static partial class Playtest {
         }
         run.Event("boss-over-cards", "cards open for 1.6 s with the Registrar waiting: name card or banner drawn over them = " + overlap);
         if (overlap) {
+            bossCardOverlaps++;
             run.Problem(PlaytestSeverity.Bug, "boss-entrances: a boss name card or 'approaches!' banner drew over the wave-cleared card picker");
         }
         if (LevelUpScreen.IsOpen) {
@@ -227,6 +233,7 @@ public static partial class Playtest {
 
     static List<float> bossEntranceStats;
     static float bossCardTopMax, bossTouchBackMax;
+    static int bossCardOverlaps;   // frames a name card or caption drew over the picker or over other text
 
     static void ClearField() {
         foreach (Enemy e in new List<Enemy>(Enemy.Roster)) {
@@ -271,6 +278,11 @@ public static partial class Playtest {
             }
             if (phone && TouchControls.Instance != null && TouchControls.Instance.IsShown) {
                 padsDuring = true;
+            }
+            if (LevelUpScreen.IsOpen && CinematicDirector.CardsVisible() > 0) {
+                bossCardOverlaps++;
+            } else if (CinematicDirector.BossCardUp && ScreenSlots.Count(null) > 0) {
+                bossCardOverlaps++;   // the card's text over any other text
             }
             if (skip && !skipped && t > 1.2f) {
                 skipped = true;
