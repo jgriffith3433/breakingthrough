@@ -246,7 +246,7 @@ public class MainMenu : MonoBehaviour {
             return;
         }
         UiFit.Notice();
-        if (canvasRoot != null && (builtStamp != UiFit.Stamp || builtSafe != UnityEngine.Screen.safeArea)) {
+        if (canvasRoot != null && (builtStamp != UiFit.Stamp || builtSafe != EffectiveSafe())) {
             // The phone turned, its toolbar moved or the window was resized: lay the menu out again for the new
             // shape once it settles.
             if (rebuildAt < 0f) {
@@ -417,7 +417,7 @@ public class MainMenu : MonoBehaviour {
         canvasRoot = canvasGo;
         builtMode = UiFit.Mode;
         builtStamp = UiFit.Stamp;
-        builtSafe = UnityEngine.Screen.safeArea;
+        builtSafe = EffectiveSafe();
         var canvas = canvasGo.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 50;
@@ -1133,13 +1133,20 @@ public class MainMenu : MonoBehaviour {
         return new Vector2(1080f * w / h, 1080f);
     }
 
+    // The rect the menu lays out in: UiRects' safe area once a touch device or a playtest is in play. That can switch on after
+    // the menu is built (a scenario starts later), so the menu compares it too and lays itself out again, instead of leaving
+    // UiRects to slide a button to the very edge of the notch.
+    static Rect EffectiveSafe() {
+        return (UiFit.Touch || Playtest.Wanted) ? UiRects.SafeArea() : UnityEngine.Screen.safeArea;
+    }
+
     // The screen's notch and rounded corners, in canvas units: left, right, top, bottom.
     Vector4 SafeInsets() {
         float sw = UnityEngine.Screen.width;
         float sh = UnityEngine.Screen.height;
         // Where UiRects slides controls (the device's safe area pulled in by the simulated notch and home bar). The menu
         // stack is laid out inside the same rect, so UiRects never has to nudge one button of it on its own.
-        Rect safe = (UiFit.Touch || Playtest.Wanted) ? UiRects.SafeArea() : UnityEngine.Screen.safeArea;
+        Rect safe = EffectiveSafe();
         if (sw <= 0f || sh <= 0f || safe.width <= 0f || safe.height <= 0f) {
             return Vector4.zero;
         }

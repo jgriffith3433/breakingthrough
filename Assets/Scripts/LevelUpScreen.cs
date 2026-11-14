@@ -47,6 +47,8 @@ public class LevelUpScreen : MonoBehaviour {
         public Text BackNumber;
         public Text Stamp;
         public float StampedAt;
+        public Vector2 CornerAt;    // where a rarity stamp sits (top-centre anchored, off the title and text), per layout
+        public int CornerFont = 30;
         public CanvasGroup Group;
     }
 
@@ -122,6 +124,8 @@ public class LevelUpScreen : MonoBehaviour {
     const float FirstFlip = 0.35f;
     const float StampHold = 0.5f;
     const float HumanDelay = 0.2f;
+    // A queued second card waits this long after the last one closed, so the tap that picked cannot land on the next set.
+    const float ReopenGap = 0.4f;
 
     public static readonly List<string> Events = new List<string>();
     // For the playtest: when the screen opened, the last card flipped, the pick and the close (unscaled seconds), and the pick.
@@ -193,7 +197,7 @@ public class LevelUpScreen : MonoBehaviour {
         if (!IsOpen) {
             TickEaseBack();
             UpgradeLook.PumpAnnouncements();   // banners that waited for the cards go up now
-            if (WaveDirector.IsLost || PauseMenu.IsOpen || StoryScreen.IsOpen || Cutscene.IsOpen || root == null || Time.frameCount <= closedFrame || CinematicDirector.BossOpen) {
+            if (WaveDirector.IsLost || PauseMenu.IsOpen || StoryScreen.IsOpen || Cutscene.IsOpen || root == null || Time.frameCount <= closedFrame || Time.unscaledTime - ClosedAtTime < ReopenGap || CinematicDirector.BossOpen) {
                 return;
             }
             if (RunBoons.TakePendingChest()) {
@@ -366,6 +370,24 @@ public class LevelUpScreen : MonoBehaviour {
 
     static void StampOn(Card card, string word, Color color, float tilt) {
         card.Stamp.text = word;
+        RectTransform sr = card.Stamp.rectTransform;
+        if (word == "APPROVED") {
+            // On the bottom row where "Tap to pick" was (spent once picked), never across the name.
+            RectTransform kr = card.Key.rectTransform;
+            sr.anchorMin = sr.anchorMax = new Vector2(0.5f, 0f);
+            sr.pivot = new Vector2(0.5f, 0.5f);
+            sr.anchoredPosition = new Vector2(0f, kr.anchoredPosition.y + 20f);
+            sr.sizeDelta = new Vector2(300f, 60f);
+            card.Stamp.fontSize = 40;
+            card.Key.enabled = false;
+        } else {
+            // RARE / EVOLVED: beside the icon, never across the title.
+            sr.anchorMin = sr.anchorMax = new Vector2(0.5f, 1f);
+            sr.pivot = new Vector2(0.5f, 0.5f);
+            sr.anchoredPosition = card.CornerAt;
+            sr.sizeDelta = new Vector2(170f, 44f);
+            card.Stamp.fontSize = card.CornerFont;
+        }
         card.Stamp.color = color;
         card.Stamp.rectTransform.localRotation = Quaternion.Euler(0f, 0f, tilt);
         card.Stamp.gameObject.SetActive(true);
@@ -399,7 +421,8 @@ public class LevelUpScreen : MonoBehaviour {
         root.SetActive(true);
         // A wave-clear card gains no level: it must not read "Level 0" (or repeat the level just reached).
         bool waveCard = !chest && RunBoons.LastCardWasWave;
-        heading.text = chest ? "Treasure!  Pick one" : (waveCard ? "Wave cleared!  Pick one" : "Level " + RunBoons.Level + "!  Pick one");
+        int cardLevel = Mathf.Max(1, RunBoons.Level - RunBoons.QueuedLevelCards);
+        heading.text = chest ? "Treasure!  Pick one" : (waveCard ? "Wave cleared!  Pick one" : "Level " + cardLevel + "!  Pick one");
         heading.color = chest ? new Color(1f, 0.82f, 0.3f) : DeptPalette.Cream;
         if (laidStamp != UiFit.Stamp) {
             Layout();
@@ -407,7 +430,7 @@ public class LevelUpScreen : MonoBehaviour {
         Fill();
         BeginDeal(0.1f);
         TickCards(Time.unscaledTime);
-        Log("open " + (chest ? "chest" : (waveCard ? "wave card" : "level " + RunBoons.Level)) + ", world easing to a stop, build-up sound, cards dealt face down");
+        Log("open " + (chest ? "chest" : (waveCard ? "wave card" : "level " + cardLevel)) + ", world easing to a stop, build-up sound, cards dealt face down");
         // Analytics, voice and sound come last: the cards are up and pickable whatever they do.
         UiSound.BuildUp();
         RunAnalytics.CardsOpen(chest);
@@ -435,6 +458,7 @@ public class LevelUpScreen : MonoBehaviour {
         for (int i = 0; i < cards.Length; i++) {
             Card card = cards[i];
             card.Stamp.gameObject.SetActive(false);
+            card.Key.enabled = true;
             if (i >= offer.Count) {
                 card.Go.SetActive(false);
                 card.Halo.gameObject.SetActive(false);
@@ -498,7 +522,7 @@ public class LevelUpScreen : MonoBehaviour {
         if (info.Evolution) {
             card.Link.text = RunBoons.Info(evo.NeedA).Name + " + " + RunBoons.Info(evo.NeedB).Name;
         } else {
-            card.Link.text = (completes ? "★ Finishes " + evo.Name : "+ " + other.Name + "  →  " + evo.Name);
+            card.Link.text = (completes ? "★ Finishes " + evo.Name : "+ " + other.Name + "  =  " + evo.Name);
         }
         card.Link.color = completes || info.Evolution ? new Color(1f, 0.84f, 0.3f) : new Color(1f, 0.95f, 0.85f, 0.8f);
         if (completes) {
@@ -682,6 +706,8 @@ public class LevelUpScreen : MonoBehaviour {
             Place(card.Frame.rectTransform, new Vector2(0.5f, 0.5f), homes[i], frame);
             Place(card.Halo.rectTransform, new Vector2(0.5f, 0.5f), homes[i], frame + new Vector2(90f, 90f));
             float inner = frame.x - 40f;
+            card.CornerAt = tall ? new Vector2(-frame.x * 0.5f + 95f, -168f) : (wide ? new Vector2(-frame.x * 0.5f + 46f, -62f) : new Vector2(-137f, -118f));
+            card.CornerFont = tall ? 28 : (wide ? 22 : 30);
             card.Rank.gameObject.SetActive(false);
             if (tall) {
                 // Stacked: the icon on the left, the words in a column beside it.
@@ -744,7 +770,8 @@ public class LevelUpScreen : MonoBehaviour {
         button.colors = colors;
         int captured = index;
         button.onClick.AddListener(() => {
-            if (Time.unscaledTime - OpenedAtTime >= HumanDelay) {
+            // A tap counts only on a card that has turned face up; a face-down form is still being dealt.
+            if (Time.unscaledTime - OpenedAtTime >= HumanDelay && flipHeard[captured]) {
                 Choose(captured);
             }
         });

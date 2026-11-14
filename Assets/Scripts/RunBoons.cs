@@ -190,6 +190,9 @@ public static class RunBoons {
         PendingChests++;
     }
 
+    // Level cards still waiting behind the one on screen (wave-clear cards gain no level and are not counted).
+    public static int QueuedLevelCards { get { return Mathf.Max(0, PendingLevels - pendingWaveCards); } }
+
     public static bool TakePendingLevel() {
         if (PendingLevels <= 0) {
             return false;
@@ -663,7 +666,7 @@ public static class RunBoons {
         if (info.Evolution) {
             return "EVOLUTION";
         }
-        return rank <= 0 ? "New" : "Rank " + rank + " → " + (rank + 1);
+        return rank <= 0 ? "New" : "Rank " + rank + " to " + (rank + 1);
     }
 
     public static Color RarityColor(Rarity rarity) {

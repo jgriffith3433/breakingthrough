@@ -234,7 +234,7 @@ public class RunHud : MonoBehaviour {
         if (laidStamp != UiFit.Stamp) {
             Layout();
         }
-        bool hidden = WaveDirector.IsLost || BossSetPiece.EntranceUp;
+        bool hidden = WaveDirector.IsLost || BossSetPiece.EntranceUp || LevelUpScreen.IsOpen;   // the upgrade cards own the screen
         if (HudPaper.Active && xpBack.gameObject.activeSelf) {
             xpBack.gameObject.SetActive(false);   // the level is the paper HUD's ink stamp now
         }
@@ -320,6 +320,10 @@ public class RunHud : MonoBehaviour {
             boonStamp = stamp;
             boonText.text = BoonLines(boonLines);
             ShowEvolved();
+        }
+        // The boon list on the left would print through the translucent card backdrop as a ghost line under a card.
+        if (boonText.enabled == LevelUpScreen.IsOpen) {
+            boonText.enabled = !LevelUpScreen.IsOpen;
         }
     }
 
