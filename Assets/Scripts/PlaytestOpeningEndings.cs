@@ -101,6 +101,7 @@ public static class PlaytestOpeningEndings {
     public static IEnumerator Run(PlaytestRun r) {
         run = r;
         CinematicDirector.Events.Clear();
+        CinematicHud.ResetCounters();
         run.Event("setup", "opening-endings: ch4-6 world opens + filed/received + live credits; touch=" + UiFit.Touch + " size=" + Screen.width + "x" + Screen.height);
 
         // Audio capture: the three sounds the sound critic asked for, played by name (setup) so the audio probe hears them.
@@ -195,6 +196,15 @@ public static class PlaytestOpeningEndings {
 
         run.Event("audio-capture", "end: " + GameAudio.Played + " sounds played in all; music '" + MusicDirector.Current + "'");
         run.Metric("audioSoundsTotal", GameAudio.Played);
+        run.Metric("cinematic.hudVisibleFrames", CinematicHud.HudVisibleFrames);
+        run.Metric("cinematic.framesObserved", CinematicHud.CinematicFrames);
+        run.Metric("ftue.devUiVisible", DevUi.Visible);
+        if (UiFit.Touch) {
+            run.Metric("cinematic.padsBackSeconds", Mathf.Round(CinematicHud.PadsBackSeconds * 100f) / 100f);
+        }
+        if (CinematicHud.HudVisibleFrames > 0) {
+            run.Problem(PlaytestSeverity.Bug, "opening-endings: the HUD or touch pads drew on " + CinematicHud.HudVisibleFrames + " frames of a cinematic");
+        }
         run.Progress(1f);
         if (!run.Done) {
             run.Finish(PlaytestOutcome.Done);
