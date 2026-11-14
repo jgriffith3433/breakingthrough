@@ -39,6 +39,39 @@ public class BatEquipment : MonoBehaviour {
         get { return Instance != null && (Instance.move != Move.None || Instance.charging); }
     }
 
+    // Dodge out of a swing: only once the bat has come through (its recovery) or while a home run is winding up.
+    // True when a swing was cut short. The combo gap restarts, so the next swing continues the chain.
+    public static bool CancelForDodge() {
+        return Instance != null && Instance.CancelMove();
+    }
+
+    public static bool Charging {
+        get { return Instance != null && Instance.charging; }
+    }
+
+    public static bool InRecovery {
+        get { return Instance != null && Instance.move != Move.None && Instance.contactDone; }
+    }
+
+    bool CancelMove() {
+        if (charging) {
+            charging = false;
+            charge = 0f;
+            pressing = false;
+            Feel.CancelledSwings++;
+            return true;
+        }
+        if (move == Move.None || !contactDone) {
+            return false;
+        }
+        move = Move.None;
+        queued = Move.None;
+        idleTime = 0f;
+        wasReady = true;
+        Feel.CancelledSwings++;
+        return true;
+    }
+
     enum Move {
         None,
         Swing1,
@@ -72,6 +105,9 @@ public class BatEquipment : MonoBehaviour {
     float gripBlend;
 
     int comboStep;
+    float queuedAt;      // Feel.Now when the queued press arrived
+    float readyAt;       // Feel.Now when Wallit could first act on it
+    bool wasReady = true;
     float idleTime = 99f;
     bool pressing;
     float pressTime;
@@ -357,19 +393,30 @@ public class BatEquipment : MonoBehaviour {
             }
             // A click during a swing waits for the bat to come through, then goes straight into the next one.
             bool chainable = contactDone && moveTime >= windup + sweep + 0.08f / Mathf.Max(0.3f, RunBoons.DrawSpeed);
+            if (chainable && !wasReady) {
+                wasReady = true;
+                readyAt = Feel.Now;
+            }
             if (queued != Move.None && chainable) {
-                Begin(queued);
+                StartQueued();
+            } else if (queued != Move.None && Feel.Now - queuedAt > 0.6f) {
+                queued = Move.None;
+                Feel.Drop("swing expired");
             } else if (moveTime >= moveLength) {
                 move = Move.None;
                 idleTime = 0f;
             }
         } else {
             idleTime += dt;
+            if (!wasReady) {
+                wasReady = true;
+                readyAt = Feel.Now;
+            }
             if (idleTime > Tuning.ComboGap) {
                 comboStep = 0;
             }
             if (queued != Move.None) {
-                Begin(queued);
+                StartQueued();
             }
         }
 
@@ -382,12 +429,19 @@ public class BatEquipment : MonoBehaviour {
         }
     }
 
-    // A quick click swings the next combo swing; a hold winds up, and letting go past HomeRunMin is a home run.
+    // A press swings the next combo step on the frame it arrives (or waits in the buffer until the bat can);
+    // a hold past ChargeStart winds up, and letting go past HomeRunMin is a home run.
     void ReadInput(float dt) {
         bool held = PlayInput.GetMouseButton(0);
         if (PlayInput.GetMouseButtonDown(0)) {
             pressing = true;
             pressTime = 0f;
+            Feel.PressSwing();
+            if (queued != Move.None) {
+                Feel.Drop("swing overwritten");
+            }
+            queued = Move.Swing1;
+            queuedAt = Feel.Now;
         }
         if (!pressing) {
             return;
@@ -419,11 +473,21 @@ public class BatEquipment : MonoBehaviour {
             charging = false;
             charge = 0f;
             queued = Move.HomeRun;
+            queuedAt = Feel.Now;
             return;
         }
         charging = false;
         charge = 0f;
-        queued = Move.Swing1;
+    }
+
+    // The queued press goes off: how long it waited and how long after Wallit could act is what Feel reports.
+    void StartQueued() {
+        Move wanted = queued;
+        if (Feel.Now - queuedAt > 0.02f) {
+            Feel.Waited(Feel.Now - queuedAt);
+        }
+        Feel.SwingStarted(queuedAt, readyAt);
+        Begin(wanted);
     }
 
     // Starts a swing. Swing1 means "the next one in the combo", which may turn into a ground smash.
@@ -450,6 +514,7 @@ public class BatEquipment : MonoBehaviour {
         move = next;
         moveTime = 0f;
         contactDone = false;
+        wasReady = false;
         poseFrom = pose;
         sweep = Sweep;
         float speed = Mathf.Max(0.3f, RunBoons.DrawSpeed);
