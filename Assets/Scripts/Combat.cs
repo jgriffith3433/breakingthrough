@@ -258,6 +258,8 @@ public static class Combat {
 
         Pickups.DropBolts(at, Tuning.BoltsFor(foe.Kind, foe.Elite || foe.Boss) * (foe.Boss ? 5 : 1));
         Juice.HitStop(Tuning.KillHitStop);
+        // Every kill pops: a soft gold ring where the bot stood, with the bolts and coin flying out.
+        Fx.Ring(at + Vector3.up * 0.1f, 2.6f, new Color(1f, 0.85f, 0.4f, 0.7f), 0.3f);
         if (!FirstMinute.SuccessSeen && ChapterRun.Instance == null) {
             // The first kill of an Arcade run pays off: a longer hit-stop, a fuller bolt burst, a soft ring and Wallit's word.
             FirstMinute.NoteKill();
