@@ -124,6 +124,8 @@ public class LevelUpScreen : MonoBehaviour {
     const float FirstFlip = 0.35f;
     const float StampHold = 0.5f;
     const float HumanDelay = 0.2f;
+    // A queued second card waits this long after the last one closed, so the tap that picked cannot land on the next set.
+    const float ReopenGap = 0.4f;
 
     public static readonly List<string> Events = new List<string>();
     // For the playtest: when the screen opened, the last card flipped, the pick and the close (unscaled seconds), and the pick.
@@ -195,7 +197,7 @@ public class LevelUpScreen : MonoBehaviour {
         if (!IsOpen) {
             TickEaseBack();
             UpgradeLook.PumpAnnouncements();   // banners that waited for the cards go up now
-            if (WaveDirector.IsLost || PauseMenu.IsOpen || StoryScreen.IsOpen || Cutscene.IsOpen || root == null || Time.frameCount <= closedFrame || CinematicDirector.BossOpen) {
+            if (WaveDirector.IsLost || PauseMenu.IsOpen || StoryScreen.IsOpen || Cutscene.IsOpen || root == null || Time.frameCount <= closedFrame || Time.unscaledTime - ClosedAtTime < ReopenGap || CinematicDirector.BossOpen) {
                 return;
             }
             if (RunBoons.TakePendingChest()) {
@@ -413,7 +415,8 @@ public class LevelUpScreen : MonoBehaviour {
         root.SetActive(true);
         // A wave-clear card gains no level: it must not read "Level 0" (or repeat the level just reached).
         bool waveCard = !chest && RunBoons.LastCardWasWave;
-        heading.text = chest ? "Treasure!  Pick one" : (waveCard ? "Wave cleared!  Pick one" : "Level " + RunBoons.Level + "!  Pick one");
+        int cardLevel = Mathf.Max(1, RunBoons.Level - RunBoons.QueuedLevelCards);
+        heading.text = chest ? "Treasure!  Pick one" : (waveCard ? "Wave cleared!  Pick one" : "Level " + cardLevel + "!  Pick one");
         heading.color = chest ? new Color(1f, 0.82f, 0.3f) : DeptPalette.Cream;
         if (laidStamp != UiFit.Stamp) {
             Layout();
@@ -421,7 +424,7 @@ public class LevelUpScreen : MonoBehaviour {
         Fill();
         BeginDeal(0.1f);
         TickCards(Time.unscaledTime);
-        Log("open " + (chest ? "chest" : (waveCard ? "wave card" : "level " + RunBoons.Level)) + ", world easing to a stop, build-up sound, cards dealt face down");
+        Log("open " + (chest ? "chest" : (waveCard ? "wave card" : "level " + cardLevel)) + ", world easing to a stop, build-up sound, cards dealt face down");
         // Analytics, voice and sound come last: the cards are up and pickable whatever they do.
         UiSound.BuildUp();
         RunAnalytics.CardsOpen(chest);
@@ -760,7 +763,8 @@ public class LevelUpScreen : MonoBehaviour {
         button.colors = colors;
         int captured = index;
         button.onClick.AddListener(() => {
-            if (Time.unscaledTime - OpenedAtTime >= HumanDelay) {
+            // A tap counts only on a card that has turned face up; a face-down form is still being dealt.
+            if (Time.unscaledTime - OpenedAtTime >= HumanDelay && flipHeard[captured]) {
                 Choose(captured);
             }
         });
