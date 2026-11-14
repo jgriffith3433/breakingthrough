@@ -162,11 +162,12 @@ public class HitDirection : MonoBehaviour {
         var px = new Color32[w * h];
         for (int y = 0; y < h; y++) {
             float v = y / (float)(h - 1);              // 1 at the top (the rim)
-            float along = Mathf.Clamp01((v - 0.82f) / 0.18f);   // only the top 18%
-            along = Mathf.Sin(along * Mathf.PI * 0.5f);
+            float along = Mathf.Clamp01((v - 0.74f) / 0.26f);   // only the top 26%
+            along = Mathf.Sin(along * Mathf.PI);                 // zero at both ends: no hard rim edge (it read as a red rectangle)
             for (int x = 0; x < w; x++) {
                 float u = Mathf.Abs(x / (float)(w - 1) - 0.5f) * 2f;
                 float across = Mathf.Pow(Mathf.Clamp01(1f - u), 1.5f);
+                across *= across;   // soft to the side edges as well
                 byte a = (byte)(255f * along * across);
                 px[y * w + x] = new Color32(255, 255, 255, a);
             }
