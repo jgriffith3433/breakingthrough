@@ -29,7 +29,7 @@ public class CardMatch : MonoBehaviour {
     public const float Budget = 15f;                 // the criterion: card and first play frame under this far apart
     public const float MaxGain = 2.2f, MinGain = 0.45f;
     public const int Passes = 8;
-    const float PassSeconds = 0.5f, FirstPass = 0.8f;
+    const float PassSeconds = 0.5f, FirstPass = 0.8f, HoldSeconds = 1f;
 
     public static CardMatch Instance { get; private set; }
     public static readonly List<string> Events = new List<string>();
@@ -44,6 +44,7 @@ public class CardMatch : MonoBehaviour {
     Camera cam;
     float pull;
     float nextPass;
+    bool relit;
     RenderTexture rt;
     Texture2D tex;
 
@@ -90,6 +91,7 @@ public class CardMatch : MonoBehaviour {
             grade.CardGain = Color.white;
         }
         PassesDone = 0;
+        relit = false;
         nextPass = Time.unscaledTime + FirstPass;
         Instance = this;
         Events.Add("attach|" + id);
@@ -107,14 +109,19 @@ public class CardMatch : MonoBehaviour {
             }
         }
         if (PassesDone >= Passes) {
+            // The first passes ran while the opening scene's camera framed the place; the play view after the hand-off, a new shot
+            // and the exposure guard's slow lift all move the frame's mean afterwards (ch2 read 16.3 from its card). Keep nudging the
+            // gain at a slow rate so the play frame is graded to the card too, not only the opening's.
+            nextPass = Time.unscaledTime + HoldSeconds;
+            Calibrate(false);
             return;
         }
-        if (PassesDone == 1 || PassesDone == 5) {
+        if (!relit && (PassesDone == 1 || PassesDone == 5)) {
             // The map's own lighting lands some frames after the scene starts (ChapterMap.Apply): pull the light after it, twice.
             PullLight();
         }
         nextPass = Time.unscaledTime + PassSeconds;
-        Calibrate();
+        Calibrate(true);
     }
 
     // Fog and ambient move toward the card's palette: the air and the fill light are what a scene's mean colour is mostly made of.
@@ -157,11 +164,13 @@ public class CardMatch : MonoBehaviour {
         return sum;
     }
 
-    void Calibrate() {
+    void Calibrate(bool counted) {
         Color mean = MeanOfFrame(cam, ref rt, ref tex);
         float delta = DeltaE(mean, Target);
         LastDelta = delta;
-        PassesDone++;
+        if (counted) {
+            PassesDone++;
+        }
         // Move the gain by the ratio of target to measured, per channel, tamed so the loop settles instead of ringing.
         Color g = Gain;
         g.r = Mathf.Clamp(g.r * Mathf.Pow(Target.r / Mathf.Max(0.02f, mean.r), 0.75f), MinGain, MaxGain);
@@ -169,11 +178,14 @@ public class CardMatch : MonoBehaviour {
         g.b = Mathf.Clamp(g.b * Mathf.Pow(Target.b / Mathf.Max(0.02f, mean.b), 0.75f), MinGain, MaxGain);
         Gain = g;
         grade.CardGain = g;
-        Events.Add("pass|" + CardId + "|" + PassesDone + "|dE " + delta.ToString("0.0"));
+        if (counted) {
+            Events.Add("pass|" + CardId + "|" + PassesDone + "|dE " + delta.ToString("0.0"));
+        }
     }
 
-    // Restart the calibration (a cutscene ended, the camera moved to the play view).
+    // Restart the calibration (a cutscene ended, the camera moved to the play view). The light is not pulled a second time.
     public void Recalibrate() {
+        relit = true;
         PassesDone = 0;
         nextPass = Time.unscaledTime + 0.1f;
     }
