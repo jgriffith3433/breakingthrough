@@ -213,6 +213,7 @@ public class StoryScreen : MonoBehaviour {
         if (stamp != UiFit.Stamp && scaler != null) {
             stamp = UiFit.Stamp;
             UiFit.Apply(scaler);
+            PlaceBeat();
             Layout();
         }
         UiFit.Notice();
@@ -296,7 +297,7 @@ public class StoryScreen : MonoBehaviour {
 
         // Beats live outside the pages root so they show during play.
         beatText = MakeText(canvasGo.transform, "", 32, FontStyle.Bold, TextAnchor.MiddleCenter);
-        Anchor(beatText.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 250f), new Vector2(1100f, 50f));
+        PlaceBeat();
         beatText.enabled = false;
 
         root = new GameObject("Pages");
@@ -338,6 +339,17 @@ public class StoryScreen : MonoBehaviour {
         Anchor((RectTransform)MenuButton.transform, new Vector2(0.5f, 0f), new Vector2(210f, 60f), new Vector2(380f, 84f));
         root.SetActive(false);
         Layout();
+    }
+
+    // A wave-start beat. Desktop keeps its spot above the bottom; on a phone that spot is the build bar's Wall/Spikes/Tower
+    // cards, so the beat joins the caption column (CaptionStack) with Wallit's and Slice's lines instead of printing over them.
+    void PlaceBeat() {
+        if (UiFit.Mode == UiMode.Desktop) {
+            Anchor(beatText.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 250f), new Vector2(1100f, 50f));
+            return;
+        }
+        beatText.fontSize = 28;
+        UiFit.PlaceCaption(beatText.rectTransform, 250f, 3);
     }
 
     // Desktop keeps the 1920x1080 numbers. Phones (Wide and Tall) fit the 660-unit short side: 20+ unit text, 88 unit buttons.

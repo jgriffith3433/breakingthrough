@@ -196,7 +196,7 @@ public class RunHud : MonoBehaviour {
             Place(bossName, 28, new Vector2(0f, -256f), new Vector2(size.x - 48f, 36f));
             Place(bossBack.rectTransform, new Vector2(0f, -290f), new Vector2(bossWidth + 6f, 22f));
             Place(goldenText, 28, new Vector2(0f, -316f), new Vector2(size.x - 48f, 36f));
-            Place(eventText, 28, new Vector2(24f, -340f), new Vector2(300f, 36f));
+            Place(eventText, 28, new Vector2(24f, -340f), new Vector2(300f, 72f));   // two wrapped lines ("Golden Hour: double bolts")
             Place(boonText, 28, new Vector2(24f, -484f), new Vector2(300f, 290f));
             evoSize = 52f;
             evoY = -424f;
