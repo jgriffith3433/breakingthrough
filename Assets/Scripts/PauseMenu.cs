@@ -28,6 +28,7 @@ public class PauseMenu : MonoBehaviour {
     public Button ResumeButton { get; private set; }
     public Button SettingsButton { get; private set; }
     public Button JournalButton { get; private set; }
+    public Button BuildButton { get; private set; }
     public Button QuitButton { get; private set; }
     public Button SkipSceneButton { get; private set; }
     public Button RestartButton { get; private set; }
@@ -142,6 +143,7 @@ public class PauseMenu : MonoBehaviour {
             return;
         }
         SettingsPanel.Close();
+        BuildPanel.Close();
         IsOpen = false;
         ClosedFrame = Time.frameCount;
         HoldFire = true;
@@ -164,10 +166,11 @@ public class PauseMenu : MonoBehaviour {
         // Resume, then Skip scene while a page reel or the in-engine Chapter 1 opening plays, Journal, Restart, Settings, Quit.
         SkipSceneButton.gameObject.SetActive((chapter && Cutscene.PageOpen) || (InLevel && CinematicDirector.IsOpen));
         JournalButton.gameObject.SetActive(chapter);
+        BuildButton.gameObject.SetActive(WaveDirector.Instance != null && BuildList.Held().Count > 0);
         RestartButton.gameObject.SetActive(chapter && !ChapterRun.Instance.Completed);
         DisarmRestart();
         float y = -264f;
-        foreach (Button b in new[] { SkipSceneButton, JournalButton, RestartButton, SettingsButton, QuitButton }) {
+        foreach (Button b in new[] { SkipSceneButton, JournalButton, BuildButton, RestartButton, SettingsButton, QuitButton }) {
             if (!b.gameObject.activeSelf) {
                 continue;
             }
@@ -177,6 +180,11 @@ public class PauseMenu : MonoBehaviour {
         Place(hint.rectTransform, new Vector2(0f, y - 10f), new Vector2(460f, 32f));
         deck.sizeDelta = new Vector2(520f, -y + 90f);
         Layout();
+    }
+
+    // Every boon held, with level and effect (BuildPanel.cs). Only offered once the run holds one.
+    void OpenBuild() {
+        BuildPanel.Open();
     }
 
     void OpenSettings() {
@@ -292,7 +300,7 @@ public class PauseMenu : MonoBehaviour {
         }
         wasLocked = locked == 1;
 
-        bool settings = SettingsPanel.IsOpen || SettingsPanel.ClosedFrame == Time.frameCount || JournalPanel.IsOpen || JournalPanel.ClosedFrame == Time.frameCount;
+        bool settings = SettingsPanel.IsOpen || SettingsPanel.ClosedFrame == Time.frameCount || JournalPanel.IsOpen || JournalPanel.ClosedFrame == Time.frameCount || BuildPanel.IsOpen || BuildPanel.ClosedFrame == Time.frameCount;
         bool own = ChapterHub.Instance != null || LevelScene.Instance != null;   // Esc leaves the hub and the level, so only P and Start pause there
         bool key = PlayInput.GetKeyDown(KeyCode.P) || MenuNav.PadStart || (MenuNav.Back && (IsOpen || !own));
 
@@ -374,6 +382,8 @@ public class PauseMenu : MonoBehaviour {
         JournalButton = MakeButton(deck, "Journal", "Journal", new Vector2(320f, 88f), 32, OpenJournal);
         Place((RectTransform)JournalButton.transform, new Vector2(0f, -264f), new Vector2(320f, 88f));
         JournalButton.gameObject.SetActive(false);
+        BuildButton = MakeButton(deck, "Build", "Build", new Vector2(320f, 88f), 32, OpenBuild);
+        BuildButton.gameObject.SetActive(false);
         SkipSceneButton = MakeButton(deck, "Skip scene", "Skip scene", new Vector2(320f, 88f), 32, SkipScene);
         SkipSceneButton.gameObject.SetActive(false);
         RestartButton = MakeButton(deck, "Restart", "Restart chapter", new Vector2(320f, 88f), 32, RestartChapter);

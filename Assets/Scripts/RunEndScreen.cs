@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -33,6 +34,14 @@ public class RunEndScreen : MonoBehaviour {
     CanvasGroup group;
     Coroutine play;
     bool arcade;
+    // The build band: the boons held when the run ended, one icon and level each, in its own band between the goal
+    // lines and the cast subtitle. Its cells are rebuilt on every layout and it is never given a pixel another band uses.
+    RectTransform buildBand;
+    readonly List<GameObject> buildCells = new List<GameObject>();
+    List<BuildList.Entry> buildHeld = new List<BuildList.Entry>();
+    public static int BuildHeld { get; private set; }
+    public static int BuildShown { get; private set; }
+    public RectTransform BuildBand { get { return buildBand; } }
     bool ready;
     bool leaving;
     float leaveAt;
@@ -78,6 +87,8 @@ public class RunEndScreen : MonoBehaviour {
         leaving = false;
         retry = false;
         gameObject.SetActive(true);
+        buildHeld = BuildList.Held();   // what the run ended with (a retry clears the ranks)
+        BuildHeld = buildHeld.Count;
         if (title != null) {
             title.text = "Address struck off";
         }
@@ -128,6 +139,8 @@ public class RunEndScreen : MonoBehaviour {
         RetryPressed = false;
         OpenedAt = Time.unscaledTime;
         gameObject.SetActive(true);
+        buildHeld = new List<BuildList.Entry>();
+        BuildHeld = 0;
         if (title != null) {
             title.text = "Address struck off";
         }
@@ -281,7 +294,10 @@ public class RunEndScreen : MonoBehaviour {
             y = PlaceRow(goalStamp, fsGoal, y, textW, goalH) + 4f;
             y = PlaceRow(goalLabel, fsGoal, y, textW, goalH) + 4f;
             PlaceBottomRow(subtitle, fsSub, bandTop, textW, subH);
+            float room = size.height - y - (bandTop + subH) - 10f;
+            PlaceBuildBand(y + 4f, textW, room, phone);
         } else {
+            PlaceBuildBand(0f, 0f, 0f, phone);
             // A chapter loss: its body takes everything between the title and the buttons.
             float room = Mathf.Max(60f, size.height - y - bandTop - 8f);
             PlaceRow(waveLabel, 30, y, textW, room);
@@ -292,6 +308,75 @@ public class RunEndScreen : MonoBehaviour {
             PlaceRow(goalLabel, fsGoal, y, 0f, 0f);
             PlaceBottomRow(subtitle, fsSub, bandTop, 0f, 0f);
         }
+    }
+
+    // Icons of the boons held, wrapped into rows, each with its level on the icon's corner. Cells are 72 units (64 on a
+    // phone, 48 when the sheet is short); what does not fit becomes a "+N" cell, and with no room at all the band is hidden.
+    void PlaceBuildBand(float fromTop, float w, float room, bool phone) {
+        for (int i = 0; i < buildCells.Count; i++) {
+            Destroy(buildCells[i]);
+        }
+        buildCells.Clear();
+        BuildShown = 0;
+        if (buildBand == null) {
+            var go = new GameObject("Build Band", typeof(RectTransform));
+            go.transform.SetParent(transform, false);
+            buildBand = (RectTransform)go.transform;
+        }
+        float cell = phone ? 64f : 72f;
+        if (room < cell) {
+            cell = 48f;
+        }
+        int n = buildHeld.Count;
+        if (w <= 0f || n == 0 || room < cell) {
+            buildBand.gameObject.SetActive(false);
+            return;
+        }
+        int cols = Mathf.Max(1, Mathf.FloorToInt(w / cell));
+        int rows = Mathf.Min(Mathf.CeilToInt(n / (float)cols), Mathf.Max(1, Mathf.FloorToInt(room / cell)));
+        int slots = cols * rows;
+        int shown = n <= slots ? n : slots - 1;
+        buildBand.gameObject.SetActive(true);
+        buildBand.anchorMin = buildBand.anchorMax = new Vector2(0.5f, 1f);
+        buildBand.pivot = new Vector2(0.5f, 1f);
+        buildBand.anchoredPosition = new Vector2(0f, -fromTop);
+        buildBand.sizeDelta = new Vector2(cols * cell, rows * cell);
+        for (int i = 0; i < shown; i++) {
+            BuildList.Entry e = buildHeld[i];
+            var go = new GameObject("Boon " + e.Name, typeof(RectTransform));
+            go.transform.SetParent(buildBand, false);
+            var image = go.AddComponent<Image>();
+            if (!UiArt.Show(image, UiArt.Boon(e.Id))) {
+                image.enabled = true;
+                image.color = RunBoons.RarityColor(e.Rarity);
+            }
+            SetCell(image.rectTransform, i, cols, cell);
+            Text level = MakeText(go.transform, BuildList.Level(e), cell < 60f ? 20 : 22, TextAnchor.LowerRight, new Vector2(1f, 0f), Vector2.zero, new Vector2(cell - 4f, 26f));
+            level.color = e.Evolution ? new Color(1f, 0.85f, 0.45f) : Color.white;
+            var lr = level.rectTransform;
+            lr.pivot = new Vector2(1f, 0f);
+            lr.anchoredPosition = new Vector2(-2f, 0f);
+            level.horizontalOverflow = HorizontalWrapMode.Overflow;
+            level.verticalOverflow = VerticalWrapMode.Overflow;
+            buildCells.Add(go);
+        }
+        if (shown < n) {
+            var go = new GameObject("More", typeof(RectTransform));
+            go.transform.SetParent(buildBand, false);
+            Text more = MakeText(go.transform, "+" + (n - shown), 26, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(cell, cell));
+            more.rectTransform.anchorMin = more.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            more.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            SetCell((RectTransform)go.transform, shown, cols, cell);
+            buildCells.Add(go);
+        }
+        BuildShown = shown;
+    }
+
+    static void SetCell(RectTransform rect, int index, int cols, float cell) {
+        rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
+        rect.pivot = new Vector2(0f, 1f);
+        rect.anchoredPosition = new Vector2((index % cols) * cell + 2f, -(index / cols) * cell - 2f);
+        rect.sizeDelta = new Vector2(cell - 4f, cell - 4f);
     }
 
     static float PlaceRow(Text text, int font, float fromTop, float w, float h) {
