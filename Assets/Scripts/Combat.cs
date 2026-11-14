@@ -53,6 +53,8 @@ public static class Combat {
     // The bat strikes a bot. Scale is the swing's multiplier (finisher, smash, home run, a bot knocked into
     // another). Power is how hard a bot it drops is flung. Tip: it met the bat's sweet spot. True when this blow
     // dropped the bot.
+    public static int BatHitsLanded { get; private set; }   // bat blows that reached Enemy.Damage (the hit-fx playtest: one flash each)
+
     public static bool BatHit(Enemy foe, float scale, float power, bool allowChain, bool tip = false) {
         return Strike(foe, power, scale, allowChain, DamageKind.Bat, tip);
     }
@@ -82,6 +84,9 @@ public static class Combat {
             crit = true;
         }
         RunLog.NoteHit(amount);
+        if (kind == DamageKind.Bat) {
+            BatHitsLanded++;
+        }
         Vector3 at = foe.transform.position;
         bool dropped = foe.Damage(amount, kind, crit, -1f, power);
         if (crit && dropped && (foe.BodyScale > 3f || foe.Elite)) {
