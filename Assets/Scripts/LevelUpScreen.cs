@@ -47,6 +47,8 @@ public class LevelUpScreen : MonoBehaviour {
         public Text BackNumber;
         public Text Stamp;
         public float StampedAt;
+        public Vector2 CornerAt;    // where a rarity stamp sits (top-centre anchored, off the title and text), per layout
+        public int CornerFont = 30;
         public CanvasGroup Group;
     }
 
@@ -366,6 +368,18 @@ public class LevelUpScreen : MonoBehaviour {
 
     static void StampOn(Card card, string word, Color color, float tilt) {
         card.Stamp.text = word;
+        RectTransform sr = card.Stamp.rectTransform;
+        if (word == "APPROVED") {
+            Place(sr, new Vector2(0.5f, 0.5f), new Vector2(0f, 10f), new Vector2(380f, 90f));
+            card.Stamp.fontSize = 56;
+        } else {
+            // RARE / EVOLVED: beside the icon, never across the title.
+            sr.anchorMin = sr.anchorMax = new Vector2(0.5f, 1f);
+            sr.pivot = new Vector2(0.5f, 0.5f);
+            sr.anchoredPosition = card.CornerAt;
+            sr.sizeDelta = new Vector2(170f, 44f);
+            card.Stamp.fontSize = card.CornerFont;
+        }
         card.Stamp.color = color;
         card.Stamp.rectTransform.localRotation = Quaternion.Euler(0f, 0f, tilt);
         card.Stamp.gameObject.SetActive(true);
@@ -682,6 +696,8 @@ public class LevelUpScreen : MonoBehaviour {
             Place(card.Frame.rectTransform, new Vector2(0.5f, 0.5f), homes[i], frame);
             Place(card.Halo.rectTransform, new Vector2(0.5f, 0.5f), homes[i], frame + new Vector2(90f, 90f));
             float inner = frame.x - 40f;
+            card.CornerAt = tall ? new Vector2(-frame.x * 0.5f + 95f, -168f) : (wide ? new Vector2(-frame.x * 0.5f + 46f, -62f) : new Vector2(-137f, -118f));
+            card.CornerFont = tall ? 28 : (wide ? 22 : 30);
             card.Rank.gameObject.SetActive(false);
             if (tall) {
                 // Stacked: the icon on the left, the words in a column beside it.
