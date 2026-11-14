@@ -686,7 +686,7 @@ public class LevelYard : MonoBehaviour {
         BotDef def = BotRoster.ForSpawn(BotKind.YoBot, 1);
         var go = new GameObject("First Yo Bot");
         go.tag = "enemy";
-        Vector3 p = w + dir * 1f + side * 3f;
+        Vector3 p = w + dir * 1.1f + side * 1.5f;   // about 1.9 m away: in bat reach the moment control returns
         p.y = 0.55f + def.Scale * 0.08f;
         go.transform.position = p;
         go.transform.rotation = Quaternion.LookRotation(LevelKit.Flat(w - p));
@@ -704,6 +704,8 @@ public class LevelYard : MonoBehaviour {
         e.Scripted = false;
         float spawned = Time.time;   // control starts now: the fight is timed from here
         BatEquipment.OpeningAuto = true;
+        // Control is Wallit's from here: the first-minute milestones count from this moment (gameplay, input; the kill is first-success).
+        FirstMinute.BeginGameplay();
         Note("first-blow-start", "a Yo Bot runs in from " + e.transform.position.ToString("0.0") + "; the bat swings by itself");
         while (e != null && e.Alive && Time.time - spawned < 14f) {
             yield return null;
