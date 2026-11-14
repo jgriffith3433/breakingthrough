@@ -131,7 +131,7 @@ public class LevelScene : MonoBehaviour {
     static void Moon() {
         RenderSettings.fog = true;
         RenderSettings.fogMode = FogMode.ExponentialSquared;
-        RenderSettings.fogColor = new Color(0.05f, 0.08f, 0.15f);
+        RenderSettings.fogColor = new Color(0.09f, 0.15f, 0.22f);   // teal haze, the card's colour (CardMatch pulls it further)
         RenderSettings.fogDensity = 0.009f;
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
         RenderSettings.ambientSkyColor = new Color(0.27f, 0.33f, 0.55f);
@@ -143,10 +143,12 @@ public class LevelScene : MonoBehaviour {
         }
         var sun = new GameObject("Moon").AddComponent<Light>();
         sun.type = LightType.Directional;
-        sun.color = new Color(0.62f, 0.72f, 1f);
-        sun.intensity = 0.95f;
+        // A low amber key raking across the walls, not a flat blue moon: the yard's brick and stencil catch it (the critic's "flat blue
+        // with bare walls"), and the cold ambient stays in the shade. The loading card is teal with lamp amber in it.
+        sun.color = new Color(1f, 0.76f, 0.5f);
+        sun.intensity = 0.9f;
         sun.shadows = LightShadows.None;
-        sun.transform.rotation = Quaternion.Euler(48f, -32f, 0f);
+        sun.transform.rotation = Quaternion.Euler(24f, -32f, 0f);
     }
 
     // The camera is scene2's: ZeldaStyleCamera with the numbers that scene serializes, a night grade over it.
@@ -164,6 +166,7 @@ public class LevelScene : MonoBehaviour {
         go.transform.position = at + new Vector3(0f, 4f, -6f);
         go.transform.rotation = Quaternion.Euler(18f, 0f, 0f);
         SceneMood.Apply(Cam, SceneMood.Yard(), false);
+        CardMatch.Attach(Cam, "ch1");
         go.AddComponent<ZeldaStyleCamera>();
     }
 
