@@ -218,7 +218,6 @@ public class DeptFx : MonoBehaviour {
 
     static readonly Color Paper = new Color(0.96f, 0.93f, 0.82f, 1f);
     static readonly Color Ink = new Color(0.72f, 0.1f, 0.1f, 1f);
-    static readonly Color Navy = new Color(0.1f, 0.12f, 0.3f, 1f);
 
     // A bat hit: spark streaks, torn paper and stamp-ink flecks. weight 0 light, 1 finisher or sweet spot, 2 home run.
     public static void Impact(Vector3 at, float botScale, int weight, Vector3 away) {
@@ -235,7 +234,7 @@ public class DeptFx : MonoBehaviour {
         InkEmitted += ink;
         Emit(Look.Spark, at, Scaled(4 + w * 3), new Color(1f, 0.92f, 0.65f, 1f), (0.45f + 0.15f * w) * root, 5f + 2f * w, bias, 0.1f);
         Emit(Look.Paper, at, paper, Paper, (0.34f + 0.08f * w) * root, 3.4f + 1.4f * w, bias, 0.15f);
-        Emit(Look.Ink, at, ink, w == 0 ? Ink : Color.Lerp(Ink, Navy, 0.35f * w), (0.22f + 0.06f * w) * root, 3f + 1.2f * w, bias, 0.1f);
+        Emit(Look.Ink, at, ink, Ink, (0.22f + 0.06f * w) * root, 3f + 1.2f * w, bias, 0.1f);
     }
 
     // The launch: a heavy paper burst and a shockwave ring at the contact point.
