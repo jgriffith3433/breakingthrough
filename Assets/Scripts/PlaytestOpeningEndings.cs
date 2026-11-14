@@ -261,6 +261,7 @@ public static class PlaytestOpeningEndings {
         int closedBefore = CinematicDirector.ClosedCount;
         int movingShots = 0;
         int movingBase = CinematicDirector.MovingShots;
+        int speakerBase = CinematicDirector.SpeakerShots.Count;
         var lastPos = new Dictionary<string, Vector3>();
         float started = Time.realtimeSinceStartup;
         int lastShot = -1;
@@ -278,6 +279,7 @@ public static class PlaytestOpeningEndings {
         float seconds = Time.realtimeSinceStartup - started;
         movingShots = CinematicDirector.MovingShots - movingBase;
         run.Metric("cinematic.movingShots", movingShots);
+        CinematicDirector.ReportSpeakers(run, "opening-endings", speakerBase, Phone);
         run.Event("opening-end", "chapter=" + (chapter + 1) + " shots=" + CinematicDirector.ShotsShown + " moving=" + movingShots + " seconds=" + seconds.ToString("0.0"));
         run.Metric("openingCh" + (chapter + 1) + "Shots", CinematicDirector.ShotsShown);
         run.Metric("openingCh" + (chapter + 1) + "Moving", movingShots);
@@ -327,6 +329,7 @@ public static class PlaytestOpeningEndings {
         float started = Time.realtimeSinceStartup;
         int movingShots = 0;
         int movingBase = CinematicDirector.MovingShots;
+        int speakerBase = CinematicDirector.SpeakerShots.Count;
         var lastPos = new Dictionary<string, Vector3>();
         int lastShot = -1;
         bool holding = false;
@@ -365,6 +368,7 @@ public static class PlaytestOpeningEndings {
         bool beat = string.IsNullOrEmpty(beatPrefix) || Seen(beatPrefix);
         movingShots = CinematicDirector.MovingShots - movingBase;
         run.Metric("cinematic.movingShots." + tag, movingShots);
+        CinematicDirector.ReportSpeakers(run, "opening-endings", speakerBase, Phone);
         run.Event("ending-end", tag + " shots=" + CinematicDirector.ShotsShown + " moving=" + movingShots + " beat=" + beat);
         if (!beat) {
             run.Problem(PlaytestSeverity.Bug, "opening-endings: " + tag + " missing beat " + beatPrefix);
