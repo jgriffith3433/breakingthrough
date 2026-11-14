@@ -452,7 +452,16 @@ public static class MetaProgress {
         }
     }
 
+    // Calls to Save (the playtest's save.writes; a sandbox run counts the call, nothing hits disk).
+    public static int Writes { get; private set; }
+
+    // Writes the shop save now (the page is being hidden).
+    public static void Flush() {
+        Save();
+    }
+
     static void Save() {
+        Writes++;
         if (Sandbox) {
             return;
         }
