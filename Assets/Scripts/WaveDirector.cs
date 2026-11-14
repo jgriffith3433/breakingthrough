@@ -141,6 +141,7 @@ public class WaveDirector : MonoBehaviour {
         Wave = MetaProgress.TakeStartWave();
         MetaProgress.NoteReached(Wave);
         RunAnalytics.RunStart(Wave);
+        FirstMinute.BeginGameplay();
         BeginIntro();
         if (Wave == 1 && !introShown) {
             introShown = true;
@@ -173,6 +174,9 @@ public class WaveDirector : MonoBehaviour {
 
     void Update() {
         Waiting = phase == Phase.Break || phase == Phase.Build;
+        if (phase != Phase.Chapter) {
+            FirstMinute.Tick();
+        }
         if (hudStamp != UiFit.Stamp) {
             LayoutHud();
         }
@@ -783,6 +787,9 @@ public class WaveDirector : MonoBehaviour {
         spot.y = GroundNear(spot, origin.y) + 0.55f + def.Scale * 0.08f;
 
         Enemy enemy = Spawn(def, spot, true);
+        if (Wave == 1 && spawnSerial <= 1 && ChapterRun.Instance == null && kind == BotKind.YoBot) {
+            enemy.HitsToDrop = Mathf.Min(enemy.HitsToDrop, 2);   // the first Yo Bot of a run falls to two bat hits
+        }
         if (makeBoss) {
             bossPending = false;
             // Arcade decade bosses 10/20/30 reuse the campaign roster (Plated Alpha, Foreman, The Order) as set pieces.
