@@ -120,6 +120,8 @@ public static class Tuning {
     }
     // Wave 1 opens with this many Yo Bots (the first three spawn within half a second).
     public const int OpeningBots = 10;
+    // Arcade Yo Bots up to this wave die to one bat hit (the first swing kills; Combo and bolts follow at once).
+    public const int OneHitWaves = 1;
     // Every kill in the first waves drops a coin that flies to the HUD; after that one in CoinKillEvery.
     public const int CoinKillWaves = 3;
     public const int CoinKillEvery = 5;
