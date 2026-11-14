@@ -260,6 +260,9 @@ public class TouchControls : MonoBehaviour {
         if (UiFit.Stamp != laidStamp || UiRects.SafeArea() != laidSafe) {
             Layout();
         }
+        if (show) {
+            KeepPadsBigEnough();
+        }
 
         if (!show) {
             // After the musician falls, any tap goes back, like any key.
@@ -706,6 +709,23 @@ public class TouchControls : MonoBehaviour {
         next.Rect.anchorMax = new Vector2(0.5f, edge);
         next.Rect.pivot = new Vector2(0.5f, edge);
         next.Rect.anchoredPosition = new Vector2(0f, tall ? 510f : laidOut == UiMode.Wide ? -200f : -250f);
+    }
+
+    // A pad is never under 46 points across on screen, whatever scale the canvas ends up at (the Menu pad read 38 px).
+    void KeepPadsBigEnough() {
+        float need = 46f * UiRects.PixelsPerPoint;
+        foreach (Pad pad in pads) {
+            float scale = pad.Rect.lossyScale.x;
+            if (scale <= 0.0001f || !pad.Go.activeSelf) {
+                continue;
+            }
+            Vector2 size = pad.Rect.sizeDelta;
+            if (size.x > 0f && Mathf.Min(size.x, size.y) * scale < need - 0.5f) {
+                float units = Mathf.Ceil(need / scale);
+                pad.Rect.sizeDelta = new Vector2(units, units);
+                UiSkin.Disc(pad.Image, units);
+            }
+        }
     }
 
     static void Anchored(Pad pad, Vector2 center) {
