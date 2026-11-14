@@ -47,18 +47,18 @@ public class ArcadeActs : MonoBehaviour {
             Exposure = 1.1f, Contrast = 1.1f, Saturation = 1.08f, Vignette = 0.8f,
             Shadows = new Color(0.9f, 0.88f, 1.1f), Highlights = new Color(1.14f, 0.98f, 0.82f), Lift = new Color(0.015f, 0.006f, 0.02f) },
         // Act II deep night: a cold blue moon key from behind the post office, rim light on everyone, warm lamp pools, ground fog.
-        new Look { Sun = new Color(0.4f, 0.58f, 1f), SunIntensity = 0.95f, Fog = new Color(0.04f, 0.08f, 0.2f), FogDensity = 0.0072f,
-            SkyTop = new Color(0.01f, 0.02f, 0.09f), SkyHorizon = new Color(0.07f, 0.15f, 0.4f), SkyGround = new Color(0.02f, 0.03f, 0.07f),
-            AmbSky = new Color(0.22f, 0.34f, 0.6f), AmbEq = new Color(0.13f, 0.19f, 0.34f), AmbGround = new Color(0.04f, 0.05f, 0.1f),
+        new Look { Sun = new Color(0.4f, 0.58f, 1f), SunIntensity = 1.35f, Fog = new Color(0.07f, 0.12f, 0.28f), FogDensity = 0.0056f,
+            SkyTop = new Color(0.01f, 0.02f, 0.09f), SkyHorizon = new Color(0.1f, 0.2f, 0.5f), SkyGround = new Color(0.02f, 0.03f, 0.07f),
+            AmbSky = new Color(0.4f, 0.54f, 0.84f), AmbEq = new Color(0.3f, 0.4f, 0.64f), AmbGround = new Color(0.14f, 0.18f, 0.3f),
             Disc = new Color(0.7f, 0.85f, 1f), DiscDir = new Vector3(0.45f, 0.35f, -0.8f), DiscSize = 0.05f, Haze = 0.8f,
-            Exposure = 1.18f, Contrast = 1.2f, Saturation = 0.95f, Vignette = 1f,
+            Exposure = 1.3f, Contrast = 1.12f, Saturation = 0.95f, Vignette = 1f,
             Shadows = new Color(0.92f, 0.88f, 1.0f), Highlights = new Color(1.1f, 1.0f, 0.86f), Lift = new Color(0.012f, 0.008f, 0.02f) },
         // Act III the Department's red alert: a red key, a beacon sweeping the lawn, ash in the air, higher contrast.
-        new Look { Sun = new Color(1f, 0.08f, 0.2f), SunIntensity = 0.95f, Fog = new Color(0.26f, 0.03f, 0.05f), FogDensity = 0.0062f,
+        new Look { Sun = new Color(1f, 0.08f, 0.2f), SunIntensity = 1.3f, Fog = new Color(0.34f, 0.06f, 0.08f), FogDensity = 0.005f,
             SkyTop = new Color(0.14f, 0f, 0.04f), SkyHorizon = new Color(0.7f, 0.07f, 0.1f), SkyGround = new Color(0.08f, 0.01f, 0.02f),
-            AmbSky = new Color(0.5f, 0.14f, 0.18f), AmbEq = new Color(0.3f, 0.07f, 0.1f), AmbGround = new Color(0.1f, 0.02f, 0.03f),
+            AmbSky = new Color(0.72f, 0.28f, 0.32f), AmbEq = new Color(0.52f, 0.2f, 0.24f), AmbGround = new Color(0.22f, 0.07f, 0.09f),
             Disc = new Color(1f, 0.2f, 0.18f), DiscDir = new Vector3(0.2f, 0.08f, 0.95f), DiscSize = 0.12f, Haze = 0.75f,
-            Exposure = 1.1f, Contrast = 1.32f, Saturation = 1.05f, Vignette = 1.1f,
+            Exposure = 1.25f, Contrast = 1.2f, Saturation = 1.05f, Vignette = 1.1f,
             Shadows = new Color(1.1f, 0.74f, 0.82f), Highlights = new Color(1.18f, 0.9f, 0.82f), Lift = new Color(0.035f, 0f, 0.008f) }
     };
 
