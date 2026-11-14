@@ -617,6 +617,7 @@ public static class WebGlBuild
 
     public static void BuildWebGLTo(string buildPath)
     {
+        AudioNameCheck.Require();   // every music name the game asks for has its file: a missing one would 404 in the player
         SetupWallit.EnsureBuiltForDeploy();
         SetupSlice.EnsureBuiltForDeploy();
         SetupBots.EnsureBuiltForDeploy();
