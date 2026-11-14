@@ -425,6 +425,8 @@ public static partial class Playtest {
                 MeshAuditReport audit = MeshAudit.Run();
                 run.Event("mesh-audit-summary", audit.Summary());
                 run.Metric("meshInsideOut", (float)audit.Inside);
+                run.Metric("quality.insideOut", (float)audit.Inside);
+                run.Metric("bakedPartsFlipped", (float)BakedMesh.FlippedParts);
                 run.Metric("meshZeroNormals", (float)audit.ZeroNormals);
                 run.Metric("meshNegativeScale", (float)audit.NegativeScales);
                 run.Metric("quality.mirroredText", (float)audit.MirroredText);
