@@ -26,6 +26,7 @@ public static partial class Playtest {
         bossEntranceStats = new List<float>();
         bossCardTopMax = 0f;
         bossTouchBackMax = 0f;
+        CinematicHud.ResetCounters();
         int count = 0;
 
         int[] waves = { 10, 20, 30 };
@@ -118,6 +119,12 @@ public static partial class Playtest {
         }
         CinematicDirector.IgnoreSeen = false;
         run.Metric("bossEntrances", count);
+        run.Metric("cinematic.hudVisibleFrames", CinematicHud.HudVisibleFrames);
+        run.Metric("cinematic.framesObserved", CinematicHud.CinematicFrames);
+        run.Metric("ftue.devUiVisible", DevUi.Visible);
+        if (CinematicHud.HudVisibleFrames > 0) {
+            run.Problem(PlaytestSeverity.Bug, "boss-entrances: the HUD or touch pads drew on " + CinematicHud.HudVisibleFrames + " frames of a boss entrance");
+        }
         run.Metric("bossEntranceCardTopFrac", Mathf.Round(bossCardTopMax * 100f) / 100f);
         if (bossEntranceStats.Count > 0) {
             float lo = 99f, hi = 0f;

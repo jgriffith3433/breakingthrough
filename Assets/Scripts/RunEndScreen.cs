@@ -199,15 +199,19 @@ public class RunEndScreen : MonoBehaviour {
             }
             FocusRetry();
         }
-        if (IsOpen && panel != null && UiFit.Stamp != layoutStamp) {
+        if (IsOpen && panel != null && (UiFit.Stamp != layoutStamp || panel.rect.size != layoutSize)) {
             LayoutForPhone();
         }
     }
 
     int layoutStamp = -1;
+    Vector2 layoutSize;
 
     void LayoutForPhone() {
         layoutStamp = UiFit.Stamp;
+        if (panel != null) {
+            layoutSize = panel.rect.size;
+        }
         // Fill the lost panel; WaveDirector.LayoutHud owns the panel's phone scale/position.
         var root = transform as RectTransform;
         if (root != null) {
@@ -220,14 +224,86 @@ public class RunEndScreen : MonoBehaviour {
         UiMode mode = UiFit.Mode;
         bool tall = mode == UiMode.Tall;
         bool phone = mode != UiMode.Desktop;
-        float retryH = phone ? 140f : 96f;   // 140 units is about 80 px on a 390 px phone: well over the 64 px a thumb needs
-        float retryW = phone ? (tall ? 640f : 560f) : 420f;
-        if (RetryButton != null && RetryButton.gameObject.activeSelf) {
-            PlaceButton(RetryButton, 0f, phone ? (20f + (tall ? 72f : 56f) + 16f) : 108f, retryW, retryH, phone ? 40 : 42);
+        Rect size = panel != null ? panel.rect : new Rect(0f, 0f, 900f, 700f);
+        float W = size.width;
+        float textW = Mathf.Min(W - 40f, 1000f);
+        // Bands, top down: title, counts, goals; bottom up: buttons, then the cast subtitle's own band above them.
+        // No two bands share a pixel, so the subtitle can never print over the FILED line or the goal ladder.
+        int fsTitle = phone ? 40 : 52, fsWave = phone ? 32 : 34, fsCoin = phone ? 28 : 30, fsBest = phone ? 26 : 28, fsGoal = phone ? 26 : 24, fsSub = phone ? 26 : 26;
+        int goalLines = textW >= 1000f ? 1 : (phone ? 3 : 2);
+        float goalH = fsGoal * 1.3f * goalLines + 6f;
+        float subH = fsSub * 1.3f * (textW >= 1000f ? 1 : 2) + 8f;
+        float bandTop;   // height from the bottom the buttons occupy
+        bool row = phone && !tall;   // landscape phone: Retry and Menu side by side
+        float retryH = phone ? (tall ? 140f : 100f) : 96f;   // 140 units is about 80 px on a 390 px phone: well over the 64 px a thumb needs
+        float retryW = phone ? (tall ? Mathf.Min(640f, W - 40f) : 380f) : 420f;
+        if (row) {
+            float menuW = 220f;
+            float total = retryW + 16f + menuW;
+            if (RetryButton != null) {
+                PlaceButton(RetryButton, -total * 0.5f + retryW * 0.5f, 20f, retryW, retryH, 38);
+            }
+            if (MenuButton != null) {
+                PlaceButton(MenuButton, total * 0.5f - menuW * 0.5f, 20f, menuW, 72f, 24);
+            }
+            bandTop = 20f + retryH + 14f;
+        } else {
+            float menuH = phone ? 72f : 64f;
+            float menuY = phone ? 20f : 36f;
+            float retryY = menuY + menuH + (phone ? 16f : 8f);
+            if (RetryButton != null) {
+                PlaceButton(RetryButton, 0f, retryY, retryW, retryH, phone ? 40 : 42);
+            }
+            if (MenuButton != null) {
+                PlaceButton(MenuButton, 0f, menuY, phone ? Mathf.Min(260f, retryW * 0.55f) : 280f, menuH, phone ? 24 : 26);
+            }
+            bandTop = retryY + retryH + 14f;
         }
-        if (MenuButton != null) {
-            PlaceButton(MenuButton, 0f, phone ? 20f : 36f, phone ? Mathf.Min(260f, retryW * 0.55f) : 280f, phone ? (tall ? 72f : 56f) : 64f, phone ? 24 : 26);
+        float y = 20f;
+        y = PlaceRow(title, fsTitle, y, textW, fsTitle * 1.3f) + 6f;
+        if (arcade) {
+            y = PlaceRow(waveLabel, fsWave, y, textW, fsWave * 1.3f) + 4f;
+            y = PlaceRow(coinLabel, fsCoin, y, textW, fsCoin * 1.3f) + 4f;
+            y = PlaceRow(bestLabel, fsBest, y, textW, fsBest * 1.3f) + 8f;
+            y = PlaceRow(goalStamp, fsGoal, y, textW, goalH) + 4f;
+            y = PlaceRow(goalLabel, fsGoal, y, textW, goalH) + 4f;
+            PlaceBottomRow(subtitle, fsSub, bandTop, textW, subH);
+        } else {
+            // A chapter loss: its body takes everything between the title and the buttons.
+            float room = Mathf.Max(60f, size.height - y - bandTop - 8f);
+            PlaceRow(waveLabel, 30, y, textW, room);
+            PlaceRow(coinLabel, fsCoin, y, 0f, 0f);
+            PlaceRow(bestLabel, fsBest, y, 0f, 0f);
+            PlaceRow(goalStamp, fsGoal, y, 0f, 0f);
+            PlaceRow(goalLabel, fsGoal, y, 0f, 0f);
+            PlaceBottomRow(subtitle, fsSub, bandTop, 0f, 0f);
         }
+    }
+
+    static float PlaceRow(Text text, int font, float fromTop, float w, float h) {
+        if (text == null) {
+            return fromTop;
+        }
+        text.fontSize = font;
+        var rect = text.rectTransform;
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
+        rect.pivot = new Vector2(0.5f, 1f);
+        rect.anchoredPosition = new Vector2(0f, -fromTop);
+        rect.sizeDelta = new Vector2(w, h);
+        return fromTop + h;
+    }
+
+    static void PlaceBottomRow(Text text, int font, float fromBottom, float w, float h) {
+        if (text == null) {
+            return;
+        }
+        text.fontSize = font;
+        text.horizontalOverflow = HorizontalWrapMode.Wrap;
+        var rect = text.rectTransform;
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
+        rect.pivot = new Vector2(0.5f, 0f);
+        rect.anchoredPosition = new Vector2(0f, fromBottom);
+        rect.sizeDelta = new Vector2(w, h);
     }
 
     static void PlaceButton(Button button, float x, float yFromBottom, float w, float h, int font) {
@@ -422,9 +498,12 @@ public class RunEndScreen : MonoBehaviour {
         goalLabel = MakeText(transform, "", 24, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -300f), new Vector2(800f, 48f));
         goalLabel.color = new Color(0.9f, 0.92f, 0.85f, 0.95f);
         subtitle = MakeText(transform, "", 26, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -360f), new Vector2(820f, 40f));
-        subtitle.horizontalOverflow = HorizontalWrapMode.Overflow;
+        subtitle.horizontalOverflow = HorizontalWrapMode.Wrap;
         subtitle.verticalOverflow = VerticalWrapMode.Truncate;
+        subtitle.alignment = TextAnchor.LowerCenter;
+        // The hint never carries words now; it used to sit inside Retry's rect and count as an overlap.
         hint = MakeText(transform, "", 22, TextAnchor.LowerCenter, new Vector2(0.5f, 0f), new Vector2(0f, 140f), new Vector2(700f, 32f));
+        hint.gameObject.SetActive(false);
         RetryButton = MakeButton(transform, "Retry", new Vector2(0f, 108f), new Vector2(420f, 96f), 42, OnRetry, true);
         MenuButton = MakeButton(transform, "Menu", new Vector2(0f, 36f), new Vector2(280f, 64f), 26, OnMenu, false);
         // Hide the old lostBody so it does not stack under the new layout.
