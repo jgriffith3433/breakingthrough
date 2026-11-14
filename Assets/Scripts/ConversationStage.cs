@@ -25,6 +25,19 @@ public class ConversationStage : MonoBehaviour {
     public static string LastLine { get; private set; } = "";
     public static int LinesShown { get; private set; }
     public static int GesturesPlayed { get; private set; }
+    // Framing probes (talk.framedPct, talk.headScreenPct): frames of an open conversation with both heads on screen, and
+    // the smaller of the two heads' height as a share of the screen height (averaged over the open frames).
+    public static int ProbeFrames { get; private set; }
+    public static int FramedFrames { get; private set; }
+    public static float FramedPct { get { return ProbeFrames == 0 ? 0f : 100f * FramedFrames / ProbeFrames; } }
+    public static float HeadScreenPct { get { return ProbeFrames == 0 ? 0f : headPctSum / ProbeFrames; } }
+    public static float HeadScreenPctA { get; private set; }   // the latest frame, speaker A (Wallit)
+    public static float HeadScreenPctB { get; private set; }   // the latest frame, speaker B
+    public static float HeadScreenPctMin { get; private set; } // the smallest head seen on any shot's settled frames
+    public static int ConversationsOpened { get; private set; }
+    public static int FirstFramesFramed { get; private set; }  // conversations whose first drawn frame held both heads
+    public static float ShotDistance { get; private set; }
+    static float headPctSum;
 
     const float EaseSeconds = 0.55f;
     const float CaptionMaxFrac = 0.20f;
@@ -62,6 +75,14 @@ public class ConversationStage : MonoBehaviour {
     Image[] choiceImages;
     int stamp = -1;
     bool choicesUp;
+    bool ready;            // both bodies have drawn bounds: only then does the camera leave the gameplay view
+    float openedAt;
+    bool firstCounted;
+    Vector3 shotPos;
+    Quaternion shotRot;
+    float shotFov;
+    Vector3 headTopA, headTopB;
+    float headHA, headHB;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void ResetStatics() {
@@ -82,6 +103,15 @@ public class ConversationStage : MonoBehaviour {
         GesturesPlayed = 0;
         GestureTravel = 0f;
         CoinShown = false;
+        ProbeFrames = 0;
+        FramedFrames = 0;
+        headPctSum = 0f;
+        HeadScreenPctA = 0f;
+        HeadScreenPctB = 0f;
+        HeadScreenPctMin = 100f;
+        ConversationsOpened = 0;
+        FirstFramesFramed = 0;
+        ShotDistance = 0f;
     }
 
     public static ConversationStage Ensure() {
@@ -150,6 +180,10 @@ public class ConversationStage : MonoBehaviour {
         listenA = a.Find("Lodger Model") ?? a;
         listenB = b.Find("Lodger Model") ?? b;
         ease = 0f;
+        ready = false;
+        firstCounted = false;
+        openedAt = Time.unscaledTime;
+        ConversationsOpened++;
         open = true;
         TwoShotActive = true;
         speakingKind = "";
@@ -172,7 +206,11 @@ public class ConversationStage : MonoBehaviour {
             portrait.gameObject.SetActive(false);
         }
         MeasureChoiceHeight();
-        ProbeFaces();
+        // Cut to the shot on this very frame when both bodies are placed (never a first frame of empty floor).
+        if (TryReady()) {
+            SolveShot();
+            SnapToShot();
+        }
     }
 
     void Close() {
@@ -197,6 +235,7 @@ public class ConversationStage : MonoBehaviour {
             CoinShown = false;
         }
         if (cam != null) {
+            CameraFeel.Cut("conversation-end");
             cam.transform.position = savedCamPos;
             cam.transform.rotation = savedCamRot;
             cam.fieldOfView = savedFov;
@@ -256,7 +295,6 @@ public class ConversationStage : MonoBehaviour {
         string kind = code == "W" ? "wallit" : code == "S" ? "slice" : kindB;
         SetSpeaking(kind);
         Layout();
-        ProbeFaces();
     }
 
     void LateUpdate() {
@@ -267,12 +305,86 @@ public class ConversationStage : MonoBehaviour {
             stamp = UiFit.Stamp;
             Layout();
         }
-        ease = Mathf.MoveTowards(ease, 1f, Time.unscaledDeltaTime / EaseSeconds);
         FaceEachOther();
-        PlaceTwoShot(ease);
+        bool wasReady = ready;
+        if (!ready && !TryReady()) {
+            // Not placed yet: the gameplay camera stays and this frame counts as unframed.
+            ProbeFaces();
+            return;
+        }
+        SolveShot();
+        if (!wasReady) {
+            SnapToShot();
+        } else {
+            ease = Mathf.MoveTowards(ease, 1f, Time.unscaledDeltaTime / EaseSeconds);
+            float k = 1f - Mathf.Exp(-6f * Time.unscaledDeltaTime);
+            cam.transform.position = Vector3.Lerp(cam.transform.position, shotPos, k);
+            cam.transform.rotation = Quaternion.Slerp(cam.transform.rotation, shotRot, k);
+            cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, shotFov, k);
+        }
         TickAmplitude();
         TickGestures();
         ProbeFaces();
+    }
+
+    // Both speakers must have drawn bounds (a placed body) before the first shot; after a second with none, the shot uses
+    // fixed heights above the feet rather than waiting forever.
+    bool TryReady() {
+        bool a = HeadOf(speakerA, out headTopA, out headHA);
+        bool b = HeadOf(speakerB, out headTopB, out headHB);
+        if (!a && Time.unscaledTime - openedAt > 1f) {
+            headTopA = speakerA.position + Vector3.up * 1.7f;
+            headHA = 0.45f;
+            a = true;
+        }
+        if (!b && Time.unscaledTime - openedAt > 1f) {
+            headTopB = speakerB.position + Vector3.up * 1.7f;
+            headHB = 0.45f;
+            b = true;
+        }
+        ready = a && b;
+        return ready;
+    }
+
+    // Top of the body's drawn bounds (labels, the "!" mark and particles left out) and a head height for it.
+    static bool HeadOf(Transform t, out Vector3 top, out float headHeight) {
+        top = Vector3.zero;
+        headHeight = 0.45f;
+        if (t == null || !t.gameObject.activeInHierarchy) {
+            return false;
+        }
+        top = t.position;
+        bool any = false;
+        Bounds bounds = new Bounds(t.position, Vector3.zero);
+        foreach (Renderer r in t.GetComponentsInChildren<Renderer>(false)) {
+            if (!r.enabled || r is ParticleSystemRenderer || r is TrailRenderer || r.GetComponent<TextMesh>() != null) {
+                continue;
+            }
+            Bounds rb = r.bounds;
+            if (rb.size.sqrMagnitude < 0.0001f) {
+                continue;
+            }
+            if (!any) {
+                bounds = rb;
+                any = true;
+            } else {
+                bounds.Encapsulate(rb);
+            }
+        }
+        if (!any || bounds.size.y < 0.3f) {
+            return false;
+        }
+        headHeight = Mathf.Clamp(bounds.size.y * 0.3f, 0.35f, 0.7f);
+        top = new Vector3(bounds.center.x, bounds.max.y, bounds.center.z);
+        return true;
+    }
+
+    void SnapToShot() {
+        CameraFeel.Cut("conversation");
+        ease = 1f;
+        cam.transform.position = shotPos;
+        cam.transform.rotation = shotRot;
+        cam.fieldOfView = shotFov;
     }
 
     void FaceEachOther() {
@@ -288,10 +400,19 @@ public class ConversationStage : MonoBehaviour {
         }
     }
 
-    void PlaceTwoShot(float t) {
-        // Aim at the midpoint of the two bodies at head-and-chest height, not at the floor under them.
-        Vector3 focus = (speakerA.position + speakerB.position) * 0.5f + Vector3.up * 1.2f;
-        Vector3 flat = speakerB.position - speakerA.position;
+    // Over-the-shoulder two-shot from both heads: the camera sits behind one speaker, off to the open side of the room,
+    // and backs off in small steps until both heads (top and chin) are inside the screen, clear of the caption bar. The
+    // first distance that fits is the closest, so heads stay as large as the pair allows (a portrait phone included).
+    void SolveShot() {
+        if (cam.nearClipPlane < 0.3f) {
+            cam.nearClipPlane = 0.3f;
+        }
+        bool tall = UiFit.Mode == UiMode.Tall || cam.aspect < 1f;
+        float fov = tall ? 50f : Mathf.Min(savedFov, 45f);
+        Vector3 ca = headTopA - Vector3.up * (headHA * 0.5f);
+        Vector3 cb = headTopB - Vector3.up * (headHB * 0.5f);
+        Vector3 focus = (ca + cb) * 0.5f;
+        Vector3 flat = cb - ca;
         flat.y = 0f;
         if (flat.sqrMagnitude < 0.01f) {
             flat = speakerA.forward;
@@ -299,39 +420,61 @@ public class ConversationStage : MonoBehaviour {
         }
         flat.Normalize();
         Vector3 side = Vector3.Cross(Vector3.up, flat).normalized;
-        // Shoot from the side that faces the gameplay camera: that is the open side of the room (the hub's front), never
-        // out past a wall where a speaker stands against it.
         Vector3 toSaved = savedCamPos - focus;
         toSaved.y = 0f;
-        if (Vector3.Dot(side, toSaved) < 0f) {
-            side = -side;
+        // Camera behind A or behind B, left or right: the one nearest the gameplay camera (the open side of the room).
+        float theta = (tall ? 35f : 40f) * Mathf.Deg2Rad;
+        Vector3 dir = Vector3.zero;
+        float bestDot = float.NegativeInfinity;
+        for (int f = -1; f <= 1; f += 2) {
+            for (int sd = -1; sd <= 1; sd += 2) {
+                Vector3 d = -flat * (f * Mathf.Cos(theta)) + side * (sd * Mathf.Sin(theta));
+                float dot = Vector3.Dot(d, toSaved);
+                if (dot > bestDot) {
+                    bestDot = dot;
+                    dir = d;
+                }
+            }
         }
-        bool tall = UiFit.Mode == UiMode.Tall || (Screen.height > Screen.width && Screen.width <= 500);
-        if (cam.nearClipPlane < 0.3f) {
-            cam.nearClipPlane = 0.3f;
-        }
-        float fov = tall ? 58f : savedFov;
-        // Distance that fits both bodies: width from the pair's span (plus body room) at the horizontal FOV, height from
-        // feet to the top of the tallest lodger at the vertical FOV.
-        float span = Vector3.Distance(speakerA.position, speakerB.position);
+        const float pitch = 8f * Mathf.Deg2Rad;
+        Vector3 horizontal = dir.normalized * Mathf.Cos(pitch) + Vector3.up * Mathf.Sin(pitch);
         float tanV = Mathf.Tan(fov * 0.5f * Mathf.Deg2Rad);
-        float tanH = tanV * Mathf.Max(0.3f, cam.aspect);
-        float dist = Mathf.Max((span * 0.5f + 0.9f) / tanH, 1.5f / tanV) * 1.1f;
-        dist = Mathf.Clamp(dist, 3f, 9f);
-        const float pitch = 14f * Mathf.Deg2Rad;
-        Vector3 dir = side * Mathf.Cos(pitch) + Vector3.up * Mathf.Sin(pitch);
-        // A little over-the-shoulder: slide back along the pair's axis so the listener's shoulder frames the speaker.
-        Vector3 want = focus + dir * dist - flat * (span * 0.12f);
-        float s = Smooth(t);
-        cam.transform.position = Vector3.Lerp(savedCamPos, want, s);
-        // Blend what the camera looks at, not its angles: the gameplay camera's gaze meets the shot's focus without
-        // sweeping through the floor.
-        Vector3 savedFocus = savedCamPos + savedCamRot * Vector3.forward * Vector3.Distance(savedCamPos, focus);
-        Vector3 aim = Vector3.Lerp(savedFocus, focus, s) - cam.transform.position;
-        if (aim.sqrMagnitude > 0.0001f) {
-            cam.transform.rotation = Quaternion.LookRotation(aim);
+        float minY = tall ? 0.30f : 0.26f;     // above the caption bar
+        float lift = tall ? 0.16f : 0.10f;     // heads ride in the upper part of the frame
+        Vector3 savePos = cam.transform.position;
+        Quaternion saveRot = cam.transform.rotation;
+        float saveFov = cam.fieldOfView;
+        cam.fieldOfView = fov;
+        float dist = 12f;
+        for (float d = 2.2f; d <= 12f; d += 0.2f) {
+            Vector3 pos = focus + horizontal * d;
+            Vector3 aim = focus - Vector3.up * (2f * d * tanV * lift);
+            cam.transform.position = pos;
+            cam.transform.rotation = Quaternion.LookRotation(aim - pos);
+            if (HeadInside(headTopA, headHA, minY) && HeadInside(headTopB, headHB, minY)) {
+                dist = d;
+                break;
+            }
         }
-        cam.fieldOfView = Mathf.Lerp(savedFov, fov, s);
+        {
+            Vector3 pos = focus + horizontal * dist;
+            Vector3 aim = focus - Vector3.up * (2f * dist * tanV * lift);
+            shotPos = pos;
+            shotRot = Quaternion.LookRotation(aim - pos);
+            shotFov = fov;
+        }
+        cam.transform.position = savePos;
+        cam.transform.rotation = saveRot;
+        cam.fieldOfView = saveFov;
+        ShotDistance = dist;
+    }
+
+    bool HeadInside(Vector3 top, float h, float minY) {
+        Vector3 t = cam.WorldToViewportPoint(top);
+        Vector3 c = cam.WorldToViewportPoint(top - Vector3.up * h);
+        return t.z > 0.3f && c.z > 0.3f
+            && t.x > 0.12f && t.x < 0.88f && c.x > 0.12f && c.x < 0.88f
+            && c.y > minY && t.y < 0.95f;
     }
 
     static float Smooth(float t) {
@@ -472,18 +615,43 @@ public class ConversationStage : MonoBehaviour {
         return "tilt and chirp";
     }
 
+    // Counts the frame: both heads (top to chin) on screen, and each head's height as a share of the screen height.
     void ProbeFaces() {
-        if (cam == null || speakerA == null || speakerB == null) {
+        if (cam == null || speakerA == null || speakerB == null || !ready) {
             BothFacesInFrame = false;
+            if (open) {
+                ProbeFrames++;
+            }
             return;
         }
-        Vector3 ha = speakerA.position + Vector3.up * 1.4f;
-        Vector3 hb = speakerB.position + Vector3.up * 1.4f;
-        Vector3 va = cam.WorldToViewportPoint(ha);
-        Vector3 vb = cam.WorldToViewportPoint(hb);
-        BothFacesInFrame = va.z > 0.2f && vb.z > 0.2f
-            && va.x > 0.05f && va.x < 0.95f && va.y > 0.08f && va.y < 0.92f
-            && vb.x > 0.05f && vb.x < 0.95f && vb.y > 0.08f && vb.y < 0.92f;
+        Vector3 ta = cam.WorldToViewportPoint(headTopA);
+        Vector3 ba = cam.WorldToViewportPoint(headTopA - Vector3.up * headHA);
+        Vector3 tb = cam.WorldToViewportPoint(headTopB);
+        Vector3 bb = cam.WorldToViewportPoint(headTopB - Vector3.up * headHB);
+        BothFacesInFrame = OnScreen(ta, ba) && OnScreen(tb, bb);
+        HeadScreenPctA = Mathf.Abs(ta.y - ba.y) * 100f;
+        HeadScreenPctB = Mathf.Abs(tb.y - bb.y) * 100f;
+        ProbeFrames++;
+        if (BothFacesInFrame) {
+            FramedFrames++;
+        }
+        float smaller = Mathf.Min(HeadScreenPctA, HeadScreenPctB);
+        headPctSum += smaller;
+        if (ease >= 0.99f) {
+            HeadScreenPctMin = Mathf.Min(HeadScreenPctMin, smaller);
+        }
+        if (!firstCounted) {
+            firstCounted = true;
+            if (BothFacesInFrame) {
+                FirstFramesFramed++;
+            }
+        }
+    }
+
+    static bool OnScreen(Vector3 top, Vector3 chin) {
+        return top.z > 0.2f && chin.z > 0.2f
+            && top.x > 0.05f && top.x < 0.95f && chin.x > 0.05f && chin.x < 0.95f
+            && top.y > 0.08f && top.y < 0.97f && chin.y > 0.08f && chin.y < 0.97f;
     }
 
     void BuildUi() {
