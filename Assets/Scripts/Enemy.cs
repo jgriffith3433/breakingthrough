@@ -1347,7 +1347,7 @@ public class Enemy : MonoBehaviour
         }
         if (kind != DamageKind.Burn)
         {
-            flash = crit ? 1f : Mathf.Max(flash, 0.7f);
+            flash = 1f;   // a full white hit flash on every blow (crit or not), so the hit reads from the high camera
             // Every blow that lands rocks the body (the bat adds its own harder Flinch on top, from BatEquipment).
             if (rig != null && (!Boss || crit))
                 rig.Flinch(crit ? 0.9f : 0.55f);
@@ -1973,7 +1973,7 @@ public class Enemy : MonoBehaviour
             return;
         float before = flash;
         if (flash > 0f)
-            flash = Mathf.MoveTowards(flash, 0f, dt * 7f);
+            flash = Mathf.MoveTowards(flash, 0f, dt * 5f);
         // Status shows on the bird itself: embers for fire, ice for frost, shimmer for gold.
         float glowAmount = 0f;
         Color glowTint = Color.white;

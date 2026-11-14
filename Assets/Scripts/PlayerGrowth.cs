@@ -367,6 +367,9 @@ public class PlayerGrowth : MonoBehaviour {
         if (!WallitHurt.Strike(this, by)) {
             return;
         }
+        if (by != null) {
+            HitDirection.Hit(by.transform.position, true);   // a red wedge toward the attacker
+        }
         if (Struck != null) {
             Struck(by);   // a campaign level counts Wallit's own health (Level*.cs); Arcade never sets it
         }
