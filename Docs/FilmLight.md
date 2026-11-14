@@ -29,3 +29,11 @@ in `Update` every frame.
 `exposure` playtest (`PlaytestExposure.cs`; run with `mobile` for 390x844): waves 1, 5, 10, 15, 20, 25, 30, event `exposure` with mean
 luma, pure-white and near-black share, and the effective exposure, bloom and threshold. Metrics `exposureLuma_<wave>`,
 `exposureWhitePct_<wave>`, `exposureDrift`. `Playtest.ExposureSample(label, ...)` logs the same for a hub, chapter or finale frame.
+
+## Card match
+
+A chapter's painted loading card and its first play frame share a palette (`CardMatch.cs`). The card's mean sRGB is held in a table
+(read with `Tools/Cards/card_mean.py`); fog and ambient are pulled toward it, then for the first four seconds the camera's own graded
+frame is read and `NightGrade.CardGain` (a per-channel gain on the split-tone tints, 0.45 to 2.2) nudged until the mean sits near the
+card's. `grade.cardDeltaE` (CIE76 in Lab, under 15) is reported per chapter and the hub by the `transitions` playtest. Chapter 1's key is
+a low amber light, not a flat blue moon, so the yard's walls catch warm light against the teal shade.

@@ -181,6 +181,7 @@ public class ChapterRun : MonoBehaviour {
         if (!string.IsNullOrEmpty(data.Map)) {
             // The chapter's own map, from its data, loaded on top of the game scene with its own lighting.
             ChapterMap.Load(data.Map);
+            CardMatch.Attach(Camera.main, CardMatch.IdOfChapter(Chapter));   // the scene's mean colour sits near the card's
         }
         if (data.Objective == Story.ChapterObjective.SurviveTime) {
             clock = data.Target;

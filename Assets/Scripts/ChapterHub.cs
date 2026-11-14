@@ -214,6 +214,7 @@ public class ChapterHub : MonoBehaviour {
         CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
         Mood = SceneMood.Hub(slot.cleared / (float)CampaignSave.ChapterCount);
         SceneMood.Apply(cam != null ? cam : Camera.main, Mood);
+        CardMatch.Attach(cam != null ? cam : Camera.main, "hub");
     }
 
     public bool Shown {
