@@ -17,6 +17,7 @@ public class ChapterScene : MonoBehaviour {
     // For the playtest bot.
     public Button MenuButton { get; private set; }
     public Button BeginButton { get; private set; }
+    public static string ContinueLine = "";   // the checkpoint line the last card showed ("" when it starts the chapter)
     public Button HubButton { get; private set; }
     public Button DifficultyButton { get; private set; }   // only on a filed file: Standard or Hard for the chapters played from here
     public Text DifficultyText { get; private set; }
@@ -258,7 +259,14 @@ public class ChapterScene : MonoBehaviour {
         RankText = best == 0 && bestHard == 0 ? "" : "Best rank " + CampaignGrade.Letter(best) + (bestHard > 0 ? "   Hard " + CampaignGrade.Letter(bestHard) : "");
         Label(column, "CASE FILE " + (CampaignSave.Active + 1) + (RankText.Length > 0 ? "    " + RankText : "") + (filed && file.hard ? "    HARD" : "") + (file.plus > 0 ? "    NEW GAME+ " + file.plus : ""), 26, FontStyle.Bold, new Color(0.66f, 0.72f, 0.84f), 0f, 0f, 36f);
         Label(column, chapter.Title, 64, FontStyle.Bold, new Color(1f, 0.82f, 0.38f), 0f, 44f, 90f);
-        Label(column, chapter.Place, 30, FontStyle.Italic, DeptPalette.Cream, 0f, 140f, 44f);
+        // A level checkpoint is saved on this file (LevelCheckpoint): the card names where Begin picks up.
+        ContinueLine = LevelCheckpoint.Line(file, Chapter);
+        bool resume = ContinueLine.Length > 0;
+        if (resume) {
+            Label(column, ContinueLine, 34, FontStyle.BoldItalic, new Color(1f, 0.82f, 0.38f), 0f, 138f, 48f);
+        } else {
+            Label(column, chapter.Place, 30, FontStyle.Italic, DeptPalette.Cream, 0f, 140f, 44f);
+        }
 
         lines = new Text[chapter.Lines.Length];
         for (int i = 0; i < lines.Length; i++) {
@@ -273,11 +281,11 @@ public class ChapterScene : MonoBehaviour {
 
         if (CampaignSave.Get(CampaignSave.Active).cleared > 0) {
             // A file with chapters behind it: the hub (the board of cleared chapters) is one press away.
-            BeginButton = MakeButton(column, "Begin", 280f, 88f, -300f, 540f, BeginChapter);
+            BeginButton = MakeButton(column, resume ? "Continue" : "Begin", 280f, 88f, -300f, 540f, BeginChapter);
             HubButton = MakeButton(column, "Hub", 280f, 88f, 0f, 540f, ShowHub);
             MenuButton = MakeButton(column, "Menu", 280f, 88f, 300f, 540f, ToMenu);
         } else {
-            BeginButton = MakeButton(column, "Begin", 300f, 88f, -170f, 540f, BeginChapter);
+            BeginButton = MakeButton(column, resume ? "Continue" : "Begin", 300f, 88f, -170f, 540f, BeginChapter);
             MenuButton = MakeButton(column, "Menu", 260f, 88f, 170f, 540f, ToMenu);
         }
         if (filed) {
