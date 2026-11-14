@@ -80,7 +80,7 @@ public class HollowLandmark : MonoBehaviour {
         return go;
     }
 
-    static Mesh BoxMesh(Vector3 s) {
+    internal static Mesh BoxMesh(Vector3 s) {
         Vector3 h = s * 0.5f;
         var v = new System.Collections.Generic.List<Vector3>();
         var t = new System.Collections.Generic.List<int>();

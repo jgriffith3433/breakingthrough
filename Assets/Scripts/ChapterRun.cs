@@ -454,6 +454,9 @@ public class ChapterRun : MonoBehaviour {
                     if (IsReading) {
                         PageRead(waveNow);
                     }
+                    if (data.Final && waveNow > 0) {
+                        WorldPayoff.LastFell(waveNow);   // the last Yo Bot of the wave falls: the wall's door opens, the circle brightens
+                    }
                     StartWave(waveNow + 1);
                 }
                 if (IsReading && Kills() >= Target() && pagesRead < data.Waves) {
