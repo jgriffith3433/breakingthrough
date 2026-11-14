@@ -142,6 +142,7 @@ public class WaveDirector : MonoBehaviour {
         Wave = MetaProgress.TakeStartWave();
         MetaProgress.NoteReached(Wave);
         RunAnalytics.RunStart(Wave);
+        RecordsCard.Opened("run");
         FirstMinute.BeginGameplay();
         BeginIntro();
         if (Wave == 1 && !introShown) {

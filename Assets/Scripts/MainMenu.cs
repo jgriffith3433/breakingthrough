@@ -148,6 +148,7 @@ public class MainMenu : MonoBehaviour {
     }
 
     void Start() {
+        RecordsCard.Opened("menu");
         font = UiSkin.Font(UiSkin.FontRole.Body);
         if (FindAnyObjectByType<EventSystem>() == null) {
             var events = new GameObject("Event System");

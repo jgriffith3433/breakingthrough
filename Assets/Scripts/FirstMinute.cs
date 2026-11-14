@@ -12,7 +12,7 @@ public static class FirstMinute {
     [System.Runtime.InteropServices.DllImport("__Internal")]
     static extern void HawkesMilestone(string name, string note);
 
-    static bool gameplay, input, success;
+    static bool gameplay, input, success, pending;
     static float gameplayAt = -1f;
 
     // Seconds since the page opened (the player's start).
@@ -22,6 +22,7 @@ public static class FirstMinute {
     // Each playtest run starts a fresh page or a fresh scenario; Arcade Start calls this so a second run reports again.
     public static void Reset() {
         gameplay = false;
+        pending = false;
         input = false;
         success = false;
         gameplayAt = -1f;
@@ -31,13 +32,25 @@ public static class FirstMinute {
     public static void BeginGameplay() {
         Reset();
         gameplay = true;
+        pending = true;
         gameplayAt = Now;
-        Report(Gameplay, "arcade wave " + WaveDirector.Wave);
+    }
+
+    // "Gameplay" is the moment the player is in control, not the moment the scene loads: not under the page turn, the
+    // menu hand-off picture, a cutscene or a card, and the Records card is down.
+    static bool InControl() {
+        return !ScreenTransition.Busy && !MenuHandoff.Active && !Cutscene.IsOpen && !LevelUpScreen.IsOpen && !PauseMenu.IsOpen
+            && Time.timeScale > 0.01f;
     }
 
     // Called every frame by WaveDirector while Arcade plays; reads the same PlayInput the bat and the stick read.
     public static void Tick() {
-        if (!gameplay || input) {
+        if (pending && InControl()) {
+            pending = false;
+            gameplayAt = Now;
+            Report(Gameplay, "arcade wave " + WaveDirector.Wave + ", player in control");
+        }
+        if (!gameplay || input || pending) {
             return;
         }
         bool touched = false;
@@ -57,6 +70,11 @@ public static class FirstMinute {
     public static void NoteKill() {
         if (!gameplay || success) {
             return;
+        }
+        if (pending) {
+            pending = false;
+            gameplayAt = Now;
+            Report(Gameplay, "arcade, a kill came first");
         }
         if (!input) {
             input = true;
