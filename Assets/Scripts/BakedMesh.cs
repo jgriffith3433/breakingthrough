@@ -13,6 +13,8 @@ public static class BakedMesh {
     // that is the NaN source the playtest could not name, proved present and removed).
     public static int MendedVertices;
     public static int MendedMeshes;
+    // Parts found inside out at load and turned outward (should stay 0 for the shipped files).
+    public static int FlippedParts;
 
     public class Part {
         public string Name, Set = "metal", Parent = "";
@@ -24,8 +26,10 @@ public static class BakedMesh {
 
         public Mesh ToMesh(string meshName) {
             var m = new Mesh { name = meshName };
+            List<Vector3> normals = MendedNormals();
+            PointOutward(normals);
             m.SetVertices(Pos);
-            m.SetNormals(MendedNormals());
+            m.SetNormals(normals);
             if (Mended > 0) {
                 MendedVertices += Mended;
                 MendedMeshes++;
@@ -75,6 +79,26 @@ public static class BakedMesh {
                 result.Add(faceArea[i] > 0f ? faceNormal[i] : Vector3.up);
             }
             return result;
+        }
+
+        // The one load step that points a bake outward: a closed part whose triangles sum to a negative signed volume (clockwise
+        // front faces, so outward is positive) is inside out, from a mirrored export or a flipped axis. It gets its winding
+        // reversed and its normals negated here, so no negative scale or two-sided material is ever needed. Counted in Flipped.
+        void PointOutward(List<Vector3> normals) {
+            double volume = 0;
+            Vector3 c = Vector3.zero;
+            foreach (Vector3 p in Pos) c += p;
+            if (Pos.Count > 0) c /= Pos.Count;
+            for (int i = 0; i + 2 < Tris.Count; i += 3) {
+                Vector3 a = Pos[Tris[i]] - c, b = Pos[Tris[i + 1]] - c, d = Pos[Tris[i + 2]] - c;
+                volume += Vector3.Dot(a, Vector3.Cross(b - a, d - a)) / 6.0;
+            }
+            if (!(volume < -1e-6)) return;
+            for (int i = 0; i + 2 < Tris.Count; i += 3) {
+                int t = Tris[i + 1]; Tris[i + 1] = Tris[i + 2]; Tris[i + 2] = t;
+            }
+            for (int i = 0; i < normals.Count; i++) normals[i] = -normals[i];
+            FlippedParts++;
         }
 
         // How many normals the last ToMesh had to replace (the playtests read it).
