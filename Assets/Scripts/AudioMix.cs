@@ -19,16 +19,23 @@ public class AudioMix : MonoBehaviour {
     public static float ReverbDecay { get; private set; }
     public static int SnapChanges { get; private set; }
 
-    float voiceAmt, crackUntil, crackAmt;
+    float voiceAmt, crackUntil, crackAmt, dipUntil, dipAmt;
 
     // Linear gains the other systems multiply by.
-    public static float MusicDuck { get { return instance != null ? Mathf.Lerp(1f, Db(MusicDuckDb), instance.voiceAmt) : 1f; } }
+    public static float MusicDuck { get { return instance != null ? Mathf.Lerp(1f, Db(MusicDuckDb), instance.voiceAmt) * Mathf.Lerp(1f, 0.35f, instance.dipAmt) : 1f; } }
     public static float AmbienceDuck { get { return instance != null ? Mathf.Lerp(1f, Db(AmbienceDuckDb), instance.voiceAmt) : 1f; } }
     public static float CrackDuck { get { return instance != null ? instance.crackAmt : 1f; } }
     // Snapshot gain on a bus: pause drops effects and low-passes the rest, the fight leans on effects, cutscenes on voice.
     public static float SfxGain { get { return Current == Snap.Pause ? 0f : Current == Snap.Cutscene ? 0.7f : 1f; } }
     public static float MusicGain { get { return Current == Snap.Combat ? 0.85f : Current == Snap.Boss ? 1f : Current == Snap.Pause ? 0.6f : 1f; } }
     static float Db(float db) { return Mathf.Pow(10f, db / 20f); }
+
+    // A down beat (DownFlow): the music drops to about a third for `seconds`, then eases back.
+    public static void Dip(float seconds) {
+        if (instance != null) {
+            instance.dipUntil = Time.unscaledTime + seconds;
+        }
+    }
 
     public static void HomeRunCrack() {
         if (instance != null) {
@@ -49,6 +56,7 @@ public class AudioMix : MonoBehaviour {
         bool voice = !WallitVoice.FloorFree || CastVoice.Speaking;
         voiceAmt = Mathf.MoveTowards(voiceAmt, voice ? 1f : 0f, dt / (voice ? Attack : Release));
         crackAmt = Mathf.MoveTowards(crackAmt, Time.unscaledTime < crackUntil ? 0.45f : 1f, dt / (Time.unscaledTime < crackUntil ? 0.03f : 0.25f));
+        dipAmt = Mathf.MoveTowards(dipAmt, Time.unscaledTime < dipUntil ? 1f : 0f, dt / (Time.unscaledTime < dipUntil ? 0.12f : 0.8f));
         Snap want = Pick();
         if (want != Current) {
             Current = want;

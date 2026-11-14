@@ -49,6 +49,8 @@ public class Juice : MonoBehaviour {
     public static int FramesFor(Weight w) {
         return w == Weight.HomeRun ? 6 : w == Weight.Finisher ? 5 : 3;
     }
+    // The longest freeze a heavy hit asks for, in ms (reported as feel.hitStopMs).
+    public static float HeaviestStopMs { get { return FramesFor(Weight.HomeRun) * 1000f / 60f; } }
     // One line per weighted contact: the frames asked and held, and the camera kick with its measured decay.
     public static readonly List<string> HitLog = new List<string>();
     public static int LightHeld { get; private set; }

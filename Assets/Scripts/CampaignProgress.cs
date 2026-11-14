@@ -210,7 +210,10 @@ public static class CampaignProgress {
     }
 
     // A slot's key was pressed. True when its ability went off.
-    public static bool Use(int slot, Transform player) {
+    public static bool Use(int slot, Transform player, float pressStamp = -1f, bool cutSwing = false) {
+        if (pressStamp < 0f) {
+            pressStamp = Feel.Now;
+        }
         int fill = SlotFill[slot];
         if (fill == SlotDodge) {
             if (Enemy.Climbers > 0 || (PlayerGrowth.Instance != null && PlayerGrowth.Instance.Rooted)) {
@@ -225,7 +228,7 @@ public static class CampaignProgress {
                 dash = ChapterRun.Instance.GetComponent<CampaignDodge>();
             }
             if (dash != null) {
-                dash.Go(heading);
+                dash.Go(heading, pressStamp, cutSwing);
             }
             return true;
         }
@@ -476,9 +479,57 @@ public class CampaignAbilities : MonoBehaviour {
             return;
         }
         for (int i = 0; i < CampaignProgress.SlotCount; i++) {
-            if (PlayInput.GetKeyDown(CampaignProgress.SlotKeys[i])) {
+            if (!PlayInput.GetKeyDown(CampaignProgress.SlotKeys[i])) {
+                continue;
+            }
+            if (CampaignProgress.SlotFill[i] == CampaignProgress.SlotDodge) {
+                if (dodgeSlot >= 0) {
+                    Feel.Drop("dodge overwritten");
+                }
+                Feel.PressDodge();
+                dodgeSlot = i;
+                dodgeAt = Feel.Now;
+            } else {
                 CampaignProgress.Use(i, PlayerGrowth.Instance.transform);
             }
+        }
+        if (dodgeSlot >= 0) {
+            TickDodge();
+        }
+    }
+
+    // The dodge press is buffered for Feel.BufferSeconds: it goes off the moment Wallit can (not cooling down, and
+    // a swing past its contact), cutting a swing's recovery short. A swing before its contact holds it a beat.
+    int dodgeSlot = -1;
+    float dodgeAt;
+
+    void TickDodge() {
+        float age = Feel.Now - dodgeAt;
+        if (Enemy.Climbers > 0 || (PlayerGrowth.Instance != null && PlayerGrowth.Instance.Rooted)) {
+            dodgeSlot = -1;   // held fast: the dodge cannot go, and the swing is left alone
+            return;
+        }
+        bool cooling = !CampaignMoves.DodgeReady;
+        if (cooling && CampaignMoves.DodgeWait > Feel.BufferSeconds) {
+            dodgeSlot = -1;   // still cooling down: a plain refusal, not a lost press
+            return;
+        }
+        bool pre = BatEquipment.IsAnimatingAction && !BatEquipment.InRecovery && !BatEquipment.Charging;
+        if (!cooling && !pre) {
+            bool cut = BatEquipment.CancelForDodge();
+            int slot = dodgeSlot;
+            dodgeSlot = -1;
+            if (age > 0.02f) {
+                Feel.Waited(age);
+            }
+            if (!CampaignProgress.Use(slot, PlayerGrowth.Instance.transform, dodgeAt, cut) && cut) {
+                Feel.Drop("dodge refused");
+            }
+            return;
+        }
+        if (age > Feel.BufferSeconds) {
+            dodgeSlot = -1;
+            Feel.Drop("dodge expired");
         }
     }
 }
