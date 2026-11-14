@@ -7923,6 +7923,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
     static IEnumerator BossSetRun() {
         var player = Object.FindAnyObjectByType<CharacterMovement>();
         yield return run.Until(() => WaveDirector.Instance != null && Enemy.Roster.Count > 0, 20f, "Arcade wave 1 bots");
+        ShotClear.Reset();
         int[] waves = { 10, 20, 30 };
         string[] expect = { "The Plated Alpha", "The Foreman", "The Order" };
         for (int i = 0; i < waves.Length && !run.Done && !WaveDirector.IsLost; i++) {
@@ -7980,6 +7981,10 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         }
         run.Metric("bossIntros", BossSetPiece.Intros);
         run.Metric("bossPayoffs", BossSetPiece.Payoffs);
+        ShotClear.Report(run);
+        if (ShotClear.InsideFrames > 0) {
+            run.Problem(PlaytestSeverity.Bug, "boss-set-pieces: the camera was inside a body or wall on " + ShotClear.InsideFrames + " frames of a boss intro");
+        }
         run.Metric("feel.hitStopMs", 120);
     }
 

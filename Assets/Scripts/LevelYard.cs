@@ -228,6 +228,11 @@ public class LevelYard : MonoBehaviour {
         LevelDress.Proxy(root, "Edge E", new Vector3(67f, 4f, 4f), new Vector3(2f, 10f, 140f));
         LevelDress.Proxy(root, "Edge S", new Vector3(0f, 4f, -62f), new Vector3(138f, 10f, 2f));
         LevelDress.Proxy(root, "Edge N", new Vector3(0f, 4f, 70f), new Vector3(138f, 10f, 2f));
+        // The same walls for the camera, flush with their inner face: it stops short of them and never sits in the box.
+        CamBlock.Wall(root, "Cam Edge W", new Vector3(-66.3f, 5f, 4f), new Vector3(1.2f, 14f, 140f));
+        CamBlock.Wall(root, "Cam Edge E", new Vector3(66.3f, 5f, 4f), new Vector3(1.2f, 14f, 140f));
+        CamBlock.Wall(root, "Cam Edge S", new Vector3(0f, 5f, -61.9f), new Vector3(138f, 14f, 1.2f));
+        CamBlock.Wall(root, "Cam Edge N", new Vector3(0f, 5f, 69.3f), new Vector3(138f, 14f, 1.2f));
         // The scar: burnt stamp ink on the stones, the dark patches the Department leaves where it has struck.
         Material ink = LevelDress.GroundMaterial("yard", "concrete", new Color(0.55f, 0.16f, 0.16f));
         for (int i = 0; i < 7; i++) {

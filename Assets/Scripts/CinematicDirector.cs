@@ -616,6 +616,7 @@ public partial class CinematicDirector : MonoBehaviour {
             if (zelda != null) {
                 zelda.CinematicHold(viewPos, viewRot);
             }
+            ShotClear.Observe(viewPos);
             return;
         }
         if ((!open && !creditsOnly) || !viewSet || cam == null) {
@@ -623,6 +624,7 @@ public partial class CinematicDirector : MonoBehaviour {
         }
         cam.transform.position = viewPos;
         cam.transform.rotation = viewRot;
+        ShotClear.Observe(viewPos);
         if (zelda != null) {
             zelda.CinematicHold(viewPos, viewRot);
         }
@@ -1185,6 +1187,7 @@ public partial class CinematicDirector : MonoBehaviour {
             viewPos = PullBackForFrame(viewPos, look, s.frame, fov);
         }
         cam.fieldOfView = fov;
+        viewPos = ShotClear.Resolve(look, viewPos);
         Vector3 dir = look - viewPos;
         if (dir.sqrMagnitude < 0.01f) {
             dir = Vector3.forward;

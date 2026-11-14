@@ -506,6 +506,13 @@ public partial class CinematicDirector {
         float e = Ease(Mathf.Clamp01((t - TWallit) / TSwing));
         Vector3 pos = Vector3.Lerp(camA, camC, e) + Vector3.up * (Mathf.Sin(e * Mathf.PI) * 2.5f);
         Vector3 look = Vector3.Lerp(lookA, lookC, e);
+        // Phone: the boss in the upper half and Wallit still in frame. Back the wide shot off along its line until both are inside.
+        if (e > 0.5f) {
+            pos = FrameBoth(pos, look, wallit + Vector3.up * 1.2f, bossSpot + Vector3.up * 1.3f * sc, phone);
+        }
+        // Clearance: before the shot is used it is pulled in ahead of walls and out of Wallit's and the boss's bodies (>= 0.5 m).
+        Vector3 subject = Vector3.Lerp(wallit + Vector3.up * 1.4f, bossSpot + Vector3.up * 1.3f * sc, e);
+        pos = ShotClear.Resolve(subject, pos);
         RaycastHit hit;
         if (Physics.Raycast(pos + Vector3.up * 60f, Vector3.down, out hit, 120f, 1 << 3, QueryTriggerInteraction.Ignore)) {
             pos.y = Mathf.Max(pos.y, hit.point.y + 1.2f);
@@ -520,6 +527,39 @@ public partial class CinematicDirector {
         if (zelda != null) {
             zelda.CinematicHold(viewPos, viewRot);
         }
+    }
+
+    // Moves the camera back along the line from `look` until Wallit and the boss both sit inside the frame (portrait-safe margins).
+    Vector3 FrameBoth(Vector3 pos, Vector3 look, Vector3 wallitPoint, Vector3 bossPoint, bool phone) {
+        Vector3 back = pos - look;
+        float dist = back.magnitude;
+        if (dist < 0.5f) {
+            return pos;
+        }
+        back /= dist;
+        Vector3 savedPos = cam.transform.position;
+        Quaternion savedRot = cam.transform.rotation;
+        float savedFovNow = cam.fieldOfView;
+        cam.fieldOfView = bossFov;
+        Vector3 result = pos;
+        for (int step = 0; step < 10; step++) {
+            result = look + back * dist;
+            cam.transform.position = result;
+            cam.transform.rotation = Quaternion.LookRotation((look - result).normalized, Vector3.up);
+            Vector3 vw = cam.WorldToViewportPoint(wallitPoint);
+            Vector3 vb = cam.WorldToViewportPoint(bossPoint);
+            float lowY = phone ? 0.22f : 0.12f;
+            bool ok = vw.z > 0.5f && vb.z > 0.5f && vw.x > 0.1f && vw.x < 0.9f && vw.y > lowY && vw.y < 0.9f
+                && vb.x > 0.1f && vb.x < 0.9f && vb.y > lowY && vb.y < 0.92f;
+            if (ok || dist > 46f) {
+                break;
+            }
+            dist += 2.2f;
+        }
+        cam.transform.position = savedPos;
+        cam.transform.rotation = savedRot;
+        cam.fieldOfView = savedFovNow;
+        return result;
     }
 
     // ---------------------------------------------------------------- the name card

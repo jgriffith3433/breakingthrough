@@ -1035,6 +1035,12 @@ public class ZeldaStyleCamera : MonoBehaviour {
             FeelPullInMeters += before - followDist;
         }
         Vector3 pulled = fromObject + dir * followDist;
+        // A spot that still sits inside a wall (the cast started inside it, or a thin box was skipped) is walked back to Wallit.
+        for (int k = 0; k < 8 && followDist > 0.7f && CamBlock.PointInsideSolid(pulled, FollowXForm, 0.3f); k++) {
+            followDist = Mathf.Max(0.7f, followDist - 0.4f);
+            followDistVel = 0f;
+            pulled = fromObject + dir * followDist;
+        }
         transform.position = pulled;
         toTarget = pulled;
     }
