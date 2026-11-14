@@ -52,7 +52,7 @@ public class VoiceImportCheck : IPreprocessBuildWithReport
                 sb.AppendLine(path + ": format " + s.compressionFormat + " is not WebGL-safe (use Vorbis)");
             if (s.loadType != AudioClipLoadType.DecompressOnLoad && s.loadType != AudioClipLoadType.CompressedInMemory)
                 sb.AppendLine(path + ": unsupported load type " + s.loadType);
-            if (!s.preloadAudioData && !imp.preloadAudioData)
+            if (!s.preloadAudioData)
                 sb.AppendLine(path + ": Preload Audio Data is off (first trigger would be late or silent)");
             if (imp.loadInBackground)
                 sb.AppendLine(path + ": Load In Background is on (a line can fire before it has loaded)");
