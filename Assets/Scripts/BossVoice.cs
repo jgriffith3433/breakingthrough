@@ -83,6 +83,11 @@ public class BossVoice : MonoBehaviour {
         SpeakFor(boss, "boss-homerun", VoiceDirector.Priority.Normal);
     }
 
+    // Low health (a quarter left): a boss that has taken a beating answers with its home-run line, once per boss.
+    public static void OnLow(Enemy boss) {
+        SpeakFor(boss, "boss-low", VoiceDirector.Priority.Normal);
+    }
+
     public static void OnWallitDown(Enemy boss) {
         SpeakFor(boss, "boss-win", VoiceDirector.Priority.Key);
     }
@@ -198,17 +203,17 @@ public class BossVoice : MonoBehaviour {
     static string[] BankOf(string code, string why) {
         switch (code) {
             case "K":
-                return why == "boss-phase" ? CourierPhase : why == "boss-homerun" ? CourierHome : CourierWin;
+                return why == "boss-phase" ? CourierPhase : why == "boss-homerun" || why == "boss-low" ? CourierHome : CourierWin;
             case "P":
-                return why == "boss-phase" ? PlatedPhase : why == "boss-homerun" ? PlatedHome : PlatedWin;
+                return why == "boss-phase" ? PlatedPhase : why == "boss-homerun" || why == "boss-low" ? PlatedHome : PlatedWin;
             case "F":
-                return why == "boss-phase" ? ForemanPhase : why == "boss-homerun" ? ForemanHome : ForemanWin;
+                return why == "boss-phase" ? ForemanPhase : why == "boss-homerun" || why == "boss-low" ? ForemanHome : ForemanWin;
             case "V":
-                return why == "boss-phase" ? ServerPhase : why == "boss-homerun" ? ServerHome : ServerWin;
+                return why == "boss-phase" ? ServerPhase : why == "boss-homerun" || why == "boss-low" ? ServerHome : ServerWin;
             case "R":
-                return why == "boss-phase" ? RegistrarPhase : why == "boss-homerun" ? RegistrarHome : RegistrarWin;
+                return why == "boss-phase" ? RegistrarPhase : why == "boss-homerun" || why == "boss-low" ? RegistrarHome : RegistrarWin;
             case "O":
-                return why == "boss-phase" ? OrderPhase : why == "boss-homerun" ? OrderHome : OrderWin;
+                return why == "boss-phase" ? OrderPhase : why == "boss-homerun" || why == "boss-low" ? OrderHome : OrderWin;
             default:
                 return null;
         }
@@ -225,6 +230,11 @@ public class BossVoice : MonoBehaviour {
         }
         float len = clip != null ? clip.length : WallitVoice.EstimateSeconds(line);
         highPass.enabled = robotic;
+        // A bark no chapter group named ahead lives in the on-demand pack: fetch it now and play it when it lands, so a boss
+        // is never silent in a build (the caption runs meanwhile).
+        if (clip == null && !OnDemand.Cached("Voice/" + file) && OnDemand.Indexed("Voice/" + file)) {
+            StartCoroutine(PlayWhenIn("Voice/" + file, Time.unscaledTime + len * 0.6f));
+        }
         if (clip != null && SoundSettings.EffectsLevel > 0f) {
             source.Stop();
             source.clip = clip;
@@ -241,6 +251,33 @@ public class BossVoice : MonoBehaviour {
             text.enabled = true;
             lineEnd = Time.unscaledTime + Mathf.Max(1.6f, len);
             ReportCaption();
+        }
+    }
+
+    System.Collections.IEnumerator PlayWhenIn(string key, float latest) {
+        AudioClip fetched = null;
+        bool arrived = false;
+        OnDemand.FetchKey(key, o => {
+            fetched = o as AudioClip;
+            arrived = true;
+        });
+        while (!arrived) {
+            yield return null;
+        }
+        if (fetched != null && source != null && Time.unscaledTime <= latest && SoundSettings.EffectsLevel > 0f && !source.isPlaying) {
+            source.clip = fetched;
+            source.volume = Mathf.Clamp01(SoundSettings.EffectsLevel);
+            source.Play();
+        }
+    }
+
+    // One low-health bark per boss, read off the live boss each frame (no hook in the damage path).
+    readonly HashSet<int> lowSpoken = new HashSet<int>();
+
+    void TickLow() {
+        Enemy b = LiveBoss();
+        if (b != null && b.Health01 <= 0.25f && lowSpoken.Add(b.GetInstanceID())) {
+            OnLow(b);
         }
     }
 
@@ -279,6 +316,7 @@ public class BossVoice : MonoBehaviour {
 
     void Update() {
         TickWaiting();
+        TickLow();
         if (stamp != UiFit.CaptionStamp && scaler != null && text != null) {
             stamp = UiFit.CaptionStamp;
             UiFit.Apply(scaler);
