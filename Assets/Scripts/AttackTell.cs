@@ -56,6 +56,24 @@ public class AttackTell : MonoBehaviour {
     Image edge;
     RectTransform edgeRect;
 
+    // A finished scene's bots are keys here: drop them so they can be collected (SceneMemory).
+    public static void Prune() {
+        PruneDead(toldAt);
+    }
+
+    static void PruneDead(Dictionary<Enemy, float> map) {
+        List<Enemy> dead = null;
+        foreach (Enemy e in map.Keys) {
+            if (e == null) {
+                if (dead == null) dead = new List<Enemy>();
+                dead.Add(e);
+            }
+        }
+        if (dead != null) {
+            foreach (Enemy e in dead) map.Remove(e);
+        }
+    }
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void Reset() {
         instance = null;
