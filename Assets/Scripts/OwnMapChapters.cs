@@ -114,7 +114,7 @@ public class HollowMap : OwnMap {
                 Vector3 d = p.transform.position - bogAt;
                 d.y = 0f;
                 if (d.magnitude <= 23f) {
-                    p.OnHit();
+                    p.OnHit(null, bogAt);
                     Log.Add("bog-surge|wallit");
                 } else {
                     Log.Add("bog-surge");

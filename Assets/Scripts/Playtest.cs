@@ -305,6 +305,7 @@ public static partial class Playtest {
     static IEnumerator Bot(string id, PlaytestOptions options, PlaytestRun current) {
         run = current;
         Running = true;
+        LightBudget.Sink = line => run.Event("phone-budget", line);   // lights, casters and visible renderers per scene, phone tier only
         WaveDirector.ReleaseKeysProbe = false;
         if (id == "ch1") {
             id = "campaign-beats";
@@ -425,6 +426,8 @@ public static partial class Playtest {
                 MeshAuditReport audit = MeshAudit.Run();
                 run.Event("mesh-audit-summary", audit.Summary());
                 run.Metric("meshInsideOut", (float)audit.Inside);
+                run.Metric("quality.insideOut", (float)audit.Inside);
+                run.Metric("bakedPartsFlipped", (float)BakedMesh.FlippedParts);
                 run.Metric("meshZeroNormals", (float)audit.ZeroNormals);
                 run.Metric("meshNegativeScale", (float)audit.NegativeScales);
                 run.Metric("quality.mirroredText", (float)audit.MirroredText);
@@ -4724,7 +4727,46 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             if (Enemy.Roster.Count == 0) {
                 PlayInput.Tap(KeyCode.Return);
             }
+            ActChangeSample();
             yield return null;
+        }
+    }
+
+    // Through every act change: the dimmest graded frame (NightGrade's own read of the frame being drawn, never a second render
+    // of the camera, which used to bend the aspect) and the worst aspect error. Reported as light.minLumaInChange and render.aspectError.
+    static float actWatchUntil, actWatchNext, actMinLuma = 9f, actWorstAspect;
+    static int actWatchSamples;
+
+    static void ActChangeWatch(float seconds) {
+        actWatchUntil = Time.unscaledTime + seconds;
+        actWatchNext = 0f;
+    }
+
+    static void ActChangeSample() {
+        if (Time.unscaledTime > actWatchUntil || Time.unscaledTime < actWatchNext) {
+            return;
+        }
+        actWatchNext = Time.unscaledTime + 0.1f;
+        if (NightGrade.MeanLuma >= 0f) {
+            actMinLuma = Mathf.Min(actMinLuma, NightGrade.MeanLuma);
+        }
+        actWorstAspect = Mathf.Max(actWorstAspect, RenderFit.Measure().aspectError);
+        actWatchSamples++;
+    }
+
+    static void ActChangeReport(string where) {
+        if (actWatchSamples == 0) {
+            return;
+        }
+        float luma = actMinLuma > 8f ? 0f : actMinLuma;
+        run.Metric("light.minLumaInChange", Mathf.Round(luma * 1000f) / 1000f);
+        run.Metric("render.aspectError", Mathf.Round(actWorstAspect * 10000f) / 10000f);
+        run.Event("act-change-light", where + ": " + actWatchSamples + " samples over the act changes, dimmest graded frame " + luma.ToString("0.000") + ", worst aspect error " + actWorstAspect.ToString("0.0000"));
+        if (luma < 0.08f) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: the frame dipped to " + luma.ToString("0.000") + " during an act change (want 0.08 or more)");
+        }
+        if (actWorstAspect >= 0.01f) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: a frame was stretched during an act change, aspect error " + actWorstAspect.ToString("0.0000"));
         }
     }
 
@@ -4805,6 +4847,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         ActBanner("wave 1");
         var (h1, s1) = ActLook(0);
 
+        ActChangeWatch(9f);
         yield return GoWave(11);
         yield return ActsPlay(player, 1f, null);
         ActBanner("wave 11");
@@ -4818,6 +4861,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             run.Problem(PlaytestSeverity.Bug, "arcade-acts: act 2 brought no Spider Bots");
         }
 
+        ActChangeWatch(9f);
         yield return GoWave(21);
         yield return ActsPlay(player, 1f, null);
         ActBanner("wave 21");
@@ -4863,20 +4907,25 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             yield return ActsPlay(player, 0.8f, null);
             ActBanner("phone wave 1");
             ActLook(0);
+            ActChangeWatch(9f);
             yield return GoWave(11);
             yield return ActsPlay(player, 0.8f, null);
             ActBanner("phone wave 11");
             ActLook(1);
+            yield return ActsPlay(player, 7f, null);
+            ActChangeWatch(9f);
             yield return GoWave(21);
             yield return ActsPlay(player, 0.8f, null);
             ActBanner("phone wave 21");
             ActLook(2);
+            yield return ActsPlay(player, 7f, null);
         } else {
             run.Event("screen-turn-skipped", "the page is a desktop viewport and a browser canvas is never resized by the bot; run the phone twin for the phone view (it is " + Screen.width + "x" + Screen.height + ")");
         }
         if (!browser) {
             Screen.SetResolution(w, h, false);
         }
+        ActChangeReport(UiFit.Touch ? "phone" : "desktop");
         ReportTextOverlaps("end of arcade-acts");
         ScreenSlots.StopProbe();
         UiFit.ForceTouch(false);
@@ -10659,6 +10708,8 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         run.Metric("level", RunBoons.Level);
         run.Metric("levelUps", levelUps);
         run.Metric("botsAlive", Enemy.Roster.Count);
+        run.Metric("hurt.directionShown", HitDirection.WallitHits > 0 ? Mathf.Round(100f * HitDirection.ShownWallit / HitDirection.WallitHits) : 100f);
+        run.Metric("hurt.hits", HitDirection.WallitHits);
         run.Metric("bestStreak", Combo.Best);
         run.Metric("coinsRun", MetaProgress.CoinsThisRun);
         run.Metric("runSeconds", Mathf.Round(elapsed));

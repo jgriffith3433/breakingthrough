@@ -18,6 +18,7 @@ public class NightGrade : MonoBehaviour {
     public Color Shadows = DeptPalette.GradeShadows;
     public Color Highlights = DeptPalette.GradeHighlights;
     public Color Lift = DeptPalette.GradeLift;
+    public Color CardGain = Color.white;   // CardMatch: a per-channel gain on the tints so a scene's mean colour sits near its card's
 
     // Colour-grading LUT strips (256x16) of the two looks being blended, set by FilmLight. LutAmount 0 = off.
     [HideInInspector] public Texture2D LutA, LutB;
@@ -90,8 +91,8 @@ public class NightGrade : MonoBehaviour {
         material.SetFloat(IntensityId, EffectiveBloom);
         material.SetVector(GradeId, new Vector4(EffectiveExposure, Contrast, Saturation, Vignette));
         material.SetVector(ToneId, new Vector4(ShoulderStart, BloomClamp, DitherAmount / 255f, 0f));
-        material.SetColor(ShadowsId, Shadows);
-        material.SetColor(HighlightsId, Highlights);
+        material.SetColor(ShadowsId, Shadows * CardGain);
+        material.SetColor(HighlightsId, Highlights * CardGain);
         material.SetColor(LiftId, Lift);
         material.SetFloat(StakesId, Stakes);
         bool lut = LutA != null && LutB != null && LutAmount > 0f;
@@ -133,8 +134,11 @@ public class NightGrade : MonoBehaviour {
         RenderTexture.ReleaseTemporary(current);
     }
 
+    // A playtest's own sampling render of the camera must not steer the exposure guard (it is a second, smaller frame).
+    public static bool Sampling;
+
     void ReadLight(RenderTexture source) {
-        if (Time.unscaledTime < nextRead) {
+        if (Sampling || Time.unscaledTime < nextRead) {
             return;
         }
         nextRead = Time.unscaledTime + 0.5f;
@@ -177,7 +181,8 @@ public class NightGrade : MonoBehaviour {
             target = Mathf.Min(target, GuardScale * 0.9f);
         }
         target = Mathf.Clamp(target, GuardMinScale, GuardMaxLift);
-        float k = target < GuardScale ? 0.6f : 0.15f;   // darken fast, lift slowly
+        // Darken fast, lift slowly, except a frame under the floor (an act change passing through a dark blend) which lifts fast.
+        float k = target < GuardScale ? 0.6f : (raw * baseExp * GuardScale < LumaMin ? 0.5f : 0.15f);
         GuardScale = Mathf.Lerp(GuardScale, target, k);
     }
 
