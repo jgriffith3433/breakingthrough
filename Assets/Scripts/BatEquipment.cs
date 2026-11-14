@@ -199,7 +199,9 @@ public class BatEquipment : MonoBehaviour {
             tip.localPosition = new Vector3(0f, 0.86f, 0f);
             trail = tip.gameObject.AddComponent<TrailRenderer>();
             trail.time = 0.22f;
-            trail.minVertexDistance = 0.04f;
+            trail.minVertexDistance = UiFit.Touch ? 0.1f : 0.04f;   // fewer, longer segments on the phone tier: no sliver wedges
+            trail.alignment = LineAlignment.View;
+            trail.numCapVertices = 0;
             trail.widthCurve = new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(1f, 0f));
             trail.material = new Material(trailShader);
             trail.material.mainTexture = DeptFx.Smear();   // a soft white smear, not a hard ribbon
@@ -216,6 +218,10 @@ public class BatEquipment : MonoBehaviour {
         trailSerial = swingCount;
         trailWasOn = on;
         trail.emitting = on;
+        if (BarProbe.Degenerate(trail)) {
+            BarProbe.ShardFrames++;
+            trail.Clear();   // two points on top of each other draw a black wedge
+        }
         // Wider, longer and brighter than before: the critic could barely see the swing from the high camera.
         trail.widthMultiplier = big ? 1.5f : move == Move.Swing3 || move == Move.Smash ? 0.95f : 0.7f;
         trail.time = big ? 0.42f : 0.3f;   // a charged swing smears longer and stronger

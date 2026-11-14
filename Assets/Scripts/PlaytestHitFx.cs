@@ -106,6 +106,7 @@ public static partial class Playtest {
         if (Enemy.BatFlashes != Combat.BatHitsLanded) {
             run.Problem(PlaytestSeverity.Bug, "hit flashes " + Enemy.BatFlashes + " but " + Combat.BatHitsLanded + " bat hits");
         }
+        BarProbe.Report(run);
         if (BatEquipment.TrailSwings == 0) {
             run.Problem(PlaytestSeverity.Bug, "no swing showed a trail on the bat");
         }
