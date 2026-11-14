@@ -22,6 +22,7 @@ Shader "Hidden/BT/Post"
     sampler2D _LutA;     // colour-grading LUTs, a 256x16 strip of 16 slices (FilmLight); _Lut.x = blend A to B, _Lut.y = amount
     sampler2D _LutB;
     float4 _Lut;
+    float4 _Tone;        // shoulder start, bloom brightness clamp, dither amplitude, 0
     float _Stakes;       // 0..1 Slice's lost health: the screen's edges drain toward grey
 
     half3 LutSample(sampler2D lut, half3 c)
@@ -75,6 +76,8 @@ Shader "Hidden/BT/Post"
 
     half3 Prefilter(half3 c)
     {
+        // Hold one pixel's contribution (the HDR sun disc, an additive glow) so a crowd of glows cannot pile up into a wash.
+        c = min(c, _Tone.yyy);
         half brightness = max(c.r, max(c.g, c.b));
         half soft = brightness - _Filter.y;
         soft = clamp(soft, 0, _Filter.z);
@@ -139,8 +142,11 @@ Shader "Hidden/BT/Post"
                 luma = dot(c, half3(0.299, 0.587, 0.114));
                 c = lerp(luma.xxx, c, _Grade.z);
                 c = (c - 0.5) * _Grade.y + 0.5;
-                // gentle shoulder so bright bloom rolls off instead of clipping hard
-                c = c / (1 + max(c - 0.85, 0) * 0.6);
+                // filmic shoulder: identity below _Tone.x, then an exponential roll-off that approaches 1 and never clips,
+                // so highlights keep detail instead of going pure white
+                half k = _Tone.x;
+                half3 over = max(c - k, 0);
+                c = min(c, k) + (1 - k) * (1 - exp(-over / (1 - k)));
 
                 if (_Lut.y > 0.001)
                 {
@@ -155,6 +161,11 @@ Shader "Hidden/BT/Post"
                 half drain = _Stakes * edge;
                 half g = dot(c, half3(0.299, 0.587, 0.114));
                 c = lerp(c, g.xxx * (1 - 0.35 * drain), saturate(drain * 1.1));
+                // triangular dither (1/255 steps): breaks the banding of the vignette and fog gradients in 8-bit
+                float2 sp = i.uv * _ScreenParams.xy;
+                float n1 = frac(52.9829189 * frac(dot(sp, float2(0.06711056, 0.00583715))));
+                float n2 = frac(52.9829189 * frac(dot(sp + 17.0, float2(0.06711056, 0.00583715))));
+                c += (n1 + n2 - 1.0) * _Tone.z;
                 return half4(SafeHDR(c), 1);
             }
             ENDCG

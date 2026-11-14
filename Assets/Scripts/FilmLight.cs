@@ -11,6 +11,7 @@ using UnityEngine;
 // Every act also has a colour-grading LUT (a 256x16 strip drawn in code, blended in the post pass), a reflection probe, soft key
 // shadows on desktop (the phone tier turns them off: MobileQuality), and a rim that goes into the character shader as _FilmRim so
 // Wallit, Slice and every bot keep an edge against the background. Light probes and lightmaps need an editor bake and are not here.
+// The level of it all is held by the shared exposure rule in NightGrade (Docs/FilmLight.md): looks set colour, not brightness.
 // Arcade only (it is added by ArcadeActs). Nothing here shakes the camera.
 [DefaultExecutionOrder(100)]
 public class FilmLight : MonoBehaviour {
