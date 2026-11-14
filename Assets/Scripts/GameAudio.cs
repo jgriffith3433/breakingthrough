@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Globalization;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -163,7 +165,29 @@ public class GameAudio : MonoBehaviour {
         return list[index];
     }
 
-    static void Note(Bus bus, string name, int variant, bool has3d, Vector3 at, float volume) {
+#if UNITY_WEBGL && !UNITY_EDITOR
+    [DllImport("__Internal")]
+    static extern void HawkesSoundProbeEmit(string json);
+#endif
+
+    // Tells the playtest audio probe a sound started (the page's hawkes-audio.js reads it as a sound-start), so
+    // audio.sounds, the silent-action check and the loudness window all see what the game plays. Not per frame.
+    static void Report(Bus bus, string name, int variant, float rate, float volume, float dur) {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        string id = name.Replace("\\", "/").Replace("\"", "'");
+        string bus2 = bus == Bus.Effects ? "sfx" : bus.ToString().ToLowerInvariant();
+        try {
+            HawkesSoundProbeEmit("{\"type\":\"sound-start\",\"sample\":\"" + id + "/" + (variant + 1) + "\",\"bus\":\"" + bus2
+                + "\",\"rate\":" + rate.ToString("0.###", CultureInfo.InvariantCulture)
+                + ",\"gain\":" + volume.ToString("0.###", CultureInfo.InvariantCulture)
+                + ",\"dur\":" + dur.ToString("0.###", CultureInfo.InvariantCulture) + "}");
+        } catch (System.Exception) {
+        }
+#endif
+    }
+
+    static void Note(Bus bus, string name, int variant, bool has3d, Vector3 at, float volume, float rate = 1f, float dur = 0f) {
+        Report(bus, name, variant, rate, volume, dur);
         if (Log.Count >= 6000) {
             return;
         }
@@ -213,7 +237,7 @@ public class GameAudio : MonoBehaviour {
         source.Play();
         Played++;
         Spatial++;
-        Note(Bus.Voice, name, 0, true, position, volume);
+        Note(Bus.Voice, name, 0, true, position, volume, 1f, clip.length);
     }
 
     static void Start(string name, float volume, float pitch, Bus bus, bool world, Vector3 at) {
@@ -273,7 +297,7 @@ public class GameAudio : MonoBehaviour {
         if (name.StartsWith("homerun") || name.StartsWith("batcrack")) {
             AudioMix.HomeRunCrack();
         }
-        Note(bus, name, index, world, at, baseVolume);
+        Note(bus, name, index, world, at, baseVolume, rate, variant.clip.length / rate);
     }
 
     void Update() {
