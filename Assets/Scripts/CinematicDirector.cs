@@ -195,6 +195,7 @@ public partial class CinematicDirector : MonoBehaviour {
         Events.Clear();
         ShotsShown = 0;
         MovingShots = 0;
+        SpeakerShots.Clear();
         VoiceLines = 0;
         Skipped = 0;
         Finished = 0;
@@ -552,6 +553,7 @@ public partial class CinematicDirector : MonoBehaviour {
     }
 
     void NextShot() {
+        FlushSpeaker();
         shotIndex++;
         if (reel == null || reel.shots == null || shotIndex >= reel.shots.Length) {
             End(false);
@@ -712,6 +714,7 @@ public partial class CinematicDirector : MonoBehaviour {
         if (zelda != null) {
             zelda.CinematicHold(viewPos, viewRot);
         }
+        MeasureSpeaker();
     }
 
     void TickVoice(Shot s, float u) {
@@ -937,6 +940,7 @@ public partial class CinematicDirector : MonoBehaviour {
         if (!open) {
             return;
         }
+        FlushSpeaker();
         open = false;
         handingOff = true;
         float handoffStart = Time.unscaledTime;
@@ -1305,6 +1309,7 @@ public partial class CinematicDirector : MonoBehaviour {
         if (Phone()) {
             fov = Mathf.Clamp(fov + 10f, 50f, 72f);
             viewPos = PullBackForFrame(viewPos, look, s.frame, fov);
+            TightenForSpeaker(s, ref viewPos, ref look, ref fov);
         }
         cam.fieldOfView = fov;
         viewPos = ShotClear.Resolve(look, viewPos);
