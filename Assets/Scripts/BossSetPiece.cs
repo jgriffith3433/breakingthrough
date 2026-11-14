@@ -302,7 +302,66 @@ public class BossSetPiece : MonoBehaviour {
                 enemy.PhaseAt = 0.5f;
             }
         }
+        // The Alphas' heavy blow: a slam. A flat red mark (Department red) fills for SlamLead seconds on Wallit, or on Slice's
+        // circle once the boss is angry, then the boss rears (BeginTell) and brings it down. Wallit steps out, or takes it.
+        public const float SlamLead = 1.0f, SlamRadius = 3.2f;
+        float slamAt = 6f, slamClock = -1f;
+        Vector3 slamPoint;
+        bool slamOnSlice;
+        void TickSlam() {
+            if (BossSetPiece.Active || Cutscene.IsOpen || PauseMenu.IsOpen || LevelUpScreen.IsOpen || Musician.Instance == null || !Musician.Instance.Alive) {
+                return;
+            }
+            if (slamClock < 0f) {
+                slamAt -= Time.deltaTime;
+                if (slamAt > 0f) {
+                    return;
+                }
+                PlayerGrowth player = PlayerGrowth.Instance;
+                slamOnSlice = enemy.Phase >= 2 || player == null;
+                slamPoint = (slamOnSlice ? Musician.Instance.transform.position : player.transform.position);
+                slamPoint.y = enemy.transform.position.y;
+                slamClock = 0f;
+                enemy.Hold(SlamLead + 0.3f);
+                enemy.BeginTell();
+                CombatTells.GroundMark(enemy, slamPoint, SlamRadius * 2f * (UiFit.Touch ? 1.15f : 1f), SlamLead);
+                BotSound.TellIn(enemy, SlamLead);
+                GameAudio.PlayAt("stomp", transform.position, 0.7f, 1.1f);
+                Events.Add("slam-tell|" + enemy.Title + "|" + (slamOnSlice ? "slice" : "wallit"));
+                return;
+            }
+            slamClock += Time.deltaTime;
+            enemy.Hold(SlamLead - slamClock + 0.3f);
+            if (slamClock < SlamLead) {
+                return;
+            }
+            slamClock = -1f;
+            slamAt = enemy.Phase >= 2 ? 4.5f : 6.5f;
+            BotSound.Hit(enemy);
+            Fx.Ring(slamPoint, SlamRadius * 2.4f, new Color(1f, 0.35f, 0.2f, 0.9f), 0.5f);
+            GameAudio.PlayAt("stamp", transform.position, 0.9f, 0.9f);
+            enemy.EndTell(true);
+            PlayerGrowth p = PlayerGrowth.Instance;
+            Vector3 d;
+            if (p != null) {
+                d = p.transform.position - slamPoint;
+                d.y = 0f;
+                if (d.magnitude <= SlamRadius) {
+                    p.OnHit(enemy);
+                }
+            }
+            d = Musician.Instance.transform.position - slamPoint;
+            d.y = 0f;
+            if (slamOnSlice && d.magnitude <= SlamRadius + 0.5f) {
+                Musician.Instance.Hurt(1, enemy);
+            }
+            Events.Add("slam-land|" + enemy.Title);
+            enemy.Hold(0.8f);
+        }
         void Update() {
+            if (enemy != null && enemy.Alive) {
+                TickSlam();
+            }
             if (enemy == null || !enemy.Alive || enemy.Phase >= 2 || enemy.Health01 > enemy.PhaseAt) {
                 return;
             }
