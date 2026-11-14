@@ -218,7 +218,7 @@ public static class PlaytestTransitions {
             run.Scene("Chapter " + (chapter + 1) + " after its card");
             yield return new WaitForSecondsRealtime(2.5f);
             yield return new WaitForSecondsRealtime(CardMatch.Passes * 0.5f);   // the grade has settled on the card's palette
-            CardDelta("ch" + (chapter + 1));
+            Playtest.CardDelta("ch" + (chapter + 1));
             run.Scene("Chapter " + (chapter + 1) + " first play frame, graded to its card");
             // Setup: the chapter's end by shortcut, to reach the hub's card the way a finished chapter does.
             if (LevelScene.Instance != null) {
@@ -244,7 +244,7 @@ public static class PlaytestTransitions {
             yield return new WaitForSecondsRealtime(2f);
             if (ChapterHub.Instance != null) {
                 yield return new WaitForSecondsRealtime(CardMatch.Passes * 0.5f);
-                CardDelta("hub");
+                Playtest.CardDelta("hub");
                 run.Scene("The hub, graded to its card");
             }
             // Leaving a built hub (the first time is after Chapter 2: with no chapter cleared there is no hub, only the card) is
@@ -312,7 +312,7 @@ public static class PlaytestTransitions {
             run.Problem(PlaytestSeverity.Bug, "transitions: the hub was never left (the hub after Chapter 2 is the step that froze the page)");
         }
         run.Metric("transitionRecoveries", ScreenTransition.Recoveries);
-        FinishCardDelta();
+        Playtest.FinishCardDelta();
         run.Metric("levelUpCardsPicked", cardsPicked);
         if (ScreenTransition.Recoveries > 0) {
             run.Problem(PlaytestSeverity.Bug, "transitions: the paper sheet had to be taken down by force " + ScreenTransition.Recoveries + " time(s) (a step threw or it stayed up too long)");

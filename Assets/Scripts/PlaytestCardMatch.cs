@@ -8,7 +8,7 @@ using UnityEngine;
 public static partial class Playtest {
     static readonly Dictionary<string, float> cardDeltas = new Dictionary<string, float>();
 
-    static void CardDelta(string id) {
+    internal static void CardDelta(string id) {
         Camera cam = Camera.main;
         if (cam == null || !CardMatch.Known(id)) {
             run.Problem(PlaytestSeverity.Bug, "card-match: no camera or no card palette for " + id);
@@ -31,7 +31,7 @@ public static partial class Playtest {
         }
     }
 
-    static void FinishCardDelta() {
+    internal static void FinishCardDelta() {
         if (cardDeltas.Count == 0) {
             return;
         }
