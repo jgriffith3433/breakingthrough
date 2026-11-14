@@ -499,8 +499,7 @@ public static class Story {
                 },
                 new Stop {
                     Dist = 95f, Bearing = 330f, Name = "the last lamp",
-                    Lines = new[] {
-                    },
+                    Lines = new string[0],
                 },
             },
             // Said at the last lamp as the way turns round to the circle.
