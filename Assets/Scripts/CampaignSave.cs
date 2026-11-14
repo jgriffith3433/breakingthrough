@@ -431,7 +431,11 @@ public static class CampaignSave {
         Save();
     }
 
+    // Calls to Save that reached the write (the playtest's save.writes; a sandbox run counts the call, nothing hits disk).
+    public static int Writes { get; private set; }
+
     static void Save() {
+        Writes++;
         if (MetaProgress.Sandbox || LoadResult == "newer") {
             return;   // a file from a newer build is never written over by this one
         }

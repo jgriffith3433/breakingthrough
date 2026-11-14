@@ -26,7 +26,7 @@ public class CharacterMovement : MonoBehaviour {
 
     [SerializeField]
     public ZeldaStyleCamera ZeldaCam;
-    private Animator Anim;
+    public Animator Anim;
 
     public const string PARAMETER_STATE = "State";
     public const string PARAMETER_CLIP = "Clip";
@@ -498,6 +498,29 @@ public class CharacterMovement : MonoBehaviour {
         }
     }
 
+    // A swing on the move must stay on screen: if the animator is neither in nor heading to the swing's clip (a
+    // locomotion cross fade or an Any State hop got in), play it again from where the swing has got to.
+    void KeepActionClip() {
+        int clip = BatEquipment.ActionClip;
+        if (clip < 0 || clip >= ClipNames.Length || Anim == null) {
+            return;
+        }
+        int hash = Animator.StringToHash(ClipNames[clip]);
+        if (!Anim.HasState(0, hash)) {
+            return;
+        }
+        AnimatorStateInfo cur = Anim.GetCurrentAnimatorStateInfo(0);
+        bool heading = Anim.IsInTransition(0) && Anim.GetNextAnimatorStateInfo(0).shortNameHash == hash;
+        if (cur.shortNameHash == hash || heading) {
+            return;
+        }
+        float length = ClipLength(Anim, ClipNames[clip]);
+        float at = length > 0f ? Mathf.Clamp01(BatEquipment.ActionElapsed / length) : 0f;
+        Anim.speed = 1f;
+        LastClip = clip;
+        Anim.CrossFade(hash, 0.04f, 0, at);
+    }
+
     void AnimationMove(Vector3 velocity) {
         if (Anim == null) {
             return;
@@ -506,6 +529,7 @@ public class CharacterMovement : MonoBehaviour {
             return;
         }
         if (BatEquipment.IsAnimatingAction) {
+            KeepActionClip();
             SwingLegs(velocity);
             return;
         }
