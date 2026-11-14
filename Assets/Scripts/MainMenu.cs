@@ -1137,7 +1137,8 @@ public class MainMenu : MonoBehaviour {
     Vector4 SafeInsets() {
         float sw = UnityEngine.Screen.width;
         float sh = UnityEngine.Screen.height;
-        Rect safe = UnityEngine.Screen.safeArea;
+        // Phones and tablets keep clear of the same insets the UI probe checks (the device's own, or the simulated notch and home bar).
+        Rect safe = compact ? UiRects.SafeArea() : UnityEngine.Screen.safeArea;
         if (sw <= 0f || sh <= 0f || safe.width <= 0f || safe.height <= 0f) {
             return Vector4.zero;
         }
