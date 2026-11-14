@@ -21,6 +21,8 @@ public class WaveDirector : MonoBehaviour {
     // A break or the build window, which Enter (or Next wave) ends early.
     public static bool Waiting { get; private set; }
     public static WaveEvent Event { get; private set; }
+    // Unscaled time until which the event's mid-screen announcement is up; the Abilities panel shows the event line only after it.
+    public static float EventAnnouncedUntil { get; private set; }
     // Shown on the menu after a run ends. Lives only until the game closes.
     public static string LastRun { get; private set; }
 
@@ -305,6 +307,7 @@ public class WaveDirector : MonoBehaviour {
         }
         if (Event != WaveEvent.None && Wave % 10 != 0) {   // a boss wave's entrance owns the screen; the HUD still lists the event
             UpgradeLook.Say(EventName, 2.6f, 230f);
+            EventAnnouncedUntil = Time.unscaledTime + 3.4f;   // the HUD's event line waits for the mid-screen copy to leave
             GameAudio.Play("launch", 0.4f, 0.7f);
         }
         if (PlayerGrowth.Instance != null) {
@@ -1336,8 +1339,9 @@ public class WaveDirector : MonoBehaviour {
         UiFit.Apply(hudScaler);
         Vector2 size = UiFit.Size;
         if (hudMode == UiMode.Desktop) {
-            Fit(waveText, 32, new Vector2(0f, HudPaper.Active ? -130f : -108f), new Vector2(1500f, 46f));
-            Fit(detailText, 24, new Vector2(0f, HudPaper.Active ? -174f : -154f), new Vector2(1400f, 72f));
+            // The middle column: clear of the left panel (coin ledger, Abilities, boons: to x 460) and the roster (from x 1584).
+            Fit(waveText, 32, new Vector2(0f, HudPaper.Active ? -130f : -108f), new Vector2(1000f, 46f));
+            Fit(detailText, 24, new Vector2(0f, HudPaper.Active ? -174f : -154f), new Vector2(1000f, 72f));
             Fit(coinText, 26, new Vector2(36f, -24f), new Vector2(860f, 40f));
             hudPurse.anchoredPosition = new Vector2(36f, -68f);
             lostPanel.transform.localScale = Vector3.one;

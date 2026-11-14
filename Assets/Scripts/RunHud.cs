@@ -166,9 +166,9 @@ public class RunHud : MonoBehaviour {
             Place(bossBack.rectTransform, new Vector2(0f, -236f), new Vector2(820f, 22f));
             Place(goldenText, 28, new Vector2(0f, -268f), new Vector2(900f, 40f));
             Place(eventText, 24, new Vector2(36f, -84f), new Vector2(600f, 30f));
-            Place(boonText, 22, new Vector2(36f, -300f), new Vector2(420f, 520f));
+            Place(boonText, 22, new Vector2(36f, -340f), new Vector2(420f, 520f));   // under the Abilities panel (event line + header + 4 abilities)
             evoSize = 52f;
-            evoY = -240f;
+            evoY = -272f;
         } else if (laidOut == UiMode.Wide) {
             Vector2 size = UiFit.Size;
             float bar = Mathf.Max(300f, size.x - 660f);
@@ -311,8 +311,8 @@ public class RunHud : MonoBehaviour {
         }
         UiFit.ReserveTop(reserve);
 
-        string ev = WaveDirector.EventName;
-        eventText.text = string.IsNullOrEmpty(ev) || hidden ? "" : "★ " + ev;
+        // The event line is drawn once, as the first line of the Abilities panel (AbilityList), after its mid-screen announcement.
+        eventText.text = "";
         eventText.color = new Color(0.85f, 0.6f, 1f);
 
         int stamp = RunBoons.Picks * 100 + RunBoons.Rerolls;
