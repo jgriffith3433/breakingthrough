@@ -56,6 +56,9 @@ public class BossSetPiece : MonoBehaviour {
     int waveNum;
     bool cracked;
 
+    // The boss bar (name plate + blurb) owns the band 300 units above centre; the intro barks sit below it, mid-screen.
+    const float BarkY = 150f;
+
     public static void Begin(Enemy boss, int wave) {
         if (boss == null || ChapterRun.Instance != null || Camera.main == null) {
             return;
@@ -138,7 +141,7 @@ public class BossSetPiece : MonoBehaviour {
     void Say() {
         float seconds = line % 2 == 0 ? WallitVoice.Cutscene(wallit[line / 2 % wallit.Length]) : SliceVoice.Cutscene(slice[line / 2 % slice.Length]);
         string text = line % 2 == 0 ? "Wallit: " + wallit[line / 2 % wallit.Length] : "Slice: " + slice[line / 2 % slice.Length];
-        UpgradeLook.Say(text, Mathf.Min(seconds, 1.8f), 300f);
+        UpgradeLook.Say(text, Mathf.Min(seconds, 1.8f), BarkY);
         nextLine = t + 1.9f;
         line++;
     }
@@ -156,11 +159,11 @@ public class BossSetPiece : MonoBehaviour {
             yield return new WaitForSecondsRealtime(0.3f);
             string w = WallitLines[pick][0];
             float seconds = WallitVoice.Cutscene(w);
-            UpgradeLook.Say("Wallit: " + w, Mathf.Min(seconds, 1.8f), 300f);
+            UpgradeLook.Say("Wallit: " + w, Mathf.Min(seconds, 1.8f), BarkY);
             yield return new WaitForSecondsRealtime(Mathf.Clamp(seconds + 0.3f, 1.2f, 2.2f));
             string s = SliceLines[pick][0];
             seconds = SliceVoice.Cutscene(s);
-            UpgradeLook.Say("Slice: " + s, Mathf.Min(seconds, 1.8f), 300f);
+            UpgradeLook.Say("Slice: " + s, Mathf.Min(seconds, 1.8f), BarkY);
             yield return new WaitForSecondsRealtime(Mathf.Clamp(seconds + 0.3f, 1.2f, 2.2f));
             Destroy(gameObject);
         }
@@ -395,12 +398,12 @@ public class BossSetPiece : MonoBehaviour {
                 GameAudio.Play("stamp", 1f, 0.5f);
                 Events.Add("order-drop|" + wave);
                 SliceVoice.Cutscene("Clean.");
-                UpgradeLook.Say("Slice: Clean.", 1.8f, 300f);
+                UpgradeLook.Say("Slice: Clean.", 1.8f, BarkY);
             } else {
                 string[] lines = { "Clean.", "Take them." };
                 string said = lines[wave == 20 ? 1 : 0];
                 SliceVoice.Cutscene(said);
-                UpgradeLook.Say("Slice: " + said, 2.2f, 300f);
+                UpgradeLook.Say("Slice: " + said, 2.2f, BarkY);
             }
             float slow = 0.5f;
             if (Time.timeScale > 0.99f && !PauseMenu.IsOpen && !LevelUpScreen.IsOpen && !StoryScreen.IsOpen) {
