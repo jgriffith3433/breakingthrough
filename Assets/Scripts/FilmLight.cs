@@ -115,7 +115,15 @@ public class FilmLight : MonoBehaviour {
         if (sun == null) {
             return;
         }
-        if (Phone) {
+        // WebGL: the real-time shadow map is a depth texture the page's float samplers read, which logs GL_INVALID_OPERATION
+        // ("texture format and sampler type are incompatible") every frame the map is drawn. The browser build goes without it,
+        // as phones do; the key light, rim and fog carry the look.
+        bool webGl = Application.platform == RuntimePlatform.WebGLPlayer;
+        if (webGl) {
+            QualitySettings.shadows = ShadowQuality.Disable;
+            QualitySettings.shadowDistance = 0f;
+        }
+        if (Phone || webGl) {
             sun.shadows = LightShadows.None;
             ShadowMode = 0;
         } else {
