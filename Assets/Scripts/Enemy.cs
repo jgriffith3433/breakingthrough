@@ -1279,7 +1279,9 @@ public class Enemy : MonoBehaviour
         launchTrail.minVertexDistance = 0.1f;
         launchTrail.widthMultiplier = 0.7f * Mathf.Sqrt(Mathf.Max(1f, bodyScale));
         launchTrail.widthCurve = new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(1f, 0f));
-        launchTrail.material = new Material(trailShader);
+        if (launchTrailMat == null)
+            launchTrailMat = new Material(trailShader);   // one for every launch: a Material per home run was never freed
+        launchTrail.sharedMaterial = launchTrailMat;
         launchTrail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         launchTrail.receiveShadows = false;
         launchTrail.startColor = new Color(1f, 0.85f, 0.4f, 0.85f);
@@ -1730,20 +1732,54 @@ public class Enemy : MonoBehaviour
         // yawed parent is sheared into black wedges and a bar far wider than the bot. FaceBar sizes it in world units.
         barRoot.position = transform.position + Vector3.up * 1.15f;
 
-        Shader shader = SafeShader.Find("Unlit/Color");
-        if (shader == null)
-            shader = SafeShader.Find("Sprites/Default");
-
-        Transform back = MakeBarQuad("Back", shader, new Color(0.1f, 0.07f, 0.06f, 0.94f));
+        // Shared materials: a Material made per bot was never freed (it grew every wave) and kept the bars from batching.
+        Transform back = MakeBarQuad("Back", BarMaterial(-1));
         back.SetParent(barRoot, false);
         back.localScale = new Vector3(1f, 0.18f, 1f);
 
-        barFill = MakeBarQuad("Fill", shader, new Color(0.45f, 0.82f, 0.38f));
+        barFill = MakeBarQuad("Fill", BarMaterial(BarSteps - 1));
         barFill.SetParent(barRoot, false);
         RefreshBar();
     }
 
-    static Transform MakeBarQuad(string name, Shader shader, Color color)
+    static Material launchTrailMat;
+    const int BarSteps = 8;
+    static Material barBackMat;
+    static readonly Material[] barFillMats = new Material[BarSteps];
+
+    // step -1 is the dark back, 0..BarSteps-1 the fill from red to green.
+    static Material BarMaterial(int step)
+    {
+        Material m = step < 0 ? barBackMat : barFillMats[step];
+        if (m != null)
+            return m;
+        Shader shader = SafeShader.Find("Unlit/Color");
+        if (shader == null)
+            shader = SafeShader.Find("Sprites/Default");
+        if (shader == null)
+            return null;
+        m = new Material(shader);
+        if (step < 0)
+        {
+            m.color = new Color(0.1f, 0.07f, 0.06f, 0.94f);
+            barBackMat = m;
+        }
+        else
+        {
+            m.color = BarColor((step + 0.5f) / BarSteps);
+            barFillMats[step] = m;
+        }
+        return m;
+    }
+
+    static Color BarColor(float remaining)
+    {
+        return remaining > 0.45f
+            ? Color.Lerp(new Color(0.92f, 0.72f, 0.22f), new Color(0.45f, 0.82f, 0.38f), (remaining - 0.45f) / 0.55f)
+            : Color.Lerp(new Color(0.85f, 0.16f, 0.12f), new Color(0.92f, 0.72f, 0.22f), remaining / 0.45f);
+    }
+
+    static Transform MakeBarQuad(string name, Material material)
     {
         var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
         quad.name = name;
@@ -1751,12 +1787,11 @@ public class Enemy : MonoBehaviour
         if (box != null)
             Destroy(box);
         Renderer renderer = quad.GetComponent<Renderer>();
-        if (shader != null && renderer != null)
+        if (material != null && renderer != null)
         {
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             renderer.receiveShadows = false;
-            renderer.sharedMaterial = new Material(shader);
-            renderer.sharedMaterial.color = color;
+            renderer.sharedMaterial = material;
         }
         return quad.transform;
     }
@@ -1769,10 +1804,9 @@ public class Enemy : MonoBehaviour
         barFill.localScale = new Vector3(0.92f * remaining, 0.12f, 1f);
         barFill.localPosition = new Vector3(-0.46f + barFill.localScale.x * 0.5f, 0f, -0.02f);
         Renderer renderer = barFill.GetComponent<Renderer>();
-        if (renderer != null && renderer.sharedMaterial != null)
-            renderer.sharedMaterial.color = remaining > 0.45f
-                ? Color.Lerp(new Color(0.92f, 0.72f, 0.22f), new Color(0.45f, 0.82f, 0.38f), (remaining - 0.45f) / 0.55f)
-                : Color.Lerp(new Color(0.85f, 0.16f, 0.12f), new Color(0.92f, 0.72f, 0.22f), remaining / 0.45f);
+        Material step = BarMaterial(Mathf.Clamp(Mathf.FloorToInt(remaining * BarSteps), 0, BarSteps - 1));
+        if (renderer != null && step != null && renderer.sharedMaterial != step)
+            renderer.sharedMaterial = step;
     }
 
     void FaceBar()
