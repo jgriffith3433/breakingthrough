@@ -12,6 +12,8 @@ public class HitDirection : MonoBehaviour {
     const float Life = 0.7f;
 
     public static int Shown, ShownWallit, ShownSlice;
+    public static int WallitHits;       // every blow Wallit took (shown or not): Shown / this is hurt.directionShown
+    public static float Radius = 0.40f; // of the short side, from the ring centre: out near the edge, above the corner pads
     public static float LastAngle;      // degrees clockwise from screen up
     public static string Last = "";
 
@@ -33,9 +35,17 @@ public class HitDirection : MonoBehaviour {
     static void ResetStatics() {
         instance = null;
         wedge = null;
-        Shown = ShownWallit = ShownSlice = 0;
+        Shown = ShownWallit = ShownSlice = WallitHits = 0;
         LastAngle = 0f;
         Last = "";
+    }
+
+    // Wallit took a blow: from is the attacker's or the projectile's or hazard's spot; null means unknown, so the arc
+    // points behind where he faces (a hit he did not see coming). Always counted, always shown.
+    public static void HitWallit(Vector3? from, Transform self) {
+        WallitHits++;
+        Vector3 at = from.HasValue ? from.Value : self.position - self.forward * 3f;
+        Hit(at, true);
     }
 
     // from: where the blow came from, in the world. Wallit: the player took it; else Slice.
@@ -73,6 +83,9 @@ public class HitDirection : MonoBehaviour {
         next = (next + 1) % Slots;
         m.Age = 0f;
         m.Peak = wallit ? 0.85f : 0.6f;
+        if (ComfortOptions.ReducedMotion) {
+            m.Peak *= 0.6f;   // Calm: softer
+        }
         m.Img.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -angle);
         m.Img.gameObject.SetActive(true);
         Shown++;
@@ -93,21 +106,21 @@ public class HitDirection : MonoBehaviour {
         float dt = Time.unscaledDeltaTime;
         for (int i = 0; i < marks.Count; i++) {
             Mark m = marks[i];
-            if (m.Age >= Life) {
+            if (m.Age >= Life * 1.4f) {
                 if (m.Img.gameObject.activeSelf) {
                     m.Img.gameObject.SetActive(false);
                 }
                 continue;
             }
             m.Age += dt;
-            float k = Mathf.Clamp01(m.Age / Life);
+            float k = Mathf.Clamp01(m.Age / (ComfortOptions.ReducedMotion ? Life * 1.4f : Life));
             float a = m.Peak * (k < 0.12f ? k / 0.12f : 1f - (k - 0.12f) / 0.88f);
             m.Img.color = new Color(0.92f, 0.12f, 0.1f, Mathf.Clamp01(a));
         }
         // The ring's size follows the canvas: a third of the short side (in canvas units) from the middle.
         var rt = (RectTransform)canvas.transform;
         float unit = Mathf.Min(rt.rect.width, rt.rect.height);
-        float radius = unit * 0.33f;
+        float radius = unit * Radius;
         for (int i = 0; i < marks.Count; i++) {
             RectTransform r = marks[i].Img.rectTransform;
             r.sizeDelta = new Vector2(Mathf.Max(88f, unit * 0.16f), Mathf.Max(88f, radius * 2f));
