@@ -233,7 +233,7 @@ public class LoadScreen : MonoBehaviour {
         if (map == null || !map.OwnScene) {
             return ChapterIsUp() ? 1f : 0.6f;
         }
-        return map.Own != null ? 1f : 0.75f;
+        return map.Own != null ? 1f : 0.6f + 0.35f * map.WarmFraction;
     }
 
     void Update() {
