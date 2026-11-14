@@ -124,12 +124,12 @@ public class RunHud : MonoBehaviour {
             xpWidth = bar - 4f;
             bossWidth = Mathf.Min(814f, middle - 6f);
             Place(xpBack.rectTransform, new Vector2(0f, 12f), new Vector2(bar, 14f));
-            Place(levelText, 24, new Vector2(-bar * 0.5f - 10f, 4f), new Vector2(120f, 32f), TextAnchor.LowerRight, new Vector2(1f, 0f));
-            Place(bossName, 24, new Vector2(0f, -200f), new Vector2(middle, 32f));
+            Place(levelText, 28, new Vector2(-bar * 0.5f - 10f, 4f), new Vector2(150f, 36f), TextAnchor.LowerRight, new Vector2(1f, 0f));
+            Place(bossName, 28, new Vector2(0f, -200f), new Vector2(middle, 36f));
             Place(bossBack.rectTransform, new Vector2(0f, -236f), new Vector2(bossWidth + 6f, 22f));
-            Place(goldenText, 24, new Vector2(0f, -262f), new Vector2(middle, 32f));
-            Place(eventText, 22, new Vector2(24f, -96f), new Vector2(360f, 30f));
-            Place(boonText, 20, new Vector2(24f, -210f), new Vector2(360f, 160f));
+            Place(goldenText, 28, new Vector2(0f, -262f), new Vector2(middle, 36f));
+            Place(eventText, 28, new Vector2(24f, -96f), new Vector2(360f, 36f));
+            Place(boonText, 28, new Vector2(24f, -210f), new Vector2(360f, 190f));
         } else {
             Vector2 size = UiFit.Size;
             float bar = size.x - 140f;
@@ -137,12 +137,12 @@ public class RunHud : MonoBehaviour {
             xpWidth = bar - 4f;
             bossWidth = size.x - 106f;
             Place(xpBack.rectTransform, new Vector2(0f, 450f), new Vector2(bar, 14f));
-            Place(levelText, 24, new Vector2(-bar * 0.5f, 468f), new Vector2(160f, 32f), TextAnchor.LowerLeft, new Vector2(0f, 0f));
-            Place(bossName, 24, new Vector2(0f, -256f), new Vector2(size.x - 48f, 32f));
+            Place(levelText, 28, new Vector2(-bar * 0.5f, 468f), new Vector2(180f, 36f), TextAnchor.LowerLeft, new Vector2(0f, 0f));
+            Place(bossName, 28, new Vector2(0f, -256f), new Vector2(size.x - 48f, 36f));
             Place(bossBack.rectTransform, new Vector2(0f, -290f), new Vector2(bossWidth + 6f, 22f));
-            Place(goldenText, 24, new Vector2(0f, -316f), new Vector2(size.x - 48f, 32f));
-            Place(eventText, 22, new Vector2(24f, -340f), new Vector2(300f, 30f));
-            Place(boonText, 20, new Vector2(24f, -484f), new Vector2(300f, 220f));
+            Place(goldenText, 28, new Vector2(0f, -316f), new Vector2(size.x - 48f, 36f));
+            Place(eventText, 28, new Vector2(24f, -340f), new Vector2(300f, 36f));
+            Place(boonText, 28, new Vector2(24f, -484f), new Vector2(300f, 290f));
         }
         bossFill.rectTransform.sizeDelta = new Vector2(bossWidth, 16f);
         eventText.horizontalOverflow = laidOut == UiMode.Desktop ? HorizontalWrapMode.Overflow : HorizontalWrapMode.Wrap;
