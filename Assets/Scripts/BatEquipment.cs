@@ -64,6 +64,10 @@ public class BatEquipment : MonoBehaviour {
         get { return Instance != null && Instance.move != Move.None && Instance.contactDone; }
     }
 
+    public static Enemy CurrentTarget {
+        get { return Instance != null ? Instance.faceTarget : null; }
+    }
+
     bool CancelMove() {
         if (charging) {
             charging = false;
@@ -223,25 +227,17 @@ public class BatEquipment : MonoBehaviour {
             trail.Clear();   // two points on top of each other draw a black wedge
         }
         // Wider, longer and brighter than before: the critic could barely see the swing from the high camera.
-        trail.widthMultiplier = big ? 1.5f : move == Move.Swing3 || move == Move.Smash ? 0.95f : 0.7f;
-        trail.time = big ? 0.42f : 0.3f;   // a charged swing smears longer and stronger
+        trail.widthMultiplier = big ? 1.5f : move == Move.Swing3 || move == Move.Smash ? 0.95f : 0.75f;
+        trail.time = big ? 0.42f : 0.32f;   // a charged swing smears longer and stronger
         Color head = big ? new Color(1f, 0.92f, 0.55f, 1f) : new Color(1f, 1f, 0.97f, 0.95f);
-        // A boon from the wave card tints the trail at once: flame, frost or a live wire, a gold sweep, an amber knock.
-        if (RunBoons.Has(BoonId.Firebrand) || RunBoons.Has(BoonId.Phoenix)) {
-            head = new Color(1f, 0.52f, 0.14f, 1f);
-        } else if (RunBoons.Has(BoonId.Frost) || RunBoons.Has(BoonId.Hailstorm)) {
-            head = new Color(0.45f, 0.82f, 1f, 1f);
-        } else if (RunBoons.Has(BoonId.Chain) || RunBoons.Has(BoonId.StormQuiver)) {
-            head = new Color(0.78f, 0.62f, 1f, 1f);
-        } else if (RunBoons.ArcBonus > 0f || RunBoons.Rank(BoonId.Pierce) > 0) {
-            head = new Color(1f, 0.9f, 0.4f, 1f);
-        } else if (RunBoons.LineDrive > 0 || RunBoons.Rank(BoonId.Heavy) > 0) {
-            head = new Color(1f, 0.72f, 0.3f, 1f);
+        // One consistent colour per boon family: the swing trail takes the run's lead family colour.
+        if (RunBoons.LeadFamily != BoonFamily.None) {
+            head = RunBoons.FamilyColor(RunBoons.LeadFamily);
         }
         trail.widthMultiplier *= 1f + RunBoons.ArcBonus / 100f + 0.08f * RunBoons.Rank(BoonId.Pierce) + 0.06f * RunBoons.Rank(BoonId.Heavy);
         TrailHead = head;
         trail.startColor = head;
-        trail.endColor = new Color(head.r, head.g * 0.8f, head.b * 0.5f, 0f);
+        trail.endColor = new Color(head.r, head.g * 0.85f, head.b * 0.7f, 0f);
     }
 
     // Movement slows a little while a swing is out, more while winding up. CharacterMovement multiplies by it.
@@ -621,6 +617,12 @@ public class BatEquipment : MonoBehaviour {
         swingCount++;
         TrailSwings++;   // one trail per swing: the ribbon restarts on this serial in TickTrail, never skipped while one fades
         RunLog.NoteSwing();
+        if (RunBoons.LeadFamily != BoonFamily.None) {
+            Fx.Ring(transform.position + Vector3.up * 0.12f, Reach * 0.85f, RunBoons.FamilyColor(RunBoons.LeadFamily), 0.52f);
+        }
+        if (RunBoons.Rank(BoonId.QuickDraw) > 0) {
+            BoonFx.Proc(BoonId.QuickDraw, transform.position + Vector3.up * 1.0f, "QUICK HANDS", 1.85f);
+        }
         bool big = next == Move.HomeRun || next == Move.Swing3 || next == Move.Spin;
         GameAudio.Play("batswing", big ? 0.6f : 0.42f, Random.Range(0.92f, 1.08f) * (next == Move.Swing3 ? 0.85f : next == Move.Spin ? 0.75f : 1f));
         actionClip = wallitClip;
@@ -724,6 +726,7 @@ public class BatEquipment : MonoBehaviour {
         }
         if (RunBoons.ArcBonus > 0f) {
             WideSwings++;
+            BoonFx.Proc(BoonId.SplitShot, transform.position + forward * (reach * 0.55f) + Vector3.up * 0.45f, "WIDE ARC", reach * 0.85f);
         }
         Blizzard(reach, halfArc, forward, finisher);
         // Campaign: each combo hit is its own (Deposit, Withdrawal, Overdraft). Arcade's three swings stay as they were.
@@ -737,6 +740,9 @@ public class BatEquipment : MonoBehaviour {
             knockSpeed *= finisher ? 1f : feel.Knock;
         }
         int count = Strike(hits, damageScale, finisher ? 4f : 2f, knockSpeed, finisher ? 5f : 2f);
+        if (count > 0 && RunBoons.Rank(BoonId.Pierce) > 0) {
+            BoonFx.Proc(BoonId.Pierce, hits[0].transform.position + Vector3.up * 0.85f, count > 1 ? "CLEAVE x" + count : "FOLLOW THROUGH", 2.3f);
+        }
         if (distinct) {
             CampaignMoves.NoteCombo(step, count);
         }
@@ -801,7 +807,8 @@ public class BatEquipment : MonoBehaviour {
             Impacts++;
             if (lineDrive > 0) {
                 // Line Drive: a ring of knock-back opens under the bot the bat sends flying.
-                Fx.Ring(enemy.transform.position + Vector3.up * 0.1f, 1.8f + 0.5f * lineDrive, new Color(1f, 0.72f, 0.3f, 0.8f), 0.4f);
+                Fx.Ring(enemy.transform.position + Vector3.up * 0.1f, 1.8f + 0.5f * lineDrive, RunBoons.FamilyColor(BoonFamily.Impact), 0.4f);
+                BoonFx.Proc(BoonId.Ricochet, enemy.transform.position + Vector3.up * 0.65f, "LINE DRIVE", 2.2f + 0.35f * lineDrive);
             }
             if (count > 1) {
                 GameAudio.PlayAt("hit", enemy.transform.position, 0.5f, Random.Range(0.9f, 1.05f));
@@ -936,6 +943,7 @@ public class BatEquipment : MonoBehaviour {
                     HomeRunKnocks++;
                 } else {
                     LineDriveHits++;
+                    BoonFx.Proc(BoonId.Ricochet, other.transform.position + Vector3.up * 0.85f, "BOWLED!", 2.5f);
                     if (LineDriveHits <= 3) {
                         Say("line drive: a knocked-back " + (flight.Bird.Title ?? "bot") + " hit " + (other.Title ?? "a bot") + " behind it");
                     }
@@ -973,8 +981,10 @@ public class BatEquipment : MonoBehaviour {
         int count = Strike(hits, Tuning.SpinDamage, 4f, Tuning.BatKnockFinisher * 0.8f, 4f);
         SpinHits += count;
         bool thunder = RunBoons.Has(BoonId.StormQuiver);
-        Fx.Ring(transform.position + Vector3.up * 0.3f, radius * 2f, thunder ? new Color(0.6f, 0.82f, 1f, 0.85f) : new Color(1f, 0.88f, 0.6f, 0.8f), 0.45f);
+        Fx.Ring(transform.position + Vector3.up * 0.3f, radius * 2f, thunder ? RunBoons.FamilyColor(BoonFamily.Element) : RunBoons.FamilyColor(BoonFamily.Reach), 0.45f);
+        BoonFx.Proc(BoonId.Volley, transform.position + Vector3.up * 0.65f, "GRAND SLAM!", radius * 1.15f);
         if (thunder) {
+            BoonFx.Proc(BoonId.StormQuiver, transform.position + Vector3.up * 1.1f, "THUNDER BAT!", radius * 1.25f);
             Combat.Lightning(transform.position + Vector3.up * 2f * (PlayerGrowth.Instance != null ? PlayerGrowth.Instance.Scale : 1f), null, 5, Combat.BatBase() * 0.8f);
         }
         if (count > 0) {
@@ -1028,10 +1038,26 @@ public class BatEquipment : MonoBehaviour {
             best = enemy;
         }
         if (best == null) {
+            float fallbackBest = 0f;
+            for (int i = 0; i < roster.Count; i++) {
+                Enemy enemy = roster[i];
+                if (enemy == null || !enemy.Alive || enemy.Climbing) {
+                    continue;
+                }
+                float d = Flat(enemy.transform.position - transform.position).sqrMagnitude;
+                if (d <= far * far && d > fallbackBest) {
+                    fallbackBest = d;
+                    bestDist = d;
+                    best = enemy;
+                }
+            }
+        }
+        if (best == null) {
             return;
         }
         Vector3 from = root != null ? root.position + root.up * 0.8f * grown : transform.position + Vector3.up * grown;
         BattedBolt.Launch(from, best, 0.55f + 0.25f * rank, grown);
+        BoonFx.Proc(BoonId.Homing, from, "LONG BALL", 1.9f);
         BoltsBatted++;
         if (BoltsBatted <= 3) {
             Say("long ball: a bolt batted at " + (best.Title ?? "a bot") + " " + Mathf.Sqrt(bestDist).ToString("0") + " m away (reach " + reach.ToString("0.0") + " m)");
@@ -1291,6 +1317,7 @@ public class BattedBolt : MonoBehaviour {
         if (to.magnitude <= step + 0.3f + target.BodyScale * 0.3f) {
             Combat.BatHit(target, scale, 2f, false);
             BatEquipment.NoteBoltHit();
+            BoonFx.Proc(BoonId.Homing, target.transform.position + Vector3.up * 0.8f, "LONG BALL HIT", 2.2f);
             GameAudio.Play("batcrack", 0.35f, 1.6f);
             Destroy(gameObject);
             return;

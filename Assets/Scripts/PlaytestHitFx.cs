@@ -53,6 +53,11 @@ public static partial class Playtest {
 
         run.Scene("Hit VFX: a crowd");
         run.Event("setup", "testing wave key to wave 10 for a crowd of 10+ bots");
+        // Five boons held (the phone criterion): a swing's colour ring, a damage callout, an arc, a keg and a bounty all fire in the crowd.
+        foreach (BoonId id in new[] { BoonId.Heavy, BoonId.Pierce, BoonId.Firebrand, BoonId.Chain, BoonId.BirdBomb }) {
+            RunBoons.Take(id);
+        }
+        run.Event("setup", "five boons granted: " + RunBoons.Summary());
         yield return GoWave(10);
         float start = Time.realtimeSinceStartup;
         float sum = 0f;
@@ -106,6 +111,7 @@ public static partial class Playtest {
         if (Enemy.BatFlashes != Combat.BatHitsLanded) {
             run.Problem(PlaytestSeverity.Bug, "hit flashes " + Enemy.BatFlashes + " but " + Combat.BatHitsLanded + " bat hits");
         }
+        ReportBoonFx(run);
         BarProbe.Report(run);
         if (BatEquipment.TrailSwings == 0) {
             run.Problem(PlaytestSeverity.Bug, "no swing showed a trail on the bat");
@@ -183,5 +189,16 @@ public static partial class Playtest {
             + "), stamps " + DeptFx.Stamps + " (" + DeptFx.StampsBeforeBreak + " then broke), leg scatters " + DeptFx.LegScatters + ", home runs " + BatEquipment.HomeRuns + ", hit flashes " + Enemy.BatFlashes + "/" + Combat.BatHitsLanded
             + ", speed-line frames " + DeptFx.SpeedLineBursts + ", landings " + DeptFx.Landings + ", circle ripples " + DeptFx.Ripples
             + ", coin glints " + DeptFx.CoinGlints + " arcs " + DeptFx.CoinArcs);
+    }
+
+    // Every boon proc draws its family-coloured ring, burst, callout and sound in BoonFx.Proc, so shown must equal procs.
+    public static void ReportBoonFx(PlaytestRun run) {
+        run.Metric("fx.boonProcs", BoonFx.Procs);
+        run.Metric("fx.boonProcsShown", BoonFx.ProcsShown);
+        run.Metric("fx.boonsShown", BoonFx.DistinctBoonsShown);
+        run.Event("boon-fx", "procs shown " + BoonFx.ProcsShown + " of " + BoonFx.Procs + " (" + BoonFx.SummaryLine() + "), lead family " + RunBoons.FamilyName(RunBoons.LeadFamily));
+        if (BoonFx.ProcsShown != BoonFx.Procs) {
+            run.Problem(PlaytestSeverity.Bug, "boon procs shown " + BoonFx.ProcsShown + " but " + BoonFx.Procs + " procs");
+        }
     }
 }

@@ -109,6 +109,8 @@ public static class RunBoons {
     public static int RerollsTaken { get; private set; }
     public static int PendingChests { get; private set; }
     public static string LastPick { get; private set; }
+    public static BoonFamily FirstFamily { get; private set; }
+    public static BoonId FirstBoon { get; private set; }
 
     static float featherCarry;
 
@@ -136,6 +138,9 @@ public static class RunBoons {
         MinFamilies = 99;
         RerollsTaken = 0;
         LastPick = null;
+        FirstFamily = BoonFamily.None;
+        FirstBoon = BoonId.Heavy;
+        BoonFx.Reset();
         Evolved.Clear();
         EvolvedWave.Clear();
         EvolutionCeremony.Reset();
@@ -251,6 +256,14 @@ public static class RunBoons {
                 EvolvedWave.Add(0);
             }
         }
+        FirstFamily = BoonFamily.None;
+        for (int i = 0; i < All.Length; i++) {
+            if (ranks[i] > 0) {
+                FirstFamily = FamilyOf(All[i].Id);
+                FirstBoon = All[i].Id;
+                break;
+            }
+        }
         if (PlayerGrowth.Instance != null) {
             PlayerGrowth.Instance.RefreshStats();
         }
@@ -274,17 +287,26 @@ public static class RunBoons {
         if (ranks[index] >= info.MaxRank) {
             return;
         }
+        if (FirstFamily == BoonFamily.None) {
+            FirstFamily = FamilyOf(id);
+            FirstBoon = id;
+        }
         ranks[index]++;
         Picks++;
         LastPick = info.Name;
         if (id == BoonId.Turret) {
             FortStock.Add(FortKind.Tower);
+            if (PlayerGrowth.Instance != null) {
+                BoonFx.Proc(BoonId.Turret, PlayerGrowth.Instance.transform.position + Vector3.up * 1.1f, "+1 TOWER", 2.6f);
+            }
         }
         if (id == BoonId.Ovation && Musician.Instance != null) {
             Musician.Instance.RaiseMax(15);
+            BoonFx.Proc(BoonId.Ovation, Musician.Instance.transform.position + Vector3.up * 1.1f, "+15 MAX HP", 3.6f);
         }
         if (id == BoonId.GrandFinale && Musician.Instance != null) {
             Musician.Instance.Heal(40);
+            BoonFx.Proc(BoonId.GrandFinale, Musician.Instance.transform.position + Vector3.up * 1.1f, "+40 HP", 4.2f);
         }
         if (PlayerGrowth.Instance != null) {
             PlayerGrowth.Instance.RefreshStats();
@@ -396,6 +418,48 @@ public static class RunBoons {
             case BoonFamily.Guard: return "GUARD";
             case BoonFamily.Tricks: return "TRICKS";
             default: return "";
+        }
+    }
+
+    // One consistent colour per boon family so the player can read their build from the fight.
+    public static Color FamilyColor(BoonFamily family) {
+        switch (family) {
+            case BoonFamily.Element: return new Color(1f, 0.42f, 0.14f, 1f);
+            case BoonFamily.Reach:   return new Color(0.16f, 0.88f, 1f, 1f);
+            case BoonFamily.Impact:  return new Color(1f, 0.82f, 0.16f, 1f);
+            case BoonFamily.Guard:   return new Color(0.22f, 0.95f, 0.52f, 1f);
+            case BoonFamily.Tricks:  return new Color(0.84f, 0.34f, 1f, 1f);
+            default:                 return new Color(1f, 0.95f, 0.8f, 1f);
+        }
+    }
+
+    public static Color ColorOf(BoonId id) {
+        return FamilyColor(FamilyOf(id));
+    }
+
+    public static BoonFamily LeadFamily {
+        get {
+            if (FirstFamily != BoonFamily.None) {
+                return FirstFamily;
+            }
+            for (int i = 0; i < All.Length; i++) {
+                if (ranks[i] > 0) {
+                    return FamilyOf(All[i].Id);
+                }
+            }
+            return BoonFamily.None;
+        }
+    }
+
+    public static int HeldCount {
+        get {
+            int n = 0;
+            for (int i = 0; i < All.Length; i++) {
+                if (ranks[i] > 0) {
+                    n++;
+                }
+            }
+            return n;
         }
     }
 

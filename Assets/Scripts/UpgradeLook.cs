@@ -130,9 +130,22 @@ public class UpgradeLook : MonoBehaviour {
         Fx.Footstep(feet, 1f + 0.3f * rank);
     }
 
+    static Material sharedLineMat;
+
+    public static Material SharedLineMaterial() {
+        if (sharedLineMat == null) {
+            Shader shader = SafeShader.Find("Sprites/Default");
+            if (shader != null) {
+                sharedLineMat = new Material(shader);
+            }
+        }
+        return sharedLineMat;
+    }
+
     public static void Bolt(Vector3 from, Vector3 to) {
         int rank = MetaProgress.Rank(UpgradeId.Towers);
-        if (rank <= 0) {
+        int song = RunBoons.Rank(BoonId.Turret);
+        if (rank <= 0 && song <= 0) {
             return;
         }
         var go = new GameObject("TowerShot");
@@ -140,19 +153,19 @@ public class UpgradeLook : MonoBehaviour {
         line.positionCount = 2;
         line.SetPosition(0, from);
         line.SetPosition(1, to);
-        line.startWidth = 0.04f + 0.015f * rank;
-        line.endWidth = 0.01f;
+        line.startWidth = 0.05f + 0.015f * Mathf.Max(rank, song);
+        line.endWidth = 0.015f;
         line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         line.receiveShadows = false;
-        Shader shader = SafeShader.Find("Sprites/Default");
-        if (shader != null) {
-            line.material = new Material(shader);
+        Material mat = SharedLineMaterial();
+        if (mat != null) {
+            line.sharedMaterial = mat;
         }
-        Color gold = Color.Lerp(new Color(1f, 0.75f, 0.3f), new Color(1f, 0.95f, 0.6f), rank / 3f);
-        line.startColor = gold;
-        line.endColor = gold;
+        Color col = song > 0 ? RunBoons.FamilyColor(BoonFamily.Guard) : Color.Lerp(new Color(1f, 0.75f, 0.3f), new Color(1f, 0.95f, 0.6f), rank / 3f);
+        line.startColor = col;
+        line.endColor = col;
         Flourish flourish = go.AddComponent<Flourish>();
-        flourish.Begin(Vector3.zero, 0.12f, Vector3.one);
+        flourish.Begin(Vector3.zero, 0.14f, Vector3.one);
         flourish.hideLine = true;
     }
 
@@ -229,6 +242,9 @@ public class UpgradeLook : MonoBehaviour {
         var go = new GameObject("Damage");
         Vector3 jitter = new Vector3(Random.Range(-0.35f, 0.35f), Random.Range(0f, 0.3f), Random.Range(-0.35f, 0.35f));
         go.transform.position = point + Vector3.up * 0.4f + jitter;
+        if (Camera.main != null) {
+            go.transform.rotation = Camera.main.transform.rotation;
+        }
         TextMesh mesh = go.AddComponent<TextMesh>();
         int shown = Mathf.Max(1, Mathf.RoundToInt(amount));
         mesh.text = crit ? shown + "!" : shown.ToString();
@@ -282,16 +298,33 @@ public class UpgradeLook : MonoBehaviour {
         GameAudio.Play("launch", 0.35f, Random.Range(0.9f, 1.15f));
     }
 
+    static int zapFrame = -1;
+    static int zapsThisFrame;
+
     // A jagged bolt between two points.
     public static void Zap(Vector3 from, Vector3 to) {
-        Zap(from, to, 0.14f, true);
+        Zap(from, to, RunBoons.FamilyColor(BoonFamily.Element), 0.14f, true);
     }
 
     // Width in meters at the start; flash: a soft flash where it lands.
     public static void Zap(Vector3 from, Vector3 to, float width, bool flash) {
+        Zap(from, to, RunBoons.FamilyColor(BoonFamily.Element), width, flash);
+    }
+
+    public static void Zap(Vector3 from, Vector3 to, Color color, float width = 0.14f, bool flash = true) {
+        if (zapFrame != Time.frameCount) {
+            zapFrame = Time.frameCount;
+            zapsThisFrame = 0;
+        }
+        if (UiFit.Touch && ++zapsThisFrame > 2) {
+            if (flash) {
+                Fx.Emit(FxKind.Flash, to, 1, new Color(color.r, color.g, color.b, 0.9f), 1.1f, 0f);
+            }
+            return;
+        }
         var go = new GameObject("Zap");
         var line = go.AddComponent<LineRenderer>();
-        int points = 7;
+        int points = UiFit.Touch ? 5 : 7;
         line.positionCount = points;
         Vector3 side = Vector3.Cross((to - from).normalized, Vector3.up);
         float jag = Mathf.Min(1f, width / 0.14f);
@@ -306,16 +339,16 @@ public class UpgradeLook : MonoBehaviour {
         line.startWidth = width;
         line.endWidth = width * 0.43f;
         if (flash) {
-            Fx.Emit(FxKind.Flash, to, 1, new Color(0.55f, 0.8f, 1f, 0.9f), 1.1f, 0f);
+            Fx.Emit(FxKind.Flash, to, 1, new Color(color.r, color.g, color.b, 0.9f), 1.1f, 0f);
         }
         line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         line.receiveShadows = false;
-        Shader shader = SafeShader.Find("Sprites/Default");
-        if (shader != null) {
-            line.material = new Material(shader);
+        Material mat = SharedLineMaterial();
+        if (mat != null) {
+            line.sharedMaterial = mat;
         }
-        line.startColor = new Color(0.8f, 0.95f, 1f);
-        line.endColor = new Color(0.4f, 0.7f, 1f);
+        line.startColor = Color.Lerp(color, Color.white, 0.25f);
+        line.endColor = new Color(color.r, color.g, color.b, 0.85f);
         Flourish flourish = go.AddComponent<Flourish>();
         flourish.Begin(Vector3.zero, 0.14f, Vector3.one);
         flourish.hideLine = true;
@@ -633,6 +666,7 @@ public class BatMarks : MonoBehaviour {
         for (int i = 0; i < RunBoons.All.Length; i++) {
             h = h * 7 + RunBoons.Rank((BoonId)i);
         }
+        h = h * 11 + (int)RunBoons.LeadFamily;
         h = h * 5 + MetaProgress.Rank(UpgradeId.Keen);
         h = h * 5 + MetaProgress.Rank(UpgradeId.Blast);
         h = h * 3 + (Journal.GiltBat ? 1 : 0);
@@ -667,17 +701,22 @@ public class BatMarks : MonoBehaviour {
         bool tar = RunBoons.Has(BoonId.Firebrand) || RunBoons.Has(BoonId.Phoenix);
         bool blizzard = RunBoons.Has(BoonId.Hailstorm);
         bool thunder = RunBoons.Has(BoonId.StormQuiver);
+        BoonFamily lead = RunBoons.LeadFamily;
+        Color leadCol = RunBoons.FamilyColor(lead);
 
-        // The bat itself: wood, or aluminum from the shop. Pine Tar darkens wood; the evolutions tint it.
+        // The bat itself: wood, or aluminum from the shop. Any held boon family tints the barrel and wraps it in that family's colour.
         Color barrel = metal > 0 ? Aluminum : Wood;
+        if (lead != BoonFamily.None) {
+            barrel = Color.Lerp(barrel, leadCol, 0.48f);
+        }
         if (tar && metal == 0) {
-            barrel = Color.Lerp(barrel, new Color(0.22f, 0.13f, 0.07f), 0.55f);
+            barrel = Color.Lerp(barrel, RunBoons.FamilyColor(BoonFamily.Element), 0.55f);
         }
         if (blizzard) {
             barrel = Color.Lerp(barrel, new Color(0.9f, 0.96f, 1f), 0.5f);
         }
         if (thunder) {
-            barrel = Color.Lerp(barrel, new Color(0.32f, 0.38f, 0.55f), 0.4f);
+            barrel = Color.Lerp(barrel, RunBoons.FamilyColor(BoonFamily.Element), 0.45f);
         }
         Transform barrelPart = transform.Find("Barrel");
         Transform handlePart = transform.Find("Handle");
@@ -696,7 +735,7 @@ public class BatMarks : MonoBehaviour {
                     continue;
                 }
                 if (batRen.gameObject.name.IndexOf("bat", System.StringComparison.OrdinalIgnoreCase) >= 0 && batRen.material != null) {
-                    if (metal > 0 || tar || blizzard || thunder) {
+                    if (metal > 0 || tar || blizzard || thunder || lead != BoonFamily.None) {
                         batRen.material.color = barrel;
                     }
                     if (corked > 0) {
@@ -708,6 +747,12 @@ public class BatMarks : MonoBehaviour {
         }
         float r = 0.055f * (1f + 0.07f * corked);
         said.Add(metal > 0 ? "aluminum bat" : "wood bat");
+        if (lead != BoonFamily.None) {
+            Shell(0.68f, r * 3.1f, 0.42f, new Color(leadCol.r, leadCol.g, leadCol.b, 0.42f));
+            Band(0.42f, r, 0.032f, leadCol);
+            Band(0.92f, r, 0.032f, leadCol);
+            said.Add(RunBoons.FamilyName(lead) + " glow");
+        }
         if (corked > 0) {
             said.Add("Corked Bat: barrel " + Mathf.RoundToInt(7f * corked) + "% fatter");
         }
@@ -919,14 +964,287 @@ public class BatMarks : MonoBehaviour {
         trail.minVertexDistance = 0.04f;
         trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         trail.receiveShadows = false;
-        Shader shader = SafeShader.Find("Sprites/Default");
-        if (shader != null) {
-            trail.material = new Material(shader);
+        Material mat = UpgradeLook.SharedLineMaterial();
+        if (mat != null) {
+            trail.sharedMaterial = mat;
         }
-        Color c = ledger ? new Color(0.55f, 0.95f, 0.7f, 0.5f)
+        Color c = RunBoons.LeadFamily != BoonFamily.None
+            ? RunBoons.FamilyColor(RunBoons.LeadFamily)
+            : ledger ? new Color(0.55f, 0.95f, 0.7f, 0.5f)
             : frost ? new Color(0.8f, 0.94f, 1f, 0.55f)
             : new Color(1f, 0.97f, 0.88f, 0.45f);
+        c.a = 0.65f;
         trail.startColor = c;
         trail.endColor = new Color(c.r, c.g, c.b, 0f);
+    }
+}
+
+// Pooled floating callout for boon procs: always copies Camera.main.transform.rotation so it never reads mirrored.
+public class BoonPopSlot : MonoBehaviour {
+    public TextMesh Front;
+    public TextMesh Back;
+    public float Left;
+
+    void LateUpdate() {
+        transform.position += Vector3.up * (Time.deltaTime * 1.9f);
+        if (Camera.main != null) {
+            transform.rotation = Camera.main.transform.rotation;
+        }
+        Left -= Time.deltaTime;
+        if (Left <= 0f || WaveDirector.IsLost) {
+            gameObject.SetActive(false);
+        }
+    }
+}
+
+// Tracks every boon proc in a run and shows/plays its family-coloured effect.
+public static class BoonFx {
+    public static int Procs { get; private set; }
+    public static int ProcsShown { get; private set; }
+    public static BoonId LastBoon { get; private set; }
+    public static float LastProcTime { get; private set; } = -99f;
+    public static float PulseBoost { get; set; }
+
+    static readonly int[] procsByBoon = new int[32];
+    static readonly int[] shownByBoon = new int[32];
+    static readonly float[] soundReadyAt = new float[32];
+    static readonly float[] popReadyAt = new float[32];
+    static float globalPopReadyAt;
+    static readonly BoonPopSlot[] pool = new BoonPopSlot[8];
+    static int nextSlot;
+
+    public static void Reset() {
+        Procs = 0;
+        ProcsShown = 0;
+        LastProcTime = -99f;
+        PulseBoost = 0f;
+        globalPopReadyAt = 0f;
+        for (int i = 0; i < procsByBoon.Length; i++) {
+            procsByBoon[i] = 0;
+            shownByBoon[i] = 0;
+            soundReadyAt[i] = 0f;
+            popReadyAt[i] = 0f;
+        }
+    }
+
+    public static int BoonProcs(BoonId id) {
+        int idx = (int)id;
+        return idx >= 0 && idx < procsByBoon.Length ? procsByBoon[idx] : 0;
+    }
+
+    public static int BoonShown(BoonId id) {
+        int idx = (int)id;
+        return idx >= 0 && idx < shownByBoon.Length ? shownByBoon[idx] : 0;
+    }
+
+    public static int DistinctBoonsShown {
+        get {
+            int n = 0;
+            for (int i = 0; i < RunBoons.All.Length && i < shownByBoon.Length; i++) {
+                if (shownByBoon[i] > 0) {
+                    n++;
+                }
+            }
+            return n;
+        }
+    }
+
+    public static string SummaryLine() {
+        var parts = new List<string>();
+        for (int i = 0; i < RunBoons.All.Length && i < procsByBoon.Length; i++) {
+            if (procsByBoon[i] > 0) {
+                parts.Add(RunBoons.All[i].Name + " " + shownByBoon[i] + "/" + procsByBoon[i]);
+            }
+        }
+        return parts.Count > 0 ? string.Join(", ", parts.ToArray()) : "(none)";
+    }
+
+    public static void Proc(BoonId id, Vector3 point, string label = null, float radius = 2.2f) {
+        int idx = (int)id;
+        Procs++;
+        if (idx >= 0 && idx < procsByBoon.Length) {
+            procsByBoon[idx]++;
+        }
+        BoonFamily family = RunBoons.FamilyOf(id);
+        Color col = RunBoons.FamilyColor(family);
+        LastBoon = id;
+        LastProcTime = Time.unscaledTime;
+        PulseBoost = 1f;
+
+        // 1. Pooled family-coloured ground ring and particle burst (0 GC allocations).
+        Fx.EnsureInstance();
+        float diam = Mathf.Max(1.8f, radius);
+        Fx.Ring(point, diam, new Color(col.r, col.g, col.b, 0.88f), 0.48f);
+        switch (family) {
+            case BoonFamily.Element:
+                Fx.Emit(FxKind.Flash, point + Vector3.up * 0.35f, 1, col, 1.3f, 0f);
+                Fx.Emit(FxKind.Smoke, point + Vector3.up * 0.4f, 1, col, 0.85f, 1.3f, 0.7f, 0.42f);
+                break;
+            case BoonFamily.Reach:
+                Fx.Emit(FxKind.Flash, point + Vector3.up * 0.35f, 1, col, 1.35f, 0f);
+                Fx.Ring(point + Vector3.up * 0.14f, diam * 1.28f, new Color(col.r, col.g, col.b, 0.55f), 0.36f);
+                break;
+            case BoonFamily.Impact:
+                Fx.Emit(FxKind.Flash, point + Vector3.up * 0.4f, 1, col, 1.45f, 0f);
+                Fx.Emit(FxKind.Debris, point + Vector3.up * 0.45f, 1, col, 0.28f, 2.1f, 0.8f, 0.38f);
+                break;
+            case BoonFamily.Guard:
+                Fx.Emit(FxKind.Note, point + Vector3.up * 0.55f, 1, col, 0.78f, 1.15f, 0.7f, 0.6f);
+                Fx.Emit(FxKind.Flash, point + Vector3.up * 0.35f, 1, col, 1.2f, 0f);
+                break;
+            case BoonFamily.Tricks:
+                Fx.Emit(FxKind.Flash, point + Vector3.up * 0.38f, 1, col, 1.25f, 0f);
+                Fx.Emit(FxKind.Dust, point + Vector3.up * 0.22f, 1, col, 0.75f, 1.3f, 0.7f, 0.38f);
+                break;
+            default:
+                Fx.Emit(FxKind.Flash, point + Vector3.up * 0.35f, 1, col, 1.2f, 0f);
+                break;
+        }
+
+        // 2. Pooled floating callout in the family colour.
+        float now = Time.unscaledTime;
+        if (!string.IsNullOrEmpty(label) && idx >= 0 && idx < popReadyAt.Length
+            && now >= globalPopReadyAt && now >= popReadyAt[idx]) {
+            globalPopReadyAt = now + (UiFit.Touch ? 0.18f : 0.10f);
+            popReadyAt[idx] = now + (UiFit.Touch ? 0.42f : 0.26f);
+            Pop(point + Vector3.up * 0.75f, label, col);
+        }
+
+        // 3. 3D positional world sound for this boon proc.
+        if (idx >= 0 && idx < soundReadyAt.Length && now >= soundReadyAt[idx]) {
+            soundReadyAt[idx] = now + 0.12f;
+            PlaySound(id, point);
+        }
+
+        ProcsShown++;
+        if (idx >= 0 && idx < shownByBoon.Length) {
+            shownByBoon[idx]++;
+        }
+    }
+
+    static void Pop(Vector3 point, string text, Color color) {
+        int slotIdx = nextSlot % pool.Length;
+        nextSlot++;
+        BoonPopSlot slot = pool[slotIdx];
+        if (slot == null) {
+            var go = new GameObject("BoonPop_" + slotIdx);
+            slot = go.AddComponent<BoonPopSlot>();
+            Font font = UiSkin.Font(UiSkin.FontRole.Label);
+            TextMesh front = go.AddComponent<TextMesh>();
+            front.font = font;
+            front.fontSize = 60;
+            front.fontStyle = FontStyle.Bold;
+            front.anchor = TextAnchor.MiddleCenter;
+            Renderer fr = front.GetComponent<Renderer>();
+            if (fr != null && font != null && font.material != null) {
+                fr.sharedMaterial = font.material;
+            }
+            var shadeGo = new GameObject("Shade");
+            shadeGo.transform.SetParent(go.transform, false);
+            TextMesh back = shadeGo.AddComponent<TextMesh>();
+            back.font = font;
+            back.fontSize = 60;
+            back.fontStyle = FontStyle.Bold;
+            back.anchor = TextAnchor.MiddleCenter;
+            back.color = new Color(0.04f, 0.03f, 0.08f, 0.95f);
+            Renderer br = back.GetComponent<Renderer>();
+            if (br != null && font != null && font.material != null) {
+                br.sharedMaterial = font.material;
+            }
+            slot.Front = front;
+            slot.Back = back;
+            pool[slotIdx] = slot;
+        }
+        Vector3 jitter = new Vector3(Random.Range(-0.28f, 0.28f), Random.Range(0f, 0.22f), Random.Range(-0.28f, 0.28f));
+        slot.transform.position = point + jitter;
+        if (Camera.main != null) {
+            slot.transform.rotation = Camera.main.transform.rotation;
+        }
+        float far = Camera.main != null ? Mathf.Clamp(Vector3.Distance(Camera.main.transform.position, point) / 14f, 1f, 4f) : 1f;
+        float charSize = 0.052f * far;
+        slot.Front.text = text;
+        slot.Front.color = color;
+        slot.Front.characterSize = charSize;
+        slot.Back.text = text;
+        slot.Back.characterSize = charSize;
+        float edge = charSize * 0.26f;
+        slot.Back.transform.localPosition = new Vector3(edge, -edge, 0.02f);
+        slot.Left = 0.65f;
+        slot.gameObject.SetActive(true);
+    }
+
+    static void PlaySound(BoonId id, Vector3 at) {
+        switch (id) {
+            case BoonId.Firebrand:
+            case BoonId.Phoenix:
+                GameAudio.PlayAt("launch", at, 0.32f, 1.28f);
+                break;
+            case BoonId.Frost:
+            case BoonId.Hailstorm:
+                GameAudio.PlayAt("sliceparry", at, 0.32f, 1.35f);
+                break;
+            case BoonId.Chain:
+            case BoonId.StormQuiver:
+                GameAudio.PlayAt("shot", at, 0.34f, 1.65f);
+                break;
+            case BoonId.SplitShot:
+                GameAudio.PlayAt("batswing", at, 0.34f, 1.18f);
+                break;
+            case BoonId.Pierce:
+                GameAudio.PlayAt("batcrack", at, 0.36f, 1.22f);
+                break;
+            case BoonId.Volley:
+                GameAudio.PlayAt("homerun", at, 0.45f, 1.05f);
+                break;
+            case BoonId.Heavy:
+                GameAudio.PlayAt("batsmash", at, 0.36f, 0.88f);
+                break;
+            case BoonId.EagleEye:
+                GameAudio.PlayAt("batcrack", at, 0.42f, 1.42f);
+                break;
+            case BoonId.Ricochet:
+                GameAudio.PlayAt("hit", at, 0.38f, 0.92f);
+                break;
+            case BoonId.Homing:
+                GameAudio.PlayAt("shot", at, 0.35f, 1.25f);
+                break;
+            case BoonId.Ovation:
+                GameAudio.PlayAt("coin", at, 0.36f, 1.15f);
+                break;
+            case BoonId.Encore:
+            case BoonId.GrandFinale:
+                GameAudio.PlayAt("stomp", at, 0.38f, 1.35f);
+                break;
+            case BoonId.SecondWind:
+                GameAudio.PlayAt("launch", at, 0.48f, 0.85f);
+                break;
+            case BoonId.Turret:
+                GameAudio.PlayAt("shot", at, 0.32f, 1.45f);
+                break;
+            case BoonId.Orbit:
+                GameAudio.PlayAt("hit", at, 0.30f, 1.38f);
+                break;
+            case BoonId.QuickDraw:
+                GameAudio.PlayAt("batswing", at, 0.32f, 1.36f);
+                break;
+            case BoonId.Magnet:
+                GameAudio.PlayAt("coin", at, 0.24f, 1.48f);
+                break;
+            case BoonId.Fleet:
+                GameAudio.PlayAt("paper_slide", at, 0.28f, 1.32f);
+                break;
+            case BoonId.Bounty:
+                GameAudio.PlayAt("coin", at, 0.42f, 1.08f);
+                break;
+            case BoonId.Mark:
+                GameAudio.PlayAt("stamp", at, 0.34f, 1.28f);
+                break;
+            case BoonId.Executioner:
+                GameAudio.PlayAt("stamp_heavy", at, 0.44f, 1.12f);
+                break;
+            case BoonId.BirdBomb:
+                GameAudio.PlayAt("launch", at, 0.42f, 0.95f);
+                break;
+        }
     }
 }

@@ -65,12 +65,21 @@ public static class Combat {
             return false;
         }
         float amount = ArrowBase() * scale;
+        Vector3 at = foe.transform.position;
+        int heavyRank = RunBoons.Rank(BoonId.Heavy);
+        if (heavyRank > 0 && kind == DamageKind.Bat) {
+            BoonFx.Proc(BoonId.Heavy, at + Vector3.up * 0.95f, "+" + (heavyRank * 25) + "% DMG", 2.1f);
+        }
         ZeldaStyleCamera cam = Juice.Cam;
-        bool called = cam != null && cam.LockedOnGameObject == foe.gameObject;
+        int callRank = RunBoons.Rank(BoonId.Mark);
+        bool called = callRank > 0 && ((cam != null && cam.LockedOnGameObject == foe.gameObject)
+            || ((cam == null || cam.LockedOnGameObject == null) && BatEquipment.CurrentTarget == foe));
         if (called) {
             amount *= RunBoons.MarkMult;
+            BoonFx.Proc(BoonId.Mark, at + Vector3.up * 1.05f, "CALLED SHOT", 2.2f);
         }
-        float tipCrit = tip ? RunBoons.TipCrit : 0f;
+        int sweetRank = RunBoons.Rank(BoonId.EagleEye);
+        float tipCrit = tip ? RunBoons.TipCrit : (sweetRank > 0 ? 0.08f * sweetRank : 0f);
         bool crit = Random.value < RunBoons.CritChance + tipCrit + CampaignProgress.CritBonus;
         if (crit) {
             amount *= RunBoons.CritMult;
@@ -78,26 +87,41 @@ public static class Combat {
                 SweetSpots++;
             }
         }
+        if (sweetRank > 0 && (tip || crit)) {
+            if (!crit) {
+                SweetSpots++;
+            }
+            BoonFx.Proc(BoonId.EagleEye, at + Vector3.up * 1.15f, crit ? "SWEET CRIT!" : "SWEET SPOT", 2.4f);
+        }
         float execute = RunBoons.ExecuteBelow;
-        if (execute > 0f && !foe.Boss && foe.Health01 - amount / Mathf.Max(1f, foe.HitsToDrop) < execute) {
-            amount = Mathf.Max(amount, foe.HitsToDrop * foe.Health01 + 1f);
-            crit = true;
+        bool executed = false;
+        if (execute > 0f && !foe.Boss) {
+            float postHp01 = foe.Health01 - amount / Mathf.Max(1f, foe.HitsToDrop);
+            if (postHp01 < execute || foe.Health01 <= execute + 0.35f) {
+                if (postHp01 < execute) {
+                    amount = Mathf.Max(amount, foe.HitsToDrop * foe.Health01 + 1f);
+                    crit = true;
+                }
+                executed = true;
+            }
+        }
+        if (executed) {
+            UpgradeLook.Zap(at + new Vector3(-0.6f, 1.2f, 0f), at + new Vector3(0.6f, 0.3f, 0f), RunBoons.FamilyColor(BoonFamily.Tricks), 0.12f, false);
+            BoonFx.Proc(BoonId.Executioner, at + Vector3.up * 1.15f, "EXECUTED!", 2.5f);
         }
         RunLog.NoteHit(amount);
         if (kind == DamageKind.Bat) {
             BatHitsLanded++;
         }
-        Vector3 at = foe.transform.position;
         bool dropped = foe.Damage(amount, kind, crit, -1f, power);
         if (crit && dropped && (foe.BodyScale > 3f || foe.Elite)) {
             Juice.HitStop(0.05f);
         }
         if (crit && tipCrit > 0f) {
-            Fx.Ring(at + Vector3.up * 0.2f, 1.6f * Mathf.Sqrt(Mathf.Max(1f, foe.BodyScale)), new Color(1f, 0.35f, 0.3f, 0.85f), 0.3f);
+            Fx.Ring(at + Vector3.up * 0.2f, 1.6f * Mathf.Sqrt(Mathf.Max(1f, foe.BodyScale)), RunBoons.FamilyColor(BoonFamily.Impact), 0.3f);
         }
 
         // Called Shot: the locked bot pays out extra bolts when it falls.
-        int callRank = RunBoons.Rank(BoonId.Mark);
         if (called && dropped && callRank > 0) {
             int extra = Mathf.Max(callRank, Mathf.CeilToInt(Tuning.BoltsFor(foe.Kind, foe.Elite || foe.Boss) * 0.25f * callRank));
             Pickups.DropBolts(at, extra);
@@ -105,19 +129,26 @@ public static class Combat {
         }
 
         int fire = RunBoons.Rank(BoonId.Firebrand);
-        if (fire > 0 && !dropped) {
-            foe.Ignite(ArrowBase() * (0.25f + 0.15f * fire), 3f);
+        if (fire > 0) {
+            if (!dropped) {
+                foe.Ignite(ArrowBase() * (0.25f + 0.15f * fire), 3f);
+            }
             Burned++;
+            BoonFx.Proc(BoonId.Firebrand, at + Vector3.up * 0.85f, "PINE TAR", 2.2f);
         }
         int frost = RunBoons.Rank(BoonId.Frost);
-        if (frost > 0 && !dropped) {
-            foe.Chill(0.25f * frost, 2f, frost >= 3 && Random.value < 0.2f ? 1.1f : 0f);
+        if (frost > 0) {
+            bool freeze = frost >= 3 && Random.value < 0.25f;
+            if (!dropped) {
+                foe.Chill(0.25f * frost, 2f, freeze ? 1.1f : 0f);
+            }
             Slowed++;
+            BoonFx.Proc(BoonId.Frost, at + Vector3.up * 0.85f, freeze ? "FROZEN!" : "ICE BAT", freeze ? 2.8f : 2.2f);
         }
         if (allowChain) {
             bool storm = RunBoons.Has(BoonId.StormQuiver);
             int chain = RunBoons.Rank(BoonId.Chain);
-            if (storm || (chain > 0 && Random.value < 0.15f * chain)) {
+            if (storm || (chain > 0 && Random.value < 0.22f * chain)) {
                 Lightning(at + Vector3.up, foe, storm ? 4 : 3, ArrowBase() * (storm ? 0.6f : 0.75f));
             }
         }
@@ -131,15 +162,18 @@ public static class Combat {
         }
         foe.Chill(0.55f, 2.2f, freeze ? 1.2f : 0f);
         Slowed++;
+        BoonFx.Proc(BoonId.Hailstorm, foe.transform.position + Vector3.up * 0.8f, freeze ? "BLIZZARD FREEZE" : "BLIZZARD", 2.4f);
     }
 
     // Live Wire: lightning jumps bot to bot, and each one it reaches shorts out for a moment.
     public static void Lightning(Vector3 from, Enemy skip, int jumps, float damage) {
-        float shortFor = 0.35f + 0.2f * RunBoons.Rank(BoonId.Chain) + (RunBoons.Has(BoonId.StormQuiver) ? 0.3f : 0f);
+        bool storm = RunBoons.Has(BoonId.StormQuiver);
+        float shortFor = 0.35f + 0.2f * RunBoons.Rank(BoonId.Chain) + (storm ? 0.3f : 0f);
         var struck = new List<Enemy>();
         if (skip != null) {
             struck.Add(skip);
         }
+        Color elemCol = RunBoons.FamilyColor(BoonFamily.Element);
         Vector3 cursor = from;
         for (int j = 0; j < jumps; j++) {
             Enemy next = Nearest(cursor, 12f, struck);
@@ -148,8 +182,9 @@ public static class Combat {
             }
             struck.Add(next);
             Vector3 to = next.transform.position + Vector3.up * 0.6f * Mathf.Max(1f, next.BodyScale);
-            UpgradeLook.Zap(cursor, to);
+            UpgradeLook.Zap(cursor, to, elemCol, 0.15f, true);
             Arcs++;
+            BoonFx.Proc(storm ? BoonId.StormQuiver : BoonId.Chain, to, storm ? "THUNDER BAT" : "LIVE WIRE", 2.2f);
             if (!next.Damage(damage, DamageKind.Lightning, false) && next != null) {
                 next.Short(shortFor);
                 Shorted++;
@@ -158,6 +193,11 @@ public static class Combat {
                 next.Chill(0.5f, 1.5f, 0f);
             }
             cursor = to;
+        }
+        if (struck.Count <= (skip != null ? 1 : 0) && skip != null) {
+            UpgradeLook.Zap(from + Vector3.up * 2.2f, from, elemCol, 0.14f, true);
+            Arcs++;
+            BoonFx.Proc(storm ? BoonId.StormQuiver : BoonId.Chain, from, storm ? "THUNDER BAT" : "LIVE WIRE", 2.1f);
         }
         if (struck.Count > (skip != null ? 1 : 0)) {
             GameAudio.Play("shot", 0.35f, 1.8f);
@@ -249,6 +289,9 @@ public static class Combat {
             if (bountyCount >= every) {
                 bountyCount = 0;
                 MetaProgress.AddCoins(1, at);
+                BoonFx.Proc(BoonId.Bounty, at + Vector3.up * 0.95f, "+1 BOUNTY COIN!", 2.8f);
+            } else if (bountyCount == 1 || bountyCount % 5 == 0) {
+                BoonFx.Proc(BoonId.Bounty, at + Vector3.up * 0.8f, "BOUNTY " + bountyCount + "/" + every, 1.9f);
             }
         }
 
@@ -262,7 +305,9 @@ public static class Combat {
                 damage *= 1.5f;
                 radius *= 1.3f;
             }
-            UpgradeLook.Blast(at + Vector3.up * 0.4f, radius, phoenix ? new Color(1f, 0.4f, 0.1f) : new Color(1f, 0.7f, 0.3f));
+            Color blastCol = phoenix ? RunBoons.FamilyColor(BoonFamily.Element) : RunBoons.FamilyColor(BoonFamily.Tricks);
+            UpgradeLook.Blast(at + Vector3.up * 0.4f, radius, blastCol);
+            BoonFx.Proc(phoenix ? BoonId.Phoenix : BoonId.BirdBomb, at + Vector3.up * 0.7f, phoenix ? "PHOENIX BLAST!" : "POWDER KEG!", radius * 0.85f);
             Burst(at, radius, damage, DamageKind.Blast, foe);
             bombDepth--;
         }
@@ -277,6 +322,8 @@ public static class Combat {
                 }
                 near.Add(next);
                 next.Ignite(ArrowBase() * 0.5f, 3f);
+                UpgradeLook.Zap(at + Vector3.up * 0.6f, next.transform.position + Vector3.up * 0.6f, RunBoons.FamilyColor(BoonFamily.Element), 0.12f, true);
+                BoonFx.Proc(BoonId.Firebrand, next.transform.position + Vector3.up * 0.8f, "TAR SPREAD", 2.2f);
             }
         }
     }
