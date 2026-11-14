@@ -18,6 +18,7 @@ public class NightGrade : MonoBehaviour {
     public Color Shadows = DeptPalette.GradeShadows;
     public Color Highlights = DeptPalette.GradeHighlights;
     public Color Lift = DeptPalette.GradeLift;
+    public Color CardGain = Color.white;   // CardMatch: a per-channel gain on the tints so a scene's mean colour sits near its card's
 
     // Colour-grading LUT strips (256x16) of the two looks being blended, set by FilmLight. LutAmount 0 = off.
     [HideInInspector] public Texture2D LutA, LutB;
@@ -90,8 +91,8 @@ public class NightGrade : MonoBehaviour {
         material.SetFloat(IntensityId, EffectiveBloom);
         material.SetVector(GradeId, new Vector4(EffectiveExposure, Contrast, Saturation, Vignette));
         material.SetVector(ToneId, new Vector4(ShoulderStart, BloomClamp, DitherAmount / 255f, 0f));
-        material.SetColor(ShadowsId, Shadows);
-        material.SetColor(HighlightsId, Highlights);
+        material.SetColor(ShadowsId, Shadows * CardGain);
+        material.SetColor(HighlightsId, Highlights * CardGain);
         material.SetColor(LiftId, Lift);
         material.SetFloat(StakesId, Stakes);
         bool lut = LutA != null && LutB != null && LutAmount > 0f;
