@@ -169,6 +169,7 @@ public class Server : MonoBehaviour {
 
     void Strike(Musician slice) {
         Struck = true;
+        AttackTell.Told(enemy);   // three refusals and the paper held out: the strike is the most told blow in the game
         BotSound.Hit(enemy);
         enemy.EndTell(true);
         Events.Add("strike|slice");

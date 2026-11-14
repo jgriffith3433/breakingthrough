@@ -357,6 +357,7 @@ public class PlayerGrowth : MonoBehaviour {
     public static System.Action<Enemy> Struck;
 
     public void OnHit(Enemy by = null) {
+        AttackTell.NoteBlow(by);
         // Campaign's dodge: a blow inside the window finds nothing.
         if (CampaignMoves.Invulnerable) {
             CampaignMoves.NoteAvoided(by);

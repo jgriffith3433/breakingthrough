@@ -245,6 +245,7 @@ public class Courier : MonoBehaviour {
     }
 
     void Land(Musician slice) {
+        AttackTell.Told(enemy);   // the mark on the ground has been filling since the wind-up began
         GameAudio.PlayAt("paper_flutter", transform.position, 0.8f);
         Vector3 at = markAt;
         bool wallitIn = false;

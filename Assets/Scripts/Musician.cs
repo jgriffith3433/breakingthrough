@@ -294,6 +294,7 @@ public class Musician : MonoBehaviour {
         if (!Alive || amount <= 0) {
             return;
         }
+        AttackTell.NoteBlow(by);
         amount = CampaignGrade.Blow(amount);   // Hard (Campaign, a filed file) doubles every blow
         Health = Mathf.Max(0, Health - amount);
         DamageTaken += amount;
