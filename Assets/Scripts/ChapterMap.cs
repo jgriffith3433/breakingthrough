@@ -325,7 +325,8 @@ public class ChapterMap : MonoBehaviour {
         LastLeave = "unload|" + MapName;
         Debug.Log("[ChapterMap] unloaded Map_" + MapName);
         Destroy(gameObject);
-        Resources.UnloadUnusedAssets();
+        // No UnloadUnusedAssets here: every caller goes on to a single scene load, and SceneMemory sweeps once after it
+        // (heap before and after in the log).
     }
 
     void OnDestroy() {

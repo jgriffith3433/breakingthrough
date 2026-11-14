@@ -22,6 +22,45 @@ public static partial class Playtest {
             MobileQuality.Apply();
         }
         SoakSampler.Begin(run);
+        // Every mode or chapter change sweeps (SceneMemory): the heap before and after goes on the timeline, and Ch1 against Ch3
+        // is compared at the end (the sweep after a chapter is cleared is tagged with the chapters cleared so far).
+        SceneMemory.OnSweep = s => {
+            int n = SceneMemory.Sweeps.Count;
+            run.Event("heap-sweep", s.Reason + " (" + s.Scene + ", cleared " + s.Cleared + "): heap " + s.BeforeMb.ToString("0.0") + " -> " + s.AfterMb.ToString("0.0")
+                + " MB (" + (s.AfterMb < s.BeforeMb ? "dropped" : "no drop") + "), JS heap " + s.JsBeforeMb.ToString("0") + " -> " + s.JsAfterMb.ToString("0")
+                + " MB, released " + s.Released + " files");
+            run.Metric("soak.sweepBeforeMb." + n, Mathf.Round(s.BeforeMb));
+            run.Metric("soak.sweepAfterMb." + n, Mathf.Round(s.AfterMb));
+        };
+    }
+
+    // Heap after the last sweep that followed `cleared` finished chapters (-1 when there was none).
+    static float HeapAfterChapters(int cleared) {
+        float found = -1f;
+        foreach (SceneMemory.Sweep s in SceneMemory.Sweeps) {
+            if (s.Cleared == cleared) {
+                found = s.JsAfterMb > 0f ? s.JsAfterMb : s.AfterMb;
+            }
+        }
+        return found;
+    }
+
+    static void SoakHeapReport() {
+        float ch1 = HeapAfterChapters(1);
+        float ch3 = HeapAfterChapters(3);
+        run.Metric("soak.sweeps", SceneMemory.Sweeps.Count);
+        if (ch1 > 0f && ch3 > 0f) {
+            float pct = (ch3 - ch1) / ch1 * 100f;
+            run.Metric("soak.heapAfterCh1Mb", Mathf.Round(ch1));
+            run.Metric("soak.heapAfterCh3Mb", Mathf.Round(ch3));
+            run.Metric("soak.heapCh3VsCh1Pct", Mathf.Round(pct * 10f) / 10f);
+            run.Event("heap-ch3-vs-ch1", "heap after Ch1 " + ch1.ToString("0") + " MB, after Ch3 " + ch3.ToString("0") + " MB (" + pct.ToString("+0.0;-0.0") + "%, 15% allowed)");
+            if (pct > 15f) {
+                run.Problem(PlaytestSeverity.Bug, "soak: heap after Ch3 is " + pct.ToString("0.0") + "% above the heap after Ch1 (15% allowed)");
+            }
+        } else {
+            run.Event("heap-ch3-vs-ch1", "not measured: sweeps after chapters 1 and 3 needed (got " + ch1.ToString("0") + ", " + ch3.ToString("0") + ")");
+        }
     }
 
     static IEnumerator SoakRun(PlaytestOptions options) {
@@ -67,6 +106,7 @@ public static partial class Playtest {
             yield break;
         }
         SoakSampler.Finish();
+        SoakHeapReport();
         run.Finish(PlaytestOutcome.Done);
     }
 }

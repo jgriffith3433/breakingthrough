@@ -462,6 +462,13 @@ public class OnDemand : MonoBehaviour {
         Events.Add("index|" + index.files.Length);
     }
 
+    // Leaving the campaign's chapters for the menu or hub: every chapter group's stills and voices go (SceneMemory).
+    public static int ReleaseChapters() {
+        int before = cache.Count;
+        Release(new string[0]);
+        return before - cache.Count;
+    }
+
     // Moving on to another chapter drops the last one's stills and voices (the phone's memory is small); core stays.
     static void Release(string[] keep) {
         var wanted = new HashSet<string>(keep);
