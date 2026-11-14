@@ -11,7 +11,7 @@ using UnityEngine.UI;
 // control is (`HawkesUiRects.Report`, one `ui-layout` per change of screen) and when one is pressed (`HawkesUiRects.Press`).
 // The touch pads (`TouchControls`) report through the same call. Desktop with no playtest does nothing.
 public class UiRects : MonoBehaviour {
-    const float MinPoints = 44f;
+    const float MinPoints = 45f;
     const float ScanEvery = 0.25f;
 
     public static UiRects Instance { get; private set; }
@@ -177,11 +177,21 @@ public class UiRects : MonoBehaviour {
 
     // Grow a graphic's raycast area to the minimum and return the screen rect of that hit area.
     static Rect Pad(Graphic graphic, Rect r, float need) {
-        float padX = Mathf.Max(0f, (need - r.width) * 0.5f);
-        float padY = Mathf.Max(0f, (need - r.height) * 0.5f);
+        float w = Mathf.Max(r.width, need);
+        float h = Mathf.Max(r.height, need);
+        float padX = (w - r.width) * 0.5f;
+        float padY = (h - r.height) * 0.5f;
         float scale = Mathf.Max(0.0001f, graphic.rectTransform.lossyScale.x);
         graphic.raycastPadding = new Vector4(-padX / scale, -padY / scale, -padX / scale, -padY / scale);
-        return Rect.MinMaxRect(r.xMin - padX, r.yMin - padY, r.xMax + padX, r.yMax + padY);
+        return new Rect(r.center.x - w * 0.5f, r.center.y - h * 0.5f, w, h);
+    }
+
+    public static Rect HitRect(Button button) {
+        if (button == null || button.targetGraphic == null) {
+            return default(Rect);
+        }
+        Rect r = ScreenRect(button.targetGraphic.rectTransform);
+        return Pad(button.targetGraphic, r, MinPoints * PixelsPerPoint);
     }
 
     static Vector2 Inward(Rect r, Rect safe) {

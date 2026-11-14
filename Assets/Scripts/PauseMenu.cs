@@ -419,11 +419,14 @@ public class PauseMenu : MonoBehaviour {
             pauseRect.anchorMin = new Vector2(0.5f, 1f);
             pauseRect.anchorMax = new Vector2(0.5f, 1f);
             pauseRect.pivot = new Vector2(0f, 1f);
-            pauseRect.anchoredPosition = new Vector2(340f, -12f);
+            pauseRect.sizeDelta = new Vector2(88f, 88f);
+            pauseRect.anchoredPosition = new Vector2(340f, -20f);
         } else {
             pauseRect.anchorMin = new Vector2(1f, 1f);
             pauseRect.anchorMax = new Vector2(1f, 1f);
             pauseRect.pivot = new Vector2(1f, 1f);
+            float btn = mode == UiMode.Wide ? 88f : ButtonSize;
+            pauseRect.sizeDelta = new Vector2(btn, btn);
             Vector2 at = mode == UiMode.Wide ? new Vector2(-336f, -12f) : new Vector2(-24f, -256f);
             if (own) {
                 // The hub and the levels hang Journal and Menu under the top-right corner: Pause sits left of them.
