@@ -210,9 +210,12 @@ public class WallitVoice : MonoBehaviour {
     // Lines waiting for the floor (the bots' chorus holds back while this is above 0).
     public static int Waiting { get { return Instance != null ? Instance.pending.Count : 0; } }
 
+    public static int HurtLines { get; private set; }   // grunts asked for (the playtest reads it)
+
     public static void OnHurt() {
         if (Instance != null && Time.unscaledTime >= Instance.nextHurtAt) {
-            Instance.nextHurtAt = Time.unscaledTime + 4f;
+            HurtLines++;
+            Instance.nextHurtAt = Time.unscaledTime + 1.5f;
             Instance.Queue(Instance.Pick(Hurt), "hurt", 1.2f);
         }
     }

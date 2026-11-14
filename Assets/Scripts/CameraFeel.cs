@@ -29,6 +29,17 @@ public class CameraFeel : MonoBehaviour {
 #endif
     }
 
+    // One small jolt when a heavy blow (a boss, an elite, a Spider Bot) lands on Wallit. It goes through the camera's
+    // own shake, which TickFight's framing never touches, and is off with Reduce Motion. Light hits never call it.
+    public static int Jolts { get; private set; }
+    public static void HurtJolt() {
+        if (ComfortOptions.ReducedMotion) {
+            return;
+        }
+        Jolts++;
+        ZeldaStyleCamera.Shake(0.07f * (UiFit.Touch ? 0.7f : 1f), 0.16f);
+    }
+
     // Fight framing: a fight frame has a live bot within ZeldaStyleCamera.FightRange of Wallit; it is framed when Slice and
     // that nearest bot are both on screen (on a portrait phone also above the touch pads).
     public int FightFrames { get; private set; }
