@@ -34,6 +34,12 @@ public static class CampaignSave {
         public int choices;      // 2 bits per Choices.All row: 0 not made, 1 first option, 2 second (the file's dialogue choices)
         public int ending;       // the ADDRESS FILED variant last seen (Endings: 1 Ledger, 2 Two Doors, 3 Open Door; 0 never): New Game+ echoes it (version 9)
         public int bosses;       // bit per chapter: its boss's entrance (CinematicDirector.PlayBoss) has played on this file (version 10)
+        public string cpId;      // the last level checkpoint reached (LevelCheckpoint ids), "" none (version 11)
+        public int cpChapter;    // the chapter that checkpoint belongs to
+        public int cpFlags;      // what was done there (LevelCheckpoint.Talked, FlagTaken, NoticeKept)
+        public int cpNotices;    // bit per notice read on the west trail
+        public int cpHealth;     // Wallit's health when it was reached
+        public float cpSeconds;  // the level's clock when it was reached
     }
 
     // Save format. 1: the first files (no stamp on the oldest; no xp, unlocks, errands or lore bits). 2: stamped, every
@@ -46,8 +52,9 @@ public static class CampaignSave {
     // 9: the ending variant last seen (Endings), so New Game+ can echo it; older files start with none and a filed one derives it
     // from its choices and errands the first time New Game+ is begun.
     // 10: the boss entrances seen, a bit per chapter (older files start with none: nothing to derive).
+    // 11: the level checkpoint (LevelCheckpoint): id, chapter, what was done, health, clock (older files start with none).
     // Bump it with a step in Migrate.
-    public const int Version = 10;
+    public const int Version = 11;
     const string BadKey = "hawkes.campaign.bad";
 
     [Serializable]
@@ -124,6 +131,12 @@ public static class CampaignSave {
             s.side &= (1 << HubLife.Sides.Length) - 1;
             s.ending = s.ending >= 1 && s.ending <= Endings.Count ? s.ending : 0;   // v9
             s.bosses &= (1 << (2 * ChapterCount)) - 1;   // v10: a bit per chapter's boss and one per mini-boss
+            if (LevelCheckpoint.Rank(s.cpId) < 0 || s.cleared > s.cpChapter || s.cpChapter < 0 || s.cpChapter >= ChapterCount) {
+                LevelCheckpoint.Clear(s);   // v11: only a checkpoint that exists, on a chapter not yet filed
+            }
+            s.cpNotices &= 7;
+            s.cpHealth = Mathf.Clamp(s.cpHealth, 0, LevelScene.MaxHealth);
+            s.cpSeconds = float.IsNaN(s.cpSeconds) || float.IsInfinity(s.cpSeconds) ? 0f : Mathf.Max(0f, s.cpSeconds);
             s.choices = Choices.Clean(s.choices);   // v7: only choices that exist, never the unused pattern 3
             s.seconds = float.IsNaN(s.seconds) || float.IsInfinity(s.seconds) ? 0f : Mathf.Max(0f, s.seconds);
         }
@@ -260,6 +273,7 @@ public static class CampaignSave {
         }
         Slot s = Get(Active);
         s.cleared = Mathf.Max(s.cleared, chapter + 1);
+        LevelCheckpoint.Clear(s);   // the chapter is filed: the next one starts at its own start
         s.chapter = Mathf.Clamp(Mathf.Max(s.chapter, chapter + 1), 0, ChapterCount - 1);
         s.reached = Mathf.Max(s.reached, s.chapter);
         Lore.Unlock(s, s.cleared);
@@ -364,6 +378,7 @@ public static class CampaignSave {
         s.errands = 0;
         s.chats = 0;   // the loop's hub starts quiet again: every conversation and side errand can be had once more
         s.side = 0;
+        LevelCheckpoint.Clear(s);
         s.bosses = 0;   // the loop meets each boss's entrance again
         s.rooms &= 1 << ChapterCount;   // only the Dead Letter's reward is kept
         s.hard = false;

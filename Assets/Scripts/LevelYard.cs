@@ -620,12 +620,95 @@ public class LevelYard : MonoBehaviour {
 
     // ---------------------------------------------------------------- the beats
 
+    public bool Restored { get; private set; }   // loaded from a saved checkpoint (LevelCheckpoint): no opening, the beats already done stay done
+    bool restoring;
+    bool resumedClear;   // the drop was already cleared when this checkpoint loaded: its closing lines were heard
+
     public void Begin() {
         nextStampAt = Time.time + 6f;
         lastIdleAt = Time.time;
         scene.Hud.Objective.text = Objective();
+        if (Restored) {
+            nextStampAt = Time.time + 9f;
+            Note("level-start", "Level_1_Yard resumed at " + scene.Checkpoint.ToString("0"));
+            return;
+        }
         StartCoroutine(Opening());
         Note("level-start", "Level_1_Yard at " + PlayerStart);
+    }
+
+    // Writes the checkpoint just reached into the open case file (LevelCheckpoint). The place only moves forward; a defeat then
+    // returns Wallit to it, and so does a reload.
+    void Mark(string id) {
+        if (restoring || scene == null) {
+            return;
+        }
+        int flags = (Talked ? LevelCheckpoint.Talked : 0) | (FlagTaken ? LevelCheckpoint.FlagTaken : 0) | (NoticeKept ? LevelCheckpoint.NoticeKept : 0);
+        int notices = 0;
+        for (int i = 0; i < noticeRead.Length; i++) {
+            notices |= noticeRead[i] ? 1 << i : 0;
+        }
+        if (LevelCheckpoint.Save(scene.Chapter, id, flags, notices, scene.Health, scene.Seconds)) {
+            scene.Checkpoint = LevelCheckpoint.PositionOf(CampaignSave.Get(CampaignSave.Active));
+            Note("checkpoint-saved", id + " (" + LevelCheckpoint.NameOf(id) + "), notices " + notices + ", flags " + flags + ", health " + scene.Health);
+        }
+    }
+
+    // Puts the level back as the checkpoint left it: the beats done stay done, Slice walks with him if he heard her out, the flag is on
+    // his back, a woken crew is put down and the Courier comes. Called by LevelScene before Begin, with Wallit already standing there.
+    public void Restore(CampaignSave.Slot s) {
+        Restored = true;
+        restoring = true;
+        int rank = LevelCheckpoint.Rank(s.cpId);
+        for (int i = 0; i < noticeRead.Length; i++) {
+            if ((s.cpNotices & (1 << i)) != 0) {
+                noticeRead[i] = true;
+                NoticesRead++;
+            }
+        }
+        if ((s.cpFlags & LevelCheckpoint.Talked) != 0) {
+            Talked = true;
+            JoinSlice();
+        }
+        if ((s.cpFlags & LevelCheckpoint.FlagTaken) != 0) {
+            FlagTaken = true;
+            AttachFlag();
+        }
+        Stage = FlagTaken ? Beat.Flag : Talked ? Beat.Talked : Beat.Arrive;
+        if (rank >= 2 && rank < 4) {
+            StartCoroutine(ResumeWake());   // the flag's lift closes the crew's report, as it did
+        }
+        if (rank >= 4) {
+            for (int i = 0; i < crew.Count; i++) {
+                if (crew[i] != null) {
+                    Destroy(crew[i].gameObject);
+                }
+            }
+            CrewWoken = true;
+            lateWoken = true;
+            CrewDown = true;
+            Stage = Beat.Courier;
+            if (rank == 4) {
+                StartCoroutine(CourierArrives());
+            } else {
+                CourierCame = true;
+                CourierDown = true;
+                resumedClear = true;
+                if ((s.cpFlags & LevelCheckpoint.NoticeKept) != 0) {
+                    NoticeKept = true;
+                } else {
+                    DropNotice(DropPos + new Vector3(3f, 0f, 0f));
+                }
+                ClearedCrew();
+            }
+        }
+        restoring = false;
+        Note("checkpoint-restored", s.cpId + " (" + LevelCheckpoint.NameOf(s.cpId) + "), notices " + NoticesRead + ", talked " + Talked + ", flag " + FlagTaken);
+    }
+
+    IEnumerator ResumeWake() {
+        yield return new WaitForSeconds(2.6f);
+        WakeCrew("resumed at the checkpoint");
     }
 
     // The opening: an in-engine directed scene in the Sorting Yard (CinematicDirector, ch1_open_world). Wallit arrives on
@@ -784,6 +867,7 @@ public class LevelYard : MonoBehaviour {
             Stage = Beat.Talked;
         }
         JoinSlice();
+        Mark(LevelCheckpoint.Ring);
     }
 
     // Slice steps off the Ring and walks with him (Companion.cs): from here she follows, fights and can go down.
@@ -810,6 +894,7 @@ public class LevelYard : MonoBehaviour {
         if (i == 2 && Companion.Instance != null) {
             StartCoroutine(SliceAnswers());
         }
+        Mark(LevelCheckpoint.Trail);
     }
 
     IEnumerator SliceAnswers() {
@@ -817,8 +902,7 @@ public class LevelYard : MonoBehaviour {
         LevelBarks.Say('S', "Noted.", "notice", true);
     }
 
-    void TakeFlag() {
-        FlagTaken = true;
+    void AttachFlag() {
         if (flagItem != null) {
             flagItem.SetParent(scene.Player, false);
             flagItem.localPosition = new Vector3(0.28f, 1.55f, -0.34f);
@@ -826,6 +910,11 @@ public class LevelYard : MonoBehaviour {
             flagItem.localScale = Vector3.one * 0.55f;
             carried = flagItem;
         }
+    }
+
+    void TakeFlag() {
+        FlagTaken = true;
+        AttachFlag();
         GameAudio.Play("coin", 0.8f, 1.1f);
         GameAudio.Play("flag_flutter", 0.7f);
         Fx.Ring(FlagPos + Vector3.up * 0.2f, 4f, new Color(1f, 0.85f, 0.45f, 0.8f), 0.9f);
@@ -834,6 +923,7 @@ public class LevelYard : MonoBehaviour {
         if (Stage == Beat.Arrive || Stage == Beat.Talked) {
             Stage = Beat.Flag;
         }
+        Mark(LevelCheckpoint.Flag);
         StartCoroutine(AfterFlag());
     }
 
@@ -862,6 +952,7 @@ public class LevelYard : MonoBehaviour {
         Note("encounter-wake", "crew at the drop (" + cause + "), " + crew.Count + " bots");
         LevelBarks.Say('Y', "Hello! Uploading victory! Striking this address now!", "wake", true);
         scene.Checkpoint = FightCheckpoint;
+        Mark(LevelCheckpoint.Fight);
         StartCoroutine(MarchOut());
     }
 
@@ -1018,6 +1109,7 @@ public class LevelYard : MonoBehaviour {
         courierRestedAt = -1f;
         LevelBarks.Quiet = true;   // the fight's own few words are forced; nothing idle over it
         scene.Checkpoint = FightCheckpoint;
+        Mark(LevelCheckpoint.Courier);
         Note("boss-wake", "The Courier (" + cause + ")");
     }
 
@@ -1157,6 +1249,7 @@ public class LevelYard : MonoBehaviour {
             noticeItem = null;
         }
         Choices.Pick("1.c1", 1);
+        Mark(LevelCheckpoint.AllClear);   // the keepsake is part of the file's state
         GameAudio.Play("paper_slide", 0.7f, 1.1f);
         Fx.Ring(NoticeAt + Vector3.up * 0.2f, 3.5f, new Color(0.96f, 0.93f, 0.82f, 0.8f), 0.8f);
         scene.Hud.ShowReceipt("Kept: the notice.", 2.6f);
@@ -1183,12 +1276,16 @@ public class LevelYard : MonoBehaviour {
         GameAudio.Play("slot_shutter", 0.9f);
         Fx.Ring(On(ExitPos.x, ExitPos.z) + Vector3.up * 0.2f, 7f, new Color(1f, 0.75f, 0.35f, 0.8f), 1f);
         Note("exit-open", "the return slot's shutter lifts");
+        Mark(LevelCheckpoint.AllClear);
         StartCoroutine(AfterClear());
     }
 
     // The defeat beat (Story.Chapters[0].DefeatLines): the Courier's last question, Wallit's answer, Slice's word.
     IEnumerator AfterClear() {
         yield return new WaitForSeconds(0.6f);
+        if (resumedClear) {
+            yield break;
+        }
         string[] lines = Story.Chapters[0].DefeatLines;
         for (int i = 0; lines != null && i < lines.Length; i++) {
             yield return SayInTurn(lines[i], "clear");
