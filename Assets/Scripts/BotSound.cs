@@ -28,6 +28,11 @@ public class BotSound : MonoBehaviour {
     float nextPoll;
     float lastPollAt;
 
+    // Bots of a finished scene are keys in tellAt: drop them so they can be collected (SceneMemory).
+    public static void Prune() {
+        tellAt.Clear();
+    }
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void Reset() {
         instance = null;

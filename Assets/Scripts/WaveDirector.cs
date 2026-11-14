@@ -1057,7 +1057,20 @@ public class WaveDirector : MonoBehaviour {
         return count;
     }
 
+    static int flavorWave = -1, flavorAuto = -1;
+    static string flavorText = "";
+
     static string Flavor(int wave) {
+        int autoNow = MetaProgress.AutoWave();
+        if (flavorWave == wave && flavorAuto == autoNow) {
+            return flavorText;
+        }
+        flavorWave = wave; flavorAuto = autoNow;
+        flavorText = FlavorLine(wave);
+        return flavorText;
+    }
+
+    static string FlavorLine(int wave) {
         if (wave <= 1) {
             return "";
         }
@@ -1182,16 +1195,27 @@ public class WaveDirector : MonoBehaviour {
         return UiFit.Touch ? "tap Next wave" : "Enter to start";
     }
 
+    // RefreshHud asks for this every frame: the text is rebuilt only when what it shows changed (it allocated on every frame).
+    string waveLineText = "";
+    int waveLineWave = -1, waveLineLeft = -1, waveLineScale = -1, waveLineBat = -1;
+    bool waveLineIntro, waveLineSize;
+
     string WaveLine() {
+        bool showSize = PlayerGrowth.Instance != null && !QuietOpening;
+        int scale = showSize ? Mathf.RoundToInt(PlayerGrowth.Instance.Scale * 100f) : 0;
+        int bat = showSize ? (int)PlayerGrowth.Instance.ArrowDamage : 0;
+        bool intro = phase == Phase.Intro;
+        int left = intro ? 0 : AliveCount() + pending.Count;
+        if (waveLineWave == Wave && waveLineLeft == left && waveLineScale == scale && waveLineBat == bat && waveLineIntro == intro && waveLineSize == showSize) {
+            return waveLineText;
+        }
+        waveLineWave = Wave; waveLineLeft = left; waveLineScale = scale; waveLineBat = bat; waveLineIntro = intro; waveLineSize = showSize;
         string size = "";
-        if (PlayerGrowth.Instance != null && !QuietOpening) {
+        if (showSize) {
             size = "   ·   Size " + PlayerGrowth.Instance.Scale.ToString("0.00") + "   ·   Bat " + PlayerGrowth.Instance.ArrowDamage;
         }
-        if (phase == Phase.Intro) {
-            return "Wave " + Wave + size;
-        }
-        int left = AliveCount() + pending.Count;
-        return "Wave " + Wave + "   ·   " + left + " left" + size;
+        waveLineText = intro ? "Wave " + Wave + size : "Wave " + Wave + "   ·   " + left + " left" + size;
+        return waveLineText;
     }
 
     int AliveCount() {
