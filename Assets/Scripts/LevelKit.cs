@@ -82,6 +82,9 @@ public static class LevelKit {
         t.characterSize = size;
         t.fontSize = 48;
         t.color = c;
+        if (flat) {
+            SignFacing.Add(go, true);   // floor words follow the camera's yaw, so they read top-up from wherever it looks
+        }
         return t;
     }
 

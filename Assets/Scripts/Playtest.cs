@@ -41,6 +41,7 @@ public static partial class Playtest {
         new PlaytestScenario("words", "Reads the menu, the shop, the help line, build tips, pause, level-up cards and the game-over screen for retired cast words. Setup: the testing wave key visits the tip waves, then wave 2 is held until Slice falls", 300, "menus"),
         new PlaytestScenario("touch", "Touch only, for a phone-sized screen (mobile, or 844x390): the menu fits, tap Play, walk to the bots with the on-screen stick and tap Swing, tap a level-up card, play to wave 2", 330, "menus"),
         new PlaytestScenario("title-scene", "The live title: Wallit, Slice and Yo Bots peeking over the hedge move in the 3D Hollow behind the menu (title-cast, title-motion), the logo stamps in with an ink splat and a thud within 3 s (title-logo), Play is in the lower third at 64 px or more and the scene holds 30 fps (title-play-layout, title-fps; run with mobile for 390x844 touch), then one tap on Play pushes the camera in and the run starts in under 2 s with no black frame over 0.3 s (title-play). Real taps only", 120, "menus"),
+        new PlaytestScenario("render-fit", "The picture is the right shape and nothing is cut off, at the main menu, in Arcade and in the campaign hub: RenderFit reads the canvas backing store against its CSS box (capped at 2x by Tools/Web/hawkes-canvas-fit.js) and the camera aspect against it (events render-fit, render-fit-hud; metrics render.aspectError under 0.01, render.cropPx 0, render.renderScale, render.hudRightPx, render.hudOffRight). Taps press Play, Campaign and the case file by finger; the hub file is a setup shortcut. Run it at 1280x720, 1920x1080 and with mobile (390x844, DPR 2) for the phone", 120, "menus"),
         new PlaytestScenario("first-screen", "The first screen: Wallit, Slice and the bots share one night palette on the live MenuStage behind the menu (first-screen-cast; firstScreenCastOk). On a fresh save only the logo, Play, Campaign and Settings show (no Shop, no hint, no quote); every button is 44 px or more, inside the safe area, nothing overlaps, nothing past the left/right edge (no sideways scroll; firstScreenOffscreenX) and Play is the largest (events first-screen, first-screen-layout, first-screen-phone; metrics firstScreenOverlaps, firstScreenMinTapPx, firstScreenPlayLargest). One tap on Play starts Arcade (first-screen-play: seconds to the game scene, wanted under 2). In a release build = and - leave the wave alone (wave-keys-release; WaveDirector.ReleaseKeysProbe stands in for a release build). Setup shortcut: one run recorded as finished, then the menu shows Shop (shop-shown), a tap opens the upgrades and Close returns (shop-open). The ?mode= parser is checked on sample addresses (url-mode); the live address is logged too. Real taps only; run it with mobile or at 390x844 for the phone checks", 150, "menus"),
         new PlaytestScenario("continue-run", "Arcade's saved run: play to the end of wave 3 (setup: bots felled, cards taken), back to the menu, the Continue run (wave 4) card is there (on a phone: 44 px or taller, lower half, one tap) and starts wave 4 with the same boons, health and bolts; then Slice falls (setup) and the card is gone. Events continue-card, continue-saved, continue-resume, continue-cleared; metrics run.continueWave, run.continueCardPx, run.continueCardCenterPct, run.continueTaps", 420, "menus"),
         new PlaytestScenario("down-retry", "The down beat and Retry, five forced downs (named setup shortcuts: Slice's bar emptied three times in Arcade, Wallit's last health point twice in Chapter 1's level) on desktop or phone (390x844 touch: taps only): each down is 0.5-1 s of slow motion (slow-mo), the camera holds on who fell (camera-cut), one existing voiced line plays (voice) and the music dips; the run-end STRUCK OFF sheet has Retry first and focused, pressed once (retry-tap) with control back in 3 s (control-back); state, timescale and input lock are logged every frame (down-frame on each change). Metrics run.downStalls, run.retryTaps, run.retrySeconds, run.padReturnSeconds and, on a phone, the Retry and Revive boxes", 600, "menus"),
@@ -112,6 +113,7 @@ public static partial class Playtest {
         new PlaytestScenario("save", "The campaign save: an old-format file loads and is brought up to date, a corrupt one shows a message and starts clean, and every chapter's load time and memory is logged (setup: the sandbox stands where the stored save would, holding version 1 text, text with no version, then corrupt text; the real save is never touched). Events save-old-loaded, save-migrated, save-oldest-loaded, save-corrupt-clean (seven kinds of bad text, none throws), save-old-panel (the case files say the old files were updated), save-old-chapter (file 1 opens chapter 3), save-corrupt-panel (\"Case files unreadable. The Department filed new ones.\", no files), save-corrupt-play (a clean file opens chapter 1); then all six chapters are begun in turn with chapter-load events (card seconds, map seconds, memory MB) and metrics chapter<N>CardSeconds, chapter<N>MapSeconds, chapter<N>MemoryMB, oldSaveLoaded, corruptClean, corruptMessageShown", 1200, "content"),
         new PlaytestScenario("journal", "The journal, with real input (setup: the sandbox case file starts on chapter 1; the real save is never touched). Campaign, case file 1, Begin. Chapter 1 shows its optional extra on the HUD (event journal-extra) and hides one lost thing out in the field (journal-find-hidden). J opens the journal over the pause menu (journal-open-chapter), Back and Resume; Wallit walks out to the find with the stick and it goes into the case file at once (journal-find, metric findKept). The chapter is played to the Courier's fall; the Chapter Complete card judges the extra and names the lost thing kept. Menu, Campaign: the slot shows the journal count (slot-journal); the Journal button opens the journal and the bot reads Active, Finished and Collected (journal-tab, journal-lists; setup marks chapter 2's extra met). Then the files are written out and read back as after a quit (journal-persist, metric journalPersisted) and read again (setup then gives every find and extra: journal-paid says PAID IN FULL)", 900, "content"),
         new PlaytestScenario("lore","The lore log and the case-file slots, with real input (setup: the sandbox case file starts on chapter 1; the real save is never touched). Campaign, case file 1, Begin, Chapter 1 is played with the bat to the Courier's fall as in the campaign scenario; the Chapter Complete card names the new lore it unlocked (event lore). Menu, Campaign: the case file slot reads its chapter, its play time and its completion (event slot-info: chapter, h:mm:ss on the books, 1/6 filed, lore n/16; problems if any is missing or the time is 0). The Lore log button opens the file's log (event lore-open), the bot turns every page with Next and reads which entries are open and which are sealed (event lore-page per entry, event lore-summary): the entries revealed by opening the file and by Chapter 1 are open, the later ones read Sealed until their chapter is filed (metrics loreUnlocked, loreSealed, slotChapterShown, slotTimeShown, slotCompletionShown). Back closes it", 800, "content"),
+        new PlaytestScenario("checkpoint-resume", "Chapter 1's checkpoint survives a reload (LevelCheckpoint, CampaignSave.Slot.cp*, save version 11; run with mobile for 390x844 touch, taps on the card): the sandbox file, Begin, the bot walks to the Ring and hears Slice out, then reads two notices on the west trail (events talk-done, checkpoint-saved, checkpoint-reached: id, notices, flags, health). The page is reloaded (setup: the save text is read back as a new page would, the scene is dropped to the menu), Campaign and the file are tapped and the chapter card names the checkpoint and its Begin reads Continue (continue-card: layout px; metrics continueCardChecks); one tap resumes in Level_1_Yard with Wallit at the checkpoint, Slice walking with him, the same two notices read and the opening not replayed (checkpoint-restored, checkpoint-resumed; metrics checkpointResumed, goalsKept). A file saved before this change (version 10, no checkpoint fields) loads into its chapter (old-save-loads; metric oldSaveLoads)", 420, "content"),
         new PlaytestScenario("campaign-full", "The whole case file in one run with real input (setup: the sandbox keeps the files off the real save): Campaign, case file 1, then Chapter 1 (Level_1_Yard, as campaign-beats plays it) through Chapters 2-6 to ADDRESS FILED. Per chapter the bot logs a chapter-verdict (distinct map/own scene, memory under 1024 MB, opening cinematic keyframe vs placeholder, map features route/landmark/hazard/setpiece, dialogue choices answered) so the review can score every chapter. Opening reels are watched for a few shots then skipped with Enter; set pieces and choices play in the chapter's own flow. Quit and resume: in Chapter 3 the scene is dropped mid-chapter (setup, as a closed tab does) and the file must reopen on Chapter 3, unfinished (events quit-midchapter, quit-resume-panel, quit-resume; metric quitResumeRight). Ends with ch6_close, the ending-variant reel (ledger/doors/open keyframes, not stand-ins), ADDRESS FILED, the credits card and the case file reading filed (events campaign-full, chapter-verdict, cutscene-open, cinematics-art, choice-open, ending-reel, ending-card, campaign-panel-filed; metrics fullCaseFileCleared, endingShown, caseFileFiled, fullDistinctMaps, fullCinematicKeyframes, fullChoicesMade)", 3600, "content"),
         new PlaytestScenario("chapter6", "Chapter 6, Address Filed, played start to finish with real input (setup: the sandbox case file starts on chapter 6): Campaign, case file 1, Begin on the Chapter 6 card; the opening scene in the changed Hollow plays and is skipped with Enter; Wallit holds the circle with the bat through three waves (events wave-start), then the Spider Bot that carries the order (boss bar up, scroll on its back) arrives and falls; the Filed scene plays over the field, then the finale pages (Story.Finale verbatim, as in Arcade's story run) and the ADDRESS FILED ending card (events filed-scene, finale-page, ending-card); Keep going shows the credits card; the case file is marked complete (6 cleared), Menu, and the Campaign panel's case file 1 reads filed (events chapter6-setup, cutscene-open, objective, wave-start, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, filed-scene, finale-page, ending-card, credits-card, campaign-complete, campaign-panel-filed; metrics bossBar, endingShown, caseFileCleared, caseFileFiled)", 1000, "content"),
         new PlaytestScenario("chapter5", "Chapter 5, Strike This Address, played start to finish with real input (setup: the sandbox case file starts on chapter 5): Campaign, case file 1, Begin on the Chapter 5 card; the opening scene in the Reading Room plays over the map (the order is not signed, so it can be denied; the stamp pressed to the first page shows DENIED; the bot reads pages then skips with Enter); the objective line reads Read the order, page 1 of 5 with the bots down counting up; Wallit holds the circle at the desk with the bat through five pages (each page's wave announced PAGE n OF 5 and its forms on the wall turning blank when it is down: events page-start, page-read); then The Registrar (a gold Titan Spider Bot with a ledger, boss bar up) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 6, Menu, and reopening the file shows Chapter 6's card (events chapter5-setup, cutscene-open, cutscene-page, objective, page-start, page-read, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics pagesRead, bossBar, chapterAdvanced, chapterResumed)", 900, "content"),
@@ -287,6 +289,7 @@ public static partial class Playtest {
     static void Stop() {
         Running = false;
         HitchMeter.End();
+        SignAudit.Meter.End();
         WaveDirector.ReleaseKeysProbe = false;
         SettingsPanel.Close();
         PauseMenu.Resume();
@@ -314,6 +317,7 @@ public static partial class Playtest {
         worstFrameMs = 0f;
         worstFps = 999f;
         HitchMeter.Begin(run);
+        SignAudit.Meter.Begin(run);
         holdFireFrom = 0;
         analyticsRun = id == "analytics";
         analyticsSeq = -1;
@@ -334,7 +338,7 @@ public static partial class Playtest {
         RunAnalytics.EnableDebug();
         ColdOpen.Suppress = id != "coldopen";
         CinematicDirector.SuppressOpening = id != "opening-scene";   // only opening-scene watches the directed Chapter 1 open; every other bot starts with the stick
-        LevelScene.ChapterOneIsLevel = id == "explore" || id == "campaign-beats" || id == "campaign-full" || id == "moods" || id == "campaign-touch" || id == "first-load" || id == "touch-pause" || id == "down-retry" || id == "ui-walk" || id == "levels-1-3" || id == "opening-scene";   // the older chapter playtests press Begin on Chapter 1 and expect the chapter run; explore must load Level_1_Yard or it hangs 60 s waiting for a level that never starts
+        LevelScene.ChapterOneIsLevel = id == "explore" || id == "campaign-beats" || id == "checkpoint-resume" || id == "campaign-full" || id == "moods" || id == "campaign-touch" || id == "first-load" || id == "touch-pause" || id == "down-retry" || id == "ui-walk" || id == "levels-1-3" || id == "opening-scene";   // the older chapter playtests press Begin on Chapter 1 and expect the chapter run; explore must load Level_1_Yard or it hangs 60 s waiting for a level that never starts
         // opening-ch23 plays Chapters 2 and 3 in-engine openings on their own maps (not Level_1_Yard).
         PlayInput.Release();
         MetaProgress.EnterSandbox(true);
@@ -425,6 +429,7 @@ public static partial class Playtest {
                 run.Metric("bakedPartsFlipped", (float)BakedMesh.FlippedParts);
                 run.Metric("meshZeroNormals", (float)audit.ZeroNormals);
                 run.Metric("meshNegativeScale", (float)audit.NegativeScales);
+                run.Metric("quality.mirroredText", (float)audit.MirroredText);
                 foreach (string f in audit.Failures) {
                     run.Problem(PlaytestSeverity.Bug, "mesh-audit: " + f);
                 }
@@ -576,6 +581,13 @@ public static partial class Playtest {
                 }
                 yield break;
             }
+            if (id == "checkpoint-resume") {
+                yield return PlaytestCheckpoint.Run(run);
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
             if (id == "campaign-beats") {
                 yield return PlaytestBeats.Run(run);
                 if (!run.Done) {
@@ -585,6 +597,13 @@ public static partial class Playtest {
             }
             if (id == "title-scene") {
                 yield return PlaytestTitle.Run(run);
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "render-fit") {
+                yield return PlaytestRenderFit.Run(run);
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
                 }
@@ -7914,6 +7933,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
     static IEnumerator BossSetRun() {
         var player = Object.FindAnyObjectByType<CharacterMovement>();
         yield return run.Until(() => WaveDirector.Instance != null && Enemy.Roster.Count > 0, 20f, "Arcade wave 1 bots");
+        ShotClear.Reset();
         int[] waves = { 10, 20, 30 };
         string[] expect = { "The Plated Alpha", "The Foreman", "The Order" };
         for (int i = 0; i < waves.Length && !run.Done && !WaveDirector.IsLost; i++) {
@@ -7971,6 +7991,10 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         }
         run.Metric("bossIntros", BossSetPiece.Intros);
         run.Metric("bossPayoffs", BossSetPiece.Payoffs);
+        ShotClear.Report(run);
+        if (ShotClear.InsideFrames > 0) {
+            run.Problem(PlaytestSeverity.Bug, "boss-set-pieces: the camera was inside a body or wall on " + ShotClear.InsideFrames + " frames of a boss intro");
+        }
         run.Metric("feel.hitStopMs", 120);
     }
 

@@ -6,9 +6,9 @@ using UnityEngine;
 // two-sided material. Returns a KitReport; counts are in Inside, ZeroNormals and NegativeScales. Called by the PlayMode test
 // and the `mesh-audit` playtest.
 public class MeshAuditReport : KitReport {
-    public int Inside, ZeroNormals, NegativeScales, Meshes;
+    public int Inside, ZeroNormals, NegativeScales, Meshes, MirroredText;
     public new string Summary() {
-        return "meshes=" + Meshes + " insideOut=" + Inside + " zeroNormals=" + ZeroNormals + " negativeScale=" + NegativeScales;
+        return "meshes=" + Meshes + " insideOut=" + Inside + " zeroNormals=" + ZeroNormals + " negativeScale=" + NegativeScales + " mirroredText=" + MirroredText;
     }
 }
 
@@ -40,12 +40,23 @@ public static class MeshAudit {
             CheckScale(r, "prop " + pid, p);
             Object.DestroyImmediate(p);
         }
+        var signs = new System.Collections.Generic.List<string>();
+        r.MirroredText += SignAudit.Scan(Camera.main, signs);
+        foreach (string f in signs) {
+            r.Failures.Add("quality.mirroredText: " + f);
+        }
         r.Lines.Add("audit " + r.Summary());
         return r;
     }
 
     public static void CheckScale(MeshAuditReport r, string label, GameObject root) {
         if (root == null) return;
+        foreach (TextMesh tm in root.GetComponentsInChildren<TextMesh>(true)) {
+            if (tm.transform.localToWorldMatrix.determinant < 0f) {
+                r.MirroredText++;
+                r.Failures.Add("quality.mirroredText: " + label + ": " + tm.name + " is mirrored by a negative scale");
+            }
+        }
         foreach (Transform t in root.GetComponentsInChildren<Transform>(true)) {
             Vector3 s = t.lossyScale;
             if (s.x < 0f || s.y < 0f || s.z < 0f) {

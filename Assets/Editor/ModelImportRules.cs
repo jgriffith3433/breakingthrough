@@ -10,7 +10,7 @@ class ModelImportRules : AssetPostprocessor
 
     public override uint GetVersion()
     {
-        return 3;
+        return 4;
     }
 
     void OnPreprocessModel()
@@ -30,13 +30,15 @@ class ModelImportRules : AssetPostprocessor
 
         // Gen robot bots (YoBot / SpiderBot): Generic rigs with procedural clips, drawn with the painted
         // Resources/Models/Bots/*Skin.png (BotArt.SkinFor). Their FBXs embed two 1024 px textures each that nothing
-        // reads, so no materials are imported and none ship in the phone's first download.
+        // reads, so no materials are imported and none ship in the phone's first download. Their eight baked clips are not
+        // imported either (CharacterRig animates the parts from code and BotArt strips the Animator): the rig stays, the
+        // curves do not ship.
         // Stand-in / Blender bird exports stay vertex-color, no animation.
         if (assetPath.StartsWith("Assets/Resources/Models/Bots/"))
         {
             importer.materialImportMode = ModelImporterMaterialImportMode.None;
             importer.animationType = ModelImporterAnimationType.Generic;
-            importer.importAnimation = true;
+            importer.importAnimation = false;
             return;
         }
 

@@ -262,8 +262,12 @@ public class BossSetPiece : MonoBehaviour {
         want.y = GroundY(want) + 2.8f + boss.BodyScale;
         Vector3 look = b + Vector3.up * (1.2f * boss.BodyScale);
         Quaternion wantRot = Quaternion.LookRotation(look - want, Vector3.up);
-        cam.position = Vector3.Lerp(orig, want, w);
+        Vector3 placed = Vector3.Lerp(orig, want, w);
+        // Clearance: the dolly is pulled in ahead of walls and out of Wallit's and the boss's bodies before it is used.
+        placed = ShotClear.Resolve(look, placed);
+        cam.position = placed;
         cam.rotation = Quaternion.Slerp(origRot, wantRot, w);
+        ShotClear.Observe(placed);
         applied = true;
     }
 

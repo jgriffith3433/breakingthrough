@@ -40,7 +40,7 @@ public class ArcadeActs : MonoBehaviour {
 
     static readonly Look[] Looks = {
         // Act I dusk: a low warm sun-to-moon key, amber fog, a violet sky going to ink; the lamp posts flicker on.
-        new Look { Sun = new Color(1f, 0.6f, 0.32f), SunIntensity = 1.1f, Fog = new Color(0.24f, 0.14f, 0.2f), FogDensity = 0.0058f,
+        new Look { Sun = new Color(1f, 0.78f, 0.32f), SunIntensity = 1.1f, Fog = new Color(0.24f, 0.14f, 0.2f), FogDensity = 0.0058f,
             SkyTop = new Color(0.1f, 0.08f, 0.24f), SkyHorizon = new Color(0.95f, 0.5f, 0.3f), SkyGround = new Color(0.08f, 0.05f, 0.08f),
             AmbSky = new Color(0.44f, 0.36f, 0.52f), AmbEq = new Color(0.3f, 0.22f, 0.26f), AmbGround = new Color(0.1f, 0.07f, 0.08f),
             Disc = new Color(1f, 0.78f, 0.55f), DiscDir = new Vector3(-0.3f, 0.12f, 0.8f), DiscSize = 0.1f, Haze = 0.6f,
@@ -54,7 +54,7 @@ public class ArcadeActs : MonoBehaviour {
             Exposure = 1.18f, Contrast = 1.2f, Saturation = 0.95f, Vignette = 1f,
             Shadows = new Color(0.92f, 0.88f, 1.0f), Highlights = new Color(1.1f, 1.0f, 0.86f), Lift = new Color(0.012f, 0.008f, 0.02f) },
         // Act III the Department's red alert: a red key, a beacon sweeping the lawn, ash in the air, higher contrast.
-        new Look { Sun = new Color(1f, 0.2f, 0.16f), SunIntensity = 0.95f, Fog = new Color(0.26f, 0.03f, 0.05f), FogDensity = 0.0062f,
+        new Look { Sun = new Color(1f, 0.08f, 0.2f), SunIntensity = 0.95f, Fog = new Color(0.26f, 0.03f, 0.05f), FogDensity = 0.0062f,
             SkyTop = new Color(0.14f, 0f, 0.04f), SkyHorizon = new Color(0.7f, 0.07f, 0.1f), SkyGround = new Color(0.08f, 0.01f, 0.02f),
             AmbSky = new Color(0.5f, 0.14f, 0.18f), AmbEq = new Color(0.3f, 0.07f, 0.1f), AmbGround = new Color(0.1f, 0.02f, 0.03f),
             Disc = new Color(1f, 0.2f, 0.18f), DiscDir = new Vector3(0.2f, 0.08f, 0.95f), DiscSize = 0.12f, Haze = 0.75f,
@@ -63,7 +63,7 @@ public class ArcadeActs : MonoBehaviour {
     };
 
     static readonly Look Overtime = new Look {
-        Sun = new Color(1f, 0.25f, 0.22f), SunIntensity = 0.8f, Fog = new Color(0.2f, 0.02f, 0.04f), FogDensity = 0.0078f,
+        Sun = new Color(1f, 0.1f, 0.2f), SunIntensity = 0.8f, Fog = new Color(0.2f, 0.02f, 0.04f), FogDensity = 0.0078f,
         SkyTop = new Color(0.12f, 0f, 0.03f), SkyHorizon = new Color(0.55f, 0.04f, 0.08f), SkyGround = new Color(0.06f, 0.01f, 0.02f),
         AmbSky = new Color(0.45f, 0.15f, 0.2f), AmbEq = new Color(0.25f, 0.08f, 0.1f), AmbGround = new Color(0.08f, 0.02f, 0.03f),
         Disc = new Color(1f, 0.2f, 0.2f), DiscDir = new Vector3(0f, 0.4f, 0.9f), DiscSize = 0.09f, Haze = 0.8f,
