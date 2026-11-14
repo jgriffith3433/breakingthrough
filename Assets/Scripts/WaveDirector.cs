@@ -122,6 +122,7 @@ public class WaveDirector : MonoBehaviour {
         CinematicDirector.NewRun();   // Arcade's boss entrances play again this run
         FortStock.BeginRun();
         Combo.BeginRun();
+        ArcadeRank.BeginRun();
         Combat.BeginRun();
         RunLog.BeginRun();
         BatEquipment.BeginRun();
@@ -273,6 +274,7 @@ public class WaveDirector : MonoBehaviour {
 
     void BeginCombat() {
         phase = Phase.Combat;
+        ArcadeRank.WaveStarted();
         RollEvent();
         FillPending(Wave);
         spawnIn = Wave == 1 ? 0f : 0.2f;
@@ -417,6 +419,7 @@ public class WaveDirector : MonoBehaviour {
         if (pending.Count == 0 && goldenIn < 0f && !AnyAlive() && !BossSetPiece.PayingOff
             && (Musician.Instance == null || Musician.Instance.Alive)) {
             cleared = Wave;
+            ArcadeRank.WaveCleared();
             UpgradeLook.WaveCleared(cleared);
             WallitVoice.OnWaveCleared(cleared);
             RunLog.EndWave(Wave, "cleared");

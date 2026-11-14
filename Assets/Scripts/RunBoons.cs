@@ -33,6 +33,10 @@ public enum BoonId {
     Hailstorm // Blizzard Bat
 }
 
+// What a boon does to the swing. The wave-clear card offers one from each of three different families, so the first pick is
+// a real choice (an element, a reach, an impact) and not three stat bumps. None means a plain stat or helper boon.
+public enum BoonFamily { None, Element, Reach, Impact }
+
 public enum Rarity {
     Common,
     Rare,
@@ -237,6 +241,57 @@ public static class RunBoons {
 
     static bool Maxed(BoonId id) {
         return ranks[(int)id] >= Info(id).MaxRank;
+    }
+
+    public static BoonFamily FamilyOf(BoonId id) {
+        switch (id) {
+            case BoonId.Firebrand: case BoonId.Frost: case BoonId.Chain: return BoonFamily.Element;
+            case BoonId.SplitShot: case BoonId.Pierce: case BoonId.Volley: return BoonFamily.Reach;
+            case BoonId.Ricochet: case BoonId.Heavy: case BoonId.EagleEye: case BoonId.Homing: return BoonFamily.Impact;
+            default: return BoonFamily.None;
+        }
+    }
+
+    public static string FamilyName(BoonFamily family) {
+        switch (family) {
+            case BoonFamily.Element: return "ELEMENT";
+            case BoonFamily.Reach: return "REACH";
+            case BoonFamily.Impact: return "IMPACT";
+            default: return "";
+        }
+    }
+
+    // The card after a wave: one boon from each family, never two from the same, each one you can see on the bat in the
+    // next wave (a flame or frost or arc on the swing's trail, a wider sweep, a knock-back ring). Falls back to a plain roll.
+    public static List<BoonId> RollFamilies() {
+        var picks = new List<BoonId>();
+        BoonFamily[] families = { BoonFamily.Element, BoonFamily.Reach, BoonFamily.Impact };
+        for (int f = 0; f < families.Length; f++) {
+            float total = 0f;
+            for (int i = 0; i < All.Length; i++) {
+                if (FamilyOf(All[i].Id) == families[f] && Offerable(All[i])) {
+                    total += Weight(All[i], false);
+                }
+            }
+            if (total <= 0f) {
+                continue;
+            }
+            float roll = Random.value * total;
+            for (int i = 0; i < All.Length; i++) {
+                if (FamilyOf(All[i].Id) != families[f] || !Offerable(All[i])) {
+                    continue;
+                }
+                roll -= Weight(All[i], false);
+                if (roll <= 0f) {
+                    picks.Add(All[i].Id);
+                    break;
+                }
+            }
+        }
+        if (picks.Count < 3) {
+            return Roll(3, false);
+        }
+        return picks;
     }
 
     // Three different boons. A chest leans rarer. Ready evolutions nearly always show.

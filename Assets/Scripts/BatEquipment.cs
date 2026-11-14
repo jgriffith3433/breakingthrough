@@ -171,6 +171,7 @@ public class BatEquipment : MonoBehaviour {
 
     public static int Impacts { get; private set; }
     public static int TrailSwings { get; private set; }
+    public static Color TrailHead { get; private set; } = new Color(1f, 1f, 0.97f, 0.95f);
     TrailRenderer trail;
     bool trailWasOn;
 
@@ -212,6 +213,20 @@ public class BatEquipment : MonoBehaviour {
         trail.widthMultiplier = big ? 1.5f : move == Move.Swing3 || move == Move.Smash ? 0.95f : 0.7f;
         trail.time = big ? 0.42f : 0.3f;   // a charged swing smears longer and stronger
         Color head = big ? new Color(1f, 0.92f, 0.55f, 1f) : new Color(1f, 1f, 0.97f, 0.95f);
+        // A boon from the wave card tints the trail at once: flame, frost or a live wire, a gold sweep, an amber knock.
+        if (RunBoons.Has(BoonId.Firebrand) || RunBoons.Has(BoonId.Phoenix)) {
+            head = new Color(1f, 0.52f, 0.14f, 1f);
+        } else if (RunBoons.Has(BoonId.Frost) || RunBoons.Has(BoonId.Hailstorm)) {
+            head = new Color(0.45f, 0.82f, 1f, 1f);
+        } else if (RunBoons.Has(BoonId.Chain) || RunBoons.Has(BoonId.StormQuiver)) {
+            head = new Color(0.78f, 0.62f, 1f, 1f);
+        } else if (RunBoons.ArcBonus > 0f || RunBoons.Rank(BoonId.Pierce) > 0) {
+            head = new Color(1f, 0.9f, 0.4f, 1f);
+        } else if (RunBoons.LineDrive > 0 || RunBoons.Rank(BoonId.Heavy) > 0) {
+            head = new Color(1f, 0.72f, 0.3f, 1f);
+        }
+        trail.widthMultiplier *= 1f + RunBoons.ArcBonus / 100f + 0.08f * RunBoons.Rank(BoonId.Pierce) + 0.06f * RunBoons.Rank(BoonId.Heavy);
+        TrailHead = head;
         trail.startColor = head;
         trail.endColor = new Color(head.r, head.g * 0.8f, head.b * 0.5f, 0f);
     }
@@ -767,6 +782,10 @@ public class BatEquipment : MonoBehaviour {
             // Every bot the bat lands on gets its own flash; the second and later also get a thud (the crack is once a swing).
             Fx.Impact(enemy.transform.position + Vector3.up * (0.7f * Mathf.Max(1f, enemy.BodyScale)), Mathf.Sqrt(Mathf.Max(1f, enemy.BodyScale)), scale >= Tuning.BatDamageFinisher || tip, away);
             Impacts++;
+            if (lineDrive > 0) {
+                // Line Drive: a ring of knock-back opens under the bot the bat sends flying.
+                Fx.Ring(enemy.transform.position + Vector3.up * 0.1f, 1.8f + 0.5f * lineDrive, new Color(1f, 0.72f, 0.3f, 0.8f), 0.4f);
+            }
             if (count > 1) {
                 GameAudio.PlayAt("hit", enemy.transform.position, 0.5f, Random.Range(0.9f, 1.05f));
             }
