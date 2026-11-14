@@ -4695,7 +4695,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
     // ui.textOverlaps: the worst count, over every frame since the probe started, of visible text rects from different screen
     // canvases that intersect (ScreenSlots.Count). A text inside its own canvas stacked on another (a HUD's layers) is
     // ui.textOverlapsSameCanvas, reported but not a fail.
-    static void ReportTextOverlaps(string where) {
+    public static void ReportTextOverlaps(string where) {
         run.Metric("ui.textOverlaps", ScreenSlots.OverlapMax);
         run.Metric("ui.textOverlapsSameCanvas", ScreenSlots.OverlapSameCanvasMax);
         run.Event("ui-text-overlaps", where + ": worst " + ScreenSlots.OverlapMax + " pairs over " + ScreenSlots.ProbeFrames + " frames"
@@ -4703,6 +4703,14 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             + ", banner spot " + (ArcadeActs.BannerClear ? "clear" : "none free"));
         if (ScreenSlots.OverlapMax > 0) {
             run.Problem(PlaytestSeverity.Bug, "arcade-acts: " + ScreenSlots.OverlapMax + " pairs of text overlap at " + where + ": " + ScreenSlots.OverlapWorst);
+        }
+        // ui.textOverflows: the worst count of visible texts whose content is bigger than their box.
+        run.Metric("ui.textOverflows", ScreenSlots.OverflowMax);
+        run.Metric("ui.captionBottomPct", Mathf.RoundToInt(CaptionStack.BottomFraction * 100f));
+        run.Event("ui-text-overflows", where + ": worst " + ScreenSlots.OverflowMax + " text(s)"
+            + (ScreenSlots.OverflowMax > 0 ? " (" + ScreenSlots.OverflowWorst + ")" : "") + ", captions end " + Mathf.RoundToInt(CaptionStack.BottomFraction * 100f) + "% down, held " + CaptionStack.Held);
+        if (ScreenSlots.OverflowMax > 0) {
+            run.Problem(PlaytestSeverity.Bug, "ui.textOverflows " + ScreenSlots.OverflowMax + " at " + where + ": " + ScreenSlots.OverflowWorst);
         }
     }
 

@@ -271,6 +271,51 @@ public static class ScreenSlots {
     public static void ResetProbe() {
         OverlapNow = OverlapSameCanvas = OverlapMax = OverlapSameCanvasMax = ProbeFrames = 0;
         OverlapWorst = "";
+        OverflowMax = 0;
+        OverflowWorst = "";
+    }
+
+    // ---- the probe: texts whose content is bigger than their box (ui.textOverflows) ----
+
+    public static int OverflowNow;
+    public static int OverflowMax;
+    public static string OverflowWorst = "";
+
+    // A visible text overflows when its wrapped content is taller (or, with no wrap, wider) than its rect by more than a
+    // couple of units. Captions are sized to their content by CaptionStack, so they never count; a text that is set to
+    // shrink to fit (best fit) counts only when it is already at its smallest size and still too big.
+    public static int CountOverflows(List<string> describe) {
+        int n = 0;
+        foreach (Text t in Object.FindObjectsByType<Text>(FindObjectsSortMode.None)) {
+            if (!Visible(t)) {
+                continue;
+            }
+            Rect r = t.rectTransform.rect;
+            if (r.width < 1f || r.height < 1f) {
+                continue;
+            }
+            float tolerance = 3f;
+            bool over = t.preferredHeight > r.height + tolerance;
+            if (t.horizontalOverflow == HorizontalWrapMode.Overflow && t.preferredWidth > r.width + tolerance) {
+                over = true;
+            }
+            if (t.resizeTextForBestFit && t.cachedTextGenerator != null && t.cachedTextGenerator.fontSizeUsed > t.resizeTextMinSize) {
+                over = false;
+            }
+            if (!over) {
+                continue;
+            }
+            Rect g = GlyphRect(t);
+            if (!g.Overlaps(new Rect(0f, 0f, Screen.width, Screen.height))) {
+                continue;
+            }
+            n++;
+            if (describe != null && describe.Count < 6) {
+                describe.Add("'" + t.text.Replace("\n", " ") + "' (" + t.canvas.rootCanvas.name + ")");
+            }
+        }
+        OverflowNow = n;
+        return n;
     }
 
     static ScreenSlotsProbe probe;
@@ -298,12 +343,97 @@ public class ScreenSlotsProbe : MonoBehaviour {
         var why = new List<string>();
         int n = ScreenSlots.Count(why);
         ScreenSlots.ProbeFrames++;
+        if ((Time.frameCount & 7) == 0) {
+            var over = new List<string>();
+            int o = ScreenSlots.CountOverflows(over);
+            if (o > ScreenSlots.OverflowMax) {
+                ScreenSlots.OverflowMax = o;
+                ScreenSlots.OverflowWorst = string.Join("; ", over.ToArray());
+            }
+        }
         if (ScreenSlots.OverlapSameCanvas > ScreenSlots.OverlapSameCanvasMax) {
             ScreenSlots.OverlapSameCanvasMax = ScreenSlots.OverlapSameCanvas;
         }
         if (n > ScreenSlots.OverlapMax) {
             ScreenSlots.OverlapMax = n;
             ScreenSlots.OverlapWorst = string.Join("; ", why.ToArray());
+        }
+    }
+}
+
+// The phone's caption lines in one column. Every caption (Wallit, Slice, a boss, the bots' chorus, Slice's callout word)
+// registers through UiFit.PlaceCaption; on a phone this stacks the ones showing from the caption band's top down, each
+// as tall as its wrapped content, so two lines can never print over each other ("WALBlocked.ble."). The column stops
+// above the touch pads: a line that would reach them is held back (alpha 0) until a higher one clears.
+public class CaptionStack : MonoBehaviour {
+    public const float Gap = 6f;
+    // Portrait: the column ends this fraction of the canvas height down from its top (the stick and buttons own the rest).
+    public const float PadFraction = 0.55f;
+    public static float BottomFraction { get; private set; }
+    public static int Held { get; private set; }
+
+    class Entry {
+        public Text text;
+        public float key;
+    }
+
+    static readonly List<Entry> entries = new List<Entry>();
+    static CaptionStack instance;
+
+    public static void Register(Text t, float key) {
+        if (t == null) {
+            return;
+        }
+        if (instance == null) {
+            instance = new GameObject("Caption Stack").AddComponent<CaptionStack>();
+            DontDestroyOnLoad(instance.gameObject);
+        }
+        for (int i = 0; i < entries.Count; i++) {
+            if (entries[i].text == t) {
+                entries[i].key = key;
+                return;
+            }
+        }
+        // Wrap, never run past the box's sides.
+        t.horizontalOverflow = HorizontalWrapMode.Wrap;
+        entries.Add(new Entry { text = t, key = key });
+    }
+
+    void LateUpdate() {
+        entries.RemoveAll(e => e.text == null);
+        if (UiFit.Mode == UiMode.Desktop) {
+            return;
+        }
+        var shown = new List<Entry>();
+        foreach (Entry e in entries) {
+            if (e.text.enabled && !string.IsNullOrEmpty(e.text.text)) {
+                shown.Add(e);
+            } else {
+                e.text.canvasRenderer.SetAlpha(1f);
+            }
+        }
+        shown.Sort((a, b) => a.key.CompareTo(b.key));
+        float top = UiFit.CaptionTop();
+        Vector4 safe = UiFit.SafeInsets();
+        float limit = UiFit.Size.y * (UiFit.Mode == UiMode.Tall ? PadFraction : 0.85f);   // landscape: the pads sit in the corners, the column is centred
+        float y = top;
+        Held = 0;
+        BottomFraction = 0f;
+        foreach (Entry e in shown) {
+            RectTransform rt = e.text.rectTransform;
+            float h = Mathf.Max(44f, e.text.preferredHeight + 8f);
+            if (y + h > limit) {
+                e.text.canvasRenderer.SetAlpha(0f);
+                Held++;
+                continue;
+            }
+            e.text.canvasRenderer.SetAlpha(1f);
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.anchoredPosition = new Vector2((safe.x - safe.y) * 0.5f, -y);
+            rt.sizeDelta = new Vector2(rt.sizeDelta.x, h);
+            y += h + Gap;
+            BottomFraction = Mathf.Max(BottomFraction, (y - Gap) / Mathf.Max(1f, UiFit.Size.y));
         }
     }
 }
