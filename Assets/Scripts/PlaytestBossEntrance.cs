@@ -28,6 +28,7 @@ public static partial class Playtest {
         bossTouchBackMax = 0f;
         bossCardOverlaps = 0;
         CinematicHud.ResetCounters();
+        ShotClear.Reset();
         int count = 0;
 
         int[] waves = { 10, 20, 30 };
@@ -123,6 +124,10 @@ public static partial class Playtest {
         run.Metric("boss.cardOverlaps", bossCardOverlaps);
         if (bossCardOverlaps > 0) {
             run.Problem(PlaytestSeverity.Bug, "boss-entrances: boss.cardOverlaps " + bossCardOverlaps + " (a card or caption overlapped the picker or other text)");
+        }
+        ShotClear.Report(run);
+        if (ShotClear.InsideFrames > 0) {
+            run.Problem(PlaytestSeverity.Bug, "boss-entrances: the camera was inside a body or wall on " + ShotClear.InsideFrames + " frames of a boss entrance");
         }
         run.Metric("cinematic.hudVisibleFrames", CinematicHud.HudVisibleFrames);
         run.Metric("cinematic.framesObserved", CinematicHud.CinematicFrames);
