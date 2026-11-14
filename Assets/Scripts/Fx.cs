@@ -64,7 +64,7 @@ public class Fx : MonoBehaviour {
         var main = ps.main;
         main.loop = false;
         main.playOnAwake = false;
-        main.maxParticles = max;
+        main.maxParticles = MobileQuality.ParticleMax(max);
         main.simulationSpace = ParticleSystemSimulationSpace.World;
         main.startLifetime = life;
         main.gravityModifier = gravity;

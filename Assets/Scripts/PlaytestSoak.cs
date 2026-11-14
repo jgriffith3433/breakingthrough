@@ -101,6 +101,10 @@ public class SoakSampler : MonoBehaviour {
     int minute;
     bool crashed;
     float peakReserved;
+    float startedAt;
+    float worstWindowFrame;   // the slowest frame between 100 and 220 s (the phone Arcade criterion: none under 10 fps)
+    // Live counts by wave, last sample of each: wave -> particle systems, lights, bots, pickups.
+    readonly SortedDictionary<int, int[]> byWave = new SortedDictionary<int, int[]>();
     float firstReserved = -1f;
 
     public static void Begin(PlaytestRun r) {
@@ -112,6 +116,7 @@ public class SoakSampler : MonoBehaviour {
         instance = go.AddComponent<SoakSampler>();
         instance.run = r;
         instance.windowStart = Time.realtimeSinceStartup;
+        instance.startedAt = Time.realtimeSinceStartup;
         Phase = "arcade";
         r.Metric("soak.crashed", 0);
     }
@@ -126,6 +131,8 @@ public class SoakSampler : MonoBehaviour {
         if (instance.firstReserved > 0f) {
             instance.run.Metric("soak.reservedGrowthMb", Mathf.Round(instance.peakReserved - instance.firstReserved));
         }
+        instance.ReportWaves();
+        instance.run.Metric("soak.worstFrameMs100to220", Mathf.Round(instance.worstWindowFrame * 1000f));
         instance.run.Event("soak-end", instance.minute + " minutes, crashed=" + instance.crashed + ", reserved " + instance.firstReserved.ToString("0") + " -> peak " + instance.peakReserved.ToString("0") + " MB");
     }
 
@@ -140,6 +147,14 @@ public class SoakSampler : MonoBehaviour {
             run.Problem(PlaytestSeverity.Bug, "soak.crashed: one frame took " + dt.ToString("0") + " s (the page stopped answering) in " + Phase + " at minute " + minute);
         }
         frames.Add(dt);
+        float since = Time.realtimeSinceStartup - startedAt;
+        if (Phase == "arcade" && since >= 100f && since <= 220f && dt > worstWindowFrame) {
+            worstWindowFrame = dt;
+            if (dt > 0.1f && UiFit.Touch) {
+                run.Event("soak-dip", "frame of " + (dt * 1000f).ToString("0") + " ms (under 10 fps) at " + since.ToString("0") + " s, wave " + WaveDirector.Wave + ", bots " + Enemy.Roster.Count);
+                run.Problem(PlaytestSeverity.Warning, "soak: a frame of " + (dt * 1000f).ToString("0") + " ms between 100 and 220 s (10 fps floor)");
+            }
+        }
         if (Time.realtimeSinceStartup - windowStart >= MinuteSeconds) {
             Sample();
         }
@@ -153,6 +168,27 @@ public class SoakSampler : MonoBehaviour {
             }
         }
         return n;
+    }
+
+    // Live counts per wave, and the criterion: from wave 5 on, particle systems and lights stay within 10% of wave 5's.
+    void ReportWaves() {
+        int baseParticles = -1, baseLights = -1;
+        foreach (KeyValuePair<int, int[]> row in byWave) {
+            run.Metric("soak.wave" + row.Key + ".particleSystems", row.Value[0]);
+            run.Metric("soak.wave" + row.Key + ".lights", row.Value[1]);
+            run.Metric("soak.wave" + row.Key + ".bots", row.Value[2]);
+            run.Metric("soak.wave" + row.Key + ".pickups", row.Value[3]);
+            run.Event("soak-wave", "wave " + row.Key + ": live particle systems " + row.Value[0] + ", lights " + row.Value[1] + ", bots " + row.Value[2] + ", pickups " + row.Value[3]);
+            if (row.Key < 5) {
+                continue;
+            }
+            if (baseParticles < 0) {
+                baseParticles = row.Value[0];
+                baseLights = row.Value[1];
+            } else if (Mathf.Abs(row.Value[0] - baseParticles) > Mathf.Max(1f, baseParticles * 0.1f) || Mathf.Abs(row.Value[1] - baseLights) > Mathf.Max(1f, baseLights * 0.1f)) {
+                run.Problem(PlaytestSeverity.Warning, "soak: live counts drift at wave " + row.Key + " (particle systems " + row.Value[0] + " vs " + baseParticles + " at wave 5, lights " + row.Value[1] + " vs " + baseLights + ")");
+            }
+        }
     }
 
     void Sample() {
@@ -193,6 +229,18 @@ public class SoakSampler : MonoBehaviour {
             firstReserved = reserved;
         }
         peakReserved = Mathf.Max(peakReserved, reserved);
+        int wave = WaveDirector.Wave;
+        int[] counts;
+        if (Phase == "arcade" && wave > 0) {
+            if (!byWave.TryGetValue(wave, out counts)) {
+                counts = new int[4];
+                byWave[wave] = counts;
+            }
+            counts[0] = particles;
+            counts[1] = lights;
+            counts[2] = Enemy.Roster.Count;
+            counts[3] = Pickups.Count;
+        }
         HawkesSoakBeat(minute);
         string m = "." + minute;
         run.Metric("soak.fpsP5" + m, Mathf.Round(p5 * 10f) / 10f);
@@ -203,7 +251,9 @@ public class SoakSampler : MonoBehaviour {
         run.Metric("soak.particleSystems" + m, particles);
         run.Metric("soak.lights" + m, lights);
         run.Metric("soak.audioSources" + m, sources);
-        run.Event("soak-minute", "minute " + minute + " (" + Phase + ", " + UnityEngine.SceneManagement.SceneManager.GetActiveScene().name + ", " + span.ToString("0") + " s): fps p5 " + p5.ToString("0.0") + ", avg " + avg.ToString("0.0")
+        run.Metric("soak.bots" + m, Enemy.Roster.Count);
+        run.Metric("soak.pickups" + m, Pickups.Count);
+        run.Event("soak-minute", "minute " + minute + " (" + Phase + " wave " + wave + ", bots " + Enemy.Roster.Count + ", pickups " + Pickups.Count + ", " + UnityEngine.SceneManagement.SceneManager.GetActiveScene().name + ", " + span.ToString("0") + " s): fps p5 " + p5.ToString("0.0") + ", avg " + avg.ToString("0.0")
             + ", worst frame " + worstMs.ToString("0") + " ms; Unity reserved " + reserved.ToString("0") + " MB, allocated " + allocated.ToString("0") + " MB, mono " + mono.ToString("0") + " MB, JS heap " + (js > 0f ? js.ToString("0") + " MB" : "n/a")
             + "; live particle systems " + particles + ", lights " + lights + ", audio sources " + sources);
         if (p5 > 0f && p5 < 30f && UiFit.Touch) {
