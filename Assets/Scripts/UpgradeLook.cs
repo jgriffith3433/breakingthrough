@@ -367,7 +367,7 @@ public class UpgradeLook : MonoBehaviour {
         }
         if (y >= AnnounceY) {
             // The wave-cleared / level-up cards own the screen: an announcement (a boss's "approaches!") waits for them to close.
-            if (announcing != null || LevelUpScreen.IsOpen) {
+            if (announcing != null || LevelUpScreen.IsOpen || CinematicDirector.BossOpen) {
                 foreach (var w in waiting) {
                     if (w.Key == line) {
                         return;
@@ -386,7 +386,7 @@ public class UpgradeLook : MonoBehaviour {
 
     // Called every frame by LevelUpScreen while no card is open: a waiting announcement takes the slot once the cards are gone.
     public static void PumpAnnouncements() {
-        if (waiting.Count == 0 || announcing != null || LevelUpScreen.IsOpen) {
+        if (waiting.Count == 0 || announcing != null || LevelUpScreen.IsOpen || CinematicDirector.BossOpen) {
             return;
         }
         if (WaveDirector.IsLost || WaveDirector.Instance == null) {

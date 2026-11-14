@@ -119,7 +119,19 @@ public partial class CinematicDirector {
     public static BossResult PlayBoss(Enemy boss, int chapter, int wave, Action done) {
         BossCard c = CardFor(boss != null ? boss.Title : null, IsMini(boss));
         Camera cam = Camera.main;
-        if (c == null || boss == null || !boss.Alive || cam == null || bossBusy()) {
+        if (c == null || boss == null || !boss.Alive || cam == null) {
+            return BossResult.Unavailable;
+        }
+        if (bossBusy()) {
+            // A second card waits for the first to clear (one waiting slot); a third asked for meanwhile is Unavailable.
+            if (Instance != null && Instance.pendBoss == null && Instance.bossFoe != boss) {
+                Instance.pendC = c;
+                Instance.pendBoss = boss;
+                Instance.pendChapter = chapter;
+                Instance.pendWave = wave;
+                Instance.pendDone = done;
+                return BossResult.Played;
+            }
             return BossResult.Unavailable;
         }
         GameObject player = GameObject.FindGameObjectWithTag("Player");
@@ -156,7 +168,7 @@ public partial class CinematicDirector {
     Action pendDone;
 
     void TickPendingBoss() {
-        if (pendBoss == null || LevelUpScreen.IsOpen || PauseMenu.IsOpen) {
+        if (pendBoss == null || LevelUpScreen.IsOpen || PauseMenu.IsOpen || bossRun || open) {
             return;
         }
         Enemy foe = pendBoss;
@@ -284,6 +296,9 @@ public partial class CinematicDirector {
         if (bossFoe == null || !bossFoe.Alive || bossWallit == null || cam == null) {
             EndBoss(true);
             return;
+        }
+        if (LevelUpScreen.IsOpen) {
+            CloseCards();   // a picker never opens over a card (LevelUpScreen waits for the entrance), but if one does, the card goes
         }
         float t = Time.unscaledTime - bossStart;
         if (t > SkipAfter && SkipTapped()) {
@@ -615,6 +630,37 @@ public partial class CinematicDirector {
         }
     }
 
+    // Hides the name card, the name plate and the caption at once (the picker is open, or the entrance is over).
+    public static void CloseCards() {
+        CinematicDirector d = Instance;
+        if (d == null) {
+            return;
+        }
+        if (d.bossCard != null) {
+            d.bossCard.SetActive(false);
+        }
+        d.bossShown = false;
+        if (d.caption != null) {
+            d.caption.text = "";
+        }
+        if (d.namePlate != null) {
+            d.namePlate.text = "";
+        }
+    }
+
+    // Cards and captions the screen shows right now (the playtest's boss.cardOverlaps counts these against the picker).
+    public static int CardsVisible() {
+        CinematicDirector d = Instance;
+        if (d == null || d.uiRoot == null || !d.uiRoot.activeSelf) {
+            return 0;
+        }
+        int n = BossCardUp ? 1 : 0;
+        if (d.caption != null && d.caption.isActiveAndEnabled && !string.IsNullOrEmpty(d.caption.text)) {
+            n++;
+        }
+        return n;
+    }
+
     // ---------------------------------------------------------------- the end
 
     void EndBoss(bool skipped) {
@@ -654,6 +700,7 @@ public partial class CinematicDirector {
             StartTrack();   // a skipped entrance still turns the music
         }
         EaseBars(false);
+        CloseCards();
         if (uiRoot != null) {
             uiRoot.SetActive(false);
         }
