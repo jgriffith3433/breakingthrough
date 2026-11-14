@@ -26,6 +26,22 @@ public class SceneWarmup : MonoBehaviour {
         new GameObject("Scene Warmup").AddComponent<SceneWarmup>();
     }
 
+    // The shader warm-up is one blocking call (seconds on a slow machine or a phone). It is paid once per page: the campaign's
+    // case-file card starts it (ChapterScene.Awake) while the player is only reading, so the chapter's own load, which the
+    // opening and the cold blow wait on, no longer carries it. Whoever gets there first pays; the other finds it done.
+    public static IEnumerator ShadersOnce() {
+        if (shadersDone) {
+            yield break;
+        }
+        yield return null;   // the card draws a frame first
+        if (!shadersDone) {
+            shadersDone = true;
+            Active = true;   // set only after the last yield, so a destroyed host cannot leave it on
+            Shader.WarmupAllShaders();
+            Active = false;
+        }
+    }
+
     IEnumerator Start() {
         // Let the load screen draw a frame first, then pay the cost behind it.
         Active = true;

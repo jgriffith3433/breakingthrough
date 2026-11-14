@@ -63,6 +63,7 @@ public class ChapterScene : MonoBehaviour {
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         font = UiSkin.Font(UiSkin.FontRole.Body);
+        StartCoroutine(SceneWarmup.ShadersOnce());   // paid here, on the card, not in the chapter's load (SceneWarmup.ShadersOnce)
         if (CampaignSave.Active < 0) {
             // Opened straight from the editor: use the last file, or the first.
             CampaignSave.Open(Mathf.Max(0, CampaignSave.Last));
