@@ -169,6 +169,22 @@ public class TouchControls : MonoBehaviour {
         }
     }
 
+    // The pads on screen, for the Hawkes UI probe (UiRects): the stick and every pad that is up, labelled by role.
+    public static void Report(List<Hawkes.Playtest.HawkesUiRects.UiControl> into) {
+        TouchControls touch = Instance;
+        if (touch == null || !touch.shown) {
+            return;
+        }
+        if (touch.stickBase.gameObject.activeInHierarchy) {
+            into.Add(Hawkes.Playtest.HawkesUiRects.Control("Stick", touch.stickBase));
+        }
+        foreach (Pad pad in touch.pads) {
+            if (pad.Go.activeInHierarchy) {
+                into.Add(Hawkes.Playtest.HawkesUiRects.Control(pad.Role.ToString(), pad.Rect));
+            }
+        }
+    }
+
     // The stick and buttons are up (the down flow measures how soon they return after a Retry).
     public static bool PadsShown {
         get { return Instance != null && Instance.shown; }
@@ -238,7 +254,7 @@ public class TouchControls : MonoBehaviour {
                 LetGoAll();
             }
         }
-        if (UiFit.Stamp != laidStamp || Screen.safeArea != laidSafe) {
+        if (UiFit.Stamp != laidStamp || UiRects.SafeArea() != laidSafe) {
             Layout();
         }
 
@@ -643,14 +659,15 @@ public class TouchControls : MonoBehaviour {
     void Layout() {
         laidOut = UiFit.Mode;
         laidStamp = UiFit.Stamp;
-        laidSafe = Screen.safeArea;
+        laidSafe = UiRects.SafeArea();
         if (scaler != null) {
             UiFit.Apply(scaler);
         }
         float w = Mathf.Max(1, Screen.width);
         float h = Mathf.Max(1, Screen.height);
-        safe.anchorMin = new Vector2(laidSafe.xMin / w, laidSafe.yMin / h);
-        safe.anchorMax = new Vector2(laidSafe.xMax / w, laidSafe.yMax / h);
+        Rect room = UiRects.SafeArea();
+        safe.anchorMin = new Vector2(room.xMin / w, room.yMin / h);
+        safe.anchorMax = new Vector2(room.xMax / w, room.yMax / h);
         safe.offsetMin = new Vector2(Margin, Margin);
         safe.offsetMax = new Vector2(-Margin, -Margin);
 
@@ -675,7 +692,7 @@ public class TouchControls : MonoBehaviour {
         Corner(interact, tall ? new Vector2(-105f, 440f) : new Vector2(-105f, 290f));
         Corner(dodge, tall ? new Vector2(-260f, 70f) : new Vector2(-430f, 95f));
         for (int a = 0; a < abilities.Length; a++) {
-            Corner(abilities[a], tall ? new Vector2(-75f - 110f * a, 600f) : new Vector2(-190f - 110f * a, 430f));
+            Corner(abilities[a], tall ? new Vector2(-75f - 124f * a, 600f) : new Vector2(-190f - 124f * a, 430f));
         }
         // Journal and Menu hang under the top-right corner, below the health line.
         Anchored(journal, new Vector2(-62f, -200f));
