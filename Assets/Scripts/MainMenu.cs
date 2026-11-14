@@ -188,7 +188,8 @@ public class MainMenu : MonoBehaviour {
         }
         Build();
         Refresh();
-        MusicDirector.Ambience("");
+        // The Hollow's night air runs under the theme from the menu on, and carries into an Arcade run (same bed: no restart).
+        MusicDirector.Ambience("amb_hollow");
         MusicDirector.Play("theme_wallit");
         RunAnalytics.Menu();
         Ready = true;

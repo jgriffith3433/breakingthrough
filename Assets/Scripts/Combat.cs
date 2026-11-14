@@ -255,6 +255,8 @@ public static class Combat {
         SliceVoice.OnKill(foe);
         WallitVoice.OnKill(foe, Combo.Count);
         Vector3 at = foe.transform.position;
+        // A coin ping on every kill, bright and a little different each time (bigger bots ring lower).
+        GameAudio.PlayAt("coin", at, 0.5f, Random.Range(1.2f, 1.45f) * (foe.Boss ? 0.7f : 1f));
 
         Pickups.DropBolts(at, Tuning.BoltsFor(foe.Kind, foe.Elite || foe.Boss) * (foe.Boss ? 5 : 1));
         Juice.HitStop(Tuning.KillHitStop);
