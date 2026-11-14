@@ -250,7 +250,8 @@ public class ArcadeActs : MonoBehaviour {
             Sting(act, over);
             if (stage && ActBeat.Play(act)) {
                 StagedChanges++;
-                FadeSeconds = ActBeat.Seconds * 0.9f;   // the moon and the light turn while the beat plays
+                // The light blend stays Tuning.ActFadeSeconds (1.5 s) whatever plays beside it: stretching it to the beat's 3.6 s
+                // made the act 2 to 3 blend 3.23 s, outside the 1 to 2 s window.
             }
         }
         NightAtmosphere.LampRest = act == 2 ? 0.5f : 0f;   // Last Light keeps half its posts dark
