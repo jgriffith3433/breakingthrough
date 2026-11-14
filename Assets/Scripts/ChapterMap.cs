@@ -217,13 +217,55 @@ public class ChapterMap : MonoBehaviour {
     // NightAtmosphere sets the Hollow's moonlight on its own first frame; the chapter's look goes on after it (and again
     // for a moment, in case the game scene's own setup runs late).
     void Update() {
-        if (OwnScene && Own == null && MapScene.isLoaded) {
-            Fill();
+        if (OwnScene && Own == null) {
+            // The map's kit meshes and textures are made a few milliseconds a frame while its scene streams in, so Fill (which
+            // places the pieces in one go) finds them made and no single frame freezes the loading card for seconds.
+            WarmStep(0.008f);
+            if (MapScene.isLoaded && warmed) {
+                Fill();
+            }
         }
         if (!applied && Time.frameCount > 2) {
             applied = true;
             Apply();
         }
+    }
+
+    static string[] PalettesFor(string map) {
+        switch (map) {
+            case "hollow": return new[] { "yard", "street" };
+            case "hollow-edge": return new[] { "gate", "yard", "street", "arena" };
+            case "clearing-floor": return new[] { "floor", "yard", "arena" };
+            case "long-walk": return new[] { "walk", "yard", "arena" };
+            case "reading-room": return new[] { "reading", "arena" };
+            case "hollow-filed": return new[] { "filed", "yard", "arena" };
+            case "office": return new[] { "office" };
+        }
+        return new string[0];
+    }
+
+    List<KitDef> warmList;
+    int warmAt;
+    bool warmed;
+    public float WarmFraction { get { return warmed ? 1f : warmList == null || warmList.Count == 0 ? 0f : (float)warmAt / warmList.Count; } }
+
+    // Builds the next kit pieces of this map's palettes (mesh and materials) until the frame's budget is spent.
+    void WarmStep(float budgetSeconds) {
+        if (warmed) {
+            return;
+        }
+        if (warmList == null) {
+            warmList = new List<KitDef>();
+            foreach (string palette in PalettesFor(Applied.Name)) {
+                warmList.AddRange(KitCatalog.OfPalette(palette));
+            }
+        }
+        float stop = Time.realtimeSinceStartup + budgetSeconds;
+        while (warmAt < warmList.Count && Time.realtimeSinceStartup < stop) {
+            KitDef d = warmList[warmAt++];
+            KitCatalog.MaterialsOf(d, KitCatalog.MeshOf(d.Id));
+        }
+        warmed = warmAt >= warmList.Count;
     }
 
     // The scene is loaded: its "Map Root" object gets the chapter's map component, which builds the place inside the scene.
