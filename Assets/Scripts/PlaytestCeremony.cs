@@ -45,8 +45,8 @@ public static partial class Playtest {
         float seconds = ChapterCeremony.ContinueAt - t0;
         run.Event("ceremony-continue", "Continue after " + seconds.ToString("0.0") + " s");
         run.Metric("ceremonySeconds", Mathf.Round(seconds * 10f) / 10f);
-        if (seconds < 6f || seconds > 15f) {
-            run.Problem(PlaytestSeverity.Warning, "ceremony: it took " + seconds.ToString("0.0") + " s, wanted 6 to 15");
+        if (seconds < 6f || seconds > 10f) {
+            run.Problem(PlaytestSeverity.Warning, "ceremony: it took " + seconds.ToString("0.0") + " s, wanted 6 to 10");
         }
         if (continueBeforeLine) {
             run.Problem(PlaytestSeverity.Bug, "ceremony: Continue showed before Wallit spoke");
