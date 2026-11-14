@@ -442,3 +442,10 @@ A player should know a bot before it acts. Every trait has one marker made in co
 
 ### Two boons become one (Arcade evolutions)
 Four pairs of maxed boons turn into one Legendary bat: Live Wire + Grand Slam = Thunder Bat, Pine Tar + Powder Keg = Phoenix Bat, Encore + Standing Ovation = Grand Finale, Ice Bat + Wide Arc = Blizzard Bat. Every card whose boon belongs to a pair carries the partner as a small linked icon (cream while held, gold once maxed) and one line, "+ Grand Slam → Thunder Bat"; a card that finishes the pair is framed gold and reads "★ Finishes Thunder Bat". When the evolution is taken, the picker's stamp thumps down as usual and then the department answers: the stamp and home-run stingers, two soft gold rings round Wallit and one round Slice's circle, Wallit's own recorded "Treasure! Mine!" family of lines, and an EVOLVED! banner. The evolved boon stays on the HUD as a gold-framed icon over the boon list. Nothing freezes beyond the picker's own stamp, and the touch pads are back the moment the picker closes. A normal run reaches its first evolution by about wave 15 (the boons that lead to it are weighted up, and the card that finishes a pair is nearly always on offer).
+
+### The build, on the table and on the sheet (built)
+
+Pause in Arcade gains a **Build** button once the run holds a boon: a scrolling list, one row per boon (card icon, name, level
+`rank/max` or `EVO`, the card's own one-line effect). On the run-end sheet the same boons sit as an icon band with their levels,
+in its own band between the goal lines and the cast subtitle, so it never overprints them. Slice's line stays clipped; the
+panel adds no new voice. Code: `BuildPanel.cs` (`BuildList` is the shared data). Playtest: `build-panel`.
