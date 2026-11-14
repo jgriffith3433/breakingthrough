@@ -12,6 +12,10 @@ public class NightAtmosphere : MonoBehaviour {
     public static float LampStutter;
     // The act-change scene's reveal (CinematicAct.cs): -1 off; 0..1 the posts go dark, then flare on one after another.
     public static float StageReveal = -1f;
+    // The act III beat (ActBeat.cs): 0..1 puts the posts out one after another (-1 off); LampRest is how far every post stays dimmed after it.
+    public static float LampOut = -1f;
+    public static float LampRest;
+    readonly List<float> lampOutAmt = new List<float>();
 
     readonly List<Light> lanterns = new List<Light>();
     readonly List<float> lanternSeeds = new List<float>();
@@ -230,6 +234,15 @@ public class NightAtmosphere : MonoBehaviour {
                 float k = StageReveal * (lanterns.Count + 2) - i;
                 on = k < 0f ? stageDim : Mathf.Lerp(3.2f, 1f, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(k / 1.5f)));
             }
+            while (lampOutAmt.Count <= i) {
+                lampOutAmt.Add(0f);
+            }
+            float outGoal = LampRest;
+            if (LampOut >= 0f) {
+                outGoal = LampOut * (lanterns.Count + 1) - i >= 0f ? 1f : 0f;
+            }
+            lampOutAmt[i] = Mathf.MoveTowards(lampOutAmt[i], outGoal, Time.unscaledDeltaTime * (outGoal > lampOutAmt[i] ? 3f : 1f));
+            on *= 1f - 0.92f * lampOutAmt[i];
             float stutter = LampStutter > 0f && Mathf.PerlinNoise(lanternSeeds[i] + 40f, t * 7f) < 0.16f * LampStutter ? 0.4f : 1f;
             lanterns[i].intensity = (1.45f + flicker * 0.5f) * LampMul * on * stutter;
         }

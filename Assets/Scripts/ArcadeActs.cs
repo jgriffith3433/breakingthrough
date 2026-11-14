@@ -187,7 +187,7 @@ public class ArcadeActs : MonoBehaviour {
             bool over = Tuning.IsOvertime(wave);
             if (act != Act || over != InOvertime) {
                 // Acts II and III arrive as a staged scene once per run (after the wave 10 and 20 bosses); it waits for any card.
-                if (Act >= 0 && !over && act > Act && !staged[act] && CinematicDirector.ActScenesAllowed) {
+                if (Act >= 0 && !over && act > Act && !staged[act]) {
                     pendingAct = act;
                     pendingOver = over;
                 } else {
@@ -248,7 +248,12 @@ public class ArcadeActs : MonoBehaviour {
         } else {
             Banner(BannerTitle, over ? OvertimeLine : Lines[act]);
             Sting(act, over);
+            if (stage && ActBeat.Play(act)) {
+                StagedChanges++;
+                FadeSeconds = ActBeat.Seconds * 0.9f;   // the moon and the light turn while the beat plays
+            }
         }
+        NightAtmosphere.LampRest = act == 2 ? 0.5f : 0f;   // Last Light keeps half its posts dark
         RunAnalytics.Screen("act");
     }
 

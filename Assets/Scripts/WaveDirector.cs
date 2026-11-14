@@ -658,6 +658,14 @@ public class WaveDirector : MonoBehaviour {
         return enemy;
     }
 
+    // Arcade: a bot that breaks out of the ground at a spot (the act II beat, ActBeat.cs). It fights like any other bot.
+    public Enemy SpawnBurst(BotKind kind, Vector3 spot) {
+        Vector3 origin = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
+        BotDef def = BotRoster.ForSpawn(kind, Wave);
+        spot.y = GroundNear(spot, origin.y) + 0.55f + def.Scale * 0.08f;
+        return Spawn(def, spot, false);
+    }
+
     // A Campaign encounter's bot, placed at a spot and asleep (Enemy.Dormant) until the encounter wakes it (ChapterPacing).
     public Enemy SpawnPlaced(BotKind kind, Vector3 spot) {
         Vector3 origin = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
