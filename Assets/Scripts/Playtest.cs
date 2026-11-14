@@ -33,6 +33,7 @@ public static partial class Playtest {
         new PlaytestScenario("bat", "The bat: a 3-hit combo on wave 1's Yo Bots (hits and knockback, the third further), a ground smash on small Yo Bots dropped in front of the player (setup), then a charged home run into a line of Yo Bots (setup) that bowls them over; lock-on picks the nearest bot throughout. Then a minute of play", 200, "full"),
         new PlaytestScenario("bot-sound", "Each bot family's own sound (BotSound.cs): positional movement loops (at most 6 at once, nearest first), wind-up tells before blows, 3+ death variants never repeated. Metrics botLoopsPeak, botTells, botDeaths", 150, "full"),
         new PlaytestScenario("place-audio", "The Moonlit Hollow's own air (PlaceAudio.cs): the bed amb_hollow plays (event ambience), 3 spot emitters sit on real objects (spot), Wallit walks toward the nearest on the keys or, on a phone viewport (390x844), the stick finger, and its gain rises (spot-approach), his steps are counted per surface with no variant twice in a row, a landing is counted, and the bed dips under a voice line (bed-duck). Metrics placeSpotGainStart/End, placeSteps, placeLandings", 180, "full"),
+        new PlaytestScenario("tells", "Every bot blow is seen coming (AttackTell.cs): Arcade waves 1 to 3 then the wave 10 boss. A red glow on the striking claw or leg and a ground marker under the target lead each blow by 0.4-0.8 s; Slice's circle pulses when a bot reaches her and the screen edge tints toward her when she is off screen (Wallit walks away by real input); the boss's heavy attacks mark the ground 0.6 s or more ahead. On a phone (mobile, 390x844) every move is a finger and the tint stays clear of the stick and Swing. Metrics combat.tellLeadMs (mean, .min, .max), combat.untelegraphedHits, boss.telegraphLeadMs", 330, "full"),
         new PlaytestScenario("hit-fx", "The Department hit effects (DeptFx): a soft smear trail on every swing, a spark, torn paper and stamp-ink burst on every hit, a red STRUCK OFF stamp slamming on a killed bot before it folds into paper (a Spider Bot scatters its legs), a charged home run with speed lines behind the bot, a shockwave ring and a flash and dust puff where it lands, coin glints arcing to the HUD, Slice's circle rippling when struck; then wave 10 (setup: the wave key) for a crowd of 10+ bots held against 30 fps with the effects on. On a phone (mobile, 390x844) every move, swing and charge is a finger. Metrics hitFxCrowdFpsAvg, hitFxPeakParticles, hitFxPaper, hitFxStamps, hitFxLandings", 300, "full"),
         new PlaytestScenario("menus", "Shop menu, start a run, a level-up card, reroll and pick", 120, "menus"),
         new PlaytestScenario("words", "Reads the menu, the shop, the help line, build tips, pause, level-up cards and the game-over screen for retired cast words. Setup: the testing wave key visits the tip waves, then wave 2 is held until Slice falls", 300, "menus"),
@@ -682,6 +683,8 @@ public static partial class Playtest {
                 yield return BotSoundRun(options);
             } else if (id == "place-audio") {
                 yield return PlaceAudioRun(options);
+            } else if (id == "tells") {
+                yield return TellsRun(options);
             } else if (id == "hit-fx") {
                 yield return HitFxRun(options);
             } else if (id == "fight-camera") {
