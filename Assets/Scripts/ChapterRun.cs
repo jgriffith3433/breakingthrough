@@ -353,7 +353,12 @@ public class ChapterRun : MonoBehaviour {
             objective.text = ObjectiveLine;
         }
         if (xpText != null) {
-            xpText.text = (Hard ? "HARD  " : "") + CampaignProgress.HudLine();
+            // The raw LV/XP and key-label line reads like a programmer's overlay: it is the developer flag's, not the player's.
+            xpText.enabled = DevUi.On;
+            if (xpText.enabled) {
+                xpText.text = (Hard ? "HARD  " : "") + CampaignProgress.HudLine();
+            }
+            DevUi.Visible = xpText.enabled && xpText.gameObject.activeInHierarchy ? 1 : 0;
         }
         for (int i = 0; i < slotIcons.Length; i++) {
             if (slotIcons[i] != null && slotIcons[i].sprite != null) {

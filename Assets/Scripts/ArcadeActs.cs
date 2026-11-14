@@ -364,7 +364,24 @@ public class ArcadeActs : MonoBehaviour {
         get { return Instance != null && Instance.bannerCanvas != null; }
     }
 
+    // The banner owns the ActBanner slot (ScreenSlots): it waits while the boss card or the run-end sheet is up, and it
+    // sits where ScreenSlots.FitTop finds no other text, re-checked a few times a second while it shows.
+    string pendingTitle;
+    string pendingLine;
+    float pendingAge;
+    float titleH;
+    float lineH;
+    float bannerWidth;
+    float nextFit;
+
     void Banner(string title, string line) {
+        if (ScreenSlots.Busy(Slot.BossCard) || ScreenSlots.Busy(Slot.RunEnd)) {
+            pendingTitle = title;
+            pendingLine = line;
+            pendingAge = 0f;
+            return;
+        }
+        pendingTitle = null;
         if (bannerCanvas != null) {
             Destroy(bannerCanvas.gameObject);
         }
@@ -379,12 +396,30 @@ public class ArcadeActs : MonoBehaviour {
         if (compact) {
             UiFit.Apply(scaler);
         }
-        float width = compact ? UiFit.Size.x - 48f : 1400f;
-        float top = compact ? (UiFit.Mode == UiMode.Tall ? 330f : 140f) : 330f;
-        bannerTitle = MakeText(go.transform, "Title", title, compact ? 36 : 60, FontStyle.Bold, new Color(1f, 0.92f, 0.72f), width, top, compact ? 56f : 90f);
-        bannerLine = MakeText(go.transform, "Line", line, compact ? 22 : 32, FontStyle.Normal, DeptPalette.CreamSoft, width, top - (compact ? 52f : 80f), compact ? 36f : 50f);
+        bannerWidth = compact ? UiFit.Size.x - 48f : 1400f;
+        titleH = compact ? 56f : 90f;
+        lineH = compact ? 36f : 50f;
+        bannerTitle = MakeText(go.transform, "Title", title, compact ? 36 : 60, FontStyle.Bold, new Color(1f, 0.92f, 0.72f), bannerWidth, 0f, titleH);
+        bannerLine = MakeText(go.transform, "Line", line, compact ? 22 : 32, FontStyle.Normal, DeptPalette.CreamSoft, bannerWidth, 0f, lineH);
         bannerLeft = Tuning.ActBannerSeconds;
+        PlaceBanner();
     }
+
+    void PlaceBanner() {
+        if (bannerCanvas == null || bannerTitle == null) {
+            return;
+        }
+        float s = ScreenSlots.UnitScale();
+        bool clear;
+        float top = ScreenSlots.FitTop(Slot.ActBanner, bannerWidth * s, (titleH + lineH) * s, bannerCanvas.transform, out clear);
+        float cy = Screen.height * 0.5f;
+        bannerTitle.rectTransform.anchoredPosition = new Vector2(0f, (top - titleH * s * 0.5f - cy) / s);
+        bannerLine.rectTransform.anchoredPosition = new Vector2(0f, (top - titleH * s - lineH * s * 0.5f - cy) / s);
+        BannerClear = clear;
+    }
+
+    // False only when no free spot was found at the last placement.
+    public static bool BannerClear { get; private set; } = true;
 
     static Text MakeText(Transform parent, string name, string text, int size, FontStyle style, Color color, float width, float y, float height) {
         var go = new GameObject(name);
@@ -408,8 +443,20 @@ public class ArcadeActs : MonoBehaviour {
     }
 
     void LateUpdate() {
+        if (pendingTitle != null) {
+            pendingAge += Time.unscaledDeltaTime;
+            if (WaveDirector.IsLost || pendingAge > 8f) {
+                pendingTitle = null;
+            } else if (!ScreenSlots.Busy(Slot.BossCard)) {
+                Banner(pendingTitle, pendingLine);
+            }
+        }
         if (bannerCanvas == null) {
             return;
+        }
+        if (Time.unscaledTime >= nextFit) {
+            nextFit = Time.unscaledTime + 0.25f;
+            PlaceBanner();
         }
         if (WaveDirector.IsLost) {
             bannerLeft = 0f;   // the run-end panel takes the screen

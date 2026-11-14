@@ -13,7 +13,7 @@ class AudioImportRules : AssetPostprocessor
 
     public override uint GetVersion()
     {
-        return 3;
+        return 4;
     }
 
     void OnPreprocessAudio()
@@ -34,6 +34,13 @@ class AudioImportRules : AssetPostprocessor
             // Nothing reads these clips' samples any more (the mouth follows the speaker output); decoding on load keeps
             // playback instant. Not a size change: the download is the same compressed data.
             settings.loadType = AudioClipLoadType.DecompressOnLoad;
+            // Short lines: preload so the first trigger plays at once, and never load in the background (a clip that is
+            // still loading when a line fires is a silent gap). VoiceImportCheck fails the build when any of this drifts.
+            settings.preloadAudioData = true;
+            importer.preloadAudioData = true;
+            importer.loadInBackground = false;
+            // The WebGL override is explicit so no per-platform setting on a stray .meta can win.
+            importer.SetOverrideSampleSettings("WebGL", settings);
         }
         else
         {

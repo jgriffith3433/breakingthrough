@@ -234,6 +234,9 @@ public class TouchControls : MonoBehaviour {
         root.SetActive(false);
     }
 
+    // True while the pads are on screen (the cinematic check reads it).
+    public bool PadsDrawn { get { return shown && root != null && root.activeInHierarchy; } }
+
     void Update() {
         UiFit.Notice();
         bool touch = UiFit.Touch;
@@ -246,7 +249,7 @@ public class TouchControls : MonoBehaviour {
         ChapterHub hubNow = ChapterHub.Instance;
         bool hub = hubNow != null && hubNow.Shown && !hubNow.BoardOpen && !(ChapterScene.Instance != null && ChapterScene.Instance.CardUp);
         bool level = LevelScene.Instance != null;
-        bool show = touch && (WaveDirector.Instance != null || level || hub) && !lost && !LevelUpScreen.IsOpen && !PauseMenu.IsOpen && !Cutscene.IsOpen && !JournalPanel.IsOpen && !LorePanel.IsOpen;
+        bool show = touch && (WaveDirector.Instance != null || level || hub) && !lost && !LevelUpScreen.IsOpen && !PauseMenu.IsOpen && !CinematicHud.Wanted() && !JournalPanel.IsOpen && !LorePanel.IsOpen;
         if (show != shown) {
             shown = show;
             root.SetActive(show);
