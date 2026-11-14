@@ -367,6 +367,15 @@ line, is only the subtitle of a voiced line. Beats marked **(built)** exist per 
     run at once. Sound: coin ticks, `stamp_heavy` on a best, goal stamp; voice files under `Resources/Voice/`. Proof: events
     `run-end-count`, `best-stamp`, `goal-done`, `cast-exchange`, `run-start` after Retry. Playtest: `run-end`.
 
+16. **One turn per chapter, in play (built, `ChapterBeats.cs`).** Each chapter has one story turn that was a narration card line and is
+    now an event around Wallit, about 7 m ahead of the play camera (on screen at 390x844 with the touch controls up), using only
+    existing kit pieces and sounds: Ch1 a yard lamp lights where the Courier's notice fell (`courier_clip`); Ch2 the gate's lamps
+    rise red as the wall answers (`stamp_heavy`); Ch3 the red lamp over the chute comes up as the lever drops and the belt stops
+    (`stomp`); Ch4 the last pair of causeway lamps rises (`slot_shutter`); Ch5 a white door rises when the last page is read
+    (`gallery_rise`); Ch6 lanterns rise round the ring as the Order-Bearer falls (`slot_shutter`). The lines they replaced are
+    gone from `Story.cs`. Still needing art/audio: a recorded voice line per beat (the spoken lines already in each scene stay).
+    Proof: events `chapter-beat`, metrics `quality.textOnlyBeats.ch1`..`ch6`; playtest `explore` (also `explore:phone`).
+
 Beat rule: every new beat gets a row here first, with where, when, the sound and voice it needs, the event that is the proof,
 and a playtest event name.
 

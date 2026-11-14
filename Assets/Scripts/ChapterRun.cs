@@ -511,6 +511,9 @@ public class ChapterRun : MonoBehaviour {
             Progress = 1;
             defeatIn = (data.DefeatLines != null ? data.DefeatLines.Length : 0) * 2.8f + 1f;
             Events.Add("defeat|" + data.BossName);
+            if (data.Final) {
+                ChapterBeats.Play(5);   // lanterns rise round the ring as the Order-Bearer falls (was a narration line)
+            }
             MusicDirector.Play(MusicDirector.ChapterTrack(Chapter));
             GameAudio.Play("stamp", 0.8f, 0.8f);
             GameAudio.Play(data.BossName == "The Registrar" ? "ledger_close" : data.BossName == "The Courier" ? "courier_clip" : "seal_crack", 0.8f);
@@ -581,10 +584,12 @@ public class ChapterRun : MonoBehaviour {
         if (last) {
             if (data.Walk) {
                 Events.Add("last-lamp|" + data.Id);
+                ChapterBeats.Play(3);   // the last pair of lamps comes up ahead (was a narration line)
                 Fx.Ring(Marker + Vector3.up * 0.3f, 14f, new Color(1f, 0.82f, 0.38f, 0.8f), 1.4f);
             } else {
                 FeedBroken = true;
                 Events.Add("feed-broken|" + data.Id);
+                ChapterBeats.Play(2);   // the red lamp over the chute goes out of true (was a narration line)
                 GameAudio.Play("stomp", 1f, 0.5f);
                 Fx.Ring(Marker + Vector3.up * 0.3f, 18f, new Color(1f, 0.3f, 0.2f, 0.8f), 1.4f);
                 if (floorProps != null) {
@@ -657,6 +662,7 @@ public class ChapterRun : MonoBehaviour {
             Marker = Musician.Instance.transform.position;
             beacon.transform.position = Marker;
         }
+        ChapterBeats.Play(1);   // the wall answers: the gate's lamps come up red (was a narration line)
         Events.Add("gate-scene|" + data.Id);
         Cutscene.Play(data.GateScene, () => Events.Add("gate-scene-done|" + data.Id));
     }
@@ -677,6 +683,9 @@ public class ChapterRun : MonoBehaviour {
     // A page is read out when its wave is down: its forms on the wall turn over, blank.
     void PageRead(int page) {
         pagesRead = page;
+        if (page >= data.Waves) {
+            ChapterBeats.Play(4);   // the white door rises when the last page is read
+        }
         Events.Add("page-read|" + page + "|" + data.Waves);
         GameAudio.Play("stamp", 0.7f, 0.9f + page * 0.05f);
         // The Reading Room's own scene turns that page's forms over (ReadingMap).
