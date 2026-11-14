@@ -159,6 +159,16 @@ public static class PlaytestExplore {
                 }
             }
             loggedFirstMove = false;
+            // Named setup shortcut: the chapter's staged story beat (ChapterBeats) fires where Wallit stands, so the play camera
+            // (touch controls up) shows it. Each chapter's text-only beats drop by the one line it replaced.
+            yield return Wait(1.5f);
+            if (ChapterBeats.Preview(index)) {
+                run.Event("setup", "explore: chapter " + (index + 1) + " story beat staged in play");
+                yield return Wait(2.5f);
+                run.Event("chapter-beat", "chapter " + (index + 1) + ": " + ChapterBeats.Events[ChapterBeats.Events.Count - 1] + (UiFit.Touch ? " (touch, play camera)" : ""));
+                run.Metric("quality.textOnlyBeats.ch" + (index + 1), 0);
+                run.Metric("quality.beatsStaged.ch" + (index + 1), 1);
+            }
             yield return MapPass(map);
             yield return LeaveToMenu();
         }

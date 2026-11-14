@@ -1286,6 +1286,7 @@ public class LevelYard : MonoBehaviour {
         if (resumedClear) {
             yield break;
         }
+        ChapterBeats.Play(0);   // a lamp lights in the yard where the notice fell (was a narration line)
         string[] lines = Story.Chapters[0].DefeatLines;
         for (int i = 0; lines != null && i < lines.Length; i++) {
             yield return SayInTurn(lines[i], "clear");
