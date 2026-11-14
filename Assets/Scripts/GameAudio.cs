@@ -48,6 +48,7 @@ public class GameAudio : MonoBehaviour {
 
     void Awake() {
         instance = this;
+        ExposeToProbe();
         for (int i = 0; i < voices.Length; i++) {
             AudioSource source = gameObject.AddComponent<AudioSource>();
             source.playOnAwake = false;
@@ -168,7 +169,20 @@ public class GameAudio : MonoBehaviour {
 #if UNITY_WEBGL && !UNITY_EDITOR
     [DllImport("__Internal")]
     static extern void HawkesSoundProbeEmit(string json);
+    [DllImport("__Internal")]
+    static extern void HawkesAudioExpose();
 #endif
+
+    // Announces Unity's own AudioContext (and starts copying its output) to the playtest audio probe: the page's probe cannot
+    // see FMOD's context by itself. Safe to call often; a no-op outside a WebGL player.
+    public static void ExposeToProbe() {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        try {
+            HawkesAudioExpose();
+        } catch (System.Exception) {
+        }
+#endif
+    }
 
     // Tells the playtest audio probe a sound started (the page's hawkes-audio.js reads it as a sound-start), so
     // audio.sounds, the silent-action check and the loudness window all see what the game plays. Not per frame.
@@ -300,7 +314,13 @@ public class GameAudio : MonoBehaviour {
         Note(bus, name, index, world, at, baseVolume, rate, variant.clip.length / rate);
     }
 
+    float nextExpose;
+
     void Update() {
+        if (Time.unscaledTime >= nextExpose) {
+            nextExpose = Time.unscaledTime + 2f;
+            ExposeToProbe();
+        }
         bool held = !WallitVoice.FloorFree;
         string state = held ? "Voice" : "Normal";
         if (state != Snapshot) {

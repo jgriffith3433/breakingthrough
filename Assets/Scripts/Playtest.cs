@@ -28,6 +28,7 @@ public static partial class Playtest {
         new PlaytestScenario("exposure", "Is the light well exposed from wave 1 to wave 30 (PlaytestExposure.cs; run with mobile for 390x844 touch): Arcade, the wave key (setup) to waves 1, 5, 10, 15, 20, 25 and 30, each frame read through the grade for mean luminance and the share of pure-white pixels (event exposure; a problem over 2% white or a climb over 10% inside one act). Metrics exposureLuma_<wave>, exposureWhitePct_<wave>, exposureDrift", 420, "smoke"),
         new PlaytestScenario("film-light", "The Moonlit Hollow lit like a film set, one look per Arcade act (FilmLight.cs; fingers only on a phone viewport, run with mobile for 390x844): acts 1, 2 and 3 reached by the wave key (setup), each photographed with its key light colour, grade and frame brightness (film-look, film-keys; the three keys must differ), a silhouette check of Wallit, Slice and the bots against the background (film-silhouette, act 2 needs a visible rim), every act change sampled for its whole blend (film-blend: about 1.5 s, no black frame, no jump), and the 5th-percentile frame rate per act (film-fps, 30 or more on the phone tier with no real-time shadows). Metrics filmKeyDistance_1_2, filmKeyDistance_2_3, filmBlendSeconds, filmBlendMinLuma_2/3, filmRimMin, filmFpsP5_1/2/3", 300, "smoke"),
         new PlaytestScenario("arcade-score", "Arcade's reactive score (ArcadeScore.cs; fingers only on a phone viewport): no stem is made or downloaded before wave 1 (stemDownloadsBeforeWave1); with four bots within 6 m of Slice two layers come in on a bar line (score-layers, scoreLayersUnderPressure, scoreBarLateMaxMs); after the wave clears they are silent within 4 s (score-clear, scoreClearFadeSeconds); the wave key to 10, 20 and 30: each boss adds a layer at its phase change and plays a 3-5 s cadence on death (score-boss, scoreBossLayer<n>, scoreCadenceSeconds<n>); on the phone tier no more than 3 music sources play at once (scoreMaxStreams)", 600, "smoke"),
+        new PlaytestScenario("first-minute", "Arcade's first minute (FirstMinute.cs; on a phone viewport, 390x844, fingers only through the stick and Swing): the game itself reports the milestones gameplay, first-input-accepted and first-success (events milestone, metrics milestone.gameplay / milestone.first-input-accepted / milestone.first-success, seconds from the page opening). The bot plays from the cold start; the first Yo Bot must be in swing reach within 3 s (first-bot-reach), fall to two bat hits (first-kill-hits) and the first kill must come within 10 s of the first control (first-success-seconds). Metrics firstInputSeconds, firstSuccessSeconds, firstKillHits, firstBotReachSeconds", 60, "smoke"),
         new PlaytestScenario("onboarding", "Arcade's first seconds: the bot waits without swinging until a Yo Bot is approaching or in reach (event first-bot-near / first-bot-approach, by 4 s), the swing hint is read then hidden by the first hit or 8 s (hint-hidden); then it walks away until the edge arrow shows while none is in swing reach (arrow-shown) and clears wave 1", 90, "smoke"),
         new PlaytestScenario("run", "A full run until the musician falls, picking level-ups: the bot guards the musician with the bat (walks to the nearest bot near the piano, locks on, swings, walks back). Should pass wave 5 without 'no kills for 45 s'", 600, "full"),
         new PlaytestScenario("bat", "The bat: a 3-hit combo on wave 1's Yo Bots (hits and knockback, the third further), a ground smash on small Yo Bots dropped in front of the player (setup), then a charged home run into a line of Yo Bots (setup) that bowls them over; lock-on picks the nearest bot throughout. Then a minute of play", 200, "full"),
@@ -181,6 +182,16 @@ public static partial class Playtest {
 #endif
 
     static PlaytestRun run;
+
+    // A first-minute milestone from the game itself (FirstMinute): an event and the metric milestone.<name> in seconds from page open.
+    public static void Milestone(string name, float seconds, string note) {
+        if (run == null || run.Done) {
+            return;
+        }
+        run.Event("milestone", name + " " + seconds.ToString("0.0") + " s: " + note);
+        run.Metric("milestone." + name, seconds);
+    }
+
     // True from the moment a scenario starts (WaveDirector.WaveKeysAllowed: the bot's setup shortcut may use the wave keys).
     public static bool Running { get; private set; }
     // A runner started a scenario on the page's stand-in bridge before Unity loaded (Install adopts it): the scenario is wanted
@@ -634,6 +645,9 @@ public static partial class Playtest {
             if (id == "upgrades") {
                 UpgradesShop();
             }
+            if (id == "first-minute") {
+                PrepareFirstMinute();
+            }
             yield return StartRun();
             if (run.Done) {
                 yield break;
@@ -671,6 +685,8 @@ public static partial class Playtest {
                 yield return ExposureRun(options);
             } else if (id == "arcade-score") {
                 yield return ArcadeScoreRun(options);
+            } else if (id == "first-minute") {
+                yield return FirstMinuteRun(options);
             } else if (id == "onboarding") {
                 yield return OnboardingRun(options);
             } else if (id == "act-change") {

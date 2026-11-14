@@ -74,6 +74,14 @@ Eight places, each its own scene or map, plus six hidden rooms. Size is the walk
 - Gap: the 61 later kit pieces and several lodger/boss bodies are still code-built stand-ins (Gen art replacement approved by J,
   2026-11-07, budget in the memory decision).
 
+### Slice at the circle (stakes, told in play)
+
+The circle is the one filed address; everything else in the Hollow can be cleared. A player learns that from Slice, not from a card:
+the first time a bot reaches the ring in a run she turns on it, knife up, and says why it matters ("That's the address. Nobody
+takes it."); later arrivals get a short bark ("Off the circle.", "Not here.", "Mine.", "Back."), at most one per 9 s through
+`VoiceDirector`. Hook: `AttackTell.ReachedCircle` -> `SliceVoice.Reached`. Her want: keep the one filed thing filed. Her arc in
+Arcade: clipped and bored at wave 1, thin and stubborn when low. Voice files are optional (`slice_<line>.mp3`); the subtitle plays without one.
+
 ## Landmarks
 
 One far-visible thing per area, so a player can steer by it. All are already in a map sheet; the bible fixes which one leads.

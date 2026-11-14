@@ -213,6 +213,14 @@ public static class Combat {
 
         Pickups.DropBolts(at, Tuning.BoltsFor(foe.Kind, foe.Elite || foe.Boss) * (foe.Boss ? 5 : 1));
         Juice.HitStop(Tuning.KillHitStop);
+        if (!FirstMinute.SuccessSeen && ChapterRun.Instance == null) {
+            // The first kill of an Arcade run pays off: a longer hit-stop, a fuller bolt burst, a soft ring and Wallit's word.
+            FirstMinute.NoteKill();
+            Pickups.DropBolts(at, Tuning.FirstKillBonusBolts);
+            Juice.HitStop(Tuning.FirstKillHitStop);
+            Fx.Ring(at + Vector3.up * 0.1f, 5f, new Color(1f, 0.9f, 0.5f, 0.8f), 0.5f);
+            UpgradeLook.Say("Pay up.", 1.6f, 200f);
+        }
         killCoinCount++;
         if (!foe.Golden && !foe.Boss && ChapterRun.Instance == null
             && (WaveDirector.Wave <= Tuning.CoinKillWaves || killCoinCount % Tuning.CoinKillEvery == 0)) {

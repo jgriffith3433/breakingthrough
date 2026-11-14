@@ -69,6 +69,10 @@ public class AudioMix : MonoBehaviour {
             GameAudio.NoteOther(GameAudio.Bus.Ambience, "place " + place);
         }
         ReverbDecay = DecayOf(Place);
+        if (Time.unscaledTime >= nextListenerCheck) {
+            nextListenerCheck = Time.unscaledTime + 0.25f;
+            EnsureOneListener();
+        }
         EnsureLimiter();
     }
 
@@ -135,6 +139,50 @@ public class AudioMix : MonoBehaviour {
 
     void OnSceneSettled(UnityEngine.SceneManagement.Scene s, UnityEngine.SceneManagement.LoadSceneMode m) {
         settleUntil = Time.unscaledTime + 1f;
+        nextListenerCheck = 0f;
+        EnsureOneListener();
+    }
+
+    // Exactly one AudioListener, always (Unity logs "There are 2 audio listeners" / "no audio listeners" otherwise): a scene
+    // camera, the menu stage camera, a cinematic or a gallery camera may each bring one. The listener on the best enabled camera
+    // stays (Camera.main first, then the highest depth) and the rest are switched off; with none, one goes on that camera.
+    public static int ListenerFixes { get; private set; }
+    float nextListenerCheck;
+
+    public static void EnsureOneListener() {
+        AudioListener[] all = Object.FindObjectsByType<AudioListener>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        AudioListener keep = null;
+        float best = float.NegativeInfinity;
+        Camera main = Camera.main;
+        foreach (AudioListener l in all) {
+            if (l == null || !l.enabled) continue;
+            Camera c = l.GetComponent<Camera>();
+            float score = c != null && c.enabled ? c.depth + (c == main ? 1000f : 0f) : -500f;
+            if (keep == null || score > best) {
+                keep = l;
+                best = score;
+            }
+        }
+        foreach (AudioListener l in all) {
+            if (l != null && l != keep && l.enabled) {
+                l.enabled = false;
+                ListenerFixes++;
+            }
+        }
+        if (keep == null) {
+            Camera cam = Camera.main != null && Camera.main.enabled ? Camera.main : null;
+            if (cam == null) {
+                foreach (Camera c in Camera.allCameras) {
+                    if (c != null && c.enabled && c.targetTexture == null && (cam == null || c.depth > cam.depth)) cam = c;
+                }
+            }
+            if (cam != null) {
+                AudioListener existing = cam.GetComponent<AudioListener>();
+                if (existing != null) existing.enabled = true;
+                else cam.gameObject.AddComponent<AudioListener>();
+                ListenerFixes++;
+            }
+        }
     }
 
     void OnSceneGone(UnityEngine.SceneManagement.Scene s) {

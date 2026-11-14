@@ -792,20 +792,18 @@ public partial class CinematicDirector : MonoBehaviour {
     void TickSkipInput() {
         bool touch = UiFit.Touch;
         if (touch) {
-            if (PlayInput.GetMouseButtonDown(0) || Input.touchCount > 0) {
-                if (!skipRevealed) {
-                    skipRevealed = true;
-                    if (skipPill != null) {
-                        skipPill.SetActive(true);
-                    }
-                    Events.Add("skip-pill");
-                    touchDownAt = Time.unscaledTime;
-                    return;
+            // The pill is up from the first frame (bottom right, inside the safe area); a tap anywhere skips after 1 s.
+            if (!skipRevealed) {
+                skipRevealed = true;
+                if (skipPill != null) {
+                    skipPill.SetActive(true);
                 }
-                if (Time.unscaledTime - touchDownAt > 0.15f && skipButton != null) {
-                    // A second tap anywhere after the pill is up skips (phone acceptance).
-                    Skip();
-                }
+                Events.Add("skip-pill");
+                touchDownAt = Time.unscaledTime;
+                return;
+            }
+            if ((PlayInput.GetMouseButtonDown(0) || Input.touchCount > 0) && Time.unscaledTime - touchDownAt > 1f) {
+                Skip();
             }
             if (PlayInput.GetKeyDown(KeyCode.Escape)) {
                 Skip();
@@ -1459,8 +1457,11 @@ public partial class CinematicDirector : MonoBehaviour {
             var safe = Screen.safeArea;
             float scale = scaler.referenceResolution.y / Mathf.Max(1f, Screen.height);
             var rt = skipPill.GetComponent<RectTransform>();
-            rt.anchoredPosition = new Vector2(-(Screen.width - safe.xMax) * scale - 20f, -(safe.yMax - (safe.y + safe.height)) * scale - 20f);
-            rt.sizeDelta = new Vector2(Mathf.Max(160f, 88f), Mathf.Max(64f, 88f));
+            // Bottom right, clear of the home bar; the pill is at least 88 units (about 52 px) tall.
+            rt.anchorMin = rt.anchorMax = new Vector2(1f, 0f);
+            rt.pivot = new Vector2(1f, 0f);
+            rt.anchoredPosition = new Vector2(-(Screen.width - safe.xMax) * scale - 20f, safe.y * scale + 20f);
+            rt.sizeDelta = new Vector2(200f, 88f);
         }
     }
 }
