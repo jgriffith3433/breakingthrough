@@ -155,6 +155,11 @@ public static class UiFit {
     // and tablets draw the corners' touch pads there (stick left, Swing/Lock/Jump right), so the line moves to a band
     // under the wave counter and the Next wave button at the top, clear of every pad; slot 0 is the first line.
     public static void PlaceCaption(RectTransform rect, float desktopY, int slot) {
+        Text label = rect.GetComponent<Text>();
+        if (label != null) {
+            // Phones stack every caption in one column (CaptionStack): boss, Wallit, chorus, then Slice, then her callout.
+            CaptionStack.Register(label, slot * 1000f - desktopY);
+        }
         if (Mode == UiMode.Desktop) {
             rect.anchorMin = new Vector2(0.5f, 0f);
             rect.anchorMax = new Vector2(0.5f, 0f);
@@ -166,14 +171,19 @@ public static class UiFit {
         rect.anchorMin = new Vector2(0.5f, 1f);
         rect.anchorMax = new Vector2(0.5f, 1f);
         rect.pivot = new Vector2(0.5f, 1f);
-        // Portrait: the wave bar's "Yo Bot / n left" row sits at about 390-420 units down, so the band starts below it.
-        float top = Mode == UiMode.Tall ? ScreenSlots.CaptionTopTall : ScreenSlots.CaptionTopWide;   // the Caption slot's top (ScreenSlots)
         Vector4 safe = SafeInsets();
-        // The boss bar's own rectangle, when it is up, pushes the band down below it.
-        top = Mathf.Max(top, reservedTop > 0f ? reservedTop + 14f - safe.z : 0f);
         // Shifted off a notch at the top, and narrowed to the safe width; the band stays between the pads' corners.
-        rect.anchoredPosition = new Vector2((safe.x - safe.y) * 0.5f, -top - safe.z - 70f * slot);
+        rect.anchoredPosition = new Vector2((safe.x - safe.y) * 0.5f, -CaptionTop() - 70f * slot);
         rect.sizeDelta = new Vector2(Mathf.Min(1000f, Size.x - 40f - safe.x - safe.y), 64f);
+    }
+
+    // Units down from the canvas top where the phone caption column starts: the Caption slot's top (ScreenSlots), pushed
+    // below the boss bar's rectangle while it is up, and below a notch.
+    public static float CaptionTop() {
+        float top = Mode == UiMode.Tall ? ScreenSlots.CaptionTopTall : ScreenSlots.CaptionTopWide;
+        Vector4 safe = SafeInsets();
+        top = Mathf.Max(top, reservedTop > 0f ? reservedTop + 14f - safe.z : 0f);
+        return top + safe.z;
     }
 
     // desktopMatch is the canvas's own matchWidthOrHeight, kept as it was on desktop.

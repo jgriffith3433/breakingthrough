@@ -36,6 +36,7 @@ public static class PlaytestSlicePartner {
             yield break;
         }
         run.Scene("Arcade partner");
+        ScreenSlots.StartProbe();   // ui.textOverlaps / ui.textOverflows over the whole run
         run.Event("phone-viewport", Screen.width + "x" + Screen.height + " touch=" + UiFit.Touch);
         if (Screen.width != 390 && !browser) {
             run.Event("phone-viewport-soft", "wanted 390x844, got " + Screen.width + "x" + Screen.height + " (layout still ForcedTouch)");
@@ -148,6 +149,11 @@ public static class PlaytestSlicePartner {
         }
 
         run.Metric("quality.textOnlyBeats", 0);
+        Playtest.ReportTextOverlaps("slice-partner");
+        if (Screen.height > Screen.width && CaptionStack.BottomFraction > CaptionStack.PadFraction + 0.01f) {
+            run.Problem(PlaytestSeverity.Bug, "captions reach the touch pads (end " + Mathf.RoundToInt(CaptionStack.BottomFraction * 100f) + "% down)");
+        }
+        ScreenSlots.StopProbe();
         yield return new WaitForSecondsRealtime(1f);
         if (!browser) { Screen.SetResolution(wasW, wasH, false); }
         UiFit.ForceTouch(wasTouch);

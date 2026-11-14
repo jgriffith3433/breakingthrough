@@ -220,14 +220,10 @@ public static class PlaytestOpening {
         yield return Wait(2.5f);
         float skipAt = Time.realtimeSinceStartup;
         if (Phone) {
-            // First tap reveals the Skip pill; second tap skips.
-            TouchControls.BotFinger(9, new Vector2(Screen.width * 0.5f, Screen.height * 0.5f), true);
-            yield return Wait(0.05f);
-            TouchControls.BotFinger(9, Vector2.zero, false);
-            yield return Wait(0.3f);
+            // The pill is up with no tap; one tap anywhere (after 1 s) skips.
             run.Event("skip-pill", CinematicDirector.Instance != null && CinematicDirector.Instance.SkipPillShown ? "shown" : "missing");
-            if (CinematicDirector.Instance != null && !CinematicDirector.Instance.SkipPillShown) {
-                run.Problem(PlaytestSeverity.Bug, "opening-scene: tap did not show the Skip pill on phone");
+            if (CinematicDirector.Instance == null || !CinematicDirector.Instance.SkipPillShown) {
+                run.Problem(PlaytestSeverity.Bug, "opening-scene: Skip pill not shown on phone without a tap");
             }
             TouchControls.BotFinger(9, new Vector2(Screen.width * 0.5f, Screen.height * 0.5f), true);
             yield return Wait(0.05f);

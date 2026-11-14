@@ -318,7 +318,8 @@ public class MainMenu : MonoBehaviour {
             StartCoroutine(FlyIn());
             return;
         }
-        ScreenTransition.Load(ScreenTransition.Kind.Enter, MetaProgress.GameScene);
+        // Arcade goes straight in: no sheet over a scene the player is waiting to act in.
+        SceneManager.LoadScene(MetaProgress.GameScene);
     }
 
     // Play: the camera pushes in toward Slice's ring while the run loads behind it, then the run takes over from that
@@ -349,12 +350,11 @@ public class MainMenu : MonoBehaviour {
             }
             yield return null;
         }
-        // The paper sheet and ENTER stamp cover the hand-over, so the run opens from the page turning, not a cut.
+        // No blank ENTER sheet: the last title frame (MenuHandoff, which never takes taps) covers the hand-over and dissolves
+        // as the run's first frames appear, so input is live the moment the scene is visible.
         RenderTexture picture = Stage.TakePicture();
-        ScreenTransition.Go(ScreenTransition.Kind.Enter, () => {
-            MenuHandoff.Begin(picture);
-            load.allowSceneActivation = true;
-        }, true);
+        MenuHandoff.Begin(picture);
+        load.allowSceneActivation = true;
     }
 
     void OpenCampaign() {
