@@ -2,13 +2,13 @@ using UnityEngine;
 
 // The mix, kept in code (an AudioMixer asset can only be authored in the editor): buses (Music, Voice, SFX-Combat, SFX-World,
 // Ambience, UI) are the gains each system applies, snapshots (Menu, Explore, Combat, Boss, Cutscene, Pause) set them, a
-// sidechain-style duck lowers Music 6 dB and Ambience 4 dB under any voice (150 ms attack, 600 ms release), a home run dips
+// sidechain-style duck lowers Music 7 dB and Ambience 7 dB under any voice (150 ms attack, 600 ms release), a home run dips
 // everything else for its crack, reverb follows the place, and a soft limiter sits on the listener.
 public class AudioMix : MonoBehaviour {
     public enum Snap { Menu, Explore, Combat, Boss, Cutscene, Pause }
 
-    public const float MusicDuckDb = -6f;
-    public const float AmbienceDuckDb = -4f;
+    public const float MusicDuckDb = -7f;
+    public const float AmbienceDuckDb = -7f;
     const float Attack = 0.15f;
     const float Release = 0.6f;
     const float CeilingDb = -1.5f;

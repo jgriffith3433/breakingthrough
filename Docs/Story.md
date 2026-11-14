@@ -708,3 +708,7 @@ The Department's wall is the edge of the Hollow, and it is how the player sees t
 in it for the length of the break (warm light spills out, Slice's circle burns a step brighter); at waves 10, 20 and 30 the wall
 breaks and drops to stumps. Chapter 6 opens on those stumps ("The circle is brighter.") and opens the door again between its
 three waves. No line explains it: Wallit and Slice only react ("Clean."). Code: `WorldPayoff.cs`; bible beat 15.
+
+### Boss entrance voices (Nov 14)
+
+Each boss's entrance is spoken in its own cast voice, not the Yo Bot chorus: Courier (K) "Special delivery! Notice of striking!", Plated Alpha (P) "Address: INVALID.", Foreman (F) "Overtime. Read louder.", Server (V) "Served. Kindly remain.", Registrar (R) "Page two. Initial here.", Order-Bearer (O) "The seal turns." Only the Courier has an intro recording; the others borrow their closest existing bark line (no new audio). The Half-Built stays a Yo Bot (Y). In-fight barks add a low-health line (a quarter health left, the boss's home-run line) to phase change, home run and win.
