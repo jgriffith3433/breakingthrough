@@ -56,6 +56,7 @@ public class CampaignPanel : MonoBehaviour {
             new GameObject("Case Files").AddComponent<CampaignPanel>();
         }
         instance.armedErase = -1;
+        instance.opening = false;
         instance.root.SetActive(true);
         instance.Fill();
         instance.Layout();
@@ -121,10 +122,17 @@ public class CampaignPanel : MonoBehaviour {
             slotRanks[i].text = slot.used ? RanksLine(slot) : "";
             PlusButtons[i].gameObject.SetActive(CampaignGrade.Filed(slot));
             slotImages[i].color = slot.used ? new Color(0.3f, 0.24f, 0.12f, 1f) : new Color(0.14f, 0.15f, 0.21f, 1f);
+            SlotButtons[i].transform.localScale = Vector3.one;
             EraseButtons[i].gameObject.SetActive(slot.used);
             eraseLabels[i].text = armedErase == i ? "Sure?" : "Erase";
             EraseButtons[i].GetComponent<Image>().color = armedErase == i ? new Color(0.7f, 0.16f, 0.12f, 1f) : new Color(0.28f, 0.2f, 0.18f, 1f);
+            UiRects.EnsureProbe(SlotButtons[i], slotTitles[i].text);
+            UiRects.EnsureProbe(EraseButtons[i], eraseLabels[i].text);
+            UiRects.EnsureProbe(PlusButtons[i], "New Game+");
         }
+        UiRects.EnsureProbe(LoreButton, "Lore log");
+        UiRects.EnsureProbe(JournalButton, "Journal");
+        UiRects.EnsureProbe(BackButton, "Back");
     }
 
     // "Ranks 1 A  2 B  3 S  4 -  5 -  6 -", with the loop on a New Game+ file.
@@ -146,6 +154,21 @@ public class CampaignPanel : MonoBehaviour {
         int chapter = CampaignSave.Open(index);
         RunAnalytics.Screen("chapter_" + (chapter + 1));
         GameAudio.PlayUI("stamp", 0.6f);
+        if (index >= 0 && index < CampaignSave.SlotCount) {
+            if (slotImages[index] != null) {
+                slotImages[index] = SlotButtons[index] != null ? SlotButtons[index].GetComponent<Image>() : slotImages[index];
+                if (slotImages[index] != null) {
+                    slotImages[index].color = new Color(0.46f, 0.36f, 0.16f, 1f);
+                }
+            }
+            if (SlotButtons[index] != null && !ComfortOptions.ReducedMotion) {
+                SlotButtons[index].transform.localScale = new Vector3(0.95f, 0.95f, 1f);
+            }
+        }
+        if (subtitle != null) {
+            subtitle.text = "Pulling the case file…";
+            subtitle.color = new Color(1f, 0.86f, 0.45f, 1f);
+        }
         if (opening) {
             return;
         }
