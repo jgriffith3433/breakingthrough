@@ -339,7 +339,8 @@ public class ControlsHelp : MonoBehaviour {
             line.text = next;
             flash = 1f;
         }
-        float y = building ? 176f : 36f;
+        // Desktop captions own 140-284 (Slice 140, Wallit and the chorus 190, her callout 240), so the build hint sits above them.
+        float y = building ? 300f : 36f;
         if (laidOut == UiMode.Wide) {
             y = building ? 150f : 34f;
         } else if (laidOut == UiMode.Tall) {
