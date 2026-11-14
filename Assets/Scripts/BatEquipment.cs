@@ -35,6 +35,12 @@ public class BatEquipment : MonoBehaviour {
     // One line per thing worth seeing ("swing 3: 2 birds hit..."). The playtest drains it; capped so nobody has to.
     public static readonly List<string> Events = new List<string>();
 
+    // The body clip this swing or wind-up plays and how far into it we are: CharacterMovement checks that the clip is
+    // still the one on screen while Wallit walks, and puts it back if the locomotion cross fade took the pose.
+    public static int ActionClip { get { return Instance != null && Instance.move != Move.None ? Instance.actionClip : -1; } }
+    public static float ActionElapsed { get { return Instance != null ? (Instance.charging ? Instance.pressTime : Instance.moveTime) : 0f; } }
+    int actionClip = -1;
+
     public static bool IsAnimatingAction {
         get { return Instance != null && (Instance.move != Move.None || Instance.charging); }
     }
@@ -475,6 +481,7 @@ public class BatEquipment : MonoBehaviour {
                     charge = 0f;
                     chargeFull = false;
                     move = Move.None;
+                    actionClip = CharacterMovement.CLIP_HOMERUN_CHARGE;
                     CharacterMovement.PlayWallitClip(CharacterMovement.CLIP_HOMERUN_CHARGE);
                 } else if (anim != null) {
                     anim.SetInteger("Clip", CharacterMovement.CLIP_HOMERUN_CHARGE);
@@ -607,6 +614,7 @@ public class BatEquipment : MonoBehaviour {
         RunLog.NoteSwing();
         bool big = next == Move.HomeRun || next == Move.Swing3 || next == Move.Spin;
         GameAudio.Play("batswing", big ? 0.6f : 0.42f, Random.Range(0.92f, 1.08f) * (next == Move.Swing3 ? 0.85f : next == Move.Spin ? 0.75f : 1f));
+        actionClip = wallitClip;
         CharacterMovement.PlayWallitClip(wallitClip, moveLength);
         if (anim != null && anim.layerCount > 1) {
             anim.SetTrigger("Fire");
