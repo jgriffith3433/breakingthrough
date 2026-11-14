@@ -176,6 +176,11 @@ public static class PlaytestOpeningEndings {
         if (run.Done) {
             yield break;
         }
+        float eLuma, eWhite;
+        Playtest.ExposureSample("ending received", out eLuma, out eWhite);
+        if (eWhite > 2f) {
+            run.Problem(PlaytestSeverity.Bug, "opening-endings: RECEIVED frame is " + eWhite.ToString("0.0") + "% pure white");
+        }
         run.Metric("endingDoors", CinematicDirector.DoorsShown);
         if (CinematicDirector.DoorsShown < 6) {
             run.Problem(PlaytestSeverity.Bug, "opening-endings: RECEIVED showed " + CinematicDirector.DoorsShown + " doors (need ≥6)");
