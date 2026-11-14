@@ -121,6 +121,11 @@ public class Enemy : MonoBehaviour
     public float WindRemaining { get { return windLeft; } }
     public float NextBlowIn { get { return Mathf.Max(0f, peckIn); } }
     public bool IsCharger { get { return charger; } }
+    // TraitMark.cs reads these: which traits this bot carries (a bit per BotTrait), and a Blinker about to jump.
+    int traitMask;
+    public bool HasTrait(BotTrait t) { return (traitMask & (1 << (int)t)) != 0; }
+    public int TraitMask { get { return traitMask; } }
+    public bool BlinkSoon { get { return blinker && !down && blinkIn < TraitMark.BlinkWarn; } }
 
     public Transform StrikingLimb() { return AttackLimb(); }
 
@@ -759,6 +764,12 @@ public class Enemy : MonoBehaviour
 
     void ApplyTrait(BotTrait trait)
     {
+        if (trait != BotTrait.None)
+        {
+            traitMask |= 1 << (int)trait;
+            if (GetComponent<TraitMark>() == null)
+                gameObject.AddComponent<TraitMark>();
+        }
         switch (trait)
         {
             case BotTrait.Sprinter:
