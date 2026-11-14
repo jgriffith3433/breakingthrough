@@ -20,6 +20,7 @@ public static partial class Playtest {
         new PlaytestScenario("explore", "Walks every live map (Arcade, chapters 1-6, the hub) on the stick: stuck cells, falls, reachability per map (map-explore; explore.stuckCells/falls/reachablePct.<map>), plus a per-frame camera feel detector (camera-feel: inside geometry, within 0.15 m, snaps over 30 deg, jitter; feel.cameraInsideFrames/Near/Snap/Jitter.<map>) and acceptance probes (camera-corner pull-in, camera-idle 2 s recentre, camera-lock ease). State note carries chapter, objective, position, grounded, camera, fov and followDist", 1200, "content"),
         new PlaytestScenario("ch1", "Alias of campaign-beats: Chapter 1 from the case file to its boss and the return slot", 700, "content"),
         new PlaytestScenario("coldopen", "The cold open (Docs/Story.md, \"The intro\"): on a fresh save Arcade shows no text page; the RETURN TO SENDER stamp drops onto Wallit, he lands in the circle as its ring lights, Slice says one existing line (subtitle only) and the first Yo Bot rushes in (events coldopen-start, coldopen-land, coldopen-end with the seconds from Play and why: done or input). The bot lets it play until it ends or a Yo Bot is close, then fights; on a phone viewport (390x844) it plays with fingers only (stick and Swing). Events first-hit (seconds from Play and from the run start, the words on screen before it), coldopen-words (the largest count of visible words outside the standing HUD: 12 or fewer wanted), coldopen-subtitle (HUD overlap check at the moment of Slice's line). Then the menu again and a second Arcade start on the same browser: no coldopen-start (coldopen-absent). Metrics coldopenSeconds, coldopenSecondsToFirstHit, coldopenWords, coldopenSecondStart", 120, "smoke"),
+        new PlaytestScenario("soak", "Soak, about 20 minutes in one page (PlaytestSoak.cs; run with mobile for 390x844 touch, fingers only): Arcade from wave 1 for 12 minutes, then Campaign chapters 1 to 3 with the openings skipped. Every minute the event soak-minute and metrics soak.<name>.<minute> report fps p5 (fpsP5) and average (fpsAvg), Unity's reserved and allocated memory (reservedMb, allocatedMb), the JS heap where the browser has one (jsHeapMb) and the live particle systems, lights and audio sources (particleSystems, lights, audioSources); soak.crashed is 1 if a frame took over 20 s, soak.reservedGrowthMb and soak.minutes at the end", 1500, "smoke"),
         new PlaytestScenario("smoke", "Boot, menu, Arcade: shots at t=2, 4 and 10 s of play (events open-shot) so a Yo Bot is approaching or in reach by 4 s, the swing hint is gone by 10 s, and the edge arrow only shows while none is in swing reach; then about 30 s of bat play", 50, "smoke"),
         new PlaytestScenario("hollow-landmark", "The Dead Letter Office ruin behind the circle (docs/world-bible.md, A): in the first frame of an Arcade run the office's clock is on the play camera (landmark-view; on a phone, 390x844 touch, in the upper half: landmark-phone), at least 12 dressing props with none floating or sunk and none inside the bots' 150 m (prop-audit, props-clear; metrics hollowProps, hollowFloating, hollowSunk), a hedge and picket rim on all four sides (boundary-sides, hollowSide0..3), draw calls under the phone budget (hollowDrawCalls), then 15 s of play", 120, "smoke"),
         new PlaytestScenario("hollow-slice", "The Moonlit Hollow vertical slice (docs/world-bible.md, A): 60 s of Arcade play with the Department stamp press landmark on the wall (events landmark-stamp; metrics quality.maxQuietSeconds = longest gap between the press stamping, a kill or a pickup-free sight, quality.textOnlyBeats = 0, hollowStamps)", 90, "smoke"),
@@ -668,6 +669,9 @@ public static partial class Playtest {
             if (id == "first-minute") {
                 PrepareFirstMinute();
             }
+            if (id == "soak") {
+                PrepareSoak();
+            }
             yield return StartRun();
             if (run.Done) {
                 yield break;
@@ -705,6 +709,8 @@ public static partial class Playtest {
                 yield return ExposureRun(options);
             } else if (id == "arcade-score") {
                 yield return ArcadeScoreRun(options);
+            } else if (id == "soak") {
+                yield return SoakRun(options);
             } else if (id == "first-minute") {
                 yield return FirstMinuteRun(options);
             } else if (id == "onboarding") {
