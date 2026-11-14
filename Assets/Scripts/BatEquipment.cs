@@ -775,6 +775,7 @@ public class BatEquipment : MonoBehaviour {
 
     // The crack of a hit. The metal bat rings higher and louder.
     void Crack(float volume, float pitch) {
+        pitch *= Random.Range(0.92f, 1.08f);   // a thunk never lands the same twice
         Vector3 at = transform.position + Flat(transform.forward) * 1.5f + Vector3.up;
         if (MetaProgress.MetalBat()) {
             GameAudio.PlayAt("batcrack", at, Mathf.Min(1f, volume * 1.25f), pitch * 1.3f);
