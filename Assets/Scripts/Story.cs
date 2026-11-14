@@ -254,7 +254,6 @@ public static class Story {
                 "N|THE NOTICE\nThe Courier comes apart. Its notice drifts down onto the grass. Nobody has signed it.",
                 "Q|1.c1",
                 "C|wallit",
-                "N|Six deliveries' worth of bolts lie in the grass, warm as coins.",
                 "Q|1.c2",
             },
             Done = new[] {
@@ -322,7 +321,6 @@ public static class Story {
                 "N|THE GATE\nNo handle. No hinges. No doormat. Wallit knocks with the bat.",
                 "W|Hello? Sender? I'd like a word, and a receipt.",
                 "C|wide",
-                "N|The wall answers. From the other side, pressed through the dark, the same stamp: RETURN TO SENDER.",
                 "C|wallit",
                 "W|Nothing. Not even a doormat. I'd say that's rude, but I'm the one with no address.",
                 "N|At the foot of the gate, a postmark is torn into the stone. Half of it is his.",
@@ -409,7 +407,6 @@ public static class Story {
             },
             // Said as the lever is pulled and the feed breaks.
             WaveLines = new[] {
-                "N|The lever drops. Down the line the hooks swing empty, and the belt coughs and stops.",
                 "Y|Batch... interrupted? Uploading... victory?",
                 "S|No new units. Back to the circle. The ring won't hold itself.",
             },
@@ -503,7 +500,6 @@ public static class Story {
                 new Stop {
                     Dist = 95f, Bearing = 330f, Name = "the last lamp",
                     Lines = new[] {
-                        "N|The last pair of lamps. Ahead the slabs end in the mist, and something tall is walking up them, slowly, to wait.",
                     },
                 },
             },
@@ -641,7 +637,7 @@ public static class Story {
                 "C|wallit",
                 "W|Nerve's free. The swing's extra.",
                 "C|wide",
-                "N|THE STAMP, REVERSED\nHe presses the Department's own stamp to the first page. The ink shows nothing, then DENIED. Every form on the walls turns over at once, blank.",
+                "N|THE STAMP, REVERSED\nHe presses the Department's own stamp to the first page. The ink shows nothing, then DENIED.",
                 "C|slice",
                 "S|Five pages. The room reads them all, and the Crew comes with each. Hold the circle at the desk.",
             },
@@ -743,7 +739,6 @@ public static class Story {
                 "Q|6.c2",
             },
             Done = new[] {
-                "N|The Spider Bot comes apart. The order drops.",
                 "W|\"Strike this address.\" Stamped DENIED. Ha.",
                 "S|Filed. Properly, this time.",
                 "W|So we exist.",
@@ -784,7 +779,6 @@ public static class Story {
     public const string SecretCredits = "\n\nRECEIVED\nBRIM: has a door. Somebody will come.\nTICK: has the time.\nCHIME: rings for the right address.";
 
     public static readonly string[] Finale = {
-        "N|The Spider Bot comes apart. The order drops.",
         "W|\"Strike this address.\" Stamped DENIED. Ha.",
         "S|Filed. Properly, this time.",
         "W|So we exist.",
