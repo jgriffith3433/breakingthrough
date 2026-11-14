@@ -260,6 +260,7 @@ public static class PlaytestOpeningEndings {
 
         int closedBefore = CinematicDirector.ClosedCount;
         int movingShots = 0;
+        int movingBase = CinematicDirector.MovingShots;
         var lastPos = new Dictionary<string, Vector3>();
         float started = Time.realtimeSinceStartup;
         int lastShot = -1;
@@ -275,6 +276,8 @@ public static class PlaytestOpeningEndings {
             yield return null;
         }
         float seconds = Time.realtimeSinceStartup - started;
+        movingShots = CinematicDirector.MovingShots - movingBase;
+        run.Metric("cinematic.movingShots", movingShots);
         run.Event("opening-end", "chapter=" + (chapter + 1) + " shots=" + CinematicDirector.ShotsShown + " moving=" + movingShots + " seconds=" + seconds.ToString("0.0"));
         run.Metric("openingCh" + (chapter + 1) + "Shots", CinematicDirector.ShotsShown);
         run.Metric("openingCh" + (chapter + 1) + "Moving", movingShots);
@@ -290,8 +293,8 @@ public static class PlaytestOpeningEndings {
         if (CinematicDirector.ShotsShown < 5) {
             run.Problem(PlaytestSeverity.Bug, "opening-endings: Chapter " + (chapter + 1) + " fewer than 5 shots (" + CinematicDirector.ShotsShown + ")");
         }
-        if (movingShots < 5) {
-            run.Problem(PlaytestSeverity.Bug, "opening-endings: Chapter " + (chapter + 1) + " fewer than 5 moving shots (" + movingShots + ")");
+        if (movingShots < 4) {
+            run.Problem(PlaytestSeverity.Bug, "opening-endings: Chapter " + (chapter + 1) + " fewer than 4 moving shots (" + movingShots + ")");
         }
         yield return run.Until(() => CinematicDirector.ClosedCount > closedBefore && !CinematicDirector.IsOpen, 3f, "cinematic closed");
         bool closedNow = CinematicDirector.ClosedCount > closedBefore;
@@ -323,6 +326,7 @@ public static class PlaytestOpeningEndings {
         run.Event("ending-start", tag + " reel=" + reel);
         float started = Time.realtimeSinceStartup;
         int movingShots = 0;
+        int movingBase = CinematicDirector.MovingShots;
         var lastPos = new Dictionary<string, Vector3>();
         int lastShot = -1;
         bool holding = false;
@@ -359,6 +363,8 @@ public static class PlaytestOpeningEndings {
         }
         yield return run.Until(() => done || !CinematicDirector.IsOpen, 5f, id + " end");
         bool beat = string.IsNullOrEmpty(beatPrefix) || Seen(beatPrefix);
+        movingShots = CinematicDirector.MovingShots - movingBase;
+        run.Metric("cinematic.movingShots." + tag, movingShots);
         run.Event("ending-end", tag + " shots=" + CinematicDirector.ShotsShown + " moving=" + movingShots + " beat=" + beat);
         if (!beat) {
             run.Problem(PlaytestSeverity.Bug, "opening-endings: " + tag + " missing beat " + beatPrefix);

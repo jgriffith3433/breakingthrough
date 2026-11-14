@@ -1258,6 +1258,7 @@ public class Enemy : MonoBehaviour
     TrailRenderer launchTrail;
     Vector3 launchPrev;
     public static int Flinches { get; private set; }
+    public static int BatFlashes { get; private set; }
     public static int HomeRunLandings { get; private set; }
     public static int HomeRunLaunches { get; private set; }
     public bool Launched { get { return launched; } }
@@ -1373,6 +1374,8 @@ public class Enemy : MonoBehaviour
         }
         if (kind != DamageKind.Burn)
         {
+            if (kind == DamageKind.Bat)
+                BatFlashes++;
             flash = 1f;   // a full white hit flash on every blow (crit or not), so the hit reads from the high camera
             // Every blow that lands rocks the body (the bat adds its own harder Flinch on top, from BatEquipment).
             if (rig != null && (!Boss || crit))
