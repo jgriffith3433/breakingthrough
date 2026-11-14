@@ -6,7 +6,7 @@ using UnityEngine;
 // Progress is career (waves reached, clears, home runs, kills, smashes) plus this-run peaks (coins, waves cleared).
 // Completing a goal unlocks coins or a bat look/trail (BatMarks via HasLook). Never reorder the JSON rows: bits are by index.
 public static class RunGoals {
-    public const int Count = 12;
+    public const int Count = 15;
 
     public class Goal {
         public string Id;
@@ -98,15 +98,27 @@ public static class RunGoals {
         return finished.ToArray();
     }
 
+    // The undone rung that is closest to done, so an early death always sees a near goal (ties go to the earlier row).
     public static Progress Next() {
         Ensure();
+        int best = -1;
+        float bestFrac = -1f;
+        int cur0 = 0;
         for (int i = 0; i < goals.Length; i++) {
             if ((doneBits & (1 << i)) != 0) {
                 continue;
             }
             Goal g = goals[i];
-            int cur = CurrentOf(g, MetaProgress.ReachedWave, MetaProgress.BestWave, bestRunCoins);
-            return new Progress { Goal = g, Current = Mathf.Min(cur, g.Target), Target = g.Target, Done = false, JustDone = false };
+            int cur = Mathf.Min(CurrentOf(g, MetaProgress.ReachedWave, MetaProgress.BestWave, bestRunCoins), g.Target);
+            float frac = g.Target <= 0 ? 0f : cur / (float)g.Target;
+            if (frac > bestFrac) {
+                bestFrac = frac;
+                best = i;
+                cur0 = cur;
+            }
+        }
+        if (best >= 0) {
+            return new Progress { Goal = goals[best], Current = cur0, Target = goals[best].Target, Done = false, JustDone = false };
         }
         Goal last = goals[goals.Length - 1];
         return new Progress { Goal = last, Current = last.Target, Target = last.Target, Done = true, JustDone = false };

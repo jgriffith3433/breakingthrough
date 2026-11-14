@@ -107,6 +107,33 @@
       "reward": "coins",
       "amount": 50,
       "blurb": "+50 coins"
+    },
+    {
+      "id": "kills8",
+      "title": "File eight bots",
+      "kind": "career_kills",
+      "target": 8,
+      "reward": "coins",
+      "amount": 5,
+      "blurb": "+5 coins"
+    },
+    {
+      "id": "wave3",
+      "title": "Reach wave 3",
+      "kind": "reach_wave",
+      "target": 3,
+      "reward": "coins",
+      "amount": 10,
+      "blurb": "+10 coins"
+    },
+    {
+      "id": "kills40",
+      "title": "File forty bots",
+      "kind": "career_kills",
+      "target": 40,
+      "reward": "coins",
+      "amount": 15,
+      "blurb": "+15 coins"
     }
   ]
 }
