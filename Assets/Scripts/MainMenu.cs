@@ -49,6 +49,8 @@ public class MainMenu : MonoBehaviour {
     // overlay never sits over a running wave (first-five@local played blind under it when Start raced ahead).
     bool waitTapThenArcade;
     static bool modeHandled;
+    // Set by the first-kill mode picker's Campaign button: the menu it returns to opens the case files once.
+    public static bool OpenCampaignNext;
     Text pageText;
     string hint = "";
     float statusUntil;
@@ -167,6 +169,10 @@ public class MainMenu : MonoBehaviour {
         if (mode == "" && firstLoad && ColdStartPlays() && !RunSave.Exists) {
             mode = "arcade";
         }
+        if (OpenCampaignNext) {
+            OpenCampaignNext = false;
+            mode = "campaign";
+        }
         // A playtest is about to press this menu's buttons (it may have been started by a runner before Unity loaded, so
         // Playtest.Running is still false): never skip the menu for it, by a cold start or by a ?mode=arcade link.
         if (mode == "arcade" && Playtest.Wanted) {
@@ -174,6 +180,8 @@ public class MainMenu : MonoBehaviour {
         }
         if (mode == "arcade") {
             SkippedMenu = true;
+            // The picker waits for the first kill (ModePicker.Offer), not the boot.
+            ModePicker.Armed = firstLoad && ColdStartPlays();
             // Skipping the menu on purpose is a Start that ran to its end: Ready only stays false when Build or Refresh threw.
             Ready = true;
             startWave = 1;
