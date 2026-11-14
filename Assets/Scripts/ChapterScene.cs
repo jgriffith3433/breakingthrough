@@ -263,7 +263,7 @@ public class ChapterScene : MonoBehaviour {
         ContinueLine = LevelCheckpoint.Line(file, Chapter);
         bool resume = ContinueLine.Length > 0;
         if (resume) {
-            Label(column, ContinueLine, 34, FontStyle.BoldItalic, new Color(1f, 0.82f, 0.38f), 0f, 138f, 48f);
+            Label(column, ContinueLine, 34, FontStyle.BoldAndItalic, new Color(1f, 0.82f, 0.38f), 0f, 138f, 48f);
         } else {
             Label(column, chapter.Place, 30, FontStyle.Italic, DeptPalette.Cream, 0f, 140f, 44f);
         }
