@@ -92,6 +92,7 @@ public static partial class Playtest {
             run.Problem(PlaytestSeverity.Warning, "desktop averaged " + avg.ToString("0.0") + " fps in a wave of " + crowd + " bots with the effects on");
         }
 
+        BarProbe.Report(run);
         if (BatEquipment.TrailSwings == 0) {
             run.Problem(PlaytestSeverity.Bug, "no swing showed a trail on the bat");
         }

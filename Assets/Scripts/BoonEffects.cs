@@ -115,7 +115,13 @@ public class BoonEffects : MonoBehaviour {
         inner.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         var holder = new GameObject("Blade").transform;
         blade.transform.SetParent(holder, false);
-        TrailRenderer trail = blade.AddComponent<TrailRenderer>();
+        // On the holder, not the squashed quill: a trail on a non-uniform scale draws sheared wedges. None on the phone tier.
+        TrailRenderer trail = UiFit.Touch ? null : holder.gameObject.AddComponent<TrailRenderer>();
+        if (trail == null)
+            return holder;
+        trail.alignment = LineAlignment.View;
+        trail.numCapVertices = 0;
+        trail.minVertexDistance = 0.1f;
         trail.time = 0.12f;
         trail.startWidth = 0.14f;
         trail.endWidth = 0f;
