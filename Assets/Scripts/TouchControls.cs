@@ -169,6 +169,29 @@ public class TouchControls : MonoBehaviour {
         }
     }
 
+    // The stick and buttons are up (the down flow measures how soon they return after a Retry).
+    public static bool PadsShown {
+        get { return Instance != null && Instance.shown; }
+    }
+
+    // A pad's box in screen pixels, shown or not (the playtest checks its size and where it sits).
+    public static bool PadBox(string name, out Rect box) {
+        box = default(Rect);
+        TouchControls touch = Instance;
+        if (touch == null) {
+            return false;
+        }
+        foreach (Pad pad in touch.pads) {
+            if (pad.Role.ToString() == name) {
+                var c = new Vector3[4];
+                pad.Rect.GetWorldCorners(c);
+                box = Rect.MinMaxRect(c[0].x, c[0].y, c[2].x, c[2].y);
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static bool Locked {
         get { return Instance != null && Instance.locked; }
     }

@@ -39,6 +39,7 @@ public static partial class Playtest {
         new PlaytestScenario("touch", "Touch only, for a phone-sized screen (mobile, or 844x390): the menu fits, tap Play, walk to the bots with the on-screen stick and tap Swing, tap a level-up card, play to wave 2", 330, "menus"),
         new PlaytestScenario("title-scene", "The live title: Wallit, Slice and Yo Bots peeking over the hedge move in the 3D Hollow behind the menu (title-cast, title-motion), the logo stamps in with an ink splat and a thud within 3 s (title-logo), Play is in the lower third at 64 px or more and the scene holds 30 fps (title-play-layout, title-fps; run with mobile for 390x844 touch), then one tap on Play pushes the camera in and the run starts in under 2 s with no black frame over 0.3 s (title-play). Real taps only", 120, "menus"),
         new PlaytestScenario("first-screen", "The first screen: Wallit, Slice and the bots share one night palette on the live MenuStage behind the menu (first-screen-cast; firstScreenCastOk). On a fresh save only the logo, Play, Campaign and Settings show (no Shop, no hint, no quote); every button is 44 px or more, inside the safe area, nothing overlaps, nothing past the left/right edge (no sideways scroll; firstScreenOffscreenX) and Play is the largest (events first-screen, first-screen-layout, first-screen-phone; metrics firstScreenOverlaps, firstScreenMinTapPx, firstScreenPlayLargest). One tap on Play starts Arcade (first-screen-play: seconds to the game scene, wanted under 2). In a release build = and - leave the wave alone (wave-keys-release; WaveDirector.ReleaseKeysProbe stands in for a release build). Setup shortcut: one run recorded as finished, then the menu shows Shop (shop-shown), a tap opens the upgrades and Close returns (shop-open). The ?mode= parser is checked on sample addresses (url-mode); the live address is logged too. Real taps only; run it with mobile or at 390x844 for the phone checks", 150, "menus"),
+        new PlaytestScenario("down-retry", "The down beat and Retry, five forced downs (named setup shortcuts: Slice's bar emptied three times in Arcade, Wallit's last health point twice in Chapter 1's level) on desktop or phone (390x844 touch: taps only): each down is 0.5-1 s of slow motion (slow-mo), the camera holds on who fell (camera-cut), one existing voiced line plays (voice) and the music dips; the run-end STRUCK OFF sheet has Retry first and focused, pressed once (retry-tap) with control back in 3 s (control-back); state, timescale and input lock are logged every frame (down-frame on each change). Metrics run.downStalls, run.retryTaps, run.retrySeconds, run.padReturnSeconds and, on a phone, the Retry and Revive boxes", 600, "menus"),
         new PlaytestScenario("touch-pause", "Pause and Settings by finger only, for a phone-sized screen (mobile, or 844x390): in an Arcade run, then Chapter 1's level, then the hub, the on-screen Pause button is found inside the safe area (pause-button, 44 px or more), tapped (pause-opened), Settings opened from it (settings-opened), sound switched and the music slider set (setting-changed), Done and Resume tapped (resumed; touchPauseCycles counts 3). The pause deck and the Settings panel are checked to sit inside the safe area with every control, in both orientations (pause-fits, settings-fits), so nothing scrolls", 400, "menus"),
         new PlaytestScenario("audio-mix", "The mix: opens Settings by touch, checks the music, voice and effects sliders are 44 px tall and persist, logs the snapshot, the reverb decay in the hub vs the Hollow, and the music duck under a voice line", 120, "menus"),
         new PlaytestScenario("settings", "Press Tap to play, open Settings from the menu: sound off and on, music and effects sliders, Done; start a run, pause (button, then P), Settings from the pause menu, resume, play a little. Any screen size", 100, "menus"),
@@ -301,7 +302,7 @@ public static partial class Playtest {
         RunAnalytics.EnableDebug();
         ColdOpen.Suppress = id != "coldopen";
         CinematicDirector.SuppressOpening = id != "opening-scene";   // only opening-scene watches the directed Chapter 1 open; every other bot starts with the stick
-        LevelScene.ChapterOneIsLevel = id == "explore" || id == "campaign-beats" || id == "campaign-full" || id == "moods" || id == "campaign-touch" || id == "first-load" || id == "touch-pause" || id == "levels-1-3" || id == "opening-scene";   // the older chapter playtests press Begin on Chapter 1 and expect the chapter run; explore must load Level_1_Yard or it hangs 60 s waiting for a level that never starts
+        LevelScene.ChapterOneIsLevel = id == "explore" || id == "campaign-beats" || id == "campaign-full" || id == "moods" || id == "campaign-touch" || id == "first-load" || id == "touch-pause" || id == "down-retry" || id == "levels-1-3" || id == "opening-scene";   // the older chapter playtests press Begin on Chapter 1 and expect the chapter run; explore must load Level_1_Yard or it hangs 60 s waiting for a level that never starts
         // opening-ch23 plays Chapters 2 and 3 in-engine openings on their own maps (not Level_1_Yard).
         PlayInput.Release();
         MetaProgress.EnterSandbox(true);
@@ -549,6 +550,13 @@ public static partial class Playtest {
             }
             if (id == "first-screen") {
                 yield return PlaytestFirstScreen.Run(run);
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "down-retry") {
+                yield return PlaytestDown.Run(run);
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
                 }
