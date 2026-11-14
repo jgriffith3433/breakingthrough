@@ -215,8 +215,9 @@ public class UiRects : MonoBehaviour {
         if (r.width > safe.width || r.height > safe.height) {
             return Vector2.zero;
         }
-        float dx = r.xMin < safe.xMin ? safe.xMin - r.xMin : r.xMax > safe.xMax ? safe.xMax - r.xMax : 0f;
-        float dy = r.yMin < safe.yMin ? safe.yMin - r.yMin : r.yMax > safe.yMax ? safe.yMax - r.yMax : 0f;
+        // Half a pixel past the edge, so rounding can never leave a control a hair under the inset.
+        float dx = r.xMin < safe.xMin ? safe.xMin - r.xMin + 0.5f : r.xMax > safe.xMax ? safe.xMax - r.xMax - 0.5f : 0f;
+        float dy = r.yMin < safe.yMin ? safe.yMin - r.yMin + 0.5f : r.yMax > safe.yMax ? safe.yMax - r.yMax - 0.5f : 0f;
         return new Vector2(dx, dy);
     }
 
