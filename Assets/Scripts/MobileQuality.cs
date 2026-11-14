@@ -8,6 +8,16 @@ using UnityEngine;
 public static class MobileQuality {
     public static bool Applied { get; private set; }
 
+    // Caps for the phone tier (the soak run's live counts are judged flat from wave 5 to 20): every pooled particle system
+    // holds half its particles, at most MaxPickups bolts lie on the ground at once (more merge their value into the oldest),
+    // and chests carry no light of their own (the lanterns are the only lights; pixelLightCount 1 limits the rest).
+    public const float ParticleScale = 0.5f;
+    public const int MaxPickups = 40;
+    public static bool Phone { get { return UiFit.Touch; } }
+    public static int ParticleMax(int desktop) {
+        return Phone ? Mathf.Max(8, Mathf.RoundToInt(desktop * ParticleScale)) : desktop;
+    }
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Boot() {
         Apply();

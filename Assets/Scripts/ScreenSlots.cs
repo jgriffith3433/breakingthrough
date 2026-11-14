@@ -299,7 +299,7 @@ public static class ScreenSlots {
             if (t.horizontalOverflow == HorizontalWrapMode.Overflow && t.preferredWidth > r.width + tolerance) {
                 over = true;
             }
-            if (t.resizeTextForBestFit && t.resizeTextMinSize < t.resizeTextMaxSize) {
+            if (t.resizeTextForBestFit && t.cachedTextGenerator != null && t.cachedTextGenerator.fontSizeUsedForBestFit > t.resizeTextMinSize) {
                 over = false;
             }
             if (!over) {

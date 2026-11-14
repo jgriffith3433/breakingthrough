@@ -20,6 +20,7 @@ public static partial class Playtest {
         new PlaytestScenario("explore", "Walks every live map (Arcade, chapters 1-6, the hub) on the stick: stuck cells, falls, reachability per map (map-explore; explore.stuckCells/falls/reachablePct.<map>), plus a per-frame camera feel detector (camera-feel: inside geometry, within 0.15 m, snaps over 30 deg, jitter; feel.cameraInsideFrames/Near/Snap/Jitter.<map>) and acceptance probes (camera-corner pull-in, camera-idle 2 s recentre, camera-lock ease). State note carries chapter, objective, position, grounded, camera, fov and followDist", 1200, "content"),
         new PlaytestScenario("ch1", "Alias of campaign-beats: Chapter 1 from the case file to its boss and the return slot", 700, "content"),
         new PlaytestScenario("coldopen", "The cold open (Docs/Story.md, \"The intro\"): on a fresh save Arcade shows no text page; the RETURN TO SENDER stamp drops onto Wallit, he lands in the circle as its ring lights, Slice says one existing line (subtitle only) and the first Yo Bot rushes in (events coldopen-start, coldopen-land, coldopen-end with the seconds from Play and why: done or input). The bot lets it play until it ends or a Yo Bot is close, then fights; on a phone viewport (390x844) it plays with fingers only (stick and Swing). Events first-hit (seconds from Play and from the run start, the words on screen before it), coldopen-words (the largest count of visible words outside the standing HUD: 12 or fewer wanted), coldopen-subtitle (HUD overlap check at the moment of Slice's line). Then the menu again and a second Arcade start on the same browser: no coldopen-start (coldopen-absent). Metrics coldopenSeconds, coldopenSecondsToFirstHit, coldopenWords, coldopenSecondStart", 120, "smoke"),
+        new PlaytestScenario("soak", "Soak, about 20 minutes in one page (PlaytestSoak.cs; run with mobile for 390x844 touch, fingers only): Arcade from wave 1 for 12 minutes, then Campaign chapters 1 to 3 with the openings skipped. Every minute the event soak-minute and metrics soak.<name>.<minute> report fps p5 (fpsP5) and average (fpsAvg), Unity's reserved and allocated memory (reservedMb, allocatedMb), the JS heap where the browser has one (jsHeapMb) and the live particle systems, lights and audio sources (particleSystems, lights, audioSources); soak.crashed is 1 if a frame took over 20 s, soak.reservedGrowthMb and soak.minutes at the end", 1500, "smoke"),
         new PlaytestScenario("smoke", "Boot, menu, Arcade: shots at t=2, 4 and 10 s of play (events open-shot) so a Yo Bot is approaching or in reach by 4 s, the swing hint is gone by 10 s, and the edge arrow only shows while none is in swing reach; then about 30 s of bat play", 50, "smoke"),
         new PlaytestScenario("hollow-landmark", "The Dead Letter Office ruin behind the circle (docs/world-bible.md, A): in the first frame of an Arcade run the office's clock is on the play camera (landmark-view; on a phone, 390x844 touch, in the upper half: landmark-phone), at least 12 dressing props with none floating or sunk and none inside the bots' 150 m (prop-audit, props-clear; metrics hollowProps, hollowFloating, hollowSunk), a hedge and picket rim on all four sides (boundary-sides, hollowSide0..3), draw calls under the phone budget (hollowDrawCalls), then 15 s of play", 120, "smoke"),
         new PlaytestScenario("hollow-slice", "The Moonlit Hollow vertical slice (docs/world-bible.md, A): 60 s of Arcade play with the Department stamp press landmark on the wall (events landmark-stamp; metrics quality.maxQuietSeconds = longest gap between the press stamping, a kill or a pickup-free sight, quality.textOnlyBeats = 0, hollowStamps)", 90, "smoke"),
@@ -41,6 +42,7 @@ public static partial class Playtest {
         new PlaytestScenario("touch", "Touch only, for a phone-sized screen (mobile, or 844x390): the menu fits, tap Play, walk to the bots with the on-screen stick and tap Swing, tap a level-up card, play to wave 2", 330, "menus"),
         new PlaytestScenario("title-scene", "The live title: Wallit, Slice and Yo Bots peeking over the hedge move in the 3D Hollow behind the menu (title-cast, title-motion), the logo stamps in with an ink splat and a thud within 3 s (title-logo), Play is in the lower third at 64 px or more and the scene holds 30 fps (title-play-layout, title-fps; run with mobile for 390x844 touch), then one tap on Play pushes the camera in and the run starts in under 2 s with no black frame over 0.3 s (title-play). Real taps only", 120, "menus"),
         new PlaytestScenario("first-screen", "The first screen: Wallit, Slice and the bots share one night palette on the live MenuStage behind the menu (first-screen-cast; firstScreenCastOk). On a fresh save only the logo, Play, Campaign and Settings show (no Shop, no hint, no quote); every button is 44 px or more, inside the safe area, nothing overlaps, nothing past the left/right edge (no sideways scroll; firstScreenOffscreenX) and Play is the largest (events first-screen, first-screen-layout, first-screen-phone; metrics firstScreenOverlaps, firstScreenMinTapPx, firstScreenPlayLargest). One tap on Play starts Arcade (first-screen-play: seconds to the game scene, wanted under 2). In a release build = and - leave the wave alone (wave-keys-release; WaveDirector.ReleaseKeysProbe stands in for a release build). Setup shortcut: one run recorded as finished, then the menu shows Shop (shop-shown), a tap opens the upgrades and Close returns (shop-open). The ?mode= parser is checked on sample addresses (url-mode); the live address is logged too. Real taps only; run it with mobile or at 390x844 for the phone checks", 150, "menus"),
+        new PlaytestScenario("continue-run", "Arcade's saved run: play to the end of wave 3 (setup: bots felled, cards taken), back to the menu, the Continue run (wave 4) card is there (on a phone: 44 px or taller, lower half, one tap) and starts wave 4 with the same boons, health and bolts; then Slice falls (setup) and the card is gone. Events continue-card, continue-saved, continue-resume, continue-cleared; metrics run.continueWave, run.continueCardPx, run.continueCardCenterPct, run.continueTaps", 420, "menus"),
         new PlaytestScenario("down-retry", "The down beat and Retry, five forced downs (named setup shortcuts: Slice's bar emptied three times in Arcade, Wallit's last health point twice in Chapter 1's level) on desktop or phone (390x844 touch: taps only): each down is 0.5-1 s of slow motion (slow-mo), the camera holds on who fell (camera-cut), one existing voiced line plays (voice) and the music dips; the run-end STRUCK OFF sheet has Retry first and focused, pressed once (retry-tap) with control back in 3 s (control-back); state, timescale and input lock are logged every frame (down-frame on each change). Metrics run.downStalls, run.retryTaps, run.retrySeconds, run.padReturnSeconds and, on a phone, the Retry and Revive boxes", 600, "menus"),
         new PlaytestScenario("upgrade-pick", "The first real choice: Arcade wave 1 is cleared (named setup shortcut: its bots are struck off), the upgrade picker opens with three boons from three different families (event pick-offer: ELEMENT, REACH, IMPACT, each with its one-line effect), every card is fully inside the safe area and 44 px or more (pick-fit; on a phone at 390x844 all by touch), one card is tapped (pick-taken), and in wave 2 the bat's trail colour shows the pick (pick-look: trail colour against the plain cream). Then Slice is struck down (setup) and the run-end sheet shows the rank with the waves, kills, streak and untouched waves that earned it (rank-shown). Metrics pickFamilies, pickMinTapPx, pickTrailChanged", 300, "menus"),
         new PlaytestScenario("page-hide", "The page is hidden and shown mid-wave (phone, touch): Pause is up with Resume, time stopped, the wave, Slice's health and the bolts unchanged (page-hidden, page-shown), the save written once (save-writes, metric save.writes 2: case files and shop), nothing written on show, Resume tapped (resume-tap) and play goes on", 120, "menus"),
@@ -285,6 +287,8 @@ public static partial class Playtest {
 
     static void Stop() {
         Running = false;
+        HitchMeter.End();
+        SignAudit.Meter.End();
         WaveDirector.ReleaseKeysProbe = false;
         SettingsPanel.Close();
         PauseMenu.Resume();
@@ -311,6 +315,8 @@ public static partial class Playtest {
         stallFrames = 0;
         worstFrameMs = 0f;
         worstFps = 999f;
+        HitchMeter.Begin(run);
+        SignAudit.Meter.Begin(run);
         holdFireFrom = 0;
         analyticsRun = id == "analytics";
         analyticsSeq = -1;
@@ -420,6 +426,7 @@ public static partial class Playtest {
                 run.Metric("meshInsideOut", (float)audit.Inside);
                 run.Metric("meshZeroNormals", (float)audit.ZeroNormals);
                 run.Metric("meshNegativeScale", (float)audit.NegativeScales);
+                run.Metric("quality.mirroredText", (float)audit.MirroredText);
                 foreach (string f in audit.Failures) {
                     run.Problem(PlaytestSeverity.Bug, "mesh-audit: " + f);
                 }
@@ -607,6 +614,13 @@ public static partial class Playtest {
                 }
                 yield break;
             }
+            if (id == "continue-run") {
+                yield return PlaytestContinue.Run(run);
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
             if (id == "down-retry") {
                 yield return PlaytestDown.Run(run);
                 if (!run.Done) {
@@ -684,6 +698,9 @@ public static partial class Playtest {
             if (id == "first-minute") {
                 PrepareFirstMinute();
             }
+            if (id == "soak") {
+                PrepareSoak();
+            }
             yield return StartRun();
             if (run.Done) {
                 yield break;
@@ -721,6 +738,8 @@ public static partial class Playtest {
                 yield return ExposureRun(options);
             } else if (id == "arcade-score") {
                 yield return ArcadeScoreRun(options);
+            } else if (id == "soak") {
+                yield return SoakRun(options);
             } else if (id == "first-minute") {
                 yield return FirstMinuteRun(options);
             } else if (id == "onboarding") {
