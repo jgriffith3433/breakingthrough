@@ -115,6 +115,7 @@ public static class PlaytestOpening {
 
         // Watch the whole scene: sample each shot for actor motion and captions.
         int movingShots = 0;
+        int movingBase = CinematicDirector.MovingShots;
         int framedOk = 0;
         var lastPos = new Dictionary<string, Vector3>();
         float started = Time.realtimeSinceStartup;
@@ -138,6 +139,8 @@ public static class PlaytestOpening {
             yield return null;
         }
         float watchSeconds = Time.realtimeSinceStartup - started;
+        movingShots = CinematicDirector.MovingShots - movingBase;
+        run.Metric("cinematic.movingShots", movingShots);
         run.Event("opening-end", "shotsShown=" + CinematicDirector.ShotsShown + " voice=" + CinematicDirector.VoiceLines + " moving=" + movingShots + " handoff=" + CinematicDirector.LastHandoffSeconds.ToString("0.000") + "s watch=" + watchSeconds.ToString("0.0"));
         run.Metric("openingShots", CinematicDirector.ShotsShown);
         run.Metric("openingVoiceLines", CinematicDirector.VoiceLines);
@@ -145,11 +148,11 @@ public static class PlaytestOpening {
         run.Metric("openingHandoffMs", Mathf.RoundToInt(CinematicDirector.LastHandoffSeconds * 1000f));
         run.Metric("openingCaptionBottom01", CinematicDirector.CaptionBottom01);
 
-        if (CinematicDirector.ShotsShown < 3) {
-            run.Problem(PlaytestSeverity.Bug, "opening-scene: fewer than 3 shots played (" + CinematicDirector.ShotsShown + ")");
+        if (CinematicDirector.ShotsShown < 6) {
+            run.Problem(PlaytestSeverity.Bug, "opening-scene: fewer than 6 shots played (" + CinematicDirector.ShotsShown + ")");
         }
-        if (movingShots < 3) {
-            run.Problem(PlaytestSeverity.Bug, "opening-scene: fewer than 3 shots with visible actor motion (" + movingShots + ")");
+        if (movingShots < 4) {
+            run.Problem(PlaytestSeverity.Bug, "opening-scene: fewer than 4 moving shots (" + movingShots + ")");
         }
         if (CinematicDirector.VoiceLines < 1) {
             run.Problem(PlaytestSeverity.Bug, "opening-scene: expected at least 1 voiced line, got " + CinematicDirector.VoiceLines);
@@ -191,9 +194,12 @@ public static class PlaytestOpening {
             run.Metric("openingToFirstKillSeconds", toKill);
             if (!yard.FirstBotDown) {
                 run.Problem(PlaytestSeverity.Bug, "opening-scene: the first Yo Bot was not killed");
-            } else if (toKill > 11f) {
-                run.Problem(PlaytestSeverity.Bug, "opening-scene: first kill came at " + toKill.ToString("0.0") + " s (> 10 s)");
+            } else if (yard.FirstBotDownSeconds > 6f) {
+                run.Problem(PlaytestSeverity.Bug, "opening-scene: first kill came " + yard.FirstBotDownSeconds.ToString("0.0") + " s after control (limit 10 s, aim 6 s)");
+            } else if (toKill > 14f) {
+                run.Problem(PlaytestSeverity.Bug, "opening-scene: first kill came at " + toKill.ToString("0.0") + " s after the opening began (> 14 s)");
             }
+            run.Metric("firstSuccessSeconds", Mathf.Round(yard.FirstBotDownSeconds * 10f) / 10f);
         }
         run.Event("opening-control", "Cutscene.IsOpen=" + Cutscene.IsOpen + " player at " + (LevelScene.Instance != null ? LevelScene.Instance.Player.position.ToString("0.0") : "?"));
 
@@ -220,14 +226,10 @@ public static class PlaytestOpening {
         yield return Wait(2.5f);
         float skipAt = Time.realtimeSinceStartup;
         if (Phone) {
-            // First tap reveals the Skip pill; second tap skips.
-            TouchControls.BotFinger(9, new Vector2(Screen.width * 0.5f, Screen.height * 0.5f), true);
-            yield return Wait(0.05f);
-            TouchControls.BotFinger(9, Vector2.zero, false);
-            yield return Wait(0.3f);
+            // The pill is up with no tap; one tap anywhere (after 1 s) skips.
             run.Event("skip-pill", CinematicDirector.Instance != null && CinematicDirector.Instance.SkipPillShown ? "shown" : "missing");
-            if (CinematicDirector.Instance != null && !CinematicDirector.Instance.SkipPillShown) {
-                run.Problem(PlaytestSeverity.Bug, "opening-scene: tap did not show the Skip pill on phone");
+            if (CinematicDirector.Instance == null || !CinematicDirector.Instance.SkipPillShown) {
+                run.Problem(PlaytestSeverity.Bug, "opening-scene: Skip pill not shown on phone without a tap");
             }
             TouchControls.BotFinger(9, new Vector2(Screen.width * 0.5f, Screen.height * 0.5f), true);
             yield return Wait(0.05f);

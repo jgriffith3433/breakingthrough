@@ -1,8 +1,60 @@
 {
   "id": "ch1_open_world",
   "fallback": "ch1_open",
-  "seconds": 7,
+  "seconds": 12.600000000000001,
   "shots": [
+    {
+      "id": "s0_yard",
+      "seconds": 2.0,
+      "camMode": "dolly",
+      "camFrom": [
+        -22,
+        7.5,
+        -24
+      ],
+      "camTo": [
+        -17,
+        3.6,
+        -17
+      ],
+      "lookAt": [
+        -6,
+        1.4,
+        -9
+      ],
+      "fov": 58,
+      "frame": [
+        "wallit",
+        "slice"
+      ],
+      "actors": [
+        {
+          "id": "wallit",
+          "from": [
+            -20,
+            0,
+            -8
+          ],
+          "to": [
+            -16,
+            0,
+            -6
+          ],
+          "yaw": 130,
+          "anim": "walk"
+        },
+        {
+          "id": "slice",
+          "at": [
+            0,
+            0,
+            -9
+          ],
+          "yaw": 180,
+          "anim": "idle"
+        }
+      ]
+    },
     {
       "id": "s1_arrive",
       "seconds": 2.2,
@@ -58,6 +110,57 @@
       "line": "You're inside. Inside, you exist."
     },
     {
+      "id": "s1b_slice",
+      "seconds": 1.8,
+      "camMode": "dolly",
+      "camFrom": [
+        -4,
+        1.8,
+        -13
+      ],
+      "camTo": [
+        -2,
+        1.7,
+        -12
+      ],
+      "lookAt": [
+        0,
+        1.5,
+        -9
+      ],
+      "fov": 46,
+      "frame": [
+        "slice"
+      ],
+      "actors": [
+        {
+          "id": "wallit",
+          "from": [
+            -8,
+            0,
+            -10
+          ],
+          "to": [
+            -7,
+            0,
+            -10.5
+          ],
+          "yaw": 60,
+          "anim": "walk"
+        },
+        {
+          "id": "slice",
+          "at": [
+            0,
+            0,
+            -9
+          ],
+          "yaw": 200,
+          "anim": "idle"
+        }
+      ]
+    },
+    {
       "id": "s2_courier",
       "seconds": 2.6,
       "camMode": "dolly",
@@ -88,9 +191,9 @@
         {
           "id": "wallit",
           "from": [
-            -8,
+            -7,
             0,
-            -10
+            -10.5
           ],
           "to": [
             -5,
@@ -134,6 +237,74 @@
       ]
     },
     {
+      "id": "s2b_clipboard",
+      "seconds": 1.8,
+      "camMode": "dolly",
+      "camFrom": [
+        3,
+        1.4,
+        -14
+      ],
+      "camTo": [
+        6.5,
+        1.8,
+        -12.5
+      ],
+      "lookAt": [
+        9,
+        1.7,
+        -8
+      ],
+      "fov": 44,
+      "frame": [
+        "courier"
+      ],
+      "sfx": "paper_flutter",
+      "actors": [
+        {
+          "id": "wallit",
+          "from": [
+            -5,
+            0,
+            -12
+          ],
+          "to": [
+            -4.5,
+            0,
+            -12.4
+          ],
+          "yaw": 40,
+          "anim": "walk"
+        },
+        {
+          "id": "slice",
+          "at": [
+            0.8,
+            0,
+            -9.2
+          ],
+          "yaw": 90,
+          "anim": "turn"
+        },
+        {
+          "id": "courier",
+          "from": [
+            9,
+            0,
+            -8
+          ],
+          "to": [
+            9,
+            0,
+            -8
+          ],
+          "yaw": 240,
+          "anim": "idle",
+          "tell": true
+        }
+      ]
+    },
+    {
       "id": "s3_swing",
       "seconds": 2.2,
       "camMode": "dolly",
@@ -162,9 +333,9 @@
         {
           "id": "wallit",
           "from": [
-            -5,
+            -4.5,
             0,
-            -12
+            -12.4
           ],
           "to": [
             -3,

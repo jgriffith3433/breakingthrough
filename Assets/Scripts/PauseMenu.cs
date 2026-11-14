@@ -11,6 +11,9 @@ public class PauseMenu : MonoBehaviour {
     const float ButtonSize = 84f;
 
     public static bool IsOpen { get; private set; }
+    // Playtest hook: pretends the browser freed the mouse this frame. MouseLeftIgnored counts the ones a cinematic refused.
+    public static bool MouseLeftProbe;
+    public static int MouseLeftIgnored;
     // The click that resumed should not also loose an arrow.
     public static bool HoldFire { get; private set; }
 
@@ -25,6 +28,7 @@ public class PauseMenu : MonoBehaviour {
     public Button ResumeButton { get; private set; }
     public Button SettingsButton { get; private set; }
     public Button JournalButton { get; private set; }
+    public Button BuildButton { get; private set; }
     public Button QuitButton { get; private set; }
     public Button SkipSceneButton { get; private set; }
     public Button RestartButton { get; private set; }
@@ -139,6 +143,7 @@ public class PauseMenu : MonoBehaviour {
             return;
         }
         SettingsPanel.Close();
+        BuildPanel.Close();
         IsOpen = false;
         ClosedFrame = Time.frameCount;
         HoldFire = true;
@@ -161,10 +166,11 @@ public class PauseMenu : MonoBehaviour {
         // Resume, then Skip scene while a page reel or the in-engine Chapter 1 opening plays, Journal, Restart, Settings, Quit.
         SkipSceneButton.gameObject.SetActive((chapter && Cutscene.PageOpen) || (InLevel && CinematicDirector.IsOpen));
         JournalButton.gameObject.SetActive(chapter);
+        BuildButton.gameObject.SetActive(WaveDirector.Instance != null && BuildList.Held().Count > 0);
         RestartButton.gameObject.SetActive(chapter && !ChapterRun.Instance.Completed);
         DisarmRestart();
         float y = -264f;
-        foreach (Button b in new[] { SkipSceneButton, JournalButton, RestartButton, SettingsButton, QuitButton }) {
+        foreach (Button b in new[] { SkipSceneButton, JournalButton, BuildButton, RestartButton, SettingsButton, QuitButton }) {
             if (!b.gameObject.activeSelf) {
                 continue;
             }
@@ -174,6 +180,11 @@ public class PauseMenu : MonoBehaviour {
         Place(hint.rectTransform, new Vector2(0f, y - 10f), new Vector2(460f, 32f));
         deck.sizeDelta = new Vector2(520f, -y + 90f);
         Layout();
+    }
+
+    // Every boon held, with level and effect (BuildPanel.cs). Only offered once the run holds one.
+    void OpenBuild() {
+        BuildPanel.Open();
     }
 
     void OpenSettings() {
@@ -275,9 +286,21 @@ public class PauseMenu : MonoBehaviour {
         // Escape in a browser frees a locked mouse without the game hearing the key: take that as a pause.
         int locked = HawkesPointerLocked();
         bool lostMouse = wasLocked && locked == 0 && Cursor.lockState == CursorLockMode.Locked;
+        if (MouseLeftProbe) {
+            MouseLeftProbe = false;
+            lostMouse = true;
+        }
+        // A cinematic or the credits owns the screen: the mouse leaving the page never pauses it (P and Start still do,
+        // and the sequence holds its own clocks while paused).
+        if (CinematicDirector.IsOpen || Cutscene.IsOpen) {
+            if (lostMouse) {
+                MouseLeftIgnored++;
+            }
+            lostMouse = false;
+        }
         wasLocked = locked == 1;
 
-        bool settings = SettingsPanel.IsOpen || SettingsPanel.ClosedFrame == Time.frameCount || JournalPanel.IsOpen || JournalPanel.ClosedFrame == Time.frameCount;
+        bool settings = SettingsPanel.IsOpen || SettingsPanel.ClosedFrame == Time.frameCount || JournalPanel.IsOpen || JournalPanel.ClosedFrame == Time.frameCount || BuildPanel.IsOpen || BuildPanel.ClosedFrame == Time.frameCount;
         bool own = ChapterHub.Instance != null || LevelScene.Instance != null;   // Esc leaves the hub and the level, so only P and Start pause there
         bool key = PlayInput.GetKeyDown(KeyCode.P) || MenuNav.PadStart || (MenuNav.Back && (IsOpen || !own));
 
@@ -359,6 +382,8 @@ public class PauseMenu : MonoBehaviour {
         JournalButton = MakeButton(deck, "Journal", "Journal", new Vector2(320f, 88f), 32, OpenJournal);
         Place((RectTransform)JournalButton.transform, new Vector2(0f, -264f), new Vector2(320f, 88f));
         JournalButton.gameObject.SetActive(false);
+        BuildButton = MakeButton(deck, "Build", "Build", new Vector2(320f, 88f), 32, OpenBuild);
+        BuildButton.gameObject.SetActive(false);
         SkipSceneButton = MakeButton(deck, "Skip scene", "Skip scene", new Vector2(320f, 88f), 32, SkipScene);
         SkipSceneButton.gameObject.SetActive(false);
         RestartButton = MakeButton(deck, "Restart", "Restart chapter", new Vector2(320f, 88f), 32, RestartChapter);
@@ -394,11 +419,14 @@ public class PauseMenu : MonoBehaviour {
             pauseRect.anchorMin = new Vector2(0.5f, 1f);
             pauseRect.anchorMax = new Vector2(0.5f, 1f);
             pauseRect.pivot = new Vector2(0f, 1f);
-            pauseRect.anchoredPosition = new Vector2(340f, -12f);
+            pauseRect.sizeDelta = new Vector2(88f, 88f);
+            pauseRect.anchoredPosition = new Vector2(340f, -20f);
         } else {
             pauseRect.anchorMin = new Vector2(1f, 1f);
             pauseRect.anchorMax = new Vector2(1f, 1f);
             pauseRect.pivot = new Vector2(1f, 1f);
+            float btn = mode == UiMode.Wide ? 88f : ButtonSize;
+            pauseRect.sizeDelta = new Vector2(btn, btn);
             Vector2 at = mode == UiMode.Wide ? new Vector2(-336f, -12f) : new Vector2(-24f, -256f);
             if (own) {
                 // The hub and the levels hang Journal and Menu under the top-right corner: Pause sits left of them.

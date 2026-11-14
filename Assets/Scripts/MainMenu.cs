@@ -121,6 +121,8 @@ public class MainMenu : MonoBehaviour {
     public Button SettingsButton { get; private set; }
     // The two modes: Campaign opens the case files, Arcade starts today's wave defense (PlayButton is the same button).
     public Button CampaignButton { get; private set; }
+    // A saved Arcade run (RunSave): present only while a snapshot exists.
+    public Button ContinueButton { get; private set; }
     // Shop is offered only after a first finished run (null before that).
     public Button ShopButton { get; private set; }
     public bool ShopUnlocked { get { return MetaProgress.RunsFinished > 0 || MetaProgress.BestWave > 0 || !string.IsNullOrEmpty(WaveDirector.LastRun); } }
@@ -148,6 +150,7 @@ public class MainMenu : MonoBehaviour {
     }
 
     void Start() {
+        RecordsCard.Opened("menu");
         font = UiSkin.Font(UiSkin.FontRole.Body);
         if (FindAnyObjectByType<EventSystem>() == null) {
             var events = new GameObject("Event System");
@@ -161,7 +164,7 @@ public class MainMenu : MonoBehaviour {
         // A cold page load plays at once: after the "Tap to play" card the bat is in hand on wave 1, with no menu and
         // no sign-in in between (the first five minutes must not start on a wall). Quit to menu still shows the menu,
         // and the playtest scenarios (?playtest=) and the editor keep the menu they check.
-        if (mode == "" && firstLoad && ColdStartPlays()) {
+        if (mode == "" && firstLoad && ColdStartPlays() && !RunSave.Exists) {
             mode = "arcade";
         }
         // A playtest is about to press this menu's buttons (it may have been started by a runner before Unity loaded, so
@@ -243,7 +246,7 @@ public class MainMenu : MonoBehaviour {
             return;
         }
         UiFit.Notice();
-        if (canvasRoot != null && (builtStamp != UiFit.Stamp || builtSafe != UnityEngine.Screen.safeArea)) {
+        if (canvasRoot != null && (builtStamp != UiFit.Stamp || builtSafe != EffectiveSafe())) {
             // The phone turned, its toolbar moved or the window was resized: lay the menu out again for the new
             // shape once it settles.
             if (rebuildAt < 0f) {
@@ -305,6 +308,15 @@ public class MainMenu : MonoBehaviour {
         }
     }
 
+    // Continue run: the saved wave starts again from its start with the boons, health and bolts the run had.
+    void ContinueRun() {
+        if (leaving || !RunSave.ArmResume()) {
+            return;
+        }
+        startWave = 1;
+        Play();
+    }
+
     void Play() {
         if (!MetaProgress.TryArmStart(startWave)) {
             Refresh();
@@ -318,7 +330,8 @@ public class MainMenu : MonoBehaviour {
             StartCoroutine(FlyIn());
             return;
         }
-        ScreenTransition.Load(ScreenTransition.Kind.Enter, MetaProgress.GameScene);
+        // Arcade goes straight in: no sheet over a scene the player is waiting to act in.
+        SceneManager.LoadScene(MetaProgress.GameScene);
     }
 
     // Play: the camera pushes in toward Slice's ring while the run loads behind it, then the run takes over from that
@@ -349,12 +362,11 @@ public class MainMenu : MonoBehaviour {
             }
             yield return null;
         }
-        // The paper sheet and ENTER stamp cover the hand-over, so the run opens from the page turning, not a cut.
+        // No blank ENTER sheet: the last title frame (MenuHandoff, which never takes taps) covers the hand-over and dissolves
+        // as the run's first frames appear, so input is live the moment the scene is visible.
         RenderTexture picture = Stage.TakePicture();
-        ScreenTransition.Go(ScreenTransition.Kind.Enter, () => {
-            MenuHandoff.Begin(picture);
-            load.allowSceneActivation = true;
-        }, true);
+        MenuHandoff.Begin(picture);
+        load.allowSceneActivation = true;
     }
 
     void OpenCampaign() {
@@ -405,7 +417,7 @@ public class MainMenu : MonoBehaviour {
         canvasRoot = canvasGo;
         builtMode = UiFit.Mode;
         builtStamp = UiFit.Stamp;
-        builtSafe = UnityEngine.Screen.safeArea;
+        builtSafe = EffectiveSafe();
         var canvas = canvasGo.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 50;
@@ -507,9 +519,16 @@ public class MainMenu : MonoBehaviour {
         float campaignY = bottom;
         bottom -= gap + playHeight;
         float playY = bottom;
+        // A saved run sits right above Play: low on the screen, in thumb reach, never under 88 units (about 44 px on a phone).
+        float continueHeight = RunSave.Exists ? (desktop ? 84f : 100f) : 0f;
+        float continueY = playY;
+        if (continueHeight > 0f) {
+            continueY = playY - gap - continueHeight;
+            bottom = continueY;
+        }
 
         // The logo takes the room above Play.
-        float room = Mathf.Max(100f, playY - gap);
+        float room = Mathf.Max(100f, (continueHeight > 0f ? continueY : playY) - gap);
         // Never bigger than Play, so Play is the largest thing on the screen.
         float logoHeight = Mathf.Min(room, playHeight - 10f);
         var header = Node(column, "Logo");
@@ -524,6 +543,10 @@ public class MainMenu : MonoBehaviour {
         }
 
         PlayButton = MakeButton(column, "Play", 0f, playY, colW, playHeight, desktop ? 64 : 48, Play, true);
+        if (continueHeight > 0f) {
+            ContinueButton = MakeButton(column, "Continue run (wave " + RunSave.Wave + ")", 0f, continueY, colW, continueHeight, desktop ? 34 : 32, ContinueRun, false, new Color(0.2f, 0.17f, 0.1f, 1f));
+            Enter(ContinueButton.GetComponent<RectTransform>(), new Vector2(0f, -24f), 1.02f);
+        }
         CampaignButton = MakeButton(column, "Campaign", 0f, campaignY, colW, campaignHeight, desktop ? 32 : 30, OpenCampaign);
         float iconWidth = compact ? 200f : 190f;
         SettingsButton = MakeButton(column, "Settings", 0f, iconY, iconWidth, iconHeight, compact ? 26 : 24, OpenSettings);
@@ -1110,11 +1133,20 @@ public class MainMenu : MonoBehaviour {
         return new Vector2(1080f * w / h, 1080f);
     }
 
+    // The rect the menu lays out in: UiRects' safe area once a touch device or a playtest is in play. That can switch on after
+    // the menu is built (a scenario starts later), so the menu compares it too and lays itself out again, instead of leaving
+    // UiRects to slide a button to the very edge of the notch.
+    static Rect EffectiveSafe() {
+        return (UiFit.Touch || Playtest.Wanted) ? UiRects.SafeArea() : UnityEngine.Screen.safeArea;
+    }
+
     // The screen's notch and rounded corners, in canvas units: left, right, top, bottom.
     Vector4 SafeInsets() {
         float sw = UnityEngine.Screen.width;
         float sh = UnityEngine.Screen.height;
-        Rect safe = UnityEngine.Screen.safeArea;
+        // Where UiRects slides controls (the device's safe area pulled in by the simulated notch and home bar). The menu
+        // stack is laid out inside the same rect, so UiRects never has to nudge one button of it on its own.
+        Rect safe = EffectiveSafe();
         if (sw <= 0f || sh <= 0f || safe.width <= 0f || safe.height <= 0f) {
             return Vector4.zero;
         }

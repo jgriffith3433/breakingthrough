@@ -122,6 +122,7 @@ public class WaveDirector : MonoBehaviour {
         CinematicDirector.NewRun();   // Arcade's boss entrances play again this run
         FortStock.BeginRun();
         Combo.BeginRun();
+        ArcadeRank.BeginRun();
         Combat.BeginRun();
         RunLog.BeginRun();
         BatEquipment.BeginRun();
@@ -138,9 +139,19 @@ public class WaveDirector : MonoBehaviour {
             }
             return;
         }
+        RunSave.BeginRun();
         Wave = MetaProgress.TakeStartWave();
+        int resumed = RunSave.Restore();
+        if (resumed > 1) {
+            Wave = resumed;
+            if (PlayerGrowth.Instance != null) {
+                PlayerGrowth.Instance.SyncToWave(Wave);
+            }
+        }
         MetaProgress.NoteReached(Wave);
         RunAnalytics.RunStart(Wave);
+        RecordsCard.Opened("run");
+        FirstMinute.BeginGameplay();
         BeginIntro();
         if (Wave == 1 && !introShown) {
             introShown = true;
@@ -173,6 +184,9 @@ public class WaveDirector : MonoBehaviour {
 
     void Update() {
         Waiting = phase == Phase.Break || phase == Phase.Build;
+        if (phase != Phase.Chapter) {
+            FirstMinute.Tick();
+        }
         if (hudStamp != UiFit.Stamp) {
             LayoutHud();
         }
@@ -269,6 +283,7 @@ public class WaveDirector : MonoBehaviour {
 
     void BeginCombat() {
         phase = Phase.Combat;
+        ArcadeRank.WaveStarted();
         RollEvent();
         FillPending(Wave);
         spawnIn = Wave == 1 ? 0f : 0.2f;
@@ -339,6 +354,15 @@ public class WaveDirector : MonoBehaviour {
         golden.transform.localScale *= 1.25f;
         UpgradeLook.Say("A Golden Yo Bot! Catch it for treasure", 2.6f, 120f);
         GameAudio.Play("coin", 0.8f, 1.5f);
+    }
+
+    // The bot-marks playtest: one bot of a kind with a trait put at a spot (TraitMark and BotThreat draw what it is).
+    public Enemy SpawnMarked(BotKind kind, BotTrait trait, Vector3 spot) {
+        Enemy e = Spawn(BotRoster.ForSpawn(kind, Wave), spot, false);
+        if (trait != BotTrait.None) {
+            e.MakeElite(trait);
+        }
+        return e;
     }
 
     Enemy Spawn(BotDef def, Vector3 spot, bool rollElite) {
@@ -413,6 +437,7 @@ public class WaveDirector : MonoBehaviour {
         if (pending.Count == 0 && goldenIn < 0f && !AnyAlive() && !BossSetPiece.PayingOff
             && (Musician.Instance == null || Musician.Instance.Alive)) {
             cleared = Wave;
+            ArcadeRank.WaveCleared();
             UpgradeLook.WaveCleared(cleared);
             WallitVoice.OnWaveCleared(cleared);
             RunLog.EndWave(Wave, "cleared");
@@ -423,7 +448,11 @@ public class WaveDirector : MonoBehaviour {
                 RunBoons.AddWaveCard();
             }
             if (Musician.Instance != null) {
-                Musician.Instance.Heal(6 * RunBoons.Rank(BoonId.Ovation));
+                int ovation = RunBoons.Rank(BoonId.Ovation);
+                if (ovation > 0) {
+                    Musician.Instance.Heal(6 * ovation);
+                    BoonFx.Proc(BoonId.Ovation, Musician.Instance.transform.position + Vector3.up * 1.1f, "+" + (6 * ovation) + " OVATION", 3.8f);
+                }
             }
             Event = WaveEvent.None;
             record = Wave > MetaProgress.BestWave;
@@ -432,6 +461,7 @@ public class WaveDirector : MonoBehaviour {
             }
             Wave++;
             MetaProgress.NoteReached(Wave);
+            RunSave.Snapshot(Wave);
             if (IsFortWave(Wave)) {
                 phase = Phase.Build;
                 phaseLeft = Tuning.BuildSeconds;
@@ -464,6 +494,7 @@ public class WaveDirector : MonoBehaviour {
             return;
         }
         RunAnalytics.RunWon(cleared);
+        RunSave.Clear();
         Time.timeScale = 1f;
         pausedGame = false;
         Cursor.lockState = CursorLockMode.None;
@@ -562,6 +593,7 @@ public class WaveDirector : MonoBehaviour {
             return;
         }
         RunLog.EndWave(Wave, "lost");
+        RunSave.Clear();
         phase = Phase.Lost;
         IsLost = true;
         IsBuilding = false;
@@ -637,6 +669,14 @@ public class WaveDirector : MonoBehaviour {
             GameAudio.Play("stomp", 1f, 0.6f);
         }
         return enemy;
+    }
+
+    // Arcade: a bot that breaks out of the ground at a spot (the act II beat, ActBeat.cs). It fights like any other bot.
+    public Enemy SpawnBurst(BotKind kind, Vector3 spot) {
+        Vector3 origin = Musician.Instance != null ? Musician.Instance.transform.position : Vector3.zero;
+        BotDef def = BotRoster.ForSpawn(kind, Wave);
+        spot.y = GroundNear(spot, origin.y) + 0.55f + def.Scale * 0.08f;
+        return Spawn(def, spot, false);
     }
 
     // A Campaign encounter's bot, placed at a spot and asleep (Enemy.Dormant) until the encounter wakes it (ChapterPacing).
@@ -783,6 +823,9 @@ public class WaveDirector : MonoBehaviour {
         spot.y = GroundNear(spot, origin.y) + 0.55f + def.Scale * 0.08f;
 
         Enemy enemy = Spawn(def, spot, true);
+        if (Wave == 1 && spawnSerial <= 1 && ChapterRun.Instance == null && kind == BotKind.YoBot) {
+            enemy.HitsToDrop = Mathf.Min(enemy.HitsToDrop, 2);   // the first Yo Bot of a run falls to two bat hits
+        }
         if (makeBoss) {
             bossPending = false;
             // Arcade decade bosses 10/20/30 reuse the campaign roster (Plated Alpha, Foreman, The Order) as set pieces.
@@ -1035,7 +1078,20 @@ public class WaveDirector : MonoBehaviour {
         return count;
     }
 
+    static int flavorWave = -1, flavorAuto = -1;
+    static string flavorText = "";
+
     static string Flavor(int wave) {
+        int autoNow = MetaProgress.AutoWave();
+        if (flavorWave == wave && flavorAuto == autoNow) {
+            return flavorText;
+        }
+        flavorWave = wave; flavorAuto = autoNow;
+        flavorText = FlavorLine(wave);
+        return flavorText;
+    }
+
+    static string FlavorLine(int wave) {
         if (wave <= 1) {
             return "";
         }
@@ -1094,6 +1150,12 @@ public class WaveDirector : MonoBehaviour {
         timerText.text = "";
         if (BossSetPiece.EntranceUp) {
             // The boss's name card owns the screen: no wave line, flavour or banner under it.
+            waveText.text = "";
+            detailText.text = "";
+            return;
+        }
+        if (LevelUpScreen.IsOpen) {
+            // The upgrade cards own the screen: no wave line or flavour prints through behind them.
             waveText.text = "";
             detailText.text = "";
             return;
@@ -1160,16 +1222,27 @@ public class WaveDirector : MonoBehaviour {
         return UiFit.Touch ? "tap Next wave" : "Enter to start";
     }
 
+    // RefreshHud asks for this every frame: the text is rebuilt only when what it shows changed (it allocated on every frame).
+    string waveLineText = "";
+    int waveLineWave = -1, waveLineLeft = -1, waveLineScale = -1, waveLineBat = -1;
+    bool waveLineIntro, waveLineSize;
+
     string WaveLine() {
+        bool showSize = PlayerGrowth.Instance != null && !QuietOpening;
+        int scale = showSize ? Mathf.RoundToInt(PlayerGrowth.Instance.Scale * 100f) : 0;
+        int bat = showSize ? (int)PlayerGrowth.Instance.ArrowDamage : 0;
+        bool intro = phase == Phase.Intro;
+        int left = intro ? 0 : AliveCount() + pending.Count;
+        if (waveLineWave == Wave && waveLineLeft == left && waveLineScale == scale && waveLineBat == bat && waveLineIntro == intro && waveLineSize == showSize) {
+            return waveLineText;
+        }
+        waveLineWave = Wave; waveLineLeft = left; waveLineScale = scale; waveLineBat = bat; waveLineIntro = intro; waveLineSize = showSize;
         string size = "";
-        if (PlayerGrowth.Instance != null && !QuietOpening) {
+        if (showSize) {
             size = "   ·   Size " + PlayerGrowth.Instance.Scale.ToString("0.00") + "   ·   Bat " + PlayerGrowth.Instance.ArrowDamage;
         }
-        if (phase == Phase.Intro) {
-            return "Wave " + Wave + size;
-        }
-        int left = AliveCount() + pending.Count;
-        return "Wave " + Wave + "   ·   " + left + " left" + size;
+        waveLineText = intro ? "Wave " + Wave + size : "Wave " + Wave + "   ·   " + left + " left" + size;
+        return waveLineText;
     }
 
     int AliveCount() {
@@ -1268,6 +1341,7 @@ public class WaveDirector : MonoBehaviour {
             Fit(coinText, 26, new Vector2(36f, -24f), new Vector2(860f, 40f));
             hudPurse.anchoredPosition = new Vector2(36f, -68f);
             lostPanel.transform.localScale = Vector3.one;
+            lostRect.sizeDelta = new Vector2(900f, 700f);
             lostRect.anchoredPosition = Vector2.zero;
             return;
         }
@@ -1278,10 +1352,14 @@ public class WaveDirector : MonoBehaviour {
         Fit(coinText, 22, new Vector2(24f, tall ? -92f : -34f), new Vector2(tall ? size.x - 48f : 360f, 56f));
         Fit(waveText, 28, new Vector2(0f, tall ? -126f : HudPaper.Active ? -108f : -66f), new Vector2(middle, 70f));
         Fit(detailText, 22, new Vector2(0f, tall ? -196f : HudPaper.Active ? -168f : -136f), new Vector2(middle, 56f));
-        float fit = Mathf.Min(1f, (size.x - 40f) / 900f, (size.y - 40f) / 700f);
-        lostPanel.transform.localScale = new Vector3(fit, fit, 1f);
-        // Portrait: sit the panel in the upper half, so the page's "How was that run?" card has the bottom to itself.
-        lostRect.anchoredPosition = new Vector2(0f, tall ? Mathf.Max(0f, (size.y - 700f * fit) * 0.5f - 40f) : 0f);
+        // The sheet is laid out in real canvas units (no shrinking), so its 26-unit rows stay 14 px or more on a phone:
+        // the panel takes the canvas width and RunEndScreen stacks its bands inside it.
+        lostPanel.transform.localScale = Vector3.one;
+        float panelW = Mathf.Min(size.x - 40f, 1300f);
+        float panelH = tall ? Mathf.Min(size.y - 40f - 200f, 1100f) : size.y - 30f;
+        lostRect.sizeDelta = new Vector2(panelW, panelH);
+        // Portrait: sit the panel in the upper part, so the page's "How was that run?" card has the bottom to itself.
+        lostRect.anchoredPosition = new Vector2(0f, tall ? Mathf.Max(0f, (size.y - panelH) * 0.5f - 20f) : 0f);
     }
 
     static void Fit(Text text, int fontSize, Vector2 position, Vector2 box) {

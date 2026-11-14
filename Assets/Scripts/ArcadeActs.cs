@@ -40,30 +40,30 @@ public class ArcadeActs : MonoBehaviour {
 
     static readonly Look[] Looks = {
         // Act I dusk: a low warm sun-to-moon key, amber fog, a violet sky going to ink; the lamp posts flicker on.
-        new Look { Sun = new Color(1f, 0.6f, 0.32f), SunIntensity = 1.1f, Fog = new Color(0.24f, 0.14f, 0.2f), FogDensity = 0.0058f,
+        new Look { Sun = new Color(1f, 0.78f, 0.32f), SunIntensity = 1.1f, Fog = new Color(0.24f, 0.14f, 0.2f), FogDensity = 0.0058f,
             SkyTop = new Color(0.1f, 0.08f, 0.24f), SkyHorizon = new Color(0.95f, 0.5f, 0.3f), SkyGround = new Color(0.08f, 0.05f, 0.08f),
             AmbSky = new Color(0.44f, 0.36f, 0.52f), AmbEq = new Color(0.3f, 0.22f, 0.26f), AmbGround = new Color(0.1f, 0.07f, 0.08f),
             Disc = new Color(1f, 0.78f, 0.55f), DiscDir = new Vector3(-0.3f, 0.12f, 0.8f), DiscSize = 0.1f, Haze = 0.6f,
             Exposure = 1.1f, Contrast = 1.1f, Saturation = 1.08f, Vignette = 0.8f,
             Shadows = new Color(0.9f, 0.88f, 1.1f), Highlights = new Color(1.14f, 0.98f, 0.82f), Lift = new Color(0.015f, 0.006f, 0.02f) },
         // Act II deep night: a cold blue moon key from behind the post office, rim light on everyone, warm lamp pools, ground fog.
-        new Look { Sun = new Color(0.4f, 0.58f, 1f), SunIntensity = 0.95f, Fog = new Color(0.04f, 0.08f, 0.2f), FogDensity = 0.0072f,
-            SkyTop = new Color(0.01f, 0.02f, 0.09f), SkyHorizon = new Color(0.07f, 0.15f, 0.4f), SkyGround = new Color(0.02f, 0.03f, 0.07f),
-            AmbSky = new Color(0.22f, 0.34f, 0.6f), AmbEq = new Color(0.13f, 0.19f, 0.34f), AmbGround = new Color(0.04f, 0.05f, 0.1f),
+        new Look { Sun = new Color(0.4f, 0.58f, 1f), SunIntensity = 1.35f, Fog = new Color(0.07f, 0.12f, 0.28f), FogDensity = 0.0056f,
+            SkyTop = new Color(0.01f, 0.02f, 0.09f), SkyHorizon = new Color(0.1f, 0.2f, 0.5f), SkyGround = new Color(0.02f, 0.03f, 0.07f),
+            AmbSky = new Color(0.4f, 0.54f, 0.84f), AmbEq = new Color(0.3f, 0.4f, 0.64f), AmbGround = new Color(0.14f, 0.18f, 0.3f),
             Disc = new Color(0.7f, 0.85f, 1f), DiscDir = new Vector3(0.45f, 0.35f, -0.8f), DiscSize = 0.05f, Haze = 0.8f,
-            Exposure = 1.18f, Contrast = 1.2f, Saturation = 0.95f, Vignette = 1f,
+            Exposure = 1.3f, Contrast = 1.12f, Saturation = 0.95f, Vignette = 1f,
             Shadows = new Color(0.92f, 0.88f, 1.0f), Highlights = new Color(1.1f, 1.0f, 0.86f), Lift = new Color(0.012f, 0.008f, 0.02f) },
         // Act III the Department's red alert: a red key, a beacon sweeping the lawn, ash in the air, higher contrast.
-        new Look { Sun = new Color(1f, 0.2f, 0.16f), SunIntensity = 0.95f, Fog = new Color(0.26f, 0.03f, 0.05f), FogDensity = 0.0062f,
+        new Look { Sun = new Color(1f, 0.08f, 0.2f), SunIntensity = 1.3f, Fog = new Color(0.34f, 0.06f, 0.08f), FogDensity = 0.005f,
             SkyTop = new Color(0.14f, 0f, 0.04f), SkyHorizon = new Color(0.7f, 0.07f, 0.1f), SkyGround = new Color(0.08f, 0.01f, 0.02f),
-            AmbSky = new Color(0.5f, 0.14f, 0.18f), AmbEq = new Color(0.3f, 0.07f, 0.1f), AmbGround = new Color(0.1f, 0.02f, 0.03f),
+            AmbSky = new Color(0.72f, 0.28f, 0.32f), AmbEq = new Color(0.52f, 0.2f, 0.24f), AmbGround = new Color(0.22f, 0.07f, 0.09f),
             Disc = new Color(1f, 0.2f, 0.18f), DiscDir = new Vector3(0.2f, 0.08f, 0.95f), DiscSize = 0.12f, Haze = 0.75f,
-            Exposure = 1.1f, Contrast = 1.32f, Saturation = 1.05f, Vignette = 1.1f,
+            Exposure = 1.25f, Contrast = 1.2f, Saturation = 1.05f, Vignette = 1.1f,
             Shadows = new Color(1.1f, 0.74f, 0.82f), Highlights = new Color(1.18f, 0.9f, 0.82f), Lift = new Color(0.035f, 0f, 0.008f) }
     };
 
     static readonly Look Overtime = new Look {
-        Sun = new Color(1f, 0.25f, 0.22f), SunIntensity = 0.8f, Fog = new Color(0.2f, 0.02f, 0.04f), FogDensity = 0.0078f,
+        Sun = new Color(1f, 0.1f, 0.2f), SunIntensity = 0.8f, Fog = new Color(0.2f, 0.02f, 0.04f), FogDensity = 0.0078f,
         SkyTop = new Color(0.12f, 0f, 0.03f), SkyHorizon = new Color(0.55f, 0.04f, 0.08f), SkyGround = new Color(0.06f, 0.01f, 0.02f),
         AmbSky = new Color(0.45f, 0.15f, 0.2f), AmbEq = new Color(0.25f, 0.08f, 0.1f), AmbGround = new Color(0.08f, 0.02f, 0.03f),
         Disc = new Color(1f, 0.2f, 0.2f), DiscDir = new Vector3(0f, 0.4f, 0.9f), DiscSize = 0.09f, Haze = 0.8f,
@@ -187,7 +187,7 @@ public class ArcadeActs : MonoBehaviour {
             bool over = Tuning.IsOvertime(wave);
             if (act != Act || over != InOvertime) {
                 // Acts II and III arrive as a staged scene once per run (after the wave 10 and 20 bosses); it waits for any card.
-                if (Act >= 0 && !over && act > Act && !staged[act] && CinematicDirector.ActScenesAllowed) {
+                if (Act >= 0 && !over && act > Act && !staged[act]) {
                     pendingAct = act;
                     pendingOver = over;
                 } else {
@@ -248,7 +248,13 @@ public class ArcadeActs : MonoBehaviour {
         } else {
             Banner(BannerTitle, over ? OvertimeLine : Lines[act]);
             Sting(act, over);
+            if (stage && ActBeat.Play(act)) {
+                StagedChanges++;
+                // The light blend stays Tuning.ActFadeSeconds (1.5 s) whatever plays beside it: stretching it to the beat's 3.6 s
+                // made the act 2 to 3 blend 3.23 s, outside the 1 to 2 s window.
+            }
         }
+        NightAtmosphere.LampRest = act == 2 ? 0.5f : 0f;   // Last Light keeps half its posts dark
         RunAnalytics.Screen("act");
     }
 
@@ -364,7 +370,24 @@ public class ArcadeActs : MonoBehaviour {
         get { return Instance != null && Instance.bannerCanvas != null; }
     }
 
+    // The banner owns the ActBanner slot (ScreenSlots): it waits while the boss card or the run-end sheet is up, and it
+    // sits where ScreenSlots.FitTop finds no other text, re-checked a few times a second while it shows.
+    string pendingTitle;
+    string pendingLine;
+    float pendingAge;
+    float titleH;
+    float lineH;
+    float bannerWidth;
+    float nextFit;
+
     void Banner(string title, string line) {
+        if (ScreenSlots.Busy(Slot.BossCard) || ScreenSlots.Busy(Slot.RunEnd)) {
+            pendingTitle = title;
+            pendingLine = line;
+            pendingAge = 0f;
+            return;
+        }
+        pendingTitle = null;
         if (bannerCanvas != null) {
             Destroy(bannerCanvas.gameObject);
         }
@@ -379,12 +402,30 @@ public class ArcadeActs : MonoBehaviour {
         if (compact) {
             UiFit.Apply(scaler);
         }
-        float width = compact ? UiFit.Size.x - 48f : 1400f;
-        float top = compact ? (UiFit.Mode == UiMode.Tall ? 330f : 140f) : 330f;
-        bannerTitle = MakeText(go.transform, "Title", title, compact ? 36 : 60, FontStyle.Bold, new Color(1f, 0.92f, 0.72f), width, top, compact ? 56f : 90f);
-        bannerLine = MakeText(go.transform, "Line", line, compact ? 22 : 32, FontStyle.Normal, DeptPalette.CreamSoft, width, top - (compact ? 52f : 80f), compact ? 36f : 50f);
+        bannerWidth = compact ? UiFit.Size.x - 48f : 1400f;
+        titleH = compact ? 56f : 90f;
+        lineH = compact ? 36f : 50f;
+        bannerTitle = MakeText(go.transform, "Title", title, compact ? 36 : 60, FontStyle.Bold, new Color(1f, 0.92f, 0.72f), bannerWidth, 0f, titleH);
+        bannerLine = MakeText(go.transform, "Line", line, compact ? 22 : 32, FontStyle.Normal, DeptPalette.CreamSoft, bannerWidth, 0f, lineH);
         bannerLeft = Tuning.ActBannerSeconds;
+        PlaceBanner();
     }
+
+    void PlaceBanner() {
+        if (bannerCanvas == null || bannerTitle == null) {
+            return;
+        }
+        float s = ScreenSlots.UnitScale();
+        bool clear;
+        float top = ScreenSlots.FitTop(Slot.ActBanner, bannerWidth * s, (titleH + lineH) * s, bannerCanvas.transform, out clear);
+        float cy = Screen.height * 0.5f;
+        bannerTitle.rectTransform.anchoredPosition = new Vector2(0f, (top - titleH * s * 0.5f - cy) / s);
+        bannerLine.rectTransform.anchoredPosition = new Vector2(0f, (top - titleH * s - lineH * s * 0.5f - cy) / s);
+        BannerClear = clear;
+    }
+
+    // False only when no free spot was found at the last placement.
+    public static bool BannerClear { get; private set; } = true;
 
     static Text MakeText(Transform parent, string name, string text, int size, FontStyle style, Color color, float width, float y, float height) {
         var go = new GameObject(name);
@@ -408,8 +449,20 @@ public class ArcadeActs : MonoBehaviour {
     }
 
     void LateUpdate() {
+        if (pendingTitle != null) {
+            pendingAge += Time.unscaledDeltaTime;
+            if (WaveDirector.IsLost || pendingAge > 8f) {
+                pendingTitle = null;
+            } else if (!ScreenSlots.Busy(Slot.BossCard)) {
+                Banner(pendingTitle, pendingLine);
+            }
+        }
         if (bannerCanvas == null) {
             return;
+        }
+        if (Time.unscaledTime >= nextFit) {
+            nextFit = Time.unscaledTime + 0.25f;
+            PlaceBanner();
         }
         if (WaveDirector.IsLost) {
             bannerLeft = 0f;   // the run-end panel takes the screen
@@ -457,6 +510,7 @@ public class ArcadeActs : MonoBehaviour {
             source.spatialBlend = 0f;
             source.volume = 0f;
             source.Play();
+            GameAudio.NoteOther(GameAudio.Bus.Music, "act_score_" + (i + 1));   // the looping bed, told to the audio probe
             layers[i] = source;
             stings[i] = Chime("Act Sting " + (i + 1), notes[i][3] * 2f, i == 1 ? 1.335f : 1.5f);
         }

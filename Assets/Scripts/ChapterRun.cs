@@ -135,6 +135,7 @@ public class ChapterRun : MonoBehaviour {
     Vector3 findAt;
     float findRing;
     Text extraText;
+    bool coldBlowPending;   // the cold blow has not run yet: no caption may sit under its camera
     int baseHomeRuns, baseSmash, baseFinishers;
     int xpAtStart;
     public bool FindKept { get; private set; }
@@ -181,6 +182,7 @@ public class ChapterRun : MonoBehaviour {
         if (!string.IsNullOrEmpty(data.Map)) {
             // The chapter's own map, from its data, loaded on top of the game scene with its own lighting.
             ChapterMap.Load(data.Map);
+            CardMatch.Attach(Camera.main, CardMatch.IdOfChapter(Chapter));   // the scene's mean colour sits near the card's
         }
         if (data.Objective == Story.ChapterObjective.SurviveTime) {
             clock = data.Target;
@@ -218,8 +220,15 @@ public class ChapterRun : MonoBehaviour {
     // The chapter map scene fills in a frame or two after Load; wait so polar marks and the postmark/belt land on real pieces.
     System.Collections.IEnumerator OpenWorldWhenReady(string worldOpen) {
         VoiceDirector.Scene = true;   // hold the voice floor so a bark cannot speak before the opening
+        coldBlowPending = Chapter >= 1 && Chapter <= 5 && !firstBlowOver;   // queued lines wait for the cold blow
         float t0 = Time.unscaledTime;
         while ((ChapterMap.Current == null || ChapterMap.Current.Own == null) && Time.unscaledTime - t0 < 2.5f) {
+            yield return null;
+        }
+        // A slow load can reach here before WaveDirector.Start (its Instance) or the player exist: the cold blow used to be skipped
+        // silently then (ChapterColdBlow.Run bails on a null director). Wait for both, counted in frames the scene is really running.
+        float t1 = Time.unscaledTime;
+        while ((WaveDirector.Instance == null || PlayerGrowth.Instance == null) && Time.unscaledTime - t1 < 15f) {
             yield return null;
         }
         // The cold blow: Wallit's bat drops a Yo Bot from a fixed 3/4 camera before the directed opening (ChapterColdBlow.cs).
@@ -233,6 +242,7 @@ public class ChapterRun : MonoBehaviour {
                 FirstBotDownSeconds = ChapterColdBlow.KillSeconds;
             }
         }
+        coldBlowPending = false;
         bool handed = false;
         CinematicDirector.PlayChapter(worldOpen, () => {
             handed = true;
@@ -353,7 +363,12 @@ public class ChapterRun : MonoBehaviour {
             objective.text = ObjectiveLine;
         }
         if (xpText != null) {
-            xpText.text = (Hard ? "HARD  " : "") + CampaignProgress.HudLine();
+            // The raw LV/XP and key-label line reads like a programmer's overlay: it is the developer flag's, not the player's.
+            xpText.enabled = DevUi.On;
+            if (xpText.enabled) {
+                xpText.text = (Hard ? "HARD  " : "") + CampaignProgress.HudLine();
+            }
+            DevUi.Visible = xpText.enabled && xpText.gameObject.activeInHierarchy ? 1 : 0;
         }
         for (int i = 0; i < slotIcons.Length; i++) {
             if (slotIcons[i] != null && slotIcons[i].sprite != null) {
@@ -505,6 +520,9 @@ public class ChapterRun : MonoBehaviour {
             Progress = 1;
             defeatIn = (data.DefeatLines != null ? data.DefeatLines.Length : 0) * 2.8f + 1f;
             Events.Add("defeat|" + data.BossName);
+            if (data.Final) {
+                ChapterBeats.Play(5);   // lanterns rise round the ring as the Order-Bearer falls (was a narration line)
+            }
             MusicDirector.Play(MusicDirector.ChapterTrack(Chapter));
             GameAudio.Play("stamp", 0.8f, 0.8f);
             GameAudio.Play(data.BossName == "The Registrar" ? "ledger_close" : data.BossName == "The Courier" ? "courier_clip" : "seal_crack", 0.8f);
@@ -575,10 +593,12 @@ public class ChapterRun : MonoBehaviour {
         if (last) {
             if (data.Walk) {
                 Events.Add("last-lamp|" + data.Id);
+                ChapterBeats.Play(3);   // the last pair of lamps comes up ahead (was a narration line)
                 Fx.Ring(Marker + Vector3.up * 0.3f, 14f, new Color(1f, 0.82f, 0.38f, 0.8f), 1.4f);
             } else {
                 FeedBroken = true;
                 Events.Add("feed-broken|" + data.Id);
+                ChapterBeats.Play(2);   // the red lamp over the chute goes out of true (was a narration line)
                 GameAudio.Play("stomp", 1f, 0.5f);
                 Fx.Ring(Marker + Vector3.up * 0.3f, 18f, new Color(1f, 0.3f, 0.2f, 0.8f), 1.4f);
                 if (floorProps != null) {
@@ -651,6 +671,7 @@ public class ChapterRun : MonoBehaviour {
             Marker = Musician.Instance.transform.position;
             beacon.transform.position = Marker;
         }
+        ChapterBeats.Play(1);   // the wall answers: the gate's lamps come up red (was a narration line)
         Events.Add("gate-scene|" + data.Id);
         Cutscene.Play(data.GateScene, () => Events.Add("gate-scene-done|" + data.Id));
     }
@@ -671,6 +692,9 @@ public class ChapterRun : MonoBehaviour {
     // A page is read out when its wave is down: its forms on the wall turn over, blank.
     void PageRead(int page) {
         pagesRead = page;
+        if (page >= data.Waves) {
+            ChapterBeats.Play(4);   // the white door rises when the last page is read
+        }
         Events.Add("page-read|" + page + "|" + data.Waves);
         GameAudio.Play("stamp", 0.7f, 0.9f + page * 0.05f);
         // The Reading Room's own scene turns that page's forms over (ReadingMap).
@@ -1239,7 +1263,7 @@ public class ChapterRun : MonoBehaviour {
     }
 
     void TickQueue() {
-        if (queue.Count == 0) {
+        if (queue.Count == 0 || coldBlowPending || ChapterColdBlow.Active) {   // the cold blow owns the screen: lines wait for it
             return;
         }
         queueIn -= Time.unscaledDeltaTime;
@@ -1374,7 +1398,7 @@ public class ChapterRun : MonoBehaviour {
             }
         }
         if (extraText != null) {
-            extraText.text = GoalMet ? "Extra met: " + Journal.Goals[Chapter].Name : "Extra: " + Journal.Goals[Chapter].Name + " (" + Journal.Goals[Chapter].Ask + ")  " + (UiFit.Touch ? "Journal button" : "J: journal");
+            extraText.text = coldBlowPending || ChapterColdBlow.Active ? "" : GoalMet ? "Extra met: " + Journal.Goals[Chapter].Name : "Extra: " + Journal.Goals[Chapter].Name + " (" + Journal.Goals[Chapter].Ask + ")  " + (UiFit.Touch ? "Journal button" : "J: journal");
         }
         if (PlayInput.GetKeyDown(KeyCode.J)) {
             PauseMenu.Open();

@@ -6,9 +6,9 @@ using UnityEngine;
 // two-sided material. Returns a KitReport; counts are in Inside, ZeroNormals and NegativeScales. Called by the PlayMode test
 // and the `mesh-audit` playtest.
 public class MeshAuditReport : KitReport {
-    public int Inside, ZeroNormals, NegativeScales, Meshes;
+    public int Inside, ZeroNormals, NegativeScales, Meshes, MirroredText;
     public new string Summary() {
-        return "meshes=" + Meshes + " insideOut=" + Inside + " zeroNormals=" + ZeroNormals + " negativeScale=" + NegativeScales;
+        return "meshes=" + Meshes + " insideOut=" + Inside + " zeroNormals=" + ZeroNormals + " negativeScale=" + NegativeScales + " mirroredText=" + MirroredText;
     }
 }
 
@@ -40,12 +40,23 @@ public static class MeshAudit {
             CheckScale(r, "prop " + pid, p);
             Object.DestroyImmediate(p);
         }
+        var signs = new System.Collections.Generic.List<string>();
+        r.MirroredText += SignAudit.Scan(Camera.main, signs);
+        foreach (string f in signs) {
+            r.Failures.Add("quality.mirroredText: " + f);
+        }
         r.Lines.Add("audit " + r.Summary());
         return r;
     }
 
     public static void CheckScale(MeshAuditReport r, string label, GameObject root) {
         if (root == null) return;
+        foreach (TextMesh tm in root.GetComponentsInChildren<TextMesh>(true)) {
+            if (tm.transform.localToWorldMatrix.determinant < 0f) {
+                r.MirroredText++;
+                r.Failures.Add("quality.mirroredText: " + label + ": " + tm.name + " is mirrored by a negative scale");
+            }
+        }
         foreach (Transform t in root.GetComponentsInChildren<Transform>(true)) {
             Vector3 s = t.lossyScale;
             if (s.x < 0f || s.y < 0f || s.z < 0f) {
@@ -86,13 +97,14 @@ public static class MeshAudit {
                 if (Vector3.Dot(fn, n[idx[i]] + n[idx[i + 1]] + n[idx[i + 2]]) < 0f) disagree++;
             }
         }
-        // Unity winds front faces clockwise, so cross(b-a, c-a) points out of the front; an outward closed mesh has a
-        // positive volume under this sum's sign convention flipped, hence the test is on the negated total.
-        bool inside = -volume < 0.0 && Mathf.Abs((float)volume) > 1e-6f && IsClosedish(m);
+        // Unity winds front faces clockwise, so cross(b-a, d-a) points out of the front (toward a viewer outside the mesh).
+        // An outward closed mesh therefore sums to a POSITIVE volume; a negative one is inside out. (The test used to be
+        // inverted, which counted every correct closed mesh as inside out: the 226 of the Nov 13 runs.)
+        bool inside = volume < 0.0 && Mathf.Abs((float)volume) > 1e-6f && IsClosedish(m);
         if (!inside && tris > 0 && disagree > tris * 0.5f) inside = true;
         if (inside) {
             r.Inside++;
-            r.Failures.Add(label + ": inside out (signed volume " + (-volume).ToString("0.000") + ", " + disagree + "/" + tris + " windings against their normals)");
+            r.Failures.Add(label + ": inside out (signed volume " + volume.ToString("0.000") + ", " + disagree + "/" + tris + " windings against their normals)");
         }
     }
 

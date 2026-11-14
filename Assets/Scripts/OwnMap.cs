@@ -585,7 +585,7 @@ public abstract class OwnMap : MonoBehaviour {
             Vector3 d = p.transform.position - at;
             d.y = 0f;
             if (d.sqrMagnitude <= r2) {
-                p.OnHit();
+                p.OnHit(null, at);
                 wallit = true;
             }
         }

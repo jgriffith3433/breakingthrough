@@ -56,12 +56,14 @@ public static class Tuning {
     public const float BuildSeconds = 30f;
 
     // In-run experience. Level L needs LevelBase + L * LevelStep + L * L * LevelCurve bolts.
-    public const float LevelBase = 5f;
+    public const float LevelBase = 3f;   // Lv 0 -> 1 takes 3 bolts, so the first pick-one card lands inside wave 1
     public const float LevelStep = 4f;
     public const float LevelCurve = 0.5f;
     public const int StartRerolls = 1;
     // Arcade: a free pick-one-of-three card at each wave clear up to this wave, so the build variety shows in the first minute.
     public const int WaveCardsUntil = 3;
+    // A player with no finished run gets the bat swinging on its own through this wave, so a first run reaches wave 3.
+    public const int FirstRunAutoUntil = 3;
 
     // Bolts each bot drops when it is destroyed. Bigger bots are worth more.
     public static int BoltsFor(BotKind kind, bool elite) {
@@ -117,12 +119,15 @@ public static class Tuning {
         return 1 + wave / 10;
     }
     // Wave 1 opens with this many Yo Bots (the first three spawn within half a second).
-    public const int OpeningBots = 6;
+    public const int OpeningBots = 10;
     // Every kill in the first waves drops a coin that flies to the HUD; after that one in CoinKillEvery.
     public const int CoinKillWaves = 3;
     public const int CoinKillEvery = 5;
     // Hit-stop on every kill (seconds): 3 frames at 60 fps, over the 40 ms floor.
     public const float KillHitStop = 0.05f;
+    // The first kill of an Arcade run: a heavier stop (over the 50 ms heavy-hit floor) and a bolt burst on top of the drop.
+    public const float FirstKillHitStop = 0.09f;
+    public const int FirstKillBonusBolts = 9;
     public const int CoinsForBoss = 6;
     public const int CoinsForGolden = 3;
 

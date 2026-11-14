@@ -1,8 +1,39 @@
 // What the browser knows about the screen that Unity doesn't say: the pixel ratio (Screen.width is in device
 // pixels) and whether the main pointer is a finger. Read by UiFit.
 mergeInto(LibraryManager.library, {
+  // Backing pixels per CSS pixel of the canvas as it really is (the page caps the render scale, see
+  // Tools/Web/hawkes-canvas-fit.js), so Screen.width / this is the CSS width whatever the cap. Falls back to the device ratio.
   HawkesPixelRatio: function () {
+    try {
+      var c = document.querySelector("#unity-canvas") || document.querySelector("canvas");
+      if (c && c.clientWidth > 0 && c.width > 0) {
+        return c.width / c.clientWidth;
+      }
+    } catch (e) {}
     return window.devicePixelRatio || 1;
+  },
+
+  // The canvas as the page has it, as JSON: its CSS box, backing store, the viewport and the ratios. Read by RenderFit.
+  HawkesRenderInfo: function () {
+    var text = "";
+    try {
+      var c = document.querySelector("#unity-canvas") || document.querySelector("canvas");
+      if (c) {
+        var vv = window.visualViewport;
+        var r = c.getBoundingClientRect();
+        text = JSON.stringify({
+          cssW: r.width, cssH: r.height, left: r.left, top: r.top, right: r.right, bottom: r.bottom,
+          backW: c.width, backH: c.height,
+          viewW: Math.floor(vv && vv.width ? vv.width : window.innerWidth),
+          viewH: Math.floor(vv && vv.height ? vv.height : window.innerHeight),
+          dpr: window.devicePixelRatio || 1
+        });
+      }
+    } catch (e) {}
+    var size = lengthBytesUTF8(text) + 1;
+    var buffer = _malloc(size);
+    stringToUTF8(text, buffer, size);
+    return buffer;
   },
 
   // 1 while the game holds the mouse (pointer lock), 0 when it doesn't. Read by PauseMenu.

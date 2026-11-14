@@ -310,6 +310,9 @@ public class Musician : MonoBehaviour {
         GameAudio.Play("slice_hurt", 0.7f);
         GameAudio.Play("hit", 0.3f, 0.8f);
         DeptFx.CircleRipple(transform.position, 12f);   // her circle ripples
+        if (by != null) {
+            HitDirection.Hit(by.transform.position, false);   // the blow's direction on screen
+        }
         RefreshBar();
         StakesFeel.OnSliceHit(this, amount, by);
         if (Alive) {
@@ -380,6 +383,15 @@ public class Musician : MonoBehaviour {
         Health = Mathf.Min(MaxHealth, Health + amount);
         UpgradeLook.Number(transform.position + Vector3.up * 2.4f, Health - before, false, DamageKind.Blade);
         RefreshBar();
+    }
+
+    // A saved run: the health bar as it stood at the wave clear.
+    public void Restore(int max, int health) {
+        if (max > 0) {
+            MaxHealth = max;
+            Health = Mathf.Clamp(health, 1, MaxHealth);
+            RefreshBar();
+        }
     }
 
     public void RaiseMax(int amount) {

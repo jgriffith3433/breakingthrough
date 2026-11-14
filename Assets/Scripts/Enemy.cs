@@ -116,6 +116,16 @@ public class Enemy : MonoBehaviour
     bool atCircleWas;
     // Within reach of Slice this frame (AttackTell pulses her circle while any bot has this set).
     public bool AtCircle { get; private set; }
+    // BotThreat (the ground ring and the edge arrows) reads these: winding up now, how long is left of it, the wait for the next blow.
+    public bool Winding { get { return winding; } }
+    public float WindRemaining { get { return windLeft; } }
+    public float NextBlowIn { get { return Mathf.Max(0f, peckIn); } }
+    public bool IsCharger { get { return charger; } }
+    // TraitMark.cs reads these: which traits this bot carries (a bit per BotTrait), and a Blinker about to jump.
+    int traitMask;
+    public bool HasTrait(BotTrait t) { return (traitMask & (1 << (int)t)) != 0; }
+    public int TraitMask { get { return traitMask; } }
+    public bool BlinkSoon { get { return blinker && !down && blinkIn < TraitMark.BlinkWarn; } }
 
     public Transform StrikingLimb() { return AttackLimb(); }
 
@@ -391,15 +401,21 @@ public class Enemy : MonoBehaviour
     void OnEnable()
     {
         Roster.Add(this);
+        if (barRoot != null && !down)
+            barRoot.gameObject.SetActive(true);
     }
 
     void OnDisable()
     {
         Roster.Remove(this);
+        if (barRoot != null)
+            barRoot.gameObject.SetActive(false);
     }
 
     void OnDestroy()
     {
+        if (barRoot != null)
+            Destroy(barRoot.gameObject);
         if (climbing)
         {
             climbing = false;
@@ -748,6 +764,12 @@ public class Enemy : MonoBehaviour
 
     void ApplyTrait(BotTrait trait)
     {
+        if (trait != BotTrait.None)
+        {
+            traitMask |= 1 << (int)trait;
+            if (GetComponent<TraitMark>() == null)
+                gameObject.AddComponent<TraitMark>();
+        }
         switch (trait)
         {
             case BotTrait.Sprinter:
@@ -1236,6 +1258,7 @@ public class Enemy : MonoBehaviour
     TrailRenderer launchTrail;
     Vector3 launchPrev;
     public static int Flinches { get; private set; }
+    public static int BatFlashes { get; private set; }
     public static int HomeRunLandings { get; private set; }
     public static int HomeRunLaunches { get; private set; }
     public bool Launched { get { return launched; } }
@@ -1263,7 +1286,7 @@ public class Enemy : MonoBehaviour
         spinAngle = 0f;
         HomeRunLaunches++;
         Shader trailShader = SafeShader.Find("Sprites/Default");
-        if (trailShader == null || launchTrail != null)
+        if (trailShader == null || launchTrail != null || UiFit.Touch)   // the phone tier has the speed lines, not a ribbon
             return;
         var tip = new GameObject("LaunchTrail").transform;
         tip.SetParent(transform, false);
@@ -1271,9 +1294,13 @@ public class Enemy : MonoBehaviour
         launchTrail = tip.gameObject.AddComponent<TrailRenderer>();
         launchTrail.time = 0.45f;
         launchTrail.minVertexDistance = 0.1f;
+        launchTrail.alignment = LineAlignment.View;
+        launchTrail.numCapVertices = 0;
         launchTrail.widthMultiplier = 0.7f * Mathf.Sqrt(Mathf.Max(1f, bodyScale));
         launchTrail.widthCurve = new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(1f, 0f));
-        launchTrail.material = new Material(trailShader);
+        if (launchTrailMat == null)
+            launchTrailMat = new Material(trailShader);   // one for every launch: a Material per home run was never freed
+        launchTrail.sharedMaterial = launchTrailMat;
         launchTrail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         launchTrail.receiveShadows = false;
         launchTrail.startColor = new Color(1f, 0.85f, 0.4f, 0.85f);
@@ -1347,7 +1374,9 @@ public class Enemy : MonoBehaviour
         }
         if (kind != DamageKind.Burn)
         {
-            flash = crit ? 1f : Mathf.Max(flash, 0.7f);
+            if (kind == DamageKind.Bat)
+                BatFlashes++;
+            flash = 1f;   // a full white hit flash on every blow (crit or not), so the hit reads from the high camera
             // Every blow that lands rocks the body (the bat adds its own harder Flinch on top, from BatEquipment).
             if (rig != null && (!Boss || crit))
                 rig.Flinch(crit ? 0.9f : 0.55f);
@@ -1720,23 +1749,58 @@ public class Enemy : MonoBehaviour
     void BuildHealthBar()
     {
         barRoot = new GameObject("Health").transform;
-        barRoot.SetParent(transform, false);
-        barRoot.localPosition = new Vector3(0f, 1.15f, 0f);
+        // Not a child of the bot: its scale is non-uniform (shape * size) and a camera-facing child of a non-uniform,
+        // yawed parent is sheared into black wedges and a bar far wider than the bot. FaceBar sizes it in world units.
+        barRoot.position = transform.position + Vector3.up * 1.15f;
 
-        Shader shader = SafeShader.Find("Unlit/Color");
-        if (shader == null)
-            shader = SafeShader.Find("Sprites/Default");
-
-        Transform back = MakeBarQuad("Back", shader, new Color(0.1f, 0.07f, 0.06f, 0.94f));
+        // Shared materials: a Material made per bot was never freed (it grew every wave) and kept the bars from batching.
+        Transform back = MakeBarQuad("Back", BarMaterial(-1));
         back.SetParent(barRoot, false);
         back.localScale = new Vector3(1f, 0.18f, 1f);
 
-        barFill = MakeBarQuad("Fill", shader, new Color(0.45f, 0.82f, 0.38f));
+        barFill = MakeBarQuad("Fill", BarMaterial(BarSteps - 1));
         barFill.SetParent(barRoot, false);
         RefreshBar();
     }
 
-    static Transform MakeBarQuad(string name, Shader shader, Color color)
+    static Material launchTrailMat;
+    const int BarSteps = 8;
+    static Material barBackMat;
+    static readonly Material[] barFillMats = new Material[BarSteps];
+
+    // step -1 is the dark back, 0..BarSteps-1 the fill from red to green.
+    static Material BarMaterial(int step)
+    {
+        Material m = step < 0 ? barBackMat : barFillMats[step];
+        if (m != null)
+            return m;
+        Shader shader = SafeShader.Find("Unlit/Color");
+        if (shader == null)
+            shader = SafeShader.Find("Sprites/Default");
+        if (shader == null)
+            return null;
+        m = new Material(shader);
+        if (step < 0)
+        {
+            m.color = new Color(0.1f, 0.07f, 0.06f, 0.94f);
+            barBackMat = m;
+        }
+        else
+        {
+            m.color = BarColor((step + 0.5f) / BarSteps);
+            barFillMats[step] = m;
+        }
+        return m;
+    }
+
+    static Color BarColor(float remaining)
+    {
+        return remaining > 0.45f
+            ? Color.Lerp(new Color(0.92f, 0.72f, 0.22f), new Color(0.45f, 0.82f, 0.38f), (remaining - 0.45f) / 0.55f)
+            : Color.Lerp(new Color(0.85f, 0.16f, 0.12f), new Color(0.92f, 0.72f, 0.22f), remaining / 0.45f);
+    }
+
+    static Transform MakeBarQuad(string name, Material material)
     {
         var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
         quad.name = name;
@@ -1744,12 +1808,11 @@ public class Enemy : MonoBehaviour
         if (box != null)
             Destroy(box);
         Renderer renderer = quad.GetComponent<Renderer>();
-        if (shader != null && renderer != null)
+        if (material != null && renderer != null)
         {
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             renderer.receiveShadows = false;
-            renderer.sharedMaterial = new Material(shader);
-            renderer.sharedMaterial.color = color;
+            renderer.sharedMaterial = material;
         }
         return quad.transform;
     }
@@ -1762,11 +1825,13 @@ public class Enemy : MonoBehaviour
         barFill.localScale = new Vector3(0.92f * remaining, 0.12f, 1f);
         barFill.localPosition = new Vector3(-0.46f + barFill.localScale.x * 0.5f, 0f, -0.02f);
         Renderer renderer = barFill.GetComponent<Renderer>();
-        if (renderer != null && renderer.sharedMaterial != null)
-            renderer.sharedMaterial.color = remaining > 0.45f
-                ? Color.Lerp(new Color(0.92f, 0.72f, 0.22f), new Color(0.45f, 0.82f, 0.38f), (remaining - 0.45f) / 0.55f)
-                : Color.Lerp(new Color(0.85f, 0.16f, 0.12f), new Color(0.92f, 0.72f, 0.22f), remaining / 0.45f);
+        Material step = BarMaterial(Mathf.Clamp(Mathf.FloorToInt(remaining * BarSteps), 0, BarSteps - 1));
+        if (renderer != null && step != null && renderer.sharedMaterial != step)
+            renderer.sharedMaterial = step;
     }
+
+    const float BarCssPhone = 44f;
+    const float BarCssDesktop = 72f;
 
     void FaceBar()
     {
@@ -1781,16 +1846,35 @@ public class Enemy : MonoBehaviour
         Camera cam = Camera.main;
         if (cam == null)
             return;
-        Vector3 size = transform.lossyScale;
-        float wide = Mathf.Max(0.01f, size.x);
-        float tall = Mathf.Max(0.01f, size.y);
-        float deep = Mathf.Max(0.01f, size.z);
-        float barWorld = Mathf.Clamp(Mathf.Max(wide, tall) * 0.55f, 1.6f, 8f);
-        barRoot.localScale = new Vector3(barWorld / wide, barWorld / tall, barWorld / deep);
-        barRoot.localPosition = new Vector3(0f, topY + 0.12f, 0f);
-        Vector3 away = barRoot.position - cam.transform.position;
-        if (away.sqrMagnitude < 0.0001f)
+        Vector3 anchor = transform.TransformPoint(new Vector3(0f, topY + 0.12f, 0f));
+        Vector3 away = anchor - cam.transform.position;
+        float depth = Vector3.Dot(away, cam.transform.forward);
+        if (depth < 0.3f)
+        {
+            // Behind or on top of the camera: no bar (a bar there is a huge smear).
+            if (barRoot.gameObject.activeSelf)
+                barRoot.gameObject.SetActive(false);
             return;
+        }
+        if (!barRoot.gameObject.activeSelf)
+            barRoot.gameObject.SetActive(true);
+        // Sized in screen pixels: a phone bar is 44 CSS px, a desktop one 72, whatever the bot's size or distance.
+        float cssWidth = UiFit.Touch ? BarCssPhone : BarCssDesktop;
+        float pixels = cssWidth * UiFit.PixelRatio;
+        float worldPerPixel = 2f * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad) * depth / Mathf.Max(1f, Screen.height);
+        float barWorld = pixels * worldPerPixel;
+        // Under its bot, inside the screen: pull the anchor back in along the camera's own axes.
+        float halfW = pixels * 0.5f / Mathf.Max(1f, Screen.width);
+        float halfH = pixels * 0.06f / Mathf.Max(1f, Screen.height);
+        Vector3 vp = cam.WorldToViewportPoint(anchor);
+        float cx = Mathf.Clamp(vp.x, halfW + 0.01f, 1f - halfW - 0.01f);
+        float cy = Mathf.Clamp(vp.y, halfH + 0.12f, 1f - halfH - 0.02f);   // above the touch pads' band, below the top bars
+        if (cx != vp.x || cy != vp.y)
+            anchor = cam.ViewportToWorldPoint(new Vector3(cx, cy, depth));
+        barRoot.position = anchor;
+        barRoot.localScale = Vector3.one * barWorld;
+        away = anchor - cam.transform.position;
+        BarProbe.Note(cam, barRoot.position, pixels / UiFit.PixelRatio);
         barRoot.rotation = Quaternion.LookRotation(away, cam.transform.up);
     }
 
@@ -1973,7 +2057,7 @@ public class Enemy : MonoBehaviour
             return;
         float before = flash;
         if (flash > 0f)
-            flash = Mathf.MoveTowards(flash, 0f, dt * 7f);
+            flash = Mathf.MoveTowards(flash, 0f, dt * 5f);
         // Status shows on the bird itself: embers for fire, ice for frost, shimmer for gold.
         float glowAmount = 0f;
         Color glowTint = Color.white;

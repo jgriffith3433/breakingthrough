@@ -89,6 +89,18 @@ public static class CamBlock {
         SetLayerRecursive(go, Layer());
     }
 
+    // A camera-only wall: a box on the CamBlock layer (movers ignore it). The yard's edge walls are Default proxies that stop
+    // Wallit; these sit `inset` metres inside each one so the camera meets a face 1 m before the near plane can reach the wall.
+    public static GameObject Wall(Transform parent, string name, Vector3 centre, Vector3 size) {
+        EnsureMatrix();
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        go.transform.position = centre;
+        go.AddComponent<BoxCollider>().size = size;
+        go.layer = Layer();
+        return go;
+    }
+
     static void SetLayerRecursive(GameObject go, int layer) {
         go.layer = layer;
         Transform t = go.transform;

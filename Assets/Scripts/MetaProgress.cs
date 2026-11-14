@@ -170,6 +170,10 @@ public static class MetaProgress {
         return true;
     }
 
+    public static void RestoreCoinsThisRun(int coins) {
+        CoinsThisRun = Mathf.Max(0, coins);
+    }
+
     public static int TakeStartWave() {
         int wave = Mathf.Max(1, armedStart);
         armedStart = 1;
@@ -443,6 +447,7 @@ public static class MetaProgress {
     public static void EnterSandbox(bool freshRanks) {
         Ensure();
         Sandbox = true;
+        RunSave.SourceChanged();
         if (freshRanks) {
             for (int i = 0; i < ranks.Length; i++) {
                 ranks[i] = 0;
@@ -452,7 +457,16 @@ public static class MetaProgress {
         }
     }
 
+    // Calls to Save (the playtest's save.writes; a sandbox run counts the call, nothing hits disk).
+    public static int Writes { get; private set; }
+
+    // Writes the shop save now (the page is being hidden).
+    public static void Flush() {
+        Save();
+    }
+
     static void Save() {
+        Writes++;
         if (Sandbox) {
             return;
         }

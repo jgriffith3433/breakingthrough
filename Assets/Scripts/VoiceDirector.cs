@@ -35,7 +35,7 @@ public static class VoiceDirector {
     public static bool IsEvent(string why) {
         switch (why) {
             case "first-hit": case "home-run": case "slice-low": case "low": case "boss-phase": case "new-type": case "wave-clear":
-            case "boss-homerun": case "boss-win":
+            case "boss-homerun": case "boss-win": case "boss-low":
                 return true;
             default:
                 return false;
@@ -83,6 +83,7 @@ public static class VoiceDirector {
             case "low":
             case "slice-low":
             case "stakes-line":
+            case "callout-reply":   // Wallit answering Slice: waits for her line to end, ignores the gaps, drops after its patience
             case "cutscene":
                 return Priority.Key;
             case "wave":
@@ -90,12 +91,14 @@ public static class VoiceDirector {
             case "chest":
             case "home-run":
             case "boss-homerun":
+            case "boss-low":
             case "first-hit":
             case "new-type":
             case "wave-clear":
             case "golden":
             case "setup":
-            case "callout-reply":
+            case "slice-streak":
+            case "slice-clear":
                 return Priority.Normal;
             default:
                 return Priority.Bark;

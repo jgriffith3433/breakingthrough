@@ -33,6 +33,12 @@ public enum BoonId {
     Hailstorm // Blizzard Bat
 }
 
+// What a boon does to the swing. The wave-clear card offers one from each of three different families, so the first pick is
+// a real choice (an element, a reach, an impact) and not three stat bumps. None means a plain stat or helper boon.
+// Guard is Slice's side (her health, the Encore thump, the towers, the blades round Wallit); Tricks is the rest of the kit
+// (what bolts, speed, coins, marks and kegs do). Every boon has a family, so an offer can always be told apart by it.
+public enum BoonFamily { None, Element, Reach, Impact, Guard, Tricks }
+
 public enum Rarity {
     Common,
     Rare,
@@ -88,21 +94,37 @@ public static class RunBoons {
     public static int Feathers { get; private set; }
     public static int NextAt { get; private set; }
     public static int PendingLevels { get; private set; }
+    // Levels gained this run (kills and bolts filled the bar), reported by the playtest as run.levelUps.
+    public static int LevelUps { get; private set; }
     // Of the pending cards, how many are wave-clear cards (no level gained), and whether the card just taken was one.
     static int pendingWaveCards;
     public static bool LastCardWasWave { get; private set; }
     public static int Rerolls { get; private set; }
     public static int Picks { get; private set; }
+    // The offers made this run, for the playtest's picks.families and picks.deadOffers (see Audit).
+    public static int Offers { get; private set; }
+    public static int DeadOffers { get; private set; }
+    public static int FamilySum { get; private set; }
+    public static int MinFamilies { get; private set; }
+    public static int RerollsTaken { get; private set; }
     public static int PendingChests { get; private set; }
     public static string LastPick { get; private set; }
+    public static BoonFamily FirstFamily { get; private set; }
+    public static BoonId FirstBoon { get; private set; }
 
     static float featherCarry;
+
+    // Evolutions this run, in the order they happened, and the wave each one was taken in (run.evolutions in the playtest).
+    public static readonly List<BoonId> Evolved = new List<BoonId>();
+    public static readonly List<int> EvolvedWave = new List<int>();
+    public static int Evolutions { get { return Evolved.Count; } }
 
     public static void BeginRun() {
         for (int i = 0; i < ranks.Length; i++) {
             ranks[i] = 0;
         }
         Level = 0;
+        LevelUps = 0;
         Feathers = 0;
         featherCarry = 0f;
         PendingLevels = 0;
@@ -110,12 +132,23 @@ public static class RunBoons {
         LastCardWasWave = false;
         PendingChests = 0;
         Picks = 0;
+        Offers = 0;
+        DeadOffers = 0;
+        FamilySum = 0;
+        MinFamilies = 99;
+        RerollsTaken = 0;
         LastPick = null;
+        FirstFamily = BoonFamily.None;
+        FirstBoon = BoonId.Heavy;
+        BoonFx.Reset();
+        Evolved.Clear();
+        EvolvedWave.Clear();
+        EvolutionCeremony.Reset();
         Rerolls = Tuning.StartRerolls + MetaProgress.Rank(UpgradeId.Clover);
         NextAt = Need(0);
         int gifts = MetaProgress.Rank(UpgradeId.OpeningAct);
         for (int i = 0; i < gifts; i++) {
-            List<BoonId> roll = Roll(1, false);
+            List<BoonId> roll = Roll(1, false, null);
             if (roll.Count > 0) {
                 Take(roll[0]);
             }
@@ -141,6 +174,7 @@ public static class RunBoons {
         while (Feathers >= NextAt) {
             Feathers -= NextAt;
             Level++;
+            LevelUps++;
             PendingLevels++;
             NextAt = Need(Level);
         }
@@ -155,6 +189,9 @@ public static class RunBoons {
     public static void AddChest() {
         PendingChests++;
     }
+
+    // Level cards still waiting behind the one on screen (wave-clear cards gain no level and are not counted).
+    public static int QueuedLevelCards { get { return Mathf.Max(0, PendingLevels - pendingWaveCards); } }
 
     public static bool TakePendingLevel() {
         if (PendingLevels <= 0) {
@@ -174,6 +211,7 @@ public static class RunBoons {
             return false;
         }
         PendingChests--;
+        LastCardWasWave = false;
         return true;
     }
 
@@ -182,11 +220,57 @@ public static class RunBoons {
             return false;
         }
         Rerolls--;
+        RerollsTaken++;
         return true;
     }
 
     public static void GiveReroll() {
         Rerolls++;
+    }
+
+    public static int[] RanksCopy() {
+        return (int[])ranks.Clone();
+    }
+
+    public static int PendingWaveCards { get { return pendingWaveCards; } }
+
+    // A saved run comes back: ranks, level, bolts and what is still owed as cards. Side effects that live outside
+    // this class (the Turret's tower stock) are given again; Slice's health comes from her own snapshot.
+    public static void Restore(int[] saved, int level, int bolts, int rerolls, int picks, int pendingCards, int waveCards) {
+        for (int i = 0; i < ranks.Length; i++) {
+            ranks[i] = saved != null && i < saved.Length ? Mathf.Clamp(saved[i], 0, All[i].MaxRank) : 0;
+        }
+        Level = Mathf.Max(0, level);
+        NextAt = Need(Level);
+        Feathers = Mathf.Clamp(bolts, 0, Mathf.Max(0, NextAt - 1));
+        featherCarry = 0f;
+        Rerolls = Mathf.Max(0, rerolls);
+        Picks = Mathf.Max(0, picks);
+        PendingLevels = Mathf.Max(0, pendingCards);
+        pendingWaveCards = Mathf.Clamp(waveCards, 0, PendingLevels);
+        PendingChests = 0;
+        for (int i = 0; i < ranks[(int)BoonId.Turret]; i++) {
+            FortStock.Add(FortKind.Tower);
+        }
+        Evolved.Clear();
+        EvolvedWave.Clear();
+        for (int i = 0; i < All.Length; i++) {
+            if (All[i].Evolution && ranks[i] > 0) {
+                Evolved.Add(All[i].Id);
+                EvolvedWave.Add(0);
+            }
+        }
+        FirstFamily = BoonFamily.None;
+        for (int i = 0; i < All.Length; i++) {
+            if (ranks[i] > 0) {
+                FirstFamily = FamilyOf(All[i].Id);
+                FirstBoon = All[i].Id;
+                break;
+            }
+        }
+        if (PlayerGrowth.Instance != null) {
+            PlayerGrowth.Instance.RefreshStats();
+        }
     }
 
     public static int Rank(BoonId id) {
@@ -207,24 +291,77 @@ public static class RunBoons {
         if (ranks[index] >= info.MaxRank) {
             return;
         }
+        if (FirstFamily == BoonFamily.None) {
+            FirstFamily = FamilyOf(id);
+            FirstBoon = id;
+        }
         ranks[index]++;
         Picks++;
         LastPick = info.Name;
         if (id == BoonId.Turret) {
             FortStock.Add(FortKind.Tower);
+            if (PlayerGrowth.Instance != null) {
+                BoonFx.Proc(BoonId.Turret, PlayerGrowth.Instance.transform.position + Vector3.up * 1.1f, "+1 TOWER", 2.6f);
+            }
         }
         if (id == BoonId.Ovation && Musician.Instance != null) {
             Musician.Instance.RaiseMax(15);
+            BoonFx.Proc(BoonId.Ovation, Musician.Instance.transform.position + Vector3.up * 1.1f, "+15 MAX HP", 3.6f);
         }
         if (id == BoonId.GrandFinale && Musician.Instance != null) {
             Musician.Instance.Heal(40);
+            BoonFx.Proc(BoonId.GrandFinale, Musician.Instance.transform.position + Vector3.up * 1.1f, "+40 HP", 4.2f);
         }
         if (PlayerGrowth.Instance != null) {
             PlayerGrowth.Instance.RefreshStats();
         }
         RunLog.NotePick(info.Name);
+        if (info.Evolution) {
+            Evolved.Add(id);
+            EvolvedWave.Add(WaveDirector.Wave);
+            EvolutionCeremony.Play(id);
+        }
+        RunSave.Touch();
     }
 
+    // The evolution a boon is a parent of (or the evolution itself), if any. Each parent belongs to one evolution.
+    public static bool EvolutionOf(BoonId id, out BoonInfo evolution) {
+        for (int i = 0; i < All.Length; i++) {
+            if (All[i].Evolution && (All[i].Id == id || All[i].NeedA == id || All[i].NeedB == id)) {
+                evolution = All[i];
+                return true;
+            }
+        }
+        evolution = default(BoonInfo);
+        return false;
+    }
+
+    // The boon a card pairs with: a parent's partner, or for an evolution its second parent.
+    public static bool PartnerOf(BoonId id, out BoonId partner, out BoonInfo evolution) {
+        partner = id;
+        if (!EvolutionOf(id, out evolution)) {
+            return false;
+        }
+        partner = evolution.Id == id ? evolution.NeedB : (evolution.NeedA == id ? evolution.NeedB : evolution.NeedA);
+        return true;
+    }
+
+    // Would taking this boon finish an evolution: it is the evolution itself, or the last rank of a parent whose partner is
+    // already maxed (so the evolution is the very next thing offered).
+    public static bool Completes(BoonId id) {
+        BoonInfo evo;
+        if (!EvolutionOf(id, out evo) || ranks[(int)evo.Id] > 0) {
+            return false;
+        }
+        if (evo.Id == id) {
+            return Offerable(evo);
+        }
+        BoonId partner = evo.NeedA == id ? evo.NeedB : evo.NeedA;
+        return Maxed(partner) && ranks[(int)id] == Info(id).MaxRank - 1;
+    }
+
+
+    // A boon a pick can use: not at its top rank, and an evolution only once both parents are maxed (it does nothing before).
     static bool Offerable(BoonInfo info) {
         if (ranks[(int)info.Id] >= info.MaxRank) {
             return false;
@@ -235,48 +372,277 @@ public static class RunBoons {
         return true;
     }
 
-    static bool Maxed(BoonId id) {
+    // The same test, asked of an offer already made: a maxed boon, a boon twice, or an evolution before its parents.
+    public static bool IsDead(BoonId id) {
+        return !Offerable(Info(id));
+    }
+
+    // Reads an offer into the run's numbers: how many families it spans, and whether it holds a dead boon. Called once per
+    // offer the picker deals (a reroll deals another and is counted again). Returns the family count.
+    public static int Audit(List<BoonId> offer) {
+        var seen = new HashSet<BoonFamily>();
+        bool dead = false;
+        for (int i = 0; i < offer.Count; i++) {
+            seen.Add(FamilyOf(offer[i]));
+            if (IsDead(offer[i]) || offer.IndexOf(offer[i]) != i) {
+                dead = true;
+            }
+        }
+        Offers++;
+        FamilySum += seen.Count;
+        MinFamilies = Mathf.Min(MinFamilies, seen.Count);
+        if (dead) {
+            DeadOffers++;
+        }
+        return seen.Count;
+    }
+
+    public static bool Maxed(BoonId id) {
         return ranks[(int)id] >= Info(id).MaxRank;
     }
 
-    // Three different boons. A chest leans rarer. Ready evolutions nearly always show.
-    public static List<BoonId> Roll(int count, bool chest) {
+    public static BoonFamily FamilyOf(BoonId id) {
+        switch (id) {
+            case BoonId.Firebrand: case BoonId.Frost: case BoonId.Chain: return BoonFamily.Element;
+            case BoonId.SplitShot: case BoonId.Pierce: case BoonId.Volley: return BoonFamily.Reach;
+            case BoonId.Ricochet: case BoonId.Heavy: case BoonId.EagleEye: case BoonId.Homing: return BoonFamily.Impact;
+            case BoonId.Ovation: case BoonId.Encore: case BoonId.SecondWind: case BoonId.Turret: case BoonId.Orbit: return BoonFamily.Guard;
+            case BoonId.QuickDraw: case BoonId.Magnet: case BoonId.Fleet: case BoonId.Bounty: case BoonId.Mark: case BoonId.Executioner: case BoonId.BirdBomb: return BoonFamily.Tricks;
+            default:
+                BoonInfo info = All[(int)id];
+                return info.Evolution ? FamilyOf(info.NeedA) : BoonFamily.None;
+        }
+    }
+
+    public static string FamilyName(BoonFamily family) {
+        switch (family) {
+            case BoonFamily.Element: return "ELEMENT";
+            case BoonFamily.Reach: return "REACH";
+            case BoonFamily.Impact: return "IMPACT";
+            case BoonFamily.Guard: return "GUARD";
+            case BoonFamily.Tricks: return "TRICKS";
+            default: return "";
+        }
+    }
+
+    // One consistent colour per boon family so the player can read their build from the fight.
+    public static Color FamilyColor(BoonFamily family) {
+        switch (family) {
+            case BoonFamily.Element: return new Color(1f, 0.42f, 0.14f, 1f);
+            case BoonFamily.Reach:   return new Color(0.16f, 0.88f, 1f, 1f);
+            case BoonFamily.Impact:  return new Color(1f, 0.82f, 0.16f, 1f);
+            case BoonFamily.Guard:   return new Color(0.22f, 0.95f, 0.52f, 1f);
+            case BoonFamily.Tricks:  return new Color(0.84f, 0.34f, 1f, 1f);
+            default:                 return new Color(1f, 0.95f, 0.8f, 1f);
+        }
+    }
+
+    public static Color ColorOf(BoonId id) {
+        return FamilyColor(FamilyOf(id));
+    }
+
+    public static BoonFamily LeadFamily {
+        get {
+            if (FirstFamily != BoonFamily.None) {
+                return FirstFamily;
+            }
+            for (int i = 0; i < All.Length; i++) {
+                if (ranks[i] > 0) {
+                    return FamilyOf(All[i].Id);
+                }
+            }
+            return BoonFamily.None;
+        }
+    }
+
+    public static int HeldCount {
+        get {
+            int n = 0;
+            for (int i = 0; i < All.Length; i++) {
+                if (ranks[i] > 0) {
+                    n++;
+                }
+            }
+            return n;
+        }
+    }
+
+    // The card after a wave: one boon from each family, never two from the same, each one you can see on the bat in the
+    // next wave (a flame or frost or arc on the swing's trail, a wider sweep, a knock-back ring). Falls back to a plain roll.
+    public static List<BoonId> RollFamilies(List<BoonId> avoid) {
         var picks = new List<BoonId>();
+        BoonFamily[] families = { BoonFamily.Element, BoonFamily.Reach, BoonFamily.Impact };
+        for (int f = 0; f < families.Length; f++) {
+            float total = 0f;
+            for (int i = 0; i < All.Length; i++) {
+                if (FamilyOf(All[i].Id) == families[f] && Offerable(All[i]) && !Avoided(All[i].Id, avoid)) {
+                    total += Weight(All[i], false);
+                }
+            }
+            if (total <= 0f) {
+                continue;
+            }
+            float roll = Random.value * total;
+            for (int i = 0; i < All.Length; i++) {
+                if (FamilyOf(All[i].Id) != families[f] || !Offerable(All[i]) || Avoided(All[i].Id, avoid)) {
+                    continue;
+                }
+                roll -= Weight(All[i], false);
+                if (roll <= 0f) {
+                    picks.Add(All[i].Id);
+                    break;
+                }
+            }
+        }
+        if (picks.Count < 3) {
+            return Roll(3, false, avoid);
+        }
+        return picks;
+    }
+
+    // A reroll deals different boons when there are enough others to deal.
+    static bool Avoided(BoonId id, List<BoonId> avoid) {
+        return avoid != null && avoid.Contains(id);
+    }
+
+    // Up to `count` different boons a pick can use. A chest leans rarer, ready evolutions nearly always show, and a boon that
+    // brings an evolution one step closer is weighted up (EvolutionLean). Each next boon leans away from the families already
+    // dealt, and a hand that still holds one family only swaps its last boon for another family's when one exists, so a
+    // three-card offer spans at least two families. `avoid` is the offer a reroll replaces.
+    public static List<BoonId> Roll(int count, bool chest, List<BoonId> avoid) {
         var pool = new List<BoonInfo>();
         for (int i = 0; i < All.Length; i++) {
-            if (Offerable(All[i])) {
+            if (Offerable(All[i]) && !Avoided(All[i].Id, avoid)) {
                 pool.Add(All[i]);
             }
         }
+        if (pool.Count < count && avoid != null) {
+            // Too few new ones: the old offer may come back before the hand is short.
+            return Roll(count, chest, null);
+        }
+        var picks = new List<BoonId>();
         for (int i = 0; i < pool.Count && picks.Count < count; i++) {
             if (pool[i].Evolution && Random.value < (chest ? 1f : 0.85f)) {
                 picks.Add(pool[i].Id);
             }
         }
-        int guard = 0;
-        while (picks.Count < count && guard++ < 200) {
-            float total = 0f;
+        // One step from an evolution: the boon that finishes it is nearly always on offer (a chest always shows it).
+        if (count >= 2 && picks.Count < count && Random.value < (chest ? 1f : 0.7f)) {
             for (int i = 0; i < pool.Count; i++) {
-                if (!picks.Contains(pool[i].Id)) {
-                    total += Weight(pool[i], chest);
-                }
-            }
-            if (total <= 0f) {
-                break;
-            }
-            float roll = Random.value * total;
-            for (int i = 0; i < pool.Count; i++) {
-                if (picks.Contains(pool[i].Id)) {
-                    continue;
-                }
-                roll -= Weight(pool[i], chest);
-                if (roll <= 0f) {
+                if (!pool[i].Evolution && Completes(pool[i].Id) && !picks.Contains(pool[i].Id)) {
                     picks.Add(pool[i].Id);
                     break;
                 }
             }
         }
+        int guard = 0;
+        while (picks.Count < count && guard++ < 200) {
+            BoonId next;
+            if (!Draw(pool, picks, chest, out next)) {
+                break;
+            }
+            picks.Add(next);
+        }
+        if (count >= 2 && picks.Count >= 2 && Families(picks) < 2) {
+            // Swap the last non-evolution boon for the best one from another family.
+            var rest = new List<BoonId>(picks);
+            int swap = rest.Count - 1;
+            while (swap > 0 && Info(rest[swap]).Evolution) {
+                swap--;
+            }
+            BoonFamily keep = FamilyOf(rest[0]);
+            rest.RemoveAt(swap);
+            var other = new List<BoonInfo>();
+            for (int i = 0; i < pool.Count; i++) {
+                if (FamilyOf(pool[i].Id) != keep && !rest.Contains(pool[i].Id)) {
+                    other.Add(pool[i]);
+                }
+            }
+            BoonId pick;
+            if (Draw(other, rest, chest, out pick)) {
+                picks[swap] = pick;
+            }
+        }
         return picks;
+    }
+
+    static int Families(List<BoonId> picks) {
+        var seen = new HashSet<BoonFamily>();
+        for (int i = 0; i < picks.Count; i++) {
+            seen.Add(FamilyOf(picks[i]));
+        }
+        return seen.Count;
+    }
+
+    // One weighted draw from `pool`, not already in `picks`, leaning away from families `picks` holds.
+    static bool Draw(List<BoonInfo> pool, List<BoonId> picks, bool chest, out BoonId drawn) {
+        drawn = BoonId.Heavy;
+        float total = 0f;
+        for (int i = 0; i < pool.Count; i++) {
+            if (!picks.Contains(pool[i].Id)) {
+                total += DrawWeight(pool[i], picks, chest);
+            }
+        }
+        if (total <= 0f) {
+            return false;
+        }
+        float roll = Random.value * total;
+        for (int i = 0; i < pool.Count; i++) {
+            if (picks.Contains(pool[i].Id)) {
+                continue;
+            }
+            roll -= DrawWeight(pool[i], picks, chest);
+            if (roll <= 0f) {
+                drawn = pool[i].Id;
+                return true;
+            }
+        }
+        for (int i = pool.Count - 1; i >= 0; i--) {
+            if (!picks.Contains(pool[i].Id)) {
+                drawn = pool[i].Id;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static float DrawWeight(BoonInfo info, List<BoonId> picks, bool chest) {
+        float weight = Weight(info, chest);
+        BoonFamily family = FamilyOf(info.Id);
+        for (int i = 0; i < picks.Count; i++) {
+            if (FamilyOf(picks[i]) == family) {
+                weight *= 0.35f;
+            }
+        }
+        return weight;
+    }
+
+    // How much closer taking this boon brings an evolution: x4 when it would max a parent whose partner is already maxed (the
+    // evolution is offered next), x2.2 when the partner is maxed and this one is still climbing, x1.5 when both parents are held.
+    static float EvolutionLean(BoonInfo info) {
+        if (info.Evolution) {
+            return 1f;
+        }
+        float lean = 1f;
+        for (int i = 0; i < All.Length; i++) {
+            BoonInfo e = All[i];
+            if (!e.Evolution || ranks[(int)e.Id] > 0 || (e.NeedA != info.Id && e.NeedB != info.Id)) {
+                continue;
+            }
+            BoonId partner = e.NeedA == info.Id ? e.NeedB : e.NeedA;
+            float one;
+            if (Maxed(partner)) {
+                one = ranks[(int)info.Id] == info.MaxRank - 1 ? 8f : 3.5f;
+            } else if (ranks[(int)partner] > 0 && ranks[(int)info.Id] > 0) {
+                one = 2.5f;
+            } else if (ranks[(int)partner] > 0) {
+                one = 1.8f;   // the partner is held: this is the one still missing
+            } else {
+                one = 1f;
+            }
+            lean = Mathf.Max(lean, one);
+        }
+        return lean;
     }
 
     static float Weight(BoonInfo info, bool chest) {
@@ -292,7 +658,7 @@ public static class RunBoons {
         if (ranks[(int)info.Id] > 0) {
             weight *= 1.6f;
         }
-        return weight;
+        return weight * EvolutionLean(info);
     }
 
     public static string RankText(BoonId id) {
@@ -301,7 +667,7 @@ public static class RunBoons {
         if (info.Evolution) {
             return "EVOLUTION";
         }
-        return rank <= 0 ? "New" : "Rank " + rank + " → " + (rank + 1);
+        return rank <= 0 ? "New" : "Rank " + rank + " to " + (rank + 1);
     }
 
     public static Color RarityColor(Rarity rarity) {

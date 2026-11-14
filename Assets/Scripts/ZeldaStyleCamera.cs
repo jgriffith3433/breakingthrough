@@ -536,7 +536,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
                 mid /= n;
                 wantBias = mid - w;
                 wantBias.y = 0f;
-                wantBias = Vector3.ClampMagnitude(wantBias * 0.9f, FightBiasCap);
+                wantBias = Vector3.ClampMagnitude(wantBias * 0.6f, FightBiasCap);   // steadier: the view drifts less as Wallit moves
                 Vector3 look = w + wantBias;
                 float yaw = orbitYaw * Mathf.Deg2Rad;
                 Vector3 fwd = new Vector3(Mathf.Sin(yaw), 0f, Mathf.Cos(yaw));
@@ -564,7 +564,7 @@ public class ZeldaStyleCamera : MonoBehaviour {
         }
         FeelFighting = fighting;
         float dt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
-        float t = ComfortOptions.ReducedMotion ? 0.55f : 0.32f;
+        float t = ComfortOptions.ReducedMotion ? 0.7f : 0.5f;
         fightBias = Vector3.SmoothDamp(fightBias, wantBias, ref fightBiasVel, t, 12f, dt);
         fightExtra = Mathf.SmoothDamp(fightExtra, wantExtra, ref fightExtraVel, t + 0.15f, 10f, dt);
         fightDrop = Mathf.SmoothDamp(fightDrop, wantDrop, ref fightDropVel, t + 0.1f, 10f, dt);
@@ -1035,6 +1035,12 @@ public class ZeldaStyleCamera : MonoBehaviour {
             FeelPullInMeters += before - followDist;
         }
         Vector3 pulled = fromObject + dir * followDist;
+        // A spot that still sits inside a wall (the cast started inside it, or a thin box was skipped) is walked back to Wallit.
+        for (int k = 0; k < 8 && followDist > 0.7f && CamBlock.PointInsideSolid(pulled, FollowXForm, 0.3f); k++) {
+            followDist = Mathf.Max(0.7f, followDist - 0.4f);
+            followDistVel = 0f;
+            pulled = fromObject + dir * followDist;
+        }
         transform.position = pulled;
         toTarget = pulled;
     }

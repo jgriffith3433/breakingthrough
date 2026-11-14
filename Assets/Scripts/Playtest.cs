@@ -20,6 +20,7 @@ public static partial class Playtest {
         new PlaytestScenario("explore", "Walks every live map (Arcade, chapters 1-6, the hub) on the stick: stuck cells, falls, reachability per map (map-explore; explore.stuckCells/falls/reachablePct.<map>), plus a per-frame camera feel detector (camera-feel: inside geometry, within 0.15 m, snaps over 30 deg, jitter; feel.cameraInsideFrames/Near/Snap/Jitter.<map>) and acceptance probes (camera-corner pull-in, camera-idle 2 s recentre, camera-lock ease). State note carries chapter, objective, position, grounded, camera, fov and followDist", 1200, "content"),
         new PlaytestScenario("ch1", "Alias of campaign-beats: Chapter 1 from the case file to its boss and the return slot", 700, "content"),
         new PlaytestScenario("coldopen", "The cold open (Docs/Story.md, \"The intro\"): on a fresh save Arcade shows no text page; the RETURN TO SENDER stamp drops onto Wallit, he lands in the circle as its ring lights, Slice says one existing line (subtitle only) and the first Yo Bot rushes in (events coldopen-start, coldopen-land, coldopen-end with the seconds from Play and why: done or input). The bot lets it play until it ends or a Yo Bot is close, then fights; on a phone viewport (390x844) it plays with fingers only (stick and Swing). Events first-hit (seconds from Play and from the run start, the words on screen before it), coldopen-words (the largest count of visible words outside the standing HUD: 12 or fewer wanted), coldopen-subtitle (HUD overlap check at the moment of Slice's line). Then the menu again and a second Arcade start on the same browser: no coldopen-start (coldopen-absent). Metrics coldopenSeconds, coldopenSecondsToFirstHit, coldopenWords, coldopenSecondStart", 120, "smoke"),
+        new PlaytestScenario("soak", "Soak, about 20 minutes in one page (PlaytestSoak.cs; run with mobile for 390x844 touch, fingers only): Arcade from wave 1 for 12 minutes, then Campaign chapters 1 to 3 with the openings skipped. Every minute the event soak-minute and metrics soak.<name>.<minute> report fps p5 (fpsP5) and average (fpsAvg), Unity's reserved and allocated memory (reservedMb, allocatedMb), the JS heap where the browser has one (jsHeapMb) and the live particle systems, lights and audio sources (particleSystems, lights, audioSources); soak.crashed is 1 if a frame took over 20 s, soak.reservedGrowthMb and soak.minutes at the end", 1500, "smoke"),
         new PlaytestScenario("smoke", "Boot, menu, Arcade: shots at t=2, 4 and 10 s of play (events open-shot) so a Yo Bot is approaching or in reach by 4 s, the swing hint is gone by 10 s, and the edge arrow only shows while none is in swing reach; then about 30 s of bat play", 50, "smoke"),
         new PlaytestScenario("hollow-landmark", "The Dead Letter Office ruin behind the circle (docs/world-bible.md, A): in the first frame of an Arcade run the office's clock is on the play camera (landmark-view; on a phone, 390x844 touch, in the upper half: landmark-phone), at least 12 dressing props with none floating or sunk and none inside the bots' 150 m (prop-audit, props-clear; metrics hollowProps, hollowFloating, hollowSunk), a hedge and picket rim on all four sides (boundary-sides, hollowSide0..3), draw calls under the phone budget (hollowDrawCalls), then 15 s of play", 120, "smoke"),
         new PlaytestScenario("hollow-slice", "The Moonlit Hollow vertical slice (docs/world-bible.md, A): 60 s of Arcade play with the Department stamp press landmark on the wall (events landmark-stamp; metrics quality.maxQuietSeconds = longest gap between the press stamping, a kill or a pickup-free sight, quality.textOnlyBeats = 0, hollowStamps)", 90, "smoke"),
@@ -28,19 +29,28 @@ public static partial class Playtest {
         new PlaytestScenario("exposure", "Is the light well exposed from wave 1 to wave 30 (PlaytestExposure.cs; run with mobile for 390x844 touch): Arcade, the wave key (setup) to waves 1, 5, 10, 15, 20, 25 and 30, each frame read through the grade for mean luminance and the share of pure-white pixels (event exposure; a problem over 2% white or a climb over 10% inside one act). Metrics exposureLuma_<wave>, exposureWhitePct_<wave>, exposureDrift", 420, "smoke"),
         new PlaytestScenario("film-light", "The Moonlit Hollow lit like a film set, one look per Arcade act (FilmLight.cs; fingers only on a phone viewport, run with mobile for 390x844): acts 1, 2 and 3 reached by the wave key (setup), each photographed with its key light colour, grade and frame brightness (film-look, film-keys; the three keys must differ), a silhouette check of Wallit, Slice and the bots against the background (film-silhouette, act 2 needs a visible rim), every act change sampled for its whole blend (film-blend: about 1.5 s, no black frame, no jump), and the 5th-percentile frame rate per act (film-fps, 30 or more on the phone tier with no real-time shadows). Metrics filmKeyDistance_1_2, filmKeyDistance_2_3, filmBlendSeconds, filmBlendMinLuma_2/3, filmRimMin, filmFpsP5_1/2/3", 300, "smoke"),
         new PlaytestScenario("arcade-score", "Arcade's reactive score (ArcadeScore.cs; fingers only on a phone viewport): no stem is made or downloaded before wave 1 (stemDownloadsBeforeWave1); with four bots within 6 m of Slice two layers come in on a bar line (score-layers, scoreLayersUnderPressure, scoreBarLateMaxMs); after the wave clears they are silent within 4 s (score-clear, scoreClearFadeSeconds); the wave key to 10, 20 and 30: each boss adds a layer at its phase change and plays a 3-5 s cadence on death (score-boss, scoreBossLayer<n>, scoreCadenceSeconds<n>); on the phone tier no more than 3 music sources play at once (scoreMaxStreams)", 600, "smoke"),
+        new PlaytestScenario("first-minute", "Arcade's first minute (FirstMinute.cs; on a phone viewport, 390x844, fingers only through the stick and Swing): the game itself reports the milestones gameplay, first-input-accepted and first-success (events milestone, metrics milestone.gameplay / milestone.first-input-accepted / milestone.first-success, seconds from the page opening). The bot plays from the cold start; the first Yo Bot must be in swing reach within 3 s (first-bot-reach), fall to two bat hits (first-kill-hits) and the first kill must come within 10 s of the first control (first-success-seconds). Metrics firstInputSeconds, firstSuccessSeconds, firstKillHits, firstBotReachSeconds", 60, "smoke"),
         new PlaytestScenario("onboarding", "Arcade's first seconds: the bot waits without swinging until a Yo Bot is approaching or in reach (event first-bot-near / first-bot-approach, by 4 s), the swing hint is read then hidden by the first hit or 8 s (hint-hidden); then it walks away until the edge arrow shows while none is in swing reach (arrow-shown) and clears wave 1", 90, "smoke"),
         new PlaytestScenario("run", "A full run until the musician falls, picking level-ups: the bot guards the musician with the bat (walks to the nearest bot near the piano, locks on, swings, walks back). Should pass wave 5 without 'no kills for 45 s'", 600, "full"),
         new PlaytestScenario("bat", "The bat: a 3-hit combo on wave 1's Yo Bots (hits and knockback, the third further), a ground smash on small Yo Bots dropped in front of the player (setup), then a charged home run into a line of Yo Bots (setup) that bowls them over; lock-on picks the nearest bot throughout. Then a minute of play", 200, "full"),
         new PlaytestScenario("bot-sound", "Each bot family's own sound (BotSound.cs): positional movement loops (at most 6 at once, nearest first), wind-up tells before blows, 3+ death variants never repeated. Metrics botLoopsPeak, botTells, botDeaths", 150, "full"),
         new PlaytestScenario("place-audio", "The Moonlit Hollow's own air (PlaceAudio.cs): the bed amb_hollow plays (event ambience), 3 spot emitters sit on real objects (spot), Wallit walks toward the nearest on the keys or, on a phone viewport (390x844), the stick finger, and its gain rises (spot-approach), his steps are counted per surface with no variant twice in a row, a landing is counted, and the bed dips under a voice line (bed-duck). Metrics placeSpotGainStart/End, placeSteps, placeLandings", 180, "full"),
         new PlaytestScenario("tells", "Every bot blow is seen coming (AttackTell.cs): Arcade waves 1 to 3 then the wave 10 boss. A red glow on the striking claw or leg and a ground marker under the target lead each blow by 0.4-0.8 s; Slice's circle pulses when a bot reaches her and the screen edge tints toward her when she is off screen (Wallit walks away by real input); the boss's heavy attacks mark the ground 0.6 s or more ahead. On a phone (mobile, 390x844) every move is a finger and the tint stays clear of the stick and Swing. Metrics combat.tellLeadMs (mean, .min, .max), combat.untelegraphedHits, boss.telegraphLeadMs", 330, "full"),
+        new PlaytestScenario("bot-marks", "Every trait has its own marker over the bot (TraitMark.cs: a badge shape and colour per trait, a Sprinter's streaks, a Splitter's crack, a Blinker's flicker before its jump) and every bot kind its own ground ring colour and size (BotThreat.KindColour/KindSize). Arcade to wave 20 by real input (fingers on a phone), then each trait and each kind put in front of the camera, held. Metrics marks.traitsSeen, marks.badgeMinPx, marks.kindPairsAlike", 240, "full"),
+        new PlaytestScenario("threats", "Every bot has a ground ring in its kind's colour, brighter while it winds up (BotThreat.cs), and a bot off screen within 2 s of a blow gets a screen-edge arrow (at most 4, inside the safe area and off the touch pads). Arcade waves 1-3 by real input with Wallit walking away from Slice, then wave 8. Metrics threats.offscreenMarked, threats.unmarkedHits, threats.ringMinPx", 240, "full"),
         new PlaytestScenario("hit-fx", "The Department hit effects (DeptFx): a soft smear trail on every swing, a spark, torn paper and stamp-ink burst on every hit, a red STRUCK OFF stamp slamming on a killed bot before it folds into paper (a Spider Bot scatters its legs), a charged home run with speed lines behind the bot, a shockwave ring and a flash and dust puff where it lands, coin glints arcing to the HUD, Slice's circle rippling when struck; then wave 10 (setup: the wave key) for a crowd of 10+ bots held against 30 fps with the effects on. On a phone (mobile, 390x844) every move, swing and charge is a finger. Metrics hitFxCrowdFpsAvg, hitFxPeakParticles, hitFxPaper, hitFxStamps, hitFxLandings", 300, "full"),
         new PlaytestScenario("menus", "Shop menu, start a run, a level-up card, reroll and pick", 120, "menus"),
         new PlaytestScenario("words", "Reads the menu, the shop, the help line, build tips, pause, level-up cards and the game-over screen for retired cast words. Setup: the testing wave key visits the tip waves, then wave 2 is held until Slice falls", 300, "menus"),
         new PlaytestScenario("touch", "Touch only, for a phone-sized screen (mobile, or 844x390): the menu fits, tap Play, walk to the bots with the on-screen stick and tap Swing, tap a level-up card, play to wave 2", 330, "menus"),
         new PlaytestScenario("title-scene", "The live title: Wallit, Slice and Yo Bots peeking over the hedge move in the 3D Hollow behind the menu (title-cast, title-motion), the logo stamps in with an ink splat and a thud within 3 s (title-logo), Play is in the lower third at 64 px or more and the scene holds 30 fps (title-play-layout, title-fps; run with mobile for 390x844 touch), then one tap on Play pushes the camera in and the run starts in under 2 s with no black frame over 0.3 s (title-play). Real taps only", 120, "menus"),
+        new PlaytestScenario("render-fit", "The picture is the right shape and nothing is cut off, at the main menu, in Arcade and in the campaign hub: RenderFit reads the canvas backing store against its CSS box (capped at 2x by Tools/Web/hawkes-canvas-fit.js) and the camera aspect against it (events render-fit, render-fit-hud; metrics render.aspectError under 0.01, render.cropPx 0, render.renderScale, render.hudRightPx, render.hudOffRight). Taps press Play, Campaign and the case file by finger; the hub file is a setup shortcut. Run it at 1280x720, 1920x1080 and with mobile (390x844, DPR 2) for the phone", 120, "menus"),
         new PlaytestScenario("first-screen", "The first screen: Wallit, Slice and the bots share one night palette on the live MenuStage behind the menu (first-screen-cast; firstScreenCastOk). On a fresh save only the logo, Play, Campaign and Settings show (no Shop, no hint, no quote); every button is 44 px or more, inside the safe area, nothing overlaps, nothing past the left/right edge (no sideways scroll; firstScreenOffscreenX) and Play is the largest (events first-screen, first-screen-layout, first-screen-phone; metrics firstScreenOverlaps, firstScreenMinTapPx, firstScreenPlayLargest). One tap on Play starts Arcade (first-screen-play: seconds to the game scene, wanted under 2). In a release build = and - leave the wave alone (wave-keys-release; WaveDirector.ReleaseKeysProbe stands in for a release build). Setup shortcut: one run recorded as finished, then the menu shows Shop (shop-shown), a tap opens the upgrades and Close returns (shop-open). The ?mode= parser is checked on sample addresses (url-mode); the live address is logged too. Real taps only; run it with mobile or at 390x844 for the phone checks", 150, "menus"),
+        new PlaytestScenario("continue-run", "Arcade's saved run: play to the end of wave 3 (setup: bots felled, cards taken), back to the menu, the Continue run (wave 4) card is there (on a phone: 44 px or taller, lower half, one tap) and starts wave 4 with the same boons, health and bolts; then Slice falls (setup) and the card is gone. Events continue-card, continue-saved, continue-resume, continue-cleared; metrics run.continueWave, run.continueCardPx, run.continueCardCenterPct, run.continueTaps", 420, "menus"),
         new PlaytestScenario("down-retry", "The down beat and Retry, five forced downs (named setup shortcuts: Slice's bar emptied three times in Arcade, Wallit's last health point twice in Chapter 1's level) on desktop or phone (390x844 touch: taps only): each down is 0.5-1 s of slow motion (slow-mo), the camera holds on who fell (camera-cut), one existing voiced line plays (voice) and the music dips; the run-end STRUCK OFF sheet has Retry first and focused, pressed once (retry-tap) with control back in 3 s (control-back); state, timescale and input lock are logged every frame (down-frame on each change). Metrics run.downStalls, run.retryTaps, run.retrySeconds, run.padReturnSeconds and, on a phone, the Retry and Revive boxes", 600, "menus"),
+        new PlaytestScenario("upgrade-pick", "The first real choice: Arcade wave 1 is cleared (named setup shortcut: its bots are struck off), the upgrade picker opens with three boons from three different families (event pick-offer: ELEMENT, REACH, IMPACT, each with its one-line effect), every card is fully inside the safe area and 44 px or more (pick-fit; on a phone at 390x844 all by touch), one card is tapped (pick-taken), and in wave 2 the bat's trail colour shows the pick (pick-look: trail colour against the plain cream). Then Slice is struck down (setup) and the run-end sheet shows the rank with the waves, kills, streak and untouched waves that earned it (rank-shown). Metrics pickFamilies, pickMinTapPx, pickTrailChanged", 300, "menus"),
+        new PlaytestScenario("evolution", "Two boons become one (EvolutionCeremony.cs; run with mobile for 390x844 touch, every card tapped by finger; setup shortcuts: each wave's bots are struck off, a level of bolts is granted once a wave, Enter skips the breaks): a 20-wave Arcade run in which the bot taps the cards that lead to one evolution. Each offer logs its cards' partner icons with their size in CSS px, the link line and which card finishes an evolution (offer-links); the evolution logs its wave, the ceremony (stamp, home-run stinger, gold rings, Wallit's line, EVOLVED banner), the pads' return time and the evolved boon's icon on the HUD (evolution). Metrics run.evolutions, run.evolution1Wave, evolution.partnerMinPx (wanted 20 or more), evolution.padsBackSeconds (wanted 0.3 or less), evolution.hudIconUnits", 900, "menus"),
+        new PlaytestScenario("boon-offers", "Every pick-of-three over a 20-wave Arcade run, by finger (run it with mobile, 390x844; setup shortcuts: each wave's bots are struck off, a level of bolts is granted once a wave, Enter skips the breaks). Each offer is logged with its boons and families (offer); the first is rerolled by tapping the 44 px Reroll button: the three are replaced once (reroll), the button greys out and reads Reroll used and a second tap changes nothing (reroll-spent); all three card slots are tapped over the run and sit inside the safe area at 44 px or more. Metrics picks.offers, picks.families (fewest families any offer spanned, wanted 2 or more), picks.familiesAvg, picks.deadOffers (wanted 0), picks.rerolls, picks.rerollPx, picks.cardSlotsTapped, picks.cardMinPx", 900, "menus"),
+        new PlaytestScenario("page-hide", "The page is hidden and shown mid-wave (phone, touch): Pause is up with Resume, time stopped, the wave, Slice's health and the bolts unchanged (page-hidden, page-shown), the save written once (save-writes, metric save.writes 2: case files and shop), nothing written on show, Resume tapped (resume-tap) and play goes on", 120, "menus"),
         new PlaytestScenario("touch-pause", "Pause and Settings by finger only, for a phone-sized screen (mobile, or 844x390): in an Arcade run, then Chapter 1's level, then the hub, the on-screen Pause button is found inside the safe area (pause-button, 44 px or more), tapped (pause-opened), Settings opened from it (settings-opened), sound switched and the music slider set (setting-changed), Done and Resume tapped (resumed; touchPauseCycles counts 3). The pause deck and the Settings panel are checked to sit inside the safe area with every control, in both orientations (pause-fits, settings-fits), so nothing scrolls", 400, "menus"),
         new PlaytestScenario("ui-walk", "Every in-game screen walked by finger on a phone (run it at 390x844 and 844x390; touch is forced, the sandbox save is used): Arcade's HUD and touch pads, the level-up cards (setup: a level of bolts), Pause and Settings, the run-end sheet (setup: Slice is struck down), the shop, then Chapter 1's level and the hub's Journal and Lore panels (setup: the sandbox file files Chapter 1). Each screen reports its controls to the Hawkes UI probe (UiRects: ui-layout events, small / inset / offscreen) and every control is pressed once through the EventSystem (ui-press: pressed state and a click). Events ui-walk (screen, controls, issues, presses), dossier-note; metrics uiWalkScreens, uiWalkPresses, uiWalkControls", 600, "menus"),
         new PlaytestScenario("audio-mix", "The mix: opens Settings by touch, checks the music, voice and effects sliders are 44 px tall and persist, logs the snapshot, the reverb decay in the hub vs the Hollow, and the music duck under a voice line", 120, "menus"),
@@ -107,6 +117,7 @@ public static partial class Playtest {
         new PlaytestScenario("save", "The campaign save: an old-format file loads and is brought up to date, a corrupt one shows a message and starts clean, and every chapter's load time and memory is logged (setup: the sandbox stands where the stored save would, holding version 1 text, text with no version, then corrupt text; the real save is never touched). Events save-old-loaded, save-migrated, save-oldest-loaded, save-corrupt-clean (seven kinds of bad text, none throws), save-old-panel (the case files say the old files were updated), save-old-chapter (file 1 opens chapter 3), save-corrupt-panel (\"Case files unreadable. The Department filed new ones.\", no files), save-corrupt-play (a clean file opens chapter 1); then all six chapters are begun in turn with chapter-load events (card seconds, map seconds, memory MB) and metrics chapter<N>CardSeconds, chapter<N>MapSeconds, chapter<N>MemoryMB, oldSaveLoaded, corruptClean, corruptMessageShown", 1200, "content"),
         new PlaytestScenario("journal", "The journal, with real input (setup: the sandbox case file starts on chapter 1; the real save is never touched). Campaign, case file 1, Begin. Chapter 1 shows its optional extra on the HUD (event journal-extra) and hides one lost thing out in the field (journal-find-hidden). J opens the journal over the pause menu (journal-open-chapter), Back and Resume; Wallit walks out to the find with the stick and it goes into the case file at once (journal-find, metric findKept). The chapter is played to the Courier's fall; the Chapter Complete card judges the extra and names the lost thing kept. Menu, Campaign: the slot shows the journal count (slot-journal); the Journal button opens the journal and the bot reads Active, Finished and Collected (journal-tab, journal-lists; setup marks chapter 2's extra met). Then the files are written out and read back as after a quit (journal-persist, metric journalPersisted) and read again (setup then gives every find and extra: journal-paid says PAID IN FULL)", 900, "content"),
         new PlaytestScenario("lore","The lore log and the case-file slots, with real input (setup: the sandbox case file starts on chapter 1; the real save is never touched). Campaign, case file 1, Begin, Chapter 1 is played with the bat to the Courier's fall as in the campaign scenario; the Chapter Complete card names the new lore it unlocked (event lore). Menu, Campaign: the case file slot reads its chapter, its play time and its completion (event slot-info: chapter, h:mm:ss on the books, 1/6 filed, lore n/16; problems if any is missing or the time is 0). The Lore log button opens the file's log (event lore-open), the bot turns every page with Next and reads which entries are open and which are sealed (event lore-page per entry, event lore-summary): the entries revealed by opening the file and by Chapter 1 are open, the later ones read Sealed until their chapter is filed (metrics loreUnlocked, loreSealed, slotChapterShown, slotTimeShown, slotCompletionShown). Back closes it", 800, "content"),
+        new PlaytestScenario("checkpoint-resume", "Chapter 1's checkpoint survives a reload (LevelCheckpoint, CampaignSave.Slot.cp*, save version 11; run with mobile for 390x844 touch, taps on the card): the sandbox file, Begin, the bot walks to the Ring and hears Slice out, then reads two notices on the west trail (events talk-done, checkpoint-saved, checkpoint-reached: id, notices, flags, health). The page is reloaded (setup: the save text is read back as a new page would, the scene is dropped to the menu), Campaign and the file are tapped and the chapter card names the checkpoint and its Begin reads Continue (continue-card: layout px; metrics continueCardChecks); one tap resumes in Level_1_Yard with Wallit at the checkpoint, Slice walking with him, the same two notices read and the opening not replayed (checkpoint-restored, checkpoint-resumed; metrics checkpointResumed, goalsKept). A file saved before this change (version 10, no checkpoint fields) loads into its chapter (old-save-loads; metric oldSaveLoads)", 420, "content"),
         new PlaytestScenario("campaign-full", "The whole case file in one run with real input (setup: the sandbox keeps the files off the real save): Campaign, case file 1, then Chapter 1 (Level_1_Yard, as campaign-beats plays it) through Chapters 2-6 to ADDRESS FILED. Per chapter the bot logs a chapter-verdict (distinct map/own scene, memory under 1024 MB, opening cinematic keyframe vs placeholder, map features route/landmark/hazard/setpiece, dialogue choices answered) so the review can score every chapter. Opening reels are watched for a few shots then skipped with Enter; set pieces and choices play in the chapter's own flow. Quit and resume: in Chapter 3 the scene is dropped mid-chapter (setup, as a closed tab does) and the file must reopen on Chapter 3, unfinished (events quit-midchapter, quit-resume-panel, quit-resume; metric quitResumeRight). Ends with ch6_close, the ending-variant reel (ledger/doors/open keyframes, not stand-ins), ADDRESS FILED, the credits card and the case file reading filed (events campaign-full, chapter-verdict, cutscene-open, cinematics-art, choice-open, ending-reel, ending-card, campaign-panel-filed; metrics fullCaseFileCleared, endingShown, caseFileFiled, fullDistinctMaps, fullCinematicKeyframes, fullChoicesMade)", 3600, "content"),
         new PlaytestScenario("chapter6", "Chapter 6, Address Filed, played start to finish with real input (setup: the sandbox case file starts on chapter 6): Campaign, case file 1, Begin on the Chapter 6 card; the opening scene in the changed Hollow plays and is skipped with Enter; Wallit holds the circle with the bat through three waves (events wave-start), then the Spider Bot that carries the order (boss bar up, scroll on its back) arrives and falls; the Filed scene plays over the field, then the finale pages (Story.Finale verbatim, as in Arcade's story run) and the ADDRESS FILED ending card (events filed-scene, finale-page, ending-card); Keep going shows the credits card; the case file is marked complete (6 cleared), Menu, and the Campaign panel's case file 1 reads filed (events chapter6-setup, cutscene-open, objective, wave-start, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, filed-scene, finale-page, ending-card, credits-card, campaign-complete, campaign-panel-filed; metrics bossBar, endingShown, caseFileCleared, caseFileFiled)", 1000, "content"),
         new PlaytestScenario("chapter5", "Chapter 5, Strike This Address, played start to finish with real input (setup: the sandbox case file starts on chapter 5): Campaign, case file 1, Begin on the Chapter 5 card; the opening scene in the Reading Room plays over the map (the order is not signed, so it can be denied; the stamp pressed to the first page shows DENIED; the bot reads pages then skips with Enter); the objective line reads Read the order, page 1 of 5 with the bots down counting up; Wallit holds the circle at the desk with the bat through five pages (each page's wave announced PAGE n OF 5 and its forms on the wall turning blank when it is down: events page-start, page-read); then The Registrar (a gold Titan Spider Bot with a ledger, boss bar up) arrives and falls; the defeat beat plays, the Chapter Complete card shows, the case file moves to Chapter 6, Menu, and reopening the file shows Chapter 6's card (events chapter5-setup, cutscene-open, cutscene-page, objective, page-start, page-read, boss-called, boss-arrives, boss-bar, defeat-beat, boss-defeated, objective-met, chapter-complete, campaign-advanced, campaign-resume; metrics pagesRead, bossBar, chapterAdvanced, chapterResumed)", 900, "content"),
@@ -124,6 +135,7 @@ public static partial class Playtest {
         new PlaytestScenario("stakes", "The stakes of Slice's circle (Docs/Story.md, \"The stakes\"), on a 390x844 phone with fingers only: Arcade wave 1, the bot holds fire until a Yo Bot reaches Slice. Events slice-hit (her health), stakes-line (Wallit's one key line, said once, with the floor's overlap count), then a setup blow takes her under 30% (slice-low and the warning layer starts), then she is healed and the ring and the grey edges recover. Event stakes-frames (ring alpha and edge drain at full health, just hit, low and recovered), stakes-overlap (the edge drain is a post-process on the 3D view, so it covers no HUD element or touch control: 0). Metrics stakesHits, stakesLines, stakesVoiceOverlaps, stakesDrainLow, stakesDrainRecovered, stakesRingFull, stakesRingLow", 150, "smoke"),
         new PlaytestScenario("slice-partner", "Slice as partner (Docs/Story.md): on a 390x844 phone with fingers only, Arcade wave 1 holds fire until Slice voices at least 3 one-word callouts (events slice-callout, callout-ring, callout-arrow; caption one word above the HUD, arrow clear of stick and buttons); setup wave key to 11 (Cold Hour) and hold fire until she parries once (slice-parry: block pose, metallic clink, knockback). Metrics sliceCallouts, sliceParries, slicePartnerVoiceOverlaps (0). No two voice lines overlap", 300, "content"),
         new PlaytestScenario("hud-paper", "The run HUD as Department paperwork (run it with mobile, 390x844, or 844x390): Slice's address card tears in three stages as her health falls (setup: her health is knocked down in steps; events card-stage, metric cardTears) and is taped on a heal, the coin ledger rolls its digits with a sound on a gain (setup: coins granted; coin-roll, coinGains), the wave postmark re-stamps each wave and a red seal shows on boss wave 10 (setup: the wave key; postmark, restamps), and at start, torn and boss wave no HUD piece is off screen or under a touch control and every number is 16 px or more (hud-layout, paperMinTextPx, paperTouchOverlaps)", 150, "menus"),
+        new PlaytestScenario("build-panel", "The build, by finger on a 390x844 phone (run it with mobile): an Arcade run to wave 10 with card picks, setup tops the build up to eight boons; Pause shows a Build button, it opens one row per boon held (name, level, one-line effect; rows 44 px or more, effect text 14 px or more), a finger drag scrolls it when more than six, Back returns to Pause, Resume plays on. Then Slice falls (setup: DevLose) and the run-end sheet shows the build as an icon band with the overlap check at 0. Events build-setup, build-pause, build-panel, build-scroll, build-closed, build-run-end; metrics buildBoonsHeld, buildRows, buildRowPx, buildTextPx, buildScrolled, buildRunEndShown, endOverlaps", 240, "menus"),
         new PlaytestScenario("run-end", "Arcade run-end screen (Docs/Story.md): five losses with different facts each play a distinct Wallit/Slice voiced exchange; waves and coins count with sound, a new best stamps, finished goals stamp and unlock a bat look; at 390x844 touch one tap on Retry starts the next run and the first bot spawns within 4 s; the screen fits without scrolling, Retry is the largest button, the subtitle is one line, overlap check 0. Events run-end-count, best-stamp, goal-done, cast-exchange, run-start, first-bot, run-end-layout; metrics runEndExchanges, retryToBotSeconds, runEndOverlaps, runEndRetryLargest, runEndSubtitleOneLine", 420, "full"),
         new PlaytestScenario("polish", "The final polish pass, on any screen size (run it on desktop and on the phone): the main menu, the HUD in wave 1, the level-up cards (setup: a level of bolts granted), the pause menu by its button, Resume, 40 s of real play, then the bot holds fire until Slice falls (setup: Plated Yo Bots ring her after 20 s) and the game-over panel reads Address struck off. Each screen gets a layout check (menu, hud, cards, pause, gameover), a fonts check (the fonts event and BuiltinFontTexts metric: visible Text still on the built-in font must be 0 on the menu, Settings, HUD, cards, pause and game-over; plus clipped or overflowing texts, 0 at 390x844 and 844x390; the subtitles are checked in coldopen), a stale-words check (no piano, keys or music-stopped words left), and a button-feel check (every button lifts on hover and sinks on press like the menu's); the audio-mix event says how many sounds played, how many stacked softer, how many were capped and how many dipped under a voice line", 420, "full"),
         new PlaytestScenario("levelup", "The level-up jackpot and the panel transitions, played with real input (on a phone viewport, 390x844 touch, by finger taps): an Arcade run; setup: a level's worth of bolts. The world eases to a stop (event ease-down: time scale samples between 1 and 0), three cards are dealt face down as Department forms and flip one after another with a rising-pitch card-flip sound, the rarest last with the biggest sound and a gold stamp (events level-up-juice: open, flip card n (rarity, pitch, sound cardflip), pick, closed; metrics flipsLogged, rarestLast). The cards are checked on screen: every card tap area 44 px or more and no text or icon boxes overlapping inside a card (events cards-fit, card-tap-size; metrics cardOverlaps, cardMinTapPx). One tap (a number key on desktop) picks a card and stamps APPROVED (event approved-stamp); play eases back (ease-up) and the bot swings (levelup-to-swing: seconds from the level-up to the first accepted swing, wanted under 2.5; metric levelUpToSwingSeconds). Then Pause, Settings and the game-over panel (setup: Slice's bar emptied) open and close, each timed by PanelFx (events panel-transition: seconds, frames, biggest alpha step; metrics panelSecondsMin, panelSecondsMax: wanted 0.15 to 0.25 s, no step over 0.25 in one frame) with a panelslide sound", 300, "menus"),
@@ -181,6 +193,28 @@ public static partial class Playtest {
 #endif
 
     static PlaytestRun run;
+
+    // A first-minute milestone from the game itself (FirstMinute): an event and the metric milestone.<name> in seconds from page open.
+    public static void Milestone(string name, float seconds, string note) {
+        if (run == null || run.Done) {
+            return;
+        }
+        run.Event("milestone", name + " " + seconds.ToString("0.0") + " s: " + note);
+        run.Metric("milestone." + name, seconds);
+    }
+
+    // The Records card cleared (RecordsCard): records.openSeconds, seconds from the page opening; over 5 s is a bug.
+    public static void RecordsOpen(float seconds, string where) {
+        if (run == null || run.Done) {
+            return;
+        }
+        run.Event("records-open", "the Records card cleared " + seconds.ToString("0.0") + " s after the page opened (" + where + ")");
+        run.Metric("records.openSeconds", seconds);
+        if (seconds > RecordsCard.LimitSeconds) {
+            run.Problem(PlaytestSeverity.Bug, "records.openSeconds " + seconds.ToString("0.0") + " is over " + RecordsCard.LimitSeconds + " s");
+        }
+    }
+
     // True from the moment a scenario starts (WaveDirector.WaveKeysAllowed: the bot's setup shortcut may use the wave keys).
     public static bool Running { get; private set; }
     // A runner started a scenario on the page's stand-in bridge before Unity loaded (Install adopts it): the scenario is wanted
@@ -198,6 +232,8 @@ public static partial class Playtest {
         }
     }
     static int levelUps;
+    // Of those picks, the wave-clear cards: they gain no level, so run.levelUps (RunBoons) is picks minus these.
+    static int waveCardPicks;
     static int lastWave;
     static float fpsSum;
     static int fpsFrames;
@@ -259,6 +295,8 @@ public static partial class Playtest {
 
     static void Stop() {
         Running = false;
+        HitchMeter.End();
+        SignAudit.Meter.End();
         WaveDirector.ReleaseKeysProbe = false;
         SettingsPanel.Close();
         PauseMenu.Resume();
@@ -274,17 +312,21 @@ public static partial class Playtest {
     static IEnumerator Bot(string id, PlaytestOptions options, PlaytestRun current) {
         run = current;
         Running = true;
+        LightBudget.Sink = line => run.Event("phone-budget", line);   // lights, casters and visible renderers per scene, phone tier only
         WaveDirector.ReleaseKeysProbe = false;
         if (id == "ch1") {
             id = "campaign-beats";
         }
         levelUps = 0;
+        waveCardPicks = 0;
         lastWave = 0;
         fpsSum = 0f;
         fpsFrames = 0;
         stallFrames = 0;
         worstFrameMs = 0f;
         worstFps = 999f;
+        HitchMeter.Begin(run);
+        SignAudit.Meter.Begin(run);
         holdFireFrom = 0;
         analyticsRun = id == "analytics";
         analyticsSeq = -1;
@@ -305,7 +347,7 @@ public static partial class Playtest {
         RunAnalytics.EnableDebug();
         ColdOpen.Suppress = id != "coldopen";
         CinematicDirector.SuppressOpening = id != "opening-scene";   // only opening-scene watches the directed Chapter 1 open; every other bot starts with the stick
-        LevelScene.ChapterOneIsLevel = id == "explore" || id == "campaign-beats" || id == "campaign-full" || id == "moods" || id == "campaign-touch" || id == "first-load" || id == "touch-pause" || id == "down-retry" || id == "ui-walk" || id == "levels-1-3" || id == "opening-scene";   // the older chapter playtests press Begin on Chapter 1 and expect the chapter run; explore must load Level_1_Yard or it hangs 60 s waiting for a level that never starts
+        LevelScene.ChapterOneIsLevel = id == "explore" || id == "campaign-beats" || id == "checkpoint-resume" || id == "campaign-full" || id == "moods" || id == "campaign-touch" || id == "first-load" || id == "touch-pause" || id == "down-retry" || id == "ui-walk" || id == "levels-1-3" || id == "opening-scene";   // the older chapter playtests press Begin on Chapter 1 and expect the chapter run; explore must load Level_1_Yard or it hangs 60 s waiting for a level that never starts
         // opening-ch23 plays Chapters 2 and 3 in-engine openings on their own maps (not Level_1_Yard).
         PlayInput.Release();
         MetaProgress.EnterSandbox(true);
@@ -356,6 +398,10 @@ public static partial class Playtest {
                 yield return PlaytestHudPaper.Run(run);
                 yield break;
             }
+            if (id == "build-panel") {
+                yield return PlaytestBuild.Run(run);
+                yield break;
+            }
             if (id == "run-end") {
                 yield return PlaytestRunEnd.Run(run);
                 yield break;
@@ -392,8 +438,11 @@ public static partial class Playtest {
                 MeshAuditReport audit = MeshAudit.Run();
                 run.Event("mesh-audit-summary", audit.Summary());
                 run.Metric("meshInsideOut", (float)audit.Inside);
+                run.Metric("quality.insideOut", (float)audit.Inside);
+                run.Metric("bakedPartsFlipped", (float)BakedMesh.FlippedParts);
                 run.Metric("meshZeroNormals", (float)audit.ZeroNormals);
                 run.Metric("meshNegativeScale", (float)audit.NegativeScales);
+                run.Metric("quality.mirroredText", (float)audit.MirroredText);
                 foreach (string f in audit.Failures) {
                     run.Problem(PlaytestSeverity.Bug, "mesh-audit: " + f);
                 }
@@ -545,6 +594,13 @@ public static partial class Playtest {
                 }
                 yield break;
             }
+            if (id == "checkpoint-resume") {
+                yield return PlaytestCheckpoint.Run(run);
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
             if (id == "campaign-beats") {
                 yield return PlaytestBeats.Run(run);
                 if (!run.Done) {
@@ -554,6 +610,13 @@ public static partial class Playtest {
             }
             if (id == "title-scene") {
                 yield return PlaytestTitle.Run(run);
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "render-fit") {
+                yield return PlaytestRenderFit.Run(run);
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
                 }
@@ -574,8 +637,43 @@ public static partial class Playtest {
                 }
                 yield break;
             }
+            if (id == "continue-run") {
+                yield return PlaytestContinue.Run(run);
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
             if (id == "down-retry") {
                 yield return PlaytestDown.Run(run);
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "evolution") {
+                yield return PlaytestOffers.RunEvolution(run);
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "boon-offers") {
+                yield return PlaytestOffers.Run(run);
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "upgrade-pick") {
+                yield return PlaytestPick.Run(run);
+                if (!run.Done) {
+                    run.Finish(PlaytestOutcome.Done);
+                }
+                yield break;
+            }
+            if (id == "page-hide") {
+                yield return PlaytestPageHide.Run(run);
                 if (!run.Done) {
                     run.Finish(PlaytestOutcome.Done);
                 }
@@ -634,6 +732,12 @@ public static partial class Playtest {
             if (id == "upgrades") {
                 UpgradesShop();
             }
+            if (id == "first-minute") {
+                PrepareFirstMinute();
+            }
+            if (id == "soak") {
+                PrepareSoak();
+            }
             yield return StartRun();
             if (run.Done) {
                 yield break;
@@ -671,6 +775,10 @@ public static partial class Playtest {
                 yield return ExposureRun(options);
             } else if (id == "arcade-score") {
                 yield return ArcadeScoreRun(options);
+            } else if (id == "soak") {
+                yield return SoakRun(options);
+            } else if (id == "first-minute") {
+                yield return FirstMinuteRun(options);
             } else if (id == "onboarding") {
                 yield return OnboardingRun(options);
             } else if (id == "act-change") {
@@ -685,6 +793,10 @@ public static partial class Playtest {
                 yield return PlaceAudioRun(options);
             } else if (id == "tells") {
                 yield return TellsRun(options);
+            } else if (id == "threats") {
+                yield return ThreatsRun(options);
+            } else if (id == "bot-marks") {
+                yield return BotMarksRun(options);
             } else if (id == "hit-fx") {
                 yield return HitFxRun(options);
             } else if (id == "fight-camera") {
@@ -4645,7 +4757,46 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             if (Enemy.Roster.Count == 0) {
                 PlayInput.Tap(KeyCode.Return);
             }
+            ActChangeSample();
             yield return null;
+        }
+    }
+
+    // Through every act change: the dimmest graded frame (NightGrade's own read of the frame being drawn, never a second render
+    // of the camera, which used to bend the aspect) and the worst aspect error. Reported as light.minLumaInChange and render.aspectError.
+    static float actWatchUntil, actWatchNext, actMinLuma = 9f, actWorstAspect;
+    static int actWatchSamples;
+
+    static void ActChangeWatch(float seconds) {
+        actWatchUntil = Time.unscaledTime + seconds;
+        actWatchNext = 0f;
+    }
+
+    static void ActChangeSample() {
+        if (Time.unscaledTime > actWatchUntil || Time.unscaledTime < actWatchNext) {
+            return;
+        }
+        actWatchNext = Time.unscaledTime + 0.1f;
+        if (NightGrade.MeanLuma >= 0f) {
+            actMinLuma = Mathf.Min(actMinLuma, NightGrade.MeanLuma);
+        }
+        actWorstAspect = Mathf.Max(actWorstAspect, RenderFit.Measure().aspectError);
+        actWatchSamples++;
+    }
+
+    static void ActChangeReport(string where) {
+        if (actWatchSamples == 0) {
+            return;
+        }
+        float luma = actMinLuma > 8f ? 0f : actMinLuma;
+        run.Metric("light.minLumaInChange", Mathf.Round(luma * 1000f) / 1000f);
+        run.Metric("render.aspectError", Mathf.Round(actWorstAspect * 10000f) / 10000f);
+        run.Event("act-change-light", where + ": " + actWatchSamples + " samples over the act changes, dimmest graded frame " + luma.ToString("0.000") + ", worst aspect error " + actWorstAspect.ToString("0.0000"));
+        if (luma < 0.08f) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: the frame dipped to " + luma.ToString("0.000") + " during an act change (want 0.08 or more)");
+        }
+        if (actWorstAspect >= 0.01f) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: a frame was stretched during an act change, aspect error " + actWorstAspect.ToString("0.0000"));
         }
     }
 
@@ -4671,20 +4822,10 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                 off++;
             }
             foreach (Text t in Object.FindObjectsByType<Text>(FindObjectsSortMode.None)) {
-                if (t == null || !t.isActiveAndEnabled || string.IsNullOrEmpty(t.text) || t.GetComponentInParent<Canvas>() == null) {
+                if (!ScreenSlots.Visible(t) || t.GetComponentInParent<Canvas>().gameObject.name == "Act Banner") {
                     continue;
                 }
-                if (t.GetComponentInParent<Canvas>().gameObject.name == "Act Banner") {
-                    continue;
-                }
-                var c = new Vector3[4];
-                t.rectTransform.GetWorldCorners(c);
-                var tr = new Rect(c[0].x, c[0].y, c[2].x - c[0].x, c[2].y - c[0].y);
-                // Only text that is really drawn counts; the layout rect is looser than the glyphs.
-                float w = Mathf.Min(tr.width, t.preferredWidth);
-                float h = Mathf.Min(tr.height, t.preferredHeight);
-                var glyphs = new Rect(tr.center.x - w * 0.5f, tr.center.y - h * 0.5f, w, h);
-                if (t.color.a > 0.1f && glyphs.Overlaps(r)) {
+                if (ScreenSlots.GlyphRect(t).Overlaps(r)) {
                     overlap++;
                     run.Event("act-banner-overlap", where + ": '" + t.text + "' under the banner");
                 }
@@ -4693,6 +4834,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         run.Event("act-banner", where + ": '" + ArcadeActs.BannerTitle + "' " + rects.Count + " texts, off screen " + off + ", over other text " + overlap + " (screen " + Screen.width + "x" + Screen.height + ")");
         run.Metric("actBannerOff", off);
         run.Metric("actBannerOverlap", overlap);
+        ReportTextOverlaps(where);
         if (off > 0) {
             run.Problem(PlaytestSeverity.Bug, "arcade-acts: the act banner runs off the screen at " + where);
         }
@@ -4701,8 +4843,31 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         }
     }
 
+    // ui.textOverlaps: the worst count, over every frame since the probe started, of visible text rects from different screen
+    // canvases that intersect (ScreenSlots.Count). A text inside its own canvas stacked on another (a HUD's layers) is
+    // ui.textOverlapsSameCanvas, reported but not a fail.
+    public static void ReportTextOverlaps(string where) {
+        run.Metric("ui.textOverlaps", ScreenSlots.OverlapMax);
+        run.Metric("ui.textOverlapsSameCanvas", ScreenSlots.OverlapSameCanvasMax);
+        run.Event("ui-text-overlaps", where + ": worst " + ScreenSlots.OverlapMax + " pairs over " + ScreenSlots.ProbeFrames + " frames"
+            + (ScreenSlots.OverlapMax > 0 ? " (" + ScreenSlots.OverlapWorst + ")" : "") + ", inside one canvas " + ScreenSlots.OverlapSameCanvasMax
+            + ", banner spot " + (ArcadeActs.BannerClear ? "clear" : "none free"));
+        if (ScreenSlots.OverlapMax > 0) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: " + ScreenSlots.OverlapMax + " pairs of text overlap at " + where + ": " + ScreenSlots.OverlapWorst);
+        }
+        // ui.textOverflows: the worst count of visible texts whose content is bigger than their box.
+        run.Metric("ui.textOverflows", ScreenSlots.OverflowMax);
+        run.Metric("ui.captionBottomPct", Mathf.RoundToInt(CaptionStack.BottomFraction * 100f));
+        run.Event("ui-text-overflows", where + ": worst " + ScreenSlots.OverflowMax + " text(s)"
+            + (ScreenSlots.OverflowMax > 0 ? " (" + ScreenSlots.OverflowWorst + ")" : "") + ", captions end " + Mathf.RoundToInt(CaptionStack.BottomFraction * 100f) + "% down, held " + CaptionStack.Held);
+        if (ScreenSlots.OverflowMax > 0) {
+            run.Problem(PlaytestSeverity.Bug, "ui.textOverflows " + ScreenSlots.OverflowMax + " at " + where + ": " + ScreenSlots.OverflowWorst);
+        }
+    }
+
     static IEnumerator ActsRun(PlaytestOptions options) {
         var player = Object.FindAnyObjectByType<CharacterMovement>();
+        ScreenSlots.StartProbe();
         yield return run.Until(() => WaveDirector.Instance != null && Enemy.Roster.Count > 0 && ControlsHelp.PlayedSeconds > 0f, 20f, "Arcade wave 1 bots");
         yield return run.Until(() => ArcadeActs.Instance != null && ArcadeActs.Act == 0, 5f, "act 1 to start");
         if (run.Done) {
@@ -4712,9 +4877,9 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         ActBanner("wave 1");
         var (h1, s1) = ActLook(0);
 
+        ActChangeWatch(9f);
         yield return GoWave(11);
-        yield return ActsPlay(player, 1f, null);
-        ActBanner("wave 11");
+        yield return ActBeatShot(player, "Act II desktop", "wave 11");
         yield return ActsPlay(player, 2f, null);
         var (h2, s2) = ActLook(1);
         yield return ActsPlay(player, 40f, () => HasKind(BotKind.SpiderBot));
@@ -4725,9 +4890,9 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             run.Problem(PlaytestSeverity.Bug, "arcade-acts: act 2 brought no Spider Bots");
         }
 
+        ActChangeWatch(9f);
         yield return GoWave(21);
-        yield return ActsPlay(player, 1f, null);
-        ActBanner("wave 21");
+        yield return ActBeatShot(player, "Act III desktop", "wave 21");
         yield return ActsPlay(player, 2f, null);
         var (h3, s3) = ActLook(2);
         yield return ActsPlay(player, 40f, () => MixedElites() > 0);
@@ -4738,6 +4903,13 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             run.Problem(PlaytestSeverity.Bug, "arcade-acts: act 3 showed no elite beyond the Yo Bots");
         }
 
+        run.Metric("quality.textOnlyBeats", ActBeat.TextOnly);
+        run.Metric("actBeats", ActBeat.Beats);
+        run.Metric("actBeatControlLostSeconds", ActBeat.ControlLostSeconds);
+        run.Event("act-beats", ActBeat.Beats + " in-world beats (spiders broke through " + ActBeat.SpidersBroke + ", lamps put out or flared " + ActBeat.LampsOut + "), text-only " + ActBeat.TextOnly + ": " + string.Join("; ", ActBeat.Log));
+        if (ActBeat.Beats < 2 || ActBeat.TextOnly > 0) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: " + ActBeat.Beats + " act beats played, " + ActBeat.TextOnly + " of them text-only (want both acts staged in the world)");
+        }
         float d12 = ArcadeActs.SignatureDistance(h1, h2) + ArcadeActs.SignatureDistance(s1, s2);
         float d23 = ArcadeActs.SignatureDistance(h2, h3) + ArcadeActs.SignatureDistance(s2, s3);
         run.Metric("actLookDistance_1_11", Mathf.Round(d12 * 100f) / 100f);
@@ -4767,25 +4939,56 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         }
         if (Screen.width == 390 || (browser && phoneViewport)) {
             yield return GoWave(1);
+            ArcadeActs.ForgetStaged();   // setup: the beats may play again on the phone
             yield return ActsPlay(player, 0.8f, null);
             ActBanner("phone wave 1");
             ActLook(0);
+            ActChangeWatch(9f);
             yield return GoWave(11);
-            yield return ActsPlay(player, 0.8f, null);
-            ActBanner("phone wave 11");
+            yield return ActBeatShot(player, "Act II phone", "phone wave 11");
             ActLook(1);
+            yield return ActsPlay(player, 7f, null);
+            ActChangeWatch(9f);
             yield return GoWave(21);
-            yield return ActsPlay(player, 0.8f, null);
-            ActBanner("phone wave 21");
+            yield return ActBeatShot(player, "Act III phone", "phone wave 21");
             ActLook(2);
+            yield return ActsPlay(player, 7f, null);
         } else {
             run.Event("screen-turn-skipped", "the page is a desktop viewport and a browser canvas is never resized by the bot; run the phone twin for the phone view (it is " + Screen.width + "x" + Screen.height + ")");
         }
         if (!browser) {
             Screen.SetResolution(w, h, false);
         }
+        ActChangeReport(UiFit.Touch ? "phone" : "desktop");
+        ReportTextOverlaps("end of arcade-acts");
+        ScreenSlots.StopProbe();
         UiFit.ForceTouch(false);
         yield return new WaitForSecondsRealtime(1f);
+    }
+
+    // The act's in-world beat plays over live play: wait for it, photograph it mid-way (the bot keeps fighting through it),
+    // and check it ran under 4 s and never took control.
+    static IEnumerator ActBeatShot(CharacterMovement player, string label, string bannerWhere) {
+        yield return run.Until(() => ActBeat.Open, 6f, label + " beat");
+        if (run.Done || !ActBeat.Open) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: no in-world beat at " + label);
+            yield break;
+        }
+        ActBanner(bannerWhere);   // the banner is up for the first seconds of the beat
+        float t0 = Time.unscaledTime;
+        bool blocked = false;
+        yield return ActsPlay(player, 1.6f, null);
+        blocked |= Cutscene.IsOpen || CinematicDirector.IsOpen || LevelUpScreen.IsOpen;
+        run.Scene("Act beat: " + label + " mid-way (" + ActBeat.Log.Count + " beat events)");
+        while (ActBeat.Open && Time.unscaledTime - t0 < 6f && !run.Done) {
+            blocked |= Cutscene.IsOpen || CinematicDirector.IsOpen;
+            yield return ActsPlay(player, 0.2f, null);
+        }
+        run.Event("act-beat", label + ": " + ActBeat.LastSeconds.ToString("0.0") + " s, controls taken " + blocked + ", look " + ArcadeActs.Describe());
+        if (blocked || ActBeat.LastSeconds > 4f) {
+            run.Problem(PlaytestSeverity.Bug, "arcade-acts: the " + label + " beat took control or ran over 4 s (" + ActBeat.LastSeconds.ToString("0.0") + " s)");
+        }
+        yield return ActsPlay(player, 0.5f, null);
     }
 
     static bool HasKind(BotKind kind) {
@@ -4991,6 +5194,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                             }
                         }
                         levelUps++;
+                        if (RunBoons.LastCardWasWave) { waveCardPicks++; }
                         run.Add("levelUps");
                         run.Log("picked card " + (pick + 1) + " (picks " + picksBefore + " -> " + RunBoons.Picks + ")");
                         cardSeenAt = -1f;
@@ -5031,7 +5235,12 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             if (wave != lastWave) {
                 if (lastWave != 0) {
                     run.Event("wave", wave.ToString());
+                    // The level the run reached by the end of the wave just cleared.
+                    run.Metric("run.level.wave" + lastWave, RunBoons.Level);
+                    run.Event("run-level", "wave " + lastWave + " cleared: run.level " + RunBoons.Level + ", run.levelUps " + RunBoons.LevelUps + ", picks " + RunBoons.Picks + ", XP " + RunBoons.Feathers + "/" + RunBoons.NextAt);
                 }
+                run.Metric("run.level", RunBoons.Level);
+                run.Metric("run.levelUps", RunBoons.LevelUps);
                 lastWave = wave;
                 waveSince = now;
                 if (holdFireFrom > 0 && wave >= holdFireFrom) {
@@ -5474,6 +5683,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             }
         }
         levelUps++;
+        if (RunBoons.LastCardWasWave) { waveCardPicks++; }
         run.Add("levelUps");
     }
 
@@ -7836,6 +8046,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
     static IEnumerator BossSetRun() {
         var player = Object.FindAnyObjectByType<CharacterMovement>();
         yield return run.Until(() => WaveDirector.Instance != null && Enemy.Roster.Count > 0, 20f, "Arcade wave 1 bots");
+        ShotClear.Reset();
         int[] waves = { 10, 20, 30 };
         string[] expect = { "The Plated Alpha", "The Foreman", "The Order" };
         for (int i = 0; i < waves.Length && !run.Done && !WaveDirector.IsLost; i++) {
@@ -7893,6 +8104,10 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         }
         run.Metric("bossIntros", BossSetPiece.Intros);
         run.Metric("bossPayoffs", BossSetPiece.Payoffs);
+        ShotClear.Report(run);
+        if (ShotClear.InsideFrames > 0) {
+            run.Problem(PlaytestSeverity.Bug, "boss-set-pieces: the camera was inside a body or wall on " + ShotClear.InsideFrames + " frames of a boss intro");
+        }
         run.Metric("feel.hitStopMs", 120);
     }
 
@@ -8784,7 +8999,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                 yield break;
             }
             MusicDirector.Play(c[0], c[1]);
-            yield return AwaitTrack(c[0]);
+            yield return AwaitTrack(MusicDirector.HasCueFile(c[0]) ? c[0] : c[1]);   // never ask the server for a cue with no file (a 404)
             yield return new WaitForSecondsRealtime(2f);
             run.Event("leitmotif-cue", c[0] + ": " + (MusicDirector.Cached(c[0]) != null ? "file" : "fallback " + c[1]) + ", playing " + MusicDirector.Current);
         }
@@ -9453,6 +9668,7 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
                         }
                     }
                     levelUps++;
+                    if (RunBoons.LastCardWasWave) { waveCardPicks++; }
                     run.Add("levelUps");
                     run.Log("tapped " + card.name);
                     cardSeenAt = -1f;
@@ -10557,8 +10773,14 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         run.Metric("lockNearest", lockNearest);
         run.Metric("lockWrong", lockWrong);
         run.Metric("level", RunBoons.Level);
-        run.Metric("levelUps", levelUps);
+        run.Metric("run.level", RunBoons.Level);
+        run.Metric("run.levelUps", RunBoons.LevelUps);
+        run.Metric("levelUps", levelUps - waveCardPicks);
+        run.Metric("waveCardPicks", waveCardPicks);
+        run.Metric("cardPicks", levelUps);
         run.Metric("botsAlive", Enemy.Roster.Count);
+        run.Metric("hurt.directionShown", HitDirection.WallitHits > 0 ? Mathf.Round(100f * HitDirection.ShownWallit / HitDirection.WallitHits) : 100f);
+        run.Metric("hurt.hits", HitDirection.WallitHits);
         run.Metric("bestStreak", Combo.Best);
         run.Metric("coinsRun", MetaProgress.CoinsThisRun);
         run.Metric("runSeconds", Mathf.Round(elapsed));

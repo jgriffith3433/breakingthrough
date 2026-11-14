@@ -600,9 +600,13 @@ public partial class Cutscene : MonoBehaviour {
             nameSize = 30;
             lineSize = ui == UiMode.Tall ? 30 : 34;
             height = ui == UiMode.Tall ? 380f : 250f;
-            skipRect.anchorMin = skipRect.anchorMax = new Vector2(1f, 1f);
-            skipRect.pivot = new Vector2(1f, 1f);
-            skipRect.anchoredPosition = new Vector2(-16f, -16f);
+            // Bottom right, just above the dialogue panel, inside the safe area (88 units = about 52 px tall).
+            var safe = Screen.safeArea;
+            float inset = Screen.width > 0 ? (Screen.width - safe.xMax) * (size.x / Screen.width) : 0f;
+            float lift = Screen.height > 0 ? safe.y * (size.y / Screen.height) : 0f;
+            skipRect.anchorMin = skipRect.anchorMax = new Vector2(1f, 0f);
+            skipRect.pivot = new Vector2(1f, 0f);
+            skipRect.anchoredPosition = new Vector2(-16f - inset, height + 40f + lift);
             skipRect.sizeDelta = new Vector2(240f, 88f);
             skipLabel.fontSize = 34;
         }

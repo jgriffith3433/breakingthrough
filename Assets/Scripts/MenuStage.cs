@@ -378,10 +378,40 @@ public class MenuStage : MonoBehaviour {
         return target;
     }
 
+    // The stage is drawn into a texture that fills the screen, so a window of another shape would stretch it (round things
+    // oval). When the screen's aspect leaves the texture's, the texture is made again at the screen's own aspect.
+    void FitTarget() {
+        if (handedOff || target == null || UnityEngine.Screen.width <= 0 || UnityEngine.Screen.height <= 0) {
+            return;
+        }
+        float aspect = (float)UnityEngine.Screen.width / UnityEngine.Screen.height;
+        if (Mathf.Abs((float)target.width / target.height / aspect - 1f) < 0.01f) {
+            return;
+        }
+        bool narrow = aspect < 1f;
+        int h = narrow ? Mathf.Clamp(Mathf.RoundToInt(540f / aspect), 540, 1100) : 720;
+        int w = narrow ? 540 : Mathf.Clamp(Mathf.RoundToInt(h * aspect), 360, 1280);
+        if (!narrow && w == 1280) {
+            // A very wide window: keep the aspect by trading height, not by stretching.
+            h = Mathf.Clamp(Mathf.RoundToInt(w / aspect), 240, 720);
+        }
+        var next = new RenderTexture(w, h, 16, RenderTextureFormat.ARGB32);
+        next.name = "Menu Stage";
+        next.antiAliasing = 1;
+        cam.targetTexture = next;
+        if (Image != null) {
+            Image.texture = next;
+        }
+        target.Release();
+        Destroy(target);
+        target = next;
+    }
+
     void Update() {
         if (cam == null) {
             return;
         }
+        FitTarget();
         float t = Time.unscaledTime - born;
         float ease = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / 0.6f));
         if (Image != null) {
@@ -549,7 +579,8 @@ public class MenuHandoff : MonoBehaviour {
         }
         // Hold for the first frames of the run so the camera has settled, then dissolve over half a second.
         float fade = upAt < 0f ? 0f : Mathf.Clamp01((now - upAt - 0.15f) / 0.5f);
-        if (upAt < 0f && now - born > 12f) {
+        // Never longer than 3 s on unscaled time, whatever the load does: the overlay takes no taps but it must not linger.
+        if (upAt < 0f && now - born > 3f) {
             fade = 1f;
         }
         image.color = new Color(1f, 1f, 1f, 1f - fade);

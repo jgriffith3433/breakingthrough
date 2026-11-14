@@ -646,7 +646,7 @@ public class FiledMap : OwnMap {
                     Vector3 d = pl.transform.position - p;
                     d.y = 0f;
                     if (d.magnitude <= 3.2f) {
-                        pl.OnHit();
+                        pl.OnHit(null, p);
                         Log.Add("stamp-mark|wallit");
                         break;
                     }

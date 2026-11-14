@@ -74,6 +74,14 @@ Eight places, each its own scene or map, plus six hidden rooms. Size is the walk
 - Gap: the 61 later kit pieces and several lodger/boss bodies are still code-built stand-ins (Gen art replacement approved by J,
   2026-11-07, budget in the memory decision).
 
+### Slice at the circle (stakes, told in play)
+
+The circle is the one filed address; everything else in the Hollow can be cleared. A player learns that from Slice, not from a card:
+the first time a bot reaches the ring in a run she turns on it, knife up, and says why it matters ("That's the address. Nobody
+takes it."); later arrivals get a short bark ("Off the circle.", "Not here.", "Mine.", "Back."), at most one per 9 s through
+`VoiceDirector`. Hook: `AttackTell.ReachedCircle` -> `SliceVoice.Reached`. Her want: keep the one filed thing filed. Her arc in
+Arcade: clipped and bored at wave 1, thin and stubborn when low. Voice files are optional (`slice_<line>.mp3`); the subtitle plays without one.
+
 ## Landmarks
 
 One far-visible thing per area, so a player can steer by it. All are already in a map sheet; the bible fixes which one leads.
@@ -212,7 +220,7 @@ ambient sound, what changes. "Gap clock" is the longest the docs allow between t
   rim on Wallit, Slice and every bot, warm lamp pools on the lawn that read as the safe zones, ground fog cards drifting, Spider
   Bots come down the wall); 21-30 **Act III Last Light**, the Department's red alert (a red key, an alarm beacon on the ruin
   sweeping the lawn, big slow ash glows, harder contrast; every kind can roll an elite trait). After 30 the loop starts again under
-  an **Overtime** red-ink tint. Each change blends light, sky, grade (and a colour LUT per act) and score over 1.5 s with a banner
+  an **Overtime** red-ink tint. Key hues: Act I amber about 41 degrees, Act II blue about 222, Act III red about 350 (at least 40 apart, so no two acts share a key). Each change blends light, sky, grade (and a colour LUT per act) and score over 1.5 s with a banner
   and a chime sting. Desktop: soft key shadows and a reflection probe; phone: no real-time shadows, a lighter bloom, the rim carried
   by the character shader. Nothing solid in the 150 m, no camera shake, no tiny sparks (the ash is large and soft). Not built:
   baked light probes and lightmaps (need an editor bake of the scene).
@@ -359,6 +367,15 @@ line, is only the subtitle of a voiced line. Beats marked **(built)** exist per 
     run at once. Sound: coin ticks, `stamp_heavy` on a best, goal stamp; voice files under `Resources/Voice/`. Proof: events
     `run-end-count`, `best-stamp`, `goal-done`, `cast-exchange`, `run-start` after Retry. Playtest: `run-end`.
 
+16. **One turn per chapter, in play (built, `ChapterBeats.cs`).** Each chapter has one story turn that was a narration card line and is
+    now an event around Wallit, about 7 m ahead of the play camera (on screen at 390x844 with the touch controls up), using only
+    existing kit pieces and sounds: Ch1 a yard lamp lights where the Courier's notice fell (`courier_clip`); Ch2 the gate's lamps
+    rise red as the wall answers (`stamp_heavy`); Ch3 the red lamp over the chute comes up as the lever drops and the belt stops
+    (`stomp`); Ch4 the last pair of causeway lamps rises (`slot_shutter`); Ch5 a white door rises when the last page is read
+    (`gallery_rise`); Ch6 lanterns rise round the ring as the Order-Bearer falls (`slot_shutter`). The lines they replaced are
+    gone from `Story.cs`. Still needing art/audio: a recorded voice line per beat (the spoken lines already in each scene stay).
+    Proof: events `chapter-beat`, metrics `quality.textOnlyBeats.ch1`..`ch6`; playtest `explore` (also `explore:phone`).
+
 Beat rule: every new beat gets a row here first, with where, when, the sound and voice it needs, the event that is the proof,
 and a playtest event name.
 
@@ -393,7 +410,10 @@ Menu beside it; the cast's run-end exchange still plays beside the buttons, it n
 
 ### The act changes (Arcade)
 
-After the wave 10 and wave 20 bosses the hour turns as a staged 6.2 s event on the CinematicDirector (`CinematicAct.cs`), once per run per act, a tap skips it. Camera: pulls up and back over the whole Hollow with Wallit and Slice kept in frame (pushed back further on a portrait phone), the post-office ruin on the horizon, then returns to play (0.3 s hand-off). Light: sky, key, fog, grade and score blend to the next act's look over the scene. World change: **Cold Hour**, the lamp posts go dark and flare on one by one and fog rolls in over the hedges; **Last Light**, the ruin's red beacon lights and sweeps the lawn and paper burns at the edges (big soft glows and smoke, never sparks). Voice: one exchange of existing lines (Cold Hour: Slice "Legs. Count them." / Wallit "Pay up."; Last Light: Wallit "Nobody touches her." / Slice "Clean."). The card (ACT II / COLD HOUR, ACT III / LAST LIGHT) is stamped in the upper third in the Department typeface with the act's chime.
+After the wave 10 and wave 20 bosses the hour turns as a 3.6 s **in-world beat** (`ActBeat.cs`), once per run per act. Play never stops: no camera take-over, no card, no held controls (the touch pads stay up); the bots and the bat go on under it, and the act's small banner is only a label. Light, sky, moon and score blend over the same seconds (`ArcadeActs`). Only existing models, VFX and recorded lines.
+- **Act II, Cold Hour:** the ground cracks in front of Wallit (a ring and a low stomp), then two Spider Bots break up through the lawn (dust, lawn chunks, a flash, a heavy stomp; they rear for 0.35 s and then fight like any Spider Bot). The lamp posts go dark and flare back on one by one and fog rolls in off the hedges. Slice: "Legs. Count them." Wallit: "Pay up."
+- **Act III, Last Light:** the post-office ruin's red beacon lights and starts sweeping; the lamp posts go out one by one, each with a soft puff of smoke, and half of them stay dark for the rest of the act; the moon swings across and turns red; paper burns at the lawn's edge (big soft glows and smoke, never sparks). Wallit: "Nobody touches her." Slice: "Clean."
+The older 6.2 s camera pull-back scene (`CinematicAct.cs`, the `act-change` playtest) stays only as a playtest opt-in. Playtest `arcade-acts` photographs each beat mid-way on desktop and on the phone, checks it under 4 s with controls never taken, and reports `quality.textOnlyBeats` (a beat is text-only if nothing in the world changed or nobody spoke).
 
 ### Boss entrances (every boss)
 Each boss is introduced on camera, never by a banner alone: slow time, a swing from Wallit to the boss arriving, the
@@ -425,3 +445,16 @@ boss theme. Spec and card table: Docs/Story.md, "Boss entrances". Code `Cinemati
 The Moonlit Hollow's ground is moonlit lawn grass with four worn dirt lanes that lead to Slice's circle, where they turn to cobble; the hub
 office has brick walls, painted boards and linoleum under the feet, a carpet in front of the six doors and rusted metal cabinets. Eight Gen-painted
 sets in the game's storybook style (`Docs/Materials.md`).
+
+## Reading a bot (traits and rings)
+A player should know a bot before it acts. Every trait has one marker made in code (`TraitMark.cs`): a badge over the head with its own shape and colour (Sprinter double chevron, Hopper up arrow, Bruiser frame, Juker diamond, Jump-Jet triangle over a flame, Splitter cracked disc, Blinker eye, Heavy hexagon, Charger down arrowhead, Swarmer three dots, Juggernaut star), plus a Sprinter's speed streaks, a Splitter's crack line across its body and a Blinker's flicker for 0.7 s before it jumps. Every bot kind has its own ground-ring colour and size (`BotThreat.KindColour`/`KindSize`). The first bot with a trait she has not met in a run makes Slice say one of her existing new-bot lines ("That one's new.", "Different. Watch it."). No new art or audio.
+
+### Two boons become one (Arcade evolutions)
+Four pairs of maxed boons turn into one Legendary bat: Live Wire + Grand Slam = Thunder Bat, Pine Tar + Powder Keg = Phoenix Bat, Encore + Standing Ovation = Grand Finale, Ice Bat + Wide Arc = Blizzard Bat. Every card whose boon belongs to a pair carries the partner as a small linked icon (cream while held, gold once maxed) and one line, "+ Grand Slam → Thunder Bat"; a card that finishes the pair is framed gold and reads "★ Finishes Thunder Bat". When the evolution is taken, the picker's stamp thumps down as usual and then the department answers: the stamp and home-run stingers, two soft gold rings round Wallit and one round Slice's circle, Wallit's own recorded "Treasure! Mine!" family of lines, and an EVOLVED! banner. The evolved boon stays on the HUD as a gold-framed icon over the boon list. Nothing freezes beyond the picker's own stamp, and the touch pads are back the moment the picker closes. A normal run reaches its first evolution by about wave 15 (the boons that lead to it are weighted up, and the card that finishes a pair is nearly always on offer).
+
+### The build, on the table and on the sheet (built)
+
+Pause in Arcade gains a **Build** button once the run holds a boon: a scrolling list, one row per boon (card icon, name, level
+`rank/max` or `EVO`, the card's own one-line effect). On the run-end sheet the same boons sit as an icon band with their levels,
+in its own band between the goal lines and the cast subtitle, so it never overprints them. Slice's line stays clipped; the
+panel adds no new voice. Code: `BuildPanel.cs` (`BuildList` is the shared data). Playtest: `build-panel`.

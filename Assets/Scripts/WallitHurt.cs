@@ -49,7 +49,7 @@ public class WallitHurt : MonoBehaviour {
     bool flashing;
 
     // A blow landed. Returns false when the window was already up and the blow found nothing.
-    public static bool Strike(PlayerGrowth growth, Enemy by) {
+    public static bool Strike(PlayerGrowth growth, Enemy by, Vector3? source = null) {
         if (growth == null) {
             return true;
         }
@@ -61,11 +61,11 @@ public class WallitHurt : MonoBehaviour {
         if (hurt == null) {
             hurt = growth.gameObject.AddComponent<WallitHurt>();
         }
-        hurt.Begin(by);
+        hurt.Begin(by, source);
         return true;
     }
 
-    void Begin(Enemy by) {
+    void Begin(Enemy by, Vector3? source) {
         bool heavy = IsHeavy(by);
         Strikes++;
         if (heavy) {
@@ -76,7 +76,8 @@ public class WallitHurt : MonoBehaviour {
         flashing = true;
         flashClock = 0f;
 
-        Vector3 away = by != null ? transform.position - by.transform.position : -transform.forward;
+        Vector3 away = by != null ? transform.position - by.transform.position
+            : source.HasValue ? transform.position - source.Value : -transform.forward;
         away.y = 0f;
         if (away.sqrMagnitude < 0.0001f) {
             away = -transform.forward;
@@ -84,6 +85,9 @@ public class WallitHurt : MonoBehaviour {
         }
         away.Normalize();
         float meters = heavy ? KnockHeavy : KnockLight;
+        if (ComfortOptions.ReducedMotion) {
+            meters *= 0.5f;   // Calm: a gentler shove
+        }
         if (PlayerGrowth.Instance != null) {
             meters *= Mathf.Clamp(PlayerGrowth.Instance.Scale, 1f, 1.6f);
         }
@@ -94,7 +98,7 @@ public class WallitHurt : MonoBehaviour {
         LastKnockSeconds = KnockSeconds;
         body = GetComponent<CharacterController>();
 
-        if (heavy) {
+        if (heavy && !ComfortOptions.ReducedMotion) {   // Calm: no camera jolt
             CameraFeel.HurtJolt();
         }
         Last = (heavy ? "heavy" : "light") + " hit by " + (by != null ? BotRoster.Slug(by.Kind) : "stamp") + ": knock " + meters.ToString("0.0") + " m, window " + InvulnerableSeconds.ToString("0.0") + " s";

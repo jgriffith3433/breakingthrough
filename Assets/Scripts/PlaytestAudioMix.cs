@@ -91,6 +91,15 @@ public static class PlaytestAudioMix {
         var l = Object.FindAnyObjectByType<AudioListener>();
         bool limiter = l != null && l.GetComponent<AudioMix.AudioLimiter>() != null;
         run.Event("limiter", "on listener " + limiter + ", audio running " + (AudioSettings.dspTime > 0.0));
+        int enabledListeners = 0;
+        foreach (var al in Object.FindObjectsByType<AudioListener>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)) {
+            if (al.enabled) enabledListeners++;
+        }
+        run.Event("listeners", enabledListeners + " enabled, " + AudioMix.ListenerFixes + " fixed by AudioMix");
+        run.Metric("audioListeners", enabledListeners);
+        if (enabledListeners != 1) {
+            run.Problem(PlaytestSeverity.Bug, "audio-mix: " + enabledListeners + " enabled AudioListeners (want exactly 1)");
+        }
         run.Metric("audioListenerErrors", listenerErrors);
         if (listenerErrors > 0) {
             run.Problem(PlaytestSeverity.Bug, "audio-mix: AudioListener.cpp error logged " + listenerErrors + "x: " + listenerErrorText);

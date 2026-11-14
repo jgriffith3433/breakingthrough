@@ -69,9 +69,26 @@ public partial class CinematicDirector : MonoBehaviour {
     const float MaxVoiceSeconds = 12f;
     public static readonly List<string> Events = new List<string>();
     public static int ShotsShown { get; private set; }
+    // Shots in this sequence whose camera really travelled (MoveMinMetres or MoveMinDegrees) while they played: measured
+    // from the frames drawn, so a short shot or the phone tier cannot skip a move unseen. Reported as cinematic.movingShots.
+    public static int MovingShots { get; private set; }
+    const float MoveMinMetres = 0.8f;
+    const float MoveMinDegrees = 4f;
+    const float MinPushMetres = 1.5f;   // a shot with no planned move gets this slow push toward its subject
     public static int VoiceLines { get; private set; }
     public static int Skipped { get; private set; }
     public static int Finished { get; private set; }
+    // Closed once per sequence, after the hand-back to the follow camera (the touch pads and control are live again).
+    public static int ClosedCount { get; private set; }
+    public static string LastClosedReel { get; private set; }
+    public static bool LastClosedByCap { get; private set; }
+    public static float LastClosedAfterSeconds { get; private set; }
+    public static bool CreditsReachedEnd { get; private set; }
+    public static int CapHits { get; private set; }
+    const float CapSlack = 2f;          // a sequence never outlasts its own length plus this, in unscaled seconds
+    const float FinaleCarryAllowance = 45f;
+    const float HandoffSeconds = 0.25f;
+    const float HandoffCapSeconds = 0.6f;
     public static float LastHandoffSeconds { get; private set; }
     public static float CaptionBottom01 { get; private set; }
     public static int DoorsShown { get; private set; }
@@ -105,6 +122,9 @@ public partial class CinematicDirector : MonoBehaviour {
     int shotIndex = -1;
     float shotStart;
     float shotLength;
+    float capStart;            // unscaled start of the sequence, pushed forward while the pause menu holds it
+    float capLength;           // reel length + CapSlack
+    string closedId = "";
     bool shotSpoke;
     bool shotSfx;
     bool shotStamp;
@@ -174,9 +194,17 @@ public partial class CinematicDirector : MonoBehaviour {
         SuppressOpening = false;
         Events.Clear();
         ShotsShown = 0;
+        MovingShots = 0;
+        SpeakerShots.Clear();
         VoiceLines = 0;
         Skipped = 0;
         Finished = 0;
+        ClosedCount = 0;
+        LastClosedReel = "";
+        LastClosedByCap = false;
+        LastClosedAfterSeconds = 0f;
+        CreditsReachedEnd = false;
+        CapHits = 0;
         LastHandoffSeconds = 0f;
         CaptionBottom01 = 0f;
         DoorsShown = 0;
@@ -260,6 +288,7 @@ public partial class CinematicDirector : MonoBehaviour {
         done = onDone;
         shotIndex = -1;
         open = true;
+        StartCap(r);
         handingOff = false;
         skipRevealed = false;
         viewSet = false;
@@ -307,6 +336,7 @@ public partial class CinematicDirector : MonoBehaviour {
         done = onDone;
         shotIndex = -1;
         open = true;
+        StartCap(r);
         handingOff = false;
         skipRevealed = false;
         viewSet = false;
@@ -380,6 +410,7 @@ public partial class CinematicDirector : MonoBehaviour {
         VoiceDirector.Scene = false;
         string fb = string.IsNullOrEmpty(r.fallback) ? "ch1_open" : r.fallback;
         Cutscene.PlayShots(fb, () => {
+            Close(false);
             done?.Invoke();
             done = null;
         });
@@ -522,6 +553,7 @@ public partial class CinematicDirector : MonoBehaviour {
     }
 
     void NextShot() {
+        FlushSpeaker();
         shotIndex++;
         if (reel == null || reel.shots == null || shotIndex >= reel.shots.Length) {
             End(false);
@@ -542,6 +574,10 @@ public partial class CinematicDirector : MonoBehaviour {
         shotKeepsakes = false;
         shotCredits = false;
         ShotsShown++;
+        moveCounted = false;
+        movePath = 0f;
+        moveDegrees = 0f;
+        moveHave = false;
         Events.Add("shot|" + s.id + "|" + shotIndex);
         PlaceActors(s, 0f);
         ApplyCamera(s, 0f);
@@ -577,9 +613,21 @@ public partial class CinematicDirector : MonoBehaviour {
             return;
         }
         if (PauseMenu.IsOpen) {
+            HoldClocks();
             return;
         }
         float now = Time.unscaledTime;
+        if (reel == null || shotIndex < 0 || shotIndex >= reel.shots.Length) {
+            End(false);
+            return;
+        }
+        if (now - capStart >= capLength) {
+            CapHits++;
+            Events.Add("cap|" + ReelId);
+            capped = true;
+            End(false);
+            return;
+        }
         Shot s = reel.shots[shotIndex];
         if (FinaleCarryActive) {
             TickFinaleCarry();
@@ -590,6 +638,7 @@ public partial class CinematicDirector : MonoBehaviour {
         float u = Mathf.Clamp01((now - shotStart) / shotLength);
         PlaceActors(s, Ease(u));
         ApplyCamera(s, Ease(u));
+        TrackMove(s);
         TickVoice(s, u);
         TickSfx(s, u);
         TickStamp(s, u);
@@ -609,6 +658,43 @@ public partial class CinematicDirector : MonoBehaviour {
         }
     }
 
+    bool capped;
+
+    void StartCap(Reel r) {
+        float total = 0f;
+        foreach (Shot sh in r.shots) {
+            total += Mathf.Max(0.4f, sh.seconds);
+        }
+        capStart = Time.unscaledTime;
+        capLength = total + CapSlack;
+        capped = false;
+        closedId = r.id;
+    }
+
+    // The pause menu freezes the sequence itself: every unscaled clock waits with it.
+    void HoldClocks() {
+        float dt = Time.unscaledDeltaTime;
+        shotStart += dt;
+        capStart += dt;
+        if (creditsStart > 0f) {
+            creditsStart += dt;
+        }
+        if (carryStart >= 0f) {
+            carryStart += dt;
+        }
+    }
+
+    void Close(bool skipped, string id = null) {
+        if (id == null) {
+            id = closedId;
+        }
+        ClosedCount++;
+        LastClosedReel = id;
+        LastClosedByCap = capped;
+        LastClosedAfterSeconds = Time.unscaledTime - capStart;
+        Events.Add("closed|" + id + "|" + (skipped ? "skipped" : capped ? "cap" : "done") + "|" + LastClosedAfterSeconds.ToString("0.00"));
+    }
+
     void LateUpdate() {
         if ((bossRun || actRun) && cam != null && viewSet) {
             cam.transform.position = viewPos;
@@ -616,6 +702,7 @@ public partial class CinematicDirector : MonoBehaviour {
             if (zelda != null) {
                 zelda.CinematicHold(viewPos, viewRot);
             }
+            ShotClear.Observe(viewPos);
             return;
         }
         if ((!open && !creditsOnly) || !viewSet || cam == null) {
@@ -623,9 +710,11 @@ public partial class CinematicDirector : MonoBehaviour {
         }
         cam.transform.position = viewPos;
         cam.transform.rotation = viewRot;
+        ShotClear.Observe(viewPos);
         if (zelda != null) {
             zelda.CinematicHold(viewPos, viewRot);
         }
+        MeasureSpeaker();
     }
 
     void TickVoice(Shot s, float u) {
@@ -751,6 +840,8 @@ public partial class CinematicDirector : MonoBehaviour {
         // Upright on the gate face, readable from the circle (never LookAt / never negative scale).
         TextMesh words = LevelKit.Text(postmarkGo.transform, "RETURN\nTO SENDER", new Vector3(0f, 0f, 0.05f), 0.055f, new Color(1f, 0.85f, 0.85f, 0.95f), false);
         words.name = "Words";
+        // The parent faces the circle, so its +Z points at the reader; TextMesh reads only along its own +Z, so turn the words round.
+        words.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
         GameObject head = LevelDress.Put(postmarkGo.transform, "gt_press_head", face + Vector3.up * 6f, yaw, 0.45f);
         if (head != null) {
             head.name = "PostmarkHead";
@@ -792,20 +883,18 @@ public partial class CinematicDirector : MonoBehaviour {
     void TickSkipInput() {
         bool touch = UiFit.Touch;
         if (touch) {
-            if (PlayInput.GetMouseButtonDown(0) || Input.touchCount > 0) {
-                if (!skipRevealed) {
-                    skipRevealed = true;
-                    if (skipPill != null) {
-                        skipPill.SetActive(true);
-                    }
-                    Events.Add("skip-pill");
-                    touchDownAt = Time.unscaledTime;
-                    return;
+            // The pill is up from the first frame (bottom right, inside the safe area); a tap anywhere skips after 1 s.
+            if (!skipRevealed) {
+                skipRevealed = true;
+                if (skipPill != null) {
+                    skipPill.SetActive(true);
                 }
-                if (Time.unscaledTime - touchDownAt > 0.15f && skipButton != null) {
-                    // A second tap anywhere after the pill is up skips (phone acceptance).
-                    Skip();
-                }
+                Events.Add("skip-pill");
+                touchDownAt = Time.unscaledTime;
+                return;
+            }
+            if ((PlayInput.GetMouseButtonDown(0) || Input.touchCount > 0) && Time.unscaledTime - touchDownAt > 1f) {
+                Skip();
             }
             if (PlayInput.GetKeyDown(KeyCode.Escape)) {
                 Skip();
@@ -851,6 +940,7 @@ public partial class CinematicDirector : MonoBehaviour {
         if (!open) {
             return;
         }
+        FlushSpeaker();
         open = false;
         handingOff = true;
         float handoffStart = Time.unscaledTime;
@@ -968,8 +1058,8 @@ public partial class CinematicDirector : MonoBehaviour {
         }
         if (zelda != null) {
             // Blend from the live cinematic view onto the follow camera (do not SnapBehind first).
-            zelda.BeginHandoff(0.6f);
-            StartCoroutine(FinishHandoff(handoffStart, skipped, done));
+            zelda.BeginHandoff(HandoffSeconds);
+            StartCoroutine(FinishHandoff(handoffStart, skipped, done, closedId));
             done = null;
             reel = null;
             shotIndex = -1;
@@ -982,6 +1072,7 @@ public partial class CinematicDirector : MonoBehaviour {
         if (!skipped) {
             Finished++;
         }
+        Close(skipped);
         Action cb = done;
         done = null;
         reel = null;
@@ -989,8 +1080,8 @@ public partial class CinematicDirector : MonoBehaviour {
         cb?.Invoke();
     }
 
-    System.Collections.IEnumerator FinishHandoff(float handoffStart, bool skipped, Action cb) {
-        while (zelda != null && zelda.HandoffBusy) {
+    System.Collections.IEnumerator FinishHandoff(float handoffStart, bool skipped, Action cb, string id) {
+        while (zelda != null && zelda.HandoffBusy && Time.unscaledTime - handoffStart < HandoffCapSeconds) {
             yield return null;
         }
         handingOff = false;
@@ -1000,6 +1091,7 @@ public partial class CinematicDirector : MonoBehaviour {
         if (!skipped) {
             Finished++;
         }
+        Close(skipped, id);
         cb?.Invoke();
     }
 
@@ -1163,6 +1255,30 @@ public partial class CinematicDirector : MonoBehaviour {
         return null;
     }
 
+    bool moveCounted, moveHave;
+    float movePath, moveDegrees;
+    Vector3 movePrevPos;
+    Quaternion movePrevRot;
+
+    // Adds the camera's travel this frame to the shot's total; the shot counts once it has moved enough.
+    void TrackMove(Shot s) {
+        if (!viewSet) {
+            return;
+        }
+        if (moveHave) {
+            movePath += Vector3.Distance(viewPos, movePrevPos);
+            moveDegrees += Quaternion.Angle(viewRot, movePrevRot);
+            if (!moveCounted && (movePath >= MoveMinMetres || moveDegrees >= MoveMinDegrees)) {
+                moveCounted = true;
+                MovingShots++;
+                Events.Add("move|" + s.id + "|" + movePath.ToString("0.00") + "m " + moveDegrees.ToString("0.0") + "deg");
+            }
+        }
+        movePrevPos = viewPos;
+        movePrevRot = viewRot;
+        moveHave = true;
+    }
+
     void ApplyCamera(Shot s, float u) {
         if (cam == null) {
             return;
@@ -1170,6 +1286,16 @@ public partial class CinematicDirector : MonoBehaviour {
         Vector3 from = CamPoint(s.camFromPolar, s.camFrom, cam.transform.position);
         Vector3 to = CamPoint(s.camToPolar, s.camTo, from);
         Vector3 look = CamLook(s.lookPolar, s.lookAt, s);
+        // Every directed shot keeps moving: with no planned travel the camera pushes slowly toward what it looks at.
+        if (s.camMode != "cut" && s.camMode != "orbit" && Vector3.Distance(from, to) < MinPushMetres) {
+            Vector3 toward = look - from;
+            toward.y = 0f;
+            if (toward.sqrMagnitude > 0.01f) {
+                to = from + toward.normalized * MinPushMetres;
+            } else {
+                to = from + Vector3.up * MinPushMetres * 0.5f;
+            }
+        }
         float k = s.camMode == "cut" ? 1f : Ease(u);
         if (s.camMode == "orbit") {
             Vector3 pivot = look;
@@ -1183,8 +1309,10 @@ public partial class CinematicDirector : MonoBehaviour {
         if (Phone()) {
             fov = Mathf.Clamp(fov + 10f, 50f, 72f);
             viewPos = PullBackForFrame(viewPos, look, s.frame, fov);
+            TightenForSpeaker(s, ref viewPos, ref look, ref fov);
         }
         cam.fieldOfView = fov;
+        viewPos = ShotClear.Resolve(look, viewPos);
         Vector3 dir = look - viewPos;
         if (dir.sqrMagnitude < 0.01f) {
             dir = Vector3.forward;
@@ -1459,8 +1587,11 @@ public partial class CinematicDirector : MonoBehaviour {
             var safe = Screen.safeArea;
             float scale = scaler.referenceResolution.y / Mathf.Max(1f, Screen.height);
             var rt = skipPill.GetComponent<RectTransform>();
-            rt.anchoredPosition = new Vector2(-(Screen.width - safe.xMax) * scale - 20f, -(safe.yMax - (safe.y + safe.height)) * scale - 20f);
-            rt.sizeDelta = new Vector2(Mathf.Max(160f, 88f), Mathf.Max(64f, 88f));
+            // Bottom right, clear of the home bar; the pill is at least 88 units (about 52 px) tall.
+            rt.anchorMin = rt.anchorMax = new Vector2(1f, 0f);
+            rt.pivot = new Vector2(1f, 0f);
+            rt.anchoredPosition = new Vector2(-(Screen.width - safe.xMax) * scale - 20f, safe.y * scale + 20f);
+            rt.sizeDelta = new Vector2(200f, 88f);
         }
     }
 }

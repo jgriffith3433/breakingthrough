@@ -77,7 +77,9 @@ Shader "Knoll/VertexColorLit"
             // Moon rim on upright surfaces: birds, trunks and walls read against the dark field.
             float3 viewDir = normalize(_WorldSpaceCameraPos - IN.worldPos);
             float3 normal = normalize(IN.worldNormal);
-            float rim = pow(1.0 - saturate(dot(viewDir, normal)), 4.0);
+            float edge = 1.0 - saturate(dot(viewDir, normal));
+            // Fades out over the last sliver at the silhouette: a lit edge just inside the outline, never a bright fringe.
+            float rim = pow(edge, 4.0) * (1.0 - smoothstep(0.80, 0.97, edge));
             float upright = 1.0 - saturate(abs(normal.y) * 1.4 - 0.2);
             float3 rimLight = _RimColor.rgb * rim * upright * _RimStrength;
 

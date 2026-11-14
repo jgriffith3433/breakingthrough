@@ -41,6 +41,7 @@ public class CampaignPanel : MonoBehaviour {
     GameObject root;
     CanvasScaler scaler;
     RectTransform panel;
+    Text titleText;
     readonly Text[] slotTitles = new Text[CampaignSave.SlotCount];
     readonly Text[] slotInfo = new Text[CampaignSave.SlotCount];
     readonly Text[] slotRanks = new Text[CampaignSave.SlotCount];
@@ -55,6 +56,7 @@ public class CampaignPanel : MonoBehaviour {
             new GameObject("Case Files").AddComponent<CampaignPanel>();
         }
         instance.armedErase = -1;
+        instance.opening = false;
         instance.root.SetActive(true);
         instance.Fill();
         instance.Layout();
@@ -120,10 +122,17 @@ public class CampaignPanel : MonoBehaviour {
             slotRanks[i].text = slot.used ? RanksLine(slot) : "";
             PlusButtons[i].gameObject.SetActive(CampaignGrade.Filed(slot));
             slotImages[i].color = slot.used ? new Color(0.3f, 0.24f, 0.12f, 1f) : new Color(0.14f, 0.15f, 0.21f, 1f);
+            SlotButtons[i].transform.localScale = Vector3.one;
             EraseButtons[i].gameObject.SetActive(slot.used);
             eraseLabels[i].text = armedErase == i ? "Sure?" : "Erase";
             EraseButtons[i].GetComponent<Image>().color = armedErase == i ? new Color(0.7f, 0.16f, 0.12f, 1f) : new Color(0.28f, 0.2f, 0.18f, 1f);
+            UiRects.EnsureProbe(SlotButtons[i], slotTitles[i].text);
+            UiRects.EnsureProbe(EraseButtons[i], eraseLabels[i].text);
+            UiRects.EnsureProbe(PlusButtons[i], "New Game+");
         }
+        UiRects.EnsureProbe(LoreButton, "Lore log");
+        UiRects.EnsureProbe(JournalButton, "Journal");
+        UiRects.EnsureProbe(BackButton, "Back");
     }
 
     // "Ranks 1 A  2 B  3 S  4 -  5 -  6 -", with the loop on a New Game+ file.
@@ -145,6 +154,21 @@ public class CampaignPanel : MonoBehaviour {
         int chapter = CampaignSave.Open(index);
         RunAnalytics.Screen("chapter_" + (chapter + 1));
         GameAudio.PlayUI("stamp", 0.6f);
+        if (index >= 0 && index < CampaignSave.SlotCount) {
+            if (slotImages[index] != null) {
+                slotImages[index] = SlotButtons[index] != null ? SlotButtons[index].GetComponent<Image>() : slotImages[index];
+                if (slotImages[index] != null) {
+                    slotImages[index].color = new Color(0.46f, 0.36f, 0.16f, 1f);
+                }
+            }
+            if (SlotButtons[index] != null && !ComfortOptions.ReducedMotion) {
+                SlotButtons[index].transform.localScale = new Vector3(0.95f, 0.95f, 1f);
+            }
+        }
+        if (subtitle != null) {
+            subtitle.text = "Pulling the case file…";
+            subtitle.color = new Color(1f, 0.86f, 0.45f, 1f);
+        }
         if (opening) {
             return;
         }
@@ -213,7 +237,7 @@ public class CampaignPanel : MonoBehaviour {
         panel.pivot = new Vector2(0.5f, 0.5f);
         panel.sizeDelta = new Vector2(PanelWidth, PanelHeight);
 
-        Text title = MakeText(panel, "Campaign", 48, FontStyle.Bold, TextAnchor.MiddleCenter);
+        Text title = titleText = MakeText(panel, "Campaign", 48, FontStyle.Bold, TextAnchor.MiddleCenter);
         Place(title.rectTransform, new Vector2(0f, -24f), new Vector2(PanelWidth - 60f, 64f), new Vector2(0.5f, 1f), false);
         Text sub = MakeText(panel, SubtitleText, 24, FontStyle.Italic, TextAnchor.MiddleCenter);
         sub.color = new Color(0.8f, 0.85f, 0.95f, 0.8f);
@@ -275,15 +299,91 @@ public class CampaignPanel : MonoBehaviour {
         rect.sizeDelta = new Vector2(220f, 88f);
     }
 
+    // Desktop and landscape: one 920 x 700 panel, scaled down to fit. Portrait phone: a column (the case file's lines
+    // wrap inside a taller row, Erase and New Game+ sit under it), at scale 1, so no word is smaller than 24 units
+    // (about 14 px) and nothing is cut off.
     void Layout() {
         laidStamp = UiFit.Stamp;
         UiFit.Apply(scaler, 0.5f);
         Vector2 size = UiFit.Size;
+        bool column = UiFit.Mode == UiMode.Tall;
         float scale = 1f;
-        if (UiFit.Compact) {
+        float w = PanelWidth;
+        float h = PanelHeight;
+        if (column) {
+            w = size.x - 40f;
+            h = Mathf.Min(size.y - 40f, 1110f);
+        } else if (UiFit.Compact) {
             scale = Mathf.Min(1f, (size.x - 40f) / PanelWidth, (size.y - 40f) / PanelHeight);
         }
+        panel.sizeDelta = new Vector2(w, h);
         panel.localScale = new Vector3(scale, scale, 1f);
+
+        Place(titleText.rectTransform, new Vector2(0f, -24f), new Vector2(w - 60f, 64f), new Vector2(0.5f, 1f), false);
+        RectTransform sub = subtitle.rectTransform;
+        float rowTop = 150f;
+        if (column) {
+            subtitle.fontSize = 24;
+            Place(sub, new Vector2(0f, -86f), new Vector2(w - 40f, 64f), new Vector2(0.5f, 1f), false);
+            rowTop = 160f;
+        } else {
+            subtitle.fontSize = 24;
+            Place(sub, new Vector2(0f, -90f), new Vector2(w - 60f, 40f), new Vector2(0.5f, 1f), false);
+        }
+        float eraseWidth = 150f;
+        float slotWidth = w - 80f - 2f * eraseWidth - 28f;
+        for (int i = 0; i < CampaignSave.SlotCount; i++) {
+            RectTransform slot = (RectTransform)SlotButtons[i].transform;
+            RectTransform erase = (RectTransform)EraseButtons[i].transform;
+            RectTransform plus = (RectTransform)PlusButtons[i].transform;
+            if (column) {
+                float rowH = 170f;
+                float y = -rowTop - i * (rowH + 8f + 88f + 14f);
+                float inner = w - 40f;
+                float half = (inner - 12f) * 0.5f;
+                Place(slot, new Vector2(20f, y), new Vector2(inner, rowH), new Vector2(0f, 1f), true, true);
+                Place(slotTitles[i].rectTransform, new Vector2(20f, -8f), new Vector2(inner - 40f, 56f), new Vector2(0f, 1f), true, true);
+                Place(slotInfo[i].rectTransform, new Vector2(20f, -66f), new Vector2(inner - 40f, 62f), new Vector2(0f, 1f), true, true);
+                Place(slotRanks[i].rectTransform, new Vector2(20f, -130f), new Vector2(inner - 40f, 34f), new Vector2(0f, 1f), true, true);
+                Place(erase, new Vector2(20f, y - rowH - 8f), new Vector2(half, 88f), new Vector2(0f, 1f), true, true);
+                Place(plus, new Vector2(20f + half + 12f, y - rowH - 8f), new Vector2(half, 88f), new Vector2(0f, 1f), true, true);
+                slotInfo[i].fontSize = 24;
+                slotRanks[i].fontSize = 24;
+            } else {
+                float y = -rowTop - i * (RowHeight + 16f);
+                Place(slot, new Vector2(40f, y), new Vector2(slotWidth, RowHeight), new Vector2(0f, 1f), true, true);
+                Place(slotTitles[i].rectTransform, new Vector2(24f, -8f), new Vector2(slotWidth - 40f, 40f), new Vector2(0f, 1f), true, true);
+                Place(slotInfo[i].rectTransform, new Vector2(24f, -48f), new Vector2(slotWidth - 40f, 32f), new Vector2(0f, 1f), true, true);
+                Place(slotRanks[i].rectTransform, new Vector2(24f, -84f), new Vector2(slotWidth - 40f, 32f), new Vector2(0f, 1f), true, true);
+                Place(erase, new Vector2(40f + slotWidth + 14f, y), new Vector2(eraseWidth, RowHeight), new Vector2(0f, 1f), true, true);
+                Place(plus, new Vector2(40f + slotWidth + 14f + eraseWidth + 14f, y), new Vector2(eraseWidth, RowHeight), new Vector2(0f, 1f), true, true);
+                slotInfo[i].fontSize = 22;
+                slotRanks[i].fontSize = 22;
+            }
+            // A line never runs past its box: it wraps, and the title shrinks (never under 24 units) before it is cut.
+            slotTitles[i].horizontalOverflow = HorizontalWrapMode.Wrap;
+            slotTitles[i].verticalOverflow = VerticalWrapMode.Truncate;
+            slotTitles[i].resizeTextForBestFit = true;
+            slotTitles[i].resizeTextMinSize = 24;
+            slotTitles[i].resizeTextMaxSize = 30;
+            slotInfo[i].horizontalOverflow = HorizontalWrapMode.Wrap;
+            slotRanks[i].horizontalOverflow = HorizontalWrapMode.Wrap;
+            eraseLabels[i].fontSize = 26;
+        }
+        float bw = column ? (w - 40f - 20f) / 3f : 220f;
+        float step = column ? bw + 10f : 236f;
+        PlaceBottom(LoreButton, -step, bw);
+        PlaceBottom(JournalButton, 0f, bw);
+        PlaceBottom(BackButton, step, bw);
+    }
+
+    static void PlaceBottom(Button button, float x, float width) {
+        var rect = (RectTransform)button.transform;
+        rect.anchorMin = new Vector2(0.5f, 0f);
+        rect.anchorMax = new Vector2(0.5f, 0f);
+        rect.pivot = new Vector2(0.5f, 0f);
+        rect.anchoredPosition = new Vector2(x, 28f);
+        rect.sizeDelta = new Vector2(width, 88f);
     }
 
     Button MakeButton(Transform parent, string name, Vector2 size, UnityEngine.Events.UnityAction click, out Text label) {

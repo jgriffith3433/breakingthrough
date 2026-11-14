@@ -23,6 +23,7 @@ Shader "Knoll/PbrSplat"
         _Bump ("Normal strength", Range(0,2)) = 1
         _Macro ("Macro variation", Range(0,1)) = 0.5
         _Lite ("Phone tier (1 skips the second samples)", Range(0,1)) = 0
+        _Calm ("Calm: lower contrast, no swirl (0 off, 1 full)", Range(0,1)) = 0
         _Tint ("Tint", Color) = (1,1,1,1)
         _VCol ("Use the vertex colour as the ground shade", Range(0,1)) = 1
     }
@@ -37,7 +38,7 @@ Shader "Knoll/PbrSplat"
 
         sampler2D _A0, _A1, _A2, _N0, _N1, _N2, _Mask, _Noise;
         float4 _MaskRect, _Tile;
-        half _Bump, _Macro, _Lite, _VCol;
+        half _Bump, _Macro, _Lite, _VCol, _Calm;
         fixed4 _Tint;
 
         struct Input
@@ -62,7 +63,13 @@ Shader "Knoll/PbrSplat"
         fixed4 LayerA(sampler2D t, float2 p, float tile, float mixAmt)
         {
             fixed4 a = tex2D(t, p / tile);
-            if (_Lite < 0.5)
+            if (_Calm > 0.5)
+            {
+                // Calm ground: pull each texel toward the layer's own average so stones and soil stop speckling.
+                fixed4 avg = tex2Dlod(t, float4(p / tile, 0, 9));
+                a.rgb = lerp(a.rgb, avg.rgb, 0.6 * _Calm);
+            }
+            else if (_Lite < 0.5)
             {
                 fixed4 b = tex2D(t, Rot(p, 0.61) / (tile * 3.1) + 0.37);
                 a = lerp(a, b, mixAmt);
@@ -75,7 +82,7 @@ Shader "Knoll/PbrSplat"
             float2 p = IN.worldPos.xz;
             float4 nzM = tex2D(_Noise, p * 0.0133);          // macro, about 75 m
             float4 nzS = tex2D(_Noise, p * 0.043 + 0.31);    // about 23 m
-            p += (nzM.rg - 0.5) * 2.4 * _Macro;               // warp: the tile grid never lines up with the eye
+            p += (nzM.rg - 0.5) * 2.4 * _Macro * (1.0 - 0.85 * _Calm);               // warp: the tile grid never lines up with the eye
 
             float4 m = tex2D(_Mask, (IN.worldPos.xz - _MaskRect.xy) * _MaskRect.zw);
             float w1 = saturate((m.r + (nzS.a - 0.5) * 0.45 - 0.5) * 5.0);
@@ -93,17 +100,17 @@ Shader "Knoll/PbrSplat"
             float3 n1 = tex2D(_N1, p / _Tile.y).xyz * 2 - 1;
             float3 n2 = tex2D(_N2, p / _Tile.z).xyz * 2 - 1;
             float3 n = n0 * w0 + n1 * w1 + n2 * w2;
-            if (_Lite < 0.5)
+            if (_Lite < 0.5 && _Calm < 0.5)
             {
                 float2 dn = tex2D(_Noise, p * 1.7).rg * 2 - 1;
                 n.xy += dn * 0.25;
             }
-            n.xy *= _Bump;
+            n.xy *= _Bump * (1.0 - 0.7 * _Calm);
             float nn = dot(n, n);
             o.Normal = nn > 0.0001 ? n * rsqrt(nn) : float3(0, 0, 1);
 
             // Macro colour: brighter and darker patches, a little warmer and cooler, across the whole field.
-            float macro = lerp(1.0 - 0.28 * _Macro, 1.0 + 0.18 * _Macro, nzM.b);
+            float macro = lerp(1.0 - 0.28 * _Macro * (1.0 - 0.6 * _Calm), 1.0 + 0.18 * _Macro * (1.0 - 0.6 * _Calm), nzM.b);
             float3 col = a.rgb * macro * _Tint.rgb;
             col *= lerp(float3(1.0, 1.0, 1.0), float3(1.06, 1.0, 0.92), (nzM.a - 0.5) * _Macro);
 
@@ -114,7 +121,7 @@ Shader "Knoll/PbrSplat"
 
             // Cheap cavity occlusion from the albedo: dark crevices in the painted stones and soil read as depth.
             float lum = dot(col, float3(0.299, 0.587, 0.114));
-            o.Occlusion = saturate(0.55 + lum * 1.6);
+            o.Occlusion = saturate(lerp(0.55 + lum * 1.6, 0.9, 0.7 * _Calm));
             o.Albedo = col;
             o.Metallic = 0;
             o.Smoothness = saturate(1.0 - a.a);

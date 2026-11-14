@@ -56,6 +56,24 @@ public class AttackTell : MonoBehaviour {
     Image edge;
     RectTransform edgeRect;
 
+    // A finished scene's bots are keys here: drop them so they can be collected (SceneMemory).
+    public static void Prune() {
+        PruneDead(toldAt);
+    }
+
+    static void PruneDead(Dictionary<Enemy, float> map) {
+        List<Enemy> dead = null;
+        foreach (Enemy e in map.Keys) {
+            if (e == null) {
+                if (dead == null) dead = new List<Enemy>();
+                dead.Add(e);
+            }
+        }
+        if (dead != null) {
+            foreach (Enemy e in dead) map.Remove(e);
+        }
+    }
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void Reset() {
         instance = null;
@@ -157,6 +175,7 @@ public class AttackTell : MonoBehaviour {
         if (by == null) {
             return;
         }
+        BotThreat.Hit(by);
         float at;
         if (toldAt.TryGetValue(by, out at) && Time.time - at <= 0.25f) {
             return;
@@ -170,6 +189,7 @@ public class AttackTell : MonoBehaviour {
     // A bot has come within reach of Slice (Enemy.Update, once per arrival).
     public static void ReachedCircle(Enemy e) {
         CircleReached++;
+        SliceVoice.Reached(e);
         if (Log.Count < 200) {
             Log.Add(Time.unscaledTime.ToString("0.00") + "|circle|" + (e != null ? e.Title : "?"));
         }

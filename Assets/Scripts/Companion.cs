@@ -323,6 +323,7 @@ public class Companion : MonoBehaviour {
         label.characterSize = 0.09f;
         label.fontSize = 48;
         label.color = new Color(0.95f, 0.9f, 1f);
+        SignFacing.Add(go, false);
     }
 
     static Vector3 Flat(Vector3 v) {

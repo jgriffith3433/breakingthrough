@@ -214,6 +214,7 @@ public class ChapterHub : MonoBehaviour {
         CampaignSave.Slot slot = CampaignSave.Get(CampaignSave.Active);
         Mood = SceneMood.Hub(slot.cleared / (float)CampaignSave.ChapterCount);
         SceneMood.Apply(cam != null ? cam : Camera.main, Mood);
+        CardMatch.Attach(cam != null ? cam : Camera.main, "hub");
     }
 
     public bool Shown {
@@ -731,6 +732,7 @@ public class ChapterHub : MonoBehaviour {
         mesh.alignment = TextAlignment.Center;
         mesh.color = color;
         go.GetComponent<MeshRenderer>().sharedMaterial = font.material;
+        SignFacing.Add(go, false);   // copies the camera rotation: reads left to right from anywhere in the room
     }
 
     // The chapter board: a roofed board on two posts with six slip frames, facing the ring. The paper is lit so it reads from across the room.

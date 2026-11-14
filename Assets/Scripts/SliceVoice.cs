@@ -21,6 +21,9 @@ public class SliceVoice : MonoBehaviour {
     static readonly string[] Hurt = { "Tch.", "Careful.", "A scratch.", "Rude.", "Not bad." };
     static readonly string[] Low = { "Getting thin.", "Still standing.", "Wallit. Now." };
     static readonly string[] NewKind = { "That one's new.", "What is that.", "Different. Watch it.", "Don't know that one." };
+    // A bot reaches the circle: the stakes, in her voice. The first one of a run says why the circle matters; later ones are short.
+    static readonly string[] ReachFirst = { "That's the address. Nobody takes it.", "Off my circle.", "Filed means mine. Back off." };
+    static readonly string[] Reach = { "Off the circle.", "Not here.", "Mine.", "Back." };
     static readonly string[] Near = { "Close.", "Too close.", "Noted.", "Barely." };
 
     // Banter: speaker (W Wallit, S Slice) and line. Wallit talks money; Slice answers short.
@@ -66,6 +69,9 @@ public class SliceVoice : MonoBehaviour {
     int killsSince;
     float lastKillLineAt = -99f;
     float lastNearAt = -99f;
+    float lastReachAt = -99f;
+    bool reachedOnce;
+    public static int ReachReactions;
     int lastHealth = -1;
     AudioSource audioOut;
 
@@ -129,6 +135,9 @@ public class SliceVoice : MonoBehaviour {
     // ---------------------------------------------------------------- hooks
 
     public static void OnWave(int wave) {
+        if (wave <= 1) {
+            traitsSeen.Clear();
+        }
         if (Instance == null) {
             return;
         }
@@ -144,10 +153,37 @@ public class SliceVoice : MonoBehaviour {
         Instance.Say(NewKind, "new-type");
     }
 
+    // The first bot with a trait she has not met this run (Sprinter, Splitter, Blinker...): the same short new-bot lines. It is
+    // counted met only once she actually says it (her floor may be busy), so TraitMark asks again until it lands.
+    static readonly HashSet<BotTrait> traitsSeen = new HashSet<BotTrait>();
+    public static bool OnNewTrait(BotTrait trait) {
+        if (Instance == null || trait == BotTrait.None || traitsSeen.Contains(trait)) {
+            return false;
+        }
+        if (Musician.Instance == null || !Musician.Instance.Alive || !Instance.Say(NewKind, "new-type")) {
+            return false;
+        }
+        traitsSeen.Add(trait);
+        return true;
+    }
+
     public static void OnKill(Enemy foe) {
         if (Instance != null && foe != null) {
             Instance.Killed(foe);
         }
+    }
+
+    // Her calls for a kill streak and a cleared wave: her own existing short lines, then Wallit answers (WallitVoice.OnSliceSaid).
+    // Returns true when she spoke, so his own streak or wave-clear bark becomes the reply instead of a second solo line.
+    static readonly string[] StreakCall = { "Clean.", "Tidy.", "One less." };
+    static readonly string[] ClearCall = { "Done.", "Clean.", "Next." };
+
+    public static bool OnStreak() {
+        return Instance != null && Musician.Instance != null && Musician.Instance.Alive && Instance.Say(StreakCall, "slice-streak");
+    }
+
+    public static bool OnWaveCleared() {
+        return Instance != null && Musician.Instance != null && Musician.Instance.Alive && Instance.Say(ClearCall, "slice-clear");
     }
 
     void Ready(int wave) {
@@ -158,6 +194,21 @@ public class SliceVoice : MonoBehaviour {
         Begin(BReady, 1.3f);
         string[] bank = wave % 10 == 0 ? BossWave : Wave;
         Say(bank, wave % 10 == 0 ? "boss-wave" : "wave");
+    }
+
+    // A bot has reached the circle (AttackTell.ReachedCircle): she turns on it, knife up, and says what is at stake.
+    public static void Reached(Enemy foe) {
+        SliceVoice v = Instance;
+        Musician slice = Musician.Instance;
+        if (v == null || slice == null || !slice.Alive || Time.time - v.lastReachAt < 9f) {
+            return;
+        }
+        v.lastReachAt = Time.time;
+        ReachReactions++;
+        v.Begin(BGlance, 1.2f);
+        v.Say(v.reachedOnce ? Reach : ReachFirst, "reach");
+        v.reachedOnce = true;
+        v.Note("reach", foe != null ? foe.Title : "bot");
     }
 
     void Killed(Enemy foe) {
@@ -188,6 +239,18 @@ public class SliceVoice : MonoBehaviour {
     void Update() {
         if (WaveDirector.IsLost) {
             // Time is stopped on the run-end panel, so the shown timers below never run out: clear the lines here.
+            sliceShown = 0f;
+            wallitShown = 0f;
+            if (sliceText != null) {
+                sliceText.enabled = false;
+            }
+            if (wallitText != null) {
+                wallitText.enabled = false;
+            }
+        }
+        if (LevelUpScreen.IsOpen) {
+            // The upgrade cards own the screen: no caption prints through behind them (time is stopped, so the
+            // timers would never run out on their own). A line still speaking is dropped, not queued.
             sliceShown = 0f;
             wallitShown = 0f;
             if (sliceText != null) {
@@ -314,13 +377,13 @@ public class SliceVoice : MonoBehaviour {
     string keyWhy;
     float keyUntil;
 
-    void Say(string[] bank, string why) {
+    bool Say(string[] bank, string why) {
         VoiceDirector.Priority priority = VoiceDirector.PriorityOf(why);
         if (banterRunning) {
-            return;
+            return false;
         }
         if (priority == VoiceDirector.Priority.Bark && Time.time < nextLineAt) {
-            return;
+            return false;
         }
         // One voice at a time, nobody over anybody (Wallit's included).
         if (!WallitVoice.FloorFree) {
@@ -329,7 +392,7 @@ public class SliceVoice : MonoBehaviour {
                 keyWhy = why;
                 keyUntil = Time.time + 5f;
             }
-            return;
+            return false;
         }
         string line = bank[Random.Range(0, bank.Length)];
         int guard = 0;
@@ -337,10 +400,11 @@ public class SliceVoice : MonoBehaviour {
             line = bank[Random.Range(0, bank.Length)];
         }
         if (line == LastLine || !VoiceDirector.Allow(line, why, priority)) {
-            return;
+            return false;
         }
         nextLineAt = Time.time + 3.2f;
         Show(false, line, why);
+        return true;
     }
 
     // The cold open's one line (ColdOpen.cs): her voice file and her subtitle, the floor for its length. It counts as her wave-1
@@ -449,7 +513,7 @@ public class SliceVoice : MonoBehaviour {
                 arcadeKeep.Add(LineId(bank[i]));
             }
         }
-        add(Idle); add(Wave); add(BossWave); add(Kill); add(Hurt); add(Low); add(NewKind); add(Near);
+        add(Idle); add(Wave); add(BossWave); add(Kill); add(Hurt); add(Low); add(NewKind); add(Near); add(ReachFirst); add(Reach);
         add(SliceCallouts.Callouts); add(SliceCallouts.ParryLine); add(SliceCallouts.StampLine);
         for (int b = 0; b < Banter.Length; b++) {
             for (int i = 0; i < Banter[b].Length; i++) {

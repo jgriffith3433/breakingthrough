@@ -15,5 +15,6 @@ public class MeshAuditTests {
         Assert.AreEqual(0, (int)rt.GetField("Inside").GetValue(report), text);
         Assert.AreEqual(0, (int)rt.GetField("ZeroNormals").GetValue(report), text);
         Assert.AreEqual(0, (int)rt.GetField("NegativeScales").GetValue(report), text);
+        Assert.AreEqual(0, (int)rt.GetField("MirroredText").GetValue(report), text);
     }
 }

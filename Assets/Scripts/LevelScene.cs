@@ -59,6 +59,8 @@ public class LevelScene : MonoBehaviour {
     public float SecondsSinceInput { get { return Time.time - lastInputAt; } }
     public Vector3 Checkpoint { get; set; }
     public int Shoves { get; private set; }
+    public bool Resumed { get; private set; }       // this load picked up a saved checkpoint
+    public static bool SkipResume;                   // the next load starts the chapter fresh (Start over, playtests)
 
     CharacterController body;
     Vector3 lastPos;
@@ -91,9 +93,23 @@ public class LevelScene : MonoBehaviour {
         Hud = LevelHud.Make(transform);
         Yard = gameObject.AddComponent<LevelYard>();
         Yard.Build(this);
-        MakeCamera();
-        MakePlayer(Yard.PlayerStart);
-        Checkpoint = Yard.PlayerStart;
+        // A checkpoint saved on this file for this chapter (LevelCheckpoint): Wallit stands there, the beats done stay done.
+        CampaignSave.Slot file = CampaignSave.Get(CampaignSave.Active);
+        Resumed = !SkipResume && LevelCheckpoint.Has(file, Chapter);
+        Vector3 start = Yard.PlayerStart;
+        if (Resumed) {
+            start = LevelCheckpoint.PositionOf(file);
+            start.y = Mathf.Max(start.y, LevelYard.H(start.x, start.z));
+        }
+        MakeCamera(start);
+        MakePlayer(start);
+        Checkpoint = start;
+        if (Resumed) {
+            Health = Mathf.Clamp(Mathf.Max(file.cpHealth, MaxHealth / 2), 1, MaxHealth);
+            Seconds = file.cpSeconds;
+            Yard.Restore(file);
+        }
+        SkipResume = false;
         Yard.Begin();
         MusicDirector.Play(MusicDirector.ChapterTrack(Chapter));
         MusicDirector.Ambience(MusicDirector.AmbienceFor(Chapter));
@@ -115,7 +131,7 @@ public class LevelScene : MonoBehaviour {
     static void Moon() {
         RenderSettings.fog = true;
         RenderSettings.fogMode = FogMode.ExponentialSquared;
-        RenderSettings.fogColor = new Color(0.05f, 0.08f, 0.15f);
+        RenderSettings.fogColor = new Color(0.09f, 0.15f, 0.22f);   // teal haze, the card's colour (CardMatch pulls it further)
         RenderSettings.fogDensity = 0.009f;
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
         RenderSettings.ambientSkyColor = new Color(0.27f, 0.33f, 0.55f);
@@ -127,14 +143,16 @@ public class LevelScene : MonoBehaviour {
         }
         var sun = new GameObject("Moon").AddComponent<Light>();
         sun.type = LightType.Directional;
-        sun.color = new Color(0.62f, 0.72f, 1f);
-        sun.intensity = 0.95f;
+        // A low amber key raking across the walls, not a flat blue moon: the yard's brick and stencil catch it (the critic's "flat blue
+        // with bare walls"), and the cold ambient stays in the shade. The loading card is teal with lamp amber in it.
+        sun.color = new Color(1f, 0.76f, 0.5f);
+        sun.intensity = 0.9f;
         sun.shadows = LightShadows.None;
-        sun.transform.rotation = Quaternion.Euler(48f, -32f, 0f);
+        sun.transform.rotation = Quaternion.Euler(24f, -32f, 0f);
     }
 
     // The camera is scene2's: ZeldaStyleCamera with the numbers that scene serializes, a night grade over it.
-    void MakeCamera() {
+    void MakeCamera(Vector3 at) {
         var go = new GameObject("Main Camera");
         go.tag = "MainCamera";
         Cam = go.AddComponent<Camera>();
@@ -145,9 +163,10 @@ public class LevelScene : MonoBehaviour {
         Cam.farClipPlane = 520f;
         Cam.allowHDR = !UiFit.Touch;
         go.AddComponent<AudioListener>();
-        go.transform.position = Yard.PlayerStart + new Vector3(0f, 4f, -6f);
+        go.transform.position = at + new Vector3(0f, 4f, -6f);
         go.transform.rotation = Quaternion.Euler(18f, 0f, 0f);
         SceneMood.Apply(Cam, SceneMood.Yard(), false);
+        CardMatch.Attach(Cam, "ch1");
         go.AddComponent<ZeldaStyleCamera>();
     }
 

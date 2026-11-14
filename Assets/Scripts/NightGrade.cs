@@ -18,6 +18,7 @@ public class NightGrade : MonoBehaviour {
     public Color Shadows = DeptPalette.GradeShadows;
     public Color Highlights = DeptPalette.GradeHighlights;
     public Color Lift = DeptPalette.GradeLift;
+    public Color CardGain = Color.white;   // CardMatch: a per-channel gain on the tints so a scene's mean colour sits near its card's
 
     // Colour-grading LUT strips (256x16) of the two looks being blended, set by FilmLight. LutAmount 0 = off.
     [HideInInspector] public Texture2D LutA, LutB;
@@ -38,7 +39,19 @@ public class NightGrade : MonoBehaviour {
     public static float BloomClamp { get { return UiFit.Touch ? 2f : 4f; } }   // one pixel feeds bloom at most this bright: a crowd of glows cannot pile up
     public static float DitherAmount { get { return UiFit.Touch ? 1.5f : 0.75f; } }   // in 1/255 steps
 
-    public float EffectiveExposure { get { return Mathf.Min(Exposure, MaxExposure); } }
+    // The exposure guard: twice a second the frame (before the grade) is shrunk to 48x27 and read, and a smoothed multiplier
+    // keeps the graded mean luma inside LumaMin..LumaMax and the clipped white under ClipMax percent. Lights, bloom and VFX
+    // added by a wave cannot accumulate past it. It darkens fast and lifts slowly, and lifts only up to GuardMaxLift.
+    public const float LumaMin = 0.12f, LumaMax = 0.7f, ClipMax = 2f, GuardMaxLift = 1.6f, GuardMinScale = 0.45f;
+    public static float MeanLuma = -1f;      // last measured (graded estimate), 0..1
+    public static float ClippedPct = -1f;    // share of pixels at pure white, percent
+    public static float GuardScale = 1f;     // the multiplier now applied to exposure
+    public static int GuardReads;
+    float nextRead;
+    RenderTexture probe;
+    Texture2D probeTex;
+
+    public float EffectiveExposure { get { return Mathf.Min(Exposure, MaxExposure) * GuardScale; } }
     public float EffectiveBloom { get { return Mathf.Min(Intensity, MaxBloom); } }
     public float EffectiveThreshold { get { return Mathf.Max(Threshold, BloomFloor); } }
 
@@ -70,14 +83,16 @@ public class NightGrade : MonoBehaviour {
             material.hideFlags = HideFlags.HideAndDontSave;
         }
 
+        ReadLight(source);
+
         float threshold = EffectiveThreshold;
         float knee = threshold * Knee + 0.00001f;
         material.SetVector(FilterId, new Vector4(threshold, threshold - knee, 2f * knee, 0.25f / knee));
         material.SetFloat(IntensityId, EffectiveBloom);
         material.SetVector(GradeId, new Vector4(EffectiveExposure, Contrast, Saturation, Vignette));
         material.SetVector(ToneId, new Vector4(ShoulderStart, BloomClamp, DitherAmount / 255f, 0f));
-        material.SetColor(ShadowsId, Shadows);
-        material.SetColor(HighlightsId, Highlights);
+        material.SetColor(ShadowsId, Shadows * CardGain);
+        material.SetColor(HighlightsId, Highlights * CardGain);
         material.SetColor(LiftId, Lift);
         material.SetFloat(StakesId, Stakes);
         bool lut = LutA != null && LutB != null && LutAmount > 0f;
@@ -119,7 +134,64 @@ public class NightGrade : MonoBehaviour {
         RenderTexture.ReleaseTemporary(current);
     }
 
+    // A playtest's own sampling render of the camera must not steer the exposure guard (it is a second, smaller frame).
+    public static bool Sampling;
+
+    void ReadLight(RenderTexture source) {
+        if (Sampling || Time.unscaledTime < nextRead) {
+            return;
+        }
+        nextRead = Time.unscaledTime + 0.5f;
+        if (probe == null) {
+            probe = new RenderTexture(48, 27, 0, RenderTextureFormat.ARGB32);
+            probe.hideFlags = HideFlags.HideAndDontSave;
+            probeTex = new Texture2D(48, 27, TextureFormat.RGBA32, false);
+            probeTex.hideFlags = HideFlags.HideAndDontSave;
+        }
+        Graphics.Blit(source, probe);
+        RenderTexture prev = RenderTexture.active;
+        RenderTexture.active = probe;
+        probeTex.ReadPixels(new Rect(0, 0, 48, 27), 0, 0, false);
+        RenderTexture.active = prev;
+        Color32[] px = probeTex.GetPixels32();
+        double sum = 0;
+        int white = 0;
+        foreach (Color32 c in px) {
+            sum += (0.299f * c.r + 0.587f * c.g + 0.114f * c.b) / 255f;
+            if (c.r >= 253 && c.g >= 253 && c.b >= 253) {
+                white++;
+            }
+        }
+        float raw = (float)(sum / px.Length);
+        float baseExp = Mathf.Min(Exposure, MaxExposure);
+        // The measured source with this pass's exposure applied (what the grade will show, before its shoulder).
+        float graded = Mathf.Clamp01(raw * baseExp * GuardScale);
+        MeanLuma = graded;
+        ClippedPct = 100f * white / px.Length;
+        GuardReads++;
+        float target = GuardScale;
+        if (raw * baseExp > LumaMax * 0.97f) {
+            target = LumaMax * 0.9f / Mathf.Max(0.001f, raw * baseExp);
+        } else if (raw * baseExp < LumaMin * 1.15f) {
+            target = Mathf.Min(GuardMaxLift, LumaMin * 1.25f / Mathf.Max(0.02f, raw * baseExp));
+        } else {
+            target = 1f;
+        }
+        if (ClippedPct > ClipMax * 0.75f) {
+            target = Mathf.Min(target, GuardScale * 0.9f);
+        }
+        target = Mathf.Clamp(target, GuardMinScale, GuardMaxLift);
+        // Darken fast, lift slowly, except a frame under the floor (an act change passing through a dark blend) which lifts fast.
+        float k = target < GuardScale ? 0.6f : (raw * baseExp * GuardScale < LumaMin ? 0.5f : 0.15f);
+        GuardScale = Mathf.Lerp(GuardScale, target, k);
+    }
+
     void OnDestroy() {
+        if (probe != null) {
+            probe.Release();
+            Destroy(probe);
+            Destroy(probeTex);
+        }
         if (material != null) {
             Destroy(material);
         }

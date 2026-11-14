@@ -38,12 +38,18 @@ public class Fx : MonoBehaviour {
         new GameObject("Fx").AddComponent<Fx>();
     }
 
+    public static void EnsureInstance() {
+        if (instance == null) {
+            Ensure();
+        }
+    }
+
     void Awake() {
         instance = this;
         Make(FxKind.Flash, "glow", true, 80, 0.18f, 0f, false);
         Make(FxKind.Smoke, "smoke", false, 300, 1.6f, -0.25f, false);
         Make(FxKind.Feather, "feather", false, 300, 1.6f, 0.35f, false);
-        Make(FxKind.Ring, "ring", true, 40, 0.45f, 0f, false, true);
+        Make(FxKind.Ring, "ring", true, 90, 0.45f, 0f, false, true);
         Make(FxKind.Note, "note", true, 60, 2.4f, -0.08f, false);
         Make(FxKind.Dust, "smoke", false, 200, 0.7f, -0.05f, false);
         Make(FxKind.Debris, "plate", false, 200, 1.3f, 0.9f, false);
@@ -64,7 +70,7 @@ public class Fx : MonoBehaviour {
         var main = ps.main;
         main.loop = false;
         main.playOnAwake = false;
-        main.maxParticles = max;
+        main.maxParticles = MobileQuality.ParticleMax(max);
         main.simulationSpace = ParticleSystemSimulationSpace.World;
         main.startLifetime = life;
         main.gravityModifier = gravity;

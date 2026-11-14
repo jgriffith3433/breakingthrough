@@ -60,6 +60,7 @@ public partial class CinematicDirector {
         carryWasHeld = false;
         carryNeedTap = false;
         carryStart = Time.unscaledTime;
+        capLength += FinaleCarryAllowance;
         carrySettleUntil = Time.unscaledTime + 1.1f;
         carryNextNoticeAt = Time.unscaledTime + 3.2f;
         carryWindowUntil = -1f;

@@ -75,6 +75,43 @@ public static partial class Playtest {
         run.Metric("combo.swings", swung);
         run.Metric("combo.pressesInBuffer", inBuffer);
 
+        // 1b. A swing while walking: the swing's clip must be the one on screen for the whole swing, and the trail must show.
+        yield return new WaitForSecondsRealtime(1.2f);
+        PlayInput.Axis("Vertical", 1f);
+        yield return new WaitForSecondsRealtime(0.5f);
+        Vector3 walkFrom = player.transform.position;
+        int walkSwingsBefore = BatEquipment.Swings;
+        int trailBefore = BatEquipment.TrailSwings;
+        yield return FeelPress("Swing", KeyCode.Mouse0);
+        int frames = 0;
+        int onClip = 0;
+        float walkEnd = Time.realtimeSinceStartup + 2f;
+        yield return null;
+        while (!run.Done && Time.realtimeSinceStartup < walkEnd && BatEquipment.IsAnimatingAction) {
+            int want = BatEquipment.ActionClip;
+            Animator a = player.Anim;
+            if (want >= 0 && a != null) {
+                frames++;
+                int hash = Animator.StringToHash(CharacterMovement.ClipNames[want]);
+                if (a.GetCurrentAnimatorStateInfo(0).shortNameHash == hash || a.IsInTransition(0) && a.GetNextAnimatorStateInfo(0).shortNameHash == hash) {
+                    onClip++;
+                }
+            }
+            yield return null;
+        }
+        Vector3 walked = player.transform.position - walkFrom;
+        walked.y = 0f;
+        PlayInput.Axis("Vertical", 0f);
+        run.Event("swing-while-walking", "swung " + (BatEquipment.Swings - walkSwingsBefore) + " time(s) while walking " + walked.magnitude.ToString("0.0") + " m, swing clip on screen " + onClip + " of " + frames + " frames, trail swings " + (BatEquipment.TrailSwings - trailBefore));
+        run.Metric("walkSwing.clipFrames", frames);
+        run.Metric("walkSwing.clipOnScreen", onClip);
+        if (BatEquipment.Swings == walkSwingsBefore || frames > 2 && onClip < frames - 1) {
+            run.Problem(PlaytestSeverity.Bug, "a swing made while walking did not show its swing animation (" + onClip + " of " + frames + " frames on the swing clip)");
+        }
+        if (walked.magnitude < 0.3f) {
+            run.Problem(PlaytestSeverity.Bug, "Wallit did not keep moving during the swing (moved " + walked.magnitude.ToString("0.00") + " m)");
+        }
+
         // 2. Dodge out of a swing's recovery.
         yield return new WaitForSecondsRealtime(1.2f);   // the dodge's cooldown and the combo gap
         PlayInput.Axis("Horizontal", 1f);
@@ -161,6 +198,23 @@ public static partial class Playtest {
                 run.Problem(PlaytestSeverity.Bug, "feel: a light hit jolted the camera");
             }
         }
+
+        // 4. A shot from Wallit's left (a hazard point, no bot): the arc must sit on the left edge of the screen.
+        yield return new WaitForSecondsRealtime(0.7f);
+        Camera cam = Camera.main;
+        if (cam != null && player != null) {
+            Vector3 left = player.transform.position - cam.transform.right * 6f;
+            int shownBefore = HitDirection.ShownWallit;
+            player.GetComponent<PlayerGrowth>().OnHit(null, left);
+            yield return null;
+            yield return new WaitForSecondsRealtime(0.12f);
+            run.Event("hit-direction", "a hit from the left (no bot): " + HitDirection.Last + ", arc shown " + (HitDirection.ShownWallit > shownBefore)
+                + ", angle " + HitDirection.LastAngle.ToString("0") + " (270 is the left edge)");
+            if (HitDirection.ShownWallit == shownBefore || Mathf.Abs(Mathf.DeltaAngle(HitDirection.LastAngle, 270f)) > 20f) {
+                run.Problem(PlaytestSeverity.Bug, "hurt: a hit from the left did not light the arc on the left edge (" + HitDirection.Last + ")");
+            }
+        }
+        run.Metric("hurt.directionShown", HitDirection.WallitHits > 0 ? Mathf.Round(100f * HitDirection.ShownWallit / HitDirection.WallitHits) : 0f);
 
         TouchControls.LiftBotFingers();
         PlayInput.Release();

@@ -101,6 +101,7 @@ public static class PlaytestOpeningEndings {
     public static IEnumerator Run(PlaytestRun r) {
         run = r;
         CinematicDirector.Events.Clear();
+        CinematicHud.ResetCounters();
         run.Event("setup", "opening-endings: ch4-6 world opens + filed/received + live credits; touch=" + UiFit.Touch + " size=" + Screen.width + "x" + Screen.height);
 
         // Audio capture: the three sounds the sound critic asked for, played by name (setup) so the audio probe hears them.
@@ -175,6 +176,11 @@ public static class PlaytestOpeningEndings {
         if (run.Done) {
             yield break;
         }
+        float eLuma, eWhite;
+        Playtest.ExposureSample("ending received", out eLuma, out eWhite);
+        if (eWhite > 2f) {
+            run.Problem(PlaytestSeverity.Bug, "opening-endings: RECEIVED frame is " + eWhite.ToString("0.0") + "% pure white");
+        }
         run.Metric("endingDoors", CinematicDirector.DoorsShown);
         if (CinematicDirector.DoorsShown < 6) {
             run.Problem(PlaytestSeverity.Bug, "opening-endings: RECEIVED showed " + CinematicDirector.DoorsShown + " doors (need ≥6)");
@@ -195,6 +201,15 @@ public static class PlaytestOpeningEndings {
 
         run.Event("audio-capture", "end: " + GameAudio.Played + " sounds played in all; music '" + MusicDirector.Current + "'");
         run.Metric("audioSoundsTotal", GameAudio.Played);
+        run.Metric("cinematic.hudVisibleFrames", CinematicHud.HudVisibleFrames);
+        run.Metric("cinematic.framesObserved", CinematicHud.CinematicFrames);
+        run.Metric("ftue.devUiVisible", DevUi.Visible);
+        if (UiFit.Touch) {
+            run.Metric("cinematic.padsBackSeconds", Mathf.Round(CinematicHud.PadsBackSeconds * 100f) / 100f);
+        }
+        if (CinematicHud.HudVisibleFrames > 0) {
+            run.Problem(PlaytestSeverity.Bug, "opening-endings: the HUD or touch pads drew on " + CinematicHud.HudVisibleFrames + " frames of a cinematic");
+        }
         run.Progress(1f);
         if (!run.Done) {
             run.Finish(PlaytestOutcome.Done);
@@ -243,7 +258,10 @@ public static class PlaytestOpeningEndings {
             run.Problem(PlaytestSeverity.Bug, "opening-endings: expected " + expectId + ", got " + reel);
         }
 
+        int closedBefore = CinematicDirector.ClosedCount;
         int movingShots = 0;
+        int movingBase = CinematicDirector.MovingShots;
+        int speakerBase = CinematicDirector.SpeakerShots.Count;
         var lastPos = new Dictionary<string, Vector3>();
         float started = Time.realtimeSinceStartup;
         int lastShot = -1;
@@ -259,6 +277,9 @@ public static class PlaytestOpeningEndings {
             yield return null;
         }
         float seconds = Time.realtimeSinceStartup - started;
+        movingShots = CinematicDirector.MovingShots - movingBase;
+        run.Metric("cinematic.movingShots", movingShots);
+        CinematicDirector.ReportSpeakers(run, "opening-endings", speakerBase, Phone);
         run.Event("opening-end", "chapter=" + (chapter + 1) + " shots=" + CinematicDirector.ShotsShown + " moving=" + movingShots + " seconds=" + seconds.ToString("0.0"));
         run.Metric("openingCh" + (chapter + 1) + "Shots", CinematicDirector.ShotsShown);
         run.Metric("openingCh" + (chapter + 1) + "Moving", movingShots);
@@ -274,8 +295,20 @@ public static class PlaytestOpeningEndings {
         if (CinematicDirector.ShotsShown < 5) {
             run.Problem(PlaytestSeverity.Bug, "opening-endings: Chapter " + (chapter + 1) + " fewer than 5 shots (" + CinematicDirector.ShotsShown + ")");
         }
-        if (movingShots < 5) {
-            run.Problem(PlaytestSeverity.Bug, "opening-endings: Chapter " + (chapter + 1) + " fewer than 5 moving shots (" + movingShots + ")");
+        if (movingShots < 4) {
+            run.Problem(PlaytestSeverity.Bug, "opening-endings: Chapter " + (chapter + 1) + " fewer than 4 moving shots (" + movingShots + ")");
+        }
+        yield return run.Until(() => CinematicDirector.ClosedCount > closedBefore && !CinematicDirector.IsOpen, 3f, "cinematic closed");
+        bool closedNow = CinematicDirector.ClosedCount > closedBefore;
+        run.Event("cinematic.closed", "opening-endings chapter=" + (chapter + 1) + " reel=" + CinematicDirector.LastClosedReel + " closed=" + closedNow
+            + " cap=" + CinematicDirector.LastClosedByCap + " seconds=" + CinematicDirector.LastClosedAfterSeconds.ToString("0.00") + " handoff=" + CinematicDirector.LastHandoffSeconds.ToString("0.00")
+            + " touch=" + UiFit.Touch + " size=" + Screen.width + "x" + Screen.height);
+        run.Metric("cinematic.closed.ch" + (chapter + 1), closedNow ? 1 : 0);
+        if (!closedNow) {
+            run.Problem(PlaytestSeverity.Bug, "opening-endings: Chapter " + (chapter + 1) + " opening never reported closed");
+        }
+        if (CinematicDirector.LastHandoffSeconds > 0.3f) {
+            run.Problem(PlaytestSeverity.Bug, "opening-endings: control returned " + CinematicDirector.LastHandoffSeconds.ToString("0.00") + " s after the last shot (> 0.3)");
         }
     }
 
@@ -295,6 +328,8 @@ public static class PlaytestOpeningEndings {
         run.Event("ending-start", tag + " reel=" + reel);
         float started = Time.realtimeSinceStartup;
         int movingShots = 0;
+        int movingBase = CinematicDirector.MovingShots;
+        int speakerBase = CinematicDirector.SpeakerShots.Count;
         var lastPos = new Dictionary<string, Vector3>();
         int lastShot = -1;
         bool holding = false;
@@ -331,6 +366,9 @@ public static class PlaytestOpeningEndings {
         }
         yield return run.Until(() => done || !CinematicDirector.IsOpen, 5f, id + " end");
         bool beat = string.IsNullOrEmpty(beatPrefix) || Seen(beatPrefix);
+        movingShots = CinematicDirector.MovingShots - movingBase;
+        run.Metric("cinematic.movingShots." + tag, movingShots);
+        CinematicDirector.ReportSpeakers(run, "opening-endings", speakerBase, Phone);
         run.Event("ending-end", tag + " shots=" + CinematicDirector.ShotsShown + " moving=" + movingShots + " beat=" + beat);
         if (!beat) {
             run.Problem(PlaytestSeverity.Bug, "opening-endings: " + tag + " missing beat " + beatPrefix);
@@ -371,6 +409,27 @@ public static class PlaytestOpeningEndings {
         }
         // The end card is what PlayCreditsLive hands to; here the callback just marks done.
         run.Event("credits-card", done ? "callback" : "missing");
+
+        // Second pass: let the credits run on their own clock with the mouse leaving the game mid-scroll.
+        bool done2 = false;
+        int ignoredBefore = PauseMenu.MouseLeftIgnored;
+        CinematicDirector.PlayCreditsLive(() => done2 = true, true);
+        yield return run.Until(() => CinematicDirector.CreditsLive || done2, 5f, "live credits (full scroll)");
+        yield return Wait(3f);
+        PauseMenu.MouseLeftProbe = true;
+        yield return Wait(0.5f);
+        run.Event("credits-mouse-left", "paused=" + PauseMenu.IsOpen + " ignored=" + (PauseMenu.MouseLeftIgnored - ignoredBefore));
+        if (PauseMenu.IsOpen) {
+            run.Problem(PlaytestSeverity.Bug, "opening-endings: the mouse leaving the game paused the credits");
+        }
+        float fullStart = Time.realtimeSinceStartup;
+        yield return run.Until(() => done2, 30f, "credits end card");
+        float fullSeconds = Time.realtimeSinceStartup - fullStart;
+        run.Event("credits.reachedEnd", "reached=" + CinematicDirector.CreditsReachedEnd + " card=" + done2 + " seconds=" + fullSeconds.ToString("0.0"));
+        run.Metric("credits.reachedEnd", CinematicDirector.CreditsReachedEnd && done2 ? 1 : 0);
+        if (!CinematicDirector.CreditsReachedEnd || !done2) {
+            run.Problem(PlaytestSeverity.Bug, "opening-endings: the credits never reached the end card on their own");
+        }
     }
 
     static void SampleMotion(ref int movingShots, Dictionary<string, Vector3> lastPos) {

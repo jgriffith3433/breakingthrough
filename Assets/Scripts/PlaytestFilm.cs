@@ -14,12 +14,19 @@ public static partial class Playtest {
     struct FilmFrame { public float Luma; public Color Mean; }
 
     static FilmFrame FilmSample(Camera cam, out Texture2D tex) {
-        const int W = 192, H = 108;
+        // The sample has the screen's own shape, and the camera's aspect is put back after it: a 16:9 sample of a phone camera used to
+        // leave it stretched until RenderFit's next half-second pass.
+        int W = 192, H = Mathf.Clamp(Mathf.RoundToInt(192f * Screen.height / Mathf.Max(1, Screen.width)), 64, 400);
         var rt = RenderTexture.GetTemporary(W, H, 24, RenderTextureFormat.ARGB32);
         RenderTexture old = cam.targetTexture, active = RenderTexture.active;
         cam.targetTexture = rt;
+        NightGrade.Sampling = true;
         cam.Render();
+        NightGrade.Sampling = false;
         cam.targetTexture = old;
+        if (old == null) {
+            cam.ResetAspect();
+        }
         RenderTexture.active = rt;
         tex = new Texture2D(W, H, TextureFormat.RGB24, false);
         tex.ReadPixels(new Rect(0, 0, W, H), 0, 0);
@@ -182,6 +189,7 @@ public static partial class Playtest {
         var keys = new Color[3];
         float rimMin = 999f;
         float[] p5 = new float[3];
+        float blendMax = 0f;
 
         for (int act = 0; act < 3 && !run.Done && !WaveDirector.IsLost; act++) {
             if (act > 0) {
@@ -197,6 +205,9 @@ public static partial class Playtest {
                 yield return FilmBlend(cam, "act " + act + " to " + (act + 1), act - 1, act, (m, j) => { lumaMin = m; jump = j; });
                 run.Metric("filmBlendMinLuma_" + (act + 1), Mathf.Round(lumaMin * 1000f) / 1000f);
                 run.Metric("filmBlendSeconds", Mathf.Round(FilmLight.LastBlendSeconds * 100f) / 100f);
+                run.Metric("light.actBlendSeconds_" + act + "_" + (act + 1), Mathf.Round(FilmLight.LastBlendSeconds * 100f) / 100f);
+                run.Metric("light.actBlendSeconds", Mathf.Round(Mathf.Max(blendMax, FilmLight.LastBlendSeconds) * 100f) / 100f);
+                blendMax = Mathf.Max(blendMax, FilmLight.LastBlendSeconds);
                 if (lumaMin < 0.02f) {
                     run.Problem(PlaytestSeverity.Bug, "film-light: a black frame during the change into act " + (act + 1) + " (mean brightness " + lumaMin.ToString("0.000") + ")");
                 }
@@ -228,6 +239,18 @@ public static partial class Playtest {
             if (animTouch && FilmLight.ShadowMode != 0) {
                 run.Problem(PlaytestSeverity.Bug, "film-light: the phone tier still has real-time shadows");
             }
+        }
+        float[] hue = new float[3];
+        for (int i = 0; i < 3; i++) {
+            Color.RGBToHSV(keys[i], out float hh, out _, out _);
+            hue[i] = hh * 360f;
+            run.Metric("light.keyHue_" + (i + 1), Mathf.Round(hue[i]));
+        }
+        float h12 = Mathf.Abs(Mathf.DeltaAngle(hue[0], hue[1])), h23 = Mathf.Abs(Mathf.DeltaAngle(hue[1], hue[2])), h13 = Mathf.Abs(Mathf.DeltaAngle(hue[0], hue[2]));
+        run.Metric("light.keyHueSpread", Mathf.Round(Mathf.Min(h12, Mathf.Min(h23, h13))));
+        run.Event("film-hues", "key hue act 1 " + hue[0].ToString("0") + ", act 2 " + hue[1].ToString("0") + ", act 3 " + hue[2].ToString("0") + " degrees; closest pair " + Mathf.Min(h12, Mathf.Min(h23, h13)).ToString("0"));
+        if (Mathf.Min(h12, Mathf.Min(h23, h13)) < 40f) {
+            run.Problem(PlaytestSeverity.Bug, "film-light: two acts' key hues are under 40 degrees apart");
         }
         float d12 = ArcadeActs.SignatureDistance(keys[0], keys[1]);
         float d23 = ArcadeActs.SignatureDistance(keys[1], keys[2]);

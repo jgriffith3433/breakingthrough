@@ -74,14 +74,20 @@ Shader "Knoll/BotSkin"
             float3 viewDir = toCamSq > 1e-8 ? toCam * rsqrt(toCamSq) : float3(0, 0, 1);
             float nSq = dot(IN.worldNormal, IN.worldNormal);
             float3 normal = nSq > 1e-8 ? IN.worldNormal * rsqrt(nSq) : float3(0, 1, 0);
-            float rim = pow(1.0 - saturate(dot(viewDir, normal)), 4.0);
-            float filmRim = pow(1.0 - saturate(dot(viewDir, normal)), 2.2);
+            float edge = 1.0 - saturate(dot(viewDir, normal));
+            // The rim is a lit edge, not a fringe: it fades out over the last sliver at the silhouette, so the pixels next to the
+            // ink line stay dark and the brightest band sits just inside it (no white halo against the night sky or after bloom).
+            float inside = 1.0 - smoothstep(0.80, 0.97, edge);
+            float rim = pow(edge, 4.0) * inside;
+            float filmRim = pow(edge, 2.2) * inside;
             // The moon is the scene's directional light: the rim hugs the side facing it.
             float3 moonDir = normalize(_WorldSpaceLightPos0.xyz + float3(0, 1e-4, 0));
             float moonSide = saturate(dot(normal, moonDir) * 0.5 + 0.65);
             float3 rimLight = _RimColor.rgb * rim * moonSide * 1.4 * _RimStrength + _FilmRim.rgb * filmRim * _FilmRim.a;
 
             // Capped so a bright texel can never burn to a flat white shape or bleed past the silhouette.
+            // The rim alone is capped well under white and tinted by the skin, so it never reads as a bright outline.
+            rimLight = min(rimLight * lerp(0.6, 1.0, saturate(dot(albedo, float3(0.33, 0.33, 0.33)) * 2.0)), float3(0.38, 0.45, 0.6));
             float3 lit = albedo * skin.a * _Glow + albedo * _AmbientBoost * 0.35 + rimLight;
             o.Emission = min(lit, float3(0.85, 0.9, 0.95)) + _Flash.rgb * _Flash.a;
         }

@@ -17,6 +17,7 @@ public class Pickups : MonoBehaviour {
     int value;
     bool chest;
     bool pulled;
+    bool magnetNoted;
     float age;
     float speed;
     Vector3 velocity;
@@ -64,6 +65,15 @@ public class Pickups : MonoBehaviour {
     }
 
     static void Spawn(Vector3 at, int value, bool chest) {
+        if (!chest && MobileQuality.Phone && live.Count >= MobileQuality.MaxPickups) {
+            // A crowd of drops on a phone: the value goes to the oldest bolt on the ground and no new object is made.
+            for (int i = 0; i < live.Count; i++) {
+                if (live[i] != null && !live[i].chest && !live[i].pulled) {
+                    live[i].value += value;
+                    return;
+                }
+            }
+        }
         var go = new GameObject(chest ? "Chest" : "Bolt");
         go.transform.position = at + Vector3.up * 0.6f;
         Pickups pickup = go.AddComponent<Pickups>();
@@ -89,6 +99,9 @@ public class Pickups : MonoBehaviour {
                 Box(spin, new Vector3(0f, 0.72f, 0f), new Vector3(1.04f, 0.26f, 0.74f), new Color(0.65f, 0.38f, 0.15f));
                 Box(spin, new Vector3(0f, 0.5f, 0f), new Vector3(1.08f, 0.12f, 0.78f), new Color(1f, 0.8f, 0.25f));
                 Box(spin, new Vector3(0f, 0.5f, 0.38f), new Vector3(0.18f, 0.22f, 0.06f), new Color(1f, 0.92f, 0.5f));
+            }
+            if (MobileQuality.Phone) {
+                return;   // no light per chest on a phone: the model is bright enough and every light is another pass
             }
             Light glow = gameObject.AddComponent<Light>();
             glow.type = LightType.Point;
@@ -189,6 +202,10 @@ public class Pickups : MonoBehaviour {
 
         if (!pulled && age > 0.45f && to.magnitude <= reach) {
             pulled = true;
+            if (!chest && !magnetNoted && RunBoons.Rank(BoonId.Magnet) > 0) {
+                magnetNoted = true;
+                BoonFx.Proc(BoonId.Magnet, transform.position + Vector3.up * 0.35f, "LODESTONE", 1.7f);
+            }
         }
 
         if (pulled) {
@@ -225,6 +242,10 @@ public class Pickups : MonoBehaviour {
             UpgradeLook.Say("Treasure!", 1.2f, 40f);
             GameAudio.PlayAt("coin", transform.position, 0.9f, 1.2f);
         } else {
+            if (!magnetNoted && RunBoons.Rank(BoonId.Magnet) > 0) {
+                magnetNoted = true;
+                BoonFx.Proc(BoonId.Magnet, transform.position + Vector3.up * 0.35f, "LODESTONE", 1.7f);
+            }
             BoltsCollected++;
             DeptFx.Coin(transform.position);
             RunBoons.AddFeathers(value);

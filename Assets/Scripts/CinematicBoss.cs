@@ -19,20 +19,20 @@ public partial class CinematicDirector {
         public string Title;     // stamped on the card
         public string Sub;       // the work-order line under it
         public string Entry;     // drop, hang, rise, unfold, climb
-        public string Code;      // speaker code of the taunt (the cast voice that has the file)
+        public string Code;      // speaker code of the taunt: the boss's own cast voice (K P F V R O; the Half-Built is a Yo Bot, Y). Its line is one the boss already has recorded (BossVoice banks); a boss with no intro recording of its own borrows its closest existing line, and the file name is <castid>_<slug>
         public string Line;      // the existing taunt line
         public float Root;       // the stinger's root note, Hz
         public bool Mini;        // a mid-chapter mini-boss: its own save bit
     }
 
     static readonly BossCard[] Cards = {
-        new BossCard { Match = "courier", Title = "THE COURIER", Sub = "Notice of striking", Entry = "rise", Code = "Y", Line = "Special delivery! Notice of striking!", Root = 98f },
-        new BossCard { Match = "plated", Title = "THE PLATED ALPHA", Sub = "Plate 0010: INVALID", Entry = "drop", Code = "Y", Line = "Notice! This plate is stamped: INVALID!", Root = 110f },
-        new BossCard { Match = "foreman", Title = "THE FOREMAN", Sub = "Work order 0031", Entry = "unfold", Code = "Y", Line = "Order, read aloud: STRIKE. THIS. ADDRESS.", Root = 87f },
+        new BossCard { Match = "courier", Title = "THE COURIER", Sub = "Notice of striking", Entry = "rise", Code = "K", Line = "Special delivery! Notice of striking!", Root = 98f },
+        new BossCard { Match = "plated", Title = "THE PLATED ALPHA", Sub = "Plate 0010: INVALID", Entry = "drop", Code = "P", Line = "Address: INVALID.", Root = 110f },
+        new BossCard { Match = "foreman", Title = "THE FOREMAN", Sub = "Work order 0031", Entry = "unfold", Code = "F", Line = "Overtime. Read louder.", Root = 87f },
         new BossCard { Match = "half-built", Title = "THE HALF-BUILT", Sub = "Still on its hook", Entry = "hang", Code = "Y", Line = "I am... not finished! Finish me?", Root = 131f, Mini = true },
-        new BossCard { Match = "server", Title = "THE SERVER", Sub = "Signature required", Entry = "climb", Code = "Y", Line = "Order delivery! Signature required!", Root = 104f },
-        new BossCard { Match = "registrar", Title = "THE REGISTRAR", Sub = "Page ten, filing", Entry = "unfold", Code = "Y", Line = "Registrar on the floor! Please remain seated!", Root = 92f },
-        new BossCard { Match = "order", Title = "THE ORDER-BEARER", Sub = "Sealed. Carried. Unsigned.", Entry = "climb", Code = "Y", Line = "Order delivery! Signature required!", Root = 73f },
+        new BossCard { Match = "server", Title = "THE SERVER", Sub = "Signature required", Entry = "climb", Code = "V", Line = "Served. Kindly remain.", Root = 104f },
+        new BossCard { Match = "registrar", Title = "THE REGISTRAR", Sub = "Page ten, filing", Entry = "unfold", Code = "R", Line = "Page two. Initial here.", Root = 92f },
+        new BossCard { Match = "order", Title = "THE ORDER-BEARER", Sub = "Sealed. Carried. Unsigned.", Entry = "climb", Code = "O", Line = "The seal turns.", Root = 73f },
     };
 
     // Timeline, in unscaled seconds from the start.
@@ -109,6 +109,12 @@ public partial class CinematicDirector {
         return null;
     }
 
+    // The cast code the boss's entrance speaks in (the playtest checks each boss has its own), or null with no card.
+    public static string IntroCode(Enemy boss) {
+        BossCard c = CardFor(boss != null ? boss.Title : null, IsMini(boss));
+        return c != null ? c.Code : null;
+    }
+
     static bool IsMini(Enemy e) {
         return e != null && e.Title != null && e.Title.ToLowerInvariant().Contains("half-built");
     }
@@ -119,7 +125,19 @@ public partial class CinematicDirector {
     public static BossResult PlayBoss(Enemy boss, int chapter, int wave, Action done) {
         BossCard c = CardFor(boss != null ? boss.Title : null, IsMini(boss));
         Camera cam = Camera.main;
-        if (c == null || boss == null || !boss.Alive || cam == null || bossBusy()) {
+        if (c == null || boss == null || !boss.Alive || cam == null) {
+            return BossResult.Unavailable;
+        }
+        if (bossBusy()) {
+            // A second card waits for the first to clear (one waiting slot); a third asked for meanwhile is Unavailable.
+            if (Instance != null && Instance.pendBoss == null && Instance.bossFoe != boss) {
+                Instance.pendC = c;
+                Instance.pendBoss = boss;
+                Instance.pendChapter = chapter;
+                Instance.pendWave = wave;
+                Instance.pendDone = done;
+                return BossResult.Played;
+            }
             return BossResult.Unavailable;
         }
         GameObject player = GameObject.FindGameObjectWithTag("Player");
@@ -156,7 +174,7 @@ public partial class CinematicDirector {
     Action pendDone;
 
     void TickPendingBoss() {
-        if (pendBoss == null || LevelUpScreen.IsOpen || PauseMenu.IsOpen) {
+        if (pendBoss == null || LevelUpScreen.IsOpen || PauseMenu.IsOpen || bossRun || open) {
             return;
         }
         Enemy foe = pendBoss;
@@ -284,6 +302,9 @@ public partial class CinematicDirector {
         if (bossFoe == null || !bossFoe.Alive || bossWallit == null || cam == null) {
             EndBoss(true);
             return;
+        }
+        if (LevelUpScreen.IsOpen) {
+            CloseCards();   // a picker never opens over a card (LevelUpScreen waits for the entrance), but if one does, the card goes
         }
         float t = Time.unscaledTime - bossStart;
         if (t > SkipAfter && SkipTapped()) {
@@ -485,6 +506,13 @@ public partial class CinematicDirector {
         float e = Ease(Mathf.Clamp01((t - TWallit) / TSwing));
         Vector3 pos = Vector3.Lerp(camA, camC, e) + Vector3.up * (Mathf.Sin(e * Mathf.PI) * 2.5f);
         Vector3 look = Vector3.Lerp(lookA, lookC, e);
+        // Phone: the boss in the upper half and Wallit still in frame. Back the wide shot off along its line until both are inside.
+        if (e > 0.5f) {
+            pos = FrameBoth(pos, look, wallit + Vector3.up * 1.2f, bossSpot + Vector3.up * 1.3f * sc, phone);
+        }
+        // Clearance: before the shot is used it is pulled in ahead of walls and out of Wallit's and the boss's bodies (>= 0.5 m).
+        Vector3 subject = Vector3.Lerp(wallit + Vector3.up * 1.4f, bossSpot + Vector3.up * 1.3f * sc, e);
+        pos = ShotClear.Resolve(subject, pos);
         RaycastHit hit;
         if (Physics.Raycast(pos + Vector3.up * 60f, Vector3.down, out hit, 120f, 1 << 3, QueryTriggerInteraction.Ignore)) {
             pos.y = Mathf.Max(pos.y, hit.point.y + 1.2f);
@@ -499,6 +527,39 @@ public partial class CinematicDirector {
         if (zelda != null) {
             zelda.CinematicHold(viewPos, viewRot);
         }
+    }
+
+    // Moves the camera back along the line from `look` until Wallit and the boss both sit inside the frame (portrait-safe margins).
+    Vector3 FrameBoth(Vector3 pos, Vector3 look, Vector3 wallitPoint, Vector3 bossPoint, bool phone) {
+        Vector3 back = pos - look;
+        float dist = back.magnitude;
+        if (dist < 0.5f) {
+            return pos;
+        }
+        back /= dist;
+        Vector3 savedPos = cam.transform.position;
+        Quaternion savedRot = cam.transform.rotation;
+        float savedFovNow = cam.fieldOfView;
+        cam.fieldOfView = bossFov;
+        Vector3 result = pos;
+        for (int step = 0; step < 10; step++) {
+            result = look + back * dist;
+            cam.transform.position = result;
+            cam.transform.rotation = Quaternion.LookRotation((look - result).normalized, Vector3.up);
+            Vector3 vw = cam.WorldToViewportPoint(wallitPoint);
+            Vector3 vb = cam.WorldToViewportPoint(bossPoint);
+            float lowY = phone ? 0.22f : 0.12f;
+            bool ok = vw.z > 0.5f && vb.z > 0.5f && vw.x > 0.1f && vw.x < 0.9f && vw.y > lowY && vw.y < 0.9f
+                && vb.x > 0.1f && vb.x < 0.9f && vb.y > lowY && vb.y < 0.92f;
+            if (ok || dist > 46f) {
+                break;
+            }
+            dist += 2.2f;
+        }
+        cam.transform.position = savedPos;
+        cam.transform.rotation = savedRot;
+        cam.fieldOfView = savedFovNow;
+        return result;
     }
 
     // ---------------------------------------------------------------- the name card
@@ -615,6 +676,37 @@ public partial class CinematicDirector {
         }
     }
 
+    // Hides the name card, the name plate and the caption at once (the picker is open, or the entrance is over).
+    public static void CloseCards() {
+        CinematicDirector d = Instance;
+        if (d == null) {
+            return;
+        }
+        if (d.bossCard != null) {
+            d.bossCard.SetActive(false);
+        }
+        d.bossShown = false;
+        if (d.caption != null) {
+            d.caption.text = "";
+        }
+        if (d.namePlate != null) {
+            d.namePlate.text = "";
+        }
+    }
+
+    // Cards and captions the screen shows right now (the playtest's boss.cardOverlaps counts these against the picker).
+    public static int CardsVisible() {
+        CinematicDirector d = Instance;
+        if (d == null || d.uiRoot == null || !d.uiRoot.activeSelf) {
+            return 0;
+        }
+        int n = BossCardUp ? 1 : 0;
+        if (d.caption != null && d.caption.isActiveAndEnabled && !string.IsNullOrEmpty(d.caption.text)) {
+            n++;
+        }
+        return n;
+    }
+
     // ---------------------------------------------------------------- the end
 
     void EndBoss(bool skipped) {
@@ -654,6 +746,7 @@ public partial class CinematicDirector {
             StartTrack();   // a skipped entrance still turns the music
         }
         EaseBars(false);
+        CloseCards();
         if (uiRoot != null) {
             uiRoot.SetActive(false);
         }

@@ -26,6 +26,20 @@ public static partial class Playtest {
         if (run.Done) {
             yield break;
         }
+        // Wave 1's opening crowd: Tuning.OpeningBots Yo Bots out inside the first 20 s of play.
+        yield return run.Until(() => Enemy.Roster.Count >= Tuning.OpeningBots - 2, 20f, "8+ Yo Bots out in the opening");
+        run.Event("opening-crowd", Enemy.Roster.Count + " bots alive early in wave 1");
+        run.Metric("openingCrowd", Enemy.Roster.Count);
+        if (PauseMenu.Instance != null && PauseMenu.Instance.PauseButton != null) {
+            Rect pauseHit = UiRects.HitRect(PauseMenu.Instance.PauseButton);
+            float ppp = UiRects.PixelsPerPoint;
+            float pw = pauseHit.width / ppp;
+            float ph = pauseHit.height / ppp;
+            run.Event("pause-target", "II on Pause Button Canvas: " + pw.ToString("0.0") + "x" + ph.ToString("0.0") + " px");
+            if (pw < 44f || ph < 44f) {
+                run.Problem(PlaytestSeverity.Bug, "Pause button II hit area is " + pw.ToString("0.0") + "x" + ph.ToString("0.0") + " px (need 44x44)");
+            }
+        }
         var player = Object.FindAnyObjectByType<CharacterMovement>();
 
         run.Scene("Hit VFX: swings, hits and deaths");
@@ -53,6 +67,11 @@ public static partial class Playtest {
 
         run.Scene("Hit VFX: a crowd");
         run.Event("setup", "testing wave key to wave 10 for a crowd of 10+ bots");
+        // Five boons held (the phone criterion): a swing's colour ring, a damage callout, an arc, a keg and a bounty all fire in the crowd.
+        foreach (BoonId id in new[] { BoonId.Heavy, BoonId.Pierce, BoonId.Firebrand, BoonId.Chain, BoonId.BirdBomb }) {
+            RunBoons.Take(id);
+        }
+        run.Event("setup", "five boons granted: " + RunBoons.Summary());
         yield return GoWave(10);
         float start = Time.realtimeSinceStartup;
         float sum = 0f;
@@ -92,6 +111,22 @@ public static partial class Playtest {
             run.Problem(PlaytestSeverity.Warning, "desktop averaged " + avg.ToString("0.0") + " fps in a wave of " + crowd + " bots with the effects on");
         }
 
+        // The per-swing, per-hit counts the criteria read: a trail for every swing, a flash for every bat hit, the home run logged.
+        run.Metric("fx.swingTrails", BatEquipment.TrailSwings);
+        run.Metric("fx.swings", BatEquipment.Swings);
+        run.Metric("fx.homeRuns", BatEquipment.HomeRuns);
+        run.Metric("fx.hitFlashes", Enemy.BatFlashes);
+        run.Metric("fx.hits", Combat.BatHitsLanded);
+        run.Event("hit-fx-totals", "swing trails " + BatEquipment.TrailSwings + " of " + BatEquipment.Swings + " swings, hit flashes " + Enemy.BatFlashes
+            + " of " + Combat.BatHitsLanded + " bat hits, home runs " + BatEquipment.HomeRuns + ", knocked back " + BatEquipment.KnockedBack);
+        if (BatEquipment.TrailSwings != BatEquipment.Swings) {
+            run.Problem(PlaytestSeverity.Bug, "swing trails " + BatEquipment.TrailSwings + " but " + BatEquipment.Swings + " swings");
+        }
+        if (Enemy.BatFlashes != Combat.BatHitsLanded) {
+            run.Problem(PlaytestSeverity.Bug, "hit flashes " + Enemy.BatFlashes + " but " + Combat.BatHitsLanded + " bat hits");
+        }
+        ReportBoonFx(run);
+        BarProbe.Report(run);
         if (BatEquipment.TrailSwings == 0) {
             run.Problem(PlaytestSeverity.Bug, "no swing showed a trail on the bat");
         }
@@ -165,8 +200,19 @@ public static partial class Playtest {
 
     static void HitFxTell(string what) {
         run.Event("hit-fx-" + what, "swing trails " + BatEquipment.TrailSwings + ", impact bursts " + DeptFx.Bursts + " (paper " + DeptFx.PaperEmitted + ", ink " + DeptFx.InkEmitted
-            + "), stamps " + DeptFx.Stamps + " (" + DeptFx.StampsBeforeBreak + " then broke), leg scatters " + DeptFx.LegScatters + ", home runs " + BatEquipment.HomeRuns
+            + "), stamps " + DeptFx.Stamps + " (" + DeptFx.StampsBeforeBreak + " then broke), leg scatters " + DeptFx.LegScatters + ", home runs " + BatEquipment.HomeRuns + ", hit flashes " + Enemy.BatFlashes + "/" + Combat.BatHitsLanded
             + ", speed-line frames " + DeptFx.SpeedLineBursts + ", landings " + DeptFx.Landings + ", circle ripples " + DeptFx.Ripples
             + ", coin glints " + DeptFx.CoinGlints + " arcs " + DeptFx.CoinArcs);
+    }
+
+    // Every boon proc draws its family-coloured ring, burst, callout and sound in BoonFx.Proc, so shown must equal procs.
+    public static void ReportBoonFx(PlaytestRun run) {
+        run.Metric("fx.boonProcs", BoonFx.Procs);
+        run.Metric("fx.boonProcsShown", BoonFx.ProcsShown);
+        run.Metric("fx.boonsShown", BoonFx.DistinctBoonsShown);
+        run.Event("boon-fx", "procs shown " + BoonFx.ProcsShown + " of " + BoonFx.Procs + " (" + BoonFx.SummaryLine() + "), lead family " + RunBoons.FamilyName(RunBoons.LeadFamily));
+        if (BoonFx.ProcsShown != BoonFx.Procs) {
+            run.Problem(PlaytestSeverity.Bug, "boon procs shown " + BoonFx.ProcsShown + " but " + BoonFx.Procs + " procs");
+        }
     }
 }

@@ -284,7 +284,11 @@ public class DefencePiece : MonoBehaviour {
             return;
         }
         shotTick = MetaProgress.TowerInterval() / RunBoons.TowerHaste;
-        UpgradeLook.Bolt(transform.position + Vector3.up * (1.7f + MetaProgress.Rank(UpgradeId.Towers) * 0.28f), best.transform.position + Vector3.up * 0.7f);
+        Vector3 to = best.transform.position + Vector3.up * 0.7f;
+        UpgradeLook.Bolt(transform.position + Vector3.up * (1.7f + MetaProgress.Rank(UpgradeId.Towers) * 0.28f), to);
+        if (RunBoons.Rank(BoonId.Turret) > 0) {
+            BoonFx.Proc(BoonId.Turret, to, "TOWER SONG", 2.0f);
+        }
         best.Hit(1f);
         if (!best.Alive) {
             NoteKill();
