@@ -92,6 +92,8 @@ public static class RunBoons {
     public static int Feathers { get; private set; }
     public static int NextAt { get; private set; }
     public static int PendingLevels { get; private set; }
+    // Levels gained this run (kills and bolts filled the bar), reported by the playtest as run.levelUps.
+    public static int LevelUps { get; private set; }
     // Of the pending cards, how many are wave-clear cards (no level gained), and whether the card just taken was one.
     static int pendingWaveCards;
     public static bool LastCardWasWave { get; private set; }
@@ -107,6 +109,7 @@ public static class RunBoons {
             ranks[i] = 0;
         }
         Level = 0;
+        LevelUps = 0;
         Feathers = 0;
         featherCarry = 0f;
         PendingLevels = 0;
@@ -145,6 +148,7 @@ public static class RunBoons {
         while (Feathers >= NextAt) {
             Feathers -= NextAt;
             Level++;
+            LevelUps++;
             PendingLevels++;
             NextAt = Need(Level);
         }

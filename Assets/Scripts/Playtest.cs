@@ -5210,7 +5210,12 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
             if (wave != lastWave) {
                 if (lastWave != 0) {
                     run.Event("wave", wave.ToString());
+                    // The level the run reached by the end of the wave just cleared.
+                    run.Metric("run.level.wave" + lastWave, RunBoons.Level);
+                    run.Event("run-level", "wave " + lastWave + " cleared: run.level " + RunBoons.Level + ", run.levelUps " + RunBoons.LevelUps + ", picks " + RunBoons.Picks + ", XP " + RunBoons.Feathers + "/" + RunBoons.NextAt);
                 }
+                run.Metric("run.level", RunBoons.Level);
+                run.Metric("run.levelUps", RunBoons.LevelUps);
                 lastWave = wave;
                 waveSince = now;
                 if (holdFireFrom > 0 && wave >= holdFireFrom) {
@@ -10741,6 +10746,8 @@ run.Event("boss-defeated", "The Spider Bot fell after " + Mathf.RoundToInt(chapt
         run.Metric("lockNearest", lockNearest);
         run.Metric("lockWrong", lockWrong);
         run.Metric("level", RunBoons.Level);
+        run.Metric("run.level", RunBoons.Level);
+        run.Metric("run.levelUps", RunBoons.LevelUps);
         run.Metric("levelUps", levelUps);
         run.Metric("botsAlive", Enemy.Roster.Count);
         run.Metric("hurt.directionShown", HitDirection.WallitHits > 0 ? Mathf.Round(100f * HitDirection.ShownWallit / HitDirection.WallitHits) : 100f);
