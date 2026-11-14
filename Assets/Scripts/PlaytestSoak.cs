@@ -1,0 +1,213 @@
+using System.Collections;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Hawkes.Playtest;
+using UnityEngine;
+
+// Scenario "soak": about 20 minutes in one page, to catch the slowdowns and leaks only a long session shows. Arcade from
+// wave 1 for 12 minutes (the bot plays and picks cards), back to the menu, then Campaign chapters 1 to 3 with the openings
+// skipped (Enter, as in "campaign"). On a phone viewport (390x844) the bot plays with fingers only.
+// Every minute the SoakSampler (it survives scene loads) reports fps p5 and average, Unity's reserved/allocated memory, the
+// JS heap where the browser has one, and the live particle systems, lights and audio sources: event soak-minute and the
+// metrics soak.<name>.<minute>. soak.crashed is 0 while the page answers and 1 when a frame took over 20 s (a hang) or
+// the bot lost the page; a page that dies outright sends no more minutes, and the last soak-minute says when.
+public static partial class Playtest {
+    const float SoakArcadeSeconds = 720f;
+    const float SoakCampaignSeconds = 480f;
+
+    static void PrepareSoak() {
+        bool touch = Screen.height > Screen.width || Screen.height < 500;
+        UiFit.ForceTouch(touch);
+        if (touch) {
+            MobileQuality.Apply();
+        }
+        SoakSampler.Begin(run);
+    }
+
+    static IEnumerator SoakRun(PlaytestOptions options) {
+        run.Event("soak-start", "Arcade " + (SoakArcadeSeconds / 60f).ToString("0") + " min, then Campaign chapters 1-3 (" + (SoakCampaignSeconds / 60f).ToString("0") + " min cap), touch=" + UiFit.Touch);
+        float arcadeEnd = Time.realtimeSinceStartup + SoakArcadeSeconds;
+        while (!run.Done && Time.realtimeSinceStartup < arcadeEnd) {
+            yield return Play(options, arcadeEnd - Time.realtimeSinceStartup, false);
+            if (run.Done) {
+                yield break;
+            }
+            if (WaveDirector.IsLost && Time.realtimeSinceStartup < arcadeEnd) {
+                // Slice fell: a new Arcade run so the soak keeps its minutes (Play's game-over path returned to the menu).
+                run.Event("soak-retry", "Arcade run lost at wave " + WaveDirector.Wave + ", starting again");
+                yield return StartRun();
+            } else {
+                break;
+            }
+        }
+        if (run.Done) {
+            yield break;
+        }
+        run.Event("soak-phase", "Arcade done after " + SoakSampler.Minutes + " minutes, off to the campaign");
+        SoakSampler.Phase = "campaign";
+        yield return ToMenu();
+        if (run.Done) {
+            yield break;
+        }
+        pacingRun = true;
+        watchCutscene = false;
+        startChapter = 0;
+        quitDone = false;
+        lastFullMap = null;
+        float campaignEnd = Time.realtimeSinceStartup + SoakCampaignSeconds;
+        IEnumerator campaign = CampaignRun();
+        while (!run.Done && campaign.MoveNext()) {
+            yield return campaign.Current;
+            if (Time.realtimeSinceStartup > campaignEnd) {
+                run.Event("soak-phase", "campaign time cap reached (cleared " + CampaignSave.Get(0).cleared + " chapters)");
+                break;
+            }
+        }
+        if (run.Done) {
+            yield break;
+        }
+        SoakSampler.Finish();
+        run.Finish(PlaytestOutcome.Done);
+    }
+}
+
+// Samples once a minute of real time; one per page, kept across scene loads.
+public class SoakSampler : MonoBehaviour {
+    const float MinuteSeconds = 60f;
+    const float HangSeconds = 20f;
+
+    static SoakSampler instance;
+    public static string Phase = "arcade";
+    public static int Minutes { get { return instance != null ? instance.minute : 0; } }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+    [DllImport("__Internal")]
+    static extern float HawkesJsHeapMb();
+
+    [DllImport("__Internal")]
+    static extern void HawkesSoakBeat(int minute);
+#else
+    static float HawkesJsHeapMb() {
+        return 0f;
+    }
+
+    static void HawkesSoakBeat(int minute) {
+    }
+#endif
+
+    PlaytestRun run;
+    readonly List<float> frames = new List<float>();
+    float windowStart;
+    int minute;
+    bool crashed;
+    float peakReserved;
+    float firstReserved = -1f;
+
+    public static void Begin(PlaytestRun r) {
+        if (instance != null) {
+            Destroy(instance.gameObject);
+        }
+        var go = new GameObject("SoakSampler");
+        DontDestroyOnLoad(go);
+        instance = go.AddComponent<SoakSampler>();
+        instance.run = r;
+        instance.windowStart = Time.realtimeSinceStartup;
+        Phase = "arcade";
+        r.Metric("soak.crashed", 0);
+    }
+
+    public static void Finish() {
+        if (instance == null) {
+            return;
+        }
+        instance.Sample();
+        instance.run.Metric("soak.crashed", instance.crashed ? 1 : 0);
+        instance.run.Metric("soak.minutes", instance.minute);
+        if (instance.firstReserved > 0f) {
+            instance.run.Metric("soak.reservedGrowthMb", Mathf.Round(instance.peakReserved - instance.firstReserved));
+        }
+        instance.run.Event("soak-end", instance.minute + " minutes, crashed=" + instance.crashed + ", reserved " + instance.firstReserved.ToString("0") + " -> peak " + instance.peakReserved.ToString("0") + " MB");
+    }
+
+    void Update() {
+        float dt = Time.unscaledDeltaTime;
+        if (dt <= 0f) {
+            return;
+        }
+        if (dt > HangSeconds && !crashed) {
+            crashed = true;
+            run.Metric("soak.crashed", 1);
+            run.Problem(PlaytestSeverity.Bug, "soak.crashed: one frame took " + dt.ToString("0") + " s (the page stopped answering) in " + Phase + " at minute " + minute);
+        }
+        frames.Add(dt);
+        if (Time.realtimeSinceStartup - windowStart >= MinuteSeconds) {
+            Sample();
+        }
+    }
+
+    static int Live(ParticleSystem[] systems) {
+        int n = 0;
+        foreach (ParticleSystem p in systems) {
+            if (p != null && p.isPlaying) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    void Sample() {
+        float span = Mathf.Max(0.1f, Time.realtimeSinceStartup - windowStart);
+        windowStart = Time.realtimeSinceStartup;
+        minute++;
+        float avg = 0f, p5 = 0f;
+        if (frames.Count > 0) {
+            frames.Sort();   // ascending frame time: the 95th percentile is the slow end, its fps is p5
+            float total = 0f;
+            foreach (float f in frames) {
+                total += f;
+            }
+            avg = frames.Count / Mathf.Max(0.001f, total);
+            int idx = Mathf.Min(frames.Count - 1, Mathf.FloorToInt(frames.Count * 0.95f));
+            p5 = 1f / Mathf.Max(0.0001f, frames[idx]);
+        }
+        float worstMs = frames.Count > 0 ? frames[frames.Count - 1] * 1000f : 0f;
+        frames.Clear();
+        float reserved = UnityEngine.Profiling.Profiler.GetTotalReservedMemoryLong() / 1048576f;
+        float allocated = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / 1048576f;
+        float mono = UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong() / 1048576f;
+        float js = HawkesJsHeapMb();
+        int particles = Live(FindObjectsByType<ParticleSystem>(FindObjectsInactive.Exclude, FindObjectsSortMode.None));
+        int lights = 0;
+        foreach (Light l in FindObjectsByType<Light>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)) {
+            if (l.enabled) {
+                lights++;
+            }
+        }
+        int sources = 0;
+        foreach (AudioSource a in FindObjectsByType<AudioSource>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)) {
+            if (a.isPlaying) {
+                sources++;
+            }
+        }
+        if (firstReserved < 0f) {
+            firstReserved = reserved;
+        }
+        peakReserved = Mathf.Max(peakReserved, reserved);
+        HawkesSoakBeat(minute);
+        string m = "." + minute;
+        run.Metric("soak.fpsP5" + m, Mathf.Round(p5 * 10f) / 10f);
+        run.Metric("soak.fpsAvg" + m, Mathf.Round(avg * 10f) / 10f);
+        run.Metric("soak.reservedMb" + m, Mathf.Round(reserved));
+        run.Metric("soak.allocatedMb" + m, Mathf.Round(allocated));
+        run.Metric("soak.jsHeapMb" + m, Mathf.Round(js));
+        run.Metric("soak.particleSystems" + m, particles);
+        run.Metric("soak.lights" + m, lights);
+        run.Metric("soak.audioSources" + m, sources);
+        run.Event("soak-minute", "minute " + minute + " (" + Phase + ", " + UnityEngine.SceneManagement.SceneManager.GetActiveScene().name + ", " + span.ToString("0") + " s): fps p5 " + p5.ToString("0.0") + ", avg " + avg.ToString("0.0")
+            + ", worst frame " + worstMs.ToString("0") + " ms; Unity reserved " + reserved.ToString("0") + " MB, allocated " + allocated.ToString("0") + " MB, mono " + mono.ToString("0") + " MB, JS heap " + (js > 0f ? js.ToString("0") + " MB" : "n/a")
+            + "; live particle systems " + particles + ", lights " + lights + ", audio sources " + sources);
+        if (p5 > 0f && p5 < 30f && UiFit.Touch) {
+            run.Problem(PlaytestSeverity.Warning, "soak: fps p5 " + p5.ToString("0.0") + " in minute " + minute + " (30 wanted on a phone)");
+        }
+    }
+}
