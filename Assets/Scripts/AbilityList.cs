@@ -11,6 +11,8 @@ public class AbilityList : MonoBehaviour {
     int freshFrom = int.MaxValue;
     float freshUntil;
     bool cachedFresh;
+    string cachedEvent = "";
+    int eventLen;
     CanvasScaler scaler;
     UiMode laidOut;
     int laidStamp = -1;
@@ -82,13 +84,14 @@ public class AbilityList : MonoBehaviour {
         if (laidOut == UiMode.Desktop) {
             body.fontSize = 24;
             body.horizontalOverflow = HorizontalWrapMode.Overflow;
-            rect.anchoredPosition = new Vector2(36f, -108f);
-            rect.sizeDelta = new Vector2(360f, 280f);
+            rect.anchoredPosition = new Vector2(36f, -92f);   // under the coin ledger (ends at -86); the event line (when there is one) is the first line
+            rect.sizeDelta = new Vector2(420f, 244f);
         } else {
             body.fontSize = 22;
             body.horizontalOverflow = HorizontalWrapMode.Wrap;
-            rect.anchoredPosition = laidOut == UiMode.Tall ? new Vector2(24f, -398f) : new Vector2(24f, -152f);
-            rect.sizeDelta = laidOut == UiMode.Tall ? new Vector2(300f, 80f) : new Vector2(360f, 56f);
+            // The panel owns the whole slot the event line used to take: it ends where the boon list (RunHud) begins.
+            rect.anchoredPosition = laidOut == UiMode.Tall ? new Vector2(24f, -340f) : new Vector2(24f, -96f);
+            rect.sizeDelta = laidOut == UiMode.Tall ? new Vector2(300f, 144f) : new Vector2(360f, 118f);
         }
     }
 
@@ -116,16 +119,25 @@ public class AbilityList : MonoBehaviour {
         }
 
         bool fresh = Time.unscaledTime < freshUntil;
-        if (wave == cachedWave && fresh == cachedFresh) {
+        // One copy of the event line: not while its mid-screen announcement is up, then here, until the wave ends.
+        string ev = WaveDirector.Event != WaveEvent.None && Time.unscaledTime >= WaveDirector.EventAnnouncedUntil
+            ? WaveDirector.EventName
+            : "";
+        if (wave == cachedWave && fresh == cachedFresh && ev == cachedEvent) {
             return;
         }
         cachedWave = wave;
         cachedFresh = fresh;
-        body.text = Build(wave, fresh);
+        cachedEvent = ev;
+        body.text = Build(wave, fresh, ev);
     }
 
-    string Build(int wave, bool highlight) {
+    string Build(int wave, bool highlight, string ev) {
         var lines = new StringBuilder();
+        if (ev.Length > 0) {
+            lines.Append("<color=#D999FF>★ ").Append(ev).Append("</color>\n");
+        }
+        eventLen = lines.Length;
         Add(lines, wave >= Tuning.JumpWave, Tuning.JumpWave, "Jump land", highlight);
         Add(lines, wave >= MetaProgress.AutoWave(), MetaProgress.AutoWave(), "Auto swing", highlight);
         Add(lines, wave >= MetaProgress.StompWave(), MetaProgress.StompWave(), "Stomp", highlight);
@@ -138,7 +150,7 @@ public class AbilityList : MonoBehaviour {
             return;
         }
         bool inline = laidOut != UiMode.Desktop;
-        if (lines.Length == 0) {
+        if (lines.Length == eventLen) {
             lines.Append(inline ? "<color=#C9B48A>Abilities:</color> " : "<color=#C9B48A>Abilities</color>");
         } else if (inline) {
             lines.Append("<color=#C9B48A>  ·  </color>");
