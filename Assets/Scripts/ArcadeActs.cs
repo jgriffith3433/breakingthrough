@@ -504,6 +504,7 @@ public class ArcadeActs : MonoBehaviour {
             source.spatialBlend = 0f;
             source.volume = 0f;
             source.Play();
+            GameAudio.NoteOther(GameAudio.Bus.Music, "act_score_" + (i + 1));   // the looping bed, told to the audio probe
             layers[i] = source;
             stings[i] = Chime("Act Sting " + (i + 1), notes[i][3] * 2f, i == 1 ? 1.335f : 1.5f);
         }
