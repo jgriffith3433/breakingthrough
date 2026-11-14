@@ -1176,6 +1176,10 @@ public class BatEquipment : MonoBehaviour {
         GUI.color = previous;
     }
 
+    public static void Note(string line) {
+        Say(line);
+    }
+
     static void Say(string line) {
         Events.Add(line);
         if (Events.Count > 32) {

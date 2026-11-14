@@ -294,6 +294,22 @@ public class CharacterMovement : MonoBehaviour {
         }
     }
 
+    // The hurt flash on Wallit's outline: a white or red rim at `rim` strength and a wash of `flash` over the skin.
+    // rim 0 puts the resting look back (the rim colour and strengths set where the materials are made).
+    public static void SetWallitFlash(float rim, Color rimColor, Color flash) {
+        bool rest = rim <= 0f;
+        if (wallitBodyMat != null) {
+            wallitBodyMat.SetFloat("_RimStrength", rest ? 0.25f : rim);
+            wallitBodyMat.SetColor("_RimColor", rest ? new Color(0.42f, 0.55f, 0.95f, 1f) : rimColor);
+            wallitBodyMat.SetColor("_Flash", flash);
+        }
+        if (wallitBatMat != null) {
+            wallitBatMat.SetFloat("_RimStrength", rest ? 0.22f : rim);
+            wallitBatMat.SetColor("_RimColor", rest ? new Color(0.42f, 0.55f, 0.95f, 1f) : rimColor);
+            wallitBatMat.SetColor("_Flash", flash);
+        }
+    }
+
     static void FitWallitToPlayer(GameObject player, GameObject model) {
         Bounds bounds = new Bounds(model.transform.position, Vector3.zero);
         bool any = false;

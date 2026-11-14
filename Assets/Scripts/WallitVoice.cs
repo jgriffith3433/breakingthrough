@@ -212,7 +212,7 @@ public class WallitVoice : MonoBehaviour {
 
     public static void OnHurt() {
         if (Instance != null && Time.unscaledTime >= Instance.nextHurtAt) {
-            Instance.nextHurtAt = Time.unscaledTime + 4f;
+            Instance.nextHurtAt = Time.unscaledTime + 1.5f;
             Instance.Queue(Instance.Pick(Hurt), "hurt", 1.2f);
         }
     }
