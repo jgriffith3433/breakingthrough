@@ -86,13 +86,14 @@ public static class MeshAudit {
                 if (Vector3.Dot(fn, n[idx[i]] + n[idx[i + 1]] + n[idx[i + 2]]) < 0f) disagree++;
             }
         }
-        // Unity winds front faces clockwise, so cross(b-a, c-a) points out of the front; an outward closed mesh has a
-        // positive volume under this sum's sign convention flipped, hence the test is on the negated total.
-        bool inside = -volume < 0.0 && Mathf.Abs((float)volume) > 1e-6f && IsClosedish(m);
+        // Unity winds front faces clockwise, so cross(b-a, d-a) points out of the front (toward a viewer outside the mesh).
+        // An outward closed mesh therefore sums to a POSITIVE volume; a negative one is inside out. (The test used to be
+        // inverted, which counted every correct closed mesh as inside out: the 226 of the Nov 13 runs.)
+        bool inside = volume < 0.0 && Mathf.Abs((float)volume) > 1e-6f && IsClosedish(m);
         if (!inside && tris > 0 && disagree > tris * 0.5f) inside = true;
         if (inside) {
             r.Inside++;
-            r.Failures.Add(label + ": inside out (signed volume " + (-volume).ToString("0.000") + ", " + disagree + "/" + tris + " windings against their normals)");
+            r.Failures.Add(label + ": inside out (signed volume " + volume.ToString("0.000") + ", " + disagree + "/" + tris + " windings against their normals)");
         }
     }
 
