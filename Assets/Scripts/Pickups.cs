@@ -17,6 +17,7 @@ public class Pickups : MonoBehaviour {
     int value;
     bool chest;
     bool pulled;
+    bool magnetNoted;
     float age;
     float speed;
     Vector3 velocity;
@@ -201,6 +202,10 @@ public class Pickups : MonoBehaviour {
 
         if (!pulled && age > 0.45f && to.magnitude <= reach) {
             pulled = true;
+            if (!chest && !magnetNoted && RunBoons.Rank(BoonId.Magnet) > 0) {
+                magnetNoted = true;
+                BoonFx.Proc(BoonId.Magnet, transform.position + Vector3.up * 0.35f, "LODESTONE", 1.7f);
+            }
         }
 
         if (pulled) {
@@ -237,6 +242,10 @@ public class Pickups : MonoBehaviour {
             UpgradeLook.Say("Treasure!", 1.2f, 40f);
             GameAudio.PlayAt("coin", transform.position, 0.9f, 1.2f);
         } else {
+            if (!magnetNoted && RunBoons.Rank(BoonId.Magnet) > 0) {
+                magnetNoted = true;
+                BoonFx.Proc(BoonId.Magnet, transform.position + Vector3.up * 0.35f, "LODESTONE", 1.7f);
+            }
             BoltsCollected++;
             DeptFx.Coin(transform.position);
             RunBoons.AddFeathers(value);

@@ -448,7 +448,11 @@ public class WaveDirector : MonoBehaviour {
                 RunBoons.AddWaveCard();
             }
             if (Musician.Instance != null) {
-                Musician.Instance.Heal(6 * RunBoons.Rank(BoonId.Ovation));
+                int ovation = RunBoons.Rank(BoonId.Ovation);
+                if (ovation > 0) {
+                    Musician.Instance.Heal(6 * ovation);
+                    BoonFx.Proc(BoonId.Ovation, Musician.Instance.transform.position + Vector3.up * 1.1f, "+" + (6 * ovation) + " OVATION", 3.8f);
+                }
             }
             Event = WaveEvent.None;
             record = Wave > MetaProgress.BestWave;

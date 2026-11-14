@@ -452,11 +452,11 @@ public class LevelUpScreen : MonoBehaviour {
             card.Rank.text = "";
             card.About.text = OneLine(info.About);
             UiArt.Show(card.Icon, UiArt.Boon(info.Id));
-BoonFamily family = RunBoons.FamilyOf(info.Id);
+            BoonFamily family = RunBoons.FamilyOf(info.Id);
             card.Tag.text = info.Evolution ? "EVOLUTION" : (!fromChest && RunBoons.LastCardWasWave && family != BoonFamily.None
                 ? RunBoons.FamilyName(family) + "  ·  " + RunBoons.RankText(info.Id)
                 : info.Rarity.ToString().ToUpper() + "  ·  " + RunBoons.RankText(info.Id));
-            card.Tag.color = tint;
+            card.Tag.color = family != BoonFamily.None ? RunBoons.FamilyColor(family) : tint;
             FillPartner(card, info);
             card.Key.text = touch ? "Tap to pick" : "[" + (i + 1) + "]";
             card.BackNumber.text = "FORM B-" + (7 + i * 3 + RunBoons.Level % 3);
