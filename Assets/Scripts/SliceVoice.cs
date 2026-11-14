@@ -227,10 +227,13 @@ public class SliceVoice : MonoBehaviour {
         }
         killsSince++;
         if (hers || (killsSince >= 4 && Time.time - lastKillLineAt > 6f)) {
-            killsSince = 0;
-            lastKillLineAt = Time.time;
-            Begin(BFlourish, 0.7f);
-            Say(Kill, "kill");
+            // Only a line that was really said spends the count and starts the cooldown; a dropped one (floor busy,
+            // gap not cooled) tries again on the next kill instead of being lost for four more.
+            if (Say(Kill, "kill")) {
+                killsSince = 0;
+                lastKillLineAt = Time.time;
+                Begin(BFlourish, 0.7f);
+            }
         }
     }
 
@@ -379,6 +382,11 @@ public class SliceVoice : MonoBehaviour {
 
     bool Say(string[] bank, string why) {
         VoiceDirector.Priority priority = VoiceDirector.PriorityOf(why);
+        if (why == "kill") {
+            // Her kill line is rare by her own count (four kills or her own stab), so it must not lose to the bark gap.
+            // Wallit's own "kill" bark keeps its Bark priority.
+            priority = VoiceDirector.Priority.Normal;
+        }
         if (banterRunning) {
             return false;
         }
