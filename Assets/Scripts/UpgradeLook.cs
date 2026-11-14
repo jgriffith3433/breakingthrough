@@ -470,6 +470,18 @@ public class UpgradeLook : MonoBehaviour {
             UiFit.Apply(scaler);
             text.fontSize = 32;
             rect.sizeDelta = new Vector2(UiFit.Size.x - 48f, 80f);
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.resizeTextForBestFit = true;
+            text.resizeTextMinSize = 20;
+            text.resizeTextMaxSize = 32;
+            if (UiFit.Mode == UiMode.Tall && y >= AnnounceY) {
+                // A portrait announcement sits in the strip under the wave line, above the roster and the caption column,
+                // below the boss bar when one is up, instead of mid-screen over the roster rows.
+                rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
+                rect.pivot = new Vector2(0.5f, 1f);
+                rect.sizeDelta = new Vector2(UiFit.Size.x - 48f, 64f);
+                rect.anchoredPosition = new Vector2(0f, -Mathf.Max(236f, UiFit.ReservedTop + 8f));
+            }
         }
         LoadoutBanner banner = go.AddComponent<LoadoutBanner>();
         banner.SetLife(seconds);
