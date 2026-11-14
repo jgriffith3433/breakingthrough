@@ -220,7 +220,7 @@ ambient sound, what changes. "Gap clock" is the longest the docs allow between t
   rim on Wallit, Slice and every bot, warm lamp pools on the lawn that read as the safe zones, ground fog cards drifting, Spider
   Bots come down the wall); 21-30 **Act III Last Light**, the Department's red alert (a red key, an alarm beacon on the ruin
   sweeping the lawn, big slow ash glows, harder contrast; every kind can roll an elite trait). After 30 the loop starts again under
-  an **Overtime** red-ink tint. Each change blends light, sky, grade (and a colour LUT per act) and score over 1.5 s with a banner
+  an **Overtime** red-ink tint. Key hues: Act I amber about 41 degrees, Act II blue about 222, Act III red about 350 (at least 40 apart, so no two acts share a key). Each change blends light, sky, grade (and a colour LUT per act) and score over 1.5 s with a banner
   and a chime sting. Desktop: soft key shadows and a reflection probe; phone: no real-time shadows, a lighter bloom, the rim carried
   by the character shader. Nothing solid in the 150 m, no camera shake, no tiny sparks (the ash is large and soft). Not built:
   baked light probes and lightmaps (need an editor bake of the scene).
