@@ -243,4 +243,204 @@ public static class PlaytestOffers {
             run.Problem(PlaytestSeverity.Bug, "boon-offers: the run stopped at wave " + WaveDirector.Wave + " of " + Waves);
         }
     }
+
+    // How much a card helps the evolution the run is chasing (the one whose parents hold the most ranks): the evolution
+    // itself, then the card that finishes it, then a parent of the chased one, then a parent of any.
+    static int Chase(BoonId id, out string why) {
+        BoonInfo own;
+        why = "";
+        if (RunBoons.Info(id).Evolution) {
+            why = "evolution";
+            return 100;
+        }
+        if (RunBoons.Completes(id)) {
+            why = "finishes";
+            return 90;
+        }
+        if (!RunBoons.EvolutionOf(id, out own)) {
+            return 0;
+        }
+        BoonInfo best = default(BoonInfo);
+        int bestRanks = -1;
+        for (int i = 0; i < RunBoons.All.Length; i++) {
+            BoonInfo e = RunBoons.All[i];
+            if (!e.Evolution) {
+                continue;
+            }
+            int held = RunBoons.Rank(e.NeedA) + RunBoons.Rank(e.NeedB);
+            if (held > bestRanks) {
+                bestRanks = held;
+                best = e;
+            }
+        }
+        if (best.NeedA == id || best.NeedB == id) {
+            why = "parent of " + best.Name;
+            return 70;
+        }
+        why = "parent of " + own.Name;
+        return 30;
+    }
+
+    // The "evolution" scenario: a 20-wave Arcade run in which the bot chases one evolution by tapping the cards that lead to it.
+    // It logs each offer's partner icons (size in CSS px, the link line, which cards finish an evolution), the evolution when
+    // it lands (wave, ceremony, the evolved boon on the HUD) and how soon the touch pads are back once the picker closes.
+    // Metrics run.evolutions, run.evolution1Wave.., evolution.partnerMinPx, evolution.padsBackSeconds, evolution.hudIconPx.
+    // Named setup shortcuts: each wave's bots are struck off, a level of bolts is granted once a wave, Enter skips the breaks.
+    public static IEnumerator RunEvolution(PlaytestRun run) {
+        UiFit.ForceTouch(true);
+        CampaignSave.EnterSandbox();
+        MetaProgress.EnterSandbox(true);
+        yield return new WaitForSecondsRealtime(1f);
+        MainMenu menu = Object.FindAnyObjectByType<MainMenu>();
+        if (menu == null || menu.PlayButton == null) {
+            run.Problem(PlaytestSeverity.Bug, "evolution: no Play button on the menu");
+            run.Finish(PlaytestOutcome.Stuck);
+            yield break;
+        }
+        Tap(menu.PlayButton.gameObject);
+        yield return run.Until(() => WaveDirector.Instance != null && SceneManager.GetActiveScene().name == MetaProgress.GameScene, 60f, "the game scene");
+        if (run.Done) {
+            yield break;
+        }
+        run.Scene("Arcade, chasing an evolution");
+        run.Event("setup", "each wave's bots are struck off, a level of bolts is granted once a wave, Enter skips the breaks; cards are tapped by finger");
+
+        int grantedWave = 0;
+        int lastWave = 0;
+        float stuckSince = Time.realtimeSinceStartup;
+        float partnerMin = 9999f;
+        int partnerSeen = 0;
+        int finishSeen = 0;
+        int logged = 0;
+        float padsBack = -1f;
+        float hudPx = 0f;
+
+        while (!run.Done && WaveDirector.Wave <= Waves) {
+            if (WaveDirector.IsLost) {
+                run.Problem(PlaytestSeverity.Bug, "evolution: Slice fell during the setup run at wave " + WaveDirector.Wave);
+                break;
+            }
+            if (Musician.Instance != null) {
+                Musician.Instance.Heal(50);
+            }
+            if (WaveDirector.Wave != lastWave) {
+                lastWave = WaveDirector.Wave;
+                stuckSince = Time.realtimeSinceStartup;
+            }
+            if (Time.realtimeSinceStartup - stuckSince > 90f) {
+                run.Problem(PlaytestSeverity.Bug, "evolution: wave " + WaveDirector.Wave + " did not end in 90 s");
+                break;
+            }
+            if (LevelUpScreen.IsOpen) {
+                yield return new WaitForSecondsRealtime(1.6f);
+                if (!LevelUpScreen.IsOpen) {
+                    continue;
+                }
+                List<BoonId> offer = new List<BoonId>(LevelUpScreen.Offered);
+                int slot = 0;
+                int bestScore = -1;
+                string bestWhy = "";
+                var seen = new List<string>();
+                float px = Mathf.Max(1f, UiFit.PixelRatio);
+                for (int i = 0; i < offer.Count; i++) {
+                    string why;
+                    int score = Chase(offer[i], out why);
+                    RectTransform rect;
+                    string partner = "no partner";
+                    if (LevelUpScreen.PartnerShown(i, out rect)) {
+                        Rect r = Box(rect);
+                        float size = Mathf.Min(r.width, r.height) / px;
+                        partnerMin = Mathf.Min(partnerMin, size);
+                        partnerSeen++;
+                        partner = "partner icon " + Mathf.Round(size) + "px: " + LevelUpScreen.LinkText(i);
+                        if (RunBoons.Completes(offer[i])) {
+                            finishSeen++;
+                        }
+                    }
+                    seen.Add(RunBoons.Info(offer[i]).Name + " [" + partner + (RunBoons.Completes(offer[i]) ? ", FINISHES" : "") + "]");
+                    if (score > bestScore) {
+                        bestScore = score;
+                        slot = i;
+                        bestWhy = why;
+                    }
+                }
+                run.Event("offer-links", "wave " + WaveDirector.Wave + ": " + string.Join(" | ", seen.ToArray()) + " -> taps card " + (slot + 1) + (bestWhy != "" ? " (" + bestWhy + ")" : ""));
+                int before = RunBoons.Picks;
+                float until = Time.realtimeSinceStartup + 10f;
+                while (LevelUpScreen.IsOpen && Time.realtimeSinceStartup < until) {
+                    GameObject card = LevelUpScreen.CardObject(slot);
+                    if (card != null) {
+                        Tap(card);
+                    }
+                    yield return new WaitForSecondsRealtime(0.5f);
+                }
+                if (RunBoons.Picks <= before) {
+                    run.Problem(PlaytestSeverity.Bug, "evolution: tapping card " + (slot + 1) + " did not take the boon (wave " + WaveDirector.Wave + ")");
+                }
+                if (RunBoons.Evolutions > logged) {
+                    // The picker has closed on an evolution: how soon are the pads back, and is the evolved boon on the HUD?
+                    float t0 = Time.unscaledTime;
+                    float closed = LevelUpScreen.ClosedAtTime;
+                    float limit = Time.realtimeSinceStartup + 3f;
+                    while (!TouchControls.PadsShown && Time.realtimeSinceStartup < limit) {
+                        yield return null;
+                    }
+                    padsBack = Time.unscaledTime - closed;
+                    yield return new WaitForSecondsRealtime(0.4f);
+                    for (; logged < RunBoons.Evolutions; logged++) {
+                        run.Metric("run.evolution" + (logged + 1) + "Wave", RunBoons.EvolvedWave[logged]);
+                        run.Event("evolution", RunBoons.Info(RunBoons.Evolved[logged]).Name + " evolved at wave " + RunBoons.EvolvedWave[logged] + "; ceremony: " + (EvolutionCeremony.Played.Count > logged ? EvolutionCeremony.Played[logged] : "none") + "; pads back " + padsBack.ToString("0.00") + "s after the picker closed; HUD shows " + RunHud.EvolvedShown + " evolved icon(s)");
+                    }
+                    hudPx = RunHud.EvolvedMinSize;
+                    if (RunHud.EvolvedShown < RunBoons.Evolutions) {
+                        run.Problem(PlaytestSeverity.Bug, "evolution: the evolved boon is not on the HUD (" + RunHud.EvolvedShown + " icons for " + RunBoons.Evolutions + " evolutions)");
+                    }
+                    if (padsBack > 0.3f) {
+                        run.Problem(PlaytestSeverity.Bug, "evolution: the touch pads came back " + padsBack.ToString("0.00") + " s after the ceremony (wanted 0.3 s or less)");
+                    }
+                }
+                yield return new WaitForSecondsRealtime(0.3f);
+                continue;
+            }
+
+            if (WaveDirector.Waiting) {
+                PlayInput.Tap(KeyCode.Return);
+            } else {
+                if (grantedWave != WaveDirector.Wave) {
+                    grantedWave = WaveDirector.Wave;
+                    RunBoons.AddFeathers(RunBoons.NextAt);
+                }
+                var copy = new List<Enemy>(Enemy.Roster);
+                foreach (Enemy e in copy) {
+                    if (e != null && e.Alive) {
+                        e.Damage(9999f, DamageKind.Bat, false);
+                    }
+                }
+            }
+            yield return new WaitForSecondsRealtime(0.4f);
+        }
+
+        run.Metric("run.evolutions", RunBoons.Evolutions);
+        run.Metric("evolution.partnerMinPx", partnerMin > 9000f ? 0f : Mathf.Round(partnerMin));
+        run.Metric("evolution.partnerCards", partnerSeen);
+        run.Metric("evolution.finishCards", finishSeen);
+        run.Metric("evolution.padsBackSeconds", padsBack);
+        run.Metric("evolution.hudIconUnits", hudPx);
+        string waves = "";
+        for (int i = 0; i < RunBoons.Evolutions; i++) {
+            waves += (i > 0 ? ", " : "") + RunBoons.Info(RunBoons.Evolved[i]).Name + " wave " + RunBoons.EvolvedWave[i];
+        }
+        run.Event("evolution-summary", RunBoons.Evolutions + " evolution(s) by wave " + WaveDirector.Wave + (waves != "" ? ": " + waves : "") + "; build " + RunBoons.Summary());
+        if (RunBoons.Evolutions < 1 || RunBoons.EvolvedWave[0] > 15) {
+            run.Problem(PlaytestSeverity.Bug, "evolution: no evolution by wave 15 (" + RunBoons.Evolutions + " in the run)");
+        }
+        if (partnerSeen == 0) {
+            run.Problem(PlaytestSeverity.Bug, "evolution: no card showed an evolution partner");
+        } else if (partnerMin < 20f) {
+            run.Problem(PlaytestSeverity.Bug, "evolution: a partner icon was " + partnerMin + " px (wanted 20 or more)");
+        }
+        if (WaveDirector.Wave <= Waves && !run.Done) {
+            run.Problem(PlaytestSeverity.Bug, "evolution: the run stopped at wave " + WaveDirector.Wave + " of " + Waves);
+        }
+    }
 }

@@ -40,6 +40,9 @@ public class LevelUpScreen : MonoBehaviour {
         public Text About;
         public Text Key;
         public Text Tag;
+        public Image PartnerDisc;   // the evolution partner, a small linked icon beside the boon's own
+        public Image PartnerIcon;
+        public Text Link;           // "Pairs with Grand Slam  ->  Thunder Bat", gold when this card finishes it
         public Image Back;
         public Text BackNumber;
         public Text Stamp;
@@ -148,7 +151,23 @@ public class LevelUpScreen : MonoBehaviour {
         parts.Add(new KeyValuePair<string, RectTransform>("name", c.Name.rectTransform));
         parts.Add(new KeyValuePair<string, RectTransform>("line", c.About.rectTransform));
         parts.Add(new KeyValuePair<string, RectTransform>("key", c.Key.rectTransform));
+        if (c.PartnerDisc.gameObject.activeSelf) {
+            parts.Add(new KeyValuePair<string, RectTransform>("partner", c.PartnerDisc.rectTransform));
+            parts.Add(new KeyValuePair<string, RectTransform>("link", c.Link.rectTransform));
+        }
         return parts;
+    }
+    // For the playtest: card i shows a partner icon (and its rect), and whether the card finishes an evolution.
+    public static bool PartnerShown(int index, out RectTransform rect) {
+        rect = null;
+        if (current == null || index < 0 || index >= current.cards.Length || !current.cards[index].Go.activeSelf || !current.cards[index].PartnerDisc.gameObject.activeSelf) {
+            return false;
+        }
+        rect = current.cards[index].PartnerDisc.rectTransform;
+        return true;
+    }
+    public static string LinkText(int index) {
+        return current != null && index >= 0 && index < current.cards.Length ? current.cards[index].Link.text : "";
     }
     public static bool StampShown(int index) {
         return current != null && index >= 0 && index < current.cards.Length && current.cards[index].Stamp.gameObject.activeSelf && current.cards[index].Stamp.text == "APPROVED";
@@ -438,6 +457,7 @@ BoonFamily family = RunBoons.FamilyOf(info.Id);
                 ? RunBoons.FamilyName(family) + "  ·  " + RunBoons.RankText(info.Id)
                 : info.Rarity.ToString().ToUpper() + "  ·  " + RunBoons.RankText(info.Id));
             card.Tag.color = tint;
+            FillPartner(card, info);
             card.Key.text = touch ? "Tap to pick" : "[" + (i + 1) + "]";
             card.BackNumber.text = "FORM B-" + (7 + i * 3 + RunBoons.Level % 3);
         }
@@ -456,6 +476,34 @@ BoonFamily family = RunBoons.FamilyOf(info.Id);
         footer.text = canReroll
             ? "1 2 3 or click to choose.   R rerolls (" + RunBoons.Rerolls + " left)"
             : "1 2 3 or click to choose.";
+    }
+
+    // The evolution link: the partner's icon (gold disc once it is maxed, cream while held, dark if not yet) and one line saying
+    // what the pair becomes. A card that finishes the evolution is framed gold and says so.
+    static void FillPartner(Card card, BoonInfo info) {
+        BoonId partner;
+        BoonInfo evo;
+        bool linked = RunBoons.PartnerOf(info.Id, out partner, out evo);
+        card.PartnerDisc.gameObject.SetActive(linked);
+        card.Link.gameObject.SetActive(linked);
+        if (!linked) {
+            return;
+        }
+        BoonInfo other = RunBoons.Info(partner);
+        bool completes = RunBoons.Completes(info.Id);
+        bool maxed = RunBoons.Maxed(partner);
+        card.PartnerDisc.color = maxed ? new Color(1f, 0.8f, 0.25f, 0.95f) : (RunBoons.Has(partner) ? new Color(0.9f, 0.85f, 0.7f, 0.6f) : new Color(0.1f, 0.09f, 0.12f, 0.85f));
+        UiArt.Show(card.PartnerIcon, UiArt.Boon(partner));
+        card.PartnerIcon.color = RunBoons.Has(partner) ? Color.white : new Color(1f, 1f, 1f, 0.6f);
+        if (info.Evolution) {
+            card.Link.text = RunBoons.Info(evo.NeedA).Name + " + " + RunBoons.Info(evo.NeedB).Name;
+        } else {
+            card.Link.text = (completes ? "★ Finishes " + evo.Name : "+ " + other.Name + "  →  " + evo.Name);
+        }
+        card.Link.color = completes || info.Evolution ? new Color(1f, 0.84f, 0.3f) : new Color(1f, 0.95f, 0.85f, 0.8f);
+        if (completes) {
+            card.Frame.color = Color.Lerp(card.Frame.color, new Color(1f, 0.8f, 0.25f), 0.7f);
+        }
     }
 
     // One short line: the card's first sentence.
@@ -507,7 +555,9 @@ BoonFamily family = RunBoons.FamilyOf(info.Id);
         // The picked card turns up if it was still face down, and is stamped APPROVED.
         StampOn(cards[index], "APPROVED", new Color(0.9f, 0.16f, 0.14f), -11f);
         UiSound.Stamp(0.95f, info.Evolution ? 0.75f : 1f);
-        UpgradeLook.Say(info.Name + (info.Evolution ? "  ★" : ""), 1.6f, 200f);
+        if (!info.Evolution) {
+            UpgradeLook.Say(info.Name, 1.6f, 200f);   // an evolution gets EvolutionCeremony's banner
+        }
         if (PlayerGrowth.Instance != null) {
             Vector3 at = PlayerGrowth.Instance.transform.position;
             Color tint = RunBoons.RarityColor(info.Rarity);
@@ -642,19 +692,26 @@ BoonFamily family = RunBoons.FamilyOf(info.Id);
                 Lay(card.Name, 36, new Vector2(colX, -48f), new Vector2(col, 50f));
                 Lay(card.About, 26, new Vector2(colX, -104f), new Vector2(col, 130f));
                 Lay(card.Key, 24, new Vector2(colX, 12f), new Vector2(col, 32f));
+                card.About.rectTransform.sizeDelta = new Vector2(col, 96f);
+                Lay(card.Link, 20, new Vector2(colX, 46f), new Vector2(col, 28f));
+                Place(card.PartnerDisc.rectTransform, new Vector2(0.5f, 1f), new Vector2(-frame.x * 0.5f + 95f, -224f), new Vector2(64f, 64f));
             } else if (wide) {
                 float iconSize = 84f;
                 Lay(card.Tag, 20, new Vector2(0f, -10f), new Vector2(inner, 28f));
                 Place(card.Icon.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -42f), new Vector2(iconSize, iconSize));
                 Lay(card.Name, 34, new Vector2(0f, -134f), new Vector2(inner, 46f));
-                Lay(card.About, 24, new Vector2(0f, -186f), new Vector2(inner, cardHeight - 186f - 52f));
+                Lay(card.About, 24, new Vector2(0f, -186f), new Vector2(inner, cardHeight - 186f - 52f - 30f));
                 Lay(card.Key, 24, new Vector2(0f, 10f), new Vector2(inner, 34f));
+                Lay(card.Link, 20, new Vector2(0f, 46f), new Vector2(inner, 28f));
+                Place(card.PartnerDisc.rectTransform, new Vector2(0.5f, 1f), new Vector2(iconSize * 0.5f + 40f, -66f), new Vector2(60f, 60f));
             } else {
                 Lay(card.Tag, 20, new Vector2(0f, -16f), new Vector2(380f, 30f));
                 Place(card.Icon.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -50f), new Vector2(140f, 140f));
                 Lay(card.Name, 38, new Vector2(0f, -198f), new Vector2(390f, 56f));
                 Lay(card.About, 26, new Vector2(0f, -260f), new Vector2(370f, 110f));
                 Lay(card.Key, 30, new Vector2(0f, 36f), new Vector2(380f, 40f));
+                Lay(card.Link, 22, new Vector2(0f, 84f), new Vector2(380f, 30f));
+                Place(card.PartnerDisc.rectTransform, new Vector2(0.5f, 1f), new Vector2(112f, -114f), new Vector2(76f, 76f));
             }
         }
     }
@@ -712,6 +769,25 @@ BoonFamily family = RunBoons.FamilyOf(info.Id);
         card.Icon.enabled = false;
         Place(card.Icon.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -48f), new Vector2(96f, 96f));
 
+        var discGo = new GameObject("Partner");
+        discGo.transform.SetParent(faceGo.transform, false);
+        card.PartnerDisc = discGo.AddComponent<Image>();
+        UiSkin.Round(card.PartnerDisc, 0.6f);
+        card.PartnerDisc.raycastTarget = false;
+        var partnerGo = new GameObject("Partner Icon");
+        partnerGo.transform.SetParent(discGo.transform, false);
+        card.PartnerIcon = partnerGo.AddComponent<Image>();
+        card.PartnerIcon.raycastTarget = false;
+        card.PartnerIcon.enabled = false;
+        var partnerRect = card.PartnerIcon.rectTransform;
+        partnerRect.anchorMin = Vector2.zero;
+        partnerRect.anchorMax = Vector2.one;
+        partnerRect.offsetMin = new Vector2(7f, 7f);
+        partnerRect.offsetMax = new Vector2(-7f, -7f);
+        discGo.SetActive(false);
+        card.Link = MakeText(faceGo.transform, "", 22, FontStyle.Bold, TextAnchor.LowerCenter);
+        Place(card.Link.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 84f), new Vector2(380f, 30f));
+        card.Link.gameObject.SetActive(false);
         card.Tag = MakeText(faceGo.transform, "", 20, FontStyle.Bold, TextAnchor.UpperCenter);
         Place(card.Tag.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -22f), new Vector2(380f, 30f));
         card.Name = MakeText(faceGo.transform, "", 40, FontStyle.Bold, TextAnchor.UpperCenter);

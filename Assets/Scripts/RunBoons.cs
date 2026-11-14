@@ -112,6 +112,11 @@ public static class RunBoons {
 
     static float featherCarry;
 
+    // Evolutions this run, in the order they happened, and the wave each one was taken in (run.evolutions in the playtest).
+    public static readonly List<BoonId> Evolved = new List<BoonId>();
+    public static readonly List<int> EvolvedWave = new List<int>();
+    public static int Evolutions { get { return Evolved.Count; } }
+
     public static void BeginRun() {
         for (int i = 0; i < ranks.Length; i++) {
             ranks[i] = 0;
@@ -131,6 +136,9 @@ public static class RunBoons {
         MinFamilies = 99;
         RerollsTaken = 0;
         LastPick = null;
+        Evolved.Clear();
+        EvolvedWave.Clear();
+        EvolutionCeremony.Reset();
         Rerolls = Tuning.StartRerolls + MetaProgress.Rank(UpgradeId.Clover);
         NextAt = Need(0);
         int gifts = MetaProgress.Rank(UpgradeId.OpeningAct);
@@ -235,6 +243,14 @@ public static class RunBoons {
         for (int i = 0; i < ranks[(int)BoonId.Turret]; i++) {
             FortStock.Add(FortKind.Tower);
         }
+        Evolved.Clear();
+        EvolvedWave.Clear();
+        for (int i = 0; i < All.Length; i++) {
+            if (All[i].Evolution && ranks[i] > 0) {
+                Evolved.Add(All[i].Id);
+                EvolvedWave.Add(0);
+            }
+        }
         if (PlayerGrowth.Instance != null) {
             PlayerGrowth.Instance.RefreshStats();
         }
@@ -274,8 +290,50 @@ public static class RunBoons {
             PlayerGrowth.Instance.RefreshStats();
         }
         RunLog.NotePick(info.Name);
+        if (info.Evolution) {
+            Evolved.Add(id);
+            EvolvedWave.Add(WaveDirector.Wave);
+            EvolutionCeremony.Play(id);
+        }
         RunSave.Touch();
     }
+
+    // The evolution a boon is a parent of (or the evolution itself), if any. Each parent belongs to one evolution.
+    public static bool EvolutionOf(BoonId id, out BoonInfo evolution) {
+        for (int i = 0; i < All.Length; i++) {
+            if (All[i].Evolution && (All[i].Id == id || All[i].NeedA == id || All[i].NeedB == id)) {
+                evolution = All[i];
+                return true;
+            }
+        }
+        evolution = default(BoonInfo);
+        return false;
+    }
+
+    // The boon a card pairs with: a parent's partner, or for an evolution its second parent.
+    public static bool PartnerOf(BoonId id, out BoonId partner, out BoonInfo evolution) {
+        partner = id;
+        if (!EvolutionOf(id, out evolution)) {
+            return false;
+        }
+        partner = evolution.Id == id ? evolution.NeedB : (evolution.NeedA == id ? evolution.NeedB : evolution.NeedA);
+        return true;
+    }
+
+    // Would taking this boon finish an evolution: it is the evolution itself, or the last rank of a parent whose partner is
+    // already maxed (so the evolution is the very next thing offered).
+    public static bool Completes(BoonId id) {
+        BoonInfo evo;
+        if (!EvolutionOf(id, out evo) || ranks[(int)evo.Id] > 0) {
+            return false;
+        }
+        if (evo.Id == id) {
+            return Offerable(evo);
+        }
+        BoonId partner = evo.NeedA == id ? evo.NeedB : evo.NeedA;
+        return Maxed(partner) && ranks[(int)id] == Info(id).MaxRank - 1;
+    }
+
 
     // A boon a pick can use: not at its top rank, and an evolution only once both parents are maxed (it does nothing before).
     static bool Offerable(BoonInfo info) {
@@ -313,7 +371,7 @@ public static class RunBoons {
         return seen.Count;
     }
 
-    static bool Maxed(BoonId id) {
+    public static bool Maxed(BoonId id) {
         return ranks[(int)id] >= Info(id).MaxRank;
     }
 
@@ -398,6 +456,15 @@ public static class RunBoons {
         for (int i = 0; i < pool.Count && picks.Count < count; i++) {
             if (pool[i].Evolution && Random.value < (chest ? 1f : 0.85f)) {
                 picks.Add(pool[i].Id);
+            }
+        }
+        // One step from an evolution: the boon that finishes it is nearly always on offer (a chest always shows it).
+        if (count >= 2 && picks.Count < count && Random.value < (chest ? 1f : 0.7f)) {
+            for (int i = 0; i < pool.Count; i++) {
+                if (!pool[i].Evolution && Completes(pool[i].Id) && !picks.Contains(pool[i].Id)) {
+                    picks.Add(pool[i].Id);
+                    break;
+                }
             }
         }
         int guard = 0;
@@ -497,9 +564,11 @@ public static class RunBoons {
             BoonId partner = e.NeedA == info.Id ? e.NeedB : e.NeedA;
             float one;
             if (Maxed(partner)) {
-                one = ranks[(int)info.Id] == info.MaxRank - 1 ? 4f : 2.2f;
+                one = ranks[(int)info.Id] == info.MaxRank - 1 ? 8f : 3.5f;
             } else if (ranks[(int)partner] > 0 && ranks[(int)info.Id] > 0) {
-                one = 1.5f;
+                one = 2.5f;
+            } else if (ranks[(int)partner] > 0) {
+                one = 1.8f;   // the partner is held: this is the one still missing
             } else {
                 one = 1f;
             }

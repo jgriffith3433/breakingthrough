@@ -244,6 +244,13 @@ public class WallitVoice : MonoBehaviour {
         }
     }
 
+    // Two boons became one: a line from the chest bank (his recorded "Treasure! Mine!"), with the chest's priority.
+    public static void OnEvolve() {
+        if (Instance != null) {
+            Instance.Queue(Instance.Pick(Chest), "chest", 4f);
+        }
+    }
+
     // Playtest setup: asks for one line (a kill bark) so a close-up can see his mouth.
     public static void Test() {
         if (Instance != null) {
