@@ -430,7 +430,7 @@ public class WallitVoice : MonoBehaviour {
             audioOut.Play();
         }
         shown = Mathf.Max(2.4f, lineLength + 0.5f);
-        if (text != null && why != "beat" && why != "cutscene") {
+        if (text != null && why != "beat" && why != "cutscene" && !LevelUpScreen.IsOpen) {
             text.text = "WALLIT  " + line;
             text.enabled = true;
         }
@@ -524,7 +524,7 @@ public class WallitVoice : MonoBehaviour {
             }
         }
         shown -= Time.unscaledDeltaTime;
-        if (text != null && (shown <= 0f || WaveDirector.IsLost)) {
+        if (text != null && (shown <= 0f || WaveDirector.IsLost || LevelUpScreen.IsOpen)) {
             text.enabled = false;
         }
         if (Speaking && now >= lineStart + lineLength) {

@@ -663,7 +663,7 @@ public static class RunBoons {
         if (info.Evolution) {
             return "EVOLUTION";
         }
-        return rank <= 0 ? "New" : "Rank " + rank + " → " + (rank + 1);
+        return rank <= 0 ? "New" : "Rank " + rank + " to " + (rank + 1);
     }
 
     public static Color RarityColor(Rarity rarity) {
