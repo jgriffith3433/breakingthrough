@@ -310,6 +310,9 @@ public class Musician : MonoBehaviour {
         GameAudio.Play("slice_hurt", 0.7f);
         GameAudio.Play("hit", 0.3f, 0.8f);
         DeptFx.CircleRipple(transform.position, 12f);   // her circle ripples
+        if (by != null) {
+            HitDirection.Hit(by.transform.position, false);   // the blow's direction on screen
+        }
         RefreshBar();
         StakesFeel.OnSliceHit(this, amount, by);
         if (Alive) {

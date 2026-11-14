@@ -208,9 +208,10 @@ public class BatEquipment : MonoBehaviour {
         }
         trailWasOn = on;
         trail.emitting = on;
-        trail.widthMultiplier = big ? 0.95f : move == Move.Swing3 || move == Move.Smash ? 0.55f : 0.36f;
-        trail.time = big ? 0.34f : 0.22f;   // a charged swing smears longer and stronger
-        Color head = big ? new Color(1f, 0.92f, 0.55f, 1f) : new Color(1f, 1f, 0.97f, 0.7f);
+        // Wider, longer and brighter than before: the critic could barely see the swing from the high camera.
+        trail.widthMultiplier = big ? 1.5f : move == Move.Swing3 || move == Move.Smash ? 0.95f : 0.7f;
+        trail.time = big ? 0.42f : 0.3f;   // a charged swing smears longer and stronger
+        Color head = big ? new Color(1f, 0.92f, 0.55f, 1f) : new Color(1f, 1f, 0.97f, 0.95f);
         trail.startColor = head;
         trail.endColor = new Color(head.r, head.g * 0.8f, head.b * 0.5f, 0f);
     }
